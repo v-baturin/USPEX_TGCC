@@ -14,6 +14,7 @@ def read_molecule(filename):
     :return: molecule as AtomicStructure object.
     '''
 
+    dct = {}
     if os.path.exists(filename):
         with open(filename) as handle:
             name = handle.readline()[:-1]
@@ -56,7 +57,7 @@ def read_molecule(filename):
             dct['molecules'] = [list(range(len(symbol)))]
             dct['molFormats'] = [temper[:,4:7].astype(int).tolist()]
             dct['molFlexDihedrals'] = [np.flatnonzero(temper[3:, 7]).astype(int).tolist()]
-            dct['molSymbols'] = [filename]
+            dct['molSymbols'] = [os.path.split(filename)[1]]
             dct['pbc'] = [False, False, False]
             if N_col == 9:  # GULP+CHARGE
                 dct['charges'] = temper[:, 8].tolist()
@@ -66,8 +67,7 @@ def read_molecule(filename):
             molecule.translate(-molecule.coordinates.mean(axis=0))
             a, b = molecule.principleAxis()
             molecule.set_positions(np.dot(molecule.coordinates, -b))
+            dct = molecule.toDICT()
 
-    else:
-        molecule = AtomicStructure()
 
-    return molecule
+    return dct

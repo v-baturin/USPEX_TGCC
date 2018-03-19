@@ -402,7 +402,9 @@ class AtomicStructure(object):
         del dct['symbols']
         if 'cell' in dct:
             newStructure.set_cell(dct['cell'])
-        del dct['cell']
+
+        if 'cell' in dct:
+            del dct['cell']
         newStructure.set_positions(dct['positions'])
         del dct['positions']
         newStructure.set_pbc(dct['pbc'])
