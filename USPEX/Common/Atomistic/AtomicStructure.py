@@ -416,13 +416,14 @@ class AtomicStructure(object):
         dct['charges'] = self.atoms.get_initial_charges().tolist()
         dct['magmoms'] = self.magmoms.tolist()
         del dct['atoms']
-        dct['dielectricTensor'] = self._dielectricTensor
-        del dct['_dielectricTensor']
+        if self._dielectricTensor is not None:
+            dct['dielectricTensor'] = self._dielectricTensor.tolist()
+            del dct['_dielectricTensor']
         if self.forces is not None:
             dct['forces'] = self.forces.tolist()
         if self._pressureTensor is not None:
             dct['pressureTensor'] = self._pressureTensor.tolist()
-        del dct['_pressureTensor']
+            del dct['_pressureTensor']
 
         # TODO refactor this
         if 'bonds' in dct:
@@ -440,10 +441,10 @@ class AtomicStructure(object):
         dct = json.loads(repr)
         return AtomicStructure.fromDICT(dct)
 
-    @staticmethod
-    def fromDICT(dct : dict):
+    @classmethod
+    def fromDICT(cls, dct : dict):
         dct = copy.copy(dct)
-        newStructure = AtomicStructure(symbols=dct['symbols'])
+        newStructure = cls(symbols=dct['symbols'])
         del dct['symbols']
         if 'cell' in dct:
             newStructure.set_cell(dct['cell'])

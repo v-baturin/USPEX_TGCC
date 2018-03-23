@@ -194,12 +194,14 @@ class AtomisticConfig(ChemicalConfig):
         dct = super().toDICT()
         dct['blocks'] = dct['blocks'].tolist()
         dct['fixed'] = dct['fixed'].tolist()
+        dct['magRatio'] = dct['magRatio'].tolist()
         return dct
 
     @classmethod
     def fromDICT(cls, dct : dict):
         dct['blocks'] = np.asarray(dct['blocks'])
         dct['fixed'] = np.asarray(dct['fixed'])
+        dct['magRatio'] = np.asarray(dct['magRatio'])
         return super().fromDICT(dct)
 
     def isGoodComposition(self, system : AtomicStructure) -> bool:
