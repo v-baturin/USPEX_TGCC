@@ -365,20 +365,14 @@ class AtomicStructure(object):
         dct['pbc'] = self.get_pbc().tolist()
         dct['charges'] = self.atoms.get_initial_charges().tolist()
         del dct['atoms']
-        dct['bonds'] = self.bonds
         dct['dielectricTensor'] = self._dielectricTensor
-        if '_dielectricTensor' in dct:
-            del dct['_dielectricTensor']
-        dct['energy'] = self.energy
-        dct['enthalpy'] = self.enthalpy
-        dct['externalPressure'] = self.externalPressure
+        del dct['_dielectricTensor']
         if self.forces is not None:
             dct['forces'] = self.forces.tolist()
         if self._pressureTensor is not None:
             dct['pressureTensor'] = self._pressureTensor.tolist()
-        if '_pressureTensor' in dct:
-            del dct['_pressureTensor']
-        dct['dimension'] = self.dimension
+        del dct['_pressureTensor']
+
         # TODO refactor this
         if 'bonds' in dct:
             del dct['bonds']
@@ -402,8 +396,6 @@ class AtomicStructure(object):
         del dct['symbols']
         if 'cell' in dct:
             newStructure.set_cell(dct['cell'])
-
-        if 'cell' in dct:
             del dct['cell']
         newStructure.set_positions(dct['positions'])
         del dct['positions']

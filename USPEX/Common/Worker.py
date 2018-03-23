@@ -11,6 +11,7 @@ class WorkerError(Exception):
 
 class Worker(object):
 
+    shortname = None
     workers = {}
 
     def __init__(self, loop, name):
