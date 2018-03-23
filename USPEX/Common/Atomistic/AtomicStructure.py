@@ -23,6 +23,9 @@ from .mol.coord2Zmatrix import coord2Zmatrix
 from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
 
+THRESHOLD_LS = 0.5
+THRESHOLD_HS = 1.5
+
 
 class AtomicStructure(object):
     '''
@@ -41,7 +44,7 @@ class AtomicStructure(object):
     dimension = None
 
     def __init__(self, molecules=[], symbols=None, positions=None, scaled_positions=None, cell=None, pbc=None, info=None,
-                 optimizeLattice=False):
+                 optimizeLattice=False, magmoms=None):
         isSymbols = symbols is not None
         assert (not isSymbols) or (not len(molecules))     # Cannot initialize with both
 
@@ -72,6 +75,13 @@ class AtomicStructure(object):
                 self.optimizeLattice()
             for molecule in molecules:
                 self.extend(molecule)
+
+        if magmoms is not None:
+            assert len(magmoms) == len(self.atoms)
+            self.magmoms = magmoms
+        else:
+            self.magType = self.get_magnetic_type()
+
         super().__init__()
 
     def __getattr__(self, item):
@@ -255,6 +265,46 @@ class AtomicStructure(object):
     def pressureTensor(self):
         return None if self._pressureTensor is None else self._pressureTensor.copy()
 
+    @property
+    def magmoms(self):
+        return self.atoms.get_initial_magnetic_moments()
+
+    @magmoms.setter
+    def magmoms(self, spins):
+        self.atoms.set_initial_magnetic_moments(spins)
+        self.magType = self.get_magnetic_type()
+
+    def round_magnetic_moments(self):
+        new_magmoms = np.zeros(len(self.magmoms))
+        for i, magmom in enumerate(self.magmoms):
+            if abs(magmom) > THRESHOLD_HS:
+                new_magmoms[i] = 4 * np.sign(magmom)
+            elif THRESHOLD_LS <= abs(magmom) <= THRESHOLD_HS:
+                new_magmoms[i] = np.sign(magmom)
+        self.magmoms = new_magmoms
+
+    def get_magnetic_type(self):
+        if all(abs(self.magmoms) < 0.5):
+            return 'NM'
+        else:
+            nonzero = self.magmoms[abs(self.magmoms) >= THRESHOLD_LS]
+            spinsup = nonzero[np.sign(nonzero) > 0]
+            spinsHS = nonzero[abs(nonzero) > THRESHOLD_HS]
+            if 0.25 < len(spinsup) / len(nonzero) < 0.75:  # AFM
+                if len(spinsHS) < (1 / 3) * len(nonzero):
+                    return 'AFM-LS'
+                elif len(spinsHS) > (2 / 3) * len(nonzero):
+                    return 'AFM-HS'
+                else:
+                    return 'AFM-HSLS'
+            else:  # FM
+                if len(spinsHS) < (1 / 3) * len(nonzero):
+                    return 'FM-LS'
+                elif len(spinsHS) > (2 / 3) * len(nonzero):
+                    return 'FM-HS'
+                else:
+                    return 'FM-HSLS'
+
     def principleAxis(self):
         coordinates = self.coordinates - self.coordinates.mean(axis=0)
         Inertia = np.zeros((3, 3), dtype=float)  # moment of inertia tensor
@@ -364,6 +414,7 @@ class AtomicStructure(object):
         dct['positions'] = self.atoms.get_positions().tolist()
         dct['pbc'] = self.get_pbc().tolist()
         dct['charges'] = self.atoms.get_initial_charges().tolist()
+        dct['magmoms'] = self.magmoms.tolist()
         del dct['atoms']
         dct['dielectricTensor'] = self._dielectricTensor
         del dct['_dielectricTensor']
@@ -410,6 +461,9 @@ class AtomicStructure(object):
         if 'charges' in dct:
             newStructure.set_initial_charges(dct['charges'])
             del dct['charges']
+        if 'magmoms' in dct:
+            newStructure.magmoms = dct['magmoms']
+            del dct['magmoms']
         if 'dielectricTensor' in dct:
             newStructure._dielectricTensor = dct['dielectricTensor']
             del dct['dielectricTensor']

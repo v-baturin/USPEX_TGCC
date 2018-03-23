@@ -24,11 +24,15 @@ def read_molecule(filename):
                 name = name[start + 1:ending]
 
             # how many columns
+            N_col = 8
+            ind_mag = 8
             if 'charge' in name:  # GULP has one more line to specify charge
                 logging.info('This calculation uses charge model, currently only supported in GULP')
-                N_col = 9
-            else:
-                N_col = 8
+                N_col += 1
+                ind_mag = 9
+            if 'mag' in name:  # Magnetic moments are present on the last line
+                logging.info('This calculation uses predefined magnetic moments on {}'.format(name))
+                N_col += 1
 
             num = int(handle.readline().split()[-1])
             temper = np.zeros((num, N_col))
@@ -59,8 +63,10 @@ def read_molecule(filename):
             dct['molFlexDihedrals'] = [np.flatnonzero(temper[3:, 7]).astype(int).tolist()]
             dct['molSymbols'] = [os.path.split(filename)[1]]
             dct['pbc'] = [False, False, False]
-            if N_col == 9:  # GULP+CHARGE
+            if 'charge' in name:  # GULP+CHARGE
                 dct['charges'] = temper[:, 8].tolist()
+            if 'mag' in name:
+                dct['magmoms'] = temper[:, ind_mag].tolist()
 
             molecule = AtomicStructure.fromDICT(dct)
 
