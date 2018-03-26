@@ -28,7 +28,9 @@ class Worker(object):
             try:
                 if 'name' in dct:
                     name = dct['name']
-                    if name not in self.workers:
+                    if 'kill' in dct:
+                        del self.workers[name]
+                    elif name not in self.workers:
                         self.workers[name] = getSubClassByName(Worker, dct['type'])(self.loop, name, **dct['params'])
             except KeyError as e:
                 print('Warning: KeyError: {}, data : {}'.format(e, data))
@@ -41,6 +43,9 @@ class Worker(object):
             except KeyError as e:
                 print('Warning: KeyError: {}, data : {}'.format(e, data))
                 continue
+
+        if not self.workers:
+            self.loop.stop()
 
     async def run(self, fromWorker : str):
         pass
