@@ -38,7 +38,7 @@ class AtomicStructure(object):
     _dielectricTensor = None
     energy = np.inf
     enthalpy = np.inf
-    externalPressure = None
+    externalPressure = 1.0e-4
     forces = None
     _pressureTensor = None
     dimension = None
