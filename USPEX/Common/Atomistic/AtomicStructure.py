@@ -413,7 +413,9 @@ class AtomicStructure(object):
         dct['cell'] = self.atoms.get_cell().tolist()
         dct['positions'] = self.atoms.get_positions().tolist()
         dct['pbc'] = self.get_pbc().tolist()
-        dct['charges'] = self.atoms.get_initial_charges().tolist()
+        charges = self.atoms.get_initial_charges()
+        if np.any(charges):
+            dct['charges'] = charges.tolist()
         dct['magmoms'] = self.magmoms.tolist()
         del dct['atoms']
         if self._dielectricTensor is not None:
