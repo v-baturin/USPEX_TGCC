@@ -113,6 +113,11 @@ class AtomicStructure(object):
         atoms.translate(np.dot(molCenter, newCell))
         self.atoms.extend(atoms)
 
+    def __add__(self, other):
+        res = copy.copy(self)
+        res.extend(other)
+        return res
+
     def __getitem__(self, item):
         return self.atoms.__getitem__(item)
 
@@ -374,7 +379,8 @@ class AtomicStructure(object):
 
     def __copy__(self):
         dct = self.toDICT()
-        del dct['ID']
+        if 'ID' in dct:
+            del dct['ID']
         return self.fromDICT(dct)
 
     def translate_frac(self, displacement : np.array):
