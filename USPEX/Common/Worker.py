@@ -33,6 +33,7 @@ class Worker(object):
                         del cls.workers[name]
                     elif name not in cls.workers:
                         cls.workers[name] = getSubClassByName(Worker, dct['type'])(name, **dct['params'])
+                        cls.save()
             except KeyError as e:
                 print('Warning: KeyError: {}, data : {}'.format(e, data))
                 continue
