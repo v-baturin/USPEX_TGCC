@@ -12,7 +12,7 @@ import unittest
 import numpy as np
 
 from ..ConvexHull import ConvexHull
-from ..AtomisticConfigPrivate import AtomisticConfigPrivate
+from ..AtomisticConfig import AtomisticConfig
 
 
 class System(object):
@@ -25,7 +25,7 @@ class System(object):
 class ConvexHullTest(unittest.TestCase):
 
     def test_bicomponent1(self):
-        config = AtomisticConfigPrivate(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]], minAt=8, maxAt=18)
+        config = AtomisticConfig(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]], minAt=8, maxAt=18)
         self.convexHull = ConvexHull(config)
         system1 = System({'Mo':4,'B':10}, -5.0)
         system2 = System({'Mo': 4, 'B': 10}, -14.0)
@@ -112,7 +112,7 @@ class ConvexHullTest(unittest.TestCase):
         self.assertEqual(enthalpies, {-16.0,-4.0,-12.0})
 
     def test_bicomponent2(self):
-        config = AtomisticConfigPrivate(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]], minAt=8, maxAt=18)
+        config = AtomisticConfig(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]], minAt=8, maxAt=18)
         self.convexHull = ConvexHull(config)
         system1 = System({'Mo':6,'B':14}, -178.845)
         system2 = System({'Mo': 16, 'B': 10}, -225.103)
@@ -152,7 +152,7 @@ class ConvexHullTest(unittest.TestCase):
         self.assertEqual(len(self.convexHull.elements),5)
 
     def test_bicomponent3(self):
-        config = AtomisticConfigPrivate(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]], minAt=8, maxAt=18)
+        config = AtomisticConfig(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]], minAt=8, maxAt=18)
         self.convexHull = ConvexHull(config)
         system1 = System({'Mo':5,'B':15}, -173.325)
         system2 = System({'Mo': 5}, -42.944)
