@@ -31,6 +31,8 @@ class CrystalConfig(AtomisticConfig):
 
     def isGoodSystem(self, SYSTEM) -> bool:
         '''
+        Method which checks if the structure meet composition constraint.
+        
         :param SYSTEM:
         :return:
         '''

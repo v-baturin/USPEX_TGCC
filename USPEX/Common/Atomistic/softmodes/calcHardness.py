@@ -8,6 +8,7 @@ from USPEX.Common.Config import Config
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from USPEX.Common.Atomistic.Element import Element
 from .BondHardness import BondHardness
+from .AtomTypeCounter import atomTypeCounter
 
 _MAX_CELL_LENGTH = 4   # max length of any cell length
 
@@ -24,8 +25,8 @@ def calcHardness(CONFIG : Config, _system : AtomicStructure) -> float:
 
     system = AtomicStructure(symbols=_system.chemicalSymbols, positions=_system.coordinates, cell=_system.cell)
 
-    R_val = [Element(type).covalent_radius for type in system.atomTypes]
-    atom_type_seq = system.atom_type_seq
+    atomTypes, atom_type_seq = atomTypeCounter(system.chemicalSymbols)
+    R_val = [Element(type).covalent_radius for type in atomTypes]
 
     bonds = BondHardness(system, CONFIG.goodBonds)
     bond_group = bonds.all_types()
@@ -115,9 +116,8 @@ def calcHardness_new(CONFIG : Config, _system : AtomicStructure) -> float:
 
     system = AtomicStructure(symbols=_system.chemicalSymbols, positions=_system.coordinates, cell=_system.cell)
 
-
-    R_val = [Element(type).covalent_radius for type in system.atomTypes]
-    atom_type_seq = system.atom_type_seq
+    atomTypes, atom_type_seq = atomTypeCounter(system.chemicalSymbols)
+    R_val = [Element(type).covalent_radius for type in atomTypes]
 
     bonds = BondHardness(system, CONFIG.goodBonds)
     bond_group = bonds.all_types()

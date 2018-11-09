@@ -2,6 +2,7 @@ import numpy as np
 
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from USPEX.Common.Atomistic.Element import Element
+from .AtomTypeCounter import atomTypeCounter
 
 
 def move_along_SoftMode(system, GOOD_BONDS, EIGENVECTOR, MUT_DEGREE):
@@ -23,7 +24,9 @@ def move_along_SoftMode(system, GOOD_BONDS, EIGENVECTOR, MUT_DEGREE):
 
     close_enough = -0.37 * np.log(GOOD_BONDS)  # this part needed for clusters
     vect = np.zeros(3)
-    R_val = np.array([Element(atomType).covalent_radius for atomType in system.atomTypes])
+    # Organize an array with a list of numbers of atoms starting from 0 (in Matlab it starts from 1):
+    atomTypes, atom_types = atomTypeCounter(system.chemicalSymbols)
+    R_val = np.array([Element(atomType).covalent_radius for atomType in atomTypes])
 
     if system.dimension == 0:  # cluster == 1
         coord += 0.0001
@@ -35,8 +38,6 @@ def move_along_SoftMode(system, GOOD_BONDS, EIGENVECTOR, MUT_DEGREE):
         coord = candidates;
         '''
 
-    # Organize an array with a list of numbers of atoms starting from 0 (in Matlab it starts from 1):
-    at_types = system.atom_type_seq
 
     coef = 0.0
     for i in range(N):

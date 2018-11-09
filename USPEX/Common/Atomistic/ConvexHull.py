@@ -20,9 +20,17 @@ import copy
 
 
 class ConvexHull(object):
+    '''
+    Class describing convex hull in space of chemical composition and energy/enthalpy.
+    '''
 
 
-    def __init__(self,config, elements=None):
+    def __init__(self, config, elements=None):
+        '''
+        Constructor. Initializes convex hull object. 
+        config: describes chemical compositions configuration space.
+        elements: if provided describe already known structures on convex hull.
+        '''
         self.config = config
         if elements:
             self.elements = copy.copy(elements)
@@ -35,6 +43,10 @@ class ConvexHull(object):
             self.elements = []
 
     def __getitem__(self, item):
+        '''
+        Special method wich allows '[]' operator. Calculates energy above convex hull,
+        i.e minimal formation energy of given structure regarding all possible decompositions on structures which are on convex hull.
+        '''
         if not self.elements:
             return -np.inf
         elif item in self.elements:
@@ -86,6 +98,9 @@ class ConvexHull(object):
                 return -np.inf
 
     def add(self, key):
+        '''
+        Method which puts a structure on convex hull only if its energy above convex hull is nonpositive.
+        '''
         if key in self.elements:
             return
         self.elements.append(key)
@@ -96,9 +111,15 @@ class ConvexHull(object):
                 del self[check_value]
 
     def __delitem__(self, key):
+        '''
+        Special methods which allows 'del' operator. Deletes structure from convex hull.
+        '''
         self.elements.remove(key)
 
     def __copy__(self):
+        '''
+        Special method which allow correctly make a copy of current convex hull using copy() operator.
+        '''
         newone = type(self)(self.config)
         newone.elements = copy.copy(self.elements)
         return newone

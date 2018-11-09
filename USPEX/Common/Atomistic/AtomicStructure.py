@@ -23,12 +23,10 @@ from .mol.coord2Zmatrix import coord2Zmatrix
 from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
 
-THRESHOLD_LS = 0.5
-THRESHOLD_HS = 1.5
-
 
 class AtomicStructure(object):
     '''
+    Class describing generic Atoms-type structure with properties
 
     '''
 
@@ -76,15 +74,14 @@ class AtomicStructure(object):
             for molecule in molecules:
                 self.extend(molecule)
 
-        if magmoms is not None:
-            assert len(magmoms) == len(self.atoms)
-            self.magmoms = magmoms
-        else:
-            self.magType = self.get_magnetic_type()
-
         super().__init__()
 
     def __getattr__(self, item):
+        '''
+        Special method for forwarding attributes which are not explicitly defined in AtomicStructure to ase.atoms class.
+
+        :param item: Attribute name
+        '''
         if item == '__setstate__':
             raise AttributeError
         if hasattr(self.atoms, item):
@@ -93,9 +90,20 @@ class AtomicStructure(object):
             raise AttributeError
 
     def __len__(self):
+        '''
+        Special method which returns number of atoms in the structure.
+        '''
         return len(self.atoms)
 
     def extend(self, ext):
+        '''
+        The method extends current system with given one.
+        This is done by adding molecules from given structure to current one.
+        Geometry of all molecules is kept. Cell parameters of current structure is kept.
+        New molecules will have same scaled coordinates of their centers as in given structure.
+
+        :param ext: AtomicStructure to extend the current one.
+        '''
         for inds, frmt, flex_dihedral, molSymbol in zip(ext._molecules, ext.format, ext.flex_dihedral, ext.molSymbol):
             inds = (np.asarray(inds) + len(self.atoms)).tolist()
             self._molecules.append(inds)
@@ -114,15 +122,31 @@ class AtomicStructure(object):
         self.atoms.extend(atoms)
 
     def __add__(self, other):
+        '''
+        Special method for supporting '+' operator on AtomicStructure. 
+        Creates a copy of the first argument and extends it with the second then returns resulting structure.
+
+        :param other: AtomicStructure to be added to the current one.
+        '''
         res = copy.copy(self)
         res.extend(other)
         return res
 
     def __getitem__(self, item):
+        '''
+        Special method for retrieving an atom from structure.
+
+        :param item: index of an atom to be retrieved.
+        :return: ase.Atom object describing an atom with given index.
+        '''
         return self.atoms.__getitem__(item)
 
     @property
     def molecules(self):
+        '''
+        Property-method which represents current structure as a list of molecules.
+        Each molecule is a AtomicStructure object.
+        '''
         mols = []
         for inds, frmt, flex_dihedral, molSymbol in zip(self._molecules, self.format, self.flex_dihedral, self.molSymbol):
             mol = AtomicStructure(symbols=self[inds], cell=self.get_cell())
@@ -133,6 +157,12 @@ class AtomicStructure(object):
 
     # TODO write Test
     def __delitem__(self, key):
+        '''
+        Special method which deletes an atom or a group of atoms from AtomicStructure.
+        Atom or group of atoms to be deleted must be a molecule. I.e. one can not delete a part of molecule.
+
+        :param key: index, slice or list of indices determining atom or atoms to be deleted from the structure.
+        '''
         if isinstance(key, int):
             key = [key]
         elif isinstance(key,slice):
@@ -157,9 +187,23 @@ class AtomicStructure(object):
 
 
     def removeMolecule(self, i):
+        '''
+        Method which deletes a molecule.
+
+        :param i: index of the moleculu to be deleted
+        '''
         del self[self._molecules[i]]
 
     def merge(self, indices : list, format : list, flex_dihedral : list, molSymbol : str):
+        '''
+        Method which turns a group of atoms belonging current structure into a molecule.
+        The molecule gets 'format' and 'flex_dihedral' information which enables a construction of ZMatrix for it.
+
+        :param indices: List of indices of atoms in the structure to be merged into a molecule.
+        :param format: List of formats of atoms to be merged into a molecule (see ZMatrix definition).
+        :param flex_dihedral: List of flexible dihedral angles in the molecule (see ZMatrix definition).
+        :param molSymbol: Unique name of this molecule.
+        '''
         if len(indices) != len(format):
             raise RuntimeError('Dimensions of molecule parameters do not match.')
         molecules = []
@@ -182,6 +226,12 @@ class AtomicStructure(object):
         self.molSymbol = molSymbols
 
     def __imul__(self, m):
+        '''
+        Special method for supporting '*=' operator. This operator creates supercell structure of current one.
+
+        :param m: Either int or tuple (int,int,int) describing supercell parametrs in each direction.
+        Single int parameter is treated  as if tuple of three equal parameters are given.
+        '''
         size = len(self.atoms)
         self.atoms.__imul__(m)
         if isinstance(m, int):
@@ -200,7 +250,9 @@ class AtomicStructure(object):
     @property
     def composition(self):
         '''
-        :return: 
+        Property-method which returns dictionary describing composition of current structure.
+        
+        :return: {'symbol' : 'amount'}
         '''
         molecules = {}
         for symbol in self.molSymbol:
@@ -216,50 +268,58 @@ class AtomicStructure(object):
 
     @property
     def coordinates(self):
+        '''
+        Property-method shortcut for calculating atomic coordinates.
+        '''
         return self.atoms.get_positions()
 
     @property
     def scaled_coordinates(self):
+        '''
+        Property-method shortcut for calculating scaled atomic coordinates.
+        '''
         return self.atoms.get_scaled_positions()
 
     @property
     def scaled_mol_coordinates(self):
+        '''
+        Property-method for calculating scaled coordinates of molecular centers.
+        '''
         return [molecule.get_center_of_mass(scaled=True) for molecule in self.molecules]
 
     @property
     def lattice(self):
-        return self.get_cell().copy()
+        '''
+        Property-method shortcut for retrieving structure cell in 3x3 vector form.
+        '''
+        return self.atoms.get_cell().copy()
 
     @property
     def cell(self):
-        return self.atoms.get_cell()
+        '''
+        Property-method shortcut for retrieving structure cell in 3x3 vector form.
+        '''
+        return self.atoms.get_cell().copy()
 
     @property
     def cell_lengths_and_angles(self):
+        '''
+        Property-method shortcut for retrieving structure cell parameters: a, b, c, alpha, beta, gama.
+        '''
         return self.atoms.get_cell_lengths_and_angles()
 
     @property
-    def atomTypes(self):
-        return np.unique(self._chemicalSymbols)
-
-    @property
-    def atom_type_seq(self):
-        tmp = []
-        res = []
-        count = -1
-        for symbol in self._chemicalSymbols:
-            if symbol not in tmp:
-                tmp.append(symbol)
-                count += 1
-            res.append(count)
-        return res
-
-    @property
     def volume(self):
+        '''
+        Property-method shortcut for calculating structure volume.
+        '''
         return self.atoms.get_volume()
 
     @property
     def dielectricTensor(self):
+        '''
+        Property-method shortcut for retrieving dielectricTensor if any.
+        '''
         return None if self._dielectricTensor is None else self._dielectricTensor.copy()
 
     # @property
@@ -268,49 +328,18 @@ class AtomicStructure(object):
 
     @property
     def pressureTensor(self):
+        '''
+        Property-method shortcut for retrieving pressureTensor if any.
+        '''
         return None if self._pressureTensor is None else self._pressureTensor.copy()
 
-    @property
-    def magmoms(self):
-        return self.atoms.get_initial_magnetic_moments()
-
-    @magmoms.setter
-    def magmoms(self, spins):
-        self.atoms.set_initial_magnetic_moments(spins)
-        self.magType = self.get_magnetic_type()
-
-    def round_magnetic_moments(self):
-        new_magmoms = np.zeros(len(self.magmoms))
-        for i, magmom in enumerate(self.magmoms):
-            if abs(magmom) > THRESHOLD_HS:
-                new_magmoms[i] = 4 * np.sign(magmom)
-            elif THRESHOLD_LS <= abs(magmom) <= THRESHOLD_HS:
-                new_magmoms[i] = np.sign(magmom)
-        self.magmoms = new_magmoms
-
-    def get_magnetic_type(self):
-        if all(abs(self.magmoms) < 0.5):
-            return 'NM'
-        else:
-            nonzero = self.magmoms[abs(self.magmoms) >= THRESHOLD_LS]
-            spinsup = nonzero[np.sign(nonzero) > 0]
-            spinsHS = nonzero[abs(nonzero) > THRESHOLD_HS]
-            if 0.25 < len(spinsup) / len(nonzero) < 0.75:  # AFM
-                if len(spinsHS) < (1 / 3) * len(nonzero):
-                    return 'AFM-LS'
-                elif len(spinsHS) > (2 / 3) * len(nonzero):
-                    return 'AFM-HS'
-                else:
-                    return 'AFM-HSLS'
-            else:  # FM
-                if len(spinsHS) < (1 / 3) * len(nonzero):
-                    return 'FM-LS'
-                elif len(spinsHS) > (2 / 3) * len(nonzero):
-                    return 'FM-HS'
-                else:
-                    return 'FM-HSLS'
-
     def principleAxis(self):
+        '''
+        Method whSich calculates principle axes of the structure.
+        Principle axes are the main axes of inertia tensor (with all atom masses set to be equal).
+
+        :return: 3x3 array of principle axes.
+        '''
         coordinates = self.coordinates - self.coordinates.mean(axis=0)
         Inertia = np.zeros((3, 3), dtype=float)  # moment of inertia tensor
         Inertia[0,0] = (coordinates[:, 1] ** 2 + coordinates[:, 2] ** 2).sum()
@@ -324,13 +353,30 @@ class AtomicStructure(object):
         Inertia[0,2] = -(coordinates[:, 2] * coordinates[:, 0]).sum()
         return np.linalg.eigh(Inertia)
 
+    #TODO make it private
     def molecule_CN(self,i):
+        '''
+        Method roughly (very roughly!!!) estimate coordination numbers of a molecule.
+        
+        :param i: Molecule index.
+        
+        :return: Array of coordination numbers.
+        '''
         molecule = self.molecules[i]
         radiu = np.array([Element(atom).covalent_radius for atom in molecule.get_chemical_symbols()])
         CN = np.fromiter((len(neighbours) for neighbours in find_pair(molecule.coordinates, radiu)), dtype = int)
         return CN
 
+    #TODO split and get rid of stochasticty
     def RotInertia(self,i):
+        '''
+        Very ugly method which does several things.
+        First rotates molecule around principle axes on random values.
+        Then translates ot to random offset.
+        And finally rotates flexible dihedrals on random values.
+
+        :param i: Molecule index.
+        '''
         molecule = self.molecules[i]
         molecule.set_masses([1] * len(molecule))
         values, vectors = molecule.get_moments_of_inertia(vectors=True)
@@ -355,7 +401,7 @@ class AtomicStructure(object):
             molecule_mod = copy.deepcopy(molecule)
             while not goodRot:
                 for j in self.flex_dihedral[i]:
-                    zmatrix[j,2] = zmatrix[j,2]# + ( np.pi*np.random.random_sample() - np.pi/2)
+                    zmatrix[j,2] = zmatrix[j,2] + ( np.pi*np.random.random_sample() - np.pi/2)
                 molecule_mod.set_positions(zmatrix2coord(zmatrix, np.asarray(self.format[i], dtype=int)))
                 if np.array_equal(molecule.molecule_CN(0),molecule_mod.molecule_CN(0)):
                     goodRot = 1
@@ -365,6 +411,9 @@ class AtomicStructure(object):
         positions[self._molecules[i]] = molecule.get_positions()
 
     def optimizeLattice(self):
+        '''
+        Method which optimizes cell in case of ill formed (too prolongated) structures.
+        '''
         coor = self.get_positions()
         lat = self.get_cell()
         coor, lat = optLattice(coor, lat)
@@ -373,21 +422,43 @@ class AtomicStructure(object):
         self.set_positions(coor)
 
     def set_cell(self, cell, optimize = False, **kwargs):
+        '''
+        Method which sets up cell for the structure and calls optimizeLattice if needed.
+
+        :param cell: 3x3 array of cell parameters to be set for the structure.
+        :param optimize: boolean parameter if we should optimize lattice when setting it.
+        '''
         self.atoms.set_cell(cell, **kwargs)
         if optimize:
             self.optimizeLattice()
 
     def __copy__(self):
+        '''
+        Special method which allows correctly make a copy of current structure using 'copy()' operator.
+        :return: A copy of the structure with conserving type of it.
+        '''
         dct = self.toDICT()
         if 'ID' in dct:
             del dct['ID']
         return self.fromDICT(dct)
 
-    def translate_frac(self, displacement : np.array):
-        assert len(displacement) == 3
+    def translate_scaled(self, displacement):
+        '''
+        Method which translates the structure on given scaled displacement.
+
+        :param displacement: Vector of scaled distances.
+        '''
         self.atoms.translate(np.dot(displacement, self.atoms.cell))
 
     def isGoodDistances(self, symbols : list, minDistMatrix : np.ndarray) -> bool:
+        '''
+        Method which checks if the structure meet minimal distance constraint provided with Minimal Distances Matrix.
+
+        :param symbols: List of chemical symbols used in minimal distances matrix.
+        :param minDistMatrix: minimal distances matrix.
+
+        :return: True if the structure meet the constraint, false otherwise.
+        '''
         if len(self.atoms) < 2:
             return True
         indices = np.fromiter((symbols.index(symbol) for symbol in self._chemicalSymbols), dtype=int)
@@ -402,9 +473,19 @@ class AtomicStructure(object):
         return np.all(self.get_all_distances(mic=np.any(self.atoms.get_pbc())) >= mDM.T)
 
     def toJSON(self) -> str:
+        '''
+        Method which creates JSON representation of the structure.
+
+        :return: String with JSON representation of the structure.
+        '''
         return json.dumps(self.toDICT())
 
     def toDICT(self) -> dict:
+        '''
+        Method which creates dictionary representation of the structure.
+
+        :return: Dictionary representing the structure.
+        '''
         dct = copy.copy(self.__dict__)
         dct['symbols'] = self._chemicalSymbols
         del dct['_chemicalSymbols']
@@ -422,7 +503,6 @@ class AtomicStructure(object):
         charges = self.atoms.get_initial_charges()
         if np.any(charges):
             dct['charges'] = charges.tolist()
-        dct['magmoms'] = self.magmoms.tolist()
         del dct['atoms']
         if self._dielectricTensor is not None:
             dct['dielectricTensor'] = self._dielectricTensor.tolist()
@@ -446,11 +526,21 @@ class AtomicStructure(object):
 
     @staticmethod
     def fromJSON(repr : str):
+        '''
+        Method which reconstructs AtoimicStructure from JSON representation.
+
+        :param repr: String with JSON representation of the structure.
+        '''
         dct = json.loads(repr)
         return AtomicStructure.fromDICT(dct)
 
     @classmethod
     def fromDICT(cls, dct : dict):
+        '''
+        Method which reconstructs AtoimicStructure from dictionary representation.
+
+        :param dct: Dictionary representing the structure.
+        '''
         dct = copy.copy(dct)
         newStructure = cls(symbols=dct['symbols'])
         del dct['symbols']
@@ -470,9 +560,6 @@ class AtomicStructure(object):
         if 'charges' in dct:
             newStructure.set_initial_charges(dct['charges'])
             del dct['charges']
-        if 'magmoms' in dct:
-            newStructure.magmoms = dct['magmoms']
-            del dct['magmoms']
         if 'dielectricTensor' in dct:
             newStructure._dielectricTensor = dct['dielectricTensor']
             del dct['dielectricTensor']

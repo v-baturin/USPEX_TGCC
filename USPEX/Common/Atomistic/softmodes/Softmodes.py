@@ -10,6 +10,8 @@ from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from .BondHardness_new import BondHardness_new
 from .calcHardness import calcHardness
 from .calcSoftModes import calcSoftModes
+from .AtomTypeCounter import atomTypeCounter
+
 
 warnings.filterwarnings('ignore')
 
@@ -51,16 +53,18 @@ class Softmodes(list):
 
         # Calculate "smart" default values:
 
+        atomTypes, atom_type_seq = atomTypeCounter(system.chemicalSymbols)
+
         if hasattr(config, 'valences'):
             self.val = config.valences
         else:
-            self.val = [Element(x).valence for x in system.atomTypes]
+            self.val = [Element(x).valence for x in atomTypes]
 
         if hasattr(config, 'valenceElectrons'):
             self.N_val = config.valenceElectrons
         else:
-            self.N_val = [Element(x).valence_electrons for x in system.atomTypes]
-        self.R_val = np.array([Element(atomType).covalent_radius for atomType in system.atomTypes])
+            self.N_val = [Element(x).valence_electrons for x in atomTypes]
+        self.R_val = np.array([Element(atomType).covalent_radius for atomType in atomTypes])
 
         system.bonds = BondHardness_new(system, config.goodBonds)
         self._calc_soft_modes(system, kvector)
