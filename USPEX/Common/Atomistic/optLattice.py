@@ -26,7 +26,7 @@ def reoptimizeVector(v1, v2, flag1):
     dot_v1_v2 = np.dot(v1, v2)
     norm_v2 = np.linalg.norm(v2)
 
-    if abs(dot_v1_v2) > norm_v2 ** 2 / 2: # corrected norm_v2 / 2 -> norm_v2 ** 2 / 2 by V. Baturin
+    if abs(dot_v1_v2) > norm_v2 ** 2 / 2: # corrected norm_v2 / 2 -> norm_v2 ** 2 / 2 by V. Baturin 09.11.18
         try:
             v1_trial = v1 - np.ceil(abs(dot_v1_v2) / (np.linalg.norm(v2) ** 2)) * np.sign(dot_v1_v2) * v2
         except:
