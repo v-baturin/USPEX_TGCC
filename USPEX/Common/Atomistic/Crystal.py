@@ -15,11 +15,18 @@ import numpy as np
 from .AtomicStructure import AtomicStructure
 
 class Crystal(AtomicStructure):
+    '''
+    Class describing crystal Atoms-type structure with properties
+
+    '''
 
     dimension = 3
 
     @property
     def symmetry(self):
+        '''
+        Property-method which calculates symmetry group for the structure.
+        '''
         lattice = self.get_cell()
         coordinates = self.scaled_coordinates
         numbers = self.get_atomic_numbers()

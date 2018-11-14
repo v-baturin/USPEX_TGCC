@@ -9,6 +9,7 @@ from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from USPEX.Common.Atomistic.Element import Element
 from ..Bonds import Bond, Bonds
 from ..super_matrix import super_matrix
+from .AtomTypeCounter import atomTypeCounter
 
 
 def MaxBonds(SYSTEM : AtomicStructure) -> Bonds:
@@ -32,8 +33,7 @@ def MaxBonds(SYSTEM : AtomicStructure) -> Bonds:
     Rmax = Bond.MAX_BOND
 
     N_atom = len(SYSTEM)
-    atomType = set(SYSTEM.atomTypes)
-    atom_type_seq = SYSTEM.chemicalSymbols
+    atomType, atom_type_seq = atomTypeCounter(SYSTEM.chemicalSymbols)
 
     R_val = {}
     for type in atomType:

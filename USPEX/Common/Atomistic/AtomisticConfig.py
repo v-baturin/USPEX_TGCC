@@ -150,6 +150,11 @@ class ChemicalConfig(Config):
             self.CenterminDistMatrice[i, j] = self.CenterminDistMatrice[j, i] = (radii[i] + radii[j])
 
     def toDICT(self):
+        '''
+        Method which creates dictionary representation of the config.
+
+        :return: Dictionary representing the config.
+        '''
         dct = super().toDICT()
         dct['goodBonds'] = dct['goodBonds'].tolist()
         dct['valences'] = dct['valences'].tolist()
@@ -160,6 +165,11 @@ class ChemicalConfig(Config):
 
     @classmethod
     def fromDICT(cls, dct : dict):
+        '''
+        Method which reconstructs ChemicalConfig from dictionary representation.
+
+        :param dct: Dictionary representing the config.
+        '''
         dct['goodBonds'] = np.asarray(dct['goodBonds'])
         dct['valences'] = np.asarray(dct['valences'])
         dct['valenceElectrons'] = np.asarray(dct['valenceElectrons'])
@@ -167,9 +177,14 @@ class ChemicalConfig(Config):
         dct['CenterminDistMatrice'] = np.asarray(dct['CenterminDistMatrice'])
         return super().fromDICT(dct)
 
-    # Here we check whether minVectorLength already specified in the input.
-    # If not, we calculate it based on the chemical compound of current system (see. Manual)
     def minVectorLength(self, system : AtomicStructure) -> float:
+        '''
+        Here we check whether minVectorLength already specified in the input.
+        If not, we calculate it based on the chemical compound of current system (see. Manual)
+
+        :param system:
+        :return:
+        '''
         if self._minVectorLength is None:
             radii = np.fromiter((Element(symbol).covalent_radius for symbol in system.chemicalSymbols), dtype=float)
             return 1.8 * radii.max()
@@ -177,9 +192,22 @@ class ChemicalConfig(Config):
             return self._minVectorLength
 
     def isGoodDistances(self, system : AtomicStructure) -> bool:
+        '''
+        Method which checks if the structure meet minimal distance constraint.
+
+        :param system:
+        :return:
+        '''
         return system.isGoodDistances(self.chemicalSymbols, self.minDistMatrice)
 
     def isGoodCenterDistances(self, system : AtomicStructure, molSymbols) -> bool:
+        '''
+        Method which checks if the structure meet minimal molecular center distance constraint.
+
+        :param system:
+        :param molSymbols:
+        :return:
+        '''
         if len(system) < 2:
             return True
         indices = np.fromiter((self.symbols.index(symbol) for symbol in molSymbols), dtype=int)
@@ -280,13 +308,20 @@ class ChemicalConfig(Config):
         return lat_OK
 
     def isGoodSystem(self, system : AtomicStructure) -> bool:
+        '''
+        Method which checks if the structure meet constraints.
+
+        :param system:
+        :return:
+        '''
         isGoodDistances = self.isGoodDistances(system)
         return isGoodDistances
 
     def calcVolume(self):
         '''
         This function estimates volume occupied by set of atoms described by chemical formula.
-        return: list of corresponding volumes
+
+        :return: list of corresponding volumes
         '''
         volume = []
         for symbol in self.symbols:
@@ -375,6 +410,11 @@ class AtomisticConfig(ChemicalConfig):
             self.fingerprints['tolerance'] = 0.008
 
     def toDICT(self):
+        '''
+        Method which creates dictionary representation of the config.
+
+        :return: Dictionary representing the config.
+        '''
         dct = super().toDICT()
         dct['blocks'] = dct['blocks'].tolist()
         dct['fixed'] = dct['fixed'].tolist()
@@ -383,12 +423,23 @@ class AtomisticConfig(ChemicalConfig):
 
     @classmethod
     def fromDICT(cls, dct : dict):
+        '''
+        Method which reconstructs AtomisticConfig from dictionary representation.
+
+        :param dct: Dictionary representing the config.
+        '''
         dct['blocks'] = np.asarray(dct['blocks'])
         dct['fixed'] = np.asarray(dct['fixed'])
         dct['magRatio'] = np.asarray(dct['magRatio'])
         return super().fromDICT(dct)
 
     def isGoodComposition(self, system : AtomicStructure) -> bool:
+        '''
+        Method which checks if the structure meet composition constraint.
+
+        :param system:
+        :return:
+        '''
         if not set(system.composition.keys()) <= set(self.symbols):
             return False
         numIons = self.numIons(system.composition)
@@ -400,6 +451,11 @@ class AtomisticConfig(ChemicalConfig):
                np.sum(numIons) <= self.maxAt
 
     def numIons(self, composition):
+        '''
+        Creates numIons array from given composition.
+        :param composition:
+        :return:
+        '''
         num = []
         for symbol in self.symbols:
             if symbol in composition:
@@ -409,9 +465,21 @@ class AtomisticConfig(ChemicalConfig):
         return np.array(num, dtype=int)
 
     def numBlocks(self, composition) -> np.ndarray:
+        '''
+        Creates numIons array from given composition.
+
+        :param composition:
+        :return:
+        '''
         return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition))[0]).astype(int)
 
     def isGoodSystem(self, system : AtomicStructure) -> bool:
+        '''
+        Method which checks if the structure meet constraints.
+
+        :param system:
+        :return:
+        '''
         return self.isGoodComposition(system) and super(AtomisticConfig, self).isGoodSystem(system)
 
     def findDesiredComposition(self, system1 : AtomicStructure, system2 : AtomicStructure, composition, debug=False):

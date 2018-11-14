@@ -2,6 +2,8 @@ from __future__ import division
 
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from ..Bonds import Bonds
+from .AtomTypeCounter import atomTypeCounter
+
 
 import numpy as np
 
@@ -75,6 +77,7 @@ def calcSoftModes(system : AtomicStructure, R_val, N_val, val, kVector0=np.zeros
     # nu_factor should be normalized to satisfy sum rule.
     nu_factor = np.zeros(N_atom)
 
+    atomTypes, atom_type_seq = atomTypeCounter(system.chemicalSymbols)
     for k in range(N_atom):
         nu_full = 0.0
         for bond in system.bonds:
@@ -83,15 +86,15 @@ def calcSoftModes(system : AtomicStructure, R_val, N_val, val, kVector0=np.zeros
                 nu_full += np.exp(-bond.delta / 0.37)
             if b == k:
                 nu_full += np.exp(-bond.delta / 0.37)
-        nu_factor[k] = val[system.atom_type_seq[k]] / nu_full
+        nu_factor[k] = val[atom_type_seq[k]] / nu_full
 
     for bondtype in bond_groups:
         bonds = system.bonds.getType(bondtype)
 
         for bond in bonds:
             ID1, ID2 = bond.atoms()
-            a = system.atom_type_seq[ID1]
-            b = system.atom_type_seq[ID2]
+            a = atom_type_seq[ID1]
+            b = atom_type_seq[ID2]
             R = R_val[a] + R_val[b] + bond.delta
             R_val_sum = R_val[a] + R_val[b]
             R_a = R_val[a]/R_val_sum * R

@@ -5,6 +5,7 @@ from copy import copy
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from ..Bonds import Bond, Bonds
 from .MaxBonds import MaxBonds
+from .AtomTypeCounter import atomTypeCounter
 
 # import logging
 # logger = logging.getLogger('SoftModeMutation')
@@ -37,7 +38,7 @@ def BondHardness(SYSTEM : AtomicStructure, goodBonds) -> Bonds:
     small_bond = -0.37 * np.log(np.array(goodBonds))  # maximum deviation to consider a bond
 
     N_atom = len(SYSTEM)
-    atom_type_seq = SYSTEM.atom_type_seq
+    atomTypes, atom_type_seq = atomTypeCounter(SYSTEM.chemicalSymbols)
 
     # 1) Calculate bonds within upper bound to max_bond.
     # 2) Group bonds by using same_bond criterion.
