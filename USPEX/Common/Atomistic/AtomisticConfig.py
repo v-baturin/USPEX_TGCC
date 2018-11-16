@@ -155,7 +155,7 @@ class ChemicalConfig(Config):
 
         :return: Dictionary representing the config.
         '''
-        dct = super().toDICT()
+        dct = copy(self.__dict__)
         dct['goodBonds'] = dct['goodBonds'].tolist()
         dct['valences'] = dct['valences'].tolist()
         dct['valenceElectrons'] = dct['valenceElectrons'].tolist()
@@ -175,7 +175,9 @@ class ChemicalConfig(Config):
         dct['valenceElectrons'] = np.asarray(dct['valenceElectrons'])
         dct['minDistMatrice'] = np.asarray(dct['minDistMatrice'])
         dct['CenterminDistMatrice'] = np.asarray(dct['CenterminDistMatrice'])
-        return super().fromDICT(dct)
+        config = cls(symbols=[])
+        config.__dict__ = copy(dct)
+        return config
 
     def minVectorLength(self, system : AtomicStructure) -> float:
         '''
