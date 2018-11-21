@@ -12,7 +12,7 @@ import unittest
 
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 
-from ..AtomisticConfigPrivate import AtomisticConfigPrivate
+from ..AtomisticConfig import AtomisticConfig
 
 
 class ConfigTest(unittest.TestCase):
@@ -130,14 +130,14 @@ class ConfigTest(unittest.TestCase):
                                              [  1.20000000e-04,   8.33440000e-01,   8.75110000e-01]])
 
     def test_fixed(self):
-        config = AtomisticConfigPrivate(symbols=['Mg', 'Al', 'O'], blocks=[[4,8,16]], fixed=[[1,1]])
+        config = AtomisticConfig(symbols=['Mg', 'Al', 'O'], blocks=[[4,8,16]], fixed=[[1,1]])
         self.assertTrue(config.isGoodComposition(self.system1))
         self.assertFalse(config.isGoodComposition(self.system2))
         self.assertFalse(config.isGoodComposition(self.system3))
         self.assertFalse(config.isGoodComposition(self.system4))
 
     def test_variable(self):
-        config = AtomisticConfigPrivate(symbols=['Mg', 'Al', 'O'], blocks=[[1,0,1], [0,2,3]], fixed=[[0, 8],[0, 8]], minAt=12, maxAt=28)
+        config = AtomisticConfig(symbols=['Mg', 'Al', 'O'], blocks=[[1,0,1], [0,2,3]], fixed=[[0, 8],[0, 8]], minAt=12, maxAt=28)
         self.assertTrue(config.isGoodComposition(self.system1))
         self.assertFalse(config.isGoodComposition(self.system2))
         self.assertFalse(config.isGoodComposition(self.system3))
