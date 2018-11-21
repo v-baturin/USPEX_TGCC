@@ -58,7 +58,7 @@ class AtomicStructure(object):
                     s = s.symbol
                 if s in ['H.5', 'H.75', 'H1.25', 'H1.5']:
                     symbols[i] = 'H'
-                self._chemicalSymbols.append(s)
+                self._chemicalSymbols.append(str(s))
             self.atoms = Atoms(symbols=symbols, scaled_positions=scaled_positions,
                                            positions=positions, pbc=pbc, cell=cell, info=info)
             if optimizeLattice:
