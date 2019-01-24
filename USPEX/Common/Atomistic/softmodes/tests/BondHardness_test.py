@@ -1,7 +1,8 @@
-from USPEX.Atomistic.Private.Bonds import Bond, Bonds
-from USPEX.Atomistic.Private.softmodes.BondHardness import BondHardness
-from USPEX.Atomistic.Private.softmodes.BondHardness_new import BondHardness_new
-from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
+from ...Bonds import Bond, Bonds
+from ..BondHardness import BondHardness
+from ..BondHardness_new import BondHardness_new
+from ...AtomicStructure import AtomicStructure
+from ...Crystal import Crystal
 
 from ase.io.vasp import read_vasp
 
