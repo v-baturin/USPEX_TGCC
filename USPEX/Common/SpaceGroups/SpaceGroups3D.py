@@ -127,6 +127,34 @@ class Group(object):
                 generatorsCombinations.append(((0,) + subgroup, (0,) + remainder))
         return Subgroups(generators, dimensions, generatorsCombinations, supercell)
 
+    def getNotPositionInvariantSubgroups(self, position):
+        """
+        Enumerates all subgroups of this group which preserve given supercell and given position.
+        :param position: 3-array describing atomic position.
+        :param supercell: 3-tuple describing supercell.
+        :return: Subgroups object.
+        """
+        allGenerators = [np.identity(4, dtype = np.float)]
+        trivialGenerators = [0]
+        nonTrivialGenerators = [0]
+        for i, generator in reversed(list(enumerate(self.generators))):
+            if not np.allclose(generator, np.identity(4, dtype = np.float)):
+                envelope = Group(self.generators[:i], self.dimensions[:i])
+                trivial = False
+                for operation in envelope.operators:
+                    modifiedGenerator = np.dot(operation, generator)
+                    modifiedGenerator[0:3, 3] = np.mod(modifiedGenerator[0:3, 3], (1,1,1))
+                    if np.allclose(np.mod(np.around(np.dot(modifiedGenerator[0:3,0:3], position)
+                                          + modifiedGenerator[0:3,3], decimals=4), (1,1,1)), position, atol = 1e-4):
+                        allGenerators.append(modifiedGenerator)
+                        trivialGenerators.append(len(allGenerators) - 1)
+                        trivial = True
+                        break
+                if not trivial:
+                    allGenerators.append(generator)
+                    nonTrivialGenerators.append(len(allGenerators) - 1)
+        return Subgroups(allGenerators, self.dimensions, [(nonTrivialGenerators, trivialGenerators)], (1,1,1))
+
     @staticmethod
     def getWrapedGroup(generators : list, dimensions : list, supercell : tuple):
         """

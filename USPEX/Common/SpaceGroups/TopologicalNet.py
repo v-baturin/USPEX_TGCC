@@ -20,6 +20,10 @@ class TopologicalNet(object):
         self.name = name
         self.group = group
         self.nodes = np.asarray(nodes)
+        self.operations = []
+        for node in self.nodes:
+            nodeOperationsVariants = self.group.getNotPositionInvariantSubgroups(node)
+            self.operations.append(nodeOperationsVariants)
         self.multiplicities = np.asarray([len(orbit) for orbit in self.group(self.nodes)])
         self.bonds = bonds
         self.coordinationNumbers = []
