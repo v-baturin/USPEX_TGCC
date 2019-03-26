@@ -1,10 +1,13 @@
-from USPEX.Atomistic.Private.Bonds import Bond, Bonds
-from USPEX.Atomistic.Private.softmodes.BondHardness import BondHardness
-from USPEX.Atomistic.Private.softmodes.BondHardness_new import BondHardness_new
-from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
+from ...AtomicStructure import AtomicStructure
+from ...Bonds import Bond, Bonds
+from ..BondHardness import BondHardness
+from ..BondHardness_new import BondHardness_new
+from ...Crystal import Crystal
+
 
 from ase.io.vasp import read_vasp
 
+import os
 import unittest
 import numpy as np
 
@@ -14,8 +17,13 @@ class test_BondHardness(unittest.TestCase):
     
     '''
 
+
+    @classmethod
+    def setUpClass(cls):
+        cls.CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
     def test_diamond(self):
-        tmp = read_vasp('diamond.POSCAR')
+        tmp = read_vasp('{}/diamond.POSCAR'.format(self.CURRENT_DIR))
         system = AtomicStructure(symbols=tmp.get_chemical_symbols(),
                                  scaled_positions=tmp.get_scaled_positions(),
                                  cell=tmp.get_cell(),

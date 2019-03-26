@@ -92,7 +92,7 @@ def MaxBonds(SYSTEM : AtomicStructure) -> Bonds:
         N_Matrix = Matrix_tmp.shape[0]
 
         tmp_type = N_Matrix * type1  # using type1
-        tmp_Rval = [R_val[x] + R_val[atom_type_seq[i]] for x in tmp_type]
+        tmp_Rval = [R_val[atomType[x]] + R_val[atomType[atom_type_seq[i]]] for x in tmp_type]
         tmp_ID = np.tile(range(i, N_atom), N_Matrix)
 
         S_coor = np.tile(coor1, (N_Matrix, 1))  # using coor1

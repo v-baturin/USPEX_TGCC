@@ -19,7 +19,7 @@ from lib.Fingerprints.cosine_distance import cosine_distance
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
 
 
-class FingerprintsTest(unittest.TestCase):
+class Fingerprints_Test(unittest.TestCase):
 
     def test_atomic(self):
         system1 = read(HOMEPATH + '/system1_POSCAR')

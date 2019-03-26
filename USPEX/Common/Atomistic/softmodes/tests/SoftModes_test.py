@@ -1,16 +1,24 @@
+import os
 import unittest
 
 import numpy as np
 from ase.io.vasp import read_vasp
 
-from USPEX.Atomistic.Private.AtomisticConfigPrivate import AtomisticConfigPrivate
-from USPEX.Atomistic.Private.softmodes.Softmodes import Softmodes
-from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
+from ...AtomisticConfig import AtomisticConfig
+from ...AtomicStructure import AtomicStructure
+from ..Softmodes import Softmodes
+from ...AtomicStructure import AtomicStructure
+from ...Crystal import Crystal
 
 
 class SoftModes_test(unittest.TestCase):
 
     # MgAlO-systems
+
+
+    @classmethod
+    def setUpClass(cls):
+        cls.CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
     def test_MgAlO_system_1(self):
         coords = [[0.238792900000000  , 0.740520900000000  , 0.667830000000000],
@@ -48,7 +56,7 @@ class SoftModes_test(unittest.TestCase):
         system = AtomicStructure(scaled_positions=coords, cell=cell, symbols=chemicalSymbols)
         N = len(system)
         params = {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]], 'fixed': [[1, 1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
         softmodes = Softmodes(config, system)
 
     def test_MgAlO_new_1(self):
@@ -87,7 +95,7 @@ class SoftModes_test(unittest.TestCase):
         system = AtomicStructure(scaled_positions=scaled_positions, cell=cell, symbols=chemicalSymbols, pbc=True)
         N = len(system)
         params = {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]], 'fixed': [[1, 1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
         softmodes = Softmodes(config, system)
 
     def test_MgAlO_system(self):
@@ -126,18 +134,18 @@ class SoftModes_test(unittest.TestCase):
         system = AtomicStructure(scaled_positions=coords, cell=cell, symbols=chemicalSymbols)
         N = len(system)
         params = {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]], 'fixed': [[1, 1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
         softModes = Softmodes(config, system)
 
     # Carbon systems
 
     def test_graphite(self):
-        tmp = read_vasp('graphite.POSCAR')
+        tmp = read_vasp('{}/graphite.POSCAR'.format(self.CURRENT_DIR))
         symbols = tmp.get_chemical_symbols()
         graphite = AtomicStructure(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         N = len(graphite)
         params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1, 1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
         softModes = Softmodes(config, graphite)
 
         freq_ref = [-3.14018492e-16, -2.07235140e-17, 0.00000000e+00, 0.00000000e+00, 2.74458612e-23, 7.54840750e-17,
@@ -146,13 +154,13 @@ class SoftModes_test(unittest.TestCase):
         assert np.isclose([mode.frequency for mode in softModes], freq_ref).all()
 
     def test_graphite_supercell(self):
-        tmp = read_vasp('graphite.POSCAR')
+        tmp = read_vasp('{}/graphite.POSCAR'.format(self.CURRENT_DIR))
         symbols = tmp.get_chemical_symbols()
         graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         graphite *= 2
         N = len(graphite)
         params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
         softModes = Softmodes(config, graphite)
         freq_ref = [ -6.88734374e-16 , -5.81698639e-16 , -5.81698639e-16 , -3.31208915e-16,
                      -2.44283384e-16 , -2.44283384e-16 , -2.00449320e-16 , -2.00449320e-16,
@@ -182,12 +190,12 @@ class SoftModes_test(unittest.TestCase):
         assert np.isclose([mode.frequency for mode in softModes], freq_ref).all()
 
     def test_graphite2(self):
-        tmp = read_vasp('graphite2.POSCAR')
+        tmp = read_vasp('{}/graphite2.POSCAR'.format(self.CURRENT_DIR))
         symbols = tmp.get_chemical_symbols()
         graphite = AtomicStructure(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         N = len(graphite)
         params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
         softModes = Softmodes(config, graphite)
 
         freq_ref = [-3.14018492e-16, -2.07235140e-17, 0.00000000e+00, 0.00000000e+00, 2.74458612e-23, 7.54840750e-17,
@@ -196,13 +204,13 @@ class SoftModes_test(unittest.TestCase):
         assert np.isclose([mode.frequency for mode in softModes], freq_ref).all()
 
     def test_graphite2_supercell(self):
-        tmp = read_vasp('graphite2.POSCAR')
+        tmp = read_vasp('{}/graphite2.POSCAR'.format(self.CURRENT_DIR))
         symbols = tmp.get_chemical_symbols()
         graphite = AtomicStructure(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         graphite *= 2
         N = len(graphite)
         params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
         softModes = Softmodes(config, graphite)
 
         freq_ref = [-3.14018492e-16, -2.07235140e-17, 0.00000000e+00, 0.00000000e+00, 2.74458612e-23, 7.54840750e-17,
@@ -211,12 +219,12 @@ class SoftModes_test(unittest.TestCase):
         assert np.isclose([mode.frequency for mode in softModes], freq_ref).all()
 
     def test_diamond(self):
-        tmp = read_vasp('diamond.POSCAR')
+        tmp = read_vasp('{}/diamond.POSCAR'.format(self.CURRENT_DIR))
         symbols = tmp.get_chemical_symbols()
         diamond = AtomicStructure(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         N = len(diamond)
         params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
 
         softModes = Softmodes(config, diamond)
         freq = [mode.frequency for mode in softModes]
@@ -224,13 +232,13 @@ class SoftModes_test(unittest.TestCase):
         assert np.isclose(freq, freq_ref).all()
 
     def test_diamond_supercell(self):
-        tmp = read_vasp('diamond.POSCAR')
+        tmp = read_vasp('{}/diamond.POSCAR'.format(self.CURRENT_DIR))
         symbols = tmp.get_chemical_symbols()
         diamond = AtomicStructure(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         diamond *= 2
         N = len(diamond)
         params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
         softModes = Softmodes(config, diamond)
 
         freq_ref = [ -4.81633103e-16,  -2.68342179e-16 , -2.38233999e-16 , -2.38233999e-16,
@@ -265,7 +273,7 @@ class SoftModes_test(unittest.TestCase):
         system = AtomicStructure(scaled_positions=scaled_positions, cell=cell, symbols=symbols, pbc=True)
 
         params = {'symbols': ['Mg', 'O'], 'blocks': [[4, 4]], 'fixed': [[1, 1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
 
         softmodes = Softmodes(config, system)
         print('MgO_1')
@@ -282,7 +290,7 @@ class SoftModes_test(unittest.TestCase):
         system = AtomicStructure(scaled_positions=scaled_positions, cell=cell, symbols=symbols, pbc=True)
 
         params = {'symbols': ['Mg', 'O'], 'blocks': [[1, 1]], 'fixed': [[1, 1]]}
-        config = AtomisticConfigPrivate(**params)
+        config = AtomisticConfig(**params)
 
         softmodes = Softmodes(config, system)
         print('MgO_1')

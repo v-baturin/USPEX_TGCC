@@ -22,7 +22,7 @@ class System(object):
         self.enthalpy = enthalpy
 
 
-class ConvexHullTest(unittest.TestCase):
+class ConvexHull_Test(unittest.TestCase):
 
     def test_bicomponent1(self):
         config = AtomisticConfig(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]], minAt=8, maxAt=18)

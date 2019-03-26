@@ -7,9 +7,9 @@ import os
 from ase.io.vasp import read_vasp
 from ase.io.vasp import write_vasp
 
-from lib.Atomistic.AtomisticConfig import AtomisticConfig
-from lib.Atomistic.softmodes.calcHardness import calcHardness
-from lib.Systems.Crystal.Crystal import Crystal
+from ...AtomisticConfig import AtomisticConfig
+from ...Crystal import Crystal
+from ..calcHardness import calcHardness
 
 
 class Hardness_test(unittest.TestCase):
@@ -97,7 +97,7 @@ class Hardness_test(unittest.TestCase):
         tmp = read_vasp(self.CURRENT_DIR + '/Mg4Al8O16_2.POSCAR')
         symbols = tmp.get_chemical_symbols()
         system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        write_vasp('tmp.vasp', system, vasp5=True, sort=True)
+        #write_vasp('tmp.vasp', system, vasp5=True, sort=True)
         params = {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]], 'fixed': [[1, 1]]}
         config = AtomisticConfig(**params)
         H = calcHardness(config, system)

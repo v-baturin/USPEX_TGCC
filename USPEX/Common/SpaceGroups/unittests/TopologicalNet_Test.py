@@ -11,7 +11,7 @@ net_def_4 = {"1964-topos_urk_urk": {"totalAtomNumber": 7, "cell": [[2.0, 0.0, 0.
 net_def_5 = {"1904-topos_ith-d_ith-d": {"totalAtomNumber": 14, "cell": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], "groupName": "Pm-3n", "nods": [[0.25, 0.25, 0.25], [0.25, 0.0, 0.5]], "bonds": [[[0.25, 0.25, 0.25], [0.0, 0.5, 0.25]], [[0.25, 0.0, 0.5], [-0.25, 0.0, 0.5]]]}}
 
 
-class RandTopTest1(unittest.TestCase):
+class RandTop_Test1(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_1.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
@@ -23,7 +23,7 @@ class RandTopTest1(unittest.TestCase):
                             msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i,flavour.multiplicities))
 
 
-class RandTopTest2(unittest.TestCase):
+class RandTop_Test2(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_2.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
@@ -32,7 +32,7 @@ class RandTopTest2(unittest.TestCase):
         self.assertTrue(np.all(self.net.multiplicities == [4,8,16]))
 
 
-class RandTopTest3(unittest.TestCase):
+class RandTop_Test3(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_3.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
@@ -47,7 +47,7 @@ class RandTopTest3(unittest.TestCase):
                             msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i,flavour.multiplicities))
 
 
-class RandTopTest4(unittest.TestCase):
+class RandTop_Test4(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_4.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
@@ -62,7 +62,7 @@ class RandTopTest4(unittest.TestCase):
                             msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i,flavour.multiplicities))
 
 
-class RandTopTest5(unittest.TestCase):
+class RandTop_Test5(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_5.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
