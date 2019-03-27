@@ -12,7 +12,7 @@ variables:
   IMAGE_RELEASE_TAG: $CI_REGISTRY_IMAGE:latest
 
 unittesting_source:
-  image: $CI_REGISTRY/thirdparty:latest
+  image: $CI_REGISTRY/uspex_python/thirdparty:latest
   stage: unittesting_source
   script:
     - nosetests ./USPEX
