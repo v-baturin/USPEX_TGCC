@@ -1,4 +1,4 @@
-FROM thirdparty:latest as uspex_tmp_common
+FROM registry.gitlab.uspex-team.org/uspex_python/thirdparty:latest as uspex_tmp_common
 RUN pip install --trusted-host pypi.python.org cython
 COPY ./USPEX ./USPEX
 RUN echo '' > ./USPEX/__init__.py
@@ -6,7 +6,7 @@ RUN find ./USPEX -type d -name "*tests*" | xargs rm -rf
 RUN find ./USPEX -type f \( -name "*.py" ! -name "__init__.py" \) | xargs -I {} -t sh -c 'cythonize -i {} && rm {}'
 RUN find ./USPEX -type f -name "*.c" | xargs -I {} rm {}
 
-FROM thirdparty:latest
+FROM registry.gitlab.uspex-team.org/uspex_python/thirdparty:latest
 COPY --from=uspex_tmp_common /opt/USPEX/Common /opt/USPEX/Common
 COPY ./setup.py /opt/setup.py
 RUN pip install -e ./
