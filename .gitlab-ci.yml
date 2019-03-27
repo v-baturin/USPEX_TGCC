@@ -48,3 +48,5 @@ deploy:
     - docker pull $IMAGE_TAG
     - docker tag $IMAGE_TAG $IMAGE_RELEASE_TAG
     - docker push $IMAGE_RELEASE_TAG
+  only:
+    master
