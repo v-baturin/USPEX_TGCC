@@ -12,8 +12,8 @@ import unittest
 import os
 from ase.io import read
 
-from lib.Fingerprints.Fingerprints import Fingerprints
-from lib.Fingerprints.cosine_distance import cosine_distance
+from ..Fingerprints import Fingerprints
+from ..cosine_distance import cosine_distance
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))

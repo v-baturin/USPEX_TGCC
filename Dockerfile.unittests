@@ -1,0 +1,3 @@
+FROM uspex_common:latest
+COPY ./onlytests/USPEX ./USPEX
+
