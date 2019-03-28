@@ -9,5 +9,5 @@ RUN find ./USPEX -type f -name "*.c" | xargs -I {} rm {}
 FROM registry.gitlab.uspex-team.org/uspex_python/thirdparty:latest
 COPY --from=uspex_tmp_common /opt/USPEX/Common /opt/USPEX/Common
 COPY ./setup.py /opt/setup.py
-RUN pip install -e ./
+RUN pip install -e ./  && rm ./setup.py
 
