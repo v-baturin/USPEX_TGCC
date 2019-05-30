@@ -13,8 +13,6 @@ from copy import copy
 from itertools import chain
 
 
-from USPEX.Common import dictifyList
-
 class Target(object):
 
     shortname = None
@@ -60,4 +58,4 @@ class Target(object):
 
     @property
     def state(self) -> tuple:
-        return (dictifyList(self.best), dictifyList(self.uniqueSystems))
+        return (self.best, self.uniqueSystems)

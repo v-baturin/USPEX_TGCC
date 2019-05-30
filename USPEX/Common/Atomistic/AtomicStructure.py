@@ -462,7 +462,7 @@ class AtomicStructure(object):
         if len(self.atoms) < 2:
             return True
         indices = np.fromiter((symbols.index(symbol) for symbol in self._chemicalSymbols), dtype=int)
-        mDM = minDistMatrix[np.meshgrid(indices, indices)]
+        mDM = minDistMatrix[tuple(np.meshgrid(indices, indices))]
         for inds, molecule in zip(self._molecules, self.molecules):
             if len(inds) == 1:
                 mDM[inds[0], inds[0]] = 0

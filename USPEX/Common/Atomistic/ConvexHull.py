@@ -83,7 +83,7 @@ class ConvexHull(object):
                 # X represents decomposition of given composition to the compositions of chosen combination.
                 # all of its elements must be positive because this decomposition have physical meaning of mixture.
                 try:
-                    X, res, rank, s = np.linalg.lstsq(C.T,composition)
+                    X, res, rank, s = np.linalg.lstsq(C.T,composition, rcond=None)
                     if not res:
                         res = np.dot(X,C) - composition
                 except np.linalg.LinAlgError:
