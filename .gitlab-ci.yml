@@ -23,7 +23,7 @@ build:
     - docker:dind
   stage: build
   script:
-    - docker login -u $THIRDPARTY_DEPLOY_USER -p $THIRDPARTY_DEPLOY_TOKEN
+    - docker login -u $THIRDPARTY_DEPLOY_USER -p $THIRDPARTY_DEPLOY_TOKEN $CI_REGISTRY
     - docker build -f Dockerfile.module -t uspex_common .
     - docker tag uspex_common $IMAGE_TAG
     - mkdir onlytests
