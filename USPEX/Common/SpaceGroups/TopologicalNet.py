@@ -21,9 +21,9 @@ class TopologicalNet(object):
         self.group = group
         self.nodes = np.asarray(nodes)
         self.operations = []
-        for node in self.nodes:
-            nodeOperationsVariants = self.group.getNotPositionInvariantSubgroups(node)
-            self.operations.append(nodeOperationsVariants)
+        # for node in self.nodes:
+        #     nodeOperationsVariants = self.group.getNotPositionInvariantSubgroups(node)
+        #     self.operations.append(nodeOperationsVariants)
         self.multiplicities = np.asarray([len(orbit) for orbit in self.group(self.nodes)])
         self.bonds = bonds
         self.coordinationNumbers = []
@@ -63,9 +63,9 @@ class TopologicalFlavours(Sequence):
         :param i: Index
         :return: Topological net object describing obtained flavour.
         """
-        subgroup, remainder = self.subgroups[i]
+        subgroup = self.subgroups[i]
         nodeCoordinates = []
-        for remOrbit in remainder(self.net.nodes):
+        for remOrbit in self.subgroups(self.net.nodes):
             for subOrbit in subgroup(remOrbit):
                 nodeIsUnique = True
                 for subNode in subOrbit:

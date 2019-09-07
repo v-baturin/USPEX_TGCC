@@ -36,7 +36,7 @@ def _generate_full_symmetry_ops(generators, supercell: tuple):
             temp_ops = np.einsum('ijk,kl', symm_ops, g)
             for op in temp_ops:
                 op[0:3, 3] = np.mod(op[0:3, 3], supercell)
-                ind = np.where(np.abs(np.asarray(supercell) - op[0:3, 3]) < 1e-5)
+                ind = np.where(np.abs(np.asarray(supercell) - op[0:3, 3]) < 1e-4)
                 op[ind, 3] = 0
                 if not in_array_list(symm_ops, op):
                     gen_ops.append(op)
@@ -93,7 +93,7 @@ class Group(object):
         :param nodes: array of positions.
         :return: list of orbits, each orbit is an array of positions.
         """
-        return [uniqueRows(np.divmod(np.around(orbit, decimals=5), (1,1,1))[1], thresh=1.0e-4)
+        return [uniqueRows(np.divmod(np.around(orbit, decimals=6), (1,1,1))[1], thresh=1.0e-4)
                 for orbit in (np.dot(self.operators[:,:3,:3], nodes.T)
                               + self.operators[:,:3,3].reshape(self.operators.shape[0],3,1)).transpose((2, 0, 1))]
 
@@ -145,7 +145,7 @@ class Group(object):
                     modifiedGenerator = np.dot(operation, generator)
                     modifiedGenerator[0:3, 3] = np.mod(modifiedGenerator[0:3, 3], (1,1,1))
                     if np.allclose(np.mod(np.around(np.dot(modifiedGenerator[0:3,0:3], position)
-                                          + modifiedGenerator[0:3,3], decimals=4), (1,1,1)), position, atol = 1e-4):
+                                          + modifiedGenerator[0:3,3], decimals=5), (1,1,1)), position, atol = 1e-4):
                         allGenerators.append(modifiedGenerator)
                         trivialGenerators.append(len(allGenerators) - 1)
                         trivial = True
@@ -162,9 +162,16 @@ class Group(object):
         :return: Group object.
         """
         generators = deepcopy(generators)
-        for gen in generators:
-            gen[0:3, 3] = gen[0:3,3] / supercell
-        return Group(generators, dimensions)
+        generators_final = []
+        dimensions_final = []
+        gens_span = []
+        for gen, dim in zip(generators, dimensions):
+            gen[0:3, 3] = np.divmod(gen[0:3,3] / supercell, 1)[1]
+            if not in_array_list(gens_span, gen):
+                gens_span.extend(_generate_full_symmetry_ops([np.eye(4), gen], (1,1,1)))
+                generators_final.append(gen)
+                dimensions_final.append(dim)
+        return Group(generators_final, dimensions_final)
 
     @staticmethod
     def getGroupFromSymbol(symbol : str):
@@ -176,45 +183,6 @@ class Group(object):
         generators = [np.asarray(generator) for generator in DECOMPOSITIONS[symbol]['generators']]
         dimensions = DECOMPOSITIONS[symbol]['dimensions']
         return Group(generators, dimensions)
-
-
-class SubgroupTransition(object):
-    """
-    Class representing transition from structure described by a group to same structure described y its subgroup.
-    """
-
-    def __init__(self, generators : list, supercell : tuple):
-        """
-        Initialize SubgroupTransition object.
-        :param generators:
-        :param supercell:
-        """
-        self.generators = copy(generators)
-        self.supercell = supercell
-        self._operators = _generate_full_symmetry_ops(self.generators, self.supercell)
-
-    @property
-    def operators(self):
-        return self._operators
-
-    def __contains__(self, op):
-        """
-        Check if this group contains provided operation.
-        :param op: 4x4 float matrix representing operation.
-        :return: True if the group contain operation, False otherwise.
-        """
-        return in_array_list(self.operators, op)
-
-    def __call__(self, nodes):
-        """
-        Calculates orbits of provided positions with respect to this group.
-        The orbit of a position is the set of positions which can be obtained by acting with operations of the group.
-        :param nodes: array of positions.
-        :return: list of orbits, each orbit is an array of positions.
-        """
-        return [uniqueRows(np.divmod(np.around(orbit, decimals=4), self.supercell)[1], thresh=1.0e-4)  / self.supercell
-                for orbit in (np.dot(self.operators[:,:3,:3], nodes.T)
-                              + self.operators[:,:3,3].reshape(self.operators.shape[0],3,1)).transpose((2, 0, 1))]
 
 
 class Subgroups(Sequence):
@@ -237,9 +205,7 @@ class Subgroups(Sequence):
         self.supercell = supercell
         self.combinationWeights = []
         for sub, rem in self.combinations:
-            N_sub = (np.asarray(self.dimensions)[np.asarray(sub)] == 2).sum()
-            N_rem = (np.asarray(self.dimensions)[np.asarray(rem)] == 2).sum()
-            self.combinationWeights.append(2 ** (N_rem * N_sub))
+            self.combinationWeights.append(np.asarray(self.dimensions)[np.asarray(rem)].prod() ** (len(sub) - 1))
         self.combinationRanges = np.cumsum(self.combinationWeights)
         self.operators = _generate_full_symmetry_ops(self.generators, self.supercell)
 
@@ -253,30 +219,23 @@ class Subgroups(Sequence):
         combInd = (self.combinationRanges > ind).nonzero()[0][0]
         ind = ind - self.combinationRanges[combInd - 1] if combInd else ind
         sub_ind, rem_ind = self.combinations[combInd]
-        constRemainder = tuple(set(range(len(self.generators))) - set(sub_ind) - set(rem_ind))
         subgroup_generators = [self.generators[i] for i in sub_ind]
         remainder_generators = np.stack(self.generators[i] for i in rem_ind)
         subgroup_dimensions = np.asarray(self.dimensions)[np.asarray(sub_ind)]
         remainder_dimensions = np.asarray(self.dimensions)[np.asarray(rem_ind)]
-        sub_dim = (subgroup_dimensions == 2).nonzero()[0]
-        rem_dim = (remainder_dimensions == 2).nonzero()[0]
-        N_sub = len(sub_dim)
-        N_rem = len(rem_dim)
-        for i in sub_dim:
-            bitmask = ind % (2**N_rem)
-            ind //= (2**N_rem)
-            mask = np.flipud(np.unpackbits(np.array([bitmask], dtype=np.uint8)))
-            for operator in remainder_generators[rem_dim[mask.nonzero()]]:
-                subgroup_generators[i] = np.dot(subgroup_generators[i], operator)
+        dividers = remainder_dimensions.cumprod()
+        for i in range(1, len(subgroup_generators)):
+            decomposition = np.floor_divide(ind, dividers).tolist()
+            decomposition.insert(0, ind)
+            ind = decomposition.pop()
+            mask = np.remainder(decomposition, remainder_dimensions)
+            assert mask[0] == 0, mask
+            for order, operator in zip(mask, remainder_generators):
+                while order:
+                    subgroup_generators[i] = np.dot(subgroup_generators[i], operator)
+                    order -= 1
         assert ind == 0
-        rem_gen_list = list(remainder_generators.tolist())
-        rem_gen_list.extend(self.generators[i] for i in constRemainder)
-        subgroup = Group.getWrapedGroup(subgroup_generators, subgroup_dimensions.tolist(), self.supercell)
-        remainder = SubgroupTransition(rem_gen_list, self.supercell)
-        if len(self.operators) != len(subgroup.operators) * len(remainder.operators):
-            subgroup = Group.getWrapedGroup([np.eye(4)], [1], (1,1,1))
-            remainder = SubgroupTransition(self.generators, self.supercell)
-        return subgroup, remainder
+        return Group.getWrapedGroup(subgroup_generators, subgroup_dimensions.tolist(), self.supercell)
 
     def __len__(self):
         """
@@ -284,3 +243,14 @@ class Subgroups(Sequence):
         :return: Number of subgroups
         """
         return self.combinationRanges[-1]
+
+    def __call__(self, nodes):
+        """
+        Calculates orbits of provided positions with respect to this group.
+        The orbit of a position is the set of positions which can be obtained by acting with operations of the group.
+        :param nodes: array of positions.
+        :return: list of orbits, each orbit is an array of positions.
+        """
+        return [uniqueRows(np.divmod(np.around(orbit, decimals=6), self.supercell)[1], thresh=1.0e-4)  / self.supercell
+                for orbit in (np.dot(self.operators[:,:3,:3], nodes.T)
+                              + self.operators[:,:3,3].reshape(self.operators.shape[0],3,1)).transpose((2, 0, 1))]
