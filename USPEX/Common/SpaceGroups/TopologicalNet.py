@@ -20,7 +20,7 @@ class TopologicalNet(object):
         self.name = name
         self.group = group
         self.nodes = np.asarray(nodes)
-        self.operations = []
+        self.operations = NodeOperations(self.nodes, self.group)
         # for node in self.nodes:
         #     nodeOperationsVariants = self.group.getNotPositionInvariantSubgroups(node)
         #     self.operations.append(nodeOperationsVariants)
@@ -38,6 +38,39 @@ class TopologicalNet(object):
         :return:
         """
         return TopologicalFlavours(self, supercell)
+
+
+class NodeOperations(Sequence):
+    """
+
+    """
+
+    def __init__(self, nodes, group):
+        """
+
+        :param nodes:
+        :param group:
+        """
+        self.nodes = nodes
+        self.group = group
+        self._operations = [None] * len(self.nodes)
+
+    def __getitem__(self, item):
+        """
+
+        :param item:
+        :return:
+        """
+        if self._operations[item] is None:
+            self._operations[item] = self.group.getNotPositionInvariantSubgroups(self.nodes[item])
+        return self._operations[item]
+
+    def __len__(self):
+        """
+
+        :return:
+        """
+        return len(self.nodes)
 
 
 class TopologicalFlavours(Sequence):

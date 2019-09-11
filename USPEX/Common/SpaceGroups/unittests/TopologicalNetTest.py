@@ -18,9 +18,33 @@ class RandTopTest1(unittest.TestCase):
 
     def test_flavours(self):
         flavours = self.net.getFlavours((2,3,1))
-        for i, flavour in enumerate(flavours):
+        # for i, flavour in enumerate(flavours):
+        i = 0
+        allGood = True
+        while i < len(flavours):
+            flavour = flavours[i]
             self.assertTrue(np.sum(flavour.multiplicities) == 18,
                             msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i,flavour.multiplicities))
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes, range(len(flavour.nodes))):
+                goodVariantExist = False
+                for j, variant in enumerate(operations):
+                    if len(variant.operators) == mult:
+                        goodVariantExist = True
+                    # else:
+                    #     print(i, n, len(variant.operators), mult, j, len(operations))
+                if not goodVariantExist:
+                    print(i, n, mult, len(operations))
+                    allGood = False
+                    # self.assertEqual(len(variant.operators), mult,
+                    #                  msg = 'In {}th flavour operations and multiplicities are inconsistent.'.format(i))
+            i += 1
+        self.assertTrue(allGood)
+        # flavour = flavours[10]
+        # operations, mult, node = flavour.operations[2], flavour.multiplicities[2], flavour.nodes[2]
+        # variant = operations[1]
+        # print(len(variant.operators), mult)
+        # print(variant.operators, node)
+
 
 
 class RandTopTest2(unittest.TestCase):
@@ -42,9 +66,21 @@ class RandTopTest3(unittest.TestCase):
 
     def test_flavours(self):
         flavours = self.net.getFlavours((2,1,1))
+        allGood = True
         for i, flavour in enumerate(flavours):
             self.assertTrue(np.sum(flavour.multiplicities) == 28,
                             msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i,flavour.multiplicities))
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes, range(len(flavour.nodes))):
+                goodVariantExist = False
+                for j, variant in enumerate(operations):
+                    if len(variant.operators) == mult:
+                        goodVariantExist = True
+                    # else:
+                    #     print(i, n, len(variant.operators), mult, j, len(operations))
+                if not goodVariantExist:
+                    print(i, n, mult, len(operations))
+                    allGood = False
+        self.assertTrue(allGood)
 
 
 class RandTopTest4(unittest.TestCase):
@@ -57,9 +93,21 @@ class RandTopTest4(unittest.TestCase):
 
     def test_flavours(self):
         flavours = self.net.getFlavours((1,4,1))
+        allGood = True
         for i, flavour in enumerate(flavours):
             self.assertTrue(np.sum(flavour.multiplicities) == 28,
                             msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i,flavour.multiplicities))
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes, range(len(flavour.nodes))):
+                goodVariantExist = False
+                for j, variant in enumerate(operations):
+                    if len(variant.operators) == mult:
+                        goodVariantExist = True
+                    # else:
+                    #     print(i, n, len(variant.operators), mult, j, len(operations))
+                if not goodVariantExist:
+                    print(i, n, mult, len(operations))
+                    allGood = False
+        self.assertTrue(allGood)
 
 
 class RandTopTest5(unittest.TestCase):
@@ -72,9 +120,21 @@ class RandTopTest5(unittest.TestCase):
 
     def test_flavours(self):
         flavours = self.net.getFlavours((1,1,2))
+        allGood = True
         for i, flavour in enumerate(flavours):
             self.assertTrue(np.sum(flavour.multiplicities) == 28,
                         msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i,flavour.multiplicities))
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes, range(len(flavour.nodes))):
+                goodVariantExist = False
+                for j, variant in enumerate(operations):
+                    if len(variant.operators) == mult:
+                        goodVariantExist = True
+                    # else:
+                    #     print(i, n, len(variant.operators), mult, j, len(operations))
+                if not goodVariantExist:
+                    print(i, n, mult, len(operations))
+                    allGood = False
+        self.assertTrue(allGood)
 
 class RandTopTest6(unittest.TestCase):
     def setUp(self):
@@ -86,6 +146,18 @@ class RandTopTest6(unittest.TestCase):
 
     def test_flavours(self):
         flavours = self.net.getFlavours((1,2,1))
+        allGood = True
         for i, flavour in enumerate(flavours):
             self.assertTrue(np.sum(flavour.multiplicities) == 18,
                         msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i,flavour.multiplicities))
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes, range(len(flavour.nodes))):
+                goodVariantExist = False
+                for j, variant in enumerate(operations):
+                    if len(variant.operators) == mult:
+                        goodVariantExist = True
+                    # else:
+                    #     print(i, n, len(variant.operators), mult, j, len(operations))
+                if not goodVariantExist:
+                    print(i, n, mult, len(operations))
+                    allGood = False
+        self.assertTrue(allGood)

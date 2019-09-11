@@ -57,6 +57,17 @@ def uniqueRows(arr, thresh=0.0, metric='euclidean'):
     idxset = {tuple(np.nonzero(v)[0]) for v in distances <= thresh}
     return arr[[x[0] for x in idxset]]
 
+def calcOrbits(operators, nodes, supercell):
+    result = []
+    for orbit in (np.dot(operators[:,:3,:3], nodes.T) + operators[:,:3,3].reshape(operators.shape[0], 3, 1)).transpose((2, 0, 1)):
+        orbit = np.remainder(orbit, supercell)
+        orbit[np.where(np.abs(np.asarray(supercell) - orbit) < 1e-4)] = 0
+        result.append(uniqueRows(orbit, thresh = 1.0e-4)/ supercell)
+    return result
+    # return [uniqueRows(np.divmod(np.around(orbit, decimals=6), supercell)[1], thresh=1.0e-4)  / supercell
+    #         for orbit in (np.dot(operators[:,:3,:3], nodes.T)
+    #                       + operators[:,:3,3].reshape(self.operators.shape[0],3,1)).transpose((2, 0, 1))]
+
 
 class Group(object):
     """
@@ -93,9 +104,41 @@ class Group(object):
         :param nodes: array of positions.
         :return: list of orbits, each orbit is an array of positions.
         """
-        return [uniqueRows(np.divmod(np.around(orbit, decimals=6), (1,1,1))[1], thresh=1.0e-4)
-                for orbit in (np.dot(self.operators[:,:3,:3], nodes.T)
-                              + self.operators[:,:3,3].reshape(self.operators.shape[0],3,1)).transpose((2, 0, 1))]
+        return calcOrbits(self.operators, nodes, (1,1,1))
+
+    def redefineGenerators(self):
+        if len(self.operators) != np.prod(self.dimensions):
+            generators = self.generators[1:]
+            dimensions = self.dimensions[1:]
+            for pair in combinations(list(range(len(generators))), 2):
+                if pair[0] < len(generators) and pair[1] < len(generators):
+                    operators = _generate_full_symmetry_ops([np.eye(4), generators[pair[0]], generators[pair[1]]], (1, 1, 1))
+                    if len(operators) != dimensions[pair[0]]* dimensions[pair[1]]:
+                        tmpDimensions = [1]
+                        for operator in operators[1:]:
+                            tmpDimensions.append(len(_generate_full_symmetry_ops([np.eye(4), operator], (1, 1, 1))))
+                        inds = np.argsort(tmpDimensions)
+                        indLarge = inds[-1]
+                        dim, rem = np.divmod(len(operators), tmpDimensions[indLarge])
+                        assert rem == 0, (len(operators), tmpDimensions[indLarge])
+                        generators[pair[0]] = operators[indLarge]
+                        dimensions[pair[0]] = tmpDimensions[indLarge]
+                        if dim == 1:
+                            del generators[pair[1]]
+                            del dimensions[pair[1]]
+                        else:
+                            for indSmall in np.flatnonzero(np.asarray(tmpDimensions) == dim):
+                                if len(_generate_full_symmetry_ops([np.eye(4), operators[indLarge], operators[indSmall]], (1,1,1)))\
+                                        == len(operators):
+                                    break
+                            generators[pair[1]] = operators[indSmall]
+                            dimensions[pair[1]] = tmpDimensions[indSmall]
+            generators.insert(0, np.eye(4))
+            dimensions.insert(0, 1)
+            assert len(_generate_full_symmetry_ops(generators, (1, 1, 1))) == len(self._operators)
+            self.generators = generators
+            self.dimensions = dimensions
+
 
     def getAllSubgroups(self, supercell: tuple):
         """
@@ -134,26 +177,99 @@ class Group(object):
         :param supercell: 3-tuple describing supercell.
         :return: Subgroups object.
         """
-        allGenerators = [np.identity(4, dtype = np.float)]
-        trivialGenerators = [0]
-        nonTrivialGenerators = [0]
-        for i, generator in reversed(list(enumerate(self.generators))):
-            if not np.allclose(generator, np.identity(4, dtype = np.float)):
-                envelope = Group(self.generators[:i], self.dimensions[:i])
-                trivial = False
-                for operation in envelope.operators:
-                    modifiedGenerator = np.dot(operation, generator)
-                    modifiedGenerator[0:3, 3] = np.mod(modifiedGenerator[0:3, 3], (1,1,1))
-                    if np.allclose(np.mod(np.around(np.dot(modifiedGenerator[0:3,0:3], position)
-                                          + modifiedGenerator[0:3,3], decimals=5), (1,1,1)), position, atol = 1e-4):
-                        allGenerators.append(modifiedGenerator)
-                        trivialGenerators.append(len(allGenerators) - 1)
-                        trivial = True
+        generators = [np.eye(4)]
+        dimensions = [1]
+        for generator, dim in zip(self.generators[1:], self.dimensions[1:]):
+            group = Group([np.eye(4), generator], [1, dim])
+            positions = group(np.asarray([position]))[0]
+            generators.append(generator)
+            dimensions.append(dim)
+            if len(positions) != len(group.operators):
+                trivialExists = False
+                for possible_generator in group.operators:
+                    subgroup = Group([np.eye(4), possible_generator], [1, dim])
+                    if (len(subgroup.operators) == len(positions)) \
+                            and (len(subgroup(np.asarray([position]))[0]) == len(positions)):
+                        generators[-1] = possible_generator
+                        dimensions[-1] = len(subgroup.operators)
+                        trivialExists = True
                         break
+                if trivialExists:
+                    for possible_generator in group.operators[1:]:
+                        if np.allclose(np.mod(np.around(np.dot(possible_generator[0:3, 0:3], position)
+                                                        + possible_generator[0:3, 3], decimals=6), (1, 1, 1)), position, atol=1e-4):
+                            subgroup = Group([np.eye(4), possible_generator], [1, dim])
+                            generators.append(possible_generator)
+                            dimensions.append(len(subgroup.operators))
+
+        allGenerators = [np.identity(4, dtype = np.float)]
+        allDimensions = [1]
+        trivialGenerators = [0]
+        nonTrivialGenerators =[0]
+
+        for generator, dimension in zip(generators, dimensions):
+            if not np.allclose(generator, np.identity(4, dtype=np.float)):
+                operators = _generate_full_symmetry_ops(allGenerators, (1, 1, 1))
+                trivial = False
+                for modifier in self.operators:
+                    modifiedGenerator = np.dot(modifier, generator)
+                    modifiedGenerator[0:3, 3] = np.mod(modifiedGenerator[0:3, 3], (1, 1, 1))
+                    modifiedGenerator[np.where(np.abs(np.asarray((1,1,1)) - modifiedGenerator[0:3, 3]) < 1e-4), 3] = 0
+                    if np.allclose(np.mod(np.around(np.dot(modifiedGenerator[0:3, 0:3], position)
+                                                    + modifiedGenerator[0:3, 3], decimals=6), (1, 1, 1)), position, atol=1e-4):
+                        if not in_array_list(operators, modifiedGenerator):
+                            span = _generate_full_symmetry_ops([np.eye(4), modifiedGenerator], (1, 1, 1))
+                            if len(span) == dimension:
+                                allGenerators.append(modifiedGenerator)
+                                allDimensions.append(dimension)
+                                trivialGenerators.append(len(allGenerators) - 1)
+                                trivial = True
+                                break
                 if not trivial:
                     allGenerators.append(generator)
+                    allDimensions.append(dimension)
                     nonTrivialGenerators.append(len(allGenerators) - 1)
-        return Subgroups(allGenerators, self.dimensions, [(nonTrivialGenerators, trivialGenerators)], (1,1,1))
+        operators = _generate_full_symmetry_ops(allGenerators, (1, 1, 1))
+        # tmpGroup = Group.getWrapedGroup(allGenerators, allDimensions, (1,1,1))
+        # allGenerators = tmpGroup.generators
+        # allDimensions = tmpGroup.dimensions
+        # operators = tmpGroup.operators
+        for generator, dimension in zip(generators, dimensions):
+            if not in_array_list(operators, generator):
+                allGenerators.append(generator)
+                allDimensions.append(dimension)
+                nonTrivialGenerators.append(len(allGenerators) - 1)
+        operators = _generate_full_symmetry_ops(allGenerators, (1, 1, 1))
+        if len(operators) != np.prod(allDimensions):
+            n = 1
+            while n < len(nonTrivialGenerators):
+                i = nonTrivialGenerators[n]
+                tmpGenerators = copy(allGenerators)
+                tmpDimensions = copy(allDimensions)
+                del tmpGenerators[i]
+                del tmpDimensions[i]
+                tmpOperators = _generate_full_symmetry_ops(tmpGenerators, (1,1,1))
+                if (len(operators) == len(tmpOperators)) and (len(operators) == np.prod(tmpDimensions)):
+                    allGenerators = tmpGenerators
+                    allDimensions = tmpDimensions
+                    tmpNonTrivialGenerators =[]
+                    for j in nonTrivialGenerators:
+                        if j < i:
+                            tmpNonTrivialGenerators.append(j)
+                        elif j > i:
+                            tmpNonTrivialGenerators.append(j-1)
+                    nonTrivialGenerators = tmpNonTrivialGenerators
+                    tmpTrivialGenerators =[]
+                    for j in trivialGenerators:
+                        if j < i:
+                            tmpTrivialGenerators.append(j)
+                        elif j > i:
+                            tmpTrivialGenerators.append(j-1)
+                    trivialGenerators = tmpTrivialGenerators
+                else:
+                    n += 1
+
+        return Subgroups(allGenerators, allDimensions, [(nonTrivialGenerators, trivialGenerators)], (1,1,1))
 
     @staticmethod
     def getWrapedGroup(generators : list, dimensions : list, supercell : tuple):
@@ -162,16 +278,20 @@ class Group(object):
         :return: Group object.
         """
         generators = deepcopy(generators)
-        generators_final = []
-        dimensions_final = []
-        gens_span = []
-        for gen, dim in zip(generators, dimensions):
+        generators_final = [np.eye(4)]
+        dimensions_final = [1]
+        operators = _generate_full_symmetry_ops(generators_final, (1, 1, 1))
+        for gen in generators:
             gen[0:3, 3] = np.divmod(gen[0:3,3] / supercell, 1)[1]
-            if not in_array_list(gens_span, gen):
-                gens_span.extend(_generate_full_symmetry_ops([np.eye(4), gen], (1,1,1)))
+            gen[np.where(np.abs(np.asarray((1, 1, 1)) - gen[0:3, 3]) < 1e-4), 3] = 0
+            if not in_array_list(operators, gen):
+                span = _generate_full_symmetry_ops([np.eye(4), gen], (1, 1, 1))
                 generators_final.append(gen)
-                dimensions_final.append(dim)
-        return Group(generators_final, dimensions_final)
+                dimensions_final.append(len(span))
+                operators = _generate_full_symmetry_ops(generators_final, (1,1,1))
+        group = Group(generators_final, dimensions_final)
+        group.redefineGenerators()
+        return group
 
     @staticmethod
     def getGroupFromSymbol(symbol : str):
@@ -251,6 +371,5 @@ class Subgroups(Sequence):
         :param nodes: array of positions.
         :return: list of orbits, each orbit is an array of positions.
         """
-        return [uniqueRows(np.divmod(np.around(orbit, decimals=6), self.supercell)[1], thresh=1.0e-4)  / self.supercell
-                for orbit in (np.dot(self.operators[:,:3,:3], nodes.T)
-                              + self.operators[:,:3,3].reshape(self.operators.shape[0],3,1)).transpose((2, 0, 1))]
+        return calcOrbits(self.operators, nodes, self.supercell)
+
