@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 import numpy as np
 from copy import copy, deepcopy
 from collections import Sequence
@@ -58,15 +59,22 @@ def uniqueRows(arr, thresh=0.0, metric='euclidean'):
     return arr[[x[0] for x in idxset]]
 
 def calcOrbits(operators, nodes, supercell):
+    """
+    Calculates orbits of provided positions with respect to given operators.
+    The orbit of a position is the set of positions which can be obtained by acting with operators.
+
+    :param operators: array of 4*4 matrices describing operators which should create an orbit from each position.
+    :param nodes: array of positions.
+    :param supercell: tuple describing supercell which should be respected when calculating orbits.
+    :return: list of orbits, each orbit is an array of positions.
+    """
+
     result = []
     for orbit in (np.dot(operators[:,:3,:3], nodes.T) + operators[:,:3,3].reshape(operators.shape[0], 3, 1)).transpose((2, 0, 1)):
         orbit = np.remainder(orbit, supercell)
         orbit[np.where(np.abs(np.asarray(supercell) - orbit) < 1e-4)] = 0
         result.append(uniqueRows(orbit, thresh = 1.0e-4)/ supercell)
     return result
-    # return [uniqueRows(np.divmod(np.around(orbit, decimals=6), supercell)[1], thresh=1.0e-4)  / supercell
-    #         for orbit in (np.dot(operators[:,:3,:3], nodes.T)
-    #                       + operators[:,:3,3].reshape(self.operators.shape[0],3,1)).transpose((2, 0, 1))]
 
 
 class Group(object):
@@ -107,7 +115,13 @@ class Group(object):
         return calcOrbits(self.operators, nodes, (1,1,1))
 
     def redefineGenerators(self):
-        if len(self.operators) != np.prod(self.dimensions):
+        """
+        If number of operators in this group mismatches product of dimensions of generators this method tries to fix it.
+        It tries to chose some other set of generators. Such fix is not possible in some cases.
+        """
+
+        attempts = 5
+        while len(self.operators) != np.prod(self.dimensions) and attempts:
             generators = self.generators[1:]
             dimensions = self.dimensions[1:]
             for pair in combinations(list(range(len(generators))), 2):
@@ -121,23 +135,42 @@ class Group(object):
                         indLarge = inds[-1]
                         dim, rem = np.divmod(len(operators), tmpDimensions[indLarge])
                         assert rem == 0, (len(operators), tmpDimensions[indLarge])
-                        generators[pair[0]] = operators[indLarge]
-                        dimensions[pair[0]] = tmpDimensions[indLarge]
                         if dim == 1:
                             del generators[pair[1]]
                             del dimensions[pair[1]]
                         else:
-                            for indSmall in np.flatnonzero(np.asarray(tmpDimensions) == dim):
-                                if len(_generate_full_symmetry_ops([np.eye(4), operators[indLarge], operators[indSmall]], (1,1,1)))\
-                                        == len(operators):
-                                    break
+                            indSmall = None
+                            if dim in tmpDimensions:
+                                for ind in np.flatnonzero(np.asarray(tmpDimensions) == dim):
+                                    if len(_generate_full_symmetry_ops([np.eye(4), operators[indLarge], operators[ind]], (1,1,1)))\
+                                            == len(operators):
+                                        indSmall = ind
+                                        break
+                            if indSmall is None:
+                                for dimTry in np.unique(tmpDimensions)[-2:0:-1]:
+                                    for ind in np.flatnonzero(np.asarray(tmpDimensions) == dimTry):
+                                        if len(_generate_full_symmetry_ops(
+                                                [np.eye(4), operators[indLarge], operators[ind]], (1, 1, 1))) \
+                                                == len(operators):
+                                            indSmall = ind
+                                            break
+                                    if indSmall is not None:
+                                        break
+                            if indSmall is None:
+                                continue
                             generators[pair[1]] = operators[indSmall]
                             dimensions[pair[1]] = tmpDimensions[indSmall]
+                        generators[pair[0]] = operators[indLarge]
+                        dimensions[pair[0]] = tmpDimensions[indLarge]
+                        break
             generators.insert(0, np.eye(4))
             dimensions.insert(0, 1)
-            assert len(_generate_full_symmetry_ops(generators, (1, 1, 1))) == len(self._operators)
             self.generators = generators
             self.dimensions = dimensions
+            attempts -= 1
+        assert len(_generate_full_symmetry_ops(self.generators, (1, 1, 1))) == len(self._operators)
+        if not attempts:
+            logging.debug('Number of operators {} missmatches generators dimensions {}'.format(len(self.operators), self.dimensions))
 
 
     def getAllSubgroups(self, supercell: tuple):
@@ -230,10 +263,6 @@ class Group(object):
                     allDimensions.append(dimension)
                     nonTrivialGenerators.append(len(allGenerators) - 1)
         operators = _generate_full_symmetry_ops(allGenerators, (1, 1, 1))
-        # tmpGroup = Group.getWrapedGroup(allGenerators, allDimensions, (1,1,1))
-        # allGenerators = tmpGroup.generators
-        # allDimensions = tmpGroup.dimensions
-        # operators = tmpGroup.operators
         for generator, dimension in zip(generators, dimensions):
             if not in_array_list(operators, generator):
                 allGenerators.append(generator)
@@ -336,6 +365,7 @@ class Subgroups(Sequence):
         :param ind: Index.
         :return: Group object of a subgroup.
         """
+        logging.debug('Trying {}th subgroup'.format(ind))
         combInd = (self.combinationRanges > ind).nonzero()[0][0]
         ind = ind - self.combinationRanges[combInd - 1] if combInd else ind
         sub_ind, rem_ind = self.combinations[combInd]
@@ -364,9 +394,9 @@ class Subgroups(Sequence):
         """
         return self.combinationRanges[-1]
 
-    def __call__(self, nodes):
+    def calcOrbits(self, nodes):
         """
-        Calculates orbits of provided positions with respect to this group.
+        Calculates orbits of provided positions with respect to operators of this Subgroups object and its supercell.
         The orbit of a position is the set of positions which can be obtained by acting with operations of the group.
         :param nodes: array of positions.
         :return: list of orbits, each orbit is an array of positions.

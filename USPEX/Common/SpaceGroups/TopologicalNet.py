@@ -98,7 +98,7 @@ class TopologicalFlavours(Sequence):
         """
         subgroup = self.subgroups[i]
         nodeCoordinates = []
-        for remOrbit in self.subgroups(self.net.nodes):
+        for remOrbit in self.subgroups.calcOrbits(self.net.nodes):
             for subOrbit in subgroup(remOrbit):
                 nodeIsUnique = True
                 for subNode in subOrbit:
