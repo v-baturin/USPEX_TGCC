@@ -14,7 +14,7 @@ net_def_7 = {"1934-topos_xal_xal": {"totalAtomNumber": 2, "cell": [[1.0, 0.0, 0.
 net_def_8 = {"1940-topos_xaq_xaq": {"totalAtomNumber": 11, "cell": [[3.3094, 0.0, 0.0], [0.0, 3.3094, 0.0], [0.0, 0.0, 3.3094]], "groupName": "P-43m", "nods": [[0.3489, 0.0, 0.0], [0.0, 0.0, 0.0], [0.1745, 0.1745, 0.1745]], "bonds": [[[0.3489, 0.0, 0.0], [0.1745, -0.1745, -0.1745]], [[0.3489, 0.0, 0.0], [0.6511, 0.0, 0.0]], [[0.0, 0.0, 0.0], [-0.1745, 0.1745, -0.1745]]]}}
 net_def_9 = {"858-topos_nbo_nbo": {"totalAtomNumber": 6, "cell": [[2.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 2.0]], "groupName": "Im-3m", "nods": [[0.5, 0.5, 0.0]], "bonds": [[[-0.5, -0.5, 0.0], [0.0, -0.5, 0.0]]]}}
 
-class RandTopTest1(unittest.TestCase):
+class RandTop_Test1(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_1.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
@@ -50,7 +50,7 @@ class RandTopTest1(unittest.TestCase):
 
 
 
-class RandTopTest2(unittest.TestCase):
+class RandTop_Test2(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_2.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
@@ -59,7 +59,7 @@ class RandTopTest2(unittest.TestCase):
         self.assertTrue(np.all(self.net.multiplicities == [4,8,16]))
 
 
-class RandTopTest3(unittest.TestCase):
+class RandTop_Test3(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_3.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
@@ -86,7 +86,7 @@ class RandTopTest3(unittest.TestCase):
         self.assertTrue(allGood)
 
 
-class RandTopTest4(unittest.TestCase):
+class RandTop_Test4(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_4.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
@@ -113,7 +113,7 @@ class RandTopTest4(unittest.TestCase):
         self.assertTrue(allGood)
 
 
-class RandTopTest5(unittest.TestCase):
+class RandTop_Test5(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_5.items())[0]
         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])

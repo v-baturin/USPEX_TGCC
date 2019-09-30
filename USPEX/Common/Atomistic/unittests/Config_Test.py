@@ -15,7 +15,7 @@ from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from ..AtomisticConfig import AtomisticConfig
 
 
-class ConfigTest(unittest.TestCase):
+class Config_Test(unittest.TestCase):
 
     def setUp(self):
         #'data_2109-TOPOS_fmj_fmj'

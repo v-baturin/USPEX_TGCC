@@ -473,7 +473,7 @@ class AtomisticConfig(ChemicalConfig):
         :param composition:
         :return:
         '''
-        return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition))[0]).astype(int)
+        return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition), rcond=None)[0]).astype(int)
 
     def isGoodSystem(self, system : AtomicStructure) -> bool:
         '''

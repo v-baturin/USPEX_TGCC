@@ -4,7 +4,7 @@ import numpy as np
 from ..mol.zmatrix2coord import zmatrix2coord
 from ..mol.coord2Zmatrix import coord2Zmatrix
 
-class ZmatrixTest(unittest.TestCase):
+class Zmatrix_Test(unittest.TestCase):
     def test_both(self):
         coords = np.array([[-0.7906,  0.6960, -1.4100],
                            [-0.3037,  0.0847, -0.8378],
