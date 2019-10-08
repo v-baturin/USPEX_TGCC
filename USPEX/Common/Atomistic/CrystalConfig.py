@@ -15,7 +15,7 @@ class CrystalConfig(AtomisticConfig):
 
     '''
 
-    def __init__(self, isConstLattice : bool =False, latticeValues=None, **kwargs):
+    def __init__(self, isConstLattice : bool =False, latticeValues=None, xraydata=None, **kwargs):
         '''
 
         :param isConstLattice:
@@ -28,6 +28,7 @@ class CrystalConfig(AtomisticConfig):
         super(CrystalConfig, self).__init__(**kwargs)
         self.isConstLattice = isConstLattice
         self.latticeValues = latticeValues
+        self.xraydata = xraydata
 
     def isGoodSystem(self, SYSTEM) -> bool:
         '''
