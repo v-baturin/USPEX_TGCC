@@ -12,13 +12,13 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 
-FACTORS = [
+FACTORS = (
     5,              # fitness factor for I > 90
     1,              # fitness factor for 50 < I <= 90
     0.25,           # fitness factor for 10 < I <= 50
     0.02,           # fitness factor for 1 < I <= 10
     0               # fitness factor for I <= 1
-]
+)
 
 
 class SpectrumAnalyzer(object):
@@ -66,7 +66,7 @@ class SpectrumAnalyzer(object):
                     counter += 1
                     exp_matches.append(exp_index)
                     th_matches.append(th_index)
-                    factor = self.choose_factor(exp_intensity, FACTORS)
+                    factor = self.choose_factor(exp_intensity)
                     partial += factor * np.abs(exp_angle - th_angle) ** 2 / amplitude ** 2
                     partial += factor * np.abs(exp_intensity - th_intensity) ** 2 / 100 ** 2
             # average out in the case when multiple theoretical peaks match to the same experimental peak
@@ -80,13 +80,13 @@ class SpectrumAnalyzer(object):
 
         # experimental rest
         for angle, intensity in zip(exp_angles_rest, exp_intensities_rest):
-            factor = self.choose_factor(intensity, FACTORS)
+            factor = self.choose_factor(intensity)
             fitness += factor * angle ** 2 / amplitude ** 2
             fitness += factor * intensity ** 2 / 100 ** 2
 
         # theoretical rest
         for angle, intensity in zip(th_angles_rest, th_intensities_rest):
-            factor = self.choose_factor(intensity, FACTORS)
+            factor = self.choose_factor(intensity)
             fitness += factor * angle ** 2 / amplitude ** 2
             fitness += factor * intensity ** 2 / 100 ** 2
 
@@ -126,7 +126,7 @@ class SpectrumAnalyzer(object):
         return dct
 
     @staticmethod
-    def choose_factor(intensity : float, choices : list):
+    def choose_factor(intensity : float, choices=FACTORS):
         """
         Simple auxiliary function which selects a factor based on the value of intensity.
         :param intensity:
