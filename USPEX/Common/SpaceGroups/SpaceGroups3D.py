@@ -370,7 +370,7 @@ class Subgroups(Sequence):
         ind = ind - self.combinationRanges[combInd - 1] if combInd else ind
         sub_ind, rem_ind = self.combinations[combInd]
         subgroup_generators = [self.generators[i] for i in sub_ind]
-        remainder_generators = np.stack(self.generators[i] for i in rem_ind)
+        remainder_generators = np.stack(tuple(self.generators[i] for i in rem_ind))
         subgroup_dimensions = np.asarray(self.dimensions)[np.asarray(sub_ind)]
         remainder_dimensions = np.asarray(self.dimensions)[np.asarray(rem_ind)]
         dividers = remainder_dimensions.cumprod()

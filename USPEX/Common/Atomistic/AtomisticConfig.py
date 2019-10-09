@@ -13,6 +13,8 @@ import numpy as np
 
 from copy import copy
 from itertools import combinations_with_replacement, chain
+from ase.geometry import get_distances
+
 
 from ..Config import Config
 from .AtomicStructure import AtomicStructure
@@ -202,7 +204,7 @@ class ChemicalConfig(Config):
         '''
         return system.isGoodDistances(self.chemicalSymbols, self.minDistMatrice)
 
-    def isGoodCenterDistances(self, system : AtomicStructure, molSymbols) -> bool:
+    def isGoodCenterDistances(self, molSymbols, coordinates, cell, pbc=True) -> bool:
         '''
         Method which checks if the structure meet minimal molecular center distance constraint.
 
@@ -210,12 +212,11 @@ class ChemicalConfig(Config):
         :param molSymbols:
         :return:
         '''
-        if len(system) < 2:
-            return True
         indices = np.fromiter((self.symbols.index(symbol) for symbol in molSymbols), dtype=int)
-        cmDM = self.CenterminDistMatrice[np.meshgrid(indices, indices)]
+        cmDM = self.CenterminDistMatrice[tuple(np.meshgrid(indices, indices))]
         cmDM -= np.diag(np.diag(cmDM))
-        return np.all(system.get_all_distances(mic=np.any(system.atoms.get_pbc())) >= cmDM.T)
+        D, D_len = get_distances(np.dot(coordinates, cell), cell=cell, pbc=pbc)
+        return np.all(D_len >= cmDM.T)
 
     def isGoodLattice(self, system : AtomicStructure) -> bool:
         '''
@@ -474,6 +475,13 @@ class AtomisticConfig(ChemicalConfig):
         :return:
         '''
         return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition), rcond=None)[0]).astype(int)
+
+    def randomComposition(self):
+        while True:
+            numBlocks = np.fromiter((np.random.randint(low, high + 1) for low, high in self.fixed), dtype=int)
+            numIons = np.dot(numBlocks, self.blocks)
+            if np.sum(numIons) >= self.minAt and np.sum(numIons) <= self.maxAt:
+                return numIons
 
     def isGoodSystem(self, system : AtomicStructure) -> bool:
         '''
