@@ -6,6 +6,7 @@ import logging
 from ..AtomicStructure import AtomicStructure
 from ..Element import Element
 
+logger = logging.getLogger(__name__)
 
 def read_molecule(filename):
     '''
@@ -27,11 +28,11 @@ def read_molecule(filename):
             N_col = 8
             ind_mag = 8
             if 'charge' in name:  # GULP has one more line to specify charge
-                logging.info('This calculation uses charge model, currently only supported in GULP')
+                logger.info('This calculation uses charge model, currently only supported in GULP')
                 N_col += 1
                 ind_mag = 9
             if 'mag' in name:  # Magnetic moments are present on the last line
-                logging.info('This calculation uses predefined magnetic moments on {}'.format(name))
+                logger.info('This calculation uses predefined magnetic moments on {}'.format(name))
                 N_col += 1
 
             num = int(handle.readline().split()[-1])

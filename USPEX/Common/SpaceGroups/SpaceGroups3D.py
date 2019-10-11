@@ -16,6 +16,7 @@ with open('{}/decompositions.json'.format(HOMEPATH), 'rt') as f:
 TRANSLATIONS = np.array([[[1.0, 0.0, 0.0, 1.0],[0.0, 1.0, 0.0, 0.0],[0.0, 0.0, 1.0, 0.0],[0.0, 0.0, 0.0, 1.0]],
                          [[1.0, 0.0, 0.0, 0.0],[0.0, 1.0, 0.0, 1.0],[0.0, 0.0, 1.0, 0.0],[0.0, 0.0, 0.0, 1.0]],
                          [[1.0, 0.0, 0.0, 0.0],[0.0, 1.0, 0.0, 0.0],[0.0, 0.0, 1.0, 1.0],[0.0, 0.0, 0.0, 1.0]]])
+logger = logging.getLogger(__name__)
 
 
 def _generate_full_symmetry_ops(generators, supercell: tuple):
@@ -170,7 +171,7 @@ class Group(object):
             attempts -= 1
         assert len(_generate_full_symmetry_ops(self.generators, (1, 1, 1))) == len(self._operators)
         if not attempts:
-            logging.debug('Number of operators {} missmatches generators dimensions {}'.format(len(self.operators), self.dimensions))
+            logger.debug('Number of operators {} missmatches generators dimensions {}'.format(len(self.operators), self.dimensions))
 
 
     def getAllSubgroups(self, supercell: tuple):
@@ -365,7 +366,7 @@ class Subgroups(Sequence):
         :param ind: Index.
         :return: Group object of a subgroup.
         """
-        logging.debug('Trying {}th subgroup'.format(ind))
+        logger.debug('Trying {}th subgroup'.format(ind))
         combInd = (self.combinationRanges > ind).nonzero()[0][0]
         ind = ind - self.combinationRanges[combInd - 1] if combInd else ind
         sub_ind, rem_ind = self.combinations[combInd]

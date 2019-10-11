@@ -423,10 +423,7 @@ class AtomicStructure(object):
         Special method which allows correctly make a copy of current structure using 'copy()' operator.
         :return: A copy of the structure with conserving type of it.
         '''
-        dct = self.toDICT()
-        if 'ID' in dct:
-            del dct['ID']
-        return self.fromDICT(dct)
+        return self.fromDICT(self.toDICT())
 
     def translate_scaled(self, displacement):
         '''

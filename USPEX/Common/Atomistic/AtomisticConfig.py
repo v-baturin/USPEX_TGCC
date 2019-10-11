@@ -29,6 +29,7 @@ _MIN_ANGLE = 55
 # A minimal angle between the vector defining the lattice and the
 # diagonal of the parallelogram formed by other 2 vectors defining the lattice
 _MIN_DIAG_ANGLE = 30
+logger = logging.getLogger(__name__)
 
 
 class ChemicalConfig(Config):
@@ -399,7 +400,7 @@ class AtomisticConfig(ChemicalConfig):
             assert isinstance(magRatio, list) and sum(magRatio) > 0
             if not np.isclose(sum(magRatio), 1.0):
                 magRatio = np.array(magRatio) / sum(magRatio)
-                logging.info('magRatio has been rescaled.')
+                logger.info('magRatio has been rescaled.')
             self.magRatio = np.array(magRatio)
         else:
             self.magRatio = np.array([1, 0, 0, 0, 0, 0, 0])
