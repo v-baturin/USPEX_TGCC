@@ -16,6 +16,8 @@ class System(object):
     '''
 
     _newID = 0
+    _isBad = False
+
 
     def __init__(self, **kwargs):
         super(System, self).__init__(**kwargs)
@@ -33,6 +35,12 @@ class System(object):
 
     def __hash__(self):
         return hash(self.ID)
+
+    def markBad(self):
+        self._isBad = True
+
+    def isBad(self):
+        return self._isBad
 
     ############################################
     # Code responds for serialization
