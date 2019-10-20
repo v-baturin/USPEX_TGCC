@@ -507,15 +507,15 @@ class AtomicStructure(object):
             del dct['lastUsedModeIter']
         return dct
 
-    @staticmethod
-    def fromJSON(repr : str):
+    @classmethod
+    def fromJSON(cls, repr : str):
         '''
         Method which reconstructs AtoimicStructure from JSON representation.
 
         :param repr: String with JSON representation of the structure.
         '''
         dct = json.loads(repr)
-        return AtomicStructure.fromDICT(dct)
+        return cls.fromDICT(dct)
 
     @classmethod
     def fromDICT(cls, dct : dict):
