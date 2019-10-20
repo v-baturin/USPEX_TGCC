@@ -18,12 +18,12 @@ class Worker(object):
     # if not cls.workers:
     #     cls.loop.stop()
 
-    @classmethod
-    def save(cls):
+    @staticmethod
+    def save():
         with open('workers.dump', 'wb') as f:
-            pcl.dump(cls.workers, f)
+            pcl.dump(Worker.workers, f)
 
-    @classmethod
-    def load(cls):
+    @staticmethod
+    def load():
         with open('workers.dump', 'rb') as f:
-            cls.workers = pcl.load(f)
+            Worker.workers = pcl.load(f)
