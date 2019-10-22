@@ -11,6 +11,8 @@ RMAX_DEFAULT = 10.0
 SIGMA_DEFAULT = 0.03
 DELTA_DEFAULT = 0.08
 
+TOLERANCE_DEFAULT = 0.008
+
 import numpy as np
 from .make_matrices import make_matrices, fp_weight
 from .fingerprint import fingerprint

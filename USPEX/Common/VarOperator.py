@@ -12,6 +12,8 @@ from abc import ABCMeta, abstractmethod
 
 from USPEX.Common.Config import Config
 
+MAX_OUTPUT_SIZE = 8
+
 
 class VarOperator(object):
     '''
@@ -23,7 +25,7 @@ class VarOperator(object):
     name = None
     isActive = True
 
-    def __init__(self, config : Config, initFrac : float, minFrac : float=0.1, maxFrac : float=1.0):
+    def __init__(self, config : Config, initFrac : float, minFrac : float=0.1, maxFrac : float=1.0, maxOutputSize : int=MAX_OUTPUT_SIZE):
         '''
 
         :param config:
@@ -39,6 +41,10 @@ class VarOperator(object):
         self._minimalFraction = minFrac
         self._maximalFraction = maxFrac
         self._initialFraction = initFrac
+        self._MAX_OUTPUT_SIZE = int(maxOutputSize)
+
+    def __str__(self):
+        return self.name
 
     @property
     def initialFraction(self):
@@ -51,6 +57,10 @@ class VarOperator(object):
     @property
     def maximalFraction(self):
         return self._maximalFraction
+
+    @property
+    def maxOutputSize(self) -> int:
+        return self._MAX_OUTPUT_SIZE
 
     def __hash__(self):
         return hash(self.name)

@@ -31,6 +31,12 @@ _MIN_ANGLE = 55
 _MIN_DIAG_ANGLE = 30
 logger = logging.getLogger(__name__)
 
+# Deafult fingerprints tolerance
+_DEFAULT_FINGERPRINT_TOLERANCE = 0.008
+
+# Default symmetry tolerance
+_DEFAULT_SYMMETRY_TOLERANCE = 0.05
+
 
 class ChemicalConfig(Config):
     '''
@@ -349,8 +355,8 @@ class AtomisticConfig(ChemicalConfig):
     isFixedComposition = None
     fingerprints = None
 
-    def __init__(self, blocks=None, fixed=None, minAt=None, maxAt=None, fingerprints : dict = None,
-                 magRatio=None, magSymm=None, **kwargs):
+    def __init__(self, blocks=None, fixed=None, minAt=None, maxAt=None, fingerprints : dict=None,
+                 magRatio=None, magSymm=None, sym_tolerance=None, **kwargs):
         '''
         :param symbols: [formula1, formula2, ...]
                         where formula* is str - list of chemical formulas
@@ -390,10 +396,8 @@ class AtomisticConfig(ChemicalConfig):
             magSymm = {}
             default = [i for i in chain(range(21, 31), range(39, 49))]   #first 2 rows of transition metals
             for symbol in self.symbols:
-                if 'MOL' in symbol:
-                    magSymm[symbol] = [0] # use magnetic moments in the MOL file, if present, otherwise set them to zero
-                else:
-                    magSymm[symbol] = int(Element(symbol).z in default)
+                # use magnetic moments in the MOL file, if present, otherwise set them to zero
+                magSymm[symbol] = [0] if 'MOL' in symbol else int(Element(symbol).z in default)
         self.magSymm = magSymm
 
         if magRatio is not None:
@@ -405,13 +409,26 @@ class AtomisticConfig(ChemicalConfig):
         else:
             self.magRatio = np.array([1, 0, 0, 0, 0, 0, 0])
 
-        if fingerprints is not None:
-            self.fingerprints = copy(fingerprints)
-        else:
-            self.fingerprints = {}
-
+        self.fingerprints = copy(fingerprints) if fingerprints is not None else {}
         if 'tolerance' not in self.fingerprints:
-            self.fingerprints['tolerance'] = 0.008
+            self.fingerprints['tolerance'] = _DEFAULT_FINGERPRINT_TOLERANCE
+
+        if sym_tolerance is not None:
+            if isinstance(sym_tolerance, str):
+                if 'high' in sym_tolerance:
+                    self.sym_tolerance = 0.05
+                elif 'medium' in sym_tolerance:
+                    self.sym_tolerance = 0.1
+                elif 'low' in sym_tolerance:
+                    self.sym_tolerance = 0.2
+                else:
+                    self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
+            elif isinstance(sym_tolerance, (float, int)):
+                self.sym_tolerance = float(sym_tolerance)
+            else:
+                self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
+        else:
+            self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
 
     def toDICT(self):
         '''

@@ -8,128 +8,60 @@
 '''
 
 
-import unittest
 
+import unittest
+import os
+
+from ase.io.vasp import read_vasp
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 
 from ..AtomisticConfig import AtomisticConfig
+
+PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 
 
 class Config_Test(unittest.TestCase):
 
     def setUp(self):
         #'data_2109-TOPOS_fmj_fmj'
-        self.system1 = AtomicStructure(symbols=['Mg', 'Mg', 'Mg', 'Mg', 'Al', 'Al', 'Al', 'Al', 'Al', 'Al', 'Al', 'Al',
-                                      'O','O','O','O','O','O','O','O','O','O','O','O','O','O','O','O'],
-                                       cell=[[  1.91938274e+00,   0.00000000e+00,   0.00000000e+00],
-                                 [  1.17528296e-16,   1.91938274e+00,   0.00000000e+00],
-                                 [  1.66210206e-16,   1.66210206e-16,   2.71441865e+00]],
-                                       scaled_positions=[[  1.20000000e-04,   6.66770000e-01,   3.33430000e-01],
-                                             [  1.20000000e-04,   3.33450000e-01,   6.66790000e-01],
-                                             [  1.20000000e-04,   3.33430000e-01,   3.33430000e-01],
-                                             [  1.20000000e-04,   6.66790000e-01,   6.66790000e-01],
-                                             [  5.00120000e-01,   8.33450000e-01,   1.66790000e-01],
-                                             [  5.00120000e-01,   1.66770000e-01,   8.33430000e-01],
-                                             [  2.50100000e-01,   7.50120000e-01,   2.50120000e-01],
-                                             [  7.50120000e-01,   7.50120000e-01,   2.50120000e-01],
-                                             [  2.50100000e-01,   2.50100000e-01,   7.50100000e-01],
-                                             [  7.50120000e-01,   2.50100000e-01,   7.50100000e-01],
-                                             [  5.00120000e-01,   1.20000000e-04,   1.20000000e-04],
-                                             [  1.20000000e-04,   5.00120000e-01,   5.00120000e-01],
-                                             [  1.66790000e-01,   1.20000000e-04,   1.66790000e-01],
-                                             [  8.33430000e-01,   1.20000000e-04,   1.66790000e-01],
-                                             [  1.66790000e-01,   1.00000000e-04,   8.33430000e-01],
-                                             [  8.33430000e-01,   1.00000000e-04,   8.33430000e-01],
-                                             [  3.33430000e-01,   5.00100000e-01,   3.33430000e-01],
-                                             [  6.66790000e-01,   5.00100000e-01,   3.33430000e-01],
-                                             [  3.33430000e-01,   5.00120000e-01,   6.66790000e-01],
-                                             [  6.66790000e-01,   5.00120000e-01,   6.66790000e-01],
-                                             [  2.50120000e-01,   2.50120000e-01,   2.50120000e-01],
-                                             [  7.50100000e-01,   2.50120000e-01,   2.50120000e-01],
-                                             [  2.50120000e-01,   7.50100000e-01,   7.50100000e-01],
-                                             [  7.50100000e-01,   7.50100000e-01,   7.50100000e-01],
-                                             [  1.20000000e-04,   1.20000000e-04,   1.20000000e-04],
-                                             [  5.00120000e-01,   5.00120000e-01,   5.00120000e-01],
-                                             [  5.00120000e-01,   1.66790000e-01,   1.66790000e-01],
-                                             [  5.00120000e-01,   8.33430000e-01,   8.33430000e-01]])
-        self.system2 = AtomicStructure(symbols=['Mg', 'O'],
-                                       cell=[[1.91938274e+00, 0.00000000e+00, 0.00000000e+00],
-                                 [1.17528296e-16, 1.91938274e+00, 0.00000000e+00],
-                                 [1.66210206e-16, 1.66210206e-16, 2.71441865e+00]],
-                                       scaled_positions=[[  1.20000000e-04,   6.66770000e-01,   3.33430000e-01],
-                                             [  1.20000000e-04,   3.33430000e-01,   3.33430000e-01]])
-        self.system3 = AtomicStructure(symbols=['Na', 'Cl'],
-                                       cell=[[1.91938274e+00, 0.00000000e+00, 0.00000000e+00],
-                                 [1.17528296e-16, 1.91938274e+00, 0.00000000e+00],
-                                 [1.66210206e-16, 1.66210206e-16, 2.71441865e+00]],
-                                       scaled_positions=[[  1.20000000e-04,   6.66770000e-01,   3.33430000e-01],
-                                             [  1.20000000e-04,   3.33430000e-01,   3.33430000e-01]])
-        #'data_2196-TOPOS_ofp_ofp'
-        self.system4 = AtomicStructure(symbols=['Mg', 'Mg', 'Mg', 'Mg', 'Mg', 'Mg', 'Mg', 'Mg',
-                                    'Al','Al','Al','Al','Al','Al','Al','Al','Al','Al','Al','Al','Al','Al','Al','Al',
-                                    'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O',
-                                    'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],
-                                       cell=[[  9.41036029e-01,   0.00000000e+00,   0.00000000e+00],
-                                 [  1.72865514e-16,   2.82310809e+00,   0.00000000e+00],
-                                 [  2.30487352e-16,   2.30487352e-16,   3.76414412e+00]],
-                                       scaled_positions=[[  5.00120000e-01,   1.66773333e-01,   1.10000000e-04],
-                                             [  1.20000000e-04,   1.06666667e-04,   2.50110000e-01],
-                                             [  5.00120000e-01,   1.66773333e-01,   5.00110000e-01],
-                                             [  1.20000000e-04,   1.06666667e-04,   7.50110000e-01],
-                                             [  5.00120000e-01,   8.33440000e-01,   1.10000000e-04],
-                                             [  1.20000000e-04,   6.66773333e-01,   2.50110000e-01],
-                                             [  5.00120000e-01,   8.33440000e-01,   5.00110000e-01],
-                                             [  1.20000000e-04,   6.66773333e-01,   7.50110000e-01],
-                                             [  6.66790000e-01,   1.11216667e-01,   8.34450000e-02],
-                                             [  1.66790000e-01,   2.77883333e-01,   3.33445000e-01],
-                                             [  1.20000000e-04,   1.66773333e-01,   1.25110000e-01],
-                                             [  5.00120000e-01,   1.06666667e-04,   3.75110000e-01],
-                                             [  6.66790000e-01,   1.11216667e-01,   5.83445000e-01],
-                                             [  1.66790000e-01,   2.77883333e-01,   8.33445000e-01],
-                                             [  1.20000000e-04,   1.66773333e-01,   6.25110000e-01],
-                                             [  5.00120000e-01,   1.06666667e-04,   8.75110000e-01],
-                                             [  6.66790000e-01,   7.77883333e-01,   8.34450000e-02],
-                                             [  1.66790000e-01,   9.44550000e-01,   3.33445000e-01],
-                                             [  1.20000000e-04,   8.33440000e-01,   1.25110000e-01],
-                                             [  5.00120000e-01,   6.66773333e-01,   3.75110000e-01],
-                                             [  6.66790000e-01,   7.77883333e-01,   5.83445000e-01],
-                                             [  1.66790000e-01,   9.44550000e-01,   8.33445000e-01],
-                                             [  1.20000000e-04,   8.33440000e-01,   6.25110000e-01],
-                                             [  5.00120000e-01,   6.66773333e-01,   8.75110000e-01],
-                                             [  1.66790000e-01,   5.56633333e-02,   1.66775000e-01],
-                                             [  6.66790000e-01,   2.22330000e-01,   4.16775000e-01],
-                                             [  8.33450000e-01,   2.77883333e-01,   1.66775000e-01],
-                                             [  3.33450000e-01,   1.11216667e-01,   4.16775000e-01],
-                                             [  3.33450000e-01,   2.22330000e-01,   8.34450000e-02],
-                                             [  8.33450000e-01,   5.56633333e-02,   3.33445000e-01],
-                                             [  5.00120000e-01,   1.06666667e-04,   1.25110000e-01],
-                                             [  1.20000000e-04,   1.66773333e-01,   3.75110000e-01],
-                                             [  1.66790000e-01,   5.56633333e-02,   6.66775000e-01],
-                                             [  6.66790000e-01,   2.22330000e-01,   9.16775000e-01],
-                                             [  8.33450000e-01,   2.77883333e-01,   6.66775000e-01],
-                                             [  3.33450000e-01,   1.11216667e-01,   9.16775000e-01],
-                                             [  3.33450000e-01,   2.22330000e-01,   5.83445000e-01],
-                                             [  8.33450000e-01,   5.56633333e-02,   8.33445000e-01],
-                                             [  5.00120000e-01,   1.06666667e-04,   6.25110000e-01],
-                                             [  1.20000000e-04,   1.66773333e-01,   8.75110000e-01],
-                                             [  1.66790000e-01,   7.22330000e-01,   1.66775000e-01],
-                                             [  6.66790000e-01,   8.88996667e-01,   4.16775000e-01],
-                                             [  8.33450000e-01,   9.44550000e-01,   1.66775000e-01],
-                                             [  3.33450000e-01,   7.77883333e-01,   4.16775000e-01],
-                                             [  3.33450000e-01,   8.88996667e-01,   8.34450000e-02],
-                                             [  8.33450000e-01,   7.22330000e-01,   3.33445000e-01],
-                                             [  5.00120000e-01,   6.66773333e-01,   1.25110000e-01],
-                                             [  1.20000000e-04,   8.33440000e-01,   3.75110000e-01],
-                                             [  1.66790000e-01,   7.22330000e-01,   6.66775000e-01],
-                                             [  6.66790000e-01,   8.88996667e-01,   9.16775000e-01],
-                                             [  8.33450000e-01,   9.44550000e-01,   6.66775000e-01],
-                                             [  3.33450000e-01,   7.77883333e-01,   9.16775000e-01],
-                                             [  3.33450000e-01,   8.88996667e-01,   5.83445000e-01],
-                                             [  8.33450000e-01,   7.22330000e-01,   8.33445000e-01],
-                                             [  5.00120000e-01,   6.66773333e-01,   6.25110000e-01],
-                                             [  1.20000000e-04,   8.33440000e-01,   8.75110000e-01]])
+
+        tmp = read_vasp('{}/system1.vasp'.format(PATH_WITH_TESTS))
+        self.system1 = AtomicStructure(symbols=tmp.get_chemical_symbols(),
+                                       scaled_positions=tmp.get_scaled_positions(),
+                                       cell=tmp.get_cell())
+        tmp = read_vasp('{}/system2.vasp'.format(PATH_WITH_TESTS))
+        self.system2 = AtomicStructure(symbols=tmp.get_chemical_symbols(),
+                                       scaled_positions=tmp.get_scaled_positions(),
+                                       cell=tmp.get_cell())
+        tmp = read_vasp('{}/system3.vasp'.format(PATH_WITH_TESTS))
+        self.system3 = AtomicStructure(symbols=tmp.get_chemical_symbols(),
+                                       scaled_positions=tmp.get_scaled_positions(),
+                                       cell=tmp.get_cell())
+        tmp = read_vasp('{}/system4.vasp'.format(PATH_WITH_TESTS))
+        self.system4 = AtomicStructure(symbols=tmp.get_chemical_symbols(),
+                                       scaled_positions=tmp.get_scaled_positions(),
+                                       cell=tmp.get_cell())
+
+        tmp = read_vasp('{}/system4.vasp'.format(PATH_WITH_TESTS))
+        self.system4 = AtomicStructure(symbols=tmp.get_chemical_symbols(),
+                                       scaled_positions=tmp.get_scaled_positions(),
+                                       cell=tmp.get_cell())
+
+        tmp = read_vasp('{}/diamond8.vasp'.format(PATH_WITH_TESTS))
+        self.diamond8 = AtomicStructure(symbols=tmp.get_chemical_symbols(),
+                                       scaled_positions=tmp.get_scaled_positions(),
+                                       cell=tmp.get_cell())
+        tmp = read_vasp('{}/dia_2x2x2.vasp'.format(PATH_WITH_TESTS))
+        self.dia_2x2x2 = AtomicStructure(symbols=tmp.get_chemical_symbols(),
+                                       scaled_positions=tmp.get_scaled_positions(),
+                                       cell=tmp.get_cell())
+
+
 
     def test_fixed(self):
+        '''
+        MgAlO-system
+        '''
         config = AtomisticConfig(symbols=['Mg', 'Al', 'O'], blocks=[[4,8,16]], fixed=[[1,1]])
         self.assertTrue(config.isGoodComposition(self.system1))
         self.assertFalse(config.isGoodComposition(self.system2))
@@ -142,3 +74,13 @@ class Config_Test(unittest.TestCase):
         self.assertFalse(config.isGoodComposition(self.system2))
         self.assertFalse(config.isGoodComposition(self.system3))
         self.assertFalse(config.isGoodComposition(self.system4))
+
+
+    def test_problem_1(self):
+        config = AtomisticConfig(symbols=['Si'], blocks=[[8]], fixed=[[1, 1]])
+        self.assertTrue(config.isGoodSystem(self.diamond8))
+
+    def test_problem_2(self):
+        config = AtomisticConfig(symbols=['Si'], blocks=[[16]], fixed=[[1, 1]])
+        self.assertTrue(config.isGoodSystem(self.dia_2x2x2))
+
