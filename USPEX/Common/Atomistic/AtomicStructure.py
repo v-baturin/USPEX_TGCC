@@ -40,7 +40,6 @@ class AtomicStructure(object):
     forces = None
     _pressureTensor = None
     dimension = None
-    notes = {}
 
     def __init__(self, molecules=[], symbols=None, positions=None, scaled_positions=None, cell=None, pbc=None, info=None,
                  optimizeLattice=False, magmoms=None):
