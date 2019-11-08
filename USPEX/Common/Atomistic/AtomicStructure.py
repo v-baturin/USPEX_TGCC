@@ -58,7 +58,7 @@ class AtomicStructure(object):
                     s = s.symbol
                 if s in ['H.5', 'H.75', 'H1.25', 'H1.5']:
                     symbols[i] = 'H'
-                self._chemicalSymbols.append(s)
+                self._chemicalSymbols.append(str(s))
             self.atoms = Atoms(symbols=symbols, scaled_positions=scaled_positions,
                                            positions=positions, pbc=pbc, cell=cell, info=info)
             if optimizeLattice:
@@ -367,45 +367,31 @@ class AtomicStructure(object):
         CN = np.fromiter((len(neighbours) for neighbours in find_pair(molecule.coordinates, radiu)), dtype = int)
         return CN
 
-    #TODO split and get rid of stochasticty
-    def RotInertia(self,i):
-        '''
-        Very ugly method which does several things.
-        First rotates molecule around principle axes on random values.
-        Then translates ot to random offset.
-        And finally rotates flexible dihedrals on random values.
-
-        :param i: Molecule index.
-        '''
+    def rotatePrinciple(self, i, axis, angle):
+        assert axis < 3
         molecule = self.molecules[i]
         molecule.set_masses([1] * len(molecule))
         values, vectors = molecule.get_moments_of_inertia(vectors=True)
-        #b(1,1) =0 for linear chain molecules, thus two rotational variables
-        if values[0] < 0.0001:
-            ref = values[1]
-        else:
-            ref = values[0]
+        ref = np.max(values)
+        value = values[axis]
+        vector = vectors[axis]
+        if value > 0.0001:
+            angle *= ref/value
+            molecule.rotate(vector,angle)
+        positions = self.atoms.arrays.get('positions')
+        assert len(positions[self._molecules[i]]) == len(molecule.get_positions())
+        positions[self._molecules[i]] = molecule.get_positions()
 
-        for value, vector in zip(values, vectors):
-            if value > 0.0001:
-                angle = ( np.pi/2*np.random.random_sample() - np.pi/4)*ref/value
-                molecule.rotate(vector,angle)
-
-        molecule.translate(np.random.random_sample(3)-0.5)
-
+    def rotateFlexDiherdal(self, i, j, angle):
+        assert j < len(self.flex_dihedral[i])
+        molecule = self.molecules[i]
         zmatrix=coord2Zmatrix(molecule.coordinates, np.asarray(self.format[i], dtype=int))
-
-        if len(self.flex_dihedral[i]) > 0:
-            goodRot = 0
-
-            molecule_mod = copy.deepcopy(molecule)
-            while not goodRot:
-                for j in self.flex_dihedral[i]:
-                    zmatrix[j,2] = zmatrix[j,2] + ( np.pi*np.random.random_sample() - np.pi/2)
-                molecule_mod.set_positions(zmatrix2coord(zmatrix, np.asarray(self.format[i], dtype=int)))
-                if np.array_equal(molecule.molecule_CN(0),molecule_mod.molecule_CN(0)):
-                    goodRot = 1
-            molecule.set_positions(molecule_mod.get_positions())
+        molecule_mod = copy.deepcopy(molecule)
+        zmatrix[self.flex_dihedral[i][j],2] += angle
+        molecule_mod.set_positions(zmatrix2coord(zmatrix, np.asarray(self.format[i], dtype=int)))
+        if not np.array_equal(molecule.molecule_CN(0),molecule_mod.molecule_CN(0)):
+            raise RuntimeError("CN mismatch")
+        molecule.set_positions(molecule_mod.get_positions())
         positions = self.atoms.arrays.get('positions')
         assert len(positions[self._molecules[i]]) == len(molecule.get_positions())
         positions[self._molecules[i]] = molecule.get_positions()
@@ -437,10 +423,7 @@ class AtomicStructure(object):
         Special method which allows correctly make a copy of current structure using 'copy()' operator.
         :return: A copy of the structure with conserving type of it.
         '''
-        dct = self.toDICT()
-        if 'ID' in dct:
-            del dct['ID']
-        return self.fromDICT(dct)
+        return self.fromDICT(self.toDICT())
 
     def translate_scaled(self, displacement):
         '''
@@ -462,14 +445,14 @@ class AtomicStructure(object):
         if len(self.atoms) < 2:
             return True
         indices = np.fromiter((symbols.index(symbol) for symbol in self._chemicalSymbols), dtype=int)
-        mDM = minDistMatrix[np.meshgrid(indices, indices)]
+        mDM = minDistMatrix[tuple(np.meshgrid(indices, indices))]
         for inds, molecule in zip(self._molecules, self.molecules):
             if len(inds) == 1:
                 mDM[inds[0], inds[0]] = 0
             else:
-                minDist = mDM[np.meshgrid(inds, inds)]
+                minDist = mDM[tuple(np.meshgrid(inds, inds))]
                 molDist = molecule.get_all_distances(mic = False) - 0.02
-                mDM[np.meshgrid(inds, inds)] = np.minimum(minDist, molDist)
+                mDM[tuple(np.meshgrid(inds, inds))] = np.minimum(minDist, molDist)
         return np.all(self.get_all_distances(mic=np.any(self.atoms.get_pbc())) >= mDM.T)
 
     def toJSON(self) -> str:
@@ -524,15 +507,15 @@ class AtomicStructure(object):
             del dct['lastUsedModeIter']
         return dct
 
-    @staticmethod
-    def fromJSON(repr : str):
+    @classmethod
+    def fromJSON(cls, repr : str):
         '''
         Method which reconstructs AtoimicStructure from JSON representation.
 
         :param repr: String with JSON representation of the structure.
         '''
         dct = json.loads(repr)
-        return AtomicStructure.fromDICT(dct)
+        return cls.fromDICT(dct)
 
     @classmethod
     def fromDICT(cls, dct : dict):

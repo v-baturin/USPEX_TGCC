@@ -13,6 +13,8 @@ import numpy as np
 
 from copy import copy
 from itertools import combinations_with_replacement, chain
+from ase.geometry import get_distances
+
 
 from ..Config import Config
 from .AtomicStructure import AtomicStructure
@@ -27,6 +29,13 @@ _MIN_ANGLE = 55
 # A minimal angle between the vector defining the lattice and the
 # diagonal of the parallelogram formed by other 2 vectors defining the lattice
 _MIN_DIAG_ANGLE = 30
+logger = logging.getLogger(__name__)
+
+# Deafult fingerprints tolerance
+_DEFAULT_FINGERPRINT_TOLERANCE = 0.008
+
+# Default symmetry tolerance
+_DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
 
 class ChemicalConfig(Config):
@@ -155,7 +164,7 @@ class ChemicalConfig(Config):
 
         :return: Dictionary representing the config.
         '''
-        dct = super().toDICT()
+        dct = copy(self.__dict__)
         dct['goodBonds'] = dct['goodBonds'].tolist()
         dct['valences'] = dct['valences'].tolist()
         dct['valenceElectrons'] = dct['valenceElectrons'].tolist()
@@ -175,7 +184,9 @@ class ChemicalConfig(Config):
         dct['valenceElectrons'] = np.asarray(dct['valenceElectrons'])
         dct['minDistMatrice'] = np.asarray(dct['minDistMatrice'])
         dct['CenterminDistMatrice'] = np.asarray(dct['CenterminDistMatrice'])
-        return super().fromDICT(dct)
+        config = cls(symbols=[])
+        config.__dict__ = copy(dct)
+        return config
 
     def minVectorLength(self, system : AtomicStructure) -> float:
         '''
@@ -200,7 +211,7 @@ class ChemicalConfig(Config):
         '''
         return system.isGoodDistances(self.chemicalSymbols, self.minDistMatrice)
 
-    def isGoodCenterDistances(self, system : AtomicStructure, molSymbols) -> bool:
+    def isGoodCenterDistances(self, molSymbols, coordinates, cell, pbc=True) -> bool:
         '''
         Method which checks if the structure meet minimal molecular center distance constraint.
 
@@ -208,12 +219,11 @@ class ChemicalConfig(Config):
         :param molSymbols:
         :return:
         '''
-        if len(system) < 2:
-            return True
         indices = np.fromiter((self.symbols.index(symbol) for symbol in molSymbols), dtype=int)
-        cmDM = self.CenterminDistMatrice[np.meshgrid(indices, indices)]
+        cmDM = self.CenterminDistMatrice[tuple(np.meshgrid(indices, indices))]
         cmDM -= np.diag(np.diag(cmDM))
-        return np.all(system.get_all_distances(mic=np.any(system.atoms.get_pbc())) >= cmDM.T)
+        D, D_len = get_distances(np.dot(coordinates, cell), cell=cell, pbc=pbc)
+        return np.all(D_len >= cmDM.T)
 
     def isGoodLattice(self, system : AtomicStructure) -> bool:
         '''
@@ -345,8 +355,8 @@ class AtomisticConfig(ChemicalConfig):
     isFixedComposition = None
     fingerprints = None
 
-    def __init__(self, blocks=None, fixed=None, minAt=None, maxAt=None, fingerprints : dict = None,
-                 magRatio=None, magSymm=None, **kwargs):
+    def __init__(self, blocks=None, fixed=None, minAt=None, maxAt=None, fingerprints : dict=None,
+                 magRatio=None, magSymm=None, sym_tolerance=None, **kwargs):
         '''
         :param symbols: [formula1, formula2, ...]
                         where formula* is str - list of chemical formulas
@@ -386,28 +396,39 @@ class AtomisticConfig(ChemicalConfig):
             magSymm = {}
             default = [i for i in chain(range(21, 31), range(39, 49))]   #first 2 rows of transition metals
             for symbol in self.symbols:
-                if 'MOL' in symbol:
-                    magSymm[symbol] = [0] # use magnetic moments in the MOL file, if present, otherwise set them to zero
-                else:
-                    magSymm[symbol] = int(Element(symbol).z in default)
+                # use magnetic moments in the MOL file, if present, otherwise set them to zero
+                magSymm[symbol] = [0] if 'MOL' in symbol else int(Element(symbol).z in default)
         self.magSymm = magSymm
 
         if magRatio is not None:
             assert isinstance(magRatio, list) and sum(magRatio) > 0
             if not np.isclose(sum(magRatio), 1.0):
                 magRatio = np.array(magRatio) / sum(magRatio)
-                logging.info('magRatio has been rescaled.')
+                logger.info('magRatio has been rescaled.')
             self.magRatio = np.array(magRatio)
         else:
             self.magRatio = np.array([1, 0, 0, 0, 0, 0, 0])
 
-        if fingerprints is not None:
-            self.fingerprints = copy(fingerprints)
-        else:
-            self.fingerprints = {}
-
+        self.fingerprints = copy(fingerprints) if fingerprints is not None else {}
         if 'tolerance' not in self.fingerprints:
-            self.fingerprints['tolerance'] = 0.008
+            self.fingerprints['tolerance'] = _DEFAULT_FINGERPRINT_TOLERANCE
+
+        if sym_tolerance is not None:
+            if isinstance(sym_tolerance, str):
+                if 'high' in sym_tolerance:
+                    self.sym_tolerance = 0.05
+                elif 'medium' in sym_tolerance:
+                    self.sym_tolerance = 0.1
+                elif 'low' in sym_tolerance:
+                    self.sym_tolerance = 0.2
+                else:
+                    self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
+            elif isinstance(sym_tolerance, (float, int)):
+                self.sym_tolerance = float(sym_tolerance)
+            else:
+                self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
+        else:
+            self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
 
     def toDICT(self):
         '''
@@ -471,7 +492,14 @@ class AtomisticConfig(ChemicalConfig):
         :param composition:
         :return:
         '''
-        return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition))[0]).astype(int)
+        return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition), rcond=None)[0]).astype(int)
+
+    def randomComposition(self):
+        while True:
+            numBlocks = np.fromiter((np.random.randint(low, high + 1) for low, high in self.fixed), dtype=int)
+            numIons = np.dot(numBlocks, self.blocks)
+            if np.sum(numIons) >= self.minAt and np.sum(numIons) <= self.maxAt:
+                return numIons
 
     def isGoodSystem(self, system : AtomicStructure) -> bool:
         '''
