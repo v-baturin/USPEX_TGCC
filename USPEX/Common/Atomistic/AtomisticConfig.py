@@ -95,13 +95,7 @@ class ChemicalConfig(Config):
         indexes = np.unique(chemicalSymbols, return_index=True)[1]  # alphabetical reordering is not wanted!
         self.chemicalSymbols = [chemicalSymbols[index] for index in sorted(indexes)]
 
-        if volumeType is None:
-            if self.molecules:
-                self.volumeType = 'mol'
-            else:
-                self.volumeType = 'atom'
-        else:
-            self.volumeType = volumeType
+        self.volumeType = ('mol' if self.molecules else 'atom') if not volumeType else volumeType
 
 
         if goodBonds is not None:
