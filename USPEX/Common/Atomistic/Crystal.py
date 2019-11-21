@@ -22,6 +22,9 @@ class Crystal(AtomicStructure):
 
     dimension = 3
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, pbc = [True, True, True], **kwargs)
+
     @property
     def symmetry(self):
         '''

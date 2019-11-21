@@ -333,6 +333,14 @@ class AtomicStructure(object):
         '''
         return None if self._pressureTensor is None else self._pressureTensor.copy()
 
+    @property
+    def covalentRadii(self):
+        '''
+        Property-method for calculating covalent radii of atoms.
+        :return:
+        '''
+        return np.fromiter((Element(atom).covalent_radius for atom in self.get_chemical_symbols()), dtype=float)
+
     def principleAxis(self):
         '''
         Method whSich calculates principle axes of the structure.
@@ -454,6 +462,25 @@ class AtomicStructure(object):
                 molDist = molecule.get_all_distances(mic = False) - 0.02
                 mDM[tuple(np.meshgrid(inds, inds))] = np.minimum(minDist, molDist)
         return np.all(self.get_all_distances(mic=np.any(self.atoms.get_pbc())) >= mDM.T)
+
+    def isMoleculesDistinct(self) -> bool:
+        '''
+        Method which checks if molecules does not interpenetrate each other.
+        Algorithm is as follows. For each atom distances to every other atom are calculated
+        and then normalized over sum of covalent radii. The atom with shortest such distance should be in the same molecule
+        as first one.
+        :return true if check passed, false otherwise:
+        '''
+        actualMinDistances = self.get_all_distances(mic=np.any(self.atoms.get_pbc()))
+        noPbcMinDistances =  self.get_all_distances(mic=False)
+        normalizedMinDistances = actualMinDistances/(self.covalentRadii.reshape(-1,1) + self.covalentRadii.reshape(1,-1))
+        for inds in self._molecules:
+            if len(inds) > 1:
+                for i in inds:
+                    j = np.argsort(normalizedMinDistances[i])[1]
+                    if (j not in inds) or (not np.isclose(actualMinDistances[i,j], noPbcMinDistances[i,j])):
+                        return False
+        return True
 
     def toJSON(self) -> str:
         '''

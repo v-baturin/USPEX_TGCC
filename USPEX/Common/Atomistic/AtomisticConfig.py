@@ -58,7 +58,7 @@ class ChemicalConfig(Config):
 
     def __init__(self, symbols : list, volumeType : str=None, ionDistances : dict=None, goodBonds : list=None,
                  valences : list=None, minVectorLength : int=None, valenceElectrons : list=None,
-                 externalPressure : float=0.0001, MolCenters : dict=None, **kwargs):
+                 externalPressure : float=0.0001, moleculesDistinctCheck = True, MolCenters : dict=None, **kwargs):
         '''
 
         :param symbols:
@@ -95,13 +95,7 @@ class ChemicalConfig(Config):
         indexes = np.unique(chemicalSymbols, return_index=True)[1]  # alphabetical reordering is not wanted!
         self.chemicalSymbols = [chemicalSymbols[index] for index in sorted(indexes)]
 
-        if volumeType is None:
-            if len(self.symbols) != len(self.chemicalSymbols):
-                self.volumeType = 'mol'
-            else:
-                self.volumeType = 'atom'
-        else:
-            self.volumeType = volumeType
+        self.volumeType = ('mol' if self.molecules else 'atom') if not volumeType else volumeType
 
 
         if goodBonds is not None:
@@ -157,6 +151,8 @@ class ChemicalConfig(Config):
                 radii.append(0.45 * np.power(calcVolume(self.externalPressure, s, self.volumeType), 1 / 3.0) + height_map[ind])
         for i,j in combinations_with_replacement(range(len(radii)),2):
             self.CenterminDistMatrice[i, j] = self.CenterminDistMatrice[j, i] = (radii[i] + radii[j])
+
+        self.moleculesDistinctCheck = moleculesDistinctCheck
 
     def toDICT(self):
         '''
@@ -324,8 +320,10 @@ class ChemicalConfig(Config):
         :param system:
         :return:
         '''
-        isGoodDistances = self.isGoodDistances(system)
-        return isGoodDistances
+        isGoodSystem = self.isGoodDistances(system)
+        if isGoodSystem and self.moleculesDistinctCheck:
+            isGoodSystem = system.isMoleculesDistinct()
+        return isGoodSystem
 
     def calcVolume(self):
         '''
