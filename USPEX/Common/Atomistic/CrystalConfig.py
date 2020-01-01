@@ -31,8 +31,9 @@ class CrystalConfig(AtomisticConfig):
         self.latticeValues = latticeValues
         self.xraydata = xraydata
 
-        if ('xraydistance', 'min') in fitness and xraydata is None:
-            raise RuntimeError('Cannot optimize the quantity xraydistance. No experimental X-ray data found.')
+        if fitness is not None:
+            if ('xraydistance', 'min') in fitness and xraydata is None:
+                raise RuntimeError('Cannot optimize the quantity xraydistance. No experimental X-ray data found.')
 
         if xraydata is not None:
             assert isinstance(xraydata, dict)
