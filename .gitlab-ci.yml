@@ -12,7 +12,7 @@ unittesting_source:
   image: $CI_REGISTRY/uspex_python/uspex_again:latest
   stage: unittesting_source
   script:
-    - nosetests -v .
+    - nosetests -v ./USPEX
 
 build:
   image: python:3.7
@@ -38,7 +38,7 @@ unittesting_binaries:
   script:
     - cp -r ./onlytests/* ./Src
     - cd ./Src
-    - nosetests -v .
+    - nosetests -v ./USPEX
 
 trigger_build:
   image: debian
