@@ -16,7 +16,7 @@ class CrystalConfig(AtomisticConfig):
 
     '''
 
-    def __init__(self, isConstLattice : bool =False, latticeValues=None, fitness=None, xraydata=None, **kwargs):
+    def __init__(self, isConstLattice : bool=False, latticeValues=None, xraydata=None, **kwargs):
         '''
 
         :param isConstLattice:
@@ -30,10 +30,6 @@ class CrystalConfig(AtomisticConfig):
         self.isConstLattice = isConstLattice
         self.latticeValues = latticeValues
         self.xraydata = xraydata
-
-        if fitness is not None:
-            if ('xraydistance', 'min') in fitness and xraydata is None:
-                raise RuntimeError('Cannot optimize the quantity xraydistance. No experimental X-ray data found.')
 
         if xraydata is not None:
             assert isinstance(xraydata, dict)
@@ -49,4 +45,7 @@ class CrystalConfig(AtomisticConfig):
         return super().isGoodSystem(SYSTEM) and self.isGoodLattice(SYSTEM)
 
     def xraydistance(self, system):
-        return self._spectrumAnalyzer[system]
+        if hasattr(self, '_spectrumAnalyzer'):
+            return self._spectrumAnalyzer[system]
+        else:
+            raise RuntimeError('Cannot optimize the quantity xraydistance. No experimental X-ray data found.')
