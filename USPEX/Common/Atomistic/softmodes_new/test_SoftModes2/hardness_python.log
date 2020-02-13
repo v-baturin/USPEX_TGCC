@@ -1,0 +1,81 @@
+C:\Anaconda2\python.exe C:/bin/uspex_py/lib/softmodes/main.py
+
+---------------------- test_SoftModes/POSCAR_1 --------------------------
+
+--------------------------------------------------------------
+
+The structure is not fully connected, adding more bonds
+The connectivity is not increased, reject adding more bonds
+The structure is not fully connected, adding more bonds
+The connectivity is not increased, reject adding more bonds
+The structure is not fully connected, adding more bonds
+The connectivity is increased, accept adding more bonds
+--------------------------------------------------------------
+Total N of Atoms : 4
+Hardness         :   0.2307 GPa
+Time elapsed     :   0.0180 seconds
+--------------------------------------------------------------
+
+The structure is not fully connected, adding more bonds
+The connectivity is not increased, reject adding more bonds
+The structure is not fully connected, adding more bonds
+The connectivity is not increased, reject adding more bonds
+The structure is not fully connected, adding more bonds
+The connectivity is increased, accept adding more bonds
+--------------------------------------------------------------
+Total N of Atoms : 32
+Hardness         :   0.2307 GPa
+Time elapsed     :   0.1210 seconds
+--------------------------------------------------------------
+
+---------------------- test_SoftModes/POSCAR_2 --------------------------
+
+--------------------------------------------------------------
+
+--------------------------------------------------------------
+Total N of Atoms : 2
+Hardness         :  89.6557 GPa
+Time elapsed     :   0.0090 seconds
+--------------------------------------------------------------
+
+C:\bin\uspex_py\lib\softmodes\calcHardness.py:114: RuntimeWarning: divide by zero encountered in log
+  small_bond = -0.37 * np.log(goodBonds)  # max value of deviation to consider a bond
+--------------------------------------------------------------
+Total N of Atoms : 16
+Hardness         :  89.6557 GPa
+Time elapsed     :   0.1280 seconds
+--------------------------------------------------------------
+
+---------------------- test_SoftModes/POSCAR_3 --------------------------
+
+--------------------------------------------------------------
+
+--------------------------------------------------------------
+Total N of Atoms : 3
+Hardness         :   7.5655 GPa
+Time elapsed     :   0.0390 seconds
+--------------------------------------------------------------
+
+--------------------------------------------------------------
+Total N of Atoms : 24
+Hardness         :   7.5655 GPa
+Time elapsed     :   0.2500 seconds
+--------------------------------------------------------------
+
+---------------------- test_SoftModes/POSCAR_4 --------------------------
+
+--------------------------------------------------------------
+
+--------------------------------------------------------------
+Total N of Atoms : 28
+Hardness         :   5.6403 GPa
+Time elapsed     :   0.4700 seconds
+--------------------------------------------------------------
+
+--------------------------------------------------------------
+Total N of Atoms : 224
+Hardness         :   5.6230 GPa
+Time elapsed     :   4.6540 seconds
+--------------------------------------------------------------
+
+Process finished with exit code 0

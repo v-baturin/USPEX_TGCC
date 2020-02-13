@@ -1,0 +1,62 @@
+>> main
+----------------------POSCAR_1--------------------------
+--------------------------------------------------------------
+The stuture is not fully connected, adding more bonds
+The connectivity is not increased, reject adding more bonds
+The stuture is not fully connected, adding more bonds
+The connectivity is not increased, reject adding more bonds
+The stuture is not fully connected, adding more bonds
+The connectivity is increased, accept adding more bonds
+--------------------------------------------------------------
+Total N of Atoms : 4
+Hardness         : 0.23067 GPa
+Time elapsed     : 0.029123 seconds
+--------------------------------------------------------------
+The stuture is not fully connected, adding more bonds
+The connectivity is not increased, reject adding more bonds
+The stuture is not fully connected, adding more bonds
+The connectivity is not increased, reject adding more bonds
+The stuture is not fully connected, adding more bonds
+The connectivity is increased, accept adding more bonds
+--------------------------------------------------------------
+Total N of Atoms : 32
+Hardness         : 0.23067 GPa
+Time elapsed     : 0.053455 seconds
+--------------------------------------------------------------
+----------------------POSCAR_2--------------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
+Total N of Atoms : 2
+Hardness         : 89.6557 GPa
+Time elapsed     : 0.014226 seconds
+--------------------------------------------------------------
+--------------------------------------------------------------
+Total N of Atoms : 16
+Hardness         : 89.6557 GPa
+Time elapsed     : 0.026768 seconds
+--------------------------------------------------------------
+----------------------POSCAR_3--------------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
+Total N of Atoms : 3
+Hardness         : 7.5655 GPa
+Time elapsed     : 0.0097606 seconds
+--------------------------------------------------------------
+--------------------------------------------------------------
+Total N of Atoms : 24
+Hardness         : 7.5655 GPa
+Time elapsed     : 0.044658 seconds
+--------------------------------------------------------------
+----------------------POSCAR_4--------------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
+Total N of Atoms : 28
+Hardness         : 5.6193 GPa
+Time elapsed     : 0.088739 seconds
+--------------------------------------------------------------
+--------------------------------------------------------------
+Total N of Atoms : 224
+Hardness         : 5.623 GPa
+Time elapsed     : 1.3629 seconds
+--------------------------------------------------------------
+>> 
