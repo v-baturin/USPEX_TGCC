@@ -7,12 +7,15 @@ import numpy as np
 from USPEX.Common.Config import Config
 from USPEX.Common.Atomistic.Element import Element
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
+
+from USPEX.Common.Atomistic.Bonds import Bonds
 from .BondHardness_new import BondHardness_new
-from .MaxBonds import MaxBonds_new
+from .MaxBonds import MaxBonds, MaxBonds_new
 from .calcHardness import calcHardness
 from .calcSoftModes import calcSoftModes
 from .AtomTypeCounter import atomTypeCounter
 
+from typing import List
 
 warnings.filterwarnings('ignore')
 
@@ -21,10 +24,10 @@ class VibrationalMode(object):
     frequency = None
     eigenvector = None
 
-    def __init__(self, FREQUENCY, EIGENVECTOR, SUPERCELL=np.ones(3)):
-        self.frequency = float(FREQUENCY)
-        self.eigenvector = np.array(EIGENVECTOR)
-        self.supercell = np.array(SUPERCELL)
+    def __init__(self, frequency : float, eigenvector : List[float], supercell : List[int]=np.ones(3)):
+        self.frequency = frequency
+        self.eigenvector = eigenvector
+        self.supercell = supercell
 
 
 class Softmodes(list):
@@ -34,12 +37,9 @@ class Softmodes(list):
     :param kvector: k-vector specified by user.
     '''
 
-    modes = []
+    duration_h = -np.inf
 
-    duration_h = 0.0
-    duration_sm = 0.0
-
-    def __init__(self, config : Config, system : AtomicStructure, kvector=np.zeros(3)):
+    def __init__(self, config : Config, system : AtomicStructure, kvector : List[int]=np.zeros(3)):
         '''
 
         :param config:
@@ -56,21 +56,25 @@ class Softmodes(list):
 
         atomTypes, atom_type_seq = atomTypeCounter(system.chemicalSymbols)
 
-        if hasattr(config, 'valences'):
-            self.val = config.valences
-        else:
-            self.val = [Element(x).valence for x in atomTypes]
-
-        if hasattr(config, 'valenceElectrons'):
-            self.N_val = config.valenceElectrons
-        else:
-            self.N_val = [Element(x).valence_electrons for x in atomTypes]
-        self.R_val = np.array([Element(atomType).covalent_radius for atomType in atomTypes])
+        # if hasattr(config, 'valences'):
+        #     self.val = config.valences
+        # else:
+        #     self.val = [Element(x).valence for x in atomTypes]
+        #
+        # if hasattr(config, 'valenceElectrons'):
+        #     self.N_val = config.valenceElectrons
+        # else:
+        #     self.N_val = [Element(x).valence_electrons for x in atomTypes]
+        # self.R_val = np.array([Element(atomType).covalent_radius for atomType in atomTypes])
 
         start_time = time.time()
-        system.bonds = MaxBonds_new(system)
+        # bonds = MaxBonds(system)
         self.duration_bh = time.time() - start_time
-        self._calc_soft_modes(system, kvector)
+        start_time = time.time()
+        bonds_new = MaxBonds_new(system)
+        self.duration_bh_new = time.time() - start_time
+        # self._calc_soft_modes(system, bonds, kvector)
+        self._calc_soft_modes(system, bonds_new, kvector)
 
     def hardness(self):
         '''
@@ -81,10 +85,11 @@ class Softmodes(list):
         self.duration_h = time.time() - start_time
         return hardness
 
-    def _calc_soft_modes(self, system, kvector=np.zeros(3)):
+    def _calc_soft_modes(self, system, bonds:Bonds, kvector : List[int]=np.zeros(3)):
         start_time = time.time()
         # each eigenvector has written as column. So, next we are using transpose matrix.
-        frequencies, eigenvectors = calcSoftModes(system, self.R_val, self.N_val, self.val, kvector)
+        # self.R_val, self.N_val, self.val,
+        frequencies, eigenvectors = calcSoftModes(system, self._config, bonds, kvector)
         self.extend([VibrationalMode(f, v) for f, v in zip(frequencies, eigenvectors.T)])
         self.duration_sm = time.time() - start_time
 

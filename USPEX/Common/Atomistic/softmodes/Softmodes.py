@@ -46,26 +46,16 @@ class Softmodes(list):
         :param kvector:
         '''
 
+        assert hasattr(config, 'valences')
+        assert hasattr(config, 'valenceElectrons')
+        assert hasattr(config, 'goodBonds')
+
         super(Softmodes, self).__init__()
         # Inputs:
         self._config = config
         self.system = system
 
-        # Calculate "smart" default values:
-
-        atomTypes, atom_type_seq = atomTypeCounter(system.chemicalSymbols)
-
-        if hasattr(config, 'valences'):
-            self.val = config.valences
-        else:
-            self.val = [Element(x).valence for x in atomTypes]
-
-        if hasattr(config, 'valenceElectrons'):
-            self.N_val = config.valenceElectrons
-        else:
-            self.N_val = [Element(x).valence_electrons for x in atomTypes]
-        self.R_val = np.array([Element(atomType).covalent_radius for atomType in atomTypes])
-
+        self.R_val = {symbol : Element(symbol).covalent_radius for symbol in set(system.chemicalSymbols)}
         system.bonds = BondHardness_new(system, config.goodBonds)
         self._calc_soft_modes(system, kvector)
 
@@ -81,7 +71,7 @@ class Softmodes(list):
     def _calc_soft_modes(self, system, kvector=np.zeros(3)):
         start_time = time.time()
         # each eigenvector has written as column. So, next we are using transpose matrix.
-        frequencies, eigenvectors = calcSoftModes(system, self.R_val, self.N_val, self.val, kvector)
+        frequencies, eigenvectors = calcSoftModes(system, self.R_val, self._config.valenceElectrons, self._config.valences, kvector)
         self.extend([VibrationalMode(f, v) for f, v in zip(frequencies, eigenvectors.T)])
         self.duration_sm = time.time() - start_time
 

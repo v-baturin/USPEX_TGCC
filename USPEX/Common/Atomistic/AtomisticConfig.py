@@ -11,9 +11,10 @@
 import logging
 import numpy as np
 
+from ase.geometry import get_distances
 from copy import copy
 from itertools import combinations_with_replacement, chain
-from ase.geometry import get_distances
+from typing import Dict, List
 
 
 from ..Config import Config
@@ -57,8 +58,8 @@ class ChemicalConfig(Config):
     CenterminDistMatrice = None
 
     def __init__(self, symbols : list, volumeType : str=None, ionDistances : dict=None, goodBonds : list=None,
-                 valences : list=None, minVectorLength : int=None, valenceElectrons : list=None,
-                 externalPressure : float=0.0001, moleculesDistinctCheck = True, MolCenters : dict=None, **kwargs):
+                       valences : Dict[str, float]=None, minVectorLength : dict=None, valenceElectrons : Dict[str, float]=None,
+                       externalPressure : float=0.0001, moleculesDistinctCheck = True, MolCenters : dict=None, **kwargs):
         '''
 
         :param symbols:
@@ -104,15 +105,8 @@ class ChemicalConfig(Config):
         else:
             self.goodBonds = defaultGoodBonds(self.chemicalSymbols)
 
-        if valences is not None:
-            self.valences = np.asarray(valences)
-        else:
-            self.valences = np.asarray([Element(symbol).valence for symbol in self.chemicalSymbols])
-
-        if valenceElectrons is not None:
-            self.valenceElectrons = np.asarray(valenceElectrons)
-        else:
-            self.valenceElectrons = np.asarray([Element(symbol).valence_electrons for symbol in self.chemicalSymbols], dtype=int)
+        self.valences = valences if valences is not None else {symbol: Element(symbol).valence for symbol in self.chemicalSymbols}
+        self.valenceElectrons = valenceElectrons if valenceElectrons is not None else {symbol: Element(symbol).valence_electrons for symbol in self.chemicalSymbols}
 
         self._minVectorLength = minVectorLength if isinstance(minVectorLength, float) and minVectorLength > 0.0 else None
 

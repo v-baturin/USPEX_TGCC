@@ -1,4 +1,10 @@
 import numpy as np
+
+from ase.atom import Atom
+from ase.neighborlist import primitive_neighbor_list
+from dataclasses import dataclass
+from typing import List, Union, Tuple
+
 from USPEX.Common.Atomistic.Element import Element
 
 
@@ -22,9 +28,21 @@ def dfs1(graph : dict, root : int):
     return visited
 
 
+# @dataclass
+# class B_Atom:
+#     name : str
+#     index : int
+#
+#     def __init__(self, name:str, index:int):
+#         assert index >= 0
+#         self.index = index
+#         self.name = name
+
+
+@dataclass
 class Bond(object):
     '''
-    Class for the chemical bond description. It has follow parametes:
+    Class for the chemical bond description. It has follow parameters:
 
     * _atom1 (int): ID of the fisrt atom in bond
     * _atom2 (int): ID of the second atom in bond
@@ -38,21 +56,19 @@ class Bond(object):
     * LOWER_BOUND = 0.5           # (Angstrems) lower bound for the distance of atoms in a bond.
     '''
 
-    _atom1 = None
-    _atom2 = None
+    _atom1 : Atom
+    _atom2 : Atom
+    distance : float
+    delta : float
+    type : Union[int, str, None]
+    enable : bool = False
 
-    type = None
-    delta = 0.0
-    enable = False
+    SAME_BOND_THRESHOLD : float = 0.05  # (Angstrems) same bond within this distance.
+    MAX_BOND : float = 5.0              # (Angstrems) maximum distance deviation for bonds search.
+    LOWER_BOUND : float = 0.5           # (Angstrems) lower bound for the distance of atoms in a bond.
 
-    # MAX_BOND: maximum distance deviation for bonds search.
-    # SAME_BOND_THRESHOLD: same bond within this distance between same type of atoms.
-
-    SAME_BOND_THRESHOLD = 0.05  # (Angstrems) same bond within this distance.
-    MAX_BOND = 5.0              # (Angstrems) maximum distance deviation for bonds search.
-    LOWER_BOUND = 0.5           # (Angstrems) lower bound for the distance of atoms in a bond.
-
-    def __init__(self, atom1 : int, atom2 : int, distance : float, type=None, direction=[0,0,0]):
+    def __init__(self, atom1 : Atom, atom2 : Atom, distance : float, type=None,
+                 direction : List[int] = [0,0,0], vector : List[float] = None):
         '''
         :param atom1: 
         :param atom2: 
@@ -60,14 +76,27 @@ class Bond(object):
         :param type: 
         :param direction: 
         '''
-        assert atom1 >= 0 and atom2 >= 0
         assert 3 == len(direction)
-        # assert distance > 0.0 and distance < self.MAX_BOND
+        assert distance > 0.0
+
+        R_val = lambda symbol: Element(symbol).covalent_radius
+
         self._atom1, self._atom2 = atom1, atom2
         self.type = type
-        self.delta = distance
+        self.distance = distance
+        self.delta = distance - R_val(atom1.symbol) - R_val(atom2.symbol)
         self.direction = direction
+        self.vector = vector
 
+    @property
+    def indicies(self) -> Tuple[int, int]:
+        return self._atom1.index, self._atom2.index
+
+    @property
+    def symbols(self) -> Tuple[str, str]:
+        return self._atom1.symbol, self._atom2.symbol
+
+    @property
     def atoms(self):
         '''
         :return: indices of origin and end atoms in bond.
@@ -75,15 +104,17 @@ class Bond(object):
         return self._atom1, self._atom2
 
     def __eq__(self, other) -> bool:
-        assert isinstance(other, Bond)
-        return self.delta - other.delta < self.SAME_BOND_THRESHOLD
+        isEqual_Symbols = self.symbols == other.symbols or self.symbols == reversed(other.symbols)
+        isEqualDistance = np.abs(self.distance - other.distance) < self.SAME_BOND_THRESHOLD
+        return isEqual_Symbols and isEqualDistance
 
     def __ne__(self, other) -> bool:
-        assert isinstance(other, Bond)
-        return self.delta - other.delta > self.SAME_BOND_THRESHOLD
+        isEqual_Symbols = self.symbols == other.symbols or self.symbols == reversed(other.symbols)
+        isEqualDistance = np.abs(self.distance - other.distance) < self.SAME_BOND_THRESHOLD
+        return not (isEqual_Symbols and isEqualDistance)
 
 
-class Bonds(list):
+class Bonds(List[Bond]):
     '''
     Class for the list of the bonds.
     '''
@@ -105,12 +136,13 @@ class Bonds(list):
         return set([x.type for x in self])
 
     # TODO do it
-    def is3Dconnected(self) -> bool:
+    def _is3Dconnected(self) -> bool:
         X = np.max([np.abs(bond.direction[0]) for bond in self])
         Y = np.max([np.abs(bond.direction[1]) for bond in self])
         Z = np.max([np.abs(bond.direction[2]) for bond in self])
         return X > 0 and Y > 0 and Z > 0
 
+    # TODO fix it
     def connectList(self):
         '''
         IMPORTANT NOTE: this implementation checks connectivity of the atoms INSIDE unit cell.
@@ -144,6 +176,7 @@ class Bonds(list):
 
     def __add__(self, other):
         return Bonds(super(Bonds,self).__add__(other))
+
 
 def defaultGoodBonds(symbols):
     '''

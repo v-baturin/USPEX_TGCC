@@ -17,19 +17,40 @@ from .AtomTypeCounter import atomTypeCounter
 def MaxBonds_new(system, cutoff:float=Bond.MAX_BOND) -> Bonds:
 
     symbols = system.chemicalSymbols
-    R_val = lambda symbol: Element(symbol).covalent_radius
+
+    bonds = Bonds()
+    i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=system.pbc,
+                                                          cell=system.get_cell(complete=True),
+                                                          positions=system.get_scaled_positions(),
+                                                          cutoff=cutoff, numbers=system.numbers,
+                                                          use_scaled_positions=True)
+
+    for i, j, dist, vec, dir in zip(i_init, j_init, dists, vecs, dirs):
+        # TODO Why we had this less 0.5A and not more than 5A (usually)
+        # if np.abs(dist - tmp_Rval) > cutoff or dist < 0.5:
+        if dist < 0.5:
+            continue
+        bonds.append(Bond(atom1=system[i], atom2=system[j], direction=dir, distance=dist, vector=vec))
 
 
-    res_bonds = Bonds()
-    i_init, j_init, dist_init, dir_init = primitive_neighbor_list(quantities='ijdS', pbc=system.pbc,
-                                                        cell=system.get_cell(complete=True),
-                                                        positions=system.get_scaled_positions(),
-                                                        cutoff=cutoff, numbers=system.numbers,
-                                                        use_scaled_positions=True)
+    # bonds: (1) atom-i, (2) atom-j, (3) dist, (4) bond_type.
+    # Now we assign the bond type
 
-    for i,j,dist, dir in zip(i_init, j_init, dist_init, dir_init):
-        res_bonds.append(Bond(atom1=i, atom2=j, direction=dir, distance=dist-(R_val(symbols[i]) + R_val(symbols[j]))))
-    return res_bonds
+    # rank = np.argsort([b.distance for b in tmp_bonds])  # sort the bonds by dist from low to high
+    # tmp_bonds = tmp_bonds[rank]
+    tmp_bonds = sorted(bonds, key=lambda x: x.distance)
+
+    # N_bonds = bonds.shape[0]
+    bond_type:int = 0
+    for bond in tmp_bonds:
+        if not bond.type:
+            bond_type += 1
+            # symbols_ref = sorted(bond.symbols)
+            # Obtain all bonds with the same type by distance:
+            for b in [b for b in tmp_bonds if b == bond]:
+                if not b.type:
+                    b.type = bond_type
+    return bonds
 
 
 def MaxBonds(SYSTEM : AtomicStructure) -> Bonds:
