@@ -9,55 +9,43 @@
 
 
 import logging
-from copy import copy
-from itertools import chain
+from typing import List
+from types import SimpleNamespace
 
 logger = logging.getLogger(__name__)
 
 
 class Target(object):
 
-    shortname = None
+    knownTargetTypes = {}
 
-    config = None
-    varOperators = []
-    hybridizations = []
-    mutations = []
-    creations = []
-    DEFAULT_FITNESS = []
+    def __init__(self, type : str, **kwargs):
+        targetDef = SimpleNamespace(**self.knownTargetTypes[type])
+        self.config = targetDef.configType(**kwargs)
+        self.pool = targetDef.poolType(self.config)
+        
+        self.hybridizations = []
+        for hybridizationType in targetDef.hybridizationTypes:
+            if hybridizationType.__name__ in kwargs:
+                self.hybridizations.append(hybridizationType(self.config, kwargs[hybridizationType.__name__]))
 
-    def __init__(self, rankSort):
-        '''
+        self.mutations = []
+        for mutationType in targetDef.mutationTypes:
+            if mutationType.__name__ in kwargs:
+                self.mutations.append(mutationType(self.config, kwargs[mutationType.__name__]))
 
-        :param fitness:
-        :param stopFitness:
-        :param kwargs:
-        '''
-        self.rankSort = rankSort
-        self.best = []
-        self.uniqueSystems = []
+        self.creations = []
+        for creationType in targetDef.creationTypes:
+            if creationType.__name__ in kwargs:
+                self.creations.append(creationType(self.config, kwargs[creationType.__name__]))
 
-    def update(self, population : list):
-        logger.info('Updating target: best systems.')
-        extendedPopulation = copy(population)
-        extendedPopulation.extend(self.best)
-        best = self.rankSort(extendedPopulation)[0]
-        if set(best) != set(self.best):
-            self.best = best
-
-        logger.info('Updating target: list of unique systems.')
-        uniqueIDs = [system.ID for system in self.uniqueSystems]
-        newFoundSystems = []
-        for system in population:
-            if system.ID not in uniqueIDs:
-                logger.debug('add new system %d to list of unique systems' % system.ID)
-                newFoundSystems.append(system)
-                uniqueIDs.append(system.ID)
-        self.uniqueSystems.extend(newFoundSystems)
-        self.uniqueSystems = list(chain.from_iterable(self.rankSort(self.uniqueSystems)))
-        return newFoundSystems
+        self.variationOperators = self.hybridizations + self.mutations + self.creations
 
 
-    @property
-    def state(self) -> tuple:
-        return (self.best, self.uniqueSystems)
+    @classmethod
+    def registerTarget(cls, name : str, configType : type, poolType : type,
+                       hybridizationTypes : List[type], mutationTypes : List[type], creationTypes : List[type]):
+        assert name not in cls.knownTargetTypes
+        cls.knownTargetTypes[name] = {'configType' : configType, 'poolType' : poolType,
+                                      'hybridizationTypes' : hybridizationTypes, 'mutationTypes' : mutationTypes,
+                                      'creationTypes' : creationTypes}
