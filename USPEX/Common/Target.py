@@ -27,17 +27,17 @@ class Target(object):
         self.hybridizations = []
         for hybridizationType in targetDef.hybridizationTypes:
             if hybridizationType.__name__ in kwargs:
-                self.hybridizations.append(hybridizationType(self.config, **kwargs[hybridizationType.__name__]))
+                self.hybridizations.append(hybridizationType(self.config, self.pool, **kwargs[hybridizationType.__name__]))
 
         self.mutations = []
         for mutationType in targetDef.mutationTypes:
             if mutationType.__name__ in kwargs:
-                self.mutations.append(mutationType(self.config, **kwargs[mutationType.__name__]))
+                self.mutations.append(mutationType(self.config, self.pool, **kwargs[mutationType.__name__]))
 
         self.creations = []
         for creationType in targetDef.creationTypes:
             if creationType.__name__ in kwargs:
-                self.creations.append(creationType(self.config, **kwargs[creationType.__name__]))
+                self.creations.append(creationType(self.config, self.pool, **kwargs[creationType.__name__]))
 
         self.variationOperators = self.hybridizations + self.mutations + self.creations
 

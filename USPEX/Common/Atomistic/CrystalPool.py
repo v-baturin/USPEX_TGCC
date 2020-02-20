@@ -48,11 +48,11 @@ class CrystalPool(SystemPool):
                     system = ref_system
                     break
 
-            if not system.isBad():
+            if not system.isBad:
                 cleanedPopulation.append(system)
 
-        for i, system in enumerate(cleanedPopulation):
-            population[i] = system
+        population.clear()
+        population.extend(cleanedPopulation)
 
     def formationEnergy(self, system):
         return self._convexHull[system]

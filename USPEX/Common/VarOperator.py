@@ -25,7 +25,7 @@ class VarOperator(object):
     name = None
     isActive = True
 
-    def __init__(self, config : Config, initFrac : float, minFrac : float=0.1, maxFrac : float=1.0, maxOutputSize : int=MAX_OUTPUT_SIZE):
+    def __init__(self, config : Config, pool, initFrac : float, minFrac : float=0.1, maxFrac : float=1.0, maxOutputSize : int=MAX_OUTPUT_SIZE):
         '''
 
         :param config:
@@ -35,6 +35,7 @@ class VarOperator(object):
         '''
 
         self.config = config
+        self.pool = pool
         assert minFrac >= 0.0 and minFrac <= 1.0
         assert maxFrac >= 0.0 and maxFrac <= 1.0
         assert minFrac <= maxFrac

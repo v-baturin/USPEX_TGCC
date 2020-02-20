@@ -9,6 +9,7 @@
 
 
 import logging
+import types
 from abc import ABCMeta, abstractmethod
 from typing import List, Tuple
 
@@ -37,6 +38,7 @@ class SystemPool(object):
         self.config = config
         self.best = {}
         self.uniqueSystems = []
+        self._newID = 0
 
     def update(self, population : list):
         self.best = {}
@@ -106,3 +108,14 @@ class SystemPool(object):
         return [[population[index] for index in front] for front in ranking]
         # uniqueFinesses, ranking = np.unique(populationFitnesses, return_inverse=True)
         # return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueFinesses))]
+
+    def assignID(self, system):
+        system.ID = self._newID
+        self._newID += 1
+        def systemHash(system): return hash(system.ID)
+        system.__hash__ = types.MethodType(systemHash, system)
+        def copy(system):
+            dct = system.toDICT()
+            del dct['ID']
+            return type(system).fromDICT(dct)
+        system.__copy__ = types.MethodType(copy, system)
