@@ -12,17 +12,20 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import List, Tuple
 
-from .Fitness import fitnessHash
 from .ParetoRanking import paretoRanking
 
 logger = logging.getLogger(__name__)
 
+
+def _fitnessRepresentation(fitness : List[Tuple[str, str]]):
+    return '_'.join(f'{attr}_{direction}' for (attr, direction) in sorted(fitness, key=lambda entry: entry[0]))
 
 class SystemPool(object):
 
 
     __metaclass__ = ABCMeta
 
+    DEFAULT_FITNESS = []
 
     def __init__(self, config):
         '''
@@ -34,7 +37,6 @@ class SystemPool(object):
         self.config = config
         self.best = {}
         self.uniqueSystems = []
-        self.DEFAULT_FITNESS = []
 
     def update(self, population : list):
         self.best = {}
@@ -63,10 +65,10 @@ class SystemPool(object):
         pass
 
     def setBest(self, fitness : List[Tuple[str, str]], best):
-        self.best[fitnessHash(fitness)] = best
+        self.best[_fitnessRepresentation(fitness)] = best
 
     def getBest(self, fitness : List[Tuple[str, str]]):
-        return self.best[fitnessHash(fitness)]
+        return self.best[_fitnessRepresentation(fitness)]
 
     def rankSort(self, fitness : List[Tuple[str, str]], population : list):
         '''

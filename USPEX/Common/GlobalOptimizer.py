@@ -41,7 +41,7 @@ class GlobalOptimizer(Worker):
         # List of new found structure on this particular step
         self.newStructures = None
 
-        self.output.run(targetConfig=self.target.config, selectionnConfig=self.selection.config)
+        self.output.run(targetConfig=self.target.config, selectionConfig=self.selection.config)
 
     def run(self, population : list = None):
         '''
@@ -52,7 +52,7 @@ class GlobalOptimizer(Worker):
         if population is None and self.population is not None:
             return self.population
 
-        self.population, *analysis = self.selection.createPopulation(population, self.newStructures)
+        self.population, *analysis = self.selection.createPopulation(population, self.newStructures, self.fitness)
 
         self.save()
         self.output.run(analysis=analysis)
@@ -67,4 +67,4 @@ class GlobalOptimizer(Worker):
         self.newStructures = self.target.pool.newFoundSystems(population)
         self.target.pool.update(self.newStructures)
         self.target.pool.setBest(self.fitness, self.target.pool.rankSort(self.fitness, self.target.pool.uniqueSystems)[0])
-        self.output.run(targetState=self.target.pool)
+        self.output.run(pool=self.target.pool)

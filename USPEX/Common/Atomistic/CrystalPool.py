@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 class CrystalPool(SystemPool):
 
+    MAX_FORMATION_ENERGY = 0.5
+    DEFAULT_FITNESS = [('formationEnergy', 'min')]
 
     def __init__(self, config):
         super().__init__(config)
         self._convexHull = ConvexHull(self.config)
         self.extendedConvexHull = []
-        self.MAX_FORMATION_ENERGY = 0.5
-        self.DEFAULT_FITNESS = [('formationEnergy', 'min')]
 
 
     def update(self, population : list):
@@ -29,6 +29,10 @@ class CrystalPool(SystemPool):
         for system in population:
             if self._convexHull[system] < 0:
                 self._convexHull.add(system)
+
+        for system in self.uniqueSystems:
+            if self._convexHull[system] < self.MAX_FORMATION_ENERGY:
+                    self.extendedConvexHull.append(system)
 
 
     def cleanDuplicates(self, population : list):
