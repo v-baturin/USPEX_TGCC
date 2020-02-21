@@ -72,7 +72,7 @@ class SystemPool(object):
     def getBest(self, fitness : List[Tuple[str, str]]):
         return self.best[_fitnessRepresentation(fitness)]
 
-    def rankSort(self, fitness : List[Tuple[str, str]], population : list):
+    def sort(self, fitness : List[Tuple[str, str]], population : list):
         '''
         Method for sorting our population by
         :param population: unsorted list of structures.

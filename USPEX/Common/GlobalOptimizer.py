@@ -66,5 +66,6 @@ class GlobalOptimizer(Worker):
         self.target.pool.cleanDuplicates(population)
         self.newStructures = self.target.pool.newFoundSystems(population)
         self.target.pool.update(self.newStructures)
-        self.target.pool.setBest(self.fitness, self.target.pool.rankSort(self.fitness, self.target.pool.uniqueSystems)[0])
+        best = self.target.pool.sort(self.fitness, self.target.pool.uniqueSystems)[0]
+        self.target.pool.setBest(self.fitness, best)
         self.output.run(pool=self.target.pool)
