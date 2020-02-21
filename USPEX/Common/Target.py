@@ -9,8 +9,9 @@
 
 
 import logging
-from typing import List
 from types import SimpleNamespace
+
+from .VariationOperators import VariationOperators
 
 logger = logging.getLogger(__name__)
 
@@ -25,17 +26,17 @@ class Target(object):
         self.pool = targetDef.poolType(self.config)
         
         self.hybridizations = []
-        for hybridizationType in targetDef.hybridizationTypes:
+        for hybridizationType in targetDef.variationOperators.hybridizationTypes:
             if hybridizationType.__name__ in kwargs:
                 self.hybridizations.append(hybridizationType(self.config, self.pool, **kwargs[hybridizationType.__name__]))
 
         self.mutations = []
-        for mutationType in targetDef.mutationTypes:
+        for mutationType in targetDef.variationOperators.mutationTypes:
             if mutationType.__name__ in kwargs:
                 self.mutations.append(mutationType(self.config, self.pool, **kwargs[mutationType.__name__]))
 
         self.creations = []
-        for creationType in targetDef.creationTypes:
+        for creationType in targetDef.variationOperators.creationTypes:
             if creationType.__name__ in kwargs:
                 self.creations.append(creationType(self.config, self.pool, **kwargs[creationType.__name__]))
 
@@ -43,9 +44,7 @@ class Target(object):
 
 
     @classmethod
-    def registerTarget(cls, name : str, configType : type, poolType : type,
-                       hybridizationTypes : List[type], mutationTypes : List[type], creationTypes : List[type]):
+    def registerTarget(cls, name : str, configType : type, poolType : type, variationOperators : VariationOperators):
         assert name not in cls.knownTargetTypes
         cls.knownTargetTypes[name] = {'configType' : configType, 'poolType' : poolType,
-                                      'hybridizationTypes' : hybridizationTypes, 'mutationTypes' : mutationTypes,
-                                      'creationTypes' : creationTypes}
+                                      'variationOperators' : variationOperators}
