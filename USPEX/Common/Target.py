@@ -1,3 +1,7 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
 '''
 @file        Target.py
 @author:     Pavel Bushlanov
@@ -8,11 +12,8 @@
 '''
 
 
-import logging
 from copy import copy
 from itertools import chain
-
-logger = logging.getLogger(__name__)
 
 
 class Target(object):
