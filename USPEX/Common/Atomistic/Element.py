@@ -1,11 +1,9 @@
 __author__ = 'mrakitin'
 
-from dataclasses import dataclass
 from typing import List, Union, Optional
 
 import sys
 
-@dataclass
 class _Atom:
     z : int                         # atomic number
     shortname : str                 # shortname
@@ -15,6 +13,17 @@ class _Atom:
     R_covalent : Optional[float]    # covalent radius of the element
     good_bonds : float              # good bonds
     mass : float                    # element mass
+
+    def __init__(self, z : int, shortname : str, fullname : str, valence : float, v_electrons : int, 
+                       R_covalent : Optional[float], good_bonds : float, mass : float):
+        self.z = z
+        self.shortname = shortname
+        self.fullname = fullname
+        self.valence = valence
+        self.v_electrons = v_electrons
+        self.R_covalent = R_covalent
+        self.good_bonds = good_bonds
+        self.mass = mass
 
 
 _ELEMENTS_LIST = [
