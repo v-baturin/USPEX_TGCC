@@ -1,12 +1,12 @@
-import os
+import logging
+logger = logging.getLogger(__name__)
 
 import numpy as np
-import logging
+import os
 
 from ..AtomicStructure import AtomicStructure
 from ..Element import Element
 
-logger = logging.getLogger(__name__)
 
 def read_molecule(filename):
     '''
@@ -32,7 +32,7 @@ def read_molecule(filename):
                 N_col += 1
                 ind_mag = 9
             if 'mag' in name:  # Magnetic moments are present on the last line
-                logger.info('This calculation uses predefined magnetic moments on {}'.format(name))
+                logger.info(f'This calculation uses predefined magnetic moments on {name}')
                 N_col += 1
 
             num = int(handle.readline().split()[-1])

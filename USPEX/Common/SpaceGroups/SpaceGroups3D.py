@@ -1,16 +1,20 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
 import os
 import json
-import logging
 import numpy as np
-from copy import copy, deepcopy
+
 from collections import Sequence
+from copy import copy, deepcopy
 from itertools import combinations
-from scipy.spatial.distance import squareform, pdist
 from pymatgen.symmetry.groups import in_array_list
+from scipy.spatial.distance import squareform, pdist
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-with open('{}/decompositions.json'.format(HOMEPATH), 'rt') as f:
+with open(f'{HOMEPATH}/decompositions.json', 'rt') as f:
     DECOMPOSITIONS = json.load(f)
 
 # This is matrices describing translations along each axis.
@@ -18,7 +22,6 @@ with open('{}/decompositions.json'.format(HOMEPATH), 'rt') as f:
 TRANSLATIONS = np.array([[[1.0, 0.0, 0.0, 1.0],[0.0, 1.0, 0.0, 0.0],[0.0, 0.0, 1.0, 0.0],[0.0, 0.0, 0.0, 1.0]],
                          [[1.0, 0.0, 0.0, 0.0],[0.0, 1.0, 0.0, 1.0],[0.0, 0.0, 1.0, 0.0],[0.0, 0.0, 0.0, 1.0]],
                          [[1.0, 0.0, 0.0, 0.0],[0.0, 1.0, 0.0, 0.0],[0.0, 0.0, 1.0, 1.0],[0.0, 0.0, 0.0, 1.0]]])
-logger = logging.getLogger(__name__)
 
 
 def _generate_full_symmetry_ops(generators, supercell: tuple = (1,1,1)):
