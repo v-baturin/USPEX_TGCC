@@ -19,13 +19,20 @@ build:
   stage: build
   script:
     - find . -name ".git*" | xargs rm -rf
-    - mkdir Src
+    - mkdir build
+    - mkdir build/USPEX
+    - mkdir build/USPEX/Common
+    - touch build/USPEX/__init__.py
     - mkdir onlytests
     - find . -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./onlytests/$(dirname {}) && mv {} ./onlytests/$(dirname {})'
-    - find . -maxdepth 1 -mindepth 1 ! -path ./Src ! -path ./onlytests | xargs -I {} mv {} ./Src/
-    - find ./Src -type d -name "*tests*" | xargs rm -rf
-    - find ./Src -type f \( -name "*.py" ! -name "__init__.py" \) | xargs -I {} -t sh -c 'cythonize -i {} && rm {}'
-    - find ./Src -type f -name "*.c" | xargs -I {} rm {}
+    - find . -maxdepth 1 -mindepth 1 ! -path ./build ! -path ./onlytests | xargs -I {} mv {} ./build/USPEX/Common
+    - cd ./build
+    - find . -type d -name "*tests*" | xargs rm -rf
+    - find . -type f \( -name "*.py" ! -name "__init__.py" \) | xargs -I {} -t sh -c 'cythonize -i {} && rm {}'
+    - find . -type f -name "*.c" | xargs -I {} rm {}
+    - cd ../
+    - mkdir Src
+    - cp -r ./build/USPEX/Common/* ./Src/
   artifacts:
     paths:
       - Src
