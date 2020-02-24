@@ -1,5 +1,4 @@
 stages:
-  - prepare
   - unittesting_source
   - build
   - unittesting_binaries
@@ -8,59 +7,43 @@ stages:
 variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_DRIVER: overlay2
-  THIRDPARTY_TAG: $CI_REGISTRY_IMAGE/thirdparty:latest
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-  IMAGE_TESTING_TAG: $CI_REGISTRY_IMAGE/testing:$CI_COMMIT_REF_SLUG
-  IMAGE_RELEASE_TAG: $CI_REGISTRY_IMAGE:latest
-
-prepare:
-  image: docker:stable
-  services:
-    - docker:dind
-  stage: prepare
-  script:
-    - docker login -u $THIRDPARTY_DEPLOY_USER -p $THIRDPARTY_DEPLOY_TOKEN $CI_REGISTRY
-    - docker pull $CI_REGISTRY/uspex_python/thirdparty:latest
-    - docker tag $CI_REGISTRY/uspex_python/thirdparty:latest $THIRDPARTY_TAG
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $THIRDPARTY_TAG
 
 unittesting_source:
-  image: $THIRDPARTY_TAG
+  image: $CI_REGISTRY/uspex_python/uspex_again:master
   stage: unittesting_source
   script:
-    - nosetests ./USPEX
+    - nosetests -v .
 
 build:
-  image: docker:stable
-  services:
-    - docker:dind
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
   stage: build
   script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build -f Dockerfile.module -t uspex_common .
-    - docker tag uspex_common $IMAGE_TAG
+    - find . -name ".git*" | xargs rm -rf
+    - mkdir Src
     - mkdir onlytests
-    - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./onlytests/$(dirname {}) && cp -r {} ./onlytests/$(dirname {})'
-    - docker build -f Dockerfile.unittests -t $IMAGE_TESTING_TAG .
-    - docker push $IMAGE_TAG
-    - docker push $IMAGE_TESTING_TAG
+    - find . -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./onlytests/$(dirname {}) && mv {} ./onlytests/$(dirname {})'
+    - find . -maxdepth 1 -mindepth 1 ! -path ./Src ! -path ./onlytests | xargs -I {} mv {} ./Src/
+    - find ./Src -type d -name "*tests*" | xargs rm -rf
+    - find ./Src -type f \( -name "*.py" ! -name "__init__.py" \) | xargs -I {} -t sh -c 'cythonize -i {} && rm {}'
+    - find ./Src -type f -name "*.c" | xargs -I {} rm {}
+  artifacts:
+    paths:
+      - Src
+      - onlytests
+    expire_in: 1 mos 1 day
 
 unittesting_binaries:
-  image: $IMAGE_TESTING_TAG
+  image: $CI_REGISTRY/uspex_python/uspex_again:master
   stage: unittesting_binaries
   script:
-    - nosetests /opt/USPEX
+    - cp -r ./onlytests/* ./Src
+    - cd ./Src
+    - nosetests -v .
 
-deploy:
-  image: docker:stable
-  services:
-    - docker:dind
+trigger_build:
+  image: $CI_REGISTRY/uspex_python/thirdparty/aux:master
   stage: deploy
   script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker pull $IMAGE_TAG
-    - docker tag $IMAGE_TAG $IMAGE_RELEASE_TAG
-    - docker push $IMAGE_RELEASE_TAG
-  only:
-    - master
+    - "curl -X POST -F token=$USPEX_AGAIN_BUILD_TRIGGER -F ref=master -F variables[SUBPROJECT_ID]=$CI_PROJECT_ID -F variables[SUBPROJECT_REF]=$CI_COMMIT_REF_SLUG https://git.uspex-team.org/api/v4/projects/59/trigger/pipeline"
+  except:
+    - triggers
