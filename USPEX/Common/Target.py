@@ -1,3 +1,7 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
 '''
 @file        Target.py
 @author:     Pavel Bushlanov
@@ -8,12 +12,9 @@
 '''
 
 
-import logging
 from types import SimpleNamespace
 
 from .VariationOperators import VariationOperators
-
-logger = logging.getLogger(__name__)
 
 
 class Target(object):

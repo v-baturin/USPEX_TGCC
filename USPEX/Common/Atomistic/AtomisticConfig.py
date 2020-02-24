@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 '''
 @file        Config.py
 @author:     Pavel Bushlanov
@@ -8,7 +11,6 @@
 '''
 
 
-import logging
 import numpy as np
 
 from copy import copy
@@ -29,7 +31,6 @@ _MIN_ANGLE = 55
 # A minimal angle between the vector defining the lattice and the
 # diagonal of the parallelogram formed by other 2 vectors defining the lattice
 _MIN_DIAG_ANGLE = 30
-logger = logging.getLogger(__name__)
 
 # Deafult fingerprints tolerance
 _DEFAULT_FINGERPRINT_TOLERANCE = 0.008
