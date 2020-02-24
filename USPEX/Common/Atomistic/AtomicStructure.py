@@ -17,6 +17,7 @@ import copy
 import json
 import numpy as np
 
+from ..System import System
 from .optLattice import optLattice
 from .Element import Element
 from .mol.coord2Zmatrix import coord2Zmatrix
@@ -24,7 +25,7 @@ from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
 
 
-class AtomicStructure(object):
+class AtomicStructure(System):
     '''
     Class describing generic Atoms-type structure with properties
 
@@ -482,14 +483,6 @@ class AtomicStructure(object):
                         return False
         return True
 
-    def toJSON(self) -> str:
-        '''
-        Method which creates JSON representation of the structure.
-
-        :return: String with JSON representation of the structure.
-        '''
-        return json.dumps(self.toDICT())
-
     def toDICT(self) -> dict:
         '''
         Method which creates dictionary representation of the structure.
@@ -533,16 +526,6 @@ class AtomicStructure(object):
         if 'lastUsedModeIter' in dct:
             del dct['lastUsedModeIter']
         return dct
-
-    @classmethod
-    def fromJSON(cls, repr : str):
-        '''
-        Method which reconstructs AtoimicStructure from JSON representation.
-
-        :param repr: String with JSON representation of the structure.
-        '''
-        dct = json.loads(repr)
-        return cls.fromDICT(dct)
 
     @classmethod
     def fromDICT(cls, dct : dict):

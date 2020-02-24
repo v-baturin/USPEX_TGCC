@@ -8,6 +8,7 @@
 '''
 
 from copy import copy
+import json
 
 
 class System(object):
@@ -15,42 +16,48 @@ class System(object):
 
     '''
 
-    _newID = 0
     _isBad = False
-
-
-    def __init__(self, **kwargs):
-        super(System, self).__init__(**kwargs)
-        self.ID = self.getNewID()
-        self.setNewID(self.ID + 1)
-        self.howCome = None
-
-    @classmethod
-    def getNewID(cls):
-        return cls._newID
-
-    @classmethod
-    def setNewID(cls, ID):
-        cls._newID = ID
-
-    def __hash__(self):
-        return hash(self.ID)
 
     def markBad(self):
         self._isBad = True
 
+    @property
     def isBad(self):
         return self._isBad
 
-    ############################################
-    # Code responds for serialization
-    def __getstate__(self):
-        state = copy(self.__dict__)
-        state['newID'] = self.getNewID()
-        return state
 
-    def __setstate__(self, state):
-        newID = state['newID']
-        del state['newID']
-        self.__dict__ = copy(state)
-        self.setNewID(newID)
+    def toJSON(self) -> str:
+        '''
+        Method which creates JSON representation of the structure.
+
+        :return: String with JSON representation of the structure.
+        '''
+        return json.dumps(self.toDICT())
+
+    def toDICT(self) -> dict:
+        '''
+        Method which creates dictionary representation of the structure.
+
+        :return: Dictionary representing the structure.
+        '''
+        return copy(self.__dict__)
+
+    @classmethod
+    def fromJSON(cls, repr : str):
+        '''
+        Method which reconstructs AtoimicStructure from JSON representation.
+
+        :param repr: String with JSON representation of the structure.
+        '''
+        return cls.fromDICT(json.loads(repr))
+
+    @classmethod
+    def fromDICT(cls, dct : dict):
+        '''
+        Method which reconstructs AtoimicStructure from dictionary representation.
+
+        :param dct: Dictionary representing the structure.
+        '''
+        newStructure = cls()
+        newStructure.__dict__.update(copy(dct))
+        return newStructure
