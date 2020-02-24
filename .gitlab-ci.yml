@@ -44,8 +44,6 @@ trigger_build:
   image: $CI_REGISTRY/uspex_python/thirdparty/aux:3-produce-artifacts-in-ci
   stage: deploy
   script:
-    - apt update
-    - apt install -y curl
     - "curl -X POST -F token=$USPEX_AGAIN_BUILD_TRIGGER -F ref=1-build-from-artifacts -F variables[SUBPROJECT_ID]=$CI_PROJECT_ID -F variables[SUBPROJECT_REF]=$CI_COMMIT_REF_SLUG https://git.uspex-team.org/api/v4/projects/59/trigger/pipeline"
   except:
     - triggers
