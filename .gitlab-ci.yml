@@ -9,13 +9,13 @@ variables:
   DOCKER_DRIVER: overlay2
 
 unittesting_source:
-  image: $CI_REGISTRY/uspex_python/uspex_again:1-build-from-artifacts
+  image: $CI_REGISTRY/uspex_python/uspex_again:master
   stage: unittesting_source
   script:
     - nosetests -v .
 
 build:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython:3-produce-artifacts-in-ci
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
   stage: build
   script:
     - find . -name ".git*" | xargs rm -rf
@@ -33,7 +33,7 @@ build:
     expire_in: 1 mos 1 day
 
 unittesting_binaries:
-  image: $CI_REGISTRY/uspex_python/uspex_again:1-build-from-artifacts
+  image: $CI_REGISTRY/uspex_python/uspex_again:master
   stage: unittesting_binaries
   script:
     - cp -r ./onlytests/* ./Src
@@ -41,9 +41,9 @@ unittesting_binaries:
     - nosetests -v .
 
 trigger_build:
-  image: $CI_REGISTRY/uspex_python/thirdparty/aux:3-produce-artifacts-in-ci
+  image: $CI_REGISTRY/uspex_python/thirdparty/aux:master
   stage: deploy
   script:
-    - "curl -X POST -F token=$USPEX_AGAIN_BUILD_TRIGGER -F ref=1-build-from-artifacts -F variables[SUBPROJECT_ID]=$CI_PROJECT_ID -F variables[SUBPROJECT_REF]=$CI_COMMIT_REF_SLUG https://git.uspex-team.org/api/v4/projects/59/trigger/pipeline"
+    - "curl -X POST -F token=$USPEX_AGAIN_BUILD_TRIGGER -F ref=master -F variables[SUBPROJECT_ID]=$CI_PROJECT_ID -F variables[SUBPROJECT_REF]=$CI_COMMIT_REF_SLUG https://git.uspex-team.org/api/v4/projects/59/trigger/pipeline"
   except:
     - triggers
