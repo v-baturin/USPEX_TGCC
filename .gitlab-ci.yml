@@ -9,17 +9,16 @@ variables:
   DOCKER_DRIVER: overlay2
 
 unittesting_source:
-  image: $CI_REGISTRY/uspex_python/uspex_again:master
+  image: $CI_REGISTRY/uspex_python/uspex_again:1-build-from-artifacts
   stage: unittesting_source
   script:
     - nosetests -v .
 
 build:
-  image: python:3.7
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython:3-produce-artifacts-in-ci
   stage: build
   script:
     - find . -name ".git*" | xargs rm -rf
-    - pip install --trusted-host pypi.python.org cython
     - mkdir Src
     - mkdir onlytests
     - find . -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./onlytests/$(dirname {}) && mv {} ./onlytests/$(dirname {})'
@@ -34,7 +33,7 @@ build:
     expire_in: 1 mos 1 day
 
 unittesting_binaries:
-  image: $CI_REGISTRY/uspex_python/uspex_again:master
+  image: $CI_REGISTRY/uspex_python/uspex_again:1-build-from-artifacts
   stage: unittesting_binaries
   script:
     - cp -r ./onlytests/* ./Src
@@ -42,7 +41,7 @@ unittesting_binaries:
     - nosetests -v .
 
 trigger_build:
-  image: debian
+  image: $CI_REGISTRY/uspex_python/thirdparty/aux:3-produce-artifacts-in-ci
   stage: deploy
   script:
     - apt update
