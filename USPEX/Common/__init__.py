@@ -1,22 +1,23 @@
-import os
 import logging
+logger = logging.getLogger(__name__)
+
+import os
 import pickle
 
 # default name for file containing restore information
 DEFAULT_FILENAME = 'dump'
-logger = logging.getLogger(__name__)
 
 
 def save(obj, filename=DEFAULT_FILENAME):
     with open(filename, 'wb') as fp:
         pickle.dump(obj, fp)
-        logger.debug('Calculation written to a %s file' % filename)
+        logger.debug(f'Calculation written to a {filename} file')
 
 def load(cls, filename=DEFAULT_FILENAME):
     with open(filename, 'rb') as fp:
         uspex = pickle.load(fp)
         assert isinstance(uspex, cls)
-    logger.info('Calculation picked up from ' + filename)
+    logger.info(f'Calculation picked up from {filename}')
     return uspex
 
 def clean(filename=DEFAULT_FILENAME):
