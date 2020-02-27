@@ -8,8 +8,6 @@
 '''
 
 
-from abc import ABCMeta, abstractmethod
-
 from USPEX.Common.Config import Config
 
 MAX_OUTPUT_SIZE = 8
@@ -19,8 +17,6 @@ class VarOperator(object):
     '''
 
     '''
-
-    __metaclass__ = ABCMeta
 
     name = None
     isActive = True
@@ -66,9 +62,8 @@ class VarOperator(object):
     def __hash__(self):
         return hash(self.name)
 
-    @abstractmethod
     def __call__(self, *args, **kwargs) -> tuple:
-        pass
+        return ()
 
     def tune(self, population : list):
         pass

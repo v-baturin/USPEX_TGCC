@@ -9,13 +9,13 @@
 
 
 import logging
+logger = logging.getLogger(__name__)
+
 import types
-from abc import ABCMeta, abstractmethod
 from typing import List, Tuple
 
 from .ParetoRanking import paretoRanking
 
-logger = logging.getLogger(__name__)
 
 
 def _fitnessRepresentation(fitness : List[Tuple[str, str]]):
@@ -23,8 +23,6 @@ def _fitnessRepresentation(fitness : List[Tuple[str, str]]):
 
 class SystemPool(object):
 
-
-    __metaclass__ = ABCMeta
 
     DEFAULT_FITNESS = []
 
@@ -62,7 +60,6 @@ class SystemPool(object):
                 uniqueIDs.append(system.ID)
         return newFoundSystems
 
-    @abstractmethod
     def cleanDuplicates(self, population : list):
         pass
 
