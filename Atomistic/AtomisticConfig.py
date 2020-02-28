@@ -341,6 +341,9 @@ class ChemicalConfig(Config):
                                   for s in self.molecules[symbol]['symbols']))
         return np.array(volume)
 
+    @property
+    def systemFactory(self):
+        return None
 
 class AtomisticConfig(ChemicalConfig):
     '''
@@ -604,3 +607,7 @@ class AtomisticConfig(ChemicalConfig):
                 numIons = None
 
         return numIons, numBlocks
+
+    @property
+    def systemFactory(self):
+        return AtomicStructure
