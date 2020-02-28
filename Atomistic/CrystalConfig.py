@@ -8,6 +8,7 @@
 '''
 
 from .AtomisticConfig import AtomisticConfig
+from .Crystal import Crystal
 from ..XRay.SpectrumAnalyzer import SpectrumAnalyzer
 
 
@@ -49,3 +50,7 @@ class CrystalConfig(AtomisticConfig):
             return self._spectrumAnalyzer[system]
         else:
             raise RuntimeError('Cannot optimize the quantity xraydistance. No experimental X-ray data found.')
+
+    @property
+    def systemFactory(self):
+        return Crystal

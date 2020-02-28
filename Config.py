@@ -16,3 +16,7 @@ class Config(object):
 
     def isGoodSystem(self, system):
         return True
+
+    @property
+    def systemFactory(self):
+        return None
