@@ -59,7 +59,7 @@ class ChemicalConfig(Config):
 
     def __init__(self, symbols : list, volumeType : str=None, ionDistances : dict=None, goodBonds : list=None,
                  valences : list=None, minVectorLength : int=None, valenceElectrons : list=None,
-                 externalPressure : float=0.0001, moleculesDistinctCheck = True, MolCenters : dict=None, **kwargs):
+                 externalPressure : float=0.0001, moleculesDistinctCheck = True, MolCenters : list=None, **kwargs):
         '''
 
         :param symbols:
@@ -134,24 +134,27 @@ class ChemicalConfig(Config):
                 self.minDistMatrice[i,j] = self.minDistMatrice[j,i] = ionDistances[arg]
 
 
-        self.CenterminDistMatrice = np.zeros((len(self.symbols), len(self.symbols)))
-        radii = []
-        for s in self.symbols:
-            if s not in self.molecules:
-                radii.append(0.22*calcVolume(self.externalPressure, s, self.volumeType) ** (1.0 / 3.0))
-            else:
-                molecule = AtomicStructure.fromDICT(self.molecules[s])
-                molecule.set_masses([1] * len(molecule))
-                molecule.translate(-molecule.get_center_of_mass())
-                values, vectors = molecule.get_moments_of_inertia(vectors=True)
-                ind = np.argsort(values)[0]
-                short_direction = vectors[ind]
-                height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.get_positions()]
-                ind = np.argsort(height_map)[0]
-                s = molecule.get_chemical_symbols()[ind]
-                radii.append(0.45 * np.power(calcVolume(self.externalPressure, s, self.volumeType), 1 / 3.0) + height_map[ind])
-        for i,j in combinations_with_replacement(range(len(radii)),2):
-            self.CenterminDistMatrice[i, j] = self.CenterminDistMatrice[j, i] = (radii[i] + radii[j])
+        if MolCenters:
+            self.CenterminDistMatrice = np.asarray(MolCenters, dtype=float)
+        else:
+            self.CenterminDistMatrice = np.zeros((len(self.symbols), len(self.symbols)))
+            radii = []
+            for s in self.symbols:
+                if s not in self.molecules:
+                    radii.append(0.22*calcVolume(self.externalPressure, s, self.volumeType) ** (1.0 / 3.0))
+                else:
+                    molecule = AtomicStructure.fromDICT(self.molecules[s])
+                    molecule.set_masses([1] * len(molecule))
+                    molecule.translate(-molecule.get_center_of_mass())
+                    values, vectors = molecule.get_moments_of_inertia(vectors=True)
+                    ind = np.argsort(values)[0]
+                    short_direction = vectors[ind]
+                    height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.get_positions()]
+                    ind = np.argsort(height_map)[0]
+                    s = molecule.get_chemical_symbols()[ind]
+                    radii.append(0.45 * np.power(calcVolume(self.externalPressure, s, self.volumeType), 1 / 3.0) + height_map[ind])
+            for i,j in combinations_with_replacement(range(len(radii)),2):
+                self.CenterminDistMatrice[i, j] = self.CenterminDistMatrice[j, i] = (radii[i] + radii[j])
 
         self.moleculesDistinctCheck = moleculesDistinctCheck
 

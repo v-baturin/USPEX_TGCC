@@ -455,14 +455,18 @@ class AtomicStructure(System):
             return True
         indices = np.fromiter((symbols.index(symbol) for symbol in self._chemicalSymbols), dtype=int)
         mDM = minDistMatrix[tuple(np.meshgrid(indices, indices))]
+        actualDistances = self.get_all_distances(mic=np.any(self.atoms.get_pbc()))
+        constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
         for inds, molecule in zip(self._molecules, self.molecules):
-            if len(inds) == 1:
-                mDM[inds[0], inds[0]] = 0
-            else:
-                minDist = mDM[tuple(np.meshgrid(inds, inds))]
-                molDist = molecule.get_all_distances(mic = False) - 0.02
-                mDM[tuple(np.meshgrid(inds, inds))] = np.minimum(minDist, molDist)
-        return np.all(self.get_all_distances(mic=np.any(self.atoms.get_pbc())) >= mDM.T)
+            distVectorsMatrix = molecule.get_all_distances(mic = True, vector = True)
+            for i, distVectorsRow in enumerate(distVectorsMatrix):
+                for j, vect in enumerate(distVectorsRow):
+                    vect = self.cell.scaled_positions(vect)
+                    if np.all(np.abs(vect) < 1.0):
+                        dists = np.linalg.norm(vect + constNeighbours, axis=1)
+                        distVectorsMatrix[i,j] = self.cell.cartesian_positions(vect + constNeighbours[np.argmin(dists)])
+            actualDistances[tuple(np.meshgrid(inds, inds))] = np.linalg.norm(distVectorsMatrix, axis=2)
+        return np.all(actualDistances >= mDM.T)
 
     def isMoleculesDistinct(self) -> bool:
         '''
