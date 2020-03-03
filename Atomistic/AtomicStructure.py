@@ -548,6 +548,13 @@ class AtomicStructure(System):
         del dct['positions']
         newStructure.set_pbc(dct['pbc'])
         del dct['pbc']
+        assert len(dct['molecules']) == len(dct['molFormats']) and \
+               len(dct['molecules']) == len (dct['molFlexDihedrals']) and \
+               len(dct['molecules']) == len(dct['molSymbols']), \
+            f'Molecule spesification missmatch:' \
+            f' molecules, formats, flex_dihedrals, symbols:' \
+            f' {len(dct["molecules"])}, {len(dct["molFormats"])},' \
+            f' {len (dct["molFlexDihedrals"])}, {len(dct["molSymbols"])}.'
         for molecule, frmt, flex_dihedral, molSymbol in zip(dct['molecules'], dct['molFormats'], dct['molFlexDihedrals'], dct['molSymbols']):
             newStructure.merge(molecule, frmt, flex_dihedral, molSymbol)
         del dct['molecules']
