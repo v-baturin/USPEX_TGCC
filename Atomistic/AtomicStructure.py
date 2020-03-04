@@ -493,7 +493,7 @@ class AtomicStructure(System):
 
         :return: Dictionary representing the structure.
         '''
-        dct = copy.copy(self.__dict__)
+        dct = super().toDICT()
         dct['symbols'] = self._chemicalSymbols
         del dct['_chemicalSymbols']
         dct['molecules'] = self._molecules
