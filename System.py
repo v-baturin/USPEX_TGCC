@@ -40,7 +40,13 @@ class System(object):
 
         :return: Dictionary representing the structure.
         '''
-        return copy(self.__dict__)
+
+        dct = copy(self.__dict__)
+        if '__hash__' in dct:
+            del dct['__hash__']
+        if '__copy__' in dct:
+            del dct['__copy__']
+        return dct
 
     @classmethod
     def fromJSON(cls, repr : str):
