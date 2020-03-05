@@ -23,7 +23,7 @@ class GlobalOptimizer(Worker):
     that will be next optimized and selected best of them to the output.
     '''
 
-    def __init__(self, target : dict, selection : dict, output):
+    def __init__(self, target : dict, selection : dict, output = None, newoutput = None):
         '''
         target: {type, params} - name of target system and its parameters; obligatory
         selection: {type, params} - name of selection to launch and its parameters; obligatory
@@ -41,7 +41,13 @@ class GlobalOptimizer(Worker):
         # List of new found structure on this particular step
         self.newStructures = None
 
-        self.output.run(targetConfig=self.target.config, selectionConfig=self.selection.config)
+        if self.output is not None:
+            self.output.run(targetConfig=self.target.config, selectionConfig=self.selection.config)
+
+        self.newoutput = newoutput
+        if self.newoutput is not None:
+            self.newoutput.targetConfig = self.target.config
+            self.newoutput.selectionConfig = self.selection.config
 
     def run(self, population : list = None):
         '''
@@ -55,7 +61,12 @@ class GlobalOptimizer(Worker):
         self.population, *analysis = self.selection.createPopulation(population, self.newStructures, self.fitness)
 
         self.save()
-        self.output.run(analysis=analysis)
+        if self.output is not None:
+            self.output.run(analysis=analysis)
+
+        if self.newoutput is not  None:
+            self.newoutput.handleAnalysis(analysis)
+
         return self.population
 
     def update(self, population : list):
@@ -68,4 +79,8 @@ class GlobalOptimizer(Worker):
         self.target.pool.update(self.newStructures)
         best = self.target.pool.sort(self.fitness, self.target.pool.uniqueSystems)[0]
         self.target.pool.setBest(self.fitness, best)
-        self.output.run(pool=self.target.pool)
+        if self.output is not None:
+            self.output.run(pool=self.target.pool)
+
+        if self.newoutput is not  None:
+            self.newoutput.handlePool(self.target.pool)
