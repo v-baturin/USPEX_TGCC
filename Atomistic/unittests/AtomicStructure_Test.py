@@ -41,3 +41,10 @@ class AtomicStructure_Test(unittest.TestCase):
         with open(f'{PREFIX}/h2o_nh3_2', 'rt') as f:
             string = f.read()
         self.assertRaises(AssertionError, Crystal.fromJSON, string)
+
+    def test_isBad(self):
+        with open("{}/CNHO_2_system".format(PREFIX), "rt") as f:
+            system = Crystal.fromJSON(f.read())
+        self.assertFalse(system.isBad)
+        system.markBad()
+        self.assertTrue(system.isBad)
