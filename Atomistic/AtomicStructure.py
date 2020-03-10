@@ -576,3 +576,12 @@ class AtomicStructure(System):
 
         newStructure.__dict__.update(dct)
         return newStructure
+
+    @property
+    def isBad(self):
+        return super().isBad
+
+    @isBad.setter
+    def isBad(self, value : bool):
+        super().isBad = value
+        self.enthalpy = np.inf
