@@ -19,12 +19,15 @@ class System(object):
     _isBad = False
 
     def markBad(self):
-        self._isBad = True
+        self.isBad = True
 
     @property
     def isBad(self):
         return self._isBad
 
+    @isBad.setter
+    def isBad(self, value : bool):
+        self._isBad = value
 
     def toJSON(self) -> str:
         '''
