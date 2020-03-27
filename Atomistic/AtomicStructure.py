@@ -83,12 +83,12 @@ class AtomicStructure(System):
 
         :param item: Attribute name
         '''
-        if item == '__setstate__':
-            raise AttributeError
-        if hasattr(self.atoms, item):
+        if item == '__setstate__' or item == 'atoms' or not hasattr(self, 'atoms'):
+            raise AttributeError(self,item)
+        elif hasattr(self.atoms, item):
             return getattr(self.atoms, item)
         else:
-            raise AttributeError
+            raise AttributeError(self,item)
 
     def __len__(self):
         '''

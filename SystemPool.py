@@ -11,7 +11,6 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import types
 from typing import List, Tuple
 
 from .ParetoRanking import paretoRanking
@@ -109,10 +108,5 @@ class SystemPool(object):
     def assignID(self, system):
         system.ID = self._newID
         self._newID += 1
-        def systemHash(system): return hash(system.ID)
-        system.__hash__ = types.MethodType(systemHash, system)
-        def copy(system):
-            dct = system.toDICT()
-            del dct['ID']
-            return type(system).fromDICT(dct)
-        system.__copy__ = types.MethodType(copy, system)
+        system.__hash__ = system.systemHash
+        system.__copy__ = system.copy
