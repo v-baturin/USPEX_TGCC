@@ -70,3 +70,11 @@ class System(object):
         newStructure = cls()
         newStructure.__dict__.update(copy(dct))
         return newStructure
+
+    def systemHash(self):
+        return hash(self.ID)
+
+    def copy(self):
+        dct = self.toDICT()
+        del dct['ID']
+        return type(self).fromDICT(dct)
