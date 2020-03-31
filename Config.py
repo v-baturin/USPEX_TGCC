@@ -7,17 +7,16 @@
 @brief       Abstract class for engines of calculations in USPEX, like USPEX, VCNEB ...
 '''
 
-from abc import ABCMeta, abstractmethod
-
 
 class Config(object):
-    __metaclass__ = ABCMeta
 
-    name = None
 
     def __init__(self, **kwargs):
         super().__init__()
 
-    @abstractmethod
     def isGoodSystem(self, system):
-        pass
+        return True
+
+    @property
+    def systemFactory(self):
+        return None

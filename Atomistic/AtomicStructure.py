@@ -17,6 +17,7 @@ import copy
 import json
 import numpy as np
 
+from ..System import System
 from .optLattice import optLattice
 from .Element import Element
 from .mol.coord2Zmatrix import coord2Zmatrix
@@ -24,7 +25,7 @@ from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
 
 
-class AtomicStructure(object):
+class AtomicStructure(System):
     '''
     Class describing generic Atoms-type structure with properties
 
@@ -82,12 +83,12 @@ class AtomicStructure(object):
 
         :param item: Attribute name
         '''
-        if item == '__setstate__':
-            raise AttributeError
-        if hasattr(self.atoms, item):
+        if item == '__setstate__' or item == 'atoms' or not hasattr(self, 'atoms'):
+            raise AttributeError(self,item)
+        elif hasattr(self.atoms, item):
             return getattr(self.atoms, item)
         else:
-            raise AttributeError
+            raise AttributeError(self,item)
 
     def __len__(self):
         '''
@@ -454,14 +455,18 @@ class AtomicStructure(object):
             return True
         indices = np.fromiter((symbols.index(symbol) for symbol in self._chemicalSymbols), dtype=int)
         mDM = minDistMatrix[tuple(np.meshgrid(indices, indices))]
+        actualDistances = self.get_all_distances(mic=np.any(self.atoms.get_pbc()))
+        constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
         for inds, molecule in zip(self._molecules, self.molecules):
-            if len(inds) == 1:
-                mDM[inds[0], inds[0]] = 0
-            else:
-                minDist = mDM[tuple(np.meshgrid(inds, inds))]
-                molDist = molecule.get_all_distances(mic = False) - 0.02
-                mDM[tuple(np.meshgrid(inds, inds))] = np.minimum(minDist, molDist)
-        return np.all(self.get_all_distances(mic=np.any(self.atoms.get_pbc())) >= mDM.T)
+            distVectorsMatrix = molecule.get_all_distances(mic = True, vector = True)
+            for i, distVectorsRow in enumerate(distVectorsMatrix):
+                for j, vect in enumerate(distVectorsRow):
+                    vect = self.cell.scaled_positions(vect)
+                    if np.all(np.abs(vect) < 1.0):
+                        dists = np.linalg.norm(vect + constNeighbours, axis=1)
+                        distVectorsMatrix[i,j] = self.cell.cartesian_positions(vect + constNeighbours[np.argmin(dists)])
+            actualDistances[tuple(np.meshgrid(inds, inds))] = np.linalg.norm(distVectorsMatrix, axis=2)
+        return np.all(actualDistances >= mDM.T)
 
     def isMoleculesDistinct(self) -> bool:
         '''
@@ -482,21 +487,13 @@ class AtomicStructure(object):
                         return False
         return True
 
-    def toJSON(self) -> str:
-        '''
-        Method which creates JSON representation of the structure.
-
-        :return: String with JSON representation of the structure.
-        '''
-        return json.dumps(self.toDICT())
-
     def toDICT(self) -> dict:
         '''
         Method which creates dictionary representation of the structure.
 
         :return: Dictionary representing the structure.
         '''
-        dct = copy.copy(self.__dict__)
+        dct = super().toDICT()
         dct['symbols'] = self._chemicalSymbols
         del dct['_chemicalSymbols']
         dct['molecules'] = self._molecules
@@ -535,16 +532,6 @@ class AtomicStructure(object):
         return dct
 
     @classmethod
-    def fromJSON(cls, repr : str):
-        '''
-        Method which reconstructs AtoimicStructure from JSON representation.
-
-        :param repr: String with JSON representation of the structure.
-        '''
-        dct = json.loads(repr)
-        return cls.fromDICT(dct)
-
-    @classmethod
     def fromDICT(cls, dct : dict):
         '''
         Method which reconstructs AtoimicStructure from dictionary representation.
@@ -561,6 +548,13 @@ class AtomicStructure(object):
         del dct['positions']
         newStructure.set_pbc(dct['pbc'])
         del dct['pbc']
+        assert len(dct['molecules']) == len(dct['molFormats']) and \
+               len(dct['molecules']) == len (dct['molFlexDihedrals']) and \
+               len(dct['molecules']) == len(dct['molSymbols']), \
+            f'Molecule spesification missmatch:' \
+            f' molecules, formats, flex_dihedrals, symbols:' \
+            f' {len(dct["molecules"])}, {len(dct["molFormats"])},' \
+            f' {len (dct["molFlexDihedrals"])}, {len(dct["molSymbols"])}.'
         for molecule, frmt, flex_dihedral, molSymbol in zip(dct['molecules'], dct['molFormats'], dct['molFlexDihedrals'], dct['molSymbols']):
             newStructure.merge(molecule, frmt, flex_dihedral, molSymbol)
         del dct['molecules']
@@ -582,3 +576,9 @@ class AtomicStructure(object):
 
         newStructure.__dict__.update(dct)
         return newStructure
+
+    @System.isBad.setter
+    def isBad(self, value : bool):
+        System.isBad.fset(self, value)
+        if value:
+            self.enthalpy = np.inf

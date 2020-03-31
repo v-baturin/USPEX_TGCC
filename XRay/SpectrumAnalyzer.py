@@ -1,9 +1,10 @@
 """
-@file:      SpectrumAnalyzer.py
-@author:    Michele Galasso
-@contact:   michele.galasso@skoltech.ru
-@date:      4 October 2019
-@brief:     Class which implements the fitness function for X-ray optimization.
+USPEX.Common.XRay.SpectrumAnalyzer
+==================================
+
+Class which implements the fitness function for comparing X-ray spectra
+
+.. codeauthor:: Michele Galasso <m.galasso@yandex.com>
 """
 
 import numpy as np
@@ -13,31 +14,50 @@ from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 
 FACTORS = (
-    5,              # fitness factor for I > 90
-    1,              # fitness factor for 50 < I <= 90
+    5.0,            # fitness factor for I > 90
+    1.0,            # fitness factor for 50 < I <= 90
     0.25,           # fitness factor for 10 < I <= 50
     0.02,           # fitness factor for 1 < I <= 10
-    0               # fitness factor for I <= 1
+    0.0             # fitness factor for I <= 1
 )
 
 
 class SpectrumAnalyzer(object):
-    def __init__(self, spectrum_starts: int, spectrum_ends: int, wavelength: float, match_tol: float,
+    def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
                  exp_angles: list, exp_intensities: list):
         """
-        Initializes the class by parsing a file which contains information about the experimental spectrum
-        :param experimentalSpectrum: file name
+        Initializes the class.
+
+        :type spectrum_starts: float
+        :param spectrum_starts:
+            minimum diffraction angle considered for the comparison between theoretical and experimental spectra.
+        :type spectrum_ends: float
+        :param spectrum_ends:
+            maximum diffraction angle considered for the comparison between theoretical and experimental spectra.
+        :type wavelength: float
+        :param wavelength: experimental wavelength.
+        :type match_tol: float
+        :param match_tol: tolerance in degrees for considering a match between two peaks.
+        :type exp_angles: list[float]
+        :param exp_angles: angles of the experimental spectrum.
+        :type exp_intensities: list[float]
+        :param exp_intensities: intensities of the experimental spectrum.
         """
         self.spectrum_starts = spectrum_starts
         self.spectrum_ends = spectrum_ends
         self.wavelength = wavelength
         self.match_tol = match_tol
-        self.exp_angles = exp_angles
-        self.exp_intensities = exp_intensities
+        self.exp_angles = np.array(exp_angles)
+        self.exp_intensities = np.array(exp_intensities) / max(exp_intensities) * 100
 
     def __getitem__(self, item):
         """
-        Special method which allows '[]' operator. Calculates the agreement with the experimental X-ray spectrum,
+        Special method which allows the '[]' operator. Calculates the agreement with the experimental X-ray spectrum.
+
+        :type item: :class:`AtomicStructure` or one of its subclasses
+        :param item: the crystal structure whose theoretical spectrum needs to be compared with experiment.
+        :rtype: float
+        :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
         # compute agreement
         amplitude = self.spectrum_ends - self.spectrum_starts
@@ -52,9 +72,9 @@ class SpectrumAnalyzer(object):
             return 100.0
 
         fitness = 0
-        pattern = calculator.get_pattern(structure)
-        th_angles = pattern.x[np.logical_and(pattern.x < self.spectrum_ends, pattern.x > self.spectrum_starts)]
-        th_intensities = pattern.y[np.logical_and(pattern.x < self.spectrum_ends, pattern.x > self.spectrum_starts)]
+        pattern = calculator.get_pattern(structure, two_theta_range=(self.spectrum_starts, self.spectrum_ends))
+        th_angles = pattern.x
+        th_intensities = pattern.y
 
         # match corresponding peaks
         exp_matches, th_matches = [], []
@@ -95,10 +115,13 @@ class SpectrumAnalyzer(object):
     @staticmethod
     def parse(filename : str):
         """
-        It parses a file containing information about the experimental spectrum
-        and returns a dictionary containing the parameters for class initialization.
-        :param filename:
-        :return: dict
+        It parses a file containing information about the experimental spectrum and
+        it returns a dictionary containing the parameters for class initialization.
+
+        :type filename: str
+        :param filename: filename.
+        :rtype: dict
+        :return: kwargs parsed from the file.
         """
         dct = {}
         with open(filename, 'r') as f:
@@ -106,9 +129,9 @@ class SpectrumAnalyzer(object):
             while current_line != '':
                 values = current_line.split()
                 if values[0] == 'start':
-                    dct['spectrum_starts'] = int(values[1])
+                    dct['spectrum_starts'] = float(values[1])
                 elif values[0] == 'end':
-                    dct['spectrum_ends'] = int(values[1])
+                    dct['spectrum_ends'] = float(values[1])
                 elif values[0] == 'wavelength':
                     dct['wavelength'] = float(values[1])
                 elif values[0] == 'match_tol':
@@ -129,9 +152,13 @@ class SpectrumAnalyzer(object):
     def choose_factor(intensity : float, choices=FACTORS):
         """
         Simple auxiliary function which selects a factor based on the value of intensity.
-        :param intensity:
-        :param choices:
-        :return:
+
+        :type intensity: float
+        :param intensity: value of intensity.
+        :type choices: tuple
+        :param choices: importance factors from which to choose.
+        :rtype: float
+        :return: importance factor chosen according to the intensity.
         """
         if intensity > 90:
             factor = choices[0]

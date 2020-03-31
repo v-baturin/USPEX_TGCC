@@ -8,8 +8,6 @@
 '''
 
 
-from abc import ABCMeta, abstractmethod
-
 from USPEX.Common.Config import Config
 
 MAX_OUTPUT_SIZE = 8
@@ -20,12 +18,10 @@ class VarOperator(object):
 
     '''
 
-    __metaclass__ = ABCMeta
-
     name = None
     isActive = True
 
-    def __init__(self, config : Config, initFrac : float, minFrac : float=0.1, maxFrac : float=1.0, maxOutputSize : int=MAX_OUTPUT_SIZE):
+    def __init__(self, config : Config, pool, initFrac : float, minFrac : float=0.1, maxFrac : float=1.0, maxOutputSize : int=MAX_OUTPUT_SIZE):
         '''
 
         :param config:
@@ -35,6 +31,7 @@ class VarOperator(object):
         '''
 
         self.config = config
+        self.pool = pool
         assert minFrac >= 0.0 and minFrac <= 1.0
         assert maxFrac >= 0.0 and maxFrac <= 1.0
         assert minFrac <= maxFrac
@@ -65,9 +62,8 @@ class VarOperator(object):
     def __hash__(self):
         return hash(self.name)
 
-    @abstractmethod
     def __call__(self, *args, **kwargs) -> tuple:
-        pass
+        return ()
 
     def tune(self, population : list):
         pass

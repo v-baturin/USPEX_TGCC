@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 '''
 @file        Config.py
 @author:     Pavel Bushlanov
@@ -8,7 +11,6 @@
 '''
 
 
-import logging
 import numpy as np
 
 from ase.geometry import get_distances
@@ -30,7 +32,6 @@ _MIN_ANGLE = 55
 # A minimal angle between the vector defining the lattice and the
 # diagonal of the parallelogram formed by other 2 vectors defining the lattice
 _MIN_DIAG_ANGLE = 30
-logger = logging.getLogger(__name__)
 
 # Deafult fingerprints tolerance
 _DEFAULT_FINGERPRINT_TOLERANCE = 0.008
@@ -59,7 +60,7 @@ class ChemicalConfig(Config):
 
     def __init__(self, symbols : list, volumeType : str=None, ionDistances : dict=None, goodBonds : list=None,
                        valences : Dict[str, float]=None, minVectorLength : dict=None, valenceElectrons : Dict[str, float]=None,
-                       externalPressure : float=0.0001, moleculesDistinctCheck = True, MolCenters : dict=None, **kwargs):
+                       externalPressure : float=0.0001, moleculesDistinctCheck = True, MolCenters : list=None, **kwargs):
         '''
 
         :param symbols:
@@ -127,24 +128,27 @@ class ChemicalConfig(Config):
                 self.minDistMatrice[i,j] = self.minDistMatrice[j,i] = ionDistances[arg]
 
 
-        self.CenterminDistMatrice = np.zeros((len(self.symbols), len(self.symbols)))
-        radii = []
-        for s in self.symbols:
-            if s not in self.molecules:
-                radii.append(0.22*calcVolume(self.externalPressure, s, self.volumeType) ** (1.0 / 3.0))
-            else:
-                molecule = AtomicStructure.fromDICT(self.molecules[s])
-                molecule.set_masses([1] * len(molecule))
-                molecule.translate(-molecule.get_center_of_mass())
-                values, vectors = molecule.get_moments_of_inertia(vectors=True)
-                ind = np.argsort(values)[0]
-                short_direction = vectors[ind]
-                height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.get_positions()]
-                ind = np.argsort(height_map)[0]
-                s = molecule.get_chemical_symbols()[ind]
-                radii.append(0.45 * np.power(calcVolume(self.externalPressure, s, self.volumeType), 1 / 3.0) + height_map[ind])
-        for i,j in combinations_with_replacement(range(len(radii)),2):
-            self.CenterminDistMatrice[i, j] = self.CenterminDistMatrice[j, i] = (radii[i] + radii[j])
+        if MolCenters:
+            self.CenterminDistMatrice = np.asarray(MolCenters, dtype=float)
+        else:
+            self.CenterminDistMatrice = np.zeros((len(self.symbols), len(self.symbols)))
+            radii = []
+            for s in self.symbols:
+                if s not in self.molecules:
+                    radii.append(0.22*calcVolume(self.externalPressure, s, self.volumeType) ** (1.0 / 3.0))
+                else:
+                    molecule = AtomicStructure.fromDICT(self.molecules[s])
+                    molecule.set_masses([1] * len(molecule))
+                    molecule.translate(-molecule.get_center_of_mass())
+                    values, vectors = molecule.get_moments_of_inertia(vectors=True)
+                    ind = np.argsort(values)[0]
+                    short_direction = vectors[ind]
+                    height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.get_positions()]
+                    ind = np.argsort(height_map)[0]
+                    s = molecule.get_chemical_symbols()[ind]
+                    radii.append(0.45 * np.power(calcVolume(self.externalPressure, s, self.volumeType), 1 / 3.0) + height_map[ind])
+            for i,j in combinations_with_replacement(range(len(radii)),2):
+                self.CenterminDistMatrice[i, j] = self.CenterminDistMatrice[j, i] = (radii[i] + radii[j])
 
         self.moleculesDistinctCheck = moleculesDistinctCheck
 
@@ -334,6 +338,9 @@ class ChemicalConfig(Config):
                                   for s in self.molecules[symbol]['symbols']))
         return np.array(volume)
 
+    @property
+    def systemFactory(self):
+        return None
 
 class AtomisticConfig(ChemicalConfig):
     '''
@@ -597,3 +604,7 @@ class AtomisticConfig(ChemicalConfig):
                 numIons = None
 
         return numIons, numBlocks
+
+    @property
+    def systemFactory(self):
+        return AtomicStructure
