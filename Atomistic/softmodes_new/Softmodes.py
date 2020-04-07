@@ -4,14 +4,14 @@ import warnings
 
 import numpy as np
 
-from USPEX.Common.Config import Config
+from USPEX.Common.Atomistic.AtomisticConfig import AtomisticConfig
 from USPEX.Common.Atomistic.Element import Element
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 
 from USPEX.Common.Atomistic.Bonds import Bonds
 from .BondHardness_new import BondHardness_new
-from .MaxBonds import MaxBonds, MaxBonds_new
-from .calcHardness import calcHardness
+from .MaxBonds import MaxBonds_new
+from .calcHardness import calcHardness_new
 from .calcSoftModes import calcSoftModes
 from .AtomTypeCounter import atomTypeCounter
 
@@ -39,7 +39,7 @@ class Softmodes(list):
 
     duration_h = -np.inf
 
-    def __init__(self, config : Config, system : AtomicStructure, kvector : List[int]=np.zeros(3)):
+    def __init__(self, config : AtomisticConfig, system : AtomicStructure, kvector : List[int]=np.zeros(3)):
         '''
 
         :param config:
@@ -67,32 +67,17 @@ class Softmodes(list):
         #     self.N_val = [Element(x).valence_electrons for x in atomTypes]
         # self.R_val = np.array([Element(atomType).covalent_radius for atomType in atomTypes])
 
-        start_time = time.time()
-        # bonds = MaxBonds(system)
-        self.duration_bh = time.time() - start_time
-        start_time = time.time()
-        bonds_new = MaxBonds_new(system)
-        self.duration_bh_new = time.time() - start_time
-        # self._calc_soft_modes(system, bonds, kvector)
-        self._calc_soft_modes(system, bonds_new, kvector)
+        frequencies, eigenvectors = calcSoftModes(system, self._config, kvector)
+        self.extend([VibrationalMode(f, v) for f, v in zip(frequencies, eigenvectors.T)])
 
     def hardness(self):
         '''
         :return: hardness of the material.
         '''
         start_time = time.time()
-        hardness = calcHardness(self._config, self.system)
+        hardness = calcHardness_new(self._config, self.system)
         self.duration_h = time.time() - start_time
         return hardness
-
-    def _calc_soft_modes(self, system, bonds:Bonds, kvector : List[int]=np.zeros(3)):
-        start_time = time.time()
-        # each eigenvector has written as column. So, next we are using transpose matrix.
-        # self.R_val, self.N_val, self.val,
-        frequencies, eigenvectors = calcSoftModes(system, self._config, bonds, kvector)
-        self.extend([VibrationalMode(f, v) for f, v in zip(frequencies, eigenvectors.T)])
-        self.duration_sm = time.time() - start_time
-
 
 #
 # if __name__ == '__main__':

@@ -1,7 +1,7 @@
 from __future__ import division
 
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
-from USPEX.Common.Atomistic.Bonds import Bonds
+from .BondHardness_new import BondHardness_new
 
 from USPEX.Common.Atomistic.Element import Element
 
@@ -9,6 +9,7 @@ from USPEX.Common.Atomistic.Element import Element
 
 
 import numpy as np
+from itertools import chain
 
 
 R_val = lambda symbol: Element(symbol).covalent_radius
@@ -42,7 +43,7 @@ def AddDynMat(D, a, b, H, Cos, phase1, phase2):
 
 
 # R_val : dict, N_val : dict, val : dict,
-def calcSoftModes(system : AtomicStructure, config, bonds, kVector0=np.zeros(3)):
+def calcSoftModes(system : AtomicStructure, config, kVector0=np.zeros(3)):
     '''
     The function calculates vibrational modes based on the dynamic matrix (D) constructed from bond hardness model.
 
@@ -59,6 +60,8 @@ def calcSoftModes(system : AtomicStructure, config, bonds, kVector0=np.zeros(3))
     :return eigvector: eigenvector of all modes.
     '''
 
+    bonds = BondHardness_new(system, config.goodBonds)
+
     # assert isinstance(system.bonds, Bonds)
 
     # Convert everything to ndarray:
@@ -73,8 +76,6 @@ def calcSoftModes(system : AtomicStructure, config, bonds, kVector0=np.zeros(3))
     kVector = np.dot(kVector0, rec_lat)
 
     # Obtain the bond information:
-    bond_groups = bonds.all_types()    # list of bond group
-    N_group = len(bond_groups)           # number of bond group
     N_atom = len(system)  # number of atoms
 
     # Initiallization of Dynamic matrix (3N*3N):
@@ -82,21 +83,22 @@ def calcSoftModes(system : AtomicStructure, config, bonds, kVector0=np.zeros(3))
 
     # Calculate bond valence using classical Brown's bond valence model.
     # nu_factor should be normalized to satisfy sum rule.
-    nu_factor = np.zeros(N_atom)
+    nu_factor = []
 
     # atomTypes, atom_type_seq = atomTypeCounter(system.chemicalSymbols)
-    for k, s in zip(range(N_atom), system.get_chemical_symbols()):
+    for k, symbol in enumerate(system.chemicalSymbols):
         nu_full = 0.0
-        for bond in bonds:
+
+        for bond in chain(*bonds):  # how many type of bonds
             a, b = bond.indicies
             if a == k:
                 nu_full += np.exp(-bond.delta / 0.37)
             if b == k:
                 nu_full += np.exp(-bond.delta / 0.37)
-        nu_factor[k] = config.valences[s] / nu_full
+        nu_factor.append(config.valences[symbol] / nu_full)
 
-    for bondtype in bond_groups:
-        for bond in bonds.getType(bondtype):
+    for bond_group in bonds:
+        for bond in bond_group:
             s1, s2 = bond.symbols
             i1, i2 = bond.indicies
             # a = atom_type_seq[ID1]

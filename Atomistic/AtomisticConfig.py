@@ -58,7 +58,7 @@ class ChemicalConfig(Config):
     minDistMatrice = None
     CenterminDistMatrice = None
 
-    def __init__(self, symbols : list, volumeType : str=None, ionDistances : dict=None, goodBonds : list=None,
+    def __init__(self, symbols : list, volumeType : str=None, ionDistances : dict=None, goodBonds : dict=None,
                        valences : Dict[str, float]=None, minVectorLength : dict=None, valenceElectrons : Dict[str, float]=None,
                        externalPressure : float=0.0001, moleculesDistinctCheck = True, MolCenters : list=None, **kwargs):
         '''
@@ -101,10 +101,15 @@ class ChemicalConfig(Config):
 
 
         if goodBonds is not None:
-            self.goodBonds = np.asarray(goodBonds)
-            assert len(self.goodBonds.shape) == 2
+            self.goodBonds = goodBonds
         else:
-            self.goodBonds = defaultGoodBonds(self.chemicalSymbols)
+            self.goodBonds = {}
+            goodBonds = defaultGoodBonds(self.chemicalSymbols)
+            for i, j in combinations_with_replacement(range(len(self.chemicalSymbols)), 2):
+                arg = '{}-{}'.format(self.chemicalSymbols[i],self.chemicalSymbols[j])
+                self.goodBonds[arg] = goodBonds[i,j]
+                arg = '{}-{}'.format(self.chemicalSymbols[j], self.chemicalSymbols[i])
+                self.goodBonds[arg] = goodBonds[j, i]
 
         self.valences = valences if valences is not None else {symbol: Element(symbol).valence for symbol in self.chemicalSymbols}
         self.valenceElectrons = valenceElectrons if valenceElectrons is not None else {symbol: Element(symbol).valence_electrons for symbol in self.chemicalSymbols}

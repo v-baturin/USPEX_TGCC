@@ -114,68 +114,100 @@ class Bond(object):
         return not (isEqual_Symbols and isEqualDistance)
 
 
-class Bonds(List[Bond]):
+# class Bonds(List[Bond]):
+#     '''
+#     Class for the list of the bonds.
+#     '''
+#
+#     def append(self, object : Bond):
+#         super(Bonds, self).append(object)
+#
+#     def getType(self, type):
+#         '''
+#         :param type (int or None): type number.
+#         :return: all bonds of _type_.
+#         '''
+#         return Bonds([x for x in self if x.type == type])
+#
+#     def all_types(self):
+#         '''
+#         :return: all types of the bonds in this list.
+#         '''
+#         return set([x.type for x in self])
+#
+#     # TODO do it
+#     def _is3Dconnected(self) -> bool:
+#         X = np.max([np.abs(bond.direction[0]) for bond in self])
+#         Y = np.max([np.abs(bond.direction[1]) for bond in self])
+#         Z = np.max([np.abs(bond.direction[2]) for bond in self])
+#         return X > 0 and Y > 0 and Z > 0
+#
+#     # TODO fix it
+#     def connectList(self):
+#         '''
+#         IMPORTANT NOTE: this implementation checks connectivity of the atoms INSIDE unit cell.
+#         It skips bonds that have and end in neighboring cells.
+#         :return: the connectivity list in this set of bonds.
+#         '''
+#
+#         # First, lets check whether we are not consider the case, when we have only 1 atom in unit cell.
+#         uniqueAtoms = np.unique([bond.indicies for bond in self])
+#         if 1 == len(uniqueAtoms):
+#             return [uniqueAtoms[0]]
+#
+#         # bonds inside the unit cell
+#         bonds = [bond.indicies for bond in self]
+#         uniqueAtoms = np.unique(bonds)
+#         pairs = {}
+#
+#         for atom in uniqueAtoms:
+#             ToAdd = np.zeros((0, 1), dtype=int)
+#             for eachBond in bonds:
+#                 if eachBond[0] == atom:
+#                     ToAdd = np.append(ToAdd, eachBond[1])
+#                 elif eachBond[1] == atom:
+#                     ToAdd = np.append(ToAdd, eachBond[0])
+#             if len(ToAdd):
+#                 ToAdd = np.array([x for x in ToAdd if x != atom], dtype=int)
+#                 pairs[atom] = set(np.unique(ToAdd))
+#
+#         visited = dfs1(pairs, uniqueAtoms[0])
+#         return list(visited)
+#
+#     def __add__(self, other):
+#         return Bonds(super(Bonds,self).__add__(other))
+
+def connectList(bondsGraph):
     '''
-    Class for the list of the bonds.
+    IMPORTANT NOTE: this implementation checks connectivity of the atoms INSIDE unit cell.
+    It skips bonds that have and end in neighboring cells.
+    :return: the connectivity list in this set of bonds.
     '''
+    bonds = [bond.indicies for bond in bondsGraph]
 
-    def append(self, object : Bond):
-        super(Bonds, self).append(object)
+    # First, lets check whether we are not consider the case, when we have only 1 atom in unit cell.
+    uniqueAtoms = np.unique(bonds)
+    if 1 == len(uniqueAtoms):
+        return [uniqueAtoms[0]]
 
-    def getType(self, type):
-        '''
-        :param type (int or None): type number.
-        :return: all bonds of _type_.
-        '''
-        return Bonds([x for x in self if x.type == type])
+    # bonds inside the unit cell
+    uniqueAtoms = np.unique(bonds)
+    pairs = {}
 
-    def all_types(self):
-        '''
-        :return: all types of the bonds in this list.
-        '''
-        return set([x.type for x in self])
+    for atom in uniqueAtoms:
+        ToAdd = np.zeros((0, 1), dtype=int)
+        for eachBond in bonds:
+            if eachBond[0] == atom:
+                ToAdd = np.append(ToAdd, eachBond[1])
+            elif eachBond[1] == atom:
+                ToAdd = np.append(ToAdd, eachBond[0])
+        if len(ToAdd):
+            ToAdd = np.array([x for x in ToAdd if x != atom], dtype=int)
+            pairs[atom] = set(np.unique(ToAdd))
 
-    # TODO do it
-    def _is3Dconnected(self) -> bool:
-        X = np.max([np.abs(bond.direction[0]) for bond in self])
-        Y = np.max([np.abs(bond.direction[1]) for bond in self])
-        Z = np.max([np.abs(bond.direction[2]) for bond in self])
-        return X > 0 and Y > 0 and Z > 0
+    visited = dfs1(pairs, uniqueAtoms[0])
+    return list(visited)
 
-    # TODO fix it
-    def connectList(self):
-        '''
-        IMPORTANT NOTE: this implementation checks connectivity of the atoms INSIDE unit cell.
-        It skips bonds that have and end in neighboring cells.
-        :return: the connectivity list in this set of bonds.
-        '''
-
-        # First, lets check whether we are not consider the case, when we have only 1 atom in unit cell.
-        uniqueAtoms = np.unique([bond.atoms() for bond in self])
-        if 1 == len(uniqueAtoms):
-            return [uniqueAtoms[0]]
-
-        # bonds inside the unit cell
-        bonds = [bond.atoms() for bond in self if np.isclose(bond.direction, [0,0,0]).all()]
-        uniqueAtoms = np.unique(bonds)
-        pairs = {}
-
-        for atom in uniqueAtoms:
-            ToAdd = np.zeros((0, 1), dtype=int)
-            for eachBond in bonds:
-                if eachBond[0] == atom:
-                    ToAdd = np.append(ToAdd, eachBond[1])
-                elif eachBond[1] == atom:
-                    ToAdd = np.append(ToAdd, eachBond[0])
-            if len(ToAdd):
-                ToAdd = np.array([x for x in ToAdd if x != atom], dtype=int)
-                pairs[atom] = set(np.unique(ToAdd))
-
-        visited = dfs1(pairs, uniqueAtoms[0])
-        return list(visited)
-
-    def __add__(self, other):
-        return Bonds(super(Bonds,self).__add__(other))
 
 
 def defaultGoodBonds(symbols):
