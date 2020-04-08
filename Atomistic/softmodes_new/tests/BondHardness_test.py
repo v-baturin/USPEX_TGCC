@@ -716,3 +716,42 @@ class test_BondHardness(unittest.TestCase):
         system = AtomicStructure(symbols=symbols, scaled_positions=scaled_positions, cell=cell, pbc=True)
         bond_in = BondHardness_new(system, goodBonds)
         print('MgO_new1')
+
+    def test_graphite2(self):
+        tmp = read_vasp(self.CURRENT_DIR + '/graphite2.POSCAR')
+        symbols = tmp.get_chemical_symbols()
+        graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
+        goodBonds = {'C-C': 0.5}
+
+        bonds_ref = []
+        bonds_ref.append((4, 7, -0.09794277, 0, 1., -0., -0.))
+        bonds_ref.append((0, 2, -0.0978511,  0,-0., -0., -0.))
+        bonds_ref.append((5, 6, -0.09781732, 0,-0., -0., -0.))
+        bonds_ref.append((3, 5, -0.0978008,  0,-0., -0., -1.))
+        bonds_ref.append((1, 3, -0.09779524, 0, 1., -0., -0.))
+        bonds_ref.append((2, 7, -0.09766957, 0,-0., -0., -0.))
+        bonds_ref.append((1, 6, -0.0975421,  0,-0., -0., -0.))
+        bonds_ref.append((4, 6, -0.09751356, 0,-0., -0., -0.))
+        bonds_ref.append((0, 1, -0.09750256, 0,-0., -1., -0.))
+        bonds_ref.append((0, 4, -0.09744626, 0,-0., -0., -1.))
+        bonds_ref.append((2, 3, -0.09727435, 0,-0., -0., -0.))
+        bonds_ref.append((5, 7, -0.09721846, 0,-0.,  1., -0.))
+        bonds_ref.append((2, 6,  1.79134098, 1,-0., -0., -0.))
+        bonds_ref.append((1, 7,  1.79358847, 1, 1.,  1., -0.))
+        bonds_ref.append((0, 5,  1.79558711, 1,-0., -1., -1.))
+        bonds_ref.append((3, 4,  1.80766622, 1,-1., -0., -1.))
+
+        bonds = BondHardness_new(graphite, goodBonds)
+        count = 0
+        len_bonds = 0
+        for i, bond_group in enumerate(bonds):
+            len_bonds += len(bond_group)
+            for bond in bond_group:
+                bond = (bond.indicies[0], bond.indicies[1], bond.delta, i, *bond.direction)
+                if np.any(np.all(np.isclose(np.asarray(bond), np.asarray(bonds_ref)), axis=1)):
+                    count += 1
+                elif bond[0] == bond[1] and np.any(
+                        np.all(np.isclose(np.abs(np.asarray(bond)), np.abs(np.asarray(bonds_ref))), axis=1)):
+                    count += 1
+
+        self.assertTrue(count == len_bonds == len(bonds_ref))
