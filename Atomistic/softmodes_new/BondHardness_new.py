@@ -12,19 +12,28 @@ _BONDS_CUTOFF = 5.0     # Angstroms
 # def Bonds(system, cutoff=_BONDS_CUTOFF) -> Bonds:
 
 def _connectedComponents(N, bonds):
-    graph = np.zeros((27*N,27*N))
+    if N < 100:
+        supper_size = 4
+        center_cell = [1,2]
+    else:
+        supper_size = 3
+        center_cell = [1]
+    graph = np.zeros((supper_size**3*N,supper_size**3*N))
+    indices = []
     for bond in chain(*bonds):
         i,j = bond.indicies
         k0,l0,m0 = bond.direction
-        for k in range(3):
-            for l in range(3):
-                for m in range(3):
-                    i_super = i + (9*k+3*l+m)*N
-                    j_super = j + (9*(k+k0)+3*(l+l0)+(m+m0))*N
-                    if 0 <= j_super < 27*N:
+        for k in range(supper_size):
+            for l in range(supper_size):
+                for m in range(supper_size):
+                    i_super = i + (supper_size**2*k+supper_size*l+m)*N
+                    j_super = j + (supper_size**2*(k+k0)+supper_size*(l+l0)+(m+m0))*N
+                    if 0 <= j_super < supper_size**3*N:
                         graph[i_super, j_super] = 1
+                    if (k in center_cell) and (l in center_cell) and (m in center_cell):
+                        indices.extend(range(supper_size**2*k+supper_size*l+m,supper_size**2*k+supper_size*l+m+N))
     N_components, labels = connected_components(graph)
-    return len(np.unique(labels[13*N:14*N]))
+    return len(np.unique(labels[np.asarray(indices)]))
 
 
 def BondHardness_new(SYSTEM : AtomicStructure, goodBonds) -> list:

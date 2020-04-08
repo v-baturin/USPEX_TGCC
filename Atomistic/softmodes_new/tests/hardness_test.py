@@ -51,16 +51,15 @@ class Hardness_test(unittest.TestCase):
         print('Hardness = ' + str(H))
         self.assertAlmostEqual(H, 0.433, places=3)
 
-    # TODO this is not Crystal case, need new AtomicStructure subclass
-    # def test_graphite_1layer(self):
-    #     tmp = read_vasp(self.CURRENT_DIR + '/graphite_1layer.POSCAR')
-    #     symbols = tmp.get_chemical_symbols()
-    #     graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-    #     params = {'symbols': ['C'], 'blocks': [[len(graphite)]], 'fixed': [[1, 1]]}
-    #     config = AtomisticConfig(**params)
-    #     H = calcHardness_new(config, graphite)
-    #     print('Hardness = ' + str(H))
-    #     self.assertAlmostEqual(H, 1.72, places=3)
+    def test_graphite_1layer(self):
+        tmp = read_vasp(self.CURRENT_DIR + '/graphite_1layer.POSCAR')
+        symbols = tmp.get_chemical_symbols()
+        graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
+        params = {'symbols': ['C'], 'blocks': [[len(graphite)]], 'fixed': [[1, 1]]}
+        config = AtomisticConfig(**params)
+        H = calcHardness_new(config, graphite)
+        print('Hardness = ' + str(H))
+        self.assertAlmostEqual(H, 1.72, places=1)
 
     def test_aluminium(self):
         tmp = read_vasp(self.CURRENT_DIR + '/al.POSCAR')
