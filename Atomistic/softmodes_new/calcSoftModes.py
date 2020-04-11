@@ -5,7 +5,6 @@ from .BondHardness_new import BondHardness_new
 
 from USPEX.Common.Atomistic.Element import Element
 
-# from .AtomTypeCounter import atomTypeCounter
 
 
 import numpy as np

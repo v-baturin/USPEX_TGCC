@@ -106,38 +106,6 @@ class SoftModes_test(unittest.TestCase):
         self.assertTrue(np.allclose(freq, freq_ref))
 
 
-    def test_graphite2(self):
-        print('Test graphite 2')
-        tmp = read_vasp(pj(self.CURRENT_DIR, 'graphite2.POSCAR'))
-        symbols = tmp.get_chemical_symbols()
-        graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        N = len(graphite)
-        params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfig(**params)
-        freq, eigvector = calcSoftModes(graphite, config)
-
-        freq_ref = [-3.14018492e-16, -2.07235140e-17, 0.00000000e+00, 0.00000000e+00, 2.74458612e-23, 7.54840750e-17,
-                     1.78390610e-16, 8.28730183e-03, 2.70874463e+00,  2.70874473e+00,  2.70892967e+00,  2.70893071e+00]
-
-        self.assertTrue(np.allclose(freq, freq_ref))
-
-    def test_graphite2_supercell(self):
-        print('Test graphite supercell 2')
-        tmp = read_vasp(pj(self.CURRENT_DIR, 'graphite2.POSCAR'))
-        symbols = tmp.get_chemical_symbols()
-        graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        graphite *= 2
-        N = len(graphite)
-        params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfig(**params)
-        freq, eigvector = calcSoftModes(graphite, config)
-
-        freq_ref = [-3.14018492e-16, -2.07235140e-17, 0.00000000e+00, 0.00000000e+00, 2.74458612e-23, 7.54840750e-17,
-                     1.78390610e-16, 8.28730183e-03, 2.70874463e+00,  2.70874473e+00,  2.70892967e+00,  2.70893071e+00]
-
-        self.assertTrue(np.allclose(freq, freq_ref))
-
-
     def test_diamond(self):
         print('Test dimanod')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'diamond.POSCAR'))
