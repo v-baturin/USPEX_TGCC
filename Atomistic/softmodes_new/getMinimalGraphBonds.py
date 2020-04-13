@@ -1,15 +1,14 @@
 import numpy as np
 from itertools import chain
 from scipy.sparse.csgraph import connected_components
+from ase.neighborlist import primitive_neighbor_list
+
 
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
-from ..Bonds import connectList
-from .MaxBonds import MaxBonds_new
+from ..Bonds import Bond
 
 
 _BONDS_CUTOFF = 5.0     # Angstroms
-
-# def Bonds(system, cutoff=_BONDS_CUTOFF) -> Bonds:
 
 def _connectedComponents(N, bonds):
     if N < 100:
@@ -36,7 +35,7 @@ def _connectedComponents(N, bonds):
     return len(np.unique(labels[np.asarray(indices)]))
 
 
-def BondHardness_new(SYSTEM : AtomicStructure, goodBonds) -> list:
+def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds) -> list:
     '''
     The function calculates bonds which make contribution to hardness.
     Used only for softmodemutation case and does not used for any other cases.
@@ -56,20 +55,49 @@ def BondHardness_new(SYSTEM : AtomicStructure, goodBonds) -> list:
 
     # 1) Calculate bonds within upper bound to max_bond.
     # 2) Group bonds by using same_bond criterion.
-    bond_total = MaxBonds_new(SYSTEM)
+    bonds = []
+    i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=SYSTEM.pbc,
+                                                          cell=SYSTEM.get_cell(complete=True),
+                                                          positions=SYSTEM.get_scaled_positions(),
+                                                          cutoff=Bond.MAX_BOND, numbers=SYSTEM.numbers,
+                                                          use_scaled_positions=True)
+
+    for i, j, dist, vec, dir in zip(i_init, j_init, dists, vecs, dirs):
+        # TODO Why we had this less 0.5A and not more than 5A (usually)
+        # if np.abs(dist - tmp_Rval) > cutoff or dist < 0.5:
+        if dist < 0.5 or j < i:
+            continue
+        bonds.append(Bond(atom1=SYSTEM[i], atom2=SYSTEM[j], direction=dir, distance=dist, vector=vec))
+
+    tmp_bonds = sorted(bonds, key=lambda x: x.delta)
+
+    bond_total = []
+    while tmp_bonds:
+        bond = tmp_bonds.pop(0)
+        bonds_one_type = [bond]
+        bonds_remain = []
+        # Obtain all bonds with the same type by distance:
+        for b in tmp_bonds:
+            if b == bond:
+                bonds_one_type.append(b)
+            else:
+                bonds_remain.append(b)
+        tmp_bonds = bonds_remain
+        bond_total.append(bonds_one_type)
+
 
     # 3) Add bonds by group.
     bond_in = []
     bond_left = []
 
     # delete short bonds
-    for bonds in bond_total:
-        a,b = bonds[0].symbols
+    for bond_total in bond_total:
+        a,b = bond_total[0].symbols
         small_bond = -0.37 * np.log(goodBonds[f'{a}-{b}'])
-        if min([bond.delta for bond in bonds]) < small_bond:
-            bond_in.append(bonds)    # Add by group
+        if min([bond.delta for bond in bond_total]) < small_bond:
+            bond_in.append(bond_total)    # Add by group
         else:
-            bond_left.append(bonds)
+            bond_left.append(bond_total)
     # del bond_group[0]
 
     # 5, check 3D connectivity, if not satisfied, add more bonds

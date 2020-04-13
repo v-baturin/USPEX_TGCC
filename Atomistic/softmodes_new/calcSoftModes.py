@@ -1,7 +1,7 @@
 from __future__ import division
 
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
-from .BondHardness_new import BondHardness_new
+from .getMinimalGraphBonds import getMinimalGraphBonds
 
 from USPEX.Common.Atomistic.Element import Element
 
@@ -59,7 +59,7 @@ def calcSoftModes(system : AtomicStructure, config, kVector0=np.zeros(3)):
     :return eigvector: eigenvector of all modes.
     '''
 
-    bonds = BondHardness_new(system, config.goodBonds)
+    bonds = getMinimalGraphBonds(system, config.goodBonds)
 
     # assert isinstance(system.bonds, Bonds)
 

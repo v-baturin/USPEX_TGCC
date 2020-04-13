@@ -9,7 +9,7 @@ from USPEX.Common.Atomistic.AtomisticConfig import AtomisticConfig
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from USPEX.Common.Atomistic.Element import Element
 #from .BondHardness import BondHardness
-from .BondHardness_new import BondHardness_new
+from .getMinimalGraphBonds import getMinimalGraphBonds
 #from .AtomTypeCounter import atomTypeCounter
 
 _MAX_CELL_LENGTH = 4   # max length of any cell length
@@ -40,7 +40,7 @@ def calcHardness_new(CONFIG : AtomisticConfig, system : AtomicStructure) -> floa
     # system = AtomicStructure(symbols=_system.chemicalSymbols, positions=coor, cell=lat)
     # system *= m
 
-    bonds = BondHardness_new(system, CONFIG.goodBonds)
+    bonds = getMinimalGraphBonds(system, CONFIG.goodBonds)
 
     # Calculate bond valence using classical Brown's bond valence model.
     # nu_factor should be normalized to satisfy sum rule.

@@ -1,7 +1,7 @@
 from ...AtomicStructure import AtomicStructure
 from ...Bonds import Bond
 #from ..BondHardness import BondHardness
-from ..BondHardness_new import BondHardness_new
+from ..getMinimalGraphBonds import getMinimalGraphBonds
 from ...Crystal import Crystal
 
 
@@ -29,7 +29,7 @@ class test_BondHardness(unittest.TestCase):
                                  cell=tmp.get_cell(),
                                  pbc=True)
         goodBonds = {'C-C': 0.5}
-        bond_in = BondHardness_new(system, goodBonds)
+        bond_in = getMinimalGraphBonds(system, goodBonds)
 
 
     def test_1(self):
@@ -53,7 +53,7 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((0, 2, 1.828, 1, 0., 0., -1.))
         bonds_ref.append((0, 2, 1.828, 1, 0., 0., 0.))
 
-        bonds = BondHardness_new(system, goodBonds)
+        bonds = getMinimalGraphBonds(system, goodBonds)
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -178,7 +178,7 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((  6, 22, 1.828 , 1,   0. ,     0.  ,    0.   ))
 
 
-        bonds = BondHardness_new(system, goodBonds)
+        bonds = getMinimalGraphBonds(system, goodBonds)
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -635,7 +635,7 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((2, 6, 0.750275712322, 99, -1.0 , 0.0 , 0.0))
         bonds_ref.append((0, 1, 0.762998361337, 100, 0.0 , 0.0 , 0.0))
 
-        bonds = BondHardness_new(system, goodBonds)
+        bonds = getMinimalGraphBonds(system, goodBonds)
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -690,7 +690,7 @@ class test_BondHardness(unittest.TestCase):
 
         system = AtomicStructure(symbols=symbols, scaled_positions=scaled_positions, cell=cell, pbc=True)
 
-        bond_in = BondHardness_new(system, goodBonds)
+        bond_in = getMinimalGraphBonds(system, goodBonds)
 
         print('1')
 
@@ -714,7 +714,7 @@ class test_BondHardness(unittest.TestCase):
                      'O-Mg': 0.17320508, 'O-Al': 0.24494897, 'O-O': 0.3}
 
         system = AtomicStructure(symbols=symbols, scaled_positions=scaled_positions, cell=cell, pbc=True)
-        bond_in = BondHardness_new(system, goodBonds)
+        bond_in = getMinimalGraphBonds(system, goodBonds)
         print('MgO_new1')
 
     def test_graphite2(self):
@@ -741,7 +741,7 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((0, 5,  1.79558711, 1,-0., -1., -1.))
         bonds_ref.append((3, 4,  1.80766622, 1,-1., -0., -1.))
 
-        bonds = BondHardness_new(graphite, goodBonds)
+        bonds = getMinimalGraphBonds(graphite, goodBonds)
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
