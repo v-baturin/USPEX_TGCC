@@ -1,4 +1,11 @@
-__author__ = 'mrakitin'
+"""
+USPEX.Common.Atomistic.Fingerprints.fingerprint
+===============================================
+
+Fingerprint calculation function
+
+.. codeauthor:: Maxim Rakitin
+"""
 
 import numpy as np
 from scipy.special import erf
@@ -11,15 +18,23 @@ def fingerprint(V, dist_matrix, structure, Rmax=10.0, sigma=0.03, delta=0.08):
     Fingerprint calculation function.
     Reference: A.R. Oganov, M. Valle. How to quantify energy landscapes. J. Chem. Phys, 104504, 2009.
 
+    :type V: float
     :param V: volume of the cell.
-    :param dist_matrix: distance matrix of size N*4 ([atomID, type1, type2, distance]), contains all the distances
-    (<Rmax) from the given atom in the unit cell
-    :param numIons: number of atoms (used for introducing the weight).
-    :return order: order.
-    :return fing: fingerprint.
-    :return atom_fing: atomic fingerprint.
+    :type dist_matrix: numpy array
+    :param dist_matrix:
+        distance matrix of size N*4 ([atomID, type1, type2, distance]), contains all the distances
+        (<Rmax) from the given atom in the unit cell.
+    :type structure: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` or descendant
+    :param structure: system that we want to characterize with a fingerprint.
+    :type Rmax: float
+    :param Rmax: threshold distance between i-th anf j-th atom.
+    :type sigma: float
+    :param sigma: smearing parameter.
+    :type delta: float
+    :param delta: bin width.
+    :rtype: tuple
+    :return: the quantities (order, fingerprint, atomic fingerprint) in a tuple.
     """
-
     V = float(V)
     numIons = np.unique(structure.get_chemical_symbols(), return_counts=True)[1]
     N_type = numIons.shape[0]
@@ -166,18 +181,3 @@ def fingerprint(V, dist_matrix, structure, Rmax=10.0, sigma=0.03, delta=0.08):
     order = local_order(V, numIons, atom_fing, delta)
 
     return order, fing, atom_fing
-
-
-if __name__ == "__main__":
-    from read_poscar import read_poscar
-
-    lat, atomType, numIons, coor = read_poscar('POSCAR_8')
-
-    from make_matrices import make_matrices
-
-    V, dist_matrix = make_matrices(lat, coor, numIons)
-
-    order, fing, atom_fing = fingerprint(V, dist_matrix, numIons)
-
-    for k in range(fing.shape[1]):
-        print('%12.8f ' * fing.shape[0] % tuple(np.transpose(fing)[k]))

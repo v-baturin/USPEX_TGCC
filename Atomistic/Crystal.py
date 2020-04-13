@@ -1,35 +1,37 @@
-'''
-@file        Crystal.py
-@author:     Artem Samtsevich
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        16 November 2016
-@brief       Class AtomicStructure-type + System-type structure with periodicity
-'''
+"""
+USPEX.Common.Atomistic.Crystal
+==============================
 
-__author__ = 'p.bushlanov'
+Class AtomicStructure-type with periodicity
+
+.. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
 
 import spglib
-import numpy as np
 
 from .AtomicStructure import AtomicStructure
 
+
 class Crystal(AtomicStructure):
-    '''
-    Class describing crystal Atoms-type structure with properties
+    """
+    Class describing atoms-composed crystal structure with properties.
+    Descendant of :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure`.
 
-    '''
-
-    dimension = 3
+    Sets **pbc** for ase.Atoms component to [True, True, True].
+    """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, pbc = [True, True, True], **kwargs)
+        super().__init__(*args, pbc=[True, True, True], **kwargs)
 
     @property
     def symmetry(self):
-        '''
-        Property-method which calculates symmetry group for the structure.
-        '''
+        """
+        Calculate symmetry group for the structure.
+
+        :rtype: str
+        :return: symmetry group symbol and number.
+        """
         lattice = self.get_cell()
         coordinates = self.scaled_coordinates
         numbers = self.get_atomic_numbers()

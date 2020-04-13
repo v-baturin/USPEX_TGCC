@@ -1,4 +1,11 @@
-__author__ = 'mrakitin'
+"""
+USPEX.Common.Atomistic.Fingerprints.cosine_distance
+===================================================
+
+Calculation of cosine distances
+
+.. codeauthor:: Maxim Rakitin
+"""
 
 import numpy as np
 
@@ -6,10 +13,15 @@ import numpy as np
 def cosine_distance(matrA, matrB, weight):
     """
     Calculation of cosine distances using eq.(6b) from JCP-2009.
+
+    :type matrA: numpy array
     :param matrA: atomic fingerprint 1.
+    :type matrB: numpy array
     :param matrB: atomic fingerprint 2.
+    :type weight: list or int
     :param weight: weight for a particular atom type in the cell.
-    :return dist: resulted distance.
+    :rtype: float
+    :return: resulted cosine distance.
     """
     if type(weight) is list and len(weight) == 1:
         weight = weight[0]
@@ -28,29 +40,3 @@ def cosine_distance(matrA, matrB, weight):
     dist = (1 - coef1 / (coef2 * coef3) ** 0.5) / 2
 
     return dist
-
-
-if __name__ == "__main__":
-    from lib.mat2dict import loadmat
-
-    test_dir = 'test_cosine_distance'
-
-    # Calc type 301:
-    matrA = loadmat(test_dir + '/matrA.mat')['matrA']
-    matrB = loadmat(test_dir + '/matrB.mat')['matrB']
-    # In Python we have (1x125) arrays:
-    matrA = matrA.reshape((1, matrA.shape[0]))
-    matrB = matrB.reshape((1, matrB.shape[0]))
-    weight = np.asarray([1])
-
-    # Calc type 300:
-    '''
-    matrA = loadmat(test_dir + '/matrA_300.mat')['matrA']
-    matrB = loadmat(test_dir + '/matrB_300.mat')['matrB']
-    weight = loadmat(test_dir + '/weight_300.mat')['weight']
-    weight = np.diag(weight)
-    '''
-
-    dist = cosine_distance(matrA, matrB, weight)
-
-    print('')

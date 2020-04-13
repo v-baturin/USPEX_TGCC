@@ -1,4 +1,12 @@
-import os
+"""
+USPEX.Common.Output
+===================
+
+Class handling output
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
 import logging
 from copy import copy
 
@@ -10,19 +18,22 @@ logger = logging.getLogger(__name__)
 
 
 class Output(Worker):
-    '''
-
-    '''
-    def __init__(self, name : str, target : dict, selection : dict, numParallelCalcs : int, stages : list,
-                 output : dict = None, representationFactory = NoRepresentation, **kwargs):
+    """
+    Class handling output.
+    """
+    def __init__(self, name: str, target: dict, selection: dict, numParallelCalcs: int, stages: list,
+                 output: dict = None, representationFactory=NoRepresentation, **kwargs):
         """
-                           ,
+        Initializes the class.
+
         :param name:
         :param target:
         :param selection:
         :param numParallelCalcs:
-        :param total_step:
-        :param toDraw:
+        :param stages:
+        :param output:
+        :param representationFactory:
+        :param kwargs:
         """
         self.numParallelCalcs = numParallelCalcs
         self.numStages = len(stages)

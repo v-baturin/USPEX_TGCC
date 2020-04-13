@@ -1,18 +1,28 @@
+"""
+USPEX.Common.Atomistic.Bonds
+============================
+
+Objects and methods for handling chemical bonds
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
 import numpy as np
 from USPEX.Common.Atomistic.Element import Element
 
 
-def dfs1(graph : dict, root : int):
-    '''
+def dfs1(graph: dict, root: int):
+    """
     Depth-first search
     :Link: https://en.wikipedia.org/wiki/Depth-first_search
 
+    :type graph: dict
     :param graph: 
-    :param root: 
+    :type root: int
+    :param root:
+    :rtype: set
     :return: 
-    '''
-
-
+    """
     visited, stack = set(), [root]
     while stack:
         vertex = stack.pop()
@@ -23,20 +33,21 @@ def dfs1(graph : dict, root : int):
 
 
 class Bond(object):
-    '''
-    Class for the chemical bond description. It has follow parametes:
+    """
+    Class for the chemical bond description. It has the follow parameters:
 
-    * _atom1 (int): ID of the fisrt atom in bond
+    * _atom1 (int): ID of the first atom in bond
     * _atom2 (int): ID of the second atom in bond
-    * type (int): just number. If bond1.type == bond2.type then they are the same distance and type (like C-C and C-C are the same)
-    * delta (float): distance between atoms - (R_val_1 + R_val_2), in Angstrems
+    * type (int): just a number. If bond1.type == bond2.type then the two bonds have
+                  the same distance and type (like C-C and C-C are the same)
+    * delta (float): distance between atoms - (R_val_1 + R_val_2), in Angstroms
 
     Some constant parameters that can be used from outside:
 
-    * SAME_BOND_THRESHOLD = 0.05  # (Angstrems) same bond within this distance.
-    * MAX_BOND = 5.0              # (Angstrems) maximum distance deviation for bonds search.
-    * LOWER_BOUND = 0.5           # (Angstrems) lower bound for the distance of atoms in a bond.
-    '''
+    * SAME_BOND_THRESHOLD = 0.05  # (Angstroms) same bond within this distance.
+    * MAX_BOND = 5.0              # (Angstroms) maximum distance deviation for bonds search.
+    * LOWER_BOUND = 0.5           # (Angstroms) lower bound for the distance of atoms in a bond.
+    """
 
     _atom1 = None
     _atom2 = None
@@ -45,21 +56,28 @@ class Bond(object):
     delta = 0.0
     enable = False
 
-    # MAX_BOND: maximum distance deviation for bonds search.
-    # SAME_BOND_THRESHOLD: same bond within this distance between same type of atoms.
+    SAME_BOND_THRESHOLD = 0.05  # (Angstroms) same bond within this distance.
+    MAX_BOND = 5.0              # (Angstroms) maximum distance deviation for bonds search.
+    LOWER_BOUND = 0.5           # (Angstroms) lower bound for the distance of atoms in a bond.
 
-    SAME_BOND_THRESHOLD = 0.05  # (Angstrems) same bond within this distance.
-    MAX_BOND = 5.0              # (Angstrems) maximum distance deviation for bonds search.
-    LOWER_BOUND = 0.5           # (Angstrems) lower bound for the distance of atoms in a bond.
-
-    def __init__(self, atom1 : int, atom2 : int, distance : float, type=None, direction=[0,0,0]):
-        '''
-        :param atom1: 
-        :param atom2: 
-        :param distance: 
-        :param type: 
-        :param direction: 
-        '''
+    def __init__(self, atom1: int, atom2: int, distance: float, type=None, direction=[0,0,0]):
+        """
+        :type atom1: int
+        :param atom1:
+            ID of the first atom in bond.
+        :type atom2: int
+        :param atom2:
+            ID of the second atom in bond.
+        :type distance: float
+        :param distance:
+            distance between atoms - (R_val_1 + R_val_2), in Angstroms.
+        :type type: int or str
+        :param type:
+            just a number. If bond1.type == bond2.type then the two bonds have
+            the same distance and type (like C-C and C-C are the same).
+        :type direction: list
+        :param direction: bond direction with respect to cell parameters.
+        """
         assert atom1 >= 0 and atom2 >= 0
         assert 3 == len(direction)
         # assert distance > 0.0 and distance < self.MAX_BOND
@@ -69,39 +87,59 @@ class Bond(object):
         self.direction = direction
 
     def atoms(self):
-        '''
+        """
+        :rtype: tuple
         :return: indices of origin and end atoms in bond.
-        '''
+        """
         return self._atom1, self._atom2
 
     def __eq__(self, other) -> bool:
+        """
+        Special method for supporting '==' operator.
+
+        :type other: :class:`Bond`
+        :param other: another bond for comparison.
+        :rtype: bool
+        :return: True if the two bond lengths are closer than SAME_BOND_THRESHOLD, False otherwise.
+        """
         assert isinstance(other, Bond)
-        return self.delta - other.delta < self.SAME_BOND_THRESHOLD
+        return self.delta - other.delta <= self.SAME_BOND_THRESHOLD
 
     def __ne__(self, other) -> bool:
+        """
+        Special method for supporting '!=' operator.
+
+        :type other: :class:`Bond`
+        :param other: another bond for comparison.
+        :rtype: bool
+        :return: False if the two bond lengths are closer than SAME_BOND_THRESHOLD, True otherwise.
+        """
         assert isinstance(other, Bond)
         return self.delta - other.delta > self.SAME_BOND_THRESHOLD
 
 
 class Bonds(list):
-    '''
-    Class for the list of the bonds.
-    '''
+    """
+    Class for the list of bonds.
+    """
 
-    def append(self, object : Bond):
+    def append(self, object: Bond):
         super(Bonds, self).append(object)
 
     def getType(self, type):
-        '''
-        :param type (int or None): type number.
+        """
+        :type type: int or None
+        :param type: type number.
+        :rtype: :class:`Bonds`
         :return: all bonds of _type_.
-        '''
+        """
         return Bonds([x for x in self if x.type == type])
 
     def all_types(self):
-        '''
+        """
+        :rtype: set
         :return: all types of the bonds in this list.
-        '''
+        """
         return set([x.type for x in self])
 
     # TODO do it
@@ -112,11 +150,13 @@ class Bonds(list):
         return X > 0 and Y > 0 and Z > 0
 
     def connectList(self):
-        '''
+        """
         IMPORTANT NOTE: this implementation checks connectivity of the atoms INSIDE unit cell.
         It skips bonds that have and end in neighboring cells.
+
+        :rtype: list
         :return: the connectivity list in this set of bonds.
-        '''
+        """
 
         # First, lets check whether we are not consider the case, when we have only 1 atom in unit cell.
         uniqueAtoms = np.unique([bond.atoms() for bond in self])
@@ -124,7 +164,7 @@ class Bonds(list):
             return [uniqueAtoms[0]]
 
         # bonds inside the unit cell
-        bonds = [bond.atoms() for bond in self if np.isclose(bond.direction, [0,0,0]).all()]
+        bonds = [bond.atoms() for bond in self if np.isclose(bond.direction, [0, 0, 0]).all()]
         uniqueAtoms = np.unique(bonds)
         pairs = {}
 
@@ -143,15 +183,18 @@ class Bonds(list):
         return list(visited)
 
     def __add__(self, other):
-        return Bonds(super(Bonds,self).__add__(other))
+        return Bonds(super(Bonds, self).__add__(other))
 
-def defaultGoodBonds(symbols):
-    '''
+
+def defaultGoodBonds(symbols: list):
+    """
     The function provides default good bonds values.
 
-    :param atomType: a list with numeric representation of atom types.
+    :type symbols: list
+    :param symbols: a list with atomic symbols.
+    :rtype: numpy array
     :return gBmatrix: upper-triangular N*N matrix with good bonds values.
-    '''
+    """
 
     numSpecies = len(symbols)
     gB = np.zeros(numSpecies, dtype=float)
@@ -162,6 +205,6 @@ def defaultGoodBonds(symbols):
 
     for i in range(numSpecies):
         for j in range(i, numSpecies):
-            gBmatrix[i,j] = gBmatrix[j,i] = np.power(gB[i] * gB[j], 0.5)
+            gBmatrix[i, j] = gBmatrix[j, i] = np.power(gB[i] * gB[j], 0.5)
 
     return gBmatrix

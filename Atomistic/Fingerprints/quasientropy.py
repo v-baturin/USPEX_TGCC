@@ -1,6 +1,13 @@
-from __future__ import division
+"""
+USPEX.Common.Atomistic.Fingerprints.quasientropy
+================================================
 
-__author__ = 'mrakitin'
+Calculate structure quasientropy
+
+.. codeauthor:: Maxim Rakitin
+"""
+
+from __future__ import division
 
 import numpy as np
 
@@ -10,13 +17,17 @@ from .cosine_distance import cosine_distance
 def quasientropy(structure, atom_fing):
     """
     Calculate structure quasientropy.
-    :param numIons: number of atoms.
-    :param atom_fing: atomic fingerprints.
-    :return sQE: structure quasientropy.
+
+    :type structure: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` or descendant
+    :param structure: system for which we want to calculate quasientropy.
+    :type atom_fing: numpy array
+    :param atom_fing: atomic fingerprint.
+    :rtype: numpy array
+    :return: structure quasientropy.
     """
 
     # assert check1DArray(numIons, int)
-    numIons = np.unique(structure.get_chemical_symbols(),return_counts=True)[1]
+    numIons = np.unique(structure.get_chemical_symbols(), return_counts=True)[1]
     sQE = 0.0
     weight = numIons / np.sum(numIons)
 
@@ -43,19 +54,3 @@ def quasientropy(structure, atom_fing):
             sQE += weight[i] * tmp / k
 
     return -sQE
-
-
-if __name__ == "__main__":
-    from read_poscar import read_poscar
-
-    lat, atomType, numIons, coor = read_poscar('POSCAR_8')
-
-    from make_matrices import make_matrices
-
-    V, dist_matrix = make_matrices(lat, coor, numIons)
-
-    from fingerprint import fingerprint
-
-    order, fing, atom_fing = fingerprint(V, dist_matrix, numIons)
-
-    sQE = quasientropy(numIons, atom_fing)

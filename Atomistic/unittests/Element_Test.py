@@ -1,3 +1,12 @@
+"""
+USPEX.Common.Atomistic.unittests.Element_Test
+=============================================
+
+Class for Element testing
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
 import unittest
 
 from ..Element import Element
@@ -41,7 +50,3 @@ class Element_Test(unittest.TestCase):
     def test_bad_z(self):
         Z = 100000
         self.assertRaises(ValueError, Element, Z)
-
-
-if __name__ == '__main__':
-    unittest.main()

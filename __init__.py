@@ -1,8 +1,8 @@
-import logging
-logger = logging.getLogger(__name__)
-
 import os
 import pickle
+
+import logging
+logger = logging.getLogger(__name__)
 
 # default name for file containing restore information
 DEFAULT_FILENAME = 'dump'
@@ -13,6 +13,7 @@ def save(obj, filename=DEFAULT_FILENAME):
         pickle.dump(obj, fp)
         logger.debug(f'Calculation written to a {filename} file')
 
+
 def load(cls, filename=DEFAULT_FILENAME):
     with open(filename, 'rb') as fp:
         uspex = pickle.load(fp)
@@ -20,9 +21,11 @@ def load(cls, filename=DEFAULT_FILENAME):
     logger.info(f'Calculation picked up from {filename}')
     return uspex
 
+
 def clean(filename=DEFAULT_FILENAME):
     if os.path.isfile(filename):
         os.remove(filename)
+
 
 def get_all_subclasses(cls):
     all_subclasses = []
@@ -31,6 +34,7 @@ def get_all_subclasses(cls):
         all_subclasses.extend(get_all_subclasses(subclass))
     return all_subclasses
 
+
 def getSubClassByName(cls, name):
     assert isinstance(name, str)
     for subcls in get_all_subclasses(cls):
@@ -38,5 +42,6 @@ def getSubClassByName(cls, name):
             return subcls
     raise KeyError(name)
 
-def dictifyList(elements : list):
+
+def dictifyList(elements: list):
     return [element.toDICT() for element in elements]
