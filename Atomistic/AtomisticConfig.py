@@ -1,15 +1,15 @@
+"""
+USPEX.Common.Atomistic.AtomisticConfig
+======================================
+
+Description of configuration of target space
+
+.. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
 import logging
 logger = logging.getLogger(__name__)
-
-'''
-@file        Config.py
-@author:     Pavel Bushlanov
-@copyright:  2018 Oganov's Lab. All rights reserved.
-@contact:    paulbush@mail.ru
-@date        5 December 2016
-@brief       Class for description of configuration of target space.
-'''
-
 
 import numpy as np
 
@@ -33,7 +33,7 @@ _MIN_ANGLE = 55
 # diagonal of the parallelogram formed by other 2 vectors defining the lattice
 _MIN_DIAG_ANGLE = 30
 
-# Deafult fingerprints tolerance
+# Default fingerprint tolerance
 _DEFAULT_FINGERPRINT_TOLERANCE = 0.008
 
 # Default symmetry tolerance
@@ -41,10 +41,9 @@ _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
 
 class ChemicalConfig(Config):
-    '''
-    Class that fix some chemical (more-less) parameters of the system.
-    This class does not take into account geometrical or
-    '''
+    """
+    Class that fixes some chemical (more or less) parameters of the system.
+    """
 
     symbols = None
     chemicalSymbols = None
@@ -58,21 +57,47 @@ class ChemicalConfig(Config):
     minDistMatrice = None
     CenterminDistMatrice = None
 
-    def __init__(self, symbols : list, volumeType : str=None, ionDistances : dict=None, goodBonds : dict=None,
-                       valences : Dict[str, float]=None, minVectorLength : dict=None, valenceElectrons : Dict[str, float]=None,
-                       externalPressure : float=0.0001, moleculesDistinctCheck = True, MolCenters : list=None, **kwargs):
-        '''
-
+    def __init__(self, symbols: list, volumeType: str=None, ionDistances: dict=None, goodBonds: dict=None,
+                 valences: Dict[str, float]=None, minVectorLength: float=None, valenceElectrons: Dict[str, float]=None,
+                 externalPressure: float=0.0001, moleculesDistinctCheck: bool=True, molCenters: list=None, **kwargs):
+        """
+        :type symbols: list[str] or list[dict]
         :param symbols:
+            list of element symbols or dictionaries describing molecules allowed for this configuration space.
+        :type volumeType: str
         :param volumeType:
+            'atom' or 'mol', one of the two possible environments for
+            volume estimation. The 'mol' environment is less dense.
+        :type ionDistances: dict
         :param ionDistances:
+            dictionary describing minimal interatomic distances.
+            example {'C_C': 1.0, 'C_H': 0.8, , 'H_C': 0.8, 'H_H': 0.5}
+        :type goodBonds: list
         :param goodBonds:
+            specifies, in a square matrix form, the minimum bond valences
+            for contacts that will be considered as important bonds.
+        :type valences: list
         :param valences:
+            describes the valences of each type of atom.
+        :type minVectorLength: float
+        :param minVectorLength:
+            sets the minimum length of a cell parameter of a newly generated structure.
+        :type valenceElectrons: list
         :param valenceElectrons:
+            number of valence electrons for each type of atoms.
+        :type externalPressure: float
         :param externalPressure:
-        :param MolCenters:
+            external pressure in GPa.
+        :type moleculesDistinctCheck: bool
+        :param moleculesDistinctCheck:
+            if True, check if molecules do not interpenetrate each other.
+        :type molCenters: list
+        :param molCenters:
+            matrix of minimal distances between the geometric centers of molecules.
+        :type kwargs: dict
         :param kwargs:
-        '''
+            additional arguments and keywords used to initialize the parent class Config.
+        """
 
         super().__init__(**kwargs)
         if symbols is None:
@@ -99,7 +124,6 @@ class ChemicalConfig(Config):
 
         self.volumeType = ('mol' if self.molecules else 'atom') if not volumeType else volumeType
 
-
         if goodBonds is not None:
             self.goodBonds = goodBonds
         else:
@@ -111,17 +135,20 @@ class ChemicalConfig(Config):
                 arg = '{}-{}'.format(self.chemicalSymbols[j], self.chemicalSymbols[i])
                 self.goodBonds[arg] = goodBonds[j, i]
 
-        self.valences = valences if valences is not None else {symbol: Element(symbol).valence for symbol in self.chemicalSymbols}
-        self.valenceElectrons = valenceElectrons if valenceElectrons is not None else {symbol: Element(symbol).valence_electrons for symbol in self.chemicalSymbols}
+        self.valences = valences if valences is not None else {symbol: Element(symbol).valence
+                                                               for symbol in self.chemicalSymbols}
+        self.valenceElectrons = valenceElectrons if valenceElectrons is not None else {symbol: Element(symbol).valence_electrons
+                                                                                       for symbol in self.chemicalSymbols}
 
-        self._minVectorLength = minVectorLength if isinstance(minVectorLength, float) and minVectorLength > 0.0 else None
+        self._minVectorLength = minVectorLength if isinstance(minVectorLength, float) and minVectorLength > 0 else None
 
-        assert externalPressure >= 0.0
+        assert externalPressure >= 0
         self.externalPressure = externalPressure
 
         self.minDistMatrice = np.zeros((len(self.chemicalSymbols), len(self.chemicalSymbols)))
         if not ionDistances:
-            radii = [calcVolume(self.externalPressure, symbol, self.volumeType) ** (1.0 / 3.0) for symbol in self.chemicalSymbols]
+            radii = [calcVolume(self.externalPressure, symbol, self.volumeType) ** (1.0 / 3.0)
+                     for symbol in self.chemicalSymbols]
             for i, j in combinations_with_replacement(range(len(self.chemicalSymbols)), 2):
                 if self.volumeType != 'mol':
                     self.minDistMatrice[i, j] = self.minDistMatrice[j, i] = min(0.22 * (radii[i] + radii[j]), 1.2)
@@ -129,12 +156,11 @@ class ChemicalConfig(Config):
                     self.minDistMatrice[i, j] = self.minDistMatrice[j, i] = 0.45 * (radii[i] + radii[j])
         else:
             for i, j in combinations_with_replacement(range(len(self.chemicalSymbols)), 2):
-                arg = '{}-{}'.format(self.chemicalSymbols[i],self.chemicalSymbols[j])
-                self.minDistMatrice[i,j] = self.minDistMatrice[j,i] = ionDistances[arg]
+                arg = '{}-{}'.format(self.chemicalSymbols[i], self.chemicalSymbols[j])
+                self.minDistMatrice[i, j] = self.minDistMatrice[j, i] = ionDistances[arg]
 
-
-        if MolCenters:
-            self.CenterminDistMatrice = np.asarray(MolCenters, dtype=float)
+        if molCenters:
+            self.CenterminDistMatrice = np.asarray(molCenters, dtype=float)
         else:
             self.CenterminDistMatrice = np.zeros((len(self.symbols), len(self.symbols)))
             radii = []
@@ -151,18 +177,20 @@ class ChemicalConfig(Config):
                     height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.get_positions()]
                     ind = np.argsort(height_map)[0]
                     s = molecule.get_chemical_symbols()[ind]
-                    radii.append(0.45 * np.power(calcVolume(self.externalPressure, s, self.volumeType), 1 / 3.0) + height_map[ind])
-            for i,j in combinations_with_replacement(range(len(radii)),2):
+                    radii.append(0.45 * np.power(calcVolume(self.externalPressure, s, self.volumeType), 1 / 3.0)
+                                 + height_map[ind])
+            for i, j in combinations_with_replacement(range(len(radii)), 2):
                 self.CenterminDistMatrice[i, j] = self.CenterminDistMatrice[j, i] = (radii[i] + radii[j])
 
         self.moleculesDistinctCheck = moleculesDistinctCheck
 
     def toDICT(self):
-        '''
-        Method which creates dictionary representation of the config.
+        """
+        Method which creates a dictionary representation of the config.
 
-        :return: Dictionary representing the config.
-        '''
+        :rtype: dict
+        :return: dictionary representing the config.
+        """
         dct = copy(self.__dict__)
         dct['goodBonds'] = dct['goodBonds'].tolist()
         dct['valences'] = dct['valences'].tolist()
@@ -172,12 +200,13 @@ class ChemicalConfig(Config):
         return dct
 
     @classmethod
-    def fromDICT(cls, dct : dict):
-        '''
+    def fromDICT(cls, dct: dict):
+        """
         Method which reconstructs ChemicalConfig from dictionary representation.
 
-        :param dct: Dictionary representing the config.
-        '''
+        :type dct: dict
+        :param dct: dictionary representing the config.
+        """
         dct['goodBonds'] = np.asarray(dct['goodBonds'])
         dct['valences'] = np.asarray(dct['valences'])
         dct['valenceElectrons'] = np.asarray(dct['valenceElectrons'])
@@ -187,61 +216,77 @@ class ChemicalConfig(Config):
         config.__dict__ = copy(dct)
         return config
 
-    def minVectorLength(self, system : AtomicStructure) -> float:
-        '''
-        Here we check whether minVectorLength already specified in the input.
-        If not, we calculate it based on the chemical compound of current system (see. Manual)
+    def minVectorLength(self, system: AtomicStructure) -> float:
+        """
+        Here we check whether minVectorLength was already specified in the input.
+        If not, we calculate it based on the chemical composition of the current system (see manual).
 
-        :param system:
-        :return:
-        '''
+        :type system: :class:`AtomicStructure`
+        :param system: system for which we will determine minimal vector length.
+        :rtype: float
+        :return: minimal vector length.
+        """
         if self._minVectorLength is None:
             radii = np.fromiter((Element(symbol).covalent_radius for symbol in system.chemicalSymbols), dtype=float)
             return 1.8 * radii.max()
         else:
             return self._minVectorLength
 
-    def isGoodDistances(self, system : AtomicStructure) -> bool:
-        '''
-        Method which checks if the structure meet minimal distance constraint.
+    def isGoodDistances(self, system: AtomicStructure) -> bool:
+        """
+        Method which checks if the structure meets the minimal distance constraints.
 
-        :param system:
-        :return:
-        '''
+        :type system: :class:`AtomicStructure`
+        :param system: system to be checked.
+        :rtype: bool
+        :return: True if system meets the constraints, False otherwise.
+        """
         return system.isGoodDistances(self.chemicalSymbols, self.minDistMatrice)
 
-    def isGoodCenterDistances(self, molSymbols, coordinates, cell, pbc=True) -> bool:
-        '''
-        Method which checks if the structure meet minimal molecular center distance constraint.
+    def isGoodCenterDistances(self, molSymbols: list, coordinates: list, cell: list, pbc=True) -> bool:
+        """
+        Method which checks if the structure meets the minimal molecular center distance constraints.
 
-        :param system:
-        :param molSymbols:
-        :return:
-        '''
+        :type molSymbols: list
+        :param molSymbols: list of molecular symbols.
+        :type coordinates: list
+        :param coordinates: list of corresponding coordinates of molecular centers.
+        :type cell: list
+        :param cell: unit cell parameters.
+        :type pbc: bool or list[bool]
+        :param pbc:
+            a value of True would give periodic boundary conditions along all three axes. It is possible
+            to give a sequence of three booleans to specify periodicity along specific axes.
+        :rtype: bool
+        :return: True if system meets the constraints, False otherwise.
+        """
         indices = np.fromiter((self.symbols.index(symbol) for symbol in molSymbols), dtype=int)
         cmDM = self.CenterminDistMatrice[tuple(np.meshgrid(indices, indices))]
         cmDM -= np.diag(np.diag(cmDM))
         D, D_len = get_distances(np.dot(coordinates, cell), cell=cell, pbc=pbc)
         return np.all(D_len >= cmDM.T)
 
-    def isGoodLattice(self, system : AtomicStructure) -> bool:
-        '''
-        This function checks whether the given lattice fulfills the hard constraints for lattices.
-        There are three sorts of hard constraints.
+    def isGoodLattice(self, system: AtomicStructure) -> bool:
+        """
+        This function checks whether the given lattice fulfils the hard constraints for lattices.
+        There are three sorts of hard constraints:
         1) A minimal angle between any two vectors defining the lattice.
         2) A minimal distance between any two planes; was lately changed to simply lattice vector length
         3) A minimal angle between the vector defining the lattice and the
-           diagonal of the parallelogram formed by other 2 vectors defining the lattice
+        diagonal of the parallelogram formed by other 2 vectors defining the lattice
 
-        :param system: system that will be checked
-        :return lat_OK: boolean value if the lattice is fine for further processing.
-        '''
+        :type system: :class:`AtomicStructure`
+        :param system: system that will be checked.
+        :rtype: bool
+        :return: True if the lattice is fine, False otherwise.
+        """
 
-        Lattice = system.cell
+        lattice = system.cell
         angLattice = system.get_cell_lengths_and_angles()
         lat_OK = True
 
-        # In this function both the matrix and the parameter representation is required, so first we prepare the two types.
+        # In this function both the matrix and the parameter representation are required,
+        # so first we prepare the two types.
 
         #        # Ensure we deal with NumPy arrays:
         #        if type(Lattice) != np.ndarray:
@@ -253,23 +298,22 @@ class ChemicalConfig(Config):
         #            angLattice = Lattice
         #            Lattice = np.asarray(latConverter(np.ndarray.tolist(Lattice)))
 
-        # Calculate the angles is degrees:
+        # Calculate the angles in radians:
         angles = copy(angLattice[3:6])  # * 180. / np.pi
         angLattice[3:6] = angles / 180.0 * np.pi
 
         # The following is constraint 1)
         # check whether none of the angles is two small. Note that the problem is
-        # symmetric around 90 degrees, that's the reason for 180-minAngle.
+        # symmetric around 90 degrees, that's the reason for 180 - minAngle.
         if np.where(angles < _MIN_ANGLE)[0].shape[0] != 0 or \
                 np.where(angles > (180.0 - _MIN_ANGLE))[0].shape[0] != 0:
             lat_OK = False
 
         # The following is constraint 2)
-        # We receive the distance by dividing the volume (found by det(lattice)) by the area of any two vectors
+        # We get the distance by dividing the volume (found by det(lattice)) by the area of any two vectors
+        vol = abs(np.linalg.det(lattice))
 
-        vol = abs(np.linalg.det(Lattice))
-
-        # We don't need dist variable anymore since the corresponding Matlab condition is commented:
+        # We don't need dist variable anymore since the corresponding MATLAB condition is commented:
         # %if ~isempty(find(dist<minVectorLength))
         '''
         dist = np.zeros(3)
@@ -281,33 +325,29 @@ class ChemicalConfig(Config):
         if np.where(angLattice[0:3] < self.minVectorLength(system))[0].shape[0] > 0:
             lat_OK = False
 
-        if np.where(np.isreal(Lattice) == False)[0].shape[0] > 0:
+        if np.where(np.isreal(lattice) is False)[0].shape[0] > 0:
             lat_OK = False
 
         # The following is constraint 3)
-        # check whether none of the angles between the vector defining the lattice and the
-        # diagonal of the parallelogram formed by other 2 vectors defining the
-        # lattice is two small.
+        # check whether none of the angles between the vector defining the lattice and the diagonal
+        # of the parallelogram formed by other 2 vectors defining the lattice is too small.
 
         if lat_OK:  # if it's not 0 it means there are no 0-length vectors
-            a_bc = Lattice[0, 0] * (Lattice[1, 0] + Lattice[2, 0]) + Lattice[0, 1] * (Lattice[1, 1] + Lattice[2, 1]) + \
-                   Lattice[0, 2] * (Lattice[1, 2] + Lattice[2, 2])
-            ab_c = Lattice[2, 0] * (Lattice[1, 0] + Lattice[0, 0]) + Lattice[2, 1] * (Lattice[1, 1] + Lattice[0, 1]) + \
-                   Lattice[2, 2] * (Lattice[1, 2] + Lattice[0, 2])
-            b_ca = Lattice[1, 0] * (Lattice[0, 0] + Lattice[2, 0]) + Lattice[1, 1] * (Lattice[0, 1] + Lattice[2, 1]) + \
-                   Lattice[1, 2] * (Lattice[0, 2] + Lattice[2, 2])
+            a_bc = lattice[0, 0] * (lattice[1, 0] + lattice[2, 0]) + lattice[0, 1] * (lattice[1, 1] + lattice[2, 1]) + \
+                   lattice[0, 2] * (lattice[1, 2] + lattice[2, 2])
+            ab_c = lattice[2, 0] * (lattice[1, 0] + lattice[0, 0]) + lattice[2, 1] * (lattice[1, 1] + lattice[0, 1]) + \
+                   lattice[2, 2] * (lattice[1, 2] + lattice[0, 2])
+            b_ca = lattice[1, 0] * (lattice[0, 0] + lattice[2, 0]) + lattice[1, 1] * (lattice[0, 1] + lattice[2, 1]) + \
+                   lattice[1, 2] * (lattice[0, 2] + lattice[2, 2])
 
             # |b+c|^2=|b|^2+|c|^2+2|b||c|cos(bc):
             anglesDiag = np.zeros(3)
             anglesDiag[0] = np.arccos(a_bc / (angLattice[0] * np.sqrt(
-                angLattice[1] ** 2 + angLattice[2] ** 2 + 2. * angLattice[1] * angLattice[2] * np.cos(
-                    angLattice[3]))))
+                angLattice[1] ** 2 + angLattice[2] ** 2 + 2. * angLattice[1] * angLattice[2] * np.cos(angLattice[3]))))
             anglesDiag[1] = np.arccos(b_ca / (angLattice[1] * np.sqrt(
-                angLattice[0] ** 2 + angLattice[2] ** 2 + 2. * angLattice[0] * angLattice[2] * np.cos(
-                    angLattice[4]))))
+                angLattice[0] ** 2 + angLattice[2] ** 2 + 2. * angLattice[0] * angLattice[2] * np.cos(angLattice[4]))))
             anglesDiag[2] = np.arccos(ab_c / (angLattice[2] * np.sqrt(
-                angLattice[1] ** 2 + angLattice[0] ** 2 + 2. * angLattice[1] * angLattice[0] * np.cos(
-                    angLattice[5]))))
+                angLattice[1] ** 2 + angLattice[0] ** 2 + 2. * angLattice[1] * angLattice[0] * np.cos(angLattice[5]))))
             anglesDiag = anglesDiag * 180. / np.pi
 
             if np.where(anglesDiag < _MIN_DIAG_ANGLE)[0].shape[0] != 0 or \
@@ -316,24 +356,29 @@ class ChemicalConfig(Config):
 
         return lat_OK
 
-    def isGoodSystem(self, system : AtomicStructure) -> bool:
-        '''
-        Method which checks if the structure meet constraints.
+    def isGoodSystem(self, system: AtomicStructure) -> bool:
+        """
+        Check if the given system belongs to this configuration space.
+        Includes :meth:`isGoodDistances` and
+        :meth:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure.isMoleculesDistinct`.
 
-        :param system:
-        :return:
-        '''
+        :type system: :class:`AtomicStructure`
+        :param system: some system to be checked against its conformance to this space.
+        :rtype: bool
+        :return: True if system belongs to this configuration space, False otherwise.
+        """
         isGoodSystem = self.isGoodDistances(system)
         if isGoodSystem and self.moleculesDistinctCheck:
             isGoodSystem = system.isMoleculesDistinct()
         return isGoodSystem
 
     def calcVolume(self):
-        '''
-        This function estimates volume occupied by set of atoms described by chemical formula.
+        """
+        This function estimates the volume occupied by a set of atoms described by chemical formula.
 
-        :return: list of corresponding volumes
-        '''
+        :rtype: list
+        :return: list of corresponding volumes.
+        """
         volume = []
         for symbol in self.symbols:
             if symbol not in self.molecules:
@@ -345,12 +390,19 @@ class ChemicalConfig(Config):
 
     @property
     def systemFactory(self):
+        """
+        A reference to the class representing the system in this configuration space.
+
+        :rtype: None
+        :return: system class.
+        """
         return None
 
+
 class AtomisticConfig(ChemicalConfig):
-    '''
-    Structure with more-less most important parameters for the calculation that are set from input of the calculation.
-    '''
+    """
+    Class with (more or less) most important parameters for the calculation that are set from the user input.
+    """
 
     blocks = None
     fixed = None
@@ -359,24 +411,36 @@ class AtomisticConfig(ChemicalConfig):
     isFixedComposition = None
     fingerprints = None
 
-    def __init__(self, blocks=None, fixed=None, minAt=None, maxAt=None, fingerprints : dict=None,
-                 magRatio=None, magSymm=None, sym_tolerance=None, **kwargs):
-        '''
-        :param symbols: [formula1, formula2, ...]
-                        where formula* is str - list of chemical formulas
-                        of molecules constituting the system; obligatory
-        :param blocks: [...],[...],...] after conversion 2D numpy array of ints, each system of the configuration space
-                                        must have composition which is span of rows of this parameter; obligatory
+    def __init__(self, blocks: list=None, fixed: list=None, minAt: int=None, maxAt: int=None,
+                 fingerprints: dict=None, sym_tolerance=None, **kwargs):
+        """
+        :type blocks: [[...],[...],...]
+        :param blocks:
+            each system of the configuration space must have composition
+            which is span of rows of this parameter; obligatory
+        :type fixed: [[...],[...],...]
         :param fixed:
-        :param magRatio: fraction of structures which are produced for each magnetic type
-        :param magSymm: lists the atomic types whose spin value will be set according to symmetries in the unit cell
+            range for each block.
+        :type minAt: int
+        :param minAt:
+            minimum number of atoms or molecules in the unit cell for the first generation.
+        :type maxAt: int
+        :param maxAt:
+            maximum number of atoms or molecules in the unit cell for the first generation.
+        :type fingerprints: dict
+        :param fingerprints:
+            arguments and keywords used to initialize :class:`~USPEX.Common.Fingerprints.Fingerprints.Fingerprints`.
+        :type sym_tolerance: str or float
+        :param sym_tolerance:
+            a string ('high', 'medium' or 'low') or a number expressing symmetry tolerance.
+        :type kwargs: dict
         :param kwargs:
-        '''
+            additional arguments and keywords used to initialize the parent class ChemicalConfig.
+        """
 
         super().__init__(**kwargs)
         if blocks is None and fixed is None:
             return
-
 
         self.blocks = np.array(blocks, dtype=int)
         assert len(self.blocks.shape) == 2 and self.blocks.shape[1] == len(self.symbols)
@@ -393,25 +457,6 @@ class AtomisticConfig(ChemicalConfig):
         assert np.all([len(x) == 2 for x in fixed]) and len(fixed) == len(blocks)
 
         self.isFixedComposition = bool(np.all([x[0] == x[1] for x in self.fixed]))
-
-        if magSymm is not None:
-            assert isinstance(magSymm, dict)
-        else:
-            magSymm = {}
-            default = [i for i in chain(range(21, 31), range(39, 49))]   #first 2 rows of transition metals
-            for symbol in self.symbols:
-                # use magnetic moments in the MOL file, if present, otherwise set them to zero
-                magSymm[symbol] = [0] if 'MOL' in symbol else int(Element(symbol).z in default)
-        self.magSymm = magSymm
-
-        if magRatio is not None:
-            assert isinstance(magRatio, list) and sum(magRatio) > 0
-            if not np.isclose(sum(magRatio), 1.0):
-                magRatio = np.array(magRatio) / sum(magRatio)
-                logger.info('magRatio has been rescaled.')
-            self.magRatio = np.array(magRatio)
-        else:
-            self.magRatio = np.array([1, 0, 0, 0, 0, 0, 0])
 
         self.fingerprints = copy(fingerprints) if fingerprints is not None else {}
         if 'tolerance' not in self.fingerprints:
@@ -435,52 +480,58 @@ class AtomisticConfig(ChemicalConfig):
             self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
 
     def toDICT(self):
-        '''
-        Method which creates dictionary representation of the config.
+        """
+        Method which creates a dictionary representation of the config.
 
-        :return: Dictionary representing the config.
-        '''
+        :rtype: dict
+        :return: dictionary representing the config.
+        """
         dct = super().toDICT()
         dct['blocks'] = dct['blocks'].tolist()
         dct['fixed'] = dct['fixed'].tolist()
-        dct['magRatio'] = dct['magRatio'].tolist()
         return dct
 
     @classmethod
-    def fromDICT(cls, dct : dict):
-        '''
-        Method which reconstructs AtomisticConfig from dictionary representation.
+    def fromDICT(cls, dct: dict):
+        """
+        Method which reconstructs AtomisticConfig from its dictionary representation.
 
-        :param dct: Dictionary representing the config.
-        '''
+        :type dct: dict
+        :param dct: dictionary representing the config.
+        """
         dct['blocks'] = np.asarray(dct['blocks'])
         dct['fixed'] = np.asarray(dct['fixed'])
-        dct['magRatio'] = np.asarray(dct['magRatio'])
         return super().fromDICT(dct)
 
-    def isGoodComposition(self, system : AtomicStructure) -> bool:
-        '''
-        Method which checks if the structure meet composition constraint.
+    def isGoodComposition(self, system: AtomicStructure) -> bool:
+        """
+        Method which checks if the structure meets the composition constraints.
 
-        :param system:
-        :return:
-        '''
+        :type system: :class:`AtomicStructure`
+        :param system: system to be checked.
+        :rtype: bool
+        :return: True if system meets the constraints, False otherwise.
+        """
         if not set(system.composition.keys()) <= set(self.symbols):
             return False
+
         numIons = self.numIons(system.composition)
         numBlocks = self.numBlocks(system.composition)
+
         return np.all(np.dot(numBlocks, self.blocks) == numIons) and \
                np.all(numBlocks >= self.fixed[:,0]) and \
                np.all(numBlocks <= self.fixed[:,1]) and \
-               np.sum(numIons) >= self.minAt and \
-               np.sum(numIons) <= self.maxAt
+               self.minAt <= np.sum(numIons) <= self.maxAt
 
     def numIons(self, composition):
-        '''
+        """
         Creates numIons array from given composition.
-        :param composition:
-        :return:
-        '''
+
+        :type composition: dict
+        :param composition: ('element' : 'amount')
+        :rtype: list
+        :return: list of elements amounts corresponding *symbols* variable of this instance.
+        """
         num = []
         for symbol in self.symbols:
             if symbol in composition:
@@ -490,40 +541,58 @@ class AtomisticConfig(ChemicalConfig):
         return np.array(num, dtype=int)
 
     def numBlocks(self, composition) -> np.ndarray:
-        '''
-        Creates numIons array from given composition.
+        """
+        Creates numBlocks array from given composition.
 
-        :param composition:
-        :return:
-        '''
+        :type composition: dict
+        :param composition: ('element' : 'amount')
+        :rtype: list
+        :return: list of blocks amounts corresponding *blocks* variable of this instance.
+        """
         return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition), rcond=None)[0]).astype(int)
 
     def randomComposition(self):
+        """
+        Creates random numIons array respecting configuration parameters: blocks, fixed, minAt and maxAt.
+
+        :rtype: list
+        :return: list of elements amounts corresponding *symbols* variable of this instance.
+        """
         while True:
             numBlocks = np.fromiter((np.random.randint(low, high + 1) for low, high in self.fixed), dtype=int)
             numIons = np.dot(numBlocks, self.blocks)
-            if np.sum(numIons) >= self.minAt and np.sum(numIons) <= self.maxAt:
+            if self.minAt <= np.sum(numIons) <= self.maxAt:
                 return numIons
 
-    def isGoodSystem(self, system : AtomicStructure) -> bool:
-        '''
-        Method which checks if the structure meet constraints.
+    def isGoodSystem(self, system: AtomicStructure) -> bool:
+        """
+        Check if the given system belongs to this configuration space.
+        Includes :meth:`isGoodDistances`,
+        :meth:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure.isMoleculesDistinct` and
+        :meth:`isGoodComposition`.
 
-        :param system:
-        :return:
-        '''
+        :type system: :class:`AtomicStructure`
+        :param system: Some system to be checked against its conformance to this space.
+        :rtype: bool
+        :return: True if system belongs to this configuration space, False otherwise.
+        """
         return self.isGoodComposition(system) and super(AtomisticConfig, self).isGoodSystem(system)
 
-    def findDesiredComposition(self, system1 : AtomicStructure, system2 : AtomicStructure, composition, debug=False):
+    def findDesiredComposition(self, system1: AtomicStructure, system2: AtomicStructure, numIons_start: int,
+                               debug: bool=False):
         """
-        How to find a composition that requires the least addition/deleting of atoms from child.
-        One should be able to compose numIons out of blocks.
-        :param system1:
-        :param system2:
-        :param composition:
+        Find a composition that requires the least addition/deleting of atoms from child.
+
+        :type system1: :class:`AtomicStructure`
+        :param system1: first parent system.
+        :type system2: :class:`AtomicStructure`
+        :param system2: second parent system.
+        :type numIons_start: int
+        :param numIons_start: starting point for approximation.
+        :type debug: bool
         :param debug: False by default. If set to True, use static values instead of random to reproduce results.
-        :return numIons:
-        :return numBlocks: full amount of blocks from both parents, determines which atoms could be used to make a child.
+        :rtype: tuple of lists
+        :return: (numIons, numBlocks) to determine which atoms could be used to make a child.
         """
 
         maxBlocks = self.numBlocks(system1.composition) + self.numBlocks(system2.composition)
@@ -533,7 +602,7 @@ class AtomisticConfig(ChemicalConfig):
         numBlocks = None
 
         maxAtoms = np.dot(maxBlocks, self.blocks)
-        maxAdded = maxAtoms - composition  # how many atoms one could possibly add
+        maxAdded = maxAtoms - numIons_start  # how many atoms one could possibly add
 
         blocks = np.asarray(self.blocks, dtype=int)
 
@@ -569,7 +638,7 @@ class AtomisticConfig(ChemicalConfig):
                 #    tolerance = 1
 
                 blockN = np.zeros(Nb, dtype=int)  # specifies the number of blocks in the composition found by algorithm
-                composition_tmp = np.copy(composition)
+                composition_tmp = np.copy(numIons_start)
                 crutch = np.random.rand(Nb)
                 if debug:
                     crutch = np.asarray([0.7947, 0.5449, 0.2])
@@ -584,23 +653,22 @@ class AtomisticConfig(ChemicalConfig):
                     while True:
                         #if min(composition_tmp - ind * block) < -1 * tolerance:
                         #    break
-                        # Take into account maxAtoms, sometimes we can't add atoms at all for varcomp, since all atoms of
-                        # specific type could be already in the child.
+                        # Take into account maxAtoms, sometimes we can't add atoms at all for varcomp,
+                        # since all atoms of specific type could be already in the child.
                         if min(maxAdded + (composition_tmp - ind * block)) < 0:
                             break
                         if min1 >= np.sum(abs(composition_tmp - ind * block)) and \
-                                ind >= self.fixed[blockOrder[i],0] and \
-                                ind <= self.fixed[blockOrder[i],1]:
+                                self.fixed[blockOrder[i], 0] <= ind <= self.fixed[blockOrder[i], 1]:
                             min1 = np.sum(abs(composition_tmp - ind * block))
                             blockN[blockOrder[i]] = ind
                         ind += 1
 
                     composition_tmp -= blockN[blockOrder[i]] * block
 
-                if bestGreed > np.sum(abs(composition - np.dot(blockN, blocks))) and \
+                if bestGreed > np.sum(abs(numIons_start - np.dot(blockN, blocks))) and \
                                 np.all(blockN >= self.fixed[:,0]) and \
                                 np.all(blockN <= self.fixed[:,1]):
-                    bestGreed = np.sum(abs(composition - np.dot(blockN, blocks)))
+                    bestGreed = np.sum(abs(numIons_start - np.dot(blockN, blocks)))
                     numBlocks = blockN
 
             try:
@@ -612,4 +680,10 @@ class AtomisticConfig(ChemicalConfig):
 
     @property
     def systemFactory(self):
+        """
+        A reference to the class representing the system in this configuration space.
+
+        :rtype: :class:`AtomicStructure`
+        :return: system class.
+        """
         return AtomicStructure

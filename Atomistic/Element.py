@@ -1,21 +1,28 @@
-__author__ = 'mrakitin'
+"""
+USPEX.Common.Atomistic.Element
+==============================
+
+Class for Element
+
+.. codeauthor:: Maxim Rakitin
+.. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
+"""
 
 from typing import List, Union, Optional
 
-import sys
 
 class _Atom:
-    z : int                         # atomic number
-    shortname : str                 # shortname
-    fullname : str                  # Full name of the element
-    valence : float                 # Valence of the element
-    v_electrons : int               # number of valence electrons
-    R_covalent : Optional[float]    # covalent radius of the element
-    good_bonds : float              # good bonds
-    mass : float                    # element mass
+    z: int                         # atomic number
+    shortname: str                 # shortname
+    fullname: str                  # Full name of the element
+    valence: float                 # Valence of the element
+    v_electrons: int               # number of valence electrons
+    R_covalent: Optional[float]    # covalent radius of the element
+    good_bonds: float              # good bonds
+    mass: float                    # element mass
 
-    def __init__(self, z : int, shortname : str, fullname : str, valence : float, v_electrons : int, 
-                       R_covalent : Optional[float], good_bonds : float, mass : float):
+    def __init__(self, z: int, shortname: str, fullname: str, valence: float, v_electrons: int,
+                 R_covalent: Optional[float], good_bonds: float, mass: float):
         self.z = z
         self.shortname = shortname
         self.fullname = fullname
@@ -136,7 +143,7 @@ _ELEMENTS_LIST = [
 
 
 class Element(object):
-    '''
+    """
     Class for returning information about elements in one place.
 
     :return elements_list: all elements represented as list of tuples.
@@ -148,10 +155,9 @@ class Element(object):
     :return covalent_radius: covalent radius of the element.
     :return good_bonds: good bonds.
     :return mass: element mass.
-    '''
+    """
 
     # List with atomic number z, short name, full name, valence, valence electrons, covalent radius, good bonds:
-
 
     z = None
     short_name = None
@@ -162,12 +168,15 @@ class Element(object):
     good_bonds = None
     mass = None
 
-    def __init__(self, input : Union[str, int]):
-        '''
-        :param input: can be shortname, fullname of atomic number
-        '''
+    def __init__(self, input: Union[str, int]):
+        """
+        Initializes the class.
+
+        :type input: str or int
+        :param input: can be shortname, fullname of atomic number.
+        """
         if isinstance(input, int):
-            if input <= 0 and input > max(self.all_z()):
+            if max(self.all_z()) < input <= 0:
                 raise ValueError
             pos = [x.z for x in _ELEMENTS_LIST].index(input)
             self.z = input
@@ -192,7 +201,6 @@ class Element(object):
         self.covalent_radius = _ELEMENTS_LIST[pos].R_covalent
         self.good_bonds = _ELEMENTS_LIST[pos].good_bonds
         self.mass = _ELEMENTS_LIST[pos].mass
-
 
     @staticmethod
     def all_z() -> List[int]:
@@ -243,4 +251,3 @@ class Element(object):
 #     print( 'Covalent r:', element.covalent_radius)
 #     print( 'Good bonds:', element.good_bonds)
 #     print( 'Mass      :', element.mass)
-

@@ -1,14 +1,20 @@
+"""
+USPEX.Common.unittests.paretoRanking_Test
+=========================================
+
+Class for paretoRanking testing
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
 import unittest
 
-import os
 import numpy as np
 
-from ..ParetoRanking import paretoRanking
-
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
+from ..paretoRanking import paretoRanking
 
 
-class ParetoRankingTest(unittest.TestCase):
+class paretoRankingTest(unittest.TestCase):
 
     def test_arbitrary(self):
         fitnesses = np.array([

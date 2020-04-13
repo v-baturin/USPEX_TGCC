@@ -1,3 +1,12 @@
+"""
+USPEX.Common.Atomistic.optLattice
+=================================
+
+Optimizes a too elongated lattice
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
 from __future__ import division
 
 import numpy as np
@@ -5,14 +14,18 @@ import numpy as np
 
 # TODO check this functions and write tests for them
 
-def reoptimizeVector(v1, v2, flag1):
+def reoptimizeVector(v1: np.ndarray, v2: np.ndarray, flag1: int):
     """
-    The function reoptimizes a vector. Need better description.
-    :param v1:
-    :param v2:
-    :param flag1:
-    :return v:
-    :return flag:
+    The function reoptimizes a vector against another vector. Needs better description.
+
+    :type v1: numpy array
+    :param v1: vector to reoptimize.
+    :type v2: numpy array
+    :param v2: vector against which we reoptimize v1.
+    :type flag1: int
+    :param flag1: flag that is raised if a new v1 has been found with norm less than the original v1.
+    :rtype: tuple
+    :return: (v1, flag)
     """
 
     flag = flag1
@@ -26,7 +39,7 @@ def reoptimizeVector(v1, v2, flag1):
     dot_v1_v2 = np.dot(v1, v2)
     norm_v2 = np.linalg.norm(v2)
 
-    if abs(dot_v1_v2) > norm_v2 ** 2 / 2: # corrected norm_v2 / 2 -> norm_v2 ** 2 / 2 by V. Baturin 09.11.18
+    if abs(dot_v1_v2) > norm_v2 ** 2 / 2:  # corrected norm_v2 / 2 -> norm_v2 ** 2 / 2 by V. Baturin 09.11.18
         try:
             v1_trial = v1 - np.ceil(abs(dot_v1_v2) / (np.linalg.norm(v2) ** 2)) * np.sign(dot_v1_v2) * v2
         except:
@@ -45,10 +58,12 @@ def optLattice(coor, lattice):
     that is greater than half of length of this vector, we can reoptimize the shape
     i. e. if |a*b|/|b| > |b|/2 then a_new = a - ceil(|a*b|/|b|^2)*sign(a*b)*b
 
-    :param coor: 1x3 list (or can be 1x3 NumPy array).
-    :param lattice: 3x3 representation of the lattice (either Python list or NumPy array).
-    :return: optcoor: optimized coordinates (1x3 NumPy array).
-    :return: optlat: optimized lattice (3x3 NumPy array).
+    :type coor: list or numpy array
+    :param coor: Nx3 coordinates.
+    :type lattice: list or numpy array
+    :param lattice: 3x3 representation of the lattice.
+    :rtype: tuple
+    :return: (optcoor, optlat) with optimized coordinates (Nx3 NumPy array) and optimized lattice (3x3 NumPy array).
     """
 
     coor = np.array(coor)
@@ -96,28 +111,3 @@ def optLattice(coor, lattice):
     optcoor = np.dot(optcoor, optlat)  # now absolute again for molecules
 
     return optcoor, optlat
-
-
-# ------------------------------------------------------------------------------
-if __name__ == "__main__":
-    '''
-    coord = [0, 0, 0]  # Fictitious coordinates
-    lattice = [[8.8961357250244362, 0.0, 0.0], [7.4920051751263292, 5.8541498910494623, 0.0],
-               [1.4497839312305156, 0.72741049512938449, 4.172098127196039]]
-
-    lattice = np.asarray(lattice)
-    v1 = lattice[0, :]
-    v2 = lattice[1, :]
-    v, flag = reoptimizeVector(v1, v2, 0)
-    '''
-
-    from lib.mat2dict import loadmat
-
-    test_dir = 'test_optLattice'
-
-    coor = loadmat(test_dir + '/coor.mat')['coor']
-    lattice = loadmat(test_dir + '/lattice.mat')['lattice']
-
-    optcoor, optlat = optLattice(coor, lattice)
-
-    print('')

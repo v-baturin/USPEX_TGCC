@@ -1,28 +1,33 @@
-'''
-@file        calcDefaultVolume.py
-@author:     Maxim Rakitin
-@copyright:  2018 Oganov's Lab. All rights reserved.
-@contact:    maxim.rakitin@gmail.com
-@date        January 2017
-@brief       Methods for calculation volume of a cell.
-'''
+"""
+USPEX.Common.Atomistic.calcDefaultVolume.py
+===========================================
 
+Methods for volume calculation of a cell
 
+.. codeauthor:: Maxim Rakitin <maxim.rakitin@gmail.com>
+"""
 
 import math
 
 from USPEX.Common.Atomistic.Element import Element
 
 
-def VintEOS(B0, B00, V0, x):
-    '''
-    The function fits the Volume with the Vint-EOS (equation of state).
-    :param B0:
-    :param B00:
-    :param V0:
-    :param x:
+def VinetEOS(B0: float, B00: float, V0: float, x: float):
+    """
+    The function fits the Volume with the Vinet-EOS (equation of state).
+    :Link: https://en.wikipedia.org/wiki/Rose%E2%80%93Vinet_equation_of_state
+
+    :type B0: float
+    :param B0: isothermal bulk modulus.
+    :type B00: float
+    :param B00: derivative of bulk modulus with respect to pressure.
+    :type V0: float
+    :param V0: volume at zero pressure.
+    :type x: float
+    :param x: volume at pressure P.
+    :rtype: float
     :return: pressure
-    '''
+    """
 
     # B00 = B0'
     P = 3.0 * B0 * (1.0 - math.pow(x/V0, 1.0/3.0)) / \
@@ -30,14 +35,20 @@ def VintEOS(B0, B00, V0, x):
 
     return P
 
+
 def arange(start, end, step):
-    '''
+    """
     Create arange like in numpy (np.arange).
-    :param start: start value for the grid;
-    :param end: end value for the grid;
+
+    :type start: float
+    :param start: start value for the grid.
+    :type end: float
+    :param end: end value for the grid.
+    :type step: float
     :param step: step to create the grid.
+    :rtype: list
     :return: a list with values of the grid.
-    '''
+    """
 
     num_steps = int(round((end - start) / step))
     values_list = []
@@ -52,14 +63,19 @@ def arange(start, end, step):
     return values_list
 
 
-def calcVolume(targetPress, atomType, systemType):    # Returns targetVolume
-    '''
+def calcVolume(targetPress: float, atomType: int, systemType: str):    # Returns targetVolume
+    """
     The function calculates a volume of a single element/molecule at the target pressure.
-    :param targetPress:
+
+    :type targetPress: float
+    :param targetPress: target pressure.
+    :type atomType: int
     :param atomType: types of atoms;
+    :type systemType: str
     :param systemType: molecular or atomic system.
+    :rtype: float
     :return: volume of the element or molecule.
-    '''
+    """
 
     moleculeType = [1, 6, 7, 8, 9, 15, 16, 17, 33, 34, 35, 52, 53]
 
@@ -198,7 +214,7 @@ def calcVolume(targetPress, atomType, systemType):    # Returns targetVolume
     tryPressure = []
     for tryVolume0 in volumeRange:
         tryVolume.append(tryVolume0)
-        tmp = VintEOS(fitParameter[i][2-1], fitParameter[i][3-1], fitParameter[i][4-1], tryVolume0)
+        tmp = VinetEOS(fitParameter[i][2-1], fitParameter[i][3-1], fitParameter[i][4-1], tryVolume0)
         tryPressure.append(tmp)
 
     tmp_list = [abs(x-targetPress) for x in tryPressure] 
@@ -207,15 +223,22 @@ def calcVolume(targetPress, atomType, systemType):    # Returns targetVolume
     
     return targetVolume
 
-def calcDefaultVolume(numIons, atomType, pressure, isMol):
-    '''
+
+def calcDefaultVolume(numIons: list, atomType: list, pressure: float, isMol: bool):
+    """
     The function calculates a volume of the investigated atomic/molecular system at the target pressure.
-    :param numIons: (list) number of atoms of each type;
-    :param atomType: (list) types of atoms;
-    :param pressure: (float) pressure under system;
-    :param isMol: (bool) molecular or atomic system.
-    :return: (float) volume of the system.
-    '''
+
+    :type numIons: list
+    :param numIons: number of atoms of each type.
+    :type atomType: list
+    :param atomType: types of atoms.
+    :type pressure: float
+    :param pressure: pressure under system.
+    :type isMol: bool
+    :param isMol: molecular or atomic system.
+    :rtype: float
+    :return: volume of the system.
+    """
 
     assert all([isinstance(x, str) for x in atomType])
 
@@ -232,6 +255,7 @@ def calcDefaultVolume(numIons, atomType, pressure, isMol):
     return vol
 
 #-------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     pass

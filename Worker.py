@@ -1,3 +1,12 @@
+"""
+USPEX.Common.Worker
+===================
+
+Basic Worker class
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
 import pickle as pcl
 
 
@@ -6,6 +15,9 @@ class WorkerError(Exception):
 
 
 class Worker(object):
+    """
+    Basic worker class.
+    """
 
     workers = []
 
@@ -13,7 +25,6 @@ class Worker(object):
         instance = super().__new__(cls)
         cls.workers.append(instance)
         return instance
-
 
     # if not cls.workers:
     #     cls.loop.stop()

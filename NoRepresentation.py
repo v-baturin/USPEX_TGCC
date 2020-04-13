@@ -1,6 +1,17 @@
+"""
+USPEX.Common.NoRepresentation
+=============================
+
+Empty output representation
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
+
 class NoRepresentation(object):
-
-
+    """
+    Empty output representation.
+    """
     def __init__(self, name : str, selection : str, target : str, **kwargs):
         pass
 
