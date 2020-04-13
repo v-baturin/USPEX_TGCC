@@ -1,8 +1,6 @@
 import numpy as np
 
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
-from USPEX.Common.Atomistic.Element import Element
-from .AtomTypeCounter import atomTypeCounter
 
 
 def move_along_SoftMode(system, GOOD_BONDS, EIGENVECTOR, MUT_DEGREE):
@@ -22,11 +20,10 @@ def move_along_SoftMode(system, GOOD_BONDS, EIGENVECTOR, MUT_DEGREE):
     vec = np.zeros(3)
     new_Coord = np.copy(system.scaled_coordinates)
 
-    close_enough = -0.37 * np.log(GOOD_BONDS)  # this part needed for clusters
     vect = np.zeros(3)
     # Organize an array with a list of numbers of atoms starting from 0 (in Matlab it starts from 1):
-    atomTypes, atom_types = atomTypeCounter(system.chemicalSymbols)
-    R_val = np.array([Element(atomType).covalent_radius for atomType in atomTypes])
+    # R_val = np.array([Element(atomType).covalent_radius for atomType in atomTypes])
+    R_val = system.covalentRadii
 
     if system.dimension == 0:  # cluster == 1
         coord += 0.0001
@@ -72,9 +69,9 @@ def move_along_SoftMode(system, GOOD_BONDS, EIGENVECTOR, MUT_DEGREE):
                     vect[1] = new_Coord[i, 1] - new_Coord[j, 1]
                     vect[2] = new_Coord[i, 2] - new_Coord[j, 2]
 
-                    delta = np.sqrt(np.sum(np.dot(vect, lattice) ** 2) - R_val[at_types[i]] - R_val[at_types[j]])
+                    delta = np.sqrt(np.sum(np.dot(vect, lattice) ** 2) - R_val[i] - R_val[j])
                     dist[i, j] = dist[j, i] = delta
-                    if delta < close_enough[at_types[i], at_types[j]]:
+                    if delta < -0.37 * np.log(GOOD_BONDS[f'{system.chemicalSymbols[i]}-{system.chemicalSymbols[j]}']):
                         badAtoms[i] = 0
                         badAtoms[j] = 0
 
