@@ -1,18 +1,31 @@
+"""
+USPEX.Common.Atomistic.Fingerprints.make_matrices
+=================================================
+
+Functions used for fingerprint calculation
+
+.. codeauthor:: Maxim Rakitin
+"""
+
 import numpy as np
 from scipy.spatial.distance import cdist
 
 from ..super_matrix import super_matrix
 
+
 def fp_weight(structure):
     """
     The function calculates weight used in fingerprint calculations.
-    :param numIons: number of atoms.
-    :return weight: calculated weight.
+
+    :type structure: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` or descendant
+    :param structure: system for which we want to calculate the weight.
+    :rtype: numpy array
+    :return: calculated weight.
     """
 
     # assert check1DArray(numIons, int)
 
-    numIons = np.unique(structure.get_chemical_symbols(),return_counts=True)[1]
+    numIons = np.unique(structure.get_chemical_symbols(), return_counts=True)[1]
 
     L = numIons.shape[0]
     S = 0
@@ -26,26 +39,25 @@ def fp_weight(structure):
 
     return weight
 
-def make_matrices(structure, Rmax = 10.0):
+
+def make_matrices(structure, Rmax=10.0):
     """
-        The function is to prepare matrices for fingerprint calculations.
-        :param lat: lattice from POSCAR.
-        :param coor: coordinates from POSCAR.
-        :param numIons: number of atoms from POSCAR.
-        :param Rmax: distance cutoff.
-        :return V: volume of the cell.
-        :return dist_matrix: [atom_i, atom_j, atomi_type, atomj_type, dist].
-        """
+    The function prepares matrices for fingerprint calculation.
+
+    :type structure: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` or descendant
+    :param structure: system for which we want to calculate the distance matrix.
+    :type Rmax: float
+    :param Rmax: distance cutoff.
+    :rtype: numpy array
+    :return: distance matrix of the form [atom_i, atom_j, atomi_type, atomj_type, dist].
+    """
 
     assert isinstance(Rmax, float) and Rmax >= 0
 
-    dist_matrix = None
-
     coor = structure.get_scaled_positions()
     lat = structure.get_cell()
-    numIons = np.unique(structure.get_chemical_symbols(),return_counts=True)[1]
+    numIons = np.unique(structure.get_chemical_symbols(), return_counts=True)[1]
     coor = coor[np.argsort(structure.get_chemical_symbols())]
-
 
     coor = coor - np.floor(coor)  # scale it the [0 1]
     N_atom = np.sum(numIons)

@@ -1,8 +1,18 @@
+"""
+USPEX.Common.Atomistic.unittests.Zmatrix_Test
+=============================================
+
+Class for Z-matrix testing
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
 import unittest
 import numpy as np
 
 from ..mol.zmatrix2coord import zmatrix2coord
 from ..mol.coord2Zmatrix import coord2Zmatrix
+
 
 class Zmatrix_Test(unittest.TestCase):
     def test_both(self):
@@ -16,16 +26,18 @@ class Zmatrix_Test(unittest.TestCase):
                            [ 0.0769,  1.4126,  0.5570],
                            [ 1.2554, -0.6507,  2.4647],
                            [ 2.0274,  0.5129, -0.7257]])
-        format = np.array([[0, 0, 0],
-                           [1, 0, 0],
-                           [2, 1, 0],
-                           [2, 1, 3],
-                           [2, 1, 3],
-                           [4, 2, 1],
-                           [4, 2, 6],
-                           [4, 2, 6],
-                           [5, 2, 1],
-                           [5, 2, 9]])
-        zmatrix = coord2Zmatrix(coords,format)
-        coords_new = zmatrix2coord(zmatrix,format)
-        self.assertTrue(np.allclose(coords,coords_new,rtol=1.e-3))
+
+        fmt = np.array([[0, 0, 0],
+                        [1, 0, 0],
+                        [2, 1, 0],
+                        [2, 1, 3],
+                        [2, 1, 3],
+                        [4, 2, 1],
+                        [4, 2, 6],
+                        [4, 2, 6],
+                        [5, 2, 1],
+                        [5, 2, 9]])
+
+        zmatrix = coord2Zmatrix(coords, fmt)
+        coords_new = zmatrix2coord(zmatrix, fmt)
+        self.assertTrue(np.allclose(coords, coords_new, rtol=1.e-3))

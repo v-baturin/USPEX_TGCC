@@ -1,18 +1,30 @@
-__author__ = 'mrakitin'
+"""
+USPEX.Common.Atomistic.Fingerprints.local_order
+===============================================
+
+Local order calculation function
+
+.. codeauthor:: Maxim Rakitin
+"""
 
 import numpy as np
 
 
 def local_order(V, numIons, atom_fing, delta):
-    '''
-    
-    :param V: 
-    :param numIons: 
-    :param atom_fing: 
-    :param delta: 
-    :return: 
-    '''
+    """
+    Local order calculation function.
 
+    :type V: float
+    :param V: volume of the cell.
+    :type numIons: numpy array
+    :param numIons: vector of integers expressing the abundance of each atomic type (or molecule) in the unit cell.
+    :type atom_fing: numpy array
+    :param atom_fing: tomic fingerprint.
+    :type delta: float
+    :param delta: bin width.
+    :rtype: numpy array
+    :return: local order.
+    """
     N_atom = sum(numIons)
     if N_atom == 0:
         return np.nan

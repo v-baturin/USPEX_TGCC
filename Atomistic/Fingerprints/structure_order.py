@@ -1,4 +1,11 @@
-__author__ = 'mrakitin'
+"""
+USPEX.Common.Atomistic.Fingerprints.structure_order
+===================================================
+
+Calculate structure order
+
+.. codeauthor:: Maxim Rakitin
+"""
 
 import numpy as np
 
@@ -6,12 +13,19 @@ import numpy as np
 def structure_order(f, volume, structure, weight, deltaFing=0.08):
     """
     Calculate structure order.
+
+    :type f: numpy array
     :param f: fingerprint values.
+    :type volume: float
     :param volume: volume of the cell.
-    :param numIons: number of atoms.
+    :type structure: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` or descendant
+    :param structure: system for which we want to calculate structure order.
+    :type weight: numpy array
+    :param weight: weight used in fingerprint calculations.
+    :type deltaFing: float
     :param deltaFing: parameter delta.
-    :param weight: weight.
-    :return s_order: structure order.
+    :rtype: float
+    :return: structure order.
     """
 
     '''
@@ -32,24 +46,3 @@ def structure_order(f, volume, structure, weight, deltaFing=0.08):
     s_order **= 0.5
 
     return s_order
-
-
-if __name__ == "__main__":
-    from read_poscar import read_poscar
-
-    lat, atomType, numIons, coor = read_poscar('POSCAR_8')
-
-    from make_matrices import make_matrices, fp_weight
-
-    V, dist_matrix = make_matrices(lat, coor, numIons)
-
-    from fingerprint import fingerprint
-
-    order, fing, atom_fing = fingerprint(V, dist_matrix, numIons)
-
-    N_size = 1
-    numIons = N_size * np.asarray(numIons)
-    weight = fp_weight(numIons)
-
-    s_order = structure_order(fing, V, numIons, weight, 0.08)
-    print('Structure order:', s_order)
