@@ -7,8 +7,9 @@ Class for Config testing
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
 
-import unittest
+import json
 import os
+import unittest
 
 from ase.io.vasp import read_vasp
 
@@ -70,3 +71,12 @@ class Config_Test(unittest.TestCase):
     def test_problem_2(self):
         config = AtomisticConfig(symbols=['Si'], blocks=[[16]], fixed=[[1, 1]])
         self.assertTrue(config.isGoodSystem(self.dia_2x2x2))
+
+    def test_serialization(self):
+        config = AtomisticConfig(symbols=['Si'], blocks=[[16]], fixed=[[1, 1]])
+        filepath = f"{PATH_WITH_TESTS}/tmp_config"
+        with open(filepath, 'w') as fp:
+            json.dump(config.toDICT(), fp)
+        with open(filepath, "rt") as f:
+            config1 = AtomisticConfig.fromDICT(json.loads(f.read()))
+        os.remove(filepath)

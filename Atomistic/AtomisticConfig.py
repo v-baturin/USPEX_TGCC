@@ -16,7 +16,7 @@ import numpy as np
 from ase.geometry import get_distances
 from copy import copy
 from itertools import combinations_with_replacement, chain
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 
 from ..Config import Config
@@ -49,17 +49,18 @@ class ChemicalConfig(Config):
     chemicalSymbols = None
     molecules = None
     volumeType = None
-    goodBonds = None
+    goodBonds : Dict[Tuple[str, str], float] = None
     valences = None
     valenceElectrons = None
     _minVectorLength = None
     externalPressure = None
-    minDistMatrice = None
-    CenterminDistMatrice = None
+    minDistMatrice : Dict[Tuple[str, str], float] = None
+    CenterminDistMatrice : Dict[Tuple[str, str], float] = None
 
-    def __init__(self, symbols: list, volumeType: str=None, ionDistances: dict=None, goodBonds: dict=None,
-                 valences: Dict[str, float]=None, minVectorLength: float=None, valenceElectrons: Dict[str, float]=None,
-                 externalPressure: float=0.0001, moleculesDistinctCheck: bool=True, molCenters: list=None, **kwargs):
+    def __init__(self, symbols: list, volumeType: str=None, ionDistances: Dict[Tuple[str, str], float]=None,
+                 goodBonds: Dict[Tuple[str, str], float]=None, valences: Dict[str, float]=None, minVectorLength: float=None,
+                 valenceElectrons: Dict[str, float]=None, externalPressure: float=0.0001, moleculesDistinctCheck: bool=True,
+                 molCenters: Dict[Tuple[str, str], float]=None, **kwargs):
         """
         :type symbols: list[str] or list[dict]
         :param symbols:
@@ -91,9 +92,10 @@ class ChemicalConfig(Config):
         :type moleculesDistinctCheck: bool
         :param moleculesDistinctCheck:
             if True, check if molecules do not interpenetrate each other.
-        :type molCenters: list
+        :type molCenters: Dict[Tuple[str, str], float]
         :param molCenters:
-            matrix of minimal distances between the geometric centers of molecules.
+            Key - pair of molecule names
+            Value - minimal distances between the geometric centers of molecules.
         :type kwargs: dict
         :param kwargs:
             additional arguments and keywords used to initialize the parent class Config.
@@ -124,16 +126,7 @@ class ChemicalConfig(Config):
 
         self.volumeType = ('mol' if self.molecules else 'atom') if not volumeType else volumeType
 
-        if goodBonds is not None:
-            self.goodBonds = goodBonds
-        else:
-            self.goodBonds = {}
-            goodBonds = defaultGoodBonds(self.chemicalSymbols)
-            for i, j in combinations_with_replacement(range(len(self.chemicalSymbols)), 2):
-                arg = '{}-{}'.format(self.chemicalSymbols[i],self.chemicalSymbols[j])
-                self.goodBonds[arg] = goodBonds[i,j]
-                arg = '{}-{}'.format(self.chemicalSymbols[j], self.chemicalSymbols[i])
-                self.goodBonds[arg] = goodBonds[j, i]
+        self.goodBonds = goodBonds if goodBonds is not None else defaultGoodBonds(self.chemicalSymbols)
 
         self.valences = valences if valences is not None else {symbol: Element(symbol).valence
                                                                for symbol in self.chemicalSymbols}
@@ -145,28 +138,29 @@ class ChemicalConfig(Config):
         assert externalPressure >= 0
         self.externalPressure = externalPressure
 
-        self.minDistMatrice = np.zeros((len(self.chemicalSymbols), len(self.chemicalSymbols)))
+        self.minDistMatrice : Dict[Tuple[str, str], float] = {}
         if not ionDistances:
-            radii = [calcVolume(self.externalPressure, symbol, self.volumeType) ** (1.0 / 3.0)
-                     for symbol in self.chemicalSymbols]
-            for i, j in combinations_with_replacement(range(len(self.chemicalSymbols)), 2):
+            radii = {symbol : calcVolume(self.externalPressure, symbol, self.volumeType) ** (1.0 / 3.0)
+                     for symbol in self.chemicalSymbols}
+            for s1, s2 in combinations_with_replacement(self.chemicalSymbols, 2):
                 if self.volumeType != 'mol':
-                    self.minDistMatrice[i, j] = self.minDistMatrice[j, i] = min(0.22 * (radii[i] + radii[j]), 1.2)
+                    self.minDistMatrice[(s1,s2)] = min(0.22 * (radii[s1] + radii[s2]), 1.2)
                 else:
-                    self.minDistMatrice[i, j] = self.minDistMatrice[j, i] = 0.45 * (radii[i] + radii[j])
+                    self.minDistMatrice[(s1,s2)] = 0.45 * (radii[s1] + radii[s2])
         else:
-            for i, j in combinations_with_replacement(range(len(self.chemicalSymbols)), 2):
-                arg = '{}-{}'.format(self.chemicalSymbols[i], self.chemicalSymbols[j])
-                self.minDistMatrice[i, j] = self.minDistMatrice[j, i] = ionDistances[arg]
+            self.minDistMatrice = ionDistances
+            # for i, j in combinations_with_replacement(range(len(self.chemicalSymbols)), 2):
+            #     arg = '{}-{}'.format(self.chemicalSymbols[i], self.chemicalSymbols[j])
+            #     self.minDistMatrice[i, j] = self.minDistMatrice[j, i] = ionDistances[arg]
 
         if molCenters:
-            self.CenterminDistMatrice = np.asarray(molCenters, dtype=float)
+            self.CenterminDistMatrice = molCenters
         else:
-            self.CenterminDistMatrice = np.zeros((len(self.symbols), len(self.symbols)))
-            radii = []
+            self.CenterminDistMatrice = {}
+            radii = {}
             for s in self.symbols:
                 if s not in self.molecules:
-                    radii.append(0.22*calcVolume(self.externalPressure, s, self.volumeType) ** (1.0 / 3.0))
+                    radii[s] = 0.22 * calcVolume(self.externalPressure, s, self.volumeType) ** (1.0 / 3.0)
                 else:
                     molecule = AtomicStructure.fromDICT(self.molecules[s])
                     molecule.set_masses([1] * len(molecule))
@@ -176,11 +170,10 @@ class ChemicalConfig(Config):
                     short_direction = vectors[ind]
                     height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.get_positions()]
                     ind = np.argsort(height_map)[0]
-                    s = molecule.get_chemical_symbols()[ind]
-                    radii.append(0.45 * np.power(calcVolume(self.externalPressure, s, self.volumeType), 1 / 3.0)
-                                 + height_map[ind])
-            for i, j in combinations_with_replacement(range(len(radii)), 2):
-                self.CenterminDistMatrice[i, j] = self.CenterminDistMatrice[j, i] = (radii[i] + radii[j])
+                    symbols = molecule.get_chemical_symbols()[ind]
+                    radii[symbols] = 0.45 * np.power(calcVolume(self.externalPressure, symbols, self.volumeType), 1 / 3.0) + height_map[ind]
+            for s1, s2 in combinations_with_replacement(radii.keys(), 2):
+                self.CenterminDistMatrice[(s1,s2)] = (radii[s1] + radii[s2])
 
         self.moleculesDistinctCheck = moleculesDistinctCheck
 
@@ -191,12 +184,13 @@ class ChemicalConfig(Config):
         :rtype: dict
         :return: dictionary representing the config.
         """
+
         dct = copy(self.__dict__)
-        dct['goodBonds'] = dct['goodBonds'].tolist()
-        dct['valences'] = dct['valences'].tolist()
-        dct['valenceElectrons'] = dct['valenceElectrons'].tolist()
-        dct['minDistMatrice'] = dct['minDistMatrice'].tolist()
-        dct['CenterminDistMatrice'] = dct['CenterminDistMatrice'].tolist()
+        dct['goodBonds'] = {f'{s1} {s2}' : value for (s1, s2), value in dct['goodBonds'].items()}
+        # dct['valences'] = dct['valences']
+        # dct['valenceElectrons'] = dct['valenceElectrons']
+        dct['minDistMatrice'] = {f'{s1} {s2}' : value for (s1, s2), value in dct['minDistMatrice'].items()}
+        dct['CenterminDistMatrice'] = {f'{s1} {s2}' : value for (s1, s2), value in dct['CenterminDistMatrice'].items()}
         return dct
 
     @classmethod
@@ -207,11 +201,12 @@ class ChemicalConfig(Config):
         :type dct: dict
         :param dct: dictionary representing the config.
         """
-        dct['goodBonds'] = np.asarray(dct['goodBonds'])
-        dct['valences'] = np.asarray(dct['valences'])
-        dct['valenceElectrons'] = np.asarray(dct['valenceElectrons'])
-        dct['minDistMatrice'] = np.asarray(dct['minDistMatrice'])
-        dct['CenterminDistMatrice'] = np.asarray(dct['CenterminDistMatrice'])
+
+        dct['goodBonds'] = {tuple(x.split()) : value for x, value in dct['goodBonds'].items()}
+        # dct['valences'] = np.asarray(dct['valences'])
+        # dct['valenceElectrons'] = np.asarray(dct['valenceElectrons'])
+        dct['minDistMatrice'] = {tuple(x.split()) : value for x, value in dct['minDistMatrice'].items()}
+        dct['CenterminDistMatrice'] = {tuple(x.split()) : value for x, value in dct['CenterminDistMatrice'].items()}
         config = cls(symbols=[])
         config.__dict__ = copy(dct)
         return config

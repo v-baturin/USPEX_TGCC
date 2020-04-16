@@ -1,8 +1,9 @@
 import numpy as np
+
+from ase.neighborlist import primitive_neighbor_list
 from itertools import chain
 from scipy.sparse.csgraph import connected_components
-from ase.neighborlist import primitive_neighbor_list
-
+from typing import Dict, List, Union, Tuple
 
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from ..Bonds import Bond
@@ -35,7 +36,7 @@ def _connectedComponents(N, bonds):
     return len(np.unique(labels[np.asarray(indices)]))
 
 
-def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds) -> list:
+def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds : Dict[Tuple[str, str], float]) -> list:
     '''
     The function calculates bonds which make contribution to hardness.
     Used only for softmodemutation case and does not used for any other cases.
@@ -57,17 +58,17 @@ def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds) -> list:
     # 2) Group bonds by using same_bond criterion.
     bonds = []
     i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=SYSTEM.pbc,
-                                                          cell=SYSTEM.get_cell(complete=True),
-                                                          positions=SYSTEM.get_scaled_positions(),
-                                                          cutoff=Bond.MAX_BOND, numbers=SYSTEM.numbers,
-                                                          use_scaled_positions=True)
+                                                                cell=SYSTEM.get_cell(complete=True),
+                                                                positions=SYSTEM.get_scaled_positions(),
+                                                                cutoff=Bond.MAX_BOND, numbers=SYSTEM.numbers,
+                                                                use_scaled_positions=True)
 
     for i, j, dist, vec, dir in zip(i_init, j_init, dists, vecs, dirs):
         # TODO Why we had this less 0.5A and not more than 5A (usually)
         # if np.abs(dist - tmp_Rval) > cutoff or dist < 0.5:
         if dist < 0.5 or j < i:
             continue
-        bonds.append(Bond(atom1=SYSTEM[i], atom2=SYSTEM[j], direction=dir, distance=dist, vector=vec))
+        bonds.append(Bond(atom1=SYSTEM[i], atom2=SYSTEM[j], dir2=dir))
 
     tmp_bonds = sorted(bonds, key=lambda x: x.delta)
 
@@ -93,7 +94,7 @@ def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds) -> list:
     # delete short bonds
     for bond_total in bond_total:
         a,b = bond_total[0].symbols
-        small_bond = -0.37 * np.log(goodBonds[f'{a}-{b}'])
+        small_bond = -0.37 * np.log(goodBonds[(a,b)])
         if min([bond.delta for bond in bond_total]) < small_bond:
             bond_in.append(bond_total)    # Add by group
         else:

@@ -13,7 +13,8 @@ import numpy as np
 from ase.atom import Atom
 from ase.neighborlist import primitive_neighbor_list
 from dataclasses import dataclass
-from typing import List, Union, Tuple
+from itertools import combinations_with_replacement
+from typing import Dict, List, Union, Tuple
 
 from USPEX.Common.Atomistic.Element import Element
 
@@ -38,47 +39,52 @@ class Bond(object):
 
     _atom1 : Atom
     _atom2 : Atom
-    distance : float
-    delta : float
     enable : bool = False
 
     SAME_BOND_THRESHOLD = 0.05  # (Angstroms) same bond within this distance.
     MAX_BOND = 5.0              # (Angstroms) maximum distance deviation for bonds search.
     LOWER_BOUND = 0.5           # (Angstroms) lower bound for the distance of atoms in a bond.
 
-    def __init__(self, atom1 : Atom, atom2 : Atom, distance : float,
-                 direction : List[int] = [0,0,0], vector : List[float] = None):
+    def __init__(self, atom1 : Atom, atom2 : Atom, dir1 : List[int] = [0,0,0], dir2 : List[int] = [0,0,0]):
         """
         :type atom1: Atom
-        :param atom1:
-            reference to the first atom in bond.
+        :param atom1: reference to the first atom in bond.
         :type atom2: Atom
-        :param atom2:
-            reference to the second atom in bond.
-        :type distance: float
-        :param distance:
-            distance between atoms - (R_val_1 + R_val_2), in Angstroms.
+        :param atom2: reference to the second atom in bond.
         :type direction: list
         :param direction: bond direction with respect to cell parameters.
         """
-        assert 3 == len(direction)
-        assert distance > 0.0
-
-        R_val = lambda symbol: Element(symbol).covalent_radius
-
+        assert atom1.atoms == atom2.atoms
+        assert 3 == len(dir1) == len(dir2)
+        self._cell = atom1.atoms.get_cell()
         self._atom1, self._atom2 = atom1, atom2
-        self.distance = distance
-        self.delta = distance - R_val(atom1.symbol) - R_val(atom2.symbol)
-        self.direction = direction
-        self.vector = vector
+        self._dir1 = np.array(dir1, dtype=int)
+        self._dir2 = np.array(dir2, dtype=int)
 
     @property
     def indicies(self) -> Tuple[int, int]:
         return self._atom1.index, self._atom2.index
 
     @property
+    def direction(self) -> List[int]:
+        return self._dir2 - self._dir1
+
+    @property
     def symbols(self) -> Tuple[str, str]:
         return self._atom1.symbol, self._atom2.symbol
+
+    @property
+    def vector(self) -> List[float]:
+        return self._atom2.position - self._atom1.position + np.dot(self._dir2-self._dir1, self._cell)
+
+    @property
+    def distance(self) -> float:
+        return np.linalg.norm(self.vector)
+
+    @property
+    def delta(self):
+        R_val = lambda symbol: Element(symbol).covalent_radius
+        return self.distance - R_val(self._atom1.symbol) - R_val(self._atom2.symbol)
 
     @property
     def atoms(self):
@@ -117,7 +123,7 @@ class Bond(object):
 
 
 
-def defaultGoodBonds(symbols: list):
+def defaultGoodBonds(symbols: List[str]) -> Dict[Tuple[str, str], float]:
     """
     The function provides default good bonds values.
 
@@ -127,15 +133,23 @@ def defaultGoodBonds(symbols: list):
     :return gBmatrix: upper-triangular N*N matrix with good bonds values.
     """
 
-    numSpecies = len(symbols)
-    gB = np.zeros(numSpecies, dtype=float)
-    gBmatrix = np.zeros((numSpecies, numSpecies), dtype=float)
+    assert len(set(symbols)) == len(symbols)
+    goodBond = lambda symbol: Element(symbol).good_bonds
 
-    for i in range(numSpecies):
-        gB[i] = Element(symbols[i]).good_bonds
+    gB_dict = {}
+    for s1,s2 in combinations_with_replacement(symbols, r=2):
+        gB_dict[(s1,s2)] = np.power(goodBond(s1) * goodBond(s2), 0.5)
+    return gB_dict
 
-    for i in range(numSpecies):
-        for j in range(i, numSpecies):
-            gBmatrix[i, j] = gBmatrix[j, i] = np.power(gB[i] * gB[j], 0.5)
 
-    return gBmatrix
+    # numSpecies = len(symbols)
+    # gB = np.zeros(numSpecies, dtype=float)
+    # gBmatrix = np.zeros((numSpecies, numSpecies), dtype=float)
+    #
+    # for i in range(numSpecies):
+    #     gB[i] = Element(symbols[i]).good_bonds
+    #
+    # for i in range(numSpecies):
+    #     for j in range(i, numSpecies):
+    #         gBmatrix[i, j] = gBmatrix[j, i] = np.power(gB[i] * gB[j], 0.5)
+    #
