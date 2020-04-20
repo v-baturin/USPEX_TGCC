@@ -555,16 +555,16 @@ class AtomicStructure(System):
         """
         # TODO delete useless input parameter - symbols
 
-        i_init, j_init = primitive_neighbor_list(quantities='ij', pbc=self.atoms.pbc, cell=self.atoms.get_cell(complete=True),
-                                                 positions=self.atoms.get_scaled_positions(), cutoff=minDistMatrix,
+        i_init, j_init, shift = primitive_neighbor_list(quantities='ijS', pbc=self.atoms.pbc, cell=self.atoms.get_cell(complete=True),
+                                                 positions=self.atoms.get_scaled_positions(wrap = False), cutoff=minDistMatrix,
                                                  numbers=self.atoms.numbers, use_scaled_positions=True)
 
         # whether system is molecular or not
         # Check whether all pairs of atoms, which are closer than minDistMatrix and are related to the same molecule
-        for i, j in zip(i_init, j_init):
+        for i, j, s in zip(i_init, j_init, shift):
             inMolecule = False
             for mol in self._molecules:
-                if not (i in mol and j in mol):
+                if i in mol and j in mol and np.allclose(s, [0,0,0]):
                     inMolecule = True
                     break
             if not inMolecule: return False
