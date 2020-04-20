@@ -562,9 +562,12 @@ class AtomicStructure(System):
         # whether system is molecular or not
         # Check whether all pairs of atoms, which are closer than minDistMatrix and are related to the same molecule
         for i, j in zip(i_init, j_init):
+            inMolecule = False
             for mol in self._molecules:
                 if not (i in mol and j in mol):
-                    return False
+                    inMolecule = True
+                    break
+            if not inMolecule: return False
         return True
 
         # if len(self.atoms) < 2:
