@@ -555,37 +555,41 @@ class AtomicStructure(System):
         """
         # TODO delete useless input parameter - symbols
 
-        i_init, j_init, shift = primitive_neighbor_list(quantities='ijS', pbc=self.atoms.pbc, cell=self.atoms.get_cell(complete=True),
-                                                 positions=self.atoms.get_scaled_positions(wrap = False), cutoff=minDistMatrix,
-                                                 numbers=self.atoms.numbers, use_scaled_positions=True)
+        # positions = self.atoms.get_positions()
+        # i_init, j_init, vect = primitive_neighbor_list(quantities='ijD', pbc=self.atoms.pbc, cell=self.atoms.get_cell(complete=True),
+        #                                          positions=positions, cutoff=minDistMatrix,
+        #                                          numbers=self.atoms.numbers, use_scaled_positions=False)
+        #
+        # # whether system is molecular or not
+        # # Check whether all pairs of atoms, which are closer than minDistMatrix and are related to the same molecule
+        # for i, j, v in zip(i_init, j_init, vect):
+        #     inMolecule = False
+        #     for mol in self._molecules:
+        #         if i in mol and j in mol and np.allclose(v, positions[j] - positions[i]):
+        #             inMolecule = True
+        #             break
+        #     if not inMolecule: return False
+        # return True
 
-        # whether system is molecular or not
-        # Check whether all pairs of atoms, which are closer than minDistMatrix and are related to the same molecule
-        for i, j, s in zip(i_init, j_init, shift):
-            inMolecule = False
-            for mol in self._molecules:
-                if i in mol and j in mol and np.allclose(s, [0,0,0]):
-                    inMolecule = True
-                    break
-            if not inMolecule: return False
-        return True
-
-        # if len(self.atoms) < 2:
-        #     return True
-        # indices = np.fromiter((symbols.index(symbol) for symbol in self.chemicalSymbols), dtype=int)
-        # mDM = minDistMatrix[tuple(np.meshgrid(indices, indices))]
-        # actualDistances = self.get_all_distances(mic=np.any(self.atoms.get_pbc()))
-        # constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
-        # for inds, molecule in zip(self._molecules, self.molecules):
-        #     distVectorsMatrix = molecule.get_all_distances(mic=True, vector=True)
-        #     for i, distVectorsRow in enumerate(distVectorsMatrix):
-        #         for j, vect in enumerate(distVectorsRow):
-        #             vect = self.cell.scaled_positions(vect)
-        #             if np.all(np.abs(vect) < 1.0):
-        #                 dists = np.linalg.norm(vect + constNeighbours, axis=1)
-        #                 distVectorsMatrix[i,j] = self.cell.cartesian_positions(vect + constNeighbours[np.argmin(dists)])
-        #     actualDistances[tuple(np.meshgrid(inds, inds))] = np.linalg.norm(distVectorsMatrix, axis=2)
-        # return np.all(actualDistances >= mDM.T)
+        N = len(self.atoms)
+        if N < 2:
+            return True
+        mDM = np.zeros((N, N), dtype=float)
+        for i, s1 in enumerate(self.chemicalSymbols):
+            for j, s2 in enumerate(self.chemicalSymbols):
+                mDM[i,j] = minDistMatrix[(s1,s2)] if (s1,s2) in minDistMatrix else minDistMatrix[(s2,s1)]
+        actualDistances = self.get_all_distances(mic=np.any(self.atoms.get_pbc()))
+        constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
+        for inds, molecule in zip(self._molecules, self.molecules):
+            distVectorsMatrix = molecule.get_all_distances(mic=True, vector=True)
+            for i, distVectorsRow in enumerate(distVectorsMatrix):
+                for j, vect in enumerate(distVectorsRow):
+                    vect = self.cell.scaled_positions(vect)
+                    if np.all(np.abs(vect) < 1.0):
+                        dists = np.linalg.norm(vect + constNeighbours, axis=1)
+                        distVectorsMatrix[i,j] = self.cell.cartesian_positions(vect + constNeighbours[np.argmin(dists)])
+            actualDistances[tuple(np.meshgrid(inds, inds))] = np.linalg.norm(distVectorsMatrix, axis=2)
+        return np.all(actualDistances >= mDM.T)
 
     def isMoleculesDistinct(self) -> bool:
         """
