@@ -50,12 +50,12 @@ class SpectrumAnalyzer(object):
         self.exp_angles = np.array(exp_angles)
         self.exp_intensities = np.array(exp_intensities) / max(exp_intensities) * 100
 
-    def __getitem__(self, item):
+    def __call__(self, system):
         """
         Special method which allows the '[]' operator. Calculates the agreement with the experimental X-ray spectrum.
 
-        :type item: :class:`AtomicStructure` or one of its subclasses
-        :param item: the crystal structure whose theoretical spectrum needs to be compared with experiment.
+        :type system: :class:`AtomicStructure` or one of its subclasses
+        :param system: the crystal structure whose theoretical spectrum needs to be compared with experiment.
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
@@ -63,12 +63,12 @@ class SpectrumAnalyzer(object):
         amplitude = self.spectrum_ends - self.spectrum_starts
         calculator = XRDCalculator(wavelength=self.wavelength)
 
-        tmp = Structure(lattice=item.cell, species=item.get_chemical_symbols(), coords=item.scaled_coordinates)
+        tmp = Structure(lattice=system.cell, species=system.get_chemical_symbols(), coords=system.scaled_coordinates)
         string = tmp.to(fmt='cif', symprec=0.2)
         structure = Structure.from_str(string, fmt='cif')
 
         # pure hydrogen gets low agreement
-        if list(item.composition.keys()) == ['H']:
+        if list(system.composition.keys()) == ['H']:
             return 100.0
 
         fitness = 0

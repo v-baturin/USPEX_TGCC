@@ -32,9 +32,7 @@ class AtomicStructure_Test(unittest.TestCase):
     def test_isGoodDistances1(self):
         with open("{}/CNHO_3_system".format(PATH_WITH_TESTS), "rt") as f:
             system = Crystal.fromJSON(f.read())
-        with open("{}/CNHO_3_config".format(PATH_WITH_TESTS), "rt") as f:
-            config = CrystalConfig.fromDICT(json.loads(f.read()))
-        self.assertFalse(config.isGoodDistances(system))
+        self.assertFalse(system.isGoodDistances())
 
     def test_molecularFromJSON(self):
         with open(f'{PATH_WITH_TESTS}/h2o_nh3_2', 'rt') as f:
