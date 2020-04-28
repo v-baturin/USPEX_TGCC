@@ -66,7 +66,7 @@ class Crystal(AtomicStructure):
         :return: distance between calculated and experimental spectrum.
         """
         if self._spectrumAnalyzer is None:
-            if 'xraydistance' in self.config:
+            if 'xraydata' in self.config:
                 self._spectrumAnalyzer = SpectrumAnalyzer(**self.config['xraydata'])
             else:
                 raise RuntimeError('Cannot optimize the quantity xraydistance. No experimental X-ray data found.')
