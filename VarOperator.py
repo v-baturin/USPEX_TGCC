@@ -8,6 +8,7 @@ Basic class for variation operators
 .. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
 """
 
+from typing import Callable
 
 from USPEX.Common.Config import Config
 from USPEX.Common.SystemPool import SystemPool
@@ -41,7 +42,7 @@ class VarOperator(object):
     name = None
     isActive = True
 
-    def __init__(self, config: Config, pool: SystemPool, initFrac: float, minFrac: float = 0.1, maxFrac: float = 1.0,
+    def __init__(self, systemFactory: Callable, config: dict, pool: SystemPool, initFrac: float, minFrac: float = 0.1, maxFrac: float = 1.0,
                  maxOutputSize: int = MAX_OUTPUT_SIZE):
         """
         Initializes the class.
@@ -60,6 +61,7 @@ class VarOperator(object):
         :param maxOutputSize: maximum number of offsprings this operator can give from single execution.
         """
 
+        self.systemFactory = systemFactory
         self.config = config
         self.pool = pool
         assert 0.0 <= minFrac <= 1.0
