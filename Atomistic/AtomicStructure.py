@@ -23,6 +23,18 @@ from .calcDefaultVolume import calcVolume
 from .mol.coord2Zmatrix import coord2Zmatrix
 from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
+from .Fingerprints.make_matrices import make_matrices
+from .Fingerprints.fingerprint import fingerprint
+from .Fingerprints.cosine_distance import cosine_distance
+from .Fingerprints.quasientropy import quasientropy
+from .Fingerprints.structure_order import structure_order
+
+
+RMAX_DEFAULT = 10.0
+SIGMA_DEFAULT = 0.03
+DELTA_DEFAULT = 0.08
+
+TOLERANCE_DEFAULT = 0.008
 
 
 class AtomicStructure(System):
@@ -87,6 +99,11 @@ class AtomicStructure(System):
             self.extend(molecule)
 
         self.externalPressure = externalPressure
+        self._fingerprint = {}
+        self._atomFingerprint = []
+        self._order = []
+        self._fingerprintWeights = {}
+        self.fingerprintTolerance = TOLERANCE_DEFAULT
 
         self._goodBonds = {}
         self._valences = {}
@@ -330,6 +347,89 @@ class AtomicStructure(System):
                 self.flex_dihedral.append(self.flex_dihedral[i])
                 self.molSymbol.append(self.molSymbol[i])
         return self
+
+    def __eq__(self, other):
+        return cosine_distance(self.fingerprint, other.fingerprint,
+                               self.fingerprintWeights, other.fingerprintWeights) < self.fingerprintTolerance
+
+    def _calcFingerprint(self):
+        uniqueSimbols, inverse, numIons = np.unique(self.chemicalSymbols, return_inverse=True, return_counts=True)
+        indices = np.argsort(inverse)
+        revertIndices = np.argsort(indices)
+        coordinates = self.scaled_coordinates[indices]
+        dist_matrix = make_matrices(coordinates, self.cell, numIons)
+        order, fing, atom_fing = fingerprint(self.volume, dist_matrix, numIons)
+        self._order = order[revertIndices]
+        self._fingerprint = {}
+        for i, symbol1 in enumerate(uniqueSimbols):
+            for j, symbol2 in enumerate(uniqueSimbols):
+                self._fingerprint[(symbol1,symbol2)] = fing[i*len(uniqueSimbols) + j]
+        self._atomFingerprint = []
+        for i in revertIndices:
+            atomFingerprint = {}
+            for j, symbol in enumerate(uniqueSimbols):
+                atomFingerprint[symbol] = atom_fing[i,j]
+            self._atomFingerprint.append(atomFingerprint)
+
+    @property
+    def fingerprint(self):
+        '''
+        :rtype: Dict[Tuple[str,str], np.ndarray]
+        :return: fingerprint of the structure.
+        '''
+        if not self._fingerprint:
+            self._calcFingerprint()
+        return self._fingerprint
+
+    @property
+    def atomFingerprint(self):
+        '''
+        :rtype: List[Dict[str], np.ndarray]]
+        :return: atomic fingerprint of the structure.
+        '''
+        if not self._atomFingerprint:
+            self._calcFingerprint()
+        return self._atomFingerprint
+
+    @property
+    def order(self):
+        '''
+        :rtype: List[float]
+        :return: local order for each atom.
+        '''
+        if not self._order:
+            self._calcFingerprint()
+        return self._order
+
+    @property
+    def averageOrder(self):
+        '''
+        :rtype: float
+        :return: average local order for the structure.
+        '''
+        if np.any(np.isfinite(self.order)):
+            a_order = np.mean(self.order[np.isfinite(self.order)])
+        else:
+            a_order = np.nan
+        return a_order
+
+    @property
+    def fingerprintWeights(self):
+        '''
+        :rtype: Dict[Tuple[str,str], float]
+        :return: weights of fingerprints of each atom type pair to be used in cosine distance calculation.
+        '''
+        if not self._fingerprintWeights:
+            uniqueSimbols = np.unique(self.chemicalSymbols)
+            weightSum = 0
+            for symbol1 in uniqueSimbols:
+                for symbol2 in uniqueSimbols:
+                    weight = self.composition[symbol1] * self.composition[symbol2]
+                    self._fingerprintWeights[(symbol1, symbol2)] = weight
+                    weightSum += weight
+            for key in self._fingerprintWeights.keys():
+                self._fingerprintWeights[key] /= weightSum
+        return self._fingerprintWeights
 
     @property
     def isMolecular(self):

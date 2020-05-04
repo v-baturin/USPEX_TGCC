@@ -11,8 +11,6 @@ Contains configuration of Crystal space
 from ..SystemPool import SystemPool
 from .CompositionSpace import CompositionSpace
 from .ConvexHull import ConvexHull
-from .Fingerprints.cosine_distance import cosine_distance
-from .Fingerprints.Fingerprints import Fingerprints
 
 import logging
 logger = logging.getLogger(__name__)
@@ -68,11 +66,9 @@ class CrystalPool(SystemPool):
         logger.info('Looking for duplicates.')
         cleanedPopulation = []
         for system in population:
-            system.f = Fingerprints(system, **self.config.fingerprints)
             logger.debug(f'checking if system {system} is new')
             for ref_system in self.uniqueSystems + cleanedPopulation:
-                if system.get_chemical_formula() == ref_system.get_chemical_formula() and \
-                   cosine_distance(system.f.fingerprint, ref_system.f.fingerprint, system.f.weight) < self.config.fingerprints['tolerance']:
+                if system == ref_system:
                     logger.debug(f'system {system} coincides with system {ref_system} found earlier')
                     system = ref_system
                     break

@@ -13,39 +13,17 @@ from scipy.spatial.distance import cdist
 from ..super_matrix import super_matrix
 
 
-def fp_weight(structure):
-    """
-    The function calculates weight used in fingerprint calculations.
-
-    :type structure: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` or descendant
-    :param structure: system for which we want to calculate the weight.
-    :rtype: numpy array
-    :return: calculated weight.
-    """
-
-    # assert check1DArray(numIons, int)
-
-    numIons = np.unique(structure.get_chemical_symbols(), return_counts=True)[1]
-
-    L = numIons.shape[0]
-    S = 0
-    weight = np.zeros((L * L), dtype=float)
-    for i in range(L):
-        for j in range(L):
-            weight[i * L + j] = numIons[i] * numIons[j]
-            S += numIons[i] * numIons[j]
-
-    weight /= S
-
-    return weight
-
-
-def make_matrices(structure, Rmax=10.0):
+def make_matrices(coor: np.ndarray, lat: np.ndarray, numIons: np.ndarray, Rmax=10.0):
     """
     The function prepares matrices for fingerprint calculation.
 
-    :type structure: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` or descendant
-    :param structure: system for which we want to calculate the distance matrix.
+    :type coor: numpy array
+    :param coor: coordinates of atoms of system for which we want to calculate the distance matrix,
+     groupped according atom types.
+    :type lat: numpy array
+    :param lat: cell of system for which we want to calculate the distance matrix.
+    :type numIons: numpy array
+    :param numIons: number atoms of each type in system for which we want to calculate the distance matrix.
     :type Rmax: float
     :param Rmax: distance cutoff.
     :rtype: numpy array
@@ -53,11 +31,6 @@ def make_matrices(structure, Rmax=10.0):
     """
 
     assert isinstance(Rmax, float) and Rmax >= 0
-
-    coor = structure.get_scaled_positions()
-    lat = structure.get_cell()
-    numIons = np.unique(structure.get_chemical_symbols(), return_counts=True)[1]
-    coor = coor[np.argsort(structure.get_chemical_symbols())]
 
     coor = coor - np.floor(coor)  # scale it the [0 1]
     N_atom = np.sum(numIons)
