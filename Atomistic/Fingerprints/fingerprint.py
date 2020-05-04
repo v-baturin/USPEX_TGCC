@@ -13,7 +13,7 @@ from scipy.special import erf
 from .local_order import local_order
 
 
-def fingerprint(V, dist_matrix, structure, Rmax=10.0, sigma=0.03, delta=0.08):
+def fingerprint(V, dist_matrix, numIons, Rmax=10.0, sigma=0.03, delta=0.08):
     """
     Fingerprint calculation function.
     Reference: A.R. Oganov, M. Valle. How to quantify energy landscapes. J. Chem. Phys, 104504, 2009.
@@ -36,7 +36,6 @@ def fingerprint(V, dist_matrix, structure, Rmax=10.0, sigma=0.03, delta=0.08):
     :return: the quantities (order, fingerprint, atomic fingerprint) in a tuple.
     """
     V = float(V)
-    numIons = np.unique(structure.get_chemical_symbols(), return_counts=True)[1]
     N_type = numIons.shape[0]
     N_atom = np.sum(numIons)
     N_pair = dist_matrix.shape[0]  # the number of atomic pairs being considered

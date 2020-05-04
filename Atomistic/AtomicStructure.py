@@ -19,6 +19,10 @@ from .Element import Element
 from .mol.coord2Zmatrix import coord2Zmatrix
 from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
+from .Fingerprints.make_matrices import make_matrices, fp_weight
+from .Fingerprints.fingerprint import fingerprint
+from .Fingerprints.quasientropy import quasientropy
+from .Fingerprints.structure_order import structure_order
 
 
 class AtomicStructure(System):
@@ -301,6 +305,51 @@ class AtomicStructure(System):
                 self.flex_dihedral.append(self.flex_dihedral[i])
                 self.molSymbol.append(self.molSymbol[i])
         return self
+
+    def _calcFingerprint(self):
+        uniqueSimbols, inverse, numIons = np.unique(self.chemicalSymbols, return_inverse=True, return_counts=True)
+        indices = np.argsort(inverse)
+        revertIndices = np.argsort(indices)
+        coordinates = self.scaled_coordinates[indices]
+        dist_matrix = make_matrices(coordinates, self.cell, numIons)
+        order, fing, atom_fing = fingerprint(self.volume, dist_matrix, numIons)
+        self._order = order[revertIndices]
+        self._fingerprint = {}
+        for i, symbol1 in enumerate(uniqueSimbols):
+            for j, symbol2 in enumerate(uniqueSimbols):
+                self._fingerprint[(symbol1,symbol2)] = fing[i*len(uniqueSimbols) + j]
+        self._atomFingerprint = []
+        for i in revertIndices:
+            atomFingerprint = {}
+            for j, symbol in enumerate(uniqueSimbols):
+                atomFingerprint[symbol] = atom_fing[i,j]
+            self._atomFingerprint.append(atomFingerprint)
+
+    @property
+    def fingerprint(self):
+        if not self._fingerprint:
+            self._calcFingerprint()
+        return self._fingerprint
+
+    @property
+    def atomFingerprint(self):
+        if not self._atomFingerprint:
+            self._calcFingerprint()
+        return self._atomFingerprint
+
+    @property
+    def order(self):
+        if not self._order:
+            self._calcFingerprint()
+        return self._order
+
+    @property
+    def averageOrder(self):
+        if np.any(np.isfinite(self.order)):
+            a_order = np.mean(self.order[np.isfinite(self.order)])
+        else:
+            a_order = np.nan
+        return a_order
 
     @property
     def composition(self):

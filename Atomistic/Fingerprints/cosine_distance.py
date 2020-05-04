@@ -23,19 +23,30 @@ def cosine_distance(matrA, matrB, weight):
     :rtype: float
     :return: resulted cosine distance.
     """
-    if type(weight) is list and len(weight) == 1:
-        weight = weight[0]
-    matrA = np.asarray(matrA)
-    matrB = np.asarray(matrB)
-    if type(weight) is int and weight != 1:
-        try:
-            weight = np.diag(weight)
-        except ValueError:
-            weight = np.diag([weight])
+    # if type(weight) is list and len(weight) == 1:
+    #     weight = weight[0]
+    # matrA = np.asarray(matrA)
+    # matrB = np.asarray(matrB)
+    # if type(weight) is int and weight != 1:
+    #     try:
+    #         weight = np.diag(weight)
+    #     except ValueError:
+    #         weight = np.diag([weight])
+    #
+    # coef1 = np.sum(np.dot(weight, matrA * matrB))
+    # coef2 = np.sum(np.dot(weight, matrA * matrA))
+    # coef3 = np.sum(np.dot(weight, matrB * matrB))
 
-    coef1 = np.sum(np.dot(weight, matrA * matrB))
-    coef2 = np.sum(np.dot(weight, matrA * matrA))
-    coef3 = np.sum(np.dot(weight, matrB * matrB))
+    coef1 = 0
+    coef2 = 0
+    coef3 = 0
+
+    for key in set(matrA.keys()) | set(matrB.keys()):
+        fing1 = matrA[key] if key in matrA else np.zeros((1), dtype=float)
+        fing2 = matrB[key] if key in matrB else np.zeros((1), dtype=float)
+        coef1 += weight[key] * np.sum(fing1 * fing2)
+        coef2 += weight[key] * np.sum(fing1 * fing1)
+        coef3 += weight[key] * np.sum(fing2 * fing2)
 
     dist = (1 - coef1 / (coef2 * coef3) ** 0.5) / 2
 

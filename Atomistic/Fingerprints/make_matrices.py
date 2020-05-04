@@ -40,7 +40,7 @@ def fp_weight(structure):
     return weight
 
 
-def make_matrices(structure, Rmax=10.0):
+def make_matrices(coor, lat, numIons, Rmax=10.0):
     """
     The function prepares matrices for fingerprint calculation.
 
@@ -53,11 +53,6 @@ def make_matrices(structure, Rmax=10.0):
     """
 
     assert isinstance(Rmax, float) and Rmax >= 0
-
-    coor = structure.get_scaled_positions()
-    lat = structure.get_cell()
-    numIons = np.unique(structure.get_chemical_symbols(), return_counts=True)[1]
-    coor = coor[np.argsort(structure.get_chemical_symbols())]
 
     coor = coor - np.floor(coor)  # scale it the [0 1]
     N_atom = np.sum(numIons)
