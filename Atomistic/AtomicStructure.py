@@ -21,8 +21,16 @@ from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
 from .Fingerprints.make_matrices import make_matrices, fp_weight
 from .Fingerprints.fingerprint import fingerprint
+from .Fingerprints.cosine_distance import cosine_distance
 from .Fingerprints.quasientropy import quasientropy
 from .Fingerprints.structure_order import structure_order
+
+
+RMAX_DEFAULT = 10.0
+SIGMA_DEFAULT = 0.03
+DELTA_DEFAULT = 0.08
+
+TOLERANCE_DEFAULT = 0.008
 
 
 class AtomicStructure(System):
@@ -71,6 +79,11 @@ class AtomicStructure(System):
             self.extend(molecule)
 
         self.externalPressure = externalPressure
+        self._fingerprint = {}
+        self._atomFingerprint = {}
+        self._order = {}
+        self._fingerprintWeights = {}
+        self.fingerprintTolerance = TOLERANCE_DEFAULT
 
         self.energy = np.inf
         self.enthalpy = np.inf
@@ -306,6 +319,11 @@ class AtomicStructure(System):
                 self.molSymbol.append(self.molSymbol[i])
         return self
 
+    def __eq__(self, other):
+        weights = other.fingerprintWeights
+        weights.update(self.fingerprintWeights)
+        return cosine_distance(self.fingerprint, other.fingerprint, weights) < self.fingerprintTolerance
+
     def _calcFingerprint(self):
         uniqueSimbols, inverse, numIons = np.unique(self.chemicalSymbols, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
@@ -350,6 +368,20 @@ class AtomicStructure(System):
         else:
             a_order = np.nan
         return a_order
+
+    @property
+    def fingerprintWeights(self):
+        if not self._fingerprintWeights:
+            uniqueSimbols = np.unique(self.chemicalSymbols)
+            weightSum = 0
+            for symbol1 in uniqueSimbols:
+                for symbol2 in uniqueSimbols:
+                    weight = self.composition[symbol1] * self.composition[symbol2]
+                    self._fingerprintWeights[(symbol1, symbol2)] = weight
+                    weightSum += weight
+            for key in self._fingerprintWeights.keys():
+                self._fingerprintWeights[key] /= weightSum
+        return self._fingerprintWeights
 
     @property
     def composition(self):

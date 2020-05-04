@@ -11,7 +11,7 @@ import unittest
 import os
 from ase.io import read
 
-from ..Fingerprints import Fingerprints
+from ...AtomicStructure import AtomicStructure
 from ..cosine_distance import cosine_distance
 
 
@@ -22,10 +22,16 @@ class Fingerprints_Test(unittest.TestCase):
 
     def test_atomic(self):
         system1 = read(PATH_WITH_TESTS + '/system1_POSCAR')
+        system1 = AtomicStructure(symbols = system1.get_chemical_symbols(),
+                                  positions = system1.get_positions(),
+                                  cell = system1.get_cell())
         system2 = read(PATH_WITH_TESTS + '/system2_POSCAR')
-        f1 = Fingerprints(system1)
-        f2 = Fingerprints(system2)
-        self.assertTrue(cosine_distance(f1.fingerprint, f2.fingerprint, 1) < 1.0e-6)
+        system2 = AtomicStructure(symbols = system2.get_chemical_symbols(),
+                                  positions = system2.get_positions(),
+                                  cell = system2.get_cell())
+        f1 = system1.fingerprint
+        f2 = system2.fingerprint
+        self.assertTrue(cosine_distance(f1, f2, system1.fingerprintWeights) < 1.0e-6)
 
 # import numpy as np
 # np.set_printoptions(threshold=10000, precision=4, suppress=True)
