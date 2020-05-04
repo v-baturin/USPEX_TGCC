@@ -29,9 +29,8 @@ class Fingerprints_Test(unittest.TestCase):
         system2 = AtomicStructure(symbols = system2.get_chemical_symbols(),
                                   positions = system2.get_positions(),
                                   cell = system2.get_cell())
-        f1 = system1.fingerprint
-        f2 = system2.fingerprint
-        self.assertTrue(cosine_distance(f1, f2, system1.fingerprintWeights) < 1.0e-6)
+        system1.fingerprintTolerance = 1.0e-6
+        self.assertTrue(system1 == system2)
 
 # import numpy as np
 # np.set_printoptions(threshold=10000, precision=4, suppress=True)

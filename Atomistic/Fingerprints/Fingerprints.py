@@ -8,7 +8,7 @@ Class denoting a fingerprint
 """
 
 import numpy as np
-from .make_matrices import make_matrices, fp_weight
+from .make_matrices import make_matrices
 from .fingerprint import fingerprint
 from .quasientropy import quasientropy
 from .structure_order import structure_order

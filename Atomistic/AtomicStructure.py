@@ -19,7 +19,7 @@ from .Element import Element
 from .mol.coord2Zmatrix import coord2Zmatrix
 from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
-from .Fingerprints.make_matrices import make_matrices, fp_weight
+from .Fingerprints.make_matrices import make_matrices
 from .Fingerprints.fingerprint import fingerprint
 from .Fingerprints.cosine_distance import cosine_distance
 from .Fingerprints.quasientropy import quasientropy
@@ -80,8 +80,8 @@ class AtomicStructure(System):
 
         self.externalPressure = externalPressure
         self._fingerprint = {}
-        self._atomFingerprint = {}
-        self._order = {}
+        self._atomFingerprint = []
+        self._order = []
         self._fingerprintWeights = {}
         self.fingerprintTolerance = TOLERANCE_DEFAULT
 
@@ -320,9 +320,8 @@ class AtomicStructure(System):
         return self
 
     def __eq__(self, other):
-        weights = other.fingerprintWeights
-        weights.update(self.fingerprintWeights)
-        return cosine_distance(self.fingerprint, other.fingerprint, weights) < self.fingerprintTolerance
+        return cosine_distance(self.fingerprint, other.fingerprint,
+                               self.fingerprintWeights, other.fingerprintWeights) < self.fingerprintTolerance
 
     def _calcFingerprint(self):
         uniqueSimbols, inverse, numIons = np.unique(self.chemicalSymbols, return_inverse=True, return_counts=True)
@@ -345,24 +344,40 @@ class AtomicStructure(System):
 
     @property
     def fingerprint(self):
+        '''
+        :rtype: Dict[Tuple[str,str], np.ndarray]
+        :return: fingerprint of the structure.
+        '''
         if not self._fingerprint:
             self._calcFingerprint()
         return self._fingerprint
 
     @property
     def atomFingerprint(self):
+        '''
+        :rtype: List[Dict[str], np.ndarray]]
+        :return: atomic fingerprint of the structure.
+        '''
         if not self._atomFingerprint:
             self._calcFingerprint()
         return self._atomFingerprint
 
     @property
     def order(self):
+        '''
+        :rtype: List[float]
+        :return: local order for each atom.
+        '''
         if not self._order:
             self._calcFingerprint()
         return self._order
 
     @property
     def averageOrder(self):
+        '''
+        :rtype: float
+        :return: average local order for the structure.
+        '''
         if np.any(np.isfinite(self.order)):
             a_order = np.mean(self.order[np.isfinite(self.order)])
         else:
@@ -371,6 +386,10 @@ class AtomicStructure(System):
 
     @property
     def fingerprintWeights(self):
+        '''
+        :rtype: Dict[Tuple[str,str], float]
+        :return: weights of fingerprints of each atom type pair to be used in cosine distance calculation.
+        '''
         if not self._fingerprintWeights:
             uniqueSimbols = np.unique(self.chemicalSymbols)
             weightSum = 0

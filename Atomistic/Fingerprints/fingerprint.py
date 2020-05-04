@@ -24,8 +24,8 @@ def fingerprint(V, dist_matrix, numIons, Rmax=10.0, sigma=0.03, delta=0.08):
     :param dist_matrix:
         distance matrix of size N*4 ([atomID, type1, type2, distance]), contains all the distances
         (<Rmax) from the given atom in the unit cell.
-    :type structure: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` or descendant
-    :param structure: system that we want to characterize with a fingerprint.
+    :type numIons: numpy array
+    :param numIons: number atoms of each type in system for which we want to calculate the distance matrix.
     :type Rmax: float
     :param Rmax: threshold distance between i-th anf j-th atom.
     :type sigma: float
