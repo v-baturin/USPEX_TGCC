@@ -91,8 +91,8 @@ class Fingerprints:
             self.a_order = np.nan
 
         self.quasientropy = quasientropy(structure, self.atom_fingerprint)
-        self.weight = fp_weight(structure)
-        self.s_order = structure_order(self.fingerprint, self.volume, structure, self.weight, self.delta)
+        # self.weight = fp_weight(structure)
+        # self.s_order = structure_order(self.fingerprint, self.volume, structure, self.weight, self.delta)
         self.system = structure.get_chemical_formula()
 
         self.info = 'System: {:s}    Quasientropy: {:.4f}    A-order: {:.4f}    S-order: {:.4f}'.format(
