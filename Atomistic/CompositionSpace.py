@@ -1,5 +1,38 @@
 import numpy as np
+from collections import Counter
+from typing import Dict, Tuple
 
+
+class Composition(object):
+
+    def __init__(self, blockComposition: Tuple[Tuple[Dict[str, int], int]], molecules: Dict[str, dict]):
+        self.blockComposition = blockComposition
+        self.molecules = molecules
+        self._compostion = {}
+        self._elementalComposition = {}
+
+    @property
+    def compostion(self):
+        if not self._compostion:
+            comp = Counter()
+            for block, amount in self.blockComposition:
+                for symbol, value in block:
+                    comp[symbol] += value*amount
+            self._compostion = dict(comp)
+        return self._compostion
+
+    @property
+    def elementalComposition(self):
+        if not self._elementalComposition:
+            comp = Counter()
+            for symbol, amount in self.compostion:
+                if symbol in self.molecules:
+                    for symbol, value in self.molecules[symbol]['symbols']:
+                        comp[symbol] += value*amount
+                else:
+                    comp[symbol] += amount
+            self._elementalComposition = dict(comp)
+        return self._elementalComposition
 
 class CompositionSpace(object):
     """
@@ -109,6 +142,16 @@ class CompositionSpace(object):
         :return: list of blocks amounts corresponding *blocks* variable of this instance.
         """
         return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition), rcond=None)[0]).astype(int)
+
+    def elementalComposition(self, composition: dict) -> dict:
+        _elementalComposition = Counter()
+        for symbol, value in composition.items():
+            if symbol in self.molecules:
+                for symbol in self.molecules[symbol]['symbols']:
+                    _elementalComposition[symbol] += composition[symbol]
+            else:
+                _elementalComposition[symbol] += composition[symbol]
+        return dict(_elementalComposition)
 
     def randomComposition(self):
         """
