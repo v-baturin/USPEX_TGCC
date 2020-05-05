@@ -25,6 +25,9 @@ _MIN_ANGLE = 55
 _MIN_DIAG_ANGLE = 30
 
 
+# Default symmetry tolerance
+_DEFAULT_SYMMETRY_TOLERANCE = 0.05
+
 class Crystal(AtomicStructure):
     """
     Class describing atoms-composed crystal structure with properties.
@@ -33,7 +36,7 @@ class Crystal(AtomicStructure):
     Sets **pbc** for ase.Atoms component to [True, True, True].
     """
 
-    def __init__(self, *args, minVectorLength: float = None, xraydata=None, **kwargs):
+    def __init__(self, *args, minVectorLength: float = None, xraydata=None, sym_tolerance=None, **kwargs):
         super().__init__(*args, pbc=[True, True, True], **kwargs)
         if minVectorLength is not None:
             self.config['minVectorLength'] = minVectorLength
@@ -41,6 +44,24 @@ class Crystal(AtomicStructure):
             assert isinstance(xraydata, dict)
             self.config['xraydata'] = xraydata
         self._spectrumAnalyzer = None
+
+        if sym_tolerance is not None:
+            if isinstance(sym_tolerance, str):
+                if 'high' in sym_tolerance:
+                    self.sym_tolerance = 0.05
+                elif 'medium' in sym_tolerance:
+                    self.sym_tolerance = 0.1
+                elif 'low' in sym_tolerance:
+                    self.sym_tolerance = 0.2
+                else:
+                    self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
+            elif isinstance(sym_tolerance, (float, int)):
+                self.sym_tolerance = float(sym_tolerance)
+            else:
+                self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
+        else:
+            self.sym_tolerance = _DEFAULT_SYMMETRY_TOLERANCE
+
 
     @property
     def symmetry(self):
@@ -54,7 +75,7 @@ class Crystal(AtomicStructure):
         coordinates = self.scaled_coordinates
         numbers = self.get_atomic_numbers()
         cell = (lattice, coordinates, numbers)
-        return '{:7s} {:4s}'.format(*[str(x) for x in spglib.get_spacegroup(cell, symprec=1.0e-2).split()])
+        return '{:7s} {:4s}'.format(*[str(x) for x in spglib.get_spacegroup(cell, symprec=self.sym_tolerance).split()])
 
     @property
     def xraydistance(self):

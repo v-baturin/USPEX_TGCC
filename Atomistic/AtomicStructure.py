@@ -51,7 +51,9 @@ class AtomicStructure(System):
     def __init__(self, molecules: list=[], optimizeLattice: bool=False, volumeType: str=None,
                  ionDistances: Dict[Tuple[str, str], float] = None,
                  goodBonds: Dict[Tuple[str, str], float] = None, valences: Dict[str, float] = None,
-                 valenceElectrons: Dict[str, float] = None, externalPressure: float = 0.0001,
+                 valenceElectrons: Dict[str, float] = None,
+                 fingerprints: Dict[str, float] = None,
+                 externalPressure: float = 0.0001,
                  **kwargs):
         """
         :type molecules: list of :class:`AtomicStructure`
@@ -86,6 +88,8 @@ class AtomicStructure(System):
             self.config['valences'] = valences
         if valenceElectrons is not None:
             self.config['valenceElectrons'] = valenceElectrons
+        if fingerprints is not None:
+            self.config['fingerprints'] = fingerprints
 
         symbols = self.atoms.get_chemical_symbols()
         self._molecules = [[i] for i in range(len(symbols))]
@@ -103,7 +107,8 @@ class AtomicStructure(System):
         self._atomFingerprint = []
         self._order = []
         self._fingerprintWeights = {}
-        self.fingerprintTolerance = TOLERANCE_DEFAULT
+        self.fingerprintTolerance = fingerprints['tolerance'] if fingerprints is not None and'tolerance' in fingerprints\
+            else TOLERANCE_DEFAULT
 
         self._goodBonds = {}
         self._valences = {}
@@ -353,12 +358,24 @@ class AtomicStructure(System):
                                self.fingerprintWeights, other.fingerprintWeights) < self.fingerprintTolerance
 
     def _calcFingerprint(self):
+        Rmax = RMAX_DEFAULT
+        sigma = SIGMA_DEFAULT
+        delta = DELTA_DEFAULT
+        if 'fingerprints' in self.config:
+            fingerprintsParams = self.config['fingerprints']
+            if 'Rmax' in fingerprintsParams:
+                Rmax = fingerprintsParams['Rmax']
+            if 'sigma' in fingerprintsParams:
+                sigma = fingerprintsParams['sigma']
+            if 'delta' in fingerprintsParams:
+                delta = fingerprintsParams['delta']
         uniqueSimbols, inverse, numIons = np.unique(self.chemicalSymbols, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
         revertIndices = np.argsort(indices)
         coordinates = self.scaled_coordinates[indices]
-        dist_matrix = make_matrices(coordinates, self.cell, numIons)
-        order, fing, atom_fing = fingerprint(self.volume, dist_matrix, numIons)
+        dist_matrix = make_matrices(coordinates, self.cell, numIons, Rmax=Rmax)
+        order, fing, atom_fing = fingerprint(self.volume, dist_matrix, numIons,
+                                             Rmax=Rmax, sigma=sigma, delta=delta)
         self._order = order[revertIndices]
         self._fingerprint = {}
         for i, symbol1 in enumerate(uniqueSimbols):
