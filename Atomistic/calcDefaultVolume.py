@@ -10,6 +10,7 @@ Methods for volume calculation of a cell
 import math
 
 from USPEX.Common.Atomistic.Element import Element
+from .CompositionSpace import Composition
 
 
 def VinetEOS(B0: float, B00: float, V0: float, x: float):
@@ -253,6 +254,25 @@ def calcDefaultVolume(numIons: list, atomType: list, pressure: float, isMol: boo
         vol += numIons[i] * atomicVolume_i
     
     return vol
+
+def calcVolumeForComposition(composition: Composition, externalPressure = 0.0001, volumeType = 'atom', **kwargs):
+    """
+    The function calculates a volume of the given composition at the target pressure.
+    :type composition: Composition
+    :param composition: Composition for which the volume is to be estimated.
+    :type externalPressure: float
+    :param externalPressure: External pressure for this structure in GPa.
+    :type volumeType: str
+    :param volumeType:
+        'atom' or 'mol', one of the two possible environments for
+        volume estimation. The 'mol' environment is less dense.
+    :rtype: float
+    :return: volume
+    """
+    volume = 0
+    for symbol, amount in composition.elementalComposition.items():
+        volume += calcVolume(externalPressure, symbol, volumeType) * amount
+    return volume
 
 #-------------------------------------------------------------------------------
 
