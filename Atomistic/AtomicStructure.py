@@ -62,6 +62,27 @@ class AtomicStructure(System):
         :param molecules: Supposed to be list of molecules. Deprecated. Will be removed soon.
         :type optimizeLattice: bool
         :param optimizeLattice: If True we will call :meth:`optimizeLattice` right after construction. If False we wont.
+        :type volumeType: str
+        :param volumeType:
+            'atom' or 'mol', one of the two possible environments for
+            volume estimation. The 'mol' environment is less dense.
+        :type ionDistances: dict
+        :param ionDistances:
+            dictionary describing minimal interatomic distances.
+            example {'C_C': 1.0, 'C_H': 0.8, , 'H_C': 0.8, 'H_H': 0.5}
+        :type goodBonds: list
+        :param goodBonds:
+            specifies, in a square matrix form, the minimum bond valences
+            for contacts that will be considered as important bonds.
+        :type valences: list
+        :param valences:
+            describes the valences of each type of atom.
+        :type valenceElectrons: list
+        :param valenceElectrons:
+            number of valence electrons for each type of atoms.
+        :type fingerprints: dict
+        :param fingerprints:
+            arguments and keywords used to initialize :class:`~USPEX.Common.Fingerprints.Fingerprints.Fingerprints`.
         :type externalPressure: float
         :param externalPressure: External pressure for this structure in GPa.
         :type kwargs: dict
@@ -336,7 +357,11 @@ class AtomicStructure(System):
         self.molSymbol = molSymbols
 
     @property
-    def moleculeTypesToFormula(self):
+    def moleculeTypesToFormula(self) -> Dict[str, Dict[str, int]]:
+        """
+        :rtype: Dict[str, Dict[str, int]]
+        :return: mapping from molecule names ti molecule formulas.
+        """
         if not self._moleculeTypesToFormula:
             for symbol, mol in zip(self.molSymbol, self.molecules):
                 if symbol not in self._moleculeTypesToFormula:
@@ -367,10 +392,21 @@ class AtomicStructure(System):
         return self
 
     def __eq__(self, other):
+        """
+        Special method for supporting '==' operator.
+
+        :type other: :class:`AtomicStructure` or descendant
+        :param other: right side operand for == operation.
+        :rtype: bool
+        :return: True if cosine distance in terms of fingerprints between two systems is within tolerance.
+        """
         return cosine_distance(self.fingerprint, other.fingerprint,
                                self.fingerprintWeights, other.fingerprintWeights) < self.fingerprintTolerance
 
     def _calcFingerprint(self):
+        """
+        Calculates fingerprint and related things.
+        """
         Rmax = RMAX_DEFAULT
         sigma = SIGMA_DEFAULT
         delta = DELTA_DEFAULT
@@ -463,16 +499,28 @@ class AtomicStructure(System):
 
     @property
     def isMolecular(self):
+        """
+        :rtype: bool
+        :return: True if at leas one molecule have more then 1 atom.
+        """
         for mol in self._molecules:
             if len(mol) > 1: return True
         return False
 
     @property
     def volumeType(self):
+        """
+        :rtype: str
+        :return: 'atom' if volume estimation is supposed to be done assuming atomic environment, 'mol' if molecular.
+        """
         return self.config['volumeType'] if 'volumeType' in self.config else ('mol' if self.isMolecular else 'atom')
 
     @property
     def goodBonds(self):
+        """
+        :rtype: Dict[Tuple(str,str), float]
+        :return: goodBond parameters fot each elemnt pair.
+        """
         if not self._goodBonds:
             if 'goodBonds' in self.config:
                 self._goodBonds = {tuple(x.split()) : value for x, value in self.config['goodBonds'].items()}
@@ -490,6 +538,10 @@ class AtomicStructure(System):
 
     @property
     def valences(self):
+        """
+        :rtype: Dict[str, float]
+        :return: valences for each element present in structure.
+        """
         if not self._valences:
             for symbol in np.unique(self.chemicalSymbols):
                 self._valences[symbol] = Element(symbol).valence
@@ -499,6 +551,10 @@ class AtomicStructure(System):
 
     @property
     def valenceElectrons(self):
+        """
+        :rtype: Dict[str, int]
+        :return: number of valence electrons for each element present in structure.
+        """
         if not self._valenceElectrons:
             for symbol in np.unique(self.chemicalSymbols):
                 self._valenceElectrons[symbol] = Element(symbol).valence_electrons
@@ -509,6 +565,10 @@ class AtomicStructure(System):
 
     @property
     def mDM(self):
+        """
+        :rtype: numpy.ndarray
+        :return: 2D array for each pair of atoms in structure containing minimal allowed distance between this two atoms.
+        """
         if self._mDM is None:
             uniqueSimbols = np.unique(self.chemicalSymbols)
             if 'ionDistances' in self.config:
@@ -539,7 +599,7 @@ class AtomicStructure(System):
     @property
     def composition(self) -> Composition:
         """
-        :rtype: dict {str : int}
+        :rtype: :class:`USPEX.Common.Atomistic.CompositionSpace.Composition`
         :return: Composition of current structure in form {symbol : amount}
         """
         if len(self.molSymbol) == 1:
@@ -826,6 +886,11 @@ class AtomicStructure(System):
         return True
 
     def isGoodSystem(self):
+        """
+        Checks if system meets constraints.
+        :rtype: bool
+        :return: True if meets False otherwise.
+        """
         return self.isGoodDistances()
 
     def toDICT(self) -> dict:

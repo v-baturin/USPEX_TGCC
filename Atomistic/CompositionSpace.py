@@ -4,14 +4,29 @@ from typing import Dict, Tuple
 
 
 class Composition(dict):
+    """
+    Class describing composition of an atomic structure.
+    """
 
     def __init__(self, composition: Dict[str, int], molecules: Dict[str, Dict[str, int]]):
+        """
+        Initializes the class.
+
+        :type composition: Dict[str, int]
+        :param composition: dictionary describing composition in terms of molecules.
+        :type molecules: Dict[str, Dict[str, int]]
+        :param molecules: mapping form molecule names to their formulas.
+        """
         super().__init__(composition)
         self.molecules = molecules
         self._elementalComposition = {}
 
     @property
     def elementalComposition(self):
+        """
+        :rtype: Dict[str, int]
+        :return: dictionary describing composition in terms of chemcal elements.
+        """
         if not self._elementalComposition:
             comp = Counter()
             for symbol, amount in self.items():
@@ -87,7 +102,7 @@ class CompositionSpace(object):
         self.isFixedComposition = bool(np.all([x[0] == x[1] for x in self.range]))
 
 
-    def isGoodComposition(self, composition: dict) -> bool:
+    def isGoodComposition(self, composition: Composition) -> bool:
         """
         Method which checks if the structure meets the composition constraints.
 

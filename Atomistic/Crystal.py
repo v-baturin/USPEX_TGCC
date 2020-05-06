@@ -37,6 +37,20 @@ class Crystal(AtomicStructure):
     """
 
     def __init__(self, *args, minVectorLength: float = None, xraydata=None, sym_tolerance=None, **kwargs):
+        """
+        Initializes the class.
+
+        :param args:
+        :type minVectorLength: float
+        :param minVectorLength:
+            sets the minimum length of a cell parameter of a newly generated structure.
+        :param xraydata:
+        :type sym_tolerance: str or float
+        :param sym_tolerance:
+            a string ('high', 'medium' or 'low') or a number expressing symmetry tolerance.
+        :type kwargs: dict
+        :param kwargs: additional arguments and keywords used to initialize the parent class AtomisticConfig.
+        """
         super().__init__(*args, pbc=[True, True, True], **kwargs)
         self.crystalConfig = {}
         if minVectorLength is not None:
@@ -97,6 +111,10 @@ class Crystal(AtomicStructure):
 
     @property
     def minVectorLength(self):
+        """
+        :rtype: float
+        :return: minimal vector length.
+        """
         uniqueSimbols = np.unique(self.chemicalSymbols)
         radii = np.fromiter((Element(symbol).covalent_radius for symbol in uniqueSimbols), dtype=float)
         minVectorLength = self.crystalConfig['minVectorLength'] if 'minVectorLength' in self.crystalConfig else 1.8 * np.max(radii)

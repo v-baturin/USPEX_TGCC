@@ -47,8 +47,10 @@ class VarOperator(object):
         """
         Initializes the class.
 
-        :type config: implementation of :class:`~USPEX.Common.Config.Config`
-        :param config: link to implementation Config interface.
+        :type systemFactory: Callable
+        :param systemFactory: factory to be used for new system creation.
+        :type config: dict
+        :param config: dictionary of parameters providied by user for new system creation.
         :type pool: :class:`~USPEX.Common.SystemPool.SystemPool` or descendant
         :param pool: system pool.
         :type initFrac: float
