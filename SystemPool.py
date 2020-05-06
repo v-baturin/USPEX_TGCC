@@ -41,14 +41,13 @@ class SystemPool(object):
 
     DEFAULT_FITNESS = []
 
-    def __init__(self, config):
+    def __init__(self):
         """
         Initializes the class.
 
         :type config: :class:`~USPEX.Common.Config.Config` or descendant
         :param config: describes the chemical compositions configuration space.
         """
-        self.config = config
         self.best = {}
         self.uniqueSystems = []
         self._newID = 0
@@ -144,8 +143,6 @@ class SystemPool(object):
                     logger.debug('Incorrect optimization deirection "{}" using default "min"'.format(direction))
                 if hasattr(self, attribute):
                     value = factor * getattr(self, attribute)(system)
-                elif hasattr(self.config, attribute):
-                    value = factor * getattr(self.config, attribute)(system)
                 elif hasattr(system, attribute):
                     value = factor * getattr(system, attribute)
                 else:

@@ -7,7 +7,9 @@ Contains configuration of Crystal space
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
 
+
 from ..SystemPool import SystemPool
+from .CompositionSpace import CompositionSpace
 from .ConvexHull import ConvexHull
 
 import logging
@@ -27,15 +29,14 @@ class CrystalPool(SystemPool):
     MAX_FORMATION_ENERGY = 0.5
     DEFAULT_FITNESS = [('formationEnergy', 'min')]
 
-    def __init__(self, config):
+    def __init__(self, **kwargs):
         """
         Initializes the class.
-
-        :type config: :class:`~USPEX.Common.Config.Config` or descendant
-        :param config: describes the chemical compositions configuration space.
         """
-        super().__init__(config)
-        self._convexHull = ConvexHull(self.config)
+        super().__init__()
+
+        self.compositionSpace = CompositionSpace(**kwargs)
+        self._convexHull = ConvexHull(self.compositionSpace)
         self.extendedConvexHull = []
 
     def update(self, population: list):

@@ -12,10 +12,16 @@ from ase.atoms import Atoms
 
 import copy
 import numpy as np
+from typing import Dict, List, Tuple
+from itertools import combinations_with_replacement, chain
+from collections import Counter
+
 
 from ..System import System
 from .optLattice import optLattice
 from .Element import Element
+from .calcDefaultVolume import calcVolume
+from .CompositionSpace import Composition
 from .mol.coord2Zmatrix import coord2Zmatrix
 from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
@@ -44,12 +50,39 @@ class AtomicStructure(System):
     Besides ase.Atoms functional class, it provides tools for creating and manipulating molecular structures.
     """
 
-    def __init__(self, molecules: list=[], optimizeLattice: bool=False, externalPressure: float=1.0e-4, **kwargs):
+    def __init__(self, molecules: list=[], optimizeLattice: bool=False, volumeType: str=None,
+                 ionDistances: Dict[Tuple[str, str], float] = None,
+                 goodBonds: Dict[Tuple[str, str], float] = None, valences: Dict[str, float] = None,
+                 valenceElectrons: Dict[str, float] = None,
+                 fingerprints: Dict[str, float] = None,
+                 externalPressure: float = 0.0001,
+                 **kwargs):
         """
         :type molecules: list of :class:`AtomicStructure`
         :param molecules: Supposed to be list of molecules. Deprecated. Will be removed soon.
         :type optimizeLattice: bool
         :param optimizeLattice: If True we will call :meth:`optimizeLattice` right after construction. If False we wont.
+        :type volumeType: str
+        :param volumeType:
+            'atom' or 'mol', one of the two possible environments for
+            volume estimation. The 'mol' environment is less dense.
+        :type ionDistances: dict
+        :param ionDistances:
+            dictionary describing minimal interatomic distances.
+            example {('C','C'): 1.0, ('C','H'): 0.8, , ('H','C'): 0.8, ('H','H'): 0.5}
+        :type goodBonds: list
+        :param goodBonds:
+            specifies, in a square matrix form, the minimum bond valences
+            for contacts that will be considered as important bonds.
+        :type valences: list
+        :param valences:
+            describes the valences of each type of atom.
+        :type valenceElectrons: list
+        :param valenceElectrons:
+            number of valence electrons for each type of atoms.
+        :type fingerprints: dict
+        :param fingerprints:
+            arguments and keywords used to initialize :class:`~USPEX.Common.Fingerprints.Fingerprints.Fingerprints`.
         :type externalPressure: float
         :param externalPressure: External pressure for this structure in GPa.
         :type kwargs: dict
@@ -67,6 +100,20 @@ class AtomicStructure(System):
         if optimizeLattice:
             self.optimizeLattice()
 
+        self.config = {}
+        if volumeType is not None:
+            self.config['volumeType'] = volumeType
+        if ionDistances is not None:
+            self.config['ionDistances'] = ionDistances
+        if goodBonds is not None:
+            self.config['goodBonds'] = goodBonds
+        if valences is not None:
+            self.config['valences'] = valences
+        if valenceElectrons is not None:
+            self.config['valenceElectrons'] = valenceElectrons
+        if fingerprints is not None:
+            self.config['fingerprints'] = fingerprints
+
         symbols = self.atoms.get_chemical_symbols()
         self._molecules = [[i] for i in range(len(symbols))]
         self.format = [[[0, 0, 0]] for s in symbols]
@@ -74,6 +121,8 @@ class AtomicStructure(System):
         self.molSymbol = copy.copy(symbols)
 
         assert (not symbols) or (not molecules)     # Cannot initialize with both
+
+        self._moleculeTypesToFormula = {}
 
         for molecule in molecules:  # This is deprecated and will be removed
             self.extend(molecule)
@@ -83,7 +132,13 @@ class AtomicStructure(System):
         self._atomFingerprint = []
         self._order = []
         self._fingerprintWeights = {}
-        self.fingerprintTolerance = TOLERANCE_DEFAULT
+        self.fingerprintTolerance = fingerprints['tolerance'] if fingerprints is not None and'tolerance' in fingerprints\
+            else TOLERANCE_DEFAULT
+
+        self._goodBonds = {}
+        self._valences = {}
+        self._valenceElectrons = {}
+        self._mDM = None
 
         self.energy = np.inf
         self.enthalpy = np.inf
@@ -171,6 +226,11 @@ class AtomicStructure(System):
         atoms.set_cell(newCell)
         atoms.translate(np.dot(molCenter, newCell))
         self.atoms.extend(atoms)
+        self._goodBonds = {}
+        self._valences = {}
+        self._valenceElectrons = {}
+        self._mDM = None
+        self._moleculeTypesToFormula = {}
 
     def __add__(self, other):
         """
@@ -208,7 +268,7 @@ class AtomicStructure(System):
         """
         mols = []
         for inds, frmt, flex_dihedral, molSymbol in zip(self._molecules, self.format, self.flex_dihedral, self.molSymbol):
-            mol = AtomicStructure(symbols=self[inds], cell=self.get_cell())
+            mol = AtomicStructure(symbols=self[inds], cell=self.get_cell(), **self.config)
             if len(mol) > 1:
                 mol.merge(list(range(len(mol))), frmt, flex_dihedral, molSymbol)
             mols.append(mol)
@@ -296,6 +356,18 @@ class AtomicStructure(System):
         self.flex_dihedral = flex_dihedrals
         self.molSymbol = molSymbols
 
+    @property
+    def moleculeTypesToFormula(self) -> Dict[str, Dict[str, int]]:
+        """
+        :rtype: Dict[str, Dict[str, int]]
+        :return: mapping from molecule names ti molecule formulas.
+        """
+        if not self._moleculeTypesToFormula:
+            for symbol, mol in zip(self.molSymbol, self.molecules):
+                if symbol not in self._moleculeTypesToFormula:
+                    self._moleculeTypesToFormula[symbol] = mol.composition.elementalComposition
+        return self._moleculeTypesToFormula
+
     def __imul__(self, m):
         """
         Special method for supporting '*=' operator. This operator creates a supercell structure of the current one.
@@ -320,16 +392,39 @@ class AtomicStructure(System):
         return self
 
     def __eq__(self, other):
+        """
+        Special method for supporting '==' operator.
+
+        :type other: :class:`AtomicStructure` or descendant
+        :param other: right side operand for == operation.
+        :rtype: bool
+        :return: True if cosine distance in terms of fingerprints between two systems is within tolerance.
+        """
         return cosine_distance(self.fingerprint, other.fingerprint,
                                self.fingerprintWeights, other.fingerprintWeights) < self.fingerprintTolerance
 
     def _calcFingerprint(self):
+        """
+        Calculates fingerprint and related things.
+        """
+        Rmax = RMAX_DEFAULT
+        sigma = SIGMA_DEFAULT
+        delta = DELTA_DEFAULT
+        if 'fingerprints' in self.config:
+            fingerprintsParams = self.config['fingerprints']
+            if 'Rmax' in fingerprintsParams:
+                Rmax = fingerprintsParams['Rmax']
+            if 'sigma' in fingerprintsParams:
+                sigma = fingerprintsParams['sigma']
+            if 'delta' in fingerprintsParams:
+                delta = fingerprintsParams['delta']
         uniqueSimbols, inverse, numIons = np.unique(self.chemicalSymbols, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
         revertIndices = np.argsort(indices)
         coordinates = self.scaled_coordinates[indices]
-        dist_matrix = make_matrices(coordinates, self.cell, numIons)
-        order, fing, atom_fing = fingerprint(self.volume, dist_matrix, numIons)
+        dist_matrix = make_matrices(coordinates, self.cell, numIons, Rmax=Rmax)
+        order, fing, atom_fing = fingerprint(self.volume, dist_matrix, numIons,
+                                             Rmax=Rmax, sigma=sigma, delta=delta)
         self._order = order[revertIndices]
         self._fingerprint = {}
         for i, symbol1 in enumerate(uniqueSimbols):
@@ -403,18 +498,121 @@ class AtomicStructure(System):
         return self._fingerprintWeights
 
     @property
-    def composition(self):
+    def isMolecular(self):
         """
-        :rtype: dict {str : int}
+        :rtype: bool
+        :return: True if at leas one molecule have more then 1 atom.
+        """
+        for mol in self._molecules:
+            if len(mol) > 1: return True
+        return False
+
+    @property
+    def volumeType(self):
+        """
+        :rtype: str
+        :return: 'atom' if volume estimation is supposed to be done assuming atomic environment, 'mol' if molecular.
+        """
+        return self.config['volumeType'] if 'volumeType' in self.config else ('mol' if self.isMolecular else 'atom')
+
+    @property
+    def goodBonds(self):
+        """
+        :rtype: Dict[Tuple(str,str), float]
+        :return: goodBond parameters fot each elemnt pair.
+        """
+        if not self._goodBonds:
+            if 'goodBonds' in self.config:
+                self._goodBonds = {tuple(x.split()) : value for x, value in self.config['goodBonds'].items()}
+            else:
+                self._goodBonds = {}
+            goodBond = lambda symbol: Element(symbol).good_bonds
+            for s1, s2 in combinations_with_replacement(np.unique(self.chemicalSymbols), r=2):
+                if (s1,s2) in self._goodBonds:
+                    self._goodBonds[(s2, s1)] = self._goodBonds[(s1, s2)]
+                elif (s2,s1) in self._goodBonds:
+                    self._goodBonds[(s1, s2)] = self._goodBonds[(s2, s1)]
+                else:
+                    self._goodBonds[(s1, s2)] = self._goodBonds[(s2, s1)] = np.power(goodBond(s1) * goodBond(s2), 0.5)
+        return self._goodBonds
+
+    @property
+    def valences(self):
+        """
+        :rtype: Dict[str, float]
+        :return: valences for each element present in structure.
+        """
+        if not self._valences:
+            for symbol in np.unique(self.chemicalSymbols):
+                self._valences[symbol] = Element(symbol).valence
+            if 'valences' in self.config:
+                self._valences.update(self.config['valences'])
+        return self._valences
+
+    @property
+    def valenceElectrons(self):
+        """
+        :rtype: Dict[str, int]
+        :return: number of valence electrons for each element present in structure.
+        """
+        if not self._valenceElectrons:
+            for symbol in np.unique(self.chemicalSymbols):
+                self._valenceElectrons[symbol] = Element(symbol).valence_electrons
+            if 'valenceElectrons' in self.config:
+                self.valenceElectrons.update(self.config['valenceElectrons'])
+        return self._valenceElectrons
+
+
+    @property
+    def mDM(self):
+        """
+        :rtype: numpy.ndarray
+        :return: 2D array for each pair of atoms in structure containing minimal allowed distance between this two atoms.
+        """
+        if self._mDM is None:
+            uniqueSimbols = np.unique(self.chemicalSymbols)
+            if 'ionDistances' in self.config:
+                minDistMatrix = {tuple(x.split()) : value for x, value in self.config['ionDistances'].items()}
+            else:
+                minDistMatrix = {}
+            radii = {symbol: calcVolume(self.externalPressure, symbol, self.volumeType) ** (1.0 / 3.0)
+                     for symbol in uniqueSimbols}
+            for s1, s2 in combinations_with_replacement(uniqueSimbols, 2):
+                if (s1, s2) in minDistMatrix:
+                    minDistMatrix[(s2, s1)] = minDistMatrix[(s1, s2)]
+                elif (s2, s1) in minDistMatrix:
+                    minDistMatrix[(s1, s2)] = minDistMatrix[(s2, s1)]
+                elif self.volumeType != 'mol':
+                    minDistMatrix[(s1, s2)] = minDistMatrix[(s2, s1)] = min(0.22 * (radii[s1] + radii[s2]), 1.2)
+                else:
+                    minDistMatrix[(s1, s2)] = minDistMatrix[(s2, s1)] = 0.45 * (radii[s1] + radii[s2])
+
+            N = len(self.atoms)
+            self._mDM = np.zeros((N, N), dtype=float)
+            chemicalSimbols = self.atoms.get_chemical_symbols()
+            for i,j in combinations_with_replacement(range(N), 2):
+                s1 = chemicalSimbols[i]
+                s2 = chemicalSimbols[j]
+                self._mDM[i, j] = self._mDM[j, i] = minDistMatrix[(s1, s2)]
+        return self._mDM
+
+    @property
+    def composition(self) -> Composition:
+        """
+        :rtype: :class:`USPEX.Common.Atomistic.CompositionSpace.Composition`
         :return: Composition of current structure in form {symbol : amount}
         """
-        molecules = {}
-        for symbol in self.molSymbol:
-            if symbol in molecules.keys():
-                molecules[symbol] += 1
-            else:
-                molecules[symbol] = 1
-        return molecules
+        if len(self.molSymbol) == 1:
+            count = Counter()
+            for symbol in self.chemicalSymbols:
+                count[symbol] += 1
+            composition = Composition({self.molSymbol[0]: 1}, {self.molSymbol[0]: dict(count)})
+        else:
+            count = Counter()
+            for symbol in self.molSymbol:
+                count[symbol] += 1
+            composition = Composition(count, self.moleculeTypesToFormula)
+        return composition
 
     @property
     def chemicalSymbols(self):
@@ -639,7 +837,7 @@ class AtomicStructure(System):
         """
         self.atoms.translate(np.dot(displacement, self.atoms.cell))
 
-    def isGoodDistances(self, symbols: list, minDistMatrix: np.ndarray) -> bool:
+    def isGoodDistances(self, symbols: list = None, minDistMatrix: np.ndarray = None) -> bool:
         """
         Check if the structure meets the minimal distance constraints provided with Minimal Distances Matrix.
 
@@ -652,8 +850,6 @@ class AtomicStructure(System):
         """
         if len(self.atoms) < 2:
             return True
-        indices = np.fromiter((symbols.index(symbol) for symbol in self.chemicalSymbols), dtype=int)
-        mDM = minDistMatrix[tuple(np.meshgrid(indices, indices))]
         actualDistances = self.get_all_distances(mic=np.any(self.atoms.get_pbc()))
         constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
         for inds, molecule in zip(self._molecules, self.molecules):
@@ -665,7 +861,7 @@ class AtomicStructure(System):
                         dists = np.linalg.norm(vect + constNeighbours, axis=1)
                         distVectorsMatrix[i,j] = self.cell.cartesian_positions(vect + constNeighbours[np.argmin(dists)])
             actualDistances[tuple(np.meshgrid(inds, inds))] = np.linalg.norm(distVectorsMatrix, axis=2)
-        return np.all(actualDistances >= mDM.T)
+        return np.all(actualDistances >= self.mDM.T)
 
     def isMoleculesDistinct(self) -> bool:
         """
@@ -688,6 +884,14 @@ class AtomicStructure(System):
                     if (j not in inds) or (not np.isclose(actualMinDistances[i, j], noPbcMinDistances[i, j])):
                         return False
         return True
+
+    def isGoodSystem(self):
+        """
+        Checks if system meets constraints.
+        :rtype: bool
+        :return: True if meets False otherwise.
+        """
+        return self.isGoodDistances()
 
     def toDICT(self) -> dict:
         """
@@ -721,6 +925,11 @@ class AtomicStructure(System):
         if self._pressureTensor is not None:
             dct['pressureTensor'] = self._pressureTensor.tolist()
             del dct['_pressureTensor']
+
+        del dct['_goodBonds']
+        del dct['_valences']
+        del dct['_valenceElectrons']
+        del dct['_mDM']
 
         # TODO refactor this
         if 'bonds' in dct:
@@ -779,6 +988,10 @@ class AtomicStructure(System):
         if 'forces' in dct:
             newStructure._forces = np.asarray(dct['forces'])
             del dct['forces']
+        dct['_goodBonds'] = {}
+        dct['_valences'] = {}
+        dct['_valenceElectrons'] = {}
+        dct['_mDM'] = None
 
         newStructure.__dict__.update(dct)
         return newStructure

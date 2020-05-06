@@ -53,41 +53,40 @@ class Target(object):
         :param kwargs: parameters for initializing config.
         """
         targetDef = SimpleNamespace(**self.knownTargetTypes[type])
-        self.config = targetDef.configType(**kwargs)
-        self.pool = targetDef.poolType(self.config)
+        self.config = kwargs['config']
+        self.pool = targetDef.poolType(**kwargs['pool'])
         
         self.hybridizations = []
         for hybridizationType in targetDef.variationOperators.hybridizationTypes:
-            if hybridizationType.__name__ in kwargs:
-                self.hybridizations.append(hybridizationType(self.config, self.pool,
-                                                             **kwargs[hybridizationType.__name__]))
+            params = kwargs[hybridizationType.__name__] if hybridizationType.__name__ in kwargs else {}
+            self.hybridizations.append(hybridizationType(targetDef.systemType, self.config, self.pool, **params))
 
         self.mutations = []
         for mutationType in targetDef.variationOperators.mutationTypes:
-            if mutationType.__name__ in kwargs:
-                self.mutations.append(mutationType(self.config, self.pool, **kwargs[mutationType.__name__]))
+            params = kwargs[mutationType.__name__] if mutationType.__name__ in kwargs else {}
+            self.mutations.append(mutationType(targetDef.systemType, self.config, self.pool, **params))
 
         self.creations = []
         for creationType in targetDef.variationOperators.creationTypes:
-            if creationType.__name__ in kwargs:
-                self.creations.append(creationType(self.config, self.pool, **kwargs[creationType.__name__]))
+            params = kwargs[creationType.__name__] if creationType.__name__ in kwargs else {}
+            self.creations.append(creationType(targetDef.systemType, self.config, self.pool, **params))
 
         self.variationOperators = self.hybridizations + self.mutations + self.creations
 
     @classmethod
-    def registerTarget(cls, name: str, configType: type, poolType: type, variationOperators: VariationOperators):
+    def registerTarget(cls, name: str, systemType: type, poolType: type, variationOperators: VariationOperators):
         """
         Register the target as known target.
 
         :type name: str
         :param name: target name.
-        :type configType: type
-        :param configType: config type.
+        :type systemType: type
+        :param systemType: system type.
         :type poolType: type
         :param poolType: pool type.
         :type variationOperators: :class:`VariationOperators`
         :param variationOperators: variation operators.
         """
         assert name not in cls.knownTargetTypes
-        cls.knownTargetTypes[name] = {'configType': configType, 'poolType': poolType,
+        cls.knownTargetTypes[name] = {'systemType': systemType, 'poolType': poolType,
                                       'variationOperators': variationOperators}
