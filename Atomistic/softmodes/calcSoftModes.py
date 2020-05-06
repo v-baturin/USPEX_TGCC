@@ -42,7 +42,7 @@ def AddDynMat(D, a, b, H, Cos, phase1, phase2):
 
 
 # R_val : dict, N_val : dict, val : dict,
-def calcSoftModes(system : AtomicStructure, config, kVector0=np.zeros(3)):
+def calcSoftModes(system : AtomicStructure, kVector0=np.zeros(3)):
     '''
     The function calculates vibrational modes based on the dynamic matrix (D) constructed from bond hardness model.
 
@@ -56,7 +56,7 @@ def calcSoftModes(system : AtomicStructure, config, kVector0=np.zeros(3)):
     :return eigvector: eigenvector of all modes.
     '''
 
-    bonds = getMinimalGraphBonds(system, config.goodBonds)
+    bonds = getMinimalGraphBonds(system)
 
     # assert isinstance(system.bonds, Bonds)
 
@@ -91,7 +91,7 @@ def calcSoftModes(system : AtomicStructure, config, kVector0=np.zeros(3)):
                 nu_full += np.exp(-bond.delta / 0.37)
             if b == k:
                 nu_full += np.exp(-bond.delta / 0.37)
-        nu_factor.append(config.valences[symbol] / nu_full)
+        nu_factor.append(system.valences[symbol] / nu_full)
 
     for bond_group in bonds:
         for bond in bond_group:
@@ -104,10 +104,10 @@ def calcSoftModes(system : AtomicStructure, config, kVector0=np.zeros(3)):
             R_a = R_val(s1)/R_val_sum * R
             R_b = R_val(s2)/R_val_sum * R
             nu = np.exp(-bond.delta / 0.37)
-            EN_a = 0.481 * config.valenceElectrons[s1] / R_a
-            EN_b = 0.481 * config.valenceElectrons[s2] / R_b
-            CN_a = config.valences[s1] / (nu * nu_factor[i1])
-            CN_b = config.valences[s2] / (nu * nu_factor[i2])
+            EN_a = 0.481 * system.valenceElectrons[s1] / R_a
+            EN_b = 0.481 * system.valenceElectrons[s2] / R_b
+            CN_a = system.valences[s1] / (nu * nu_factor[i1])
+            CN_b = system.valences[s2] / (nu * nu_factor[i2])
 
             f_ab = 0.25 * np.abs(EN_a - EN_b) / np.sqrt(EN_a * EN_b)
             X_ab = np.sqrt(EN_a * EN_b / (CN_a * CN_b))

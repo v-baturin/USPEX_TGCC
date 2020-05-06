@@ -6,9 +6,7 @@ import unittest
 from ase.io.vasp import read_vasp
 from os.path import join as pj
 
-from ...AtomisticConfig import AtomisticConfig
 from ..calcSoftModes import calcSoftModes
-from ...AtomicStructure import AtomicStructure
 from ...Crystal import Crystal
 
 
@@ -26,9 +24,7 @@ class SoftModes_test(unittest.TestCase):
         system = Crystal(scaled_positions=tmp.get_scaled_positions(),
                          cell=tmp.get_cell(),
                          symbols=tmp.get_chemical_symbols())
-        params = {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        freq, eigvector = calcSoftModes(system, config)
+        freq, eigvector = calcSoftModes(system)
 
     def test_MgAlO_system_2(self):
         print('Test MgAlO 2')
@@ -36,9 +32,7 @@ class SoftModes_test(unittest.TestCase):
         system = Crystal(scaled_positions=tmp.get_scaled_positions(),
                          cell=tmp.get_cell(),
                          symbols=tmp.get_chemical_symbols())
-        params = {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        freq, eigvector = calcSoftModes(system, config)
+        freq, eigvector = calcSoftModes(system)
 
     def test_MgAlO_system_3(self):
         print('Test MgAlO 3')
@@ -46,9 +40,7 @@ class SoftModes_test(unittest.TestCase):
         system = Crystal(scaled_positions=tmp.get_scaled_positions(),
                          cell=tmp.get_cell(),
                          symbols=tmp.get_chemical_symbols())
-        params = {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        freq, eigvector = calcSoftModes(system, config)
+        freq, eigvector = calcSoftModes(system)
 
     # Carbon systems
     def test_graphite(self):
@@ -57,9 +49,7 @@ class SoftModes_test(unittest.TestCase):
         symbols = tmp.get_chemical_symbols()
         graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         N = len(graphite)
-        params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1, 1]]}
-        config = AtomisticConfig(**params)
-        freq, eigvector = calcSoftModes(graphite, config)
+        freq, eigvector = calcSoftModes(graphite)
 
         freq_ref = [-3.14018492e-16, -2.07235140e-17, 0.00000000e+00, 0.00000000e+00, 2.74458612e-23, 7.54840750e-17,
                      1.78390610e-16, 8.28730183e-03, 2.70874463e+00,  2.70874473e+00,  2.70892967e+00,  2.70893071e+00]
@@ -74,9 +64,7 @@ class SoftModes_test(unittest.TestCase):
         graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         graphite *= 2
         N = len(graphite)
-        params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfig(**params)
-        freq, eigvector = calcSoftModes(graphite, config)
+        freq, eigvector = calcSoftModes(graphite)
 
         freq_ref = [ -6.88734374e-16 , -5.81698639e-16 , -5.81698639e-16 , -3.31208915e-16,
                      -2.44283384e-16 , -2.44283384e-16 , -2.00449320e-16 , -2.00449320e-16,
@@ -112,9 +100,7 @@ class SoftModes_test(unittest.TestCase):
         symbols = tmp.get_chemical_symbols()
         diamond = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         N = len(diamond)
-        params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfig(**params)
-        freq, eigvector = calcSoftModes(diamond, config)
+        freq, eigvector = calcSoftModes(diamond)
         freq_ref = [ -2.22044605e-16, -2.22044605e-16, -2.22044605e-16,  1.66088535e+00, 1.66088535e+00,  1.66088535e+00]
         self.assertTrue(np.allclose(freq, freq_ref))
 
@@ -126,9 +112,7 @@ class SoftModes_test(unittest.TestCase):
         diamond = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         diamond *= 2
         N = len(diamond)
-        params = {'symbols' : ['C'], 'blocks' : [[N]], 'fixed' : [[1,1]]}
-        config = AtomisticConfig(**params)
-        freq, eigvector = calcSoftModes(diamond, config)
+        freq, eigvector = calcSoftModes(diamond)
 
         freq_ref = [ -4.81633103e-16,  -2.68342179e-16 , -2.38233999e-16 , -2.38233999e-16,
                      -2.07559197e-16,  -2.07559197e-16 , -9.21082950e-17 , -9.21082950e-17,
@@ -151,10 +135,8 @@ class SoftModes_test(unittest.TestCase):
         tmp = read_vasp(pj(self.CURRENT_DIR, 'MgO_system_1.vasp'))
         symbols = tmp.get_chemical_symbols()
         system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        params = {'symbols': ['Mg', 'O'], 'blocks': [[4, 4]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
 
-        freq, eigvector = calcSoftModes(system, config)
+        freq, eigvector = calcSoftModes(system)
 
     def test_MgO_2(self):
         print('Test MgO 2')
@@ -162,7 +144,4 @@ class SoftModes_test(unittest.TestCase):
         symbols = tmp.get_chemical_symbols()
         system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
 
-        params = {'symbols': ['Mg', 'O'], 'blocks': [[1, 1]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-
-        freq, eigvector = calcSoftModes(system, config)
+        freq, eigvector = calcSoftModes(system)

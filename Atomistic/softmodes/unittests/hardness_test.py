@@ -7,9 +7,8 @@ import os
 from ase.io.vasp import read_vasp
 from ase.io.vasp import write_vasp
 
-from ...AtomisticConfig import AtomisticConfig
 from ...Crystal import Crystal
-from ..calcHardness import calcHardness_new
+from ..calcHardness import calcHardness
 
 
 class Hardness_test(unittest.TestCase):
@@ -24,9 +23,7 @@ class Hardness_test(unittest.TestCase):
         tmp = read_vasp(self.CURRENT_DIR + '/graphite.POSCAR')
         symbols = tmp.get_chemical_symbols()
         graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        params = {'symbols': ['C'], 'blocks': [[len(graphite)]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        H = calcHardness_new(config, graphite)
+        H = calcHardness(graphite)
         print('Hardness = ' + str(H))
         self.assertAlmostEqual(H, 0.231, places=3)
 
@@ -34,9 +31,7 @@ class Hardness_test(unittest.TestCase):
         tmp = read_vasp(self.CURRENT_DIR + '/graphite2.POSCAR')
         symbols = tmp.get_chemical_symbols()
         graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        params = {'symbols': ['C'], 'blocks': [[len(graphite)]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        H = calcHardness_new(config, graphite)
+        H = calcHardness(graphite)
         print('Hardness = ' + str(H))
         self.assertAlmostEqual(H, 0.433, places=3)
 
@@ -45,9 +40,7 @@ class Hardness_test(unittest.TestCase):
         symbols = tmp.get_chemical_symbols()
         graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         graphite *= 3
-        params = {'symbols': ['C'], 'blocks': [[len(graphite)]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        H = calcHardness_new(config, graphite)
+        H = calcHardness(graphite)
         print('Hardness = ' + str(H))
         self.assertAlmostEqual(H, 0.433, places=3)
 
@@ -55,9 +48,7 @@ class Hardness_test(unittest.TestCase):
         tmp = read_vasp(self.CURRENT_DIR + '/graphite_1layer.POSCAR')
         symbols = tmp.get_chemical_symbols()
         graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        params = {'symbols': ['C'], 'blocks': [[len(graphite)]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        H = calcHardness_new(config, graphite)
+        H = calcHardness(graphite)
         print('Hardness = ' + str(H))
         self.assertAlmostEqual(H, 1.72, places=1)
 
@@ -65,9 +56,7 @@ class Hardness_test(unittest.TestCase):
         tmp = read_vasp(self.CURRENT_DIR + '/al.POSCAR')
         symbols = tmp.get_chemical_symbols()
         system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        params = {'symbols': ['Al'], 'blocks': [[len(system)]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        H = calcHardness_new(config, system)
+        H = calcHardness(system)
         print('Hardness = ' + str(H))
         self.assertAlmostEqual(H, 10.562, places=3)
 
@@ -75,9 +64,7 @@ class Hardness_test(unittest.TestCase):
         tmp = read_vasp(self.CURRENT_DIR + '/diamond.POSCAR')
         symbols = tmp.get_chemical_symbols()
         diamond = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        params = {'symbols': ['C'], 'blocks': [[len(diamond)]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        H = calcHardness_new(config, diamond)
+        H = calcHardness(diamond)
         print('Hardness = ' + str(H))
         self.assertAlmostEqual(H, 89.656, places=3)
 
@@ -87,9 +74,7 @@ class Hardness_test(unittest.TestCase):
         system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         # system *= 2
         # write_vasp('tmp.POSCAR', system, direct=True, vasp5=True, sort=True)
-        params = {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        H = calcHardness_new(config, system)
+        H = calcHardness(system)
         print('Hardness = ' + str(H))
         self.assertAlmostEqual(H, 6.177, places=3)
 
@@ -98,8 +83,6 @@ class Hardness_test(unittest.TestCase):
         symbols = tmp.get_chemical_symbols()
         system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         #write_vasp('tmp.vasp', system, vasp5=True, sort=True)
-        params = {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]], 'fixed': [[1, 1]]}
-        config = AtomisticConfig(**params)
-        H = calcHardness_new(config, system)
+        H = calcHardness(system)
         print('Hardness = ' + str(H))
         self.assertAlmostEqual(H, 19.970, places=0)

@@ -42,16 +42,16 @@ def _connectedComponents(N, bonds):
     return len(np.unique(labels[np.asarray(indices)]))
 
 
-def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds : Dict[Tuple[str, str], float]) -> list:
+def getMinimalGraphBonds(SYSTEM : AtomicStructure) -> list:
     '''
     Calculates bond graph minimal for the structure to be 3D connected.
 
     :param SYSTEM:
-    :param goodBonds:
     :return:
     '''
 
     N_atom = len(SYSTEM)
+    goodBonds = SYSTEM.goodBonds
 
 
     # 1) Calculate bonds within upper bound to max_bond.

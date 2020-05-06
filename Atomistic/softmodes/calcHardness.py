@@ -16,12 +16,11 @@ _MAX_CELL_LENGTH = 4   # max length of any cell length
 
 
 
-def calcHardness_new(CONFIG : AtomisticConfig, system : AtomicStructure) -> float:
+def calcHardness(system : AtomicStructure) -> float:
     '''
     Calculate hardness for a given structure from bond hardness model.
     See http://han.ess.sunysb.edu/hardness/ for details.
 
-    :param CONFIG:
     :param system:
     :return H: hardness (GPa).
     '''
@@ -40,7 +39,7 @@ def calcHardness_new(CONFIG : AtomisticConfig, system : AtomicStructure) -> floa
     # system = AtomicStructure(symbols=_system.chemicalSymbols, positions=coor, cell=lat)
     # system *= m
 
-    bonds = getMinimalGraphBonds(system, CONFIG.goodBonds)
+    bonds = getMinimalGraphBonds(system)
 
     # Calculate bond valence using classical Brown's bond valence model.
     # nu_factor should be normalized to satisfy sum rule.
@@ -55,7 +54,7 @@ def calcHardness_new(CONFIG : AtomisticConfig, system : AtomicStructure) -> floa
                 nu_full += np.exp(-bond.delta / 0.37)
             if b == k:
                 nu_full += np.exp(-bond.delta / 0.37)
-        nu_factor.append(CONFIG.valences[symbol] / nu_full)
+        nu_factor.append(system.valences[symbol] / nu_full)
 
     '''
     Apply the bond hardness model here. Two for loops here:
@@ -78,13 +77,13 @@ def calcHardness_new(CONFIG : AtomisticConfig, system : AtomicStructure) -> floa
                 R_a = Element(a).covalent_radius + bond.delta / 2
                 R_b = Element(b).covalent_radius + bond.delta / 2
                 nu = np.exp(-bond.delta / 0.37)
-                EN_a = 0.481 * CONFIG.valenceElectrons[a] / R_a  # electronegativity
-                EN_b = 0.481 * CONFIG.valenceElectrons[b] / R_b
+                EN_a = 0.481 * system.valenceElectrons[a] / R_a  # electronegativity
+                EN_b = 0.481 * system.valenceElectrons[b] / R_b
 
                 # Effective CN that describes the atomic valence:
                 a1, b1 = bond.indicies
-                CN_a = CONFIG.valences[a] / (nu * nu_factor[a1])
-                CN_b = CONFIG.valences[b] / (nu * nu_factor[b1])
+                CN_a = system.valences[a] / (nu * nu_factor[a1])
+                CN_b = system.valences[b] / (nu * nu_factor[b1])
 
                 f_ab = 0.25 * abs(EN_a - EN_b) / np.sqrt(EN_a * EN_b)  # ionicity indicator
                 X_ab = np.sqrt(EN_a * EN_b / (CN_a * CN_b))  # electron-holding energy
