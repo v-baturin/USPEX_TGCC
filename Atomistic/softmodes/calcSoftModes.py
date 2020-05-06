@@ -51,9 +51,6 @@ def calcSoftModes(system : AtomicStructure, config, kVector0=np.zeros(3)):
         k_abs = k*reciprocal_lattice
 
     :param system: 
-    :param R_val: radii.
-    :param N_val: number of valence electrons.
-    :param val: valence.
     :param kVector0: K-vector.
     :return freq: frequencies of all modes.
     :return eigvector: eigenvector of all modes.

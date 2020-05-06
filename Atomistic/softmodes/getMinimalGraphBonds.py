@@ -12,6 +12,12 @@ from ..Bonds import Bond
 _BONDS_CUTOFF = 5.0     # Angstroms
 
 def _connectedComponents(N, bonds):
+    """
+    Calculate number of connected components.
+    :param N: number of atoms.
+    :param bonds: bond graph.
+    :return:
+    """
     if N < 100:
         supper_size = 4
         center_cell = [1,2]
@@ -38,13 +44,7 @@ def _connectedComponents(N, bonds):
 
 def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds : Dict[Tuple[str, str], float]) -> list:
     '''
-    The function calculates bonds which make contribution to hardness.
-    Used only for softmodemutation case and does not used for any other cases.
-
-    NOTE (for future generations):
-    this function should be used for softmodes calculation and for hardness calculation as well.
-    But it is not right now. So, this method is not used for hardness calculation.
-    Method that is above right now works proper for hardness calculation.
+    Calculates bond graph minimal for the structure to be 3D connected.
 
     :param SYSTEM:
     :param goodBonds:
