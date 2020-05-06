@@ -952,6 +952,13 @@ class AtomicStructure(System):
         del dct['_valences']
         del dct['_valenceElectrons']
         del dct['_mDM']
+        if 'config' in dct:
+            if 'ionDistance' in dct['config']:
+                dct['config']['ionDistances'] = {f'{s1} {s2}': value
+                                                 for (s1, s2), value in dct['config']['ionDistances'].items()}
+            if 'goodBonds' in dct['config']:
+                dct['config']['goodBonds'] = {f'{s1} {s2}': value
+                                              for (s1, s2), value in dct['config']['goodBonds'].items()}
 
         # TODO refactor this
         if 'bonds' in dct:
@@ -1014,6 +1021,13 @@ class AtomicStructure(System):
         dct['_valences'] = {}
         dct['_valenceElectrons'] = {}
         dct['_mDM'] = None
+        if 'config' in dct:
+            if 'ionDistances' in dct['config']:
+                dct['config']['ionDistances'] = {tuple(x.split()): value
+                                                 for x, value in dct['config']['ionDistances'].items()}
+            if 'goodBonds' in dct['config']:
+                dct['config']['goodBonds'] = {tuple(x.split()): value
+                                              for x, value in dct['config']['goodBonds'].items()}
 
         newStructure.__dict__.update(dct)
         return newStructure
