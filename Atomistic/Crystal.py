@@ -177,7 +177,7 @@ class Crystal(AtomicStructure):
         dist[2] = vol/(angLattice[0, 1] * angLattice[0, 2] * sin(angLattice[0, 3]))
         '''
 
-        if np.where(angLattice[0:3] < self.minVectorLength())[0].shape[0] > 0:
+        if np.where(angLattice[0:3] < self.minVectorLength)[0].shape[0] > 0:
             lat_OK = False
 
         if np.where(np.isreal(lattice) is False)[0].shape[0] > 0:

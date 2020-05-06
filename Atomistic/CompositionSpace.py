@@ -74,7 +74,7 @@ class CompositionSpace(object):
                 assert 'molSymbols' in symbol and len(symbol['molSymbols']) == 1
                 molSymbol = symbol['molSymbols'][0]
                 self.molecules[molSymbol] = symbol
-                formula = dict(zip(np.unique(symbol['symbols'], return_counts=True)))
+                formula = dict(zip(*np.unique(symbol['symbols'], return_counts=True)))
                 self.moleculesTypeToFormula[molSymbol] =  formula
                 self.symbols.append(molSymbol)
                 chemicalSymbols.extend(symbol['symbols'])

@@ -255,7 +255,7 @@ def calcDefaultVolume(numIons: list, atomType: list, pressure: float, isMol: boo
     
     return vol
 
-def calcVolumeForComposition(composition: Composition, externalPressure = 0.0001, volumeType = 'atom'):
+def calcVolumeForComposition(composition: Composition, externalPressure = 0.0001, volumeType = 'atom', **kwargs):
     """
     The function calculates a volume of the given composition at the target pressure.
     :type composition: Composition
@@ -270,7 +270,7 @@ def calcVolumeForComposition(composition: Composition, externalPressure = 0.0001
     :return: volume
     """
     volume = 0
-    for symbol, amount in composition.elementalComposition:
+    for symbol, amount in composition.elementalComposition.items():
         volume += calcVolume(externalPressure, symbol, volumeType) * amount
     return volume
 
