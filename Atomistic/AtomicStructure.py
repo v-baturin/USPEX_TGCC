@@ -9,12 +9,15 @@ Class Atoms-type structure with properties and without periodicity (not Crystal)
 """
 
 from ase.atoms import Atoms
+from ase.neighborlist import primitive_neighbor_list
+from typing import Dict, List, Union, Tuple
 
 import copy
 import numpy as np
 from typing import Dict, List, Tuple
 from itertools import combinations_with_replacement, chain
 from collections import Counter
+
 
 
 from ..System import System
@@ -523,7 +526,7 @@ class AtomicStructure(System):
         """
         if not self._goodBonds:
             if 'goodBonds' in self.config:
-                self._goodBonds = {tuple(x.split()) : value for x, value in self.config['goodBonds'].items()}
+                self._goodBonds = copy.copy(self.config['goodBonds'])
             else:
                 self._goodBonds = {}
             goodBond = lambda symbol: Element(symbol).good_bonds
@@ -572,7 +575,7 @@ class AtomicStructure(System):
         if self._mDM is None:
             uniqueSimbols = np.unique(self.chemicalSymbols)
             if 'ionDistances' in self.config:
-                minDistMatrix = {tuple(x.split()) : value for x, value in self.config['ionDistances'].items()}
+                minDistMatrix = copy.copy(self.config['ionDistances'])
             else:
                 minDistMatrix = {}
             radii = {symbol: calcVolume(self.externalPressure, symbol, self.volumeType) ** (1.0 / 3.0)
@@ -848,7 +851,26 @@ class AtomicStructure(System):
         :rtype: bool
         :return: True if the structure meet the constraint, False otherwise.
         """
-        if len(self.atoms) < 2:
+        # TODO delete useless input parameter - symbols
+
+        # positions = self.atoms.get_positions()
+        # i_init, j_init, vect = primitive_neighbor_list(quantities='ijD', pbc=self.atoms.pbc, cell=self.atoms.get_cell(complete=True),
+        #                                          positions=positions, cutoff=minDistMatrix,
+        #                                          numbers=self.atoms.numbers, use_scaled_positions=False)
+        #
+        # # whether system is molecular or not
+        # # Check whether all pairs of atoms, which are closer than minDistMatrix and are related to the same molecule
+        # for i, j, v in zip(i_init, j_init, vect):
+        #     inMolecule = False
+        #     for mol in self._molecules:
+        #         if i in mol and j in mol and np.allclose(v, positions[j] - positions[i]):
+        #             inMolecule = True
+        #             break
+        #     if not inMolecule: return False
+        # return True
+
+        N = len(self.atoms)
+        if N < 2:
             return True
         actualDistances = self.get_all_distances(mic=np.any(self.atoms.get_pbc()))
         constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
@@ -930,6 +952,13 @@ class AtomicStructure(System):
         del dct['_valences']
         del dct['_valenceElectrons']
         del dct['_mDM']
+        if 'config' in dct:
+            if 'ionDistance' in dct['config']:
+                dct['config']['ionDistances'] = {f'{s1} {s2}': value
+                                                 for (s1, s2), value in dct['config']['ionDistances'].items()}
+            if 'goodBonds' in dct['config']:
+                dct['config']['goodBonds'] = {f'{s1} {s2}': value
+                                              for (s1, s2), value in dct['config']['goodBonds'].items()}
 
         # TODO refactor this
         if 'bonds' in dct:
@@ -992,6 +1021,13 @@ class AtomicStructure(System):
         dct['_valences'] = {}
         dct['_valenceElectrons'] = {}
         dct['_mDM'] = None
+        if 'config' in dct:
+            if 'ionDistances' in dct['config']:
+                dct['config']['ionDistances'] = {tuple(x.split()): value
+                                                 for x, value in dct['config']['ionDistances'].items()}
+            if 'goodBonds' in dct['config']:
+                dct['config']['goodBonds'] = {tuple(x.split()): value
+                                              for x, value in dct['config']['goodBonds'].items()}
 
         newStructure.__dict__.update(dct)
         return newStructure
