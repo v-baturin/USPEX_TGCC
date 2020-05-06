@@ -69,7 +69,7 @@ class AtomicStructure(System):
         :type ionDistances: dict
         :param ionDistances:
             dictionary describing minimal interatomic distances.
-            example {'C_C': 1.0, 'C_H': 0.8, , 'H_C': 0.8, 'H_H': 0.5}
+            example {('C','C'): 1.0, ('C','H'): 0.8, , ('H','C'): 0.8, ('H','H'): 0.5}
         :type goodBonds: list
         :param goodBonds:
             specifies, in a square matrix form, the minimum bond valences
