@@ -14,7 +14,6 @@ from ase.io import read
 
 
 from ..Crystal import Crystal
-from ..CrystalConfig import CrystalConfig
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 

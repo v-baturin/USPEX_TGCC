@@ -11,8 +11,7 @@ import unittest
 import numpy as np
 
 from ..ConvexHull import ConvexHull
-from ..AtomisticConfig import AtomisticConfig
-
+from ..CompositionSpace import CompositionSpace
 
 class System(object):
 
@@ -24,9 +23,9 @@ class System(object):
 class ConvexHull_Test(unittest.TestCase):
 
     def test_bicomponent1(self):
-        config = AtomisticConfig(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]],
-                                 minAt=8, maxAt=18)
-        self.convexHull = ConvexHull(config)
+        compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
+                                  minAt=8, maxAt=18)
+        self.convexHull = ConvexHull(compositionSpace)
         system1 = System({'Mo': 4, 'B': 10}, -5.0)
         system2 = System({'Mo': 4, 'B': 10}, -14.0)
         system3 = System({'Mo': 8, 'B': 8}, -8.0)
@@ -111,9 +110,9 @@ class ConvexHull_Test(unittest.TestCase):
         self.assertEqual(enthalpies, {-16.0, -4.0, -12.0})
 
     def test_bicomponent2(self):
-        config = AtomisticConfig(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]],
+        compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                  minAt=8, maxAt=18)
-        self.convexHull = ConvexHull(config)
+        self.convexHull = ConvexHull(compositionSpace)
         system1 = System({'Mo': 6, 'B': 14}, -178.845)
         system2 = System({'Mo': 16, 'B': 10}, -225.103)
         system3 = System({'Mo': 5, 'B': 14}, -162.761)
@@ -152,9 +151,9 @@ class ConvexHull_Test(unittest.TestCase):
         self.assertEqual(len(self.convexHull.elements), 5)
 
     def test_bicomponent3(self):
-        config = AtomisticConfig(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], fixed=[[0, 18], [0, 18]],
+        compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                  minAt=8, maxAt=18)
-        self.convexHull = ConvexHull(config)
+        self.convexHull = ConvexHull(compositionSpace)
         system1 = System({'Mo': 5, 'B': 15}, -173.325)
         system2 = System({'Mo': 5}, -42.944)
         system3 = System({'Mo': 3, 'B': 9}, -104.041)

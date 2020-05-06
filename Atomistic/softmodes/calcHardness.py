@@ -5,14 +5,9 @@ import numpy as np
 from scipy.stats import gmean
 from itertools import chain
 
-from USPEX.Common.Atomistic.AtomisticConfig import AtomisticConfig
 from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
 from USPEX.Common.Atomistic.Element import Element
-#from .BondHardness import BondHardness
 from .getMinimalGraphBonds import getMinimalGraphBonds
-#from .AtomTypeCounter import atomTypeCounter
-
-_MAX_CELL_LENGTH = 4   # max length of any cell length
 
 
 
