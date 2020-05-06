@@ -526,7 +526,7 @@ class AtomicStructure(System):
         """
         if not self._goodBonds:
             if 'goodBonds' in self.config:
-                self._goodBonds = {tuple(x.split()) : value for x, value in self.config['goodBonds'].items()}
+                self._goodBonds = copy.copy(self.config['goodBonds'])
             else:
                 self._goodBonds = {}
             goodBond = lambda symbol: Element(symbol).good_bonds
@@ -575,7 +575,7 @@ class AtomicStructure(System):
         if self._mDM is None:
             uniqueSimbols = np.unique(self.chemicalSymbols)
             if 'ionDistances' in self.config:
-                minDistMatrix = {tuple(x.split()) : value for x, value in self.config['ionDistances'].items()}
+                minDistMatrix = copy.copy(self.config['ionDistances'])
             else:
                 minDistMatrix = {}
             radii = {symbol: calcVolume(self.externalPressure, symbol, self.volumeType) ** (1.0 / 3.0)
