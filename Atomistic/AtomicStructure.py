@@ -14,12 +14,14 @@ import copy
 import numpy as np
 from typing import Dict, List, Tuple
 from itertools import combinations_with_replacement, chain
+from collections import Counter
 
 
 from ..System import System
 from .optLattice import optLattice
 from .Element import Element
 from .calcDefaultVolume import calcVolume
+from .CompositionSpace import Composition
 from .mol.coord2Zmatrix import coord2Zmatrix
 from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
@@ -98,6 +100,8 @@ class AtomicStructure(System):
         self.molSymbol = copy.copy(symbols)
 
         assert (not symbols) or (not molecules)     # Cannot initialize with both
+
+        self._moleculeTypesToFormula = {}
 
         for molecule in molecules:  # This is deprecated and will be removed
             self.extend(molecule)
@@ -205,6 +209,7 @@ class AtomicStructure(System):
         self._valences = {}
         self._valenceElectrons = {}
         self._mDM = None
+        self._moleculeTypesToFormula = {}
 
     def __add__(self, other):
         """
@@ -329,6 +334,14 @@ class AtomicStructure(System):
         self.format = frmts
         self.flex_dihedral = flex_dihedrals
         self.molSymbol = molSymbols
+
+    @property
+    def moleculeTypesToFormula(self):
+        if not self._moleculeTypesToFormula:
+            for symbol, mol in zip(self.molSymbol, self.molecules):
+                if symbol not in self._moleculeTypesToFormula:
+                    self._moleculeTypesToFormula[symbol] = mol.composition.elementalComposition
+        return self._moleculeTypesToFormula
 
     def __imul__(self, m):
         """
@@ -524,18 +537,15 @@ class AtomicStructure(System):
         return self._mDM
 
     @property
-    def composition(self):
+    def composition(self) -> Composition:
         """
         :rtype: dict {str : int}
         :return: Composition of current structure in form {symbol : amount}
         """
-        molecules = {}
+        count = Counter()
         for symbol in self.molSymbol:
-            if symbol in molecules.keys():
-                molecules[symbol] += 1
-            else:
-                molecules[symbol] = 1
-        return molecules
+            count[symbol] += 1
+        return Composition(count, self.moleculeTypesToFormula)
 
     @property
     def chemicalSymbols(self):

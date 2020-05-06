@@ -3,31 +3,20 @@ from collections import Counter
 from typing import Dict, Tuple
 
 
-class Composition(object):
+class Composition(dict):
 
-    def __init__(self, blockComposition: Tuple[Tuple[Dict[str, int], int]], molecules: Dict[str, dict]):
-        self.blockComposition = blockComposition
+    def __init__(self, composition: Dict[str, int], molecules: Dict[str, Dict[str, int]]):
+        super().__init__(composition)
         self.molecules = molecules
-        self._compostion = {}
         self._elementalComposition = {}
-
-    @property
-    def compostion(self):
-        if not self._compostion:
-            comp = Counter()
-            for block, amount in self.blockComposition:
-                for symbol, value in block:
-                    comp[symbol] += value*amount
-            self._compostion = dict(comp)
-        return self._compostion
 
     @property
     def elementalComposition(self):
         if not self._elementalComposition:
             comp = Counter()
-            for symbol, amount in self.compostion:
+            for symbol, amount in self.items():
                 if symbol in self.molecules:
-                    for symbol, value in self.molecules[symbol]['symbols']:
+                    for symbol, value in self.molecules[symbol].items():
                         comp[symbol] += value*amount
                 else:
                     comp[symbol] += amount
@@ -60,6 +49,7 @@ class CompositionSpace(object):
         """
 
         self.molecules = {}
+        self.moleculesTypeToFormula = {}
         self.symbols = []
         self.chemicalSymbols = []
 
@@ -69,6 +59,8 @@ class CompositionSpace(object):
                 assert 'molSymbols' in symbol and len(symbol['molSymbols']) == 1
                 molSymbol = symbol['molSymbols'][0]
                 self.molecules[molSymbol] = symbol
+                formula = dict(zip(np.unique(symbol['symbols'], return_counts=True)))
+                self.moleculesTypeToFormula[molSymbol] =  formula
                 self.symbols.append(molSymbol)
                 chemicalSymbols.extend(symbol['symbols'])
             else:
@@ -143,16 +135,6 @@ class CompositionSpace(object):
         """
         return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition), rcond=None)[0]).astype(int)
 
-    def elementalComposition(self, composition: dict) -> dict:
-        _elementalComposition = Counter()
-        for symbol, value in composition.items():
-            if symbol in self.molecules:
-                for symbol in self.molecules[symbol]['symbols']:
-                    _elementalComposition[symbol] += composition[symbol]
-            else:
-                _elementalComposition[symbol] += composition[symbol]
-        return dict(_elementalComposition)
-
     def randomComposition(self):
         """
         Creates random numIons array respecting configuration parameters: blocks, range, minAt and maxAt.
@@ -164,7 +146,7 @@ class CompositionSpace(object):
             numBlocks = np.fromiter((np.random.randint(low, high + 1) for low, high in self.range), dtype=int)
             numIons = np.dot(numBlocks, self.blocks)
             if self.minAt <= np.sum(numIons) <= self.maxAt:
-                return numIons
+                return Composition(dict(zip(self.symbols, numIons)), self.moleculesTypeToFormula)
 
     def findDesiredComposition(self, composition1: dict, composition2: dict, numIons_start: int,
                                debug: bool=False):
