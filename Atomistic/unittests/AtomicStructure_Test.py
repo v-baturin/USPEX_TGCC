@@ -59,3 +59,17 @@ class AtomicStructure_Test(unittest.TestCase):
                                   cell = system2.get_cell())
         system1.fingerprintTolerance = 1.0e-6
         self.assertTrue(system1 == system2)
+
+    def test_problem_1(self):
+        tmp = read('{}/diamond8.vasp'.format(PATH_WITH_TESTS))
+        self.diamond8 = Crystal(symbols=tmp.get_chemical_symbols(),
+                                        scaled_positions=tmp.get_scaled_positions(),
+                                        cell=tmp.get_cell())
+        self.assertTrue(self.diamond8.isGoodSystem)
+
+    def test_problem_2(self):
+        tmp = read('{}/dia_2x2x2.vasp'.format(PATH_WITH_TESTS))
+        self.dia_2x2x2 = Crystal(symbols=tmp.get_chemical_symbols(),
+                                         scaled_positions=tmp.get_scaled_positions(),
+                                         cell=tmp.get_cell())
+        self.assertTrue(self.dia_2x2x2.isGoodSystem)

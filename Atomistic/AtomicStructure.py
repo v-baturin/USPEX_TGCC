@@ -542,10 +542,17 @@ class AtomicStructure(System):
         :rtype: dict {str : int}
         :return: Composition of current structure in form {symbol : amount}
         """
-        count = Counter()
-        for symbol in self.molSymbol:
-            count[symbol] += 1
-        return Composition(count, self.moleculeTypesToFormula)
+        if len(self.molSymbol) == 1:
+            count = Counter()
+            for symbol in self.chemicalSymbols:
+                count[symbol] += 1
+            composition = Composition({self.molSymbol[0]: 1}, {self.molSymbol[0]: dict(count)})
+        else:
+            count = Counter()
+            for symbol in self.molSymbol:
+                count[symbol] += 1
+            composition = Composition(count, self.moleculeTypesToFormula)
+        return composition
 
     @property
     def chemicalSymbols(self):
