@@ -38,11 +38,12 @@ class Crystal(AtomicStructure):
 
     def __init__(self, *args, minVectorLength: float = None, xraydata=None, sym_tolerance=None, **kwargs):
         super().__init__(*args, pbc=[True, True, True], **kwargs)
+        self.crystalConfig = {}
         if minVectorLength is not None:
-            self.config['minVectorLength'] = minVectorLength
+            self.crystalConfig['minVectorLength'] = minVectorLength
         if xraydata is not None:
             assert isinstance(xraydata, dict)
-            self.config['xraydata'] = xraydata
+            self.crystalConfig['xraydata'] = xraydata
         self._spectrumAnalyzer = None
 
         if sym_tolerance is not None:
@@ -87,8 +88,8 @@ class Crystal(AtomicStructure):
         :return: distance between calculated and experimental spectrum.
         """
         if self._spectrumAnalyzer is None:
-            if 'xraydata' in self.config:
-                self._spectrumAnalyzer = SpectrumAnalyzer(**self.config['xraydata'])
+            if 'xraydata' in self.crystalConfig:
+                self._spectrumAnalyzer = SpectrumAnalyzer(**self.crystalConfig['xraydata'])
             else:
                 raise RuntimeError('Cannot optimize the quantity xraydistance. No experimental X-ray data found.')
         return self._spectrumAnalyzer(self)
@@ -98,7 +99,7 @@ class Crystal(AtomicStructure):
     def minVectorLength(self):
         uniqueSimbols = np.unique(self.chemicalSymbols)
         radii = np.fromiter((Element(symbol).covalent_radius for symbol in uniqueSimbols), dtype=float)
-        minVectorLength = self.config['minVectorLength'] if 'minVectorLength' in self.config else 1.8 * np.max(radii)
+        minVectorLength = self.crystalConfig['minVectorLength'] if 'minVectorLength' in self.crystalConfig else 1.8 * np.max(radii)
         assert isinstance(minVectorLength, float) and minVectorLength > 0
         return minVectorLength
 
