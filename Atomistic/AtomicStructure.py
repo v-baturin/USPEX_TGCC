@@ -428,7 +428,7 @@ class AtomicStructure(System):
         dist_matrix = make_matrices(coordinates, self.cell, numIons, Rmax=Rmax)
         order, fing, atom_fing = fingerprint(self.volume, dist_matrix, numIons,
                                              Rmax=Rmax, sigma=sigma, delta=delta)
-        self._order = order[revertIndices]
+        self._order = order[revertIndices].tolist()
         self._fingerprint = {}
         for i, symbol1 in enumerate(uniqueSimbols):
             for j, symbol2 in enumerate(uniqueSimbols):
@@ -476,8 +476,9 @@ class AtomicStructure(System):
         :rtype: float
         :return: average local order for the structure.
         '''
-        if np.any(np.isfinite(self.order)):
-            a_order = np.mean(self.order[np.isfinite(self.order)])
+        order = np.asarray(self.order, dtype=float)
+        if np.any(np.isfinite(order)):
+            a_order = np.mean(order[np.isfinite(order)])
         else:
             a_order = np.nan
         return a_order
@@ -493,7 +494,7 @@ class AtomicStructure(System):
             weightSum = 0
             for symbol1 in uniqueSimbols:
                 for symbol2 in uniqueSimbols:
-                    weight = self.composition[symbol1] * self.composition[symbol2]
+                    weight = self.composition.elementalComposition[symbol1] * self.composition.elementalComposition[symbol2]
                     self._fingerprintWeights[(symbol1, symbol2)] = weight
                     weightSum += weight
             for key in self._fingerprintWeights.keys():
@@ -953,7 +954,7 @@ class AtomicStructure(System):
         del dct['_valenceElectrons']
         del dct['_mDM']
         if 'config' in dct:
-            if 'ionDistance' in dct['config']:
+            if 'ionDistances' in dct['config']:
                 dct['config']['ionDistances'] = {f'{s1} {s2}': value
                                                  for (s1, s2), value in dct['config']['ionDistances'].items()}
             if 'goodBonds' in dct['config']:

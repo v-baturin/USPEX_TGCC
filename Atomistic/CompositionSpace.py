@@ -163,7 +163,7 @@ class CompositionSpace(object):
             if self.minAt <= np.sum(numIons) <= self.maxAt:
                 return Composition(dict(zip(self.symbols, numIons)), self.moleculesTypeToFormula)
 
-    def findDesiredComposition(self, composition1: dict, composition2: dict, numIons_start: int,
+    def findDesiredComposition(self, composition1: dict, composition2: dict, numIons_start: np.ndarray,
                                debug: bool=False):
         """
         Find a composition that requires the least addition/deleting of atoms from child.
@@ -172,7 +172,7 @@ class CompositionSpace(object):
         :param composition1: first parent composition.
         :type composition2: dict
         :param composition2: second parent composition.
-        :type numIons_start: int
+        :type numIons_start: numpy.ndarray
         :param numIons_start: starting point for approximation.
         :type debug: bool
         :param debug: False by default. If set to True, use static values instead of random to reproduce results.

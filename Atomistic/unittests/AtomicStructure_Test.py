@@ -64,11 +64,11 @@ class AtomicStructure_Test(unittest.TestCase):
         self.diamond8 = Crystal(symbols=tmp.get_chemical_symbols(),
                                         scaled_positions=tmp.get_scaled_positions(),
                                         cell=tmp.get_cell())
-        self.assertTrue(self.diamond8.isGoodSystem)
+        self.assertTrue(self.diamond8.isGoodSystem())
 
     def test_problem_2(self):
         tmp = read('{}/dia_2x2x2.vasp'.format(PATH_WITH_TESTS))
         self.dia_2x2x2 = Crystal(symbols=tmp.get_chemical_symbols(),
                                          scaled_positions=tmp.get_scaled_positions(),
                                          cell=tmp.get_cell())
-        self.assertTrue(self.dia_2x2x2.isGoodSystem)
+        self.assertTrue(self.dia_2x2x2.isGoodSystem())
