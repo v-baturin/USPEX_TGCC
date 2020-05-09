@@ -1,6 +1,6 @@
 import numpy as np
 from collections import Counter
-from typing import Dict, Tuple
+from typing import Dict, Union
 
 
 class Composition(dict):
@@ -163,8 +163,8 @@ class CompositionSpace(object):
             if self.minAt <= np.sum(numIons) <= self.maxAt:
                 return Composition(dict(zip(self.symbols, numIons)), self.moleculesTypeToFormula)
 
-    def findDesiredComposition(self, composition1: dict, composition2: dict, numIons_start: np.ndarray,
-                               debug: bool=False):
+    def findDesiredComposition(self, composition1: Union[dict, Composition], composition2: Union[dict, Composition],
+                               numIons_start: np.ndarray, debug: bool=False):
         """
         Find a composition that requires the least addition/deleting of atoms from child.
 
