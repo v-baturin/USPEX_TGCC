@@ -51,6 +51,9 @@ class Crystal(AtomicStructure):
         :type kwargs: dict
         :param kwargs: additional arguments and keywords used to initialize the parent class AtomisticConfig.
         """
+        if 'pbc' in kwargs:
+            assert np.allclose(np.asarray(kwargs['pbc'], dtype=int), np.array([1, 1, 1]))
+            del kwargs['pbc']
         super().__init__(*args, pbc=[True, True, True], **kwargs)
         self.crystalConfig = {}
         if minVectorLength is not None:
@@ -213,3 +216,16 @@ class Crystal(AtomicStructure):
 
     def isGoodSystem(self):
         return super().isGoodSystem() and self.isGoodLattice()
+
+    def toDICT(self, old: bool = True) -> dict:
+        dct = super().toDICT(old)
+        if not old and self.crystalConfig:
+            dct['configuration']['crystal'] = self.crystalConfig
+        return dct
+
+    @classmethod
+    def fromDICT(cls, dct: dict, old: bool = True):
+        structure = super().fromDICT(dct, old)
+        if not old and 'configuration' in dct and 'crystal' in dct['configuration']:
+            structure.crystalConfig = dct['configuration']['crystal']
+        return structure
