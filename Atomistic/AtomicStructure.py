@@ -146,7 +146,8 @@ class AtomicStructure(System):
         self.energy = np.inf
         self.enthalpy = np.inf
         self._forces = None
-        self._pressureTensor = None
+        self._strains = None
+        self._stressTensor = None
         self._dielectricTensor = None
         self.bonds = None
 
@@ -699,12 +700,16 @@ class AtomicStructure(System):
         return None if self._forces is None else self._forces.copy()
 
     @property
-    def pressureTensor(self):
+    def strains(self):
+        return None if self._strains is None else self._strains.copy()
+
+    @property
+    def stressTensor(self):
         """
         :rtype: numpy array
-        :return: pressure tensor if it is calculated, else None
+        :return: stress tensor in GPa if it is calculated, else None
         """
-        return None if self._pressureTensor is None else self._pressureTensor.copy()
+        return None if self._stressTensor is None else self._stressTensor.copy()
 
     @property
     def covalentRadii(self):
@@ -945,10 +950,13 @@ class AtomicStructure(System):
                 del dct['_dielectricTensor']
             if self._forces is not None:
                 dct['forces'] = self._forces.tolist()
-            if self._pressureTensor is not None:
-                dct['pressureTensor'] = self._pressureTensor.tolist()
-                del dct['_pressureTensor']
-    
+            if self._stressTensor is not None:
+                dct['stressTensor'] = self._stressTensor.tolist()
+                del dct['_stressTensor']
+            if self._strains is not None:
+                dct['strains'] = self._strains.tolist()
+                del dct['_strains']
+
             del dct['_goodBonds']
             del dct['_valences']
             del dct['_valenceElectrons']
@@ -998,8 +1006,8 @@ class AtomicStructure(System):
                 dct['properties']['dielectricTensor'] = self._dielectricTensor.tolist()
             if self._forces is not None:
                 dct['properties']['forces'] = self._forces.tolist()
-            if self._pressureTensor is not None:
-                dct['properties']['pressureTensor'] = self._pressureTensor.tolist()
+            if self._stressTensor is not None:
+                dct['properties']['stressTensor'] = self._stressTensor.tolist()
 
         return dct
 
@@ -1044,12 +1052,15 @@ class AtomicStructure(System):
             if 'dielectricTensor' in dct:
                 newStructure._dielectricTensor = dct['dielectricTensor']
                 del dct['dielectricTensor']
-            if 'pressureTensor' in dct:
-                newStructure._pressureTensor = np.asarray(dct['pressureTensor'])
-                del dct['pressureTensor']
+            if 'stressTensor' in dct:
+                newStructure._stressTensor = np.asarray(dct['stressTensor'])
+                del dct['stressTensor']
             if 'forces' in dct:
                 newStructure._forces = np.asarray(dct['forces'])
                 del dct['forces']
+            if 'strains' in dct:
+                newStructure._strains = np.asarray(dct['strains'])
+                del dct['strains']
             dct['_goodBonds'] = {}
             dct['_valences'] = {}
             dct['_valenceElectrons'] = {}
@@ -1085,8 +1096,8 @@ class AtomicStructure(System):
                     newStructure.enthalpy = dct['properties']['enthalpy']
                 if 'dielectricTensor' in dct['properties']:
                     newStructure._dielectricTensor = dct['properties']['dielectricTensor']
-                if 'pressureTensor' in dct['properties']:
-                    newStructure._pressureTensor = dct['properties']['pressureTensor']
+                if 'stressTensor' in dct['properties']:
+                    newStructure._stressTensor = dct['properties']['stressTensor']
                 if 'forces' in dct['properties']:
                     newStructure._forces = dct['properties']['forces']
         return newStructure
