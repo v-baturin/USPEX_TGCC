@@ -146,6 +146,7 @@ class AtomicStructure(System):
         self.energy = np.inf
         self.enthalpy = np.inf
         self._forces = None
+        self._strains = None
         self._pressureTensor = None
         self._dielectricTensor = None
         self.bonds = None
@@ -948,6 +949,9 @@ class AtomicStructure(System):
         if self._pressureTensor is not None:
             dct['pressureTensor'] = self._pressureTensor.tolist()
             del dct['_pressureTensor']
+        if self._strains is not None:
+            dct['strains'] = self._strains.tolist()
+            del dct['_strains']
 
         del dct['_goodBonds']
         del dct['_valences']
@@ -1018,6 +1022,10 @@ class AtomicStructure(System):
         if 'forces' in dct:
             newStructure._forces = np.asarray(dct['forces'])
             del dct['forces']
+        if 'strains' in dct:
+            newStructure._strains = np.asarray(dct['strains'])
+            del dct['strains']
+
         dct['_goodBonds'] = {}
         dct['_valences'] = {}
         dct['_valenceElectrons'] = {}
