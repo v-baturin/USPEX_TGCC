@@ -916,64 +916,96 @@ class AtomicStructure(System):
         """
         return self.isGoodDistances()
 
-    def toDICT(self) -> dict:
+    def toDICT(self, old: bool = True) -> dict:
         """
         Create a dictionary representation of the structure.
 
         :rtype: dict
         :return: Dictionary representing the structure.
         """
-        dct = super().toDICT()
-        dct['symbols'] = self.atoms.get_chemical_symbols()
-        dct['molecules'] = self._molecules
-        del dct['_molecules']
-        dct['molSymbols'] = self.molSymbol
-        del dct['molSymbol']
-        dct['molFormats'] = self.format
-        del dct['format']
-        dct['molFlexDihedrals'] = self.flex_dihedral
-        del dct['flex_dihedral']
-        dct['cell'] = self.atoms.get_cell().tolist()
-        dct['positions'] = self.atoms.get_positions().tolist()
-        dct['pbc'] = self.get_pbc().tolist()
-        charges = self.atoms.get_initial_charges()
-        if np.any(charges):
-            dct['charges'] = charges.tolist()
-        del dct['atoms']
-        if self._dielectricTensor is not None:
-            dct['dielectricTensor'] = self._dielectricTensor.tolist()
-            del dct['_dielectricTensor']
-        if self._forces is not None:
-            dct['forces'] = self._forces.tolist()
-        if self._pressureTensor is not None:
-            dct['pressureTensor'] = self._pressureTensor.tolist()
-            del dct['_pressureTensor']
+        if old:
+            dct = super().toDICT()
+            dct['symbols'] = self.atoms.get_chemical_symbols()
+            dct['molecules'] = self._molecules
+            del dct['_molecules']
+            dct['molSymbols'] = self.molSymbol
+            del dct['molSymbol']
+            dct['molFormats'] = self.format
+            del dct['format']
+            dct['molFlexDihedrals'] = self.flex_dihedral
+            del dct['flex_dihedral']
+            dct['cell'] = self.atoms.get_cell().tolist()
+            dct['positions'] = self.atoms.get_positions().tolist()
+            dct['pbc'] = self.get_pbc().tolist()
+            charges = self.atoms.get_initial_charges()
+            if np.any(charges):
+                dct['charges'] = charges.tolist()
+            del dct['atoms']
+            if self._dielectricTensor is not None:
+                dct['dielectricTensor'] = self._dielectricTensor.tolist()
+                del dct['_dielectricTensor']
+            if self._forces is not None:
+                dct['forces'] = self._forces.tolist()
+            if self._pressureTensor is not None:
+                dct['pressureTensor'] = self._pressureTensor.tolist()
+                del dct['_pressureTensor']
+    
+            del dct['_goodBonds']
+            del dct['_valences']
+            del dct['_valenceElectrons']
+            del dct['_mDM']
+            if 'config' in dct:
+                if 'ionDistances' in dct['config']:
+                    dct['config']['ionDistances'] = {f'{s1} {s2}': value
+                                                     for (s1, s2), value in dct['config']['ionDistances'].items()}
+                if 'goodBonds' in dct['config']:
+                    dct['config']['goodBonds'] = {f'{s1} {s2}': value
+                                                  for (s1, s2), value in dct['config']['goodBonds'].items()}
+    
+            # TODO refactor this
+            if 'bonds' in dct:
+                del dct['bonds']
+            if 'f' in dct:
+                del dct['f']
+            if 'softmodes' in dct:
+                del dct['softmodes']
+            if 'lastUsedModeIter' in dct:
+                del dct['lastUsedModeIter']
+        else:
+            dct = {}
+            dct['structural'] = {}
+            dct['structural']['symbols'] = self.atoms.get_chemical_symbols()
+            dct['structural']['cell'] = self.atoms.get_cell().tolist()
+            dct['structural']['positions'] = self.atoms.get_positions().tolist()
+            dct['structural']['pbc'] = self.get_pbc().tolist()
+            if self.isMolecular:
+                dct['structural']['molecules'] = {}
+                dct['structural']['molecules']['symbols'] = copy.copy(self.molSymbol)
+                dct['structural']['molecules']['indices'] = copy.deepcopy(self._molecules)
+                dct['structural']['molecules']['length_angle_dihedral_reference_atoms'] = copy.deepcopy(self.format)
+                dct['structural']['molecules']['flexible_dihedrals'] = copy.deepcopy(self.flex_dihedral)
+            config = copy.deepcopy(self.config)
+            if 'ionDistances' in config:
+                config['ionDistances'] = {f'{s1} {s2}': value
+                                                 for (s1, s2), value in config['ionDistances'].items()}
+            if 'goodBonds' in config:
+                config['goodBonds'] = {f'{s1} {s2}': value
+                                              for (s1, s2), value in config['goodBonds'].items()}
+            dct['configuration'] = config
+            dct['properties'] = {}
+            if self.enthalpy != np.inf:
+                dct['properties']['enthalpy'] = self.enthalpy
+            if self._dielectricTensor is not None:
+                dct['properties']['dielectricTensor'] = self._dielectricTensor.tolist()
+            if self._forces is not None:
+                dct['properties']['forces'] = self._forces.tolist()
+            if self._pressureTensor is not None:
+                dct['properties']['pressureTensor'] = self._pressureTensor.tolist()
 
-        del dct['_goodBonds']
-        del dct['_valences']
-        del dct['_valenceElectrons']
-        del dct['_mDM']
-        if 'config' in dct:
-            if 'ionDistances' in dct['config']:
-                dct['config']['ionDistances'] = {f'{s1} {s2}': value
-                                                 for (s1, s2), value in dct['config']['ionDistances'].items()}
-            if 'goodBonds' in dct['config']:
-                dct['config']['goodBonds'] = {f'{s1} {s2}': value
-                                              for (s1, s2), value in dct['config']['goodBonds'].items()}
-
-        # TODO refactor this
-        if 'bonds' in dct:
-            del dct['bonds']
-        if 'f' in dct:
-            del dct['f']
-        if 'softmodes' in dct:
-            del dct['softmodes']
-        if 'lastUsedModeIter' in dct:
-            del dct['lastUsedModeIter']
         return dct
 
     @classmethod
-    def fromDICT(cls, dct: dict):
+    def fromDICT(cls, dct: dict, old: bool = True):
         """
         Reconstruct :class:`AtomicStructure` from its dictionary representation.
 
@@ -982,55 +1014,82 @@ class AtomicStructure(System):
         :rtype: type corresponding to this classmethod. (see Examples)
         :return: new created structure.
         """
-        dct = copy.copy(dct)
-        newStructure = cls(symbols=dct['symbols'])
-        del dct['symbols']
-        if 'cell' in dct:
-            newStructure.set_cell(dct['cell'])
-            del dct['cell']
-        newStructure.set_positions(dct['positions'])
-        del dct['positions']
-        newStructure.set_pbc(dct['pbc'])
-        del dct['pbc']
-        assert len(dct['molecules']) == len(dct['molFormats']) and \
-               len(dct['molecules']) == len(dct['molFlexDihedrals']) and \
-               len(dct['molecules']) == len(dct['molSymbols']), \
-            f'Molecule specification mismatch:' \
-            f' molecules, formats, flex_dihedrals, symbols:' \
-            f' {len(dct["molecules"])}, {len(dct["molFormats"])},' \
-            f' {len (dct["molFlexDihedrals"])}, {len(dct["molSymbols"])}.'
-        for molecule, frmt, flex_dihedral, molSymbol in zip(dct['molecules'], dct['molFormats'],
-                                                            dct['molFlexDihedrals'], dct['molSymbols']):
-            newStructure.merge(molecule, frmt, flex_dihedral, molSymbol)
-        del dct['molecules']
-        del dct['molFormats']
-        del dct['molFlexDihedrals']
-        del dct['molSymbols']
-        if 'charges' in dct:
-            newStructure.set_initial_charges(dct['charges'])
-            del dct['charges']
-        if 'dielectricTensor' in dct:
-            newStructure._dielectricTensor = dct['dielectricTensor']
-            del dct['dielectricTensor']
-        if 'pressureTensor' in dct:
-            newStructure._pressureTensor = np.asarray(dct['pressureTensor'])
-            del dct['pressureTensor']
-        if 'forces' in dct:
-            newStructure._forces = np.asarray(dct['forces'])
-            del dct['forces']
-        dct['_goodBonds'] = {}
-        dct['_valences'] = {}
-        dct['_valenceElectrons'] = {}
-        dct['_mDM'] = None
-        if 'config' in dct:
-            if 'ionDistances' in dct['config']:
-                dct['config']['ionDistances'] = {tuple(x.split()): value
-                                                 for x, value in dct['config']['ionDistances'].items()}
-            if 'goodBonds' in dct['config']:
-                dct['config']['goodBonds'] = {tuple(x.split()): value
-                                              for x, value in dct['config']['goodBonds'].items()}
+        if old:
+            dct = copy.copy(dct)
+            newStructure = cls(symbols=dct['symbols'])
+            del dct['symbols']
+            if 'cell' in dct:
+                newStructure.set_cell(dct['cell'])
+                del dct['cell']
+            newStructure.set_positions(dct['positions'])
+            del dct['positions']
+            newStructure.set_pbc(dct['pbc'])
+            del dct['pbc']
+            assert len(dct['molecules']) == len(dct['molFormats']) and \
+                   len(dct['molecules']) == len(dct['molFlexDihedrals']) and \
+                   len(dct['molecules']) == len(dct['molSymbols']), \
+                f'Molecule specification mismatch:' \
+                f' molecules, formats, flex_dihedrals, symbols:' \
+                f' {len(dct["molecules"])}, {len(dct["molFormats"])},' \
+                f' {len (dct["molFlexDihedrals"])}, {len(dct["molSymbols"])}.'
+            for molecule, frmt, flex_dihedral, molSymbol in zip(dct['molecules'], dct['molFormats'],
+                                                                dct['molFlexDihedrals'], dct['molSymbols']):
+                newStructure.merge(molecule, frmt, flex_dihedral, molSymbol)
+            del dct['molecules']
+            del dct['molFormats']
+            del dct['molFlexDihedrals']
+            del dct['molSymbols']
+            if 'charges' in dct:
+                newStructure.set_initial_charges(dct['charges'])
+                del dct['charges']
+            if 'dielectricTensor' in dct:
+                newStructure._dielectricTensor = dct['dielectricTensor']
+                del dct['dielectricTensor']
+            if 'pressureTensor' in dct:
+                newStructure._pressureTensor = np.asarray(dct['pressureTensor'])
+                del dct['pressureTensor']
+            if 'forces' in dct:
+                newStructure._forces = np.asarray(dct['forces'])
+                del dct['forces']
+            dct['_goodBonds'] = {}
+            dct['_valences'] = {}
+            dct['_valenceElectrons'] = {}
+            dct['_mDM'] = None
+            if 'config' in dct:
+                if 'ionDistances' in dct['config']:
+                    dct['config']['ionDistances'] = {tuple(x.split()): value
+                                                     for x, value in dct['config']['ionDistances'].items()}
+                if 'goodBonds' in dct['config']:
+                    dct['config']['goodBonds'] = {tuple(x.split()): value
+                                                  for x, value in dct['config']['goodBonds'].items()}
 
-        newStructure.__dict__.update(dct)
+            newStructure.__dict__.update(dct)
+        else:
+            newStructure = cls(symbols = dct['structural']['symbols'], cell = dct['structural']['cell'],
+                               positions = dct['structural']['positions'], pbc= dct['structural']['pbc'])
+            if 'molecules' in dct['structural']:
+                for symbol, indices, format, flex_dihedrals in zip(dct['structural']['molecules']['symbols'],
+                                                                   dct['structural']['molecules']['indices'],
+                                                                   dct['structural']['molecules']['length_angle_dihedral_reference_atoms'],
+                                                                   dct['structural']['molecules']['flexible_dihedrals']):
+                    newStructure.merge(indices, format, flex_dihedrals, symbol)
+            if 'configuration' in dct:
+                newStructure.config = dct['configuration']
+                if 'ionDistances' in newStructure.config:
+                    newStructure.config['ionDistances'] = {tuple(x.split()): value
+                                                           for x, value in newStructure.config['ionDistances'].items()}
+                if 'goodBonds' in newStructure.config:
+                    newStructure.config['goodBonds'] = {tuple(x.split()): value
+                                                        for x, value in newStructure.config['goodBonds'].items()}
+            if 'properties' in dct:
+                if 'enthalpy' in dct['properties']:
+                    newStructure.enthalpy = dct['properties']['enthalpy']
+                if 'dielectricTensor' in dct['properties']:
+                    newStructure._dielectricTensor = dct['properties']['dielectricTensor']
+                if 'pressureTensor' in dct['properties']:
+                    newStructure._pressureTensor = dct['properties']['pressureTensor']
+                if 'forces' in dct['properties']:
+                    newStructure._forces = dct['properties']['forces']
         return newStructure
 
     @System.isBad.setter
