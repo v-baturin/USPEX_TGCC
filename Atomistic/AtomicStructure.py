@@ -147,7 +147,7 @@ class AtomicStructure(System):
         self.enthalpy = np.inf
         self._forces = None
         self._strains = None
-        self._pressureTensor = None
+        self._stressTensor = None
         self._dielectricTensor = None
         self.bonds = None
 
@@ -701,12 +701,16 @@ class AtomicStructure(System):
         return None if self._forces is None else self._forces.copy()
 
     @property
-    def pressureTensor(self):
+    def strains(self):
+        return None if self._strains is None else self._strains.copy()
+
+    @property
+    def stressTensor(self):
         """
         :rtype: numpy array
-        :return: pressure tensor if it is calculated, else None
+        :return: stress tensor in GPa if it is calculated, else None
         """
-        return None if self._pressureTensor is None else self._pressureTensor.copy()
+        return None if self._stressTensor is None else self._stressTensor.copy()
 
     @property
     def covalentRadii(self):
@@ -946,9 +950,9 @@ class AtomicStructure(System):
             del dct['_dielectricTensor']
         if self._forces is not None:
             dct['forces'] = self._forces.tolist()
-        if self._pressureTensor is not None:
-            dct['pressureTensor'] = self._pressureTensor.tolist()
-            del dct['_pressureTensor']
+        if self._stressTensor is not None:
+            dct['stressTensor'] = self._stressTensor.tolist()
+            del dct['_stressTensor']
         if self._strains is not None:
             dct['strains'] = self._strains.tolist()
             del dct['_strains']
@@ -1016,9 +1020,9 @@ class AtomicStructure(System):
         if 'dielectricTensor' in dct:
             newStructure._dielectricTensor = dct['dielectricTensor']
             del dct['dielectricTensor']
-        if 'pressureTensor' in dct:
-            newStructure._pressureTensor = np.asarray(dct['pressureTensor'])
-            del dct['pressureTensor']
+        if 'stressTensor' in dct:
+            newStructure._stressTensor = np.asarray(dct['stressTensor'])
+            del dct['stressTensor']
         if 'forces' in dct:
             newStructure._forces = np.asarray(dct['forces'])
             del dct['forces']
