@@ -225,7 +225,7 @@ class Crystal(AtomicStructure):
 
     @classmethod
     def fromDICT(cls, dct: dict, old: bool = True):
-        structure = super().fromDICT(dct, bool)
+        structure = super().fromDICT(dct, old)
         if not old and 'configuration' in dct and 'crystal' in dct['configuration']:
             structure.crystalConfig = dct['configuration']['crystal']
         return structure

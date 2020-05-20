@@ -299,8 +299,7 @@ class AtomicStructure(System):
         inds = list(range(len(self.chemicalSymbols)))
         inds = sorted(list(set(inds) - set(key)))
 
-        for j in key:
-            del self.atoms[j]
+        del self.atoms[key]
         del self._molecules[i]
         del self.format[i]
         del self.flex_dihedral[i]
