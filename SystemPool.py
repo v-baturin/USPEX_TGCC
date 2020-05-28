@@ -167,6 +167,3 @@ class SystemPool(object):
         """
         system.ID = self._newID
         self._newID += 1
-
-        system.__copy__ = system.copy
-        system.__hash__ = system._systemHash

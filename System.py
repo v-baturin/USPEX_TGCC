@@ -89,14 +89,3 @@ class System(object):
         newStructure = cls()
         newStructure.__dict__.update(copy(dct))
         return newStructure
-
-    def copy(self):
-        """
-        Method which returns a copy of the system.
-        """
-        dct = self.toDICT()
-        del dct['ID']
-        return type(self).fromDICT(dct)
-
-    def _systemHash(self):
-        return hash(self.ID)
