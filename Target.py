@@ -53,6 +53,7 @@ class Target(object):
         :param kwargs: parameters for initializing config.
         """
         targetDef = SimpleNamespace(**self.knownTargetTypes[type])
+        self.systemType = targetDef.systemType
         self.config = kwargs['config']
         self.pool = targetDef.poolType(**kwargs['pool'])
         

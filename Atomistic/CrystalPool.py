@@ -32,7 +32,7 @@ class CrystalPool(SystemPool):
     ANTISEEDS_MAX = 0.005
     ANTISEEDS_SIGMA = 0.001
     MAX_FORMATION_ENERGY = 0.5
-    DEFAULT_FITNESS = [('formationEnergy', 'min')]
+    DEFAULT_FITNESS = [('formationEnergy', 'min_antiseeds')]
 
     def __init__(self, **kwargs):
         """
