@@ -956,6 +956,30 @@ class AtomicStructure(System):
         """
         return self.isGoodDistances()
 
+    @staticmethod
+    def determineMostDiverse(population : list, howManyDiverse: int, tolerance: float):
+        deltaTol = tolerance / 2
+        while deltaTol > 0.000001:
+            mostDiverse = []
+            for system in population:
+                goodSystem = True
+                for ref_system in mostDiverse:
+                    dist = cosine_distance(system.fingerprint, ref_system.fingerprint,
+                                           system.fingerprintWeights, ref_system.fingerprintWeights)
+                    if dist < tolerance:
+                        goodSystem = False
+                        break
+                if goodSystem:
+                    mostDiverse.append(system)
+            if len(mostDiverse) < howManyDiverse:
+                tolerance -= deltaTol
+            elif len(mostDiverse) > howManyDiverse:
+                tolerance += deltaTol
+            else:
+                break
+            deltaTol /= 2
+        return mostDiverse
+
     def toDICT(self, old: bool = True) -> dict:
         """
         Create a dictionary representation of the structure.

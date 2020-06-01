@@ -89,3 +89,7 @@ class System(object):
         newStructure = cls()
         newStructure.__dict__.update(copy(dct))
         return newStructure
+
+    @staticmethod
+    def determineMostDiverse(population : list, howManyDiverse: int, tolerance: float):
+        return []

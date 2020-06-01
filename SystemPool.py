@@ -8,6 +8,7 @@ Contains configuration of such space, parameters of what we are searching for
 """
 
 from typing import List, Tuple
+import numpy as np
 
 from .paretoRanking import paretoRanking
 
@@ -118,6 +119,9 @@ class SystemPool(object):
         """
         return self.best[_fitnessRepresentation(fitness)]
 
+    def antiseedsCorrection(self, system) -> float:
+        return 0
+
     def sort(self, fitness: List[Tuple[str, str]], population: list):
         """
         Method for sorting our population by fitness.
@@ -136,10 +140,19 @@ class SystemPool(object):
             for attribute, direction in fitness:
                 if direction == 'min':
                     factor = 1
+                    correction = 0
                 elif direction == 'max':
                     factor = -1
+                    correction = 0
+                elif direction == 'min_antiseeds':
+                    factor = 1
+                    correction = self.antiseedsCorrection(system)
+                elif direction == 'max_antiseeds':
+                    factor = -1
+                    correction = self.antiseedsCorrection(system)
                 else:
                     factor = 1
+                    correction = 0
                     logger.debug('Incorrect optimization deirection "{}" using default "min"'.format(direction))
                 if hasattr(self, attribute):
                     value = factor * getattr(self, attribute)(system)
@@ -149,11 +162,16 @@ class SystemPool(object):
                     value = 0
                     logger.debug('Neither target {} nor system {} has attribute {}'
                                  ' which is set as fitness.'.format(self.__name__, system.ID, attribute))
-                systemFitnesses.append(value)
+                systemFitnesses.append((value, correction))
             populationFitnesses.append(systemFitnesses)
 
         logger.debug('Fitnesses of this population are: {}'.format(populationFitnesses))
-        ranking = paretoRanking(populationFitnesses)
+        populationFitnesses = np.asarray(populationFitnesses)
+        populationFitnessesValues = populationFitnesses[:,:,0]
+        populationFitnessesCorrections = populationFitnesses[:, :, 1]
+        populationFitnessesValues += (populationFitnessesValues.mean(axis = 0) -
+                                      populationFitnessesValues.min(axis = 0)).reshape((1,-1)) * populationFitnessesCorrections
+        ranking = paretoRanking(populationFitnessesValues.tolist())
         return [[population[index] for index in front] for front in ranking]
         # uniqueFinesses, ranking = np.unique(populationFitnesses, return_inverse=True)
         # return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueFinesses))]
