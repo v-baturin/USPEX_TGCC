@@ -649,7 +649,7 @@ class AtomicStructure(System):
         :rtype: numpy array
         :return: array of molecular centers relative coordinates.
         """
-        return [molecule.get_center_of_mass(scaled=True) for molecule in self.molecules]
+        return [molecule.coordinates.mean(axis=0) for molecule in self.molecules]
 
     @property
     def lattice(self):
@@ -844,6 +844,42 @@ class AtomicStructure(System):
         :param displacement: array of scaled distances.
         """
         self.atoms.translate(np.dot(displacement, self.atoms.cell))
+
+    def decomposeDisplacements(self, displacements: np.ndarray):
+        """
+        Decompose atomic displacements into molecular translations and rotations and intramolecular atomic displacements.
+        :type displacements: numpy array N*3
+        :param displacements: array of atomic displacements, where N is number of atoms in structure.
+        :rtype: List[Tuple[vector, vector, array of vectors]]
+        :return: List of tuples for each molecule with translation vector, rotation vector and array of intramolecular
+        atomic displacements.
+        """
+        assert displacements.shape == (len(self), 3)
+        molecularDispacements = []
+        for molecule, inds in zip(self.molecules, self._molecules):
+            if len(molecule) > 1:
+                atomicDisplacements = displacements[inds]
+                centerCoordinates = molecule.coordinates.mean(axis=0)
+                atomicCoordinates = molecule.coordinates - centerCoordinates
+                inertia = np.linalg.norm(atomicCoordinates) ** 2
+                atomicDistances = np.linalg.norm(atomicCoordinates, axis=1)
+                nonCentralAtoms = np.nonzero(atomicDistances > 0.001)
+                centralAtoms = np.nonzero(atomicDistances <= 0.001)
+                atomicCoordinatesNonCentral = atomicCoordinates[nonCentralAtoms]
+                atomicDistancesNonCentral = atomicDistances[nonCentralAtoms]
+                atomicDisplacementsNonCentral = atomicDisplacements[nonCentralAtoms]
+                atomicNormalsNonCentral = atomicCoordinatesNonCentral / atomicDistancesNonCentral.reshape((-1,1))
+                translation = (np.sum(np.sum(atomicDisplacementsNonCentral * atomicNormalsNonCentral, axis=1).reshape((-1,1))
+                                      * atomicNormalsNonCentral, axis=0) +
+                               np.sum(atomicDisplacements[centralAtoms], axis=0)) / len(molecule)
+                rotation = np.sum(np.cross(atomicDisplacements, atomicCoordinates), axis=0) / inertia
+                atomicDisplacements -= translation.reshape((1,3)) + np.cross(atomicCoordinates, rotation.reshape((1,3)))
+            else:
+                translation = displacements[inds]
+                rotation = np.array([0., 0., 0.])
+                atomicDisplacements = np.array([[0.,0.,0.]])
+            molecularDispacements.append((translation, rotation, atomicDisplacements))
+        return molecularDispacements
 
     def isGoodDistances(self, symbols: list = None, minDistMatrix: np.ndarray = None) -> bool:
         """

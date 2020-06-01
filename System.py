@@ -93,14 +93,3 @@ class System(object):
     @staticmethod
     def determineMostDiverse(population : list, howManyDiverse: int, tolerance: float):
         return []
-
-    def copy(self):
-        """
-        Method which returns a copy of the system.
-        """
-        dct = self.toDICT()
-        del dct['ID']
-        return type(self).fromDICT(dct)
-
-    def _systemHash(self):
-        return hash(self.ID)
