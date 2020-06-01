@@ -10,7 +10,9 @@ Class for AtomicStricture testing
 import unittest
 import os
 import json
+import toml
 from ase.io import read
+import numpy as np
 
 
 from ..Crystal import Crystal
@@ -72,3 +74,15 @@ class AtomicStructure_Test(unittest.TestCase):
                                          scaled_positions=tmp.get_scaled_positions(),
                                          cell=tmp.get_cell())
         self.assertTrue(self.dia_2x2x2.isGoodSystem())
+
+    def test_decomposeDisplacemants_atomic(self):
+        with open(os.path.join(PATH_WITH_TESTS, 'system1.toml'), 'rt') as f:
+            repr1 = toml.load(f)
+        system1 = Crystal.fromDICT(repr1, old = False)
+        atomicDisplacemants = np.random.random((len(system1),3))
+        molecularDisplacemants = system1.decomposeDisplacements(atomicDisplacemants)
+        for atomicDisplacemant, molecularDisplacement in zip(atomicDisplacemants, molecularDisplacemants):
+            self.assertTrue(np.allclose(atomicDisplacemant, molecularDisplacement[0]))
+            self.assertTrue(np.allclose(molecularDisplacement[1], np.zeros(3)))
+            self.assertEqual(len(molecularDisplacement[2]), 1)
+            self.assertTrue(np.allclose(molecularDisplacement[2][0], np.zeros(3)))
