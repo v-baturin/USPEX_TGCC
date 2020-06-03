@@ -235,6 +235,7 @@ class AtomicStructure(System):
         self._valenceElectrons = {}
         self._mDM = None
         self._moleculeTypesToFormula = {}
+        self._fingerprint = {}
 
     def __add__(self, other):
         """
@@ -823,6 +824,7 @@ class AtomicStructure(System):
         :type kwargs: dict
         :param kwargs: additional arguments and keywords to be passed to :meth:`ase.Atoms.set_cell`.
         """
+        self._fingerprint = {}
         self.atoms.set_cell(cell, **kwargs)
         if optimize:
             self.optimizeLattice()
@@ -844,6 +846,29 @@ class AtomicStructure(System):
         :param displacement: array of scaled distances.
         """
         self.atoms.translate(np.dot(displacement, self.atoms.cell))
+        self._fingerprint = {}
+
+    def translate(self, displacement: np.ndarray):
+        """
+        Translate the structure by a given absolute displacement.
+
+        :type displacement: numpy array
+        :param displacement: array of absolute distances.
+        """
+        self.atoms.translate(displacement)
+        self._fingerprint = {}
+
+    def rotate(self, *args, **kwargs):
+        self._fingerprint = {}
+        return self.atoms.rotate(*args, **kwargs)
+
+    def set_positions(self, *args, **kwargs):
+        self._fingerprint = {}
+        return self.atoms.set_positions(*args, **kwargs)
+
+    def set_scaled_positions(self, *args, **kwargs):
+        self._fingerprint = {}
+        return self.atoms.set_scaled_positions(*args, **kwargs)
 
     def decomposeDisplacements(self, displacements: np.ndarray):
         """
