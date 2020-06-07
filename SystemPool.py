@@ -134,7 +134,8 @@ class SystemPool(object):
         :return: sorted population.
         """
         populationFitnesses = []
-
+        goodPopulation = []
+        badPopulation = []
         for system in population:
             systemFitnesses = []
             for attribute, direction in fitness:
@@ -163,7 +164,11 @@ class SystemPool(object):
                     logger.debug('Neither target {} nor system {} has attribute {}'
                                  ' which is set as fitness.'.format(self.__name__, system.ID, attribute))
                 systemFitnesses.append((value, correction))
-            populationFitnesses.append(systemFitnesses)
+            if np.all(np.isfinite(systemFitnesses)):
+                goodPopulation.append(system)
+                populationFitnesses.append(systemFitnesses)
+            else:
+                badPopulation.append(system)
 
         logger.debug('Fitnesses of this population are: {}'.format(populationFitnesses))
         populationFitnesses = np.asarray(populationFitnesses)
@@ -172,7 +177,7 @@ class SystemPool(object):
         populationFitnessesValues += (populationFitnessesValues.mean(axis = 0) -
                                       populationFitnessesValues.min(axis = 0)).reshape((1,-1)) * populationFitnessesCorrections
         ranking = paretoRanking(populationFitnessesValues.tolist())
-        return [[population[index] for index in front] for front in ranking]
+        return [[goodPopulation[index] for index in front] for front in ranking] + [badPopulation]
         # uniqueFinesses, ranking = np.unique(populationFitnesses, return_inverse=True)
         # return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueFinesses))]
 
