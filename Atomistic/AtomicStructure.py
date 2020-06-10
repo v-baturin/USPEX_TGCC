@@ -53,7 +53,7 @@ class AtomicStructure(System):
     Besides ase.Atoms functional class, it provides tools for creating and manipulating molecular structures.
     """
 
-    def __init__(self, molecules: list=[], optimizeLattice: bool=False, volumeType: str=None,
+    def __init__(self, molecules: list=[], optimizeLattice: bool=False, volumeType: float=None,
                  ionDistances: Dict[Tuple[str, str], float] = None,
                  goodBonds: Dict[Tuple[str, str], float] = None, valences: Dict[str, float] = None,
                  valenceElectrons: Dict[str, float] = None,
@@ -66,9 +66,13 @@ class AtomicStructure(System):
         :type optimizeLattice: bool
         :param optimizeLattice: If True we will call :meth:`optimizeLattice` right after construction. If False we wont.
         :type volumeType: str
+        :type volumeType: float
         :param volumeType:
-            'atom' or 'mol', one of the two possible environments for
-            volume estimation. The 'mol' environment is less dense.
+            range 0 to 1, 0 corresponds to pure atomic environment for
+            volume estimation, 1 to pure molecular one.
+            Molecular environment is less dense.
+            Intermediate value is a coefficient for molecular environment
+            in linear combination of the two.
         :type ionDistances: dict
         :param ionDistances:
             dictionary describing minimal interatomic distances.
@@ -515,10 +519,10 @@ class AtomicStructure(System):
     @property
     def volumeType(self):
         """
-        :rtype: str
+        :rtype: float
         :return: 'atom' if volume estimation is supposed to be done assuming atomic environment, 'mol' if molecular.
         """
-        return self.config['volumeType'] if 'volumeType' in self.config else ('mol' if self.isMolecular else 'atom')
+        return self.config['volumeType'] if 'volumeType' in self.config else (0.5 if self.isMolecular else 0.0)
 
     @property
     def goodBonds(self):
@@ -587,7 +591,7 @@ class AtomicStructure(System):
                     minDistMatrix[(s2, s1)] = minDistMatrix[(s1, s2)]
                 elif (s2, s1) in minDistMatrix:
                     minDistMatrix[(s1, s2)] = minDistMatrix[(s2, s1)]
-                elif self.volumeType != 'mol':
+                elif self.volumeType == 0:
                     minDistMatrix[(s1, s2)] = minDistMatrix[(s2, s1)] = min(0.22 * (radii[s1] + radii[s2]), 1.2)
                 else:
                     minDistMatrix[(s1, s2)] = minDistMatrix[(s2, s1)] = 0.45 * (radii[s1] + radii[s2])

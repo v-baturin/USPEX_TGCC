@@ -64,13 +64,13 @@ def arange(start, end, step):
     return values_list
 
 
-def calcVolume(targetPress: float, atomType: int, systemType: str = 'atom'):    # Returns targetVolume
+def calcVolumePure(targetPress: float, atomType, systemType: str = 'atom'):    # Returns targetVolume
     """
     The function calculates a volume of a single element/molecule at the target pressure.
 
     :type targetPress: float
     :param targetPress: target pressure.
-    :type atomType: int
+    :type atomType: str
     :param atomType: types of atoms;
     :type systemType: str
     :param systemType: molecular or atomic system.
@@ -80,7 +80,7 @@ def calcVolume(targetPress: float, atomType: int, systemType: str = 'atom'):    
 
     moleculeType = [1, 6, 7, 8, 9, 15, 16, 17, 33, 34, 35, 52, 53]
 
-    if atomType in moleculeType and systemType == 'mol':
+    if Element(atomType).z in moleculeType and systemType == 'mol':
         #             atomType   B0       B0'  V at 0GPa  V at 500GPa
         fitParameter = [
                         [  1,   8.937200,  4.77840,   7.0100,   1.1796],
@@ -225,57 +225,44 @@ def calcVolume(targetPress: float, atomType: int, systemType: str = 'atom'):    
     return targetVolume
 
 
-def calcDefaultVolume(numIons: list, atomType: list, pressure: float, isMol: bool):
+def calcVolume(targetPress: float, atomType, volumeType = 0):    # Returns targetVolume
     """
-    The function calculates a volume of the investigated atomic/molecular system at the target pressure.
+    The function calculates a volume of a single element/molecule at the target pressure.
 
-    :type numIons: list
-    :param numIons: number of atoms of each type.
-    :type atomType: list
-    :param atomType: types of atoms.
-    :type pressure: float
-    :param pressure: pressure under system.
-    :type isMol: bool
-    :param isMol: molecular or atomic system.
+    :type targetPress: float
+    :param targetPress: target pressure.
+    :type atomType: str
+    :param atomType: types of atoms;
+    :type volumeType: float
+    :param volumeType:
+        range 0 to 1, 0 corresponds to pure atomic environment for
+        volume estimation, 1 to pure molecular one.
+        Molecular environment is less dense.
+        Intermediate value is a coefficient for molecular environment
+        in linear combination of the two.
     :rtype: float
-    :return: volume of the system.
+    :return: volume of the element or molecule.
     """
 
-    assert all([isinstance(x, str) for x in atomType])
+    return (     volumeType  * calcVolumePure(targetPress, atomType, 'atom') +
+            (1 - volumeType) * calcVolumePure(targetPress, atomType, 'mol')   )
 
-    moleculeType = [1, 6, 7, 8, 9, 15, 16, 17, 33, 34, 35, 52, 53]
-    
-    vol = 0.0
-    for i, atomType_i in enumerate(atomType):
-        if atomType_i in moleculeType and isMol:
-            atomicVolume_i = calcVolume(pressure, atomType_i, 'mol')
-        else:
-            atomicVolume_i = calcVolume(pressure, atomType_i, 'atom')
-        vol += numIons[i] * atomicVolume_i
-    
-    return vol
-
-def calcVolumeForComposition(composition: Composition, externalPressure = 0.0001, volumeType = 'atom', **kwargs):
+def calcVolumeForComposition(composition: Composition, externalPressure = 0.0001, volumeType = 0, **kwargs):
     """
     The function calculates a volume of the given composition at the target pressure.
     :type composition: Composition
     :param composition: Composition for which the volume is to be estimated.
     :type externalPressure: float
     :param externalPressure: External pressure for this structure in GPa.
-    :type volumeType: str
+    :type volumeType: float
     :param volumeType:
-        'atom' or 'mol', one of the two possible environments for
-        volume estimation. The 'mol' environment is less dense.
+        range 0 to 1, 0 corresponds to pure atomic environment for
+        volume estimation, 1 to pure molecular one.
+        Molecular environment is less dense.
+        Intermediate value is a coefficient for molecular environment
+        in linear combination of the two.
     :rtype: float
     :return: volume
     """
-    volume = 0
-    for symbol, amount in composition.elementalComposition.items():
-        volume += calcVolume(externalPressure, symbol, volumeType) * amount
-    return volume
-
-#-------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    pass
+    return sum(calcVolume(externalPressure, symbol, volumeType) * amount
+               for symbol, amount in composition.elementalComposition.items())
