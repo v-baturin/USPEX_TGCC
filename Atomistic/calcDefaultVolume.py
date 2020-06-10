@@ -64,7 +64,7 @@ def arange(start, end, step):
     return values_list
 
 
-def calcVolume(targetPress: float, atomType: int, systemType: str):    # Returns targetVolume
+def calcVolume(targetPress: float, atomType: int, systemType: str = 'atom'):    # Returns targetVolume
     """
     The function calculates a volume of a single element/molecule at the target pressure.
 
