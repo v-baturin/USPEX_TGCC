@@ -44,6 +44,7 @@ class CrystalPool(SystemPool):
         self._convexHull = ConvexHull(self.compositionSpace)
         self.extendedConvexHull = []
         self._antiseeds = {}
+        self._antiseedsCorrections = {}
 
     def update(self, population: list):
         """
@@ -78,6 +79,18 @@ class CrystalPool(SystemPool):
                 self._antiseeds[system.ID].append(sigma)
             else:
                 self._antiseeds[system.ID] = [sigma]
+            if system.ID in self._antiseedsCorrections:
+                for ref_system in population:
+                    dist = cosine_distance(ref_system.fingerprint, system.fingerprint,
+                                           ref_system.fingerprintWeights, system.fingerprintWeights)
+                    self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))
+            else:
+                self._antiseedsCorrections[system.ID] = 0
+                for ref_system in self.uniqueSystems:
+                    dist = cosine_distance(ref_system.fingerprint, system.fingerprint,
+                                           ref_system.fingerprintWeights, system.fingerprintWeights)
+                    self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))
+
 
     def cleanDuplicates(self, population: list):
         """
@@ -114,11 +127,4 @@ class CrystalPool(SystemPool):
         return self._convexHull[system]
 
     def antiseedsCorrection(self, system) -> float:
-        correction = 0
-        for ref_system in self.uniqueSystems:
-            if ref_system.ID in self._antiseeds:
-                for sigma in self._antiseeds[ref_system.ID]:
-                    dist = cosine_distance(ref_system.fingerprint, system.fingerprint,
-                                           ref_system.fingerprintWeights, system.fingerprintWeights)
-                    correction += np.exp(-dist**2/(2*sigma**2))
-        return self.ANTISEEDS_MAX*correction
+        return self.ANTISEEDS_MAX*self._antiseedsCorrections[system.ID]
