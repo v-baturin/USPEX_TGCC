@@ -122,6 +122,9 @@ class SystemPool(object):
     def antiseedsCorrection(self, system) -> float:
         return 0
 
+    def payAntiseeds(self, population):
+        pass
+
     def sort(self, fitness: List[Tuple[str, str]], population: list):
         """
         Method for sorting our population by fitness.
