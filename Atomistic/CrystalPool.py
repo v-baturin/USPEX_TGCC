@@ -102,7 +102,7 @@ class CrystalPool(SystemPool):
         else:
             return 0
 
-    def payAntiseeds(self, population):
+    def payPenalties(self, population):
         comb = list(combinations(population, 2))
         if comb:
             sigma = 0
