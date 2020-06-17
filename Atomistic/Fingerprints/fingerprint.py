@@ -14,11 +14,11 @@ from .local_order import local_order
 
 
 class Fingerprint:
-    def __init__(self, value : dict, weight):
+    def __init__(self, value : dict, weights):
         sizes = [len(v) for v in value.values()]
         assert len(sizes) > 0
         self._value = value
-        self._weight = weight
+        self._weights = weights
         self._size = sizes[0]
 
     @property
@@ -30,11 +30,11 @@ class Fingerprint:
         return self._size
 
     @property
-    def weight(self):
-        return self._weight
+    def weights(self):
+        return self._weights
 
 
-def fingerprintWeights(system):
+def fpWeights(system):
     '''
     :rtype: Dict[Tuple[str,str], float]
     :return: weights of fingerprints of each atom type pair to be used in cosine distance calculation.

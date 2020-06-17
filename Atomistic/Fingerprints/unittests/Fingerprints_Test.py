@@ -29,6 +29,8 @@ class Fingerprints_Test(unittest.TestCase):
         system2 = AtomicStructure(symbols = system2.get_chemical_symbols(),
                                   positions = system2.get_positions(),
                                   cell = system2.get_cell())
+        fp1 = system1.fingerprint
+        fp2 = system2.fingerprint
         system1.fingerprintTolerance = 1.0e-6
         self.assertTrue(system1 == system2)
 

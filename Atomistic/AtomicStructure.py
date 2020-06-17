@@ -30,7 +30,7 @@ from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
 from .Fingerprints.make_matrices import make_matrices
 from .Fingerprints.fingerprint import fingerprint, Fingerprint
-from .Fingerprints.fingerprint import fingerprintWeights
+from .Fingerprints.fingerprint import fpWeights
 from .Fingerprints.cosine_distance import cosine_distance
 from .Fingerprints.quasientropy import quasientropy
 from .Fingerprints.structure_order import structure_order
@@ -437,7 +437,7 @@ class AtomicStructure(System):
         self._order = order[revertIndices].tolist()
         n = len(uniqueSimbols)
         fp_value = {(s1,s2): fing[i*n+j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
-        self._fingerprint = Fingerprint(value=fp_value, weight=fingerprintWeights(self))
+        self._fingerprint = Fingerprint(value=fp_value, weights=fpWeights(self))
         self._atomFingerprint = [{s:atom_fing[i,j] for j, s in enumerate(uniqueSimbols)} for i in revertIndices]
 
     @property
