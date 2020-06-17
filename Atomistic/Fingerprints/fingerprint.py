@@ -13,6 +13,42 @@ from scipy.special import erf
 from .local_order import local_order
 
 
+class Fingerprint:
+    def __init__(self, value : dict, weight):
+        sizes = [len(v) for v in value.values()]
+        assert len(sizes) > 0
+        self._value = value
+        self._weight = weight
+        self._size = sizes[0]
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def size(self):
+        return self._size
+
+    @property
+    def weight(self):
+        return self._weight
+
+
+def fingerprintWeights(system):
+    '''
+    :rtype: Dict[Tuple[str,str], float]
+    :return: weights of fingerprints of each atom type pair to be used in cosine distance calculation.
+    '''
+    uniqueSimbols = np.unique(system.chemicalSymbols)
+    comp = system.composition.elementalComposition
+    # TODO Whether we really need to duplicate weights Like Fe-C and C-Fe
+    weights = {(s1,s2): comp[s1]*comp[s2] for i,s1 in enumerate(uniqueSimbols) for s2 in uniqueSimbols}
+    weightSum = np.sum(list(weights.values()))
+    for key in weights:
+        weights[key] /= weightSum
+    return weights
+
+
 def fingerprint(V, dist_matrix, numIons, Rmax=10.0, sigma=0.03, delta=0.08):
     """
     Fingerprint calculation function.

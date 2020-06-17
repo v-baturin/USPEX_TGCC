@@ -7,16 +7,19 @@ Contains configuration of Crystal space
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 from ..SystemPool import SystemPool
 from .CompositionSpace import CompositionSpace
 from .ConvexHull import ConvexHull
 from .Fingerprints.cosine_distance import cosine_distance
 
-import numpy as np
 from itertools import combinations
-import logging
-logger = logging.getLogger(__name__)
+
+import numpy as np
+
 
 
 class CrystalPool(SystemPool):
@@ -106,9 +109,9 @@ class CrystalPool(SystemPool):
         comb = list(combinations(population, 2))
         if comb:
             sigma = 0
-            for system1, system2 in comb:
-                dist = cosine_distance(system1.fingerprint, system2.fingerprint,
-                                       system1.fingerprintWeights, system2.fingerprintWeights)
+            for s1, s2 in comb:
+                dist = cosine_distance(s1.fingerprint.value, s2.fingerprint.value,
+                                       s1.fingerprint.weights, s2.fingerprint.weights)
                 sigma += dist
             sigma /= len(comb)
         else:
@@ -117,12 +120,14 @@ class CrystalPool(SystemPool):
         for system in self.uniqueSystems:
             if system.ID in self._antiseedsCorrections:
                 for ref_system in population:
-                    dist = cosine_distance(ref_system.fingerprint, system.fingerprint,
-                                           ref_system.fingerprintWeights, system.fingerprintWeights)
+                    f1 = ref_system.fingerprint
+                    f2 = system.fingerprint
+                    dist = cosine_distance(f1.value, f2.value, f1.weights, f2.weights)
                     self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))
             else:
                 self._antiseedsCorrections[system.ID] = 0
                 for ref_system in self.uniqueSystems:
-                    dist = cosine_distance(ref_system.fingerprint, system.fingerprint,
-                                           ref_system.fingerprintWeights, system.fingerprintWeights)
+                    f1 = ref_system.fingerprint
+                    f2 = system.fingerprint
+                    dist = cosine_distance(f1.value, f2.value, f1.weights, f2.weights)
                     self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))

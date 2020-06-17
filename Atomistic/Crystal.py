@@ -28,6 +28,7 @@ _MIN_DIAG_ANGLE = 30
 # Default symmetry tolerance
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
+
 class Crystal(AtomicStructure):
     """
     Class describing atoms-composed crystal structure with properties.
