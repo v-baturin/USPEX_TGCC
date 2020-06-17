@@ -29,7 +29,8 @@ from .mol.coord2Zmatrix import coord2Zmatrix
 from .mol.zmatrix2coord import zmatrix2coord
 from .mol.find_pair import find_pair
 from .Fingerprints.make_matrices import make_matrices
-from .Fingerprints.fingerprint import fingerprint
+from .Fingerprints.fingerprint import fingerprint, Fingerprint
+from .Fingerprints.fingerprint import fpWeights
 from .Fingerprints.cosine_distance import cosine_distance
 from .Fingerprints.quasientropy import quasientropy
 from .Fingerprints.structure_order import structure_order
@@ -138,7 +139,6 @@ class AtomicStructure(System):
         self._fingerprint = {}
         self._atomFingerprint = []
         self._order = []
-        self._fingerprintWeights = {}
         self.fingerprintTolerance = fingerprints['tolerance'] if fingerprints is not None and'tolerance' in fingerprints\
             else TOLERANCE_DEFAULT
 
@@ -408,8 +408,9 @@ class AtomicStructure(System):
         :rtype: bool
         :return: True if cosine distance in terms of fingerprints between two systems is within tolerance.
         """
-        return cosine_distance(self.fingerprint, other.fingerprint,
-                               self.fingerprintWeights, other.fingerprintWeights) < self.fingerprintTolerance
+        f1 = self.fingerprint
+        f2 = other.fingerprint
+        return cosine_distance(f1.value, f2.value, f1.weights, f2.weights) < self.fingerprintTolerance
 
     def _calcFingerprint(self):
         """
@@ -434,16 +435,10 @@ class AtomicStructure(System):
         order, fing, atom_fing = fingerprint(self.volume, dist_matrix, numIons,
                                              Rmax=Rmax, sigma=sigma, delta=delta)
         self._order = order[revertIndices].tolist()
-        self._fingerprint = {}
-        for i, symbol1 in enumerate(uniqueSimbols):
-            for j, symbol2 in enumerate(uniqueSimbols):
-                self._fingerprint[(symbol1,symbol2)] = fing[i*len(uniqueSimbols) + j]
-        self._atomFingerprint = []
-        for i in revertIndices:
-            atomFingerprint = {}
-            for j, symbol in enumerate(uniqueSimbols):
-                atomFingerprint[symbol] = atom_fing[i,j]
-            self._atomFingerprint.append(atomFingerprint)
+        n = len(uniqueSimbols)
+        fp_value = {(s1,s2): fing[i*n+j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
+        self._fingerprint = Fingerprint(value=fp_value, weights=fpWeights(self))
+        self._atomFingerprint = [{s:atom_fing[i,j] for j, s in enumerate(uniqueSimbols)} for i in revertIndices]
 
     @property
     def fingerprint(self):
@@ -487,24 +482,6 @@ class AtomicStructure(System):
         else:
             a_order = np.nan
         return a_order
-
-    @property
-    def fingerprintWeights(self):
-        '''
-        :rtype: Dict[Tuple[str,str], float]
-        :return: weights of fingerprints of each atom type pair to be used in cosine distance calculation.
-        '''
-        if not self._fingerprintWeights:
-            uniqueSimbols = np.unique(self.chemicalSymbols)
-            weightSum = 0
-            for symbol1 in uniqueSimbols:
-                for symbol2 in uniqueSimbols:
-                    weight = self.composition.elementalComposition[symbol1] * self.composition.elementalComposition[symbol2]
-                    self._fingerprintWeights[(symbol1, symbol2)] = weight
-                    weightSum += weight
-            for key in self._fingerprintWeights.keys():
-                self._fingerprintWeights[key] /= weightSum
-        return self._fingerprintWeights
 
     @property
     def isMolecular(self):
@@ -993,9 +970,9 @@ class AtomicStructure(System):
             for system in population:
                 goodSystem = True
                 for ref_system in mostDiverse:
-                    dist = cosine_distance(system.fingerprint, ref_system.fingerprint,
-                                           system.fingerprintWeights, ref_system.fingerprintWeights)
-                    if dist < tolerance:
+                    f1 = system.fingerprint
+                    f2 = ref_system.fingerprint
+                    if cosine_distance(f1.value, f2.value, f1.weights, f2.weights) < tolerance:
                         goodSystem = False
                         break
                 if goodSystem:
