@@ -16,13 +16,13 @@ from .Selection import Selection
 logger = logging.getLogger(__name__)
 
 
-class GlobalOptimizer(Worker):
+class GlobalOptimizer(object):
     """
     Main purpose of this class is to generate new structures
     that will be then optimized and selected best of them to the output.
     """
 
-    def __init__(self, target: dict, selection: dict, newoutput=None):
+    def __init__(self, target: dict, selection: dict, output=None, **kwargs):
         """
         Initializes the class.
 
@@ -30,8 +30,8 @@ class GlobalOptimizer(Worker):
         :param target: name of target system and its parameters; obligatory
         :type selection: dict{type, params}
         :param selection: name of selection to launch and its parameters; obligatory
-        :type newoutput: :class:`~USPEX.Common.Output.Output`
-        :param newoutput: instance of class handling output.
+        :type output: :class:`~USPEX.Common.Output.Output`
+        :param output: instance of class handling output.
         """
 
         self.target = Target(**target)
@@ -41,11 +41,10 @@ class GlobalOptimizer(Worker):
             self.fitness = self.target.pool.DEFAULT_FITNESS
 
         self.selection = Selection(self.target, **selection)
-        self.population = None
         # List of new found structure on this particular step
         self.newStructures = None
 
-        self.output = newoutput
+        self.output = output
         if self.output is not None:
             self.output.targetConfig = self.target.config
             self.output.selectionConfig = self.selection.config
@@ -58,17 +57,12 @@ class GlobalOptimizer(Worker):
         :return: list of structures.
         """
 
-        if population is None and self.population is not None:
-            return self.population
-
-        self.population, *analysis = self.selection.createPopulation(population, self.newStructures, self.fitness)
-
-        self.save()
+        population, *analysis = self.selection.createPopulation(population, self.newStructures, self.fitness)
 
         if self.output is not None:
             self.output.handleAnalysis(analysis)
 
-        return self.population
+        return population
 
     def update(self, population: list):
         """
@@ -85,3 +79,9 @@ class GlobalOptimizer(Worker):
 
         if self.output is not None:
             self.output.handlePool(self.target.pool)
+
+    def isStable(self):
+        return False
+
+    def isGoalReached(self):
+        return False

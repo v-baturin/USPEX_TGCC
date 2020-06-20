@@ -17,7 +17,7 @@ from .NoRepresentation import NoRepresentation
 logger = logging.getLogger(__name__)
 
 
-class Output(Worker):
+class Output(object):
     """
     Class handling output.
     """
