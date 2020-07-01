@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 from ..SystemPool import SystemPool
 from .CompositionSpace import CompositionSpace
-from .ConvexHull import ConvexHull
+from .ConvexHull import CompositionConvexHull
 from .Fingerprints.cosine_distance import cosine_distance
 
 from itertools import combinations
@@ -44,7 +44,7 @@ class CrystalPool(SystemPool):
         super().__init__()
 
         self.compositionSpace = CompositionSpace(**kwargs)
-        self._convexHull = ConvexHull(self.compositionSpace)
+        self._convexHull = CompositionConvexHull(config=self.compositionSpace)
         self.extendedConvexHull = []
         self._antiseedsCorrections = {}
 
@@ -57,13 +57,12 @@ class CrystalPool(SystemPool):
         """
         super().update(population)
         logger.info('Updating target: convex hull.')
-        for system in population:
-            if self._convexHull[system] < 0:
-                self._convexHull.add(system)
+        # self._convexHull.extend([(x.ID, x) for x in self.uniqueSystems + population])
+        self._convexHull.extend([(x.ID,x) for x in population])
 
         for system in self.uniqueSystems:
-            if self._convexHull[system] < self.MAX_FORMATION_ENERGY:
-                    self.extendedConvexHull.append(system)
+            if self._convexHull.height(system.ID) < self.MAX_FORMATION_ENERGY:
+                self.extendedConvexHull.append(system)
 
     def cleanDuplicates(self, population: list):
         """
@@ -97,7 +96,7 @@ class CrystalPool(SystemPool):
         :rtype: float
         :return: energy above convex hull.
         """
-        return self._convexHull[system]
+        return self._convexHull.height(system.ID)
 
     def antiseedsCorrection(self, system) -> float:
         if system.ID in self._antiseedsCorrections:
