@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 import pandas as pd
+import sympy as smp
 from copy import copy
 from typing import List, Tuple
 from itertools import combinations
@@ -51,16 +52,20 @@ class Fintness(object):
 
         fitnessValues = []
         for attribute, direction in fitness:
-            if attribute is 'formationEnergy':
-                enthalpies_per_atom = []
+            if attribute == 'formationEnergy':
+                enthalpies = []
                 compositions = []
                 for system in pool:
                     composition = system.composition
                     compositions.append(composition)
-                    enthalpies_per_atom.append(system.enthalpy/sum(composition.values()))
+                    enthalpies.append(system.enthalpy/sum(composition.values()))
                 numIons = self.tabulate(compositions)
-                numIons /= numIons.sum(axis = 1)
-                values = self.convexHullHeight(numIons[:,:-1], np.asarray(enthalpies_per_atom, dtype=float))[IDs]
+                numBlocks, blocks = smp.Matrix(numIons).T.rref()
+                numBlocks = np.asarray(numBlocks, dtype = float)[:len(blocks)].T
+                totalBlocks = numBlocks.sum(axis = 1).reshape((-1,1))
+                numBlocks /= totalBlocks
+                enthalpies_per_block = np.asarray(enthalpies, dtype = float) / totalBlocks
+                values = self.convexHullHeight(numIons[:,:-1], enthalpies_per_block)[IDs]
             else:
                 values = []
                 for system in population:
@@ -79,9 +84,9 @@ class Fintness(object):
                     useAntiseeds = False
             except:
                 useAntiseeds = False
-            if direction is 'max':
+            if direction == 'max':
                 values *= -1
-            elif direction is not 'min':
+            elif direction != 'min':
                 logger.info('Incorrect optimization direction "{}" using default "min"'.format(direction))
             if useAntiseeds:
                 values = self.getAntiseedsCorrections([{'ID': ID, 'value': value} for ID, value in zip(IDs, values)])
@@ -118,9 +123,9 @@ class Fintness(object):
 
     def getAntiseedsCorrections(self, systems: List[dict]) -> np.ndarray:
         data_pd = pd.DataFrame(systems)
-        values = data_pd['values'].to_numpy()
+        values = data_pd.value.to_numpy()
         corrections = []
-        for ID in data_pd['ID'].to_list():
+        for ID in data_pd.ID.to_list():
             if ID in self._antiseedsCorrections:
                 corrections.append(self.ANTISEEDS_MAX * self._antiseedsCorrections[ID])
             else:
