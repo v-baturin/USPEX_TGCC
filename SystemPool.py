@@ -143,3 +143,6 @@ class SystemPool(object):
         """
         system.ID = self._newID
         self._newID += 1
+
+    def payPenalties(self, systems):
+        self.fitness.payPenalties(systems, self.uniqueSystems)
