@@ -11,6 +11,7 @@ from typing import List, Tuple
 import numpy as np
 
 from .paretoRanking import paretoRanking
+from .Fitness import Fintness
 
 import logging
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ class SystemPool(object):
         self.best = {}
         self.uniqueSystems = []
         self._newID = 0
+        self.fitness = Fintness()
 
     def update(self, population: list):
         """
@@ -119,12 +121,6 @@ class SystemPool(object):
         """
         return self.best[_fitnessRepresentation(fitness)]
 
-    def antiseedsCorrection(self, system) -> float:
-        return 0
-
-    def payAntiseeds(self, population):
-        pass
-
     def sort(self, fitness: List[Tuple[str, str]], population: list):
         """
         Method for sorting our population by fitness.
@@ -136,53 +132,7 @@ class SystemPool(object):
         :rtype: list
         :return: sorted population.
         """
-        populationFitnesses = []
-        goodPopulation = []
-        badPopulation = []
-        for system in population:
-            systemFitnesses = []
-            for attribute, direction in fitness:
-                if direction == 'min':
-                    factor = 1
-                    correction = 0
-                elif direction == 'max':
-                    factor = -1
-                    correction = 0
-                elif direction == 'min_antiseeds':
-                    factor = 1
-                    correction = self.antiseedsCorrection(system)
-                elif direction == 'max_antiseeds':
-                    factor = -1
-                    correction = self.antiseedsCorrection(system)
-                else:
-                    factor = 1
-                    correction = 0
-                    logger.debug('Incorrect optimization deirection "{}" using default "min"'.format(direction))
-                if hasattr(self, attribute):
-                    value = factor * getattr(self, attribute)(system)
-                elif hasattr(system, attribute):
-                    value = factor * getattr(system, attribute)
-                else:
-                    value = 0
-                    logger.debug('Neither target {} nor system {} has attribute {}'
-                                 ' which is set as fitness.'.format(self.__name__, system.ID, attribute))
-                systemFitnesses.append((value, correction))
-            if np.all(np.isfinite(systemFitnesses)):
-                goodPopulation.append(system)
-                populationFitnesses.append(systemFitnesses)
-            else:
-                badPopulation.append(system)
-
-        logger.debug('Fitnesses of this population are: {}'.format(populationFitnesses))
-        populationFitnesses = np.asarray(populationFitnesses)
-        populationFitnessesValues = populationFitnesses[:,:,0]
-        populationFitnessesCorrections = populationFitnesses[:, :, 1]
-        populationFitnessesValues += (populationFitnessesValues.mean(axis = 0) -
-                                      populationFitnessesValues.min(axis = 0)).reshape((1,-1)) * populationFitnessesCorrections
-        ranking = paretoRanking(populationFitnessesValues.tolist())
-        return [[goodPopulation[index] for index in front] for front in ranking] + [badPopulation]
-        # uniqueFinesses, ranking = np.unique(populationFitnesses, return_inverse=True)
-        # return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueFinesses))]
+        return self.fitness.sort(fitness, population, self.uniqueSystems)
 
     def assignID(self, system):
         """

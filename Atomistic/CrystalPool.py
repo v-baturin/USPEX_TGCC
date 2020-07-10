@@ -13,13 +13,6 @@ logger = logging.getLogger(__name__)
 
 from ..SystemPool import SystemPool
 from .CompositionSpace import CompositionSpace
-from .ConvexHull import CompositionConvexHull
-from .Fingerprints.cosine_distance import cosine_distance
-
-from itertools import combinations
-
-import numpy as np
-
 
 
 class CrystalPool(SystemPool):
@@ -44,25 +37,6 @@ class CrystalPool(SystemPool):
         super().__init__()
 
         self.compositionSpace = CompositionSpace(**kwargs)
-        self._convexHull = CompositionConvexHull(config=self.compositionSpace)
-        self.extendedConvexHull = []
-        self._antiseedsCorrections = {}
-
-    def update(self, population: list):
-        """
-        Update information about target space in current search.
-
-        :type population: list of :class:`~USPEX.Common.System.System` descendants
-        :param population: list of systems which allows to update our knowledge about target space.
-        """
-        super().update(population)
-        logger.info('Updating target: convex hull.')
-        # self._convexHull.extend([(x.ID, x) for x in self.uniqueSystems + population])
-        self._convexHull.extend([(x.ID,x) for x in population])
-
-        for system in self.uniqueSystems:
-            if self._convexHull.height(system.ID) < self.MAX_FORMATION_ENERGY:
-                self.extendedConvexHull.append(system)
 
     def cleanDuplicates(self, population: list):
         """
@@ -86,47 +60,3 @@ class CrystalPool(SystemPool):
 
         population.clear()
         population.extend(cleanedPopulation)
-
-    def formationEnergy(self, system):
-        """
-        Returns energy above convex hull of an input system.
-
-        :type system: :class:`~USPEX.Common.System.System`
-        :param system: the system of which we want the energy above convex hull.
-        :rtype: float
-        :return: energy above convex hull.
-        """
-        return self._convexHull.height(system.ID)
-
-    def antiseedsCorrection(self, system) -> float:
-        if system.ID in self._antiseedsCorrections:
-            return self.ANTISEEDS_MAX*self._antiseedsCorrections[system.ID]
-        else:
-            return 0
-
-    def payPenalties(self, population):
-        comb = list(combinations(population, 2))
-        if comb:
-            sigma = 0
-            for s1, s2 in comb:
-                dist = cosine_distance(s1.fingerprint.value, s2.fingerprint.value,
-                                       s1.fingerprint.weights, s2.fingerprint.weights)
-                sigma += dist
-            sigma /= len(comb)
-        else:
-            sigma = 1
-        sigma *= self.ANTISEEDS_SIGMA
-        for system in self.uniqueSystems:
-            if system.ID in self._antiseedsCorrections:
-                for ref_system in population:
-                    f1 = ref_system.fingerprint
-                    f2 = system.fingerprint
-                    dist = cosine_distance(f1.value, f2.value, f1.weights, f2.weights)
-                    self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))
-            else:
-                self._antiseedsCorrections[system.ID] = 0
-                for ref_system in self.uniqueSystems:
-                    f1 = ref_system.fingerprint
-                    f2 = system.fingerprint
-                    dist = cosine_distance(f1.value, f2.value, f1.weights, f2.weights)
-                    self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))

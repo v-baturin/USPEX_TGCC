@@ -21,7 +21,7 @@ from typing import List
 from ..CompositionSpace import CompositionSpace
 from ..Crystal import Crystal
 from ..GCH import GeneralizedConvexHull
-from ..ConvexHull import Simplex
+from ...ConvexHull import Simplex
 
 TESTPATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -82,9 +82,9 @@ class GenConvexHull_Si_Test(unittest.TestCase):
             os.remove(df_short)
         self.convexHull_short = GeneralizedConvexHull(config=self.config, saved_data=df_short)
         system = self.all_systems[0]
-        self.convexHull_short.extend([(system.ID,system)])
-        self.assertTrue(system.ID in self.convexHull_short.lower_bound)
-        self.assertTrue(system.ID in self.convexHull_short.upper_bound)
+        self.convexHull_short.extend([system])
+        self.assertTrue(system in self.convexHull_short.lower_bound)
+        self.assertTrue(system in self.convexHull_short.upper_bound)
 
         # Remove temporary files
         self.convexHull_short.clean()
@@ -96,11 +96,11 @@ class GenConvexHull_Si_Test(unittest.TestCase):
 
         init_systems = self.populations[0]
         self.convexHull_1 = GeneralizedConvexHull(config=self.config, saved_data=df_1)
-        self.convexHull_1.extend([(system.ID, system) for system in init_systems])
+        self.convexHull_1.extend([system for system in init_systems])
         lowest_energy_structure = sorted(init_systems, key=lambda x: x.enthalpy)[0]
         highest_energy_structure = sorted(init_systems, key=lambda x: x.enthalpy)[-1]
-        self.assertTrue(lowest_energy_structure.ID in self.convexHull_1.lower_bound)
-        self.assertTrue(highest_energy_structure.ID in self.convexHull_1.upper_bound)
+        self.assertTrue(lowest_energy_structure in self.convexHull_1.lower_bound)
+        self.assertTrue(highest_energy_structure in self.convexHull_1.upper_bound)
 
         # Remove temporary files
         self.convexHull_1.clean()
@@ -111,11 +111,11 @@ class GenConvexHull_Si_Test(unittest.TestCase):
             os.remove(df_0)
 
         self.convexHull = GeneralizedConvexHull(config=self.config, saved_data=df_0)
-        self.convexHull.extend([(x.ID, x) for x in self.all_systems])
+        self.convexHull.extend([x for x in self.all_systems])
         lowest_energy_structure = sorted(self.all_systems, key=lambda x: x.enthalpy)[0]
         highest_energy_structure = sorted(self.all_systems, key=lambda x: x.enthalpy)[-1]
-        self.assertTrue(lowest_energy_structure.ID in self.convexHull.lower_bound)
-        self.assertTrue(highest_energy_structure.ID in self.convexHull.upper_bound)
+        self.assertTrue(lowest_energy_structure in self.convexHull.lower_bound)
+        self.assertTrue(highest_energy_structure in self.convexHull.upper_bound)
 
         # Remove temporary files
         self.convexHull.clean()
@@ -133,9 +133,9 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
             os.remove(df_short)
         self.convexHull_short = GeneralizedConvexHull(config=self.config, saved_data=df_short)
         system = self.all_systems[0]
-        self.convexHull_short.extend([(system.ID,system)])
-        self.assertTrue(system.ID in self.convexHull_short.lower_bound)
-        self.assertTrue(system.ID in self.convexHull_short.upper_bound)
+        self.convexHull_short.extend([system])
+        self.assertTrue(system in self.convexHull_short.lower_bound)
+        self.assertTrue(system in self.convexHull_short.upper_bound)
 
         # Remove temporary files
         self.convexHull_short.clean()
@@ -146,11 +146,11 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
             os.remove(df_1)
         init_systems = self.populations[0]
         self.convexHull_1 = GeneralizedConvexHull(config=self.config, saved_data=df_1)
-        self.convexHull_1.extend([(system.ID, system) for system in init_systems])
+        self.convexHull_1.extend([system for system in init_systems])
         lowest_energy_structure = sorted(init_systems, key=lambda x: x.enthalpy)[0]
         highest_energy_structure = sorted(init_systems, key=lambda x: x.enthalpy)[-1]
-        self.assertTrue(lowest_energy_structure.ID in self.convexHull_1.lower_bound)
-        self.assertTrue(highest_energy_structure.ID in self.convexHull_1.upper_bound)
+        self.assertTrue(lowest_energy_structure in self.convexHull_1.lower_bound)
+        self.assertTrue(highest_energy_structure in self.convexHull_1.upper_bound)
 
         # Remove temporary files
         self.convexHull_1.clean()
@@ -161,11 +161,11 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
         if os.path.exists(df_0):
             os.remove(df_0)
         self.convexHull = GeneralizedConvexHull(config=self.config, saved_data=df_0)
-        self.convexHull.extend([(x.ID, x) for x in self.all_systems])
+        self.convexHull.extend([x for x in self.all_systems])
         lowest_energy_structure = sorted(self.all_systems, key=lambda x: x.enthalpy)[0]
         highest_energy_structure = sorted(self.all_systems, key=lambda x: x.enthalpy)[-1]
-        self.assertTrue(lowest_energy_structure.ID in self.convexHull.lower_bound)
-        self.assertTrue(highest_energy_structure.ID in self.convexHull.upper_bound)
+        self.assertTrue(lowest_energy_structure in self.convexHull.lower_bound)
+        self.assertTrue(highest_energy_structure in self.convexHull.upper_bound)
 
         # Remove temporary files
         self.convexHull.clean()

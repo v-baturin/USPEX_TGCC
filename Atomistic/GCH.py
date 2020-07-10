@@ -6,7 +6,7 @@ import numpy as np
 
 from itertools import chain, combinations_with_replacement
 
-from .ConvexHull import ConvexHull
+from ..ConvexHull import ConvexHull
 
 
 # To which dimensionality we project our FP and consider
@@ -68,16 +68,17 @@ class GeneralizedConvexHull(ConvexHull):
         :param systems: N * (ID + structure with enthalpy)
         '''
 
-        if len(systems) <= self.DIMENSIONALITY:  # not enough points to build GCH
-            for ID, system in systems:
-                self._df.loc[len(self._df)] = ID, None, None, 0.0, 0.0
+        self.systems.extend(systems)
+        if len(self.systems) <= self.DIMENSIONALITY:  # not enough points to build GCH
+            for i, system in enumerate(self.systems):
+                self._df.loc[i] = system, None, None, 0.0, 0.0
             return
 
         from sklearn.decomposition import PCA
         pca = PCA(n_components=self.DIMENSIONALITY-1)
-        transformed = pca.fit_transform(np.array([self._flatten_fp(x.fingerprint) for _, x in systems]))
+        transformed = pca.fit_transform(np.array([self._flatten_fp(x.fingerprint) for x in self.systems]))
 
-        for (_, system), coord in zip(systems, transformed):
+        for system, coord in zip(systems, transformed):
             system.principal_component = coord
             composition = self.config.numBlocks(system.composition)
             system.enthalpy_per_block = system.enthalpy/np.sum(composition)

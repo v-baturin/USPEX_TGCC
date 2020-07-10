@@ -57,24 +57,22 @@ class ConvexHull:
     # all_IDs = []
 
     def __init__(self, saved_data : str, property:str='enthalpy_per_atom'):
-        self._df = pd.DataFrame(columns=['ID', 'principal_component', 'property', 'height', 'depth'])
+        self._df = pd.DataFrame(columns=['system', 'principal_component', 'property', 'height', 'depth'])
         self.property = property
 
         # self._df = pd.DataFrame(columns=['ID', 'enthalpy_per_atom', 'fingerprint', 'height'])
         self.SAVED_DATAFILE = saved_data
+        self.systems = []
 
     def extend(self, systems):
         if not len(systems):
             return
-        if os.path.exists(self.SAVED_DATAFILE):
-            self._df = pd.read_pickle(self.SAVED_DATAFILE)
+        # if os.path.exists(self.SAVED_DATAFILE):
+        #     self._df = pd.read_pickle(self.SAVED_DATAFILE)
 
-        # ID of all systems in database
-        all_IDs = self._df.ID.tolist()
-
-        for ID, system in systems:
-            if ID not in all_IDs:
-                self._df.loc[len(self._df)] = ID, system.principal_component, getattr(system, self.property), np.inf, -np.inf
+        self.systems.extend(systems)
+        for i, system in enumerate(self.systems):
+            self._df.loc[i] = system, system.principal_component, getattr(system, self.property), np.inf, -np.inf
 
         properties = self._df.property.tolist()
         coords = self._df.principal_component.tolist()
@@ -93,9 +91,13 @@ class ConvexHull:
                 self._df.at[i, 'height'] = row.property - min_E
                 self._df.at[i, 'depth'] = row.property - max_E
         elif m <= n:    # Not enough point to build proper CH, so all structures are on CH
-            for i, _ in self._df.iterrows():
-                self._df.at[i, 'height'] = 0.0
-                self._df.at[i, 'depth'] = 0.0
+            for p1, coord1, (i, _) in zip(properties, coords, self._df.iterrows()):
+                _dists = []
+                for p2, coord2, (j, _) in zip(properties, coords, self._df.iterrows()):
+                    if np.allclose(coord1, coord2):
+                        _dists.append(p1-p2)
+                self._df.at[i, 'height'] = np.max(_dists)
+                self._df.at[i, 'depth'] = np.min(_dists)
         else:
             qhull = QHull(principal_component_set)
 
@@ -133,45 +135,53 @@ class ConvexHull:
         assert np.isclose(self._df.iloc[max_ID].depth, 0.0)
         # assert set(qhull.vertices) == set(chain(self.lower_bound, self.upper_bound))
 
-        self._df.to_pickle(self.SAVED_DATAFILE)
+        # self._df.to_pickle(self.SAVED_DATAFILE)
 
     def clean(self):
         if os.path.exists(self.SAVED_DATAFILE):
             os.remove(self.SAVED_DATAFILE)
 
     @property
-    def lower_bound(self) -> set:
+    def lower_bound(self) -> list:
         '''
         :return: IDs of structures, which are on the lower bound of CH
         '''
-        return set(x.ID for _,x in self._df.iterrows() if np.isclose(x.height, 0.0))
+        return list(x.system for _,x in self._df.iterrows() if np.isclose(x.height, 0.0))
 
     @property
-    def upper_bound(self) -> set:
+    def upper_bound(self) -> list:
         '''
         :return: IDs of structures, which are on the lower bound of CH
         '''
-        return set(x.ID for _,x in self._df.iterrows() if np.isclose(x.depth, 0.0))
+        return list(x.system for _,x in self._df.iterrows() if np.isclose(x.depth, 0.0))
 
-    def depth(self, ID : int):
-        '''
-        Calculates depth below the top of convex hull
-        : param ID: ID of the structure
-        '''
-        for _, row in self._df.iterrows():
-            if ID == row.ID:
-                return row.depth
-        return -np.inf
+    @property
+    def depth(self):
+        return self._df.depth.to_numpy()
 
-    def height(self, ID : int):
-        '''
-        Calculates height above convex hull
-        : param ID: ID of the structure
-        '''
-        for _, row in self._df.iterrows():
-            if ID == row.ID:
-                return row.height
-        return np.inf
+    @property
+    def height(self):
+        return self._df.height.to_numpy()
+
+    # def depth(self, ID : int):
+    #     '''
+    #     Calculates depth below the top of convex hull
+    #     : param ID: ID of the structure
+    #     '''
+    #     for _, row in self._df.iterrows():
+    #         if ID == row.ID:
+    #             return row.depth
+    #     return -np.inf
+    #
+    # def height(self, ID : int):
+    #     '''
+    #     Calculates height above convex hull
+    #     : param ID: ID of the structure
+    #     '''
+    #     for _, row in self._df.iterrows():
+    #         if ID == row.ID:
+    #             return row.height
+    #     return np.inf
 
 
 DEFAULT_DATA_FILE = 'compositionCH.dump'
@@ -203,7 +213,7 @@ class CompositionConvexHull(ConvexHull):
         self.config = config
 
     def extend(self, systems):
-        for ID, system in systems:
+        for system in systems:
             composition = self.config.numBlocks(system.composition)
             system.enthalpy_per_block = system.enthalpy/sum(composition)
             system.principal_component = composition[:-1] / np.sum(composition)
