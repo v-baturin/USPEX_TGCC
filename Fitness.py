@@ -104,7 +104,7 @@ class Fintness(object):
         else:
             sigma = 1
         sigma *= self.ANTISEEDS_SIGMA
-        for system in pool.uniqueSystems:
+        for system in pool:
             assert hasattr(system, 'dist')
             if system.ID in self._antiseedsCorrections:
                 for ref_system in population:
@@ -112,7 +112,7 @@ class Fintness(object):
                     self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))
             else:
                 self._antiseedsCorrections[system.ID] = 0
-                for ref_system in pool.uniqueSystems:
+                for ref_system in pool:
                     dist = system.dist(ref_system, system)
                     self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))
 
