@@ -62,10 +62,11 @@ class Fintness(object):
                 numIons = self.tabulate(compositions)
                 numBlocks, blocks = smp.Matrix(numIons).T.rref()
                 numBlocks = np.asarray(numBlocks, dtype = float)[:len(blocks)].T
-                totalBlocks = numBlocks.sum(axis = 1).reshape((-1,1))
-                numBlocks /= totalBlocks
+                totalBlocks = numBlocks.sum(axis = 1)
+                numBlocks /= totalBlocks.reshape((-1,1))
                 enthalpies_per_block = np.asarray(enthalpies, dtype = float) / totalBlocks
-                values = self.convexHullHeight(numIons[:,:-1], enthalpies_per_block)[IDs]
+                logger.debug(f'numBlocks: {numBlocks[:,:-1]}, enthalpies_per_block: {enthalpies_per_block}')
+                values = self.convexHullHeight(numBlocks[:,:-1], enthalpies_per_block)[IDs]
             else:
                 values = []
                 for system in population:
