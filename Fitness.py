@@ -149,12 +149,7 @@ class Fintness(object):
     @staticmethod
     def convexHullHeight(arguments: np.ndarray, properties: np.ndarray) -> np.ndarray:
         assert arguments.shape[0] == properties.shape[0]
-        class System(object):
-            def __init__(self, principal_component, enthalpy_per_atom):
-                self.principal_component = principal_component
-                self.enthalpy_per_atom = enthalpy_per_atom
-
-        systems = [System(args, prop) for args, prop in zip(arguments, properties)]
-        convexHull = ConvexHull(saved_data='CH.dump')
+        systems = [{'argument': args, 'property': prop} for args, prop in zip(arguments, properties)]
+        convexHull = ConvexHull()
         convexHull.extend(systems)
         return copy(convexHull.height)

@@ -22,7 +22,7 @@ from ..Fitness import Fintness
 #         self.enthalpy = enthalpy
 
 
-class CompositionConvexHull_Test(unittest.TestCase):
+class ConvexHull_Test(unittest.TestCase):
 
     def test_unocomponent(self):
         filename = 'tmp_u.dump'
