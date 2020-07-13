@@ -83,6 +83,8 @@ class GenConvexHull_Si_Test(unittest.TestCase):
         self.convexHull_short = GeneralizedConvexHull(config=self.config)
         system = self.all_systems[0]
         self.convexHull_short.extend([system])
+        self.assertEqual(self.convexHull_short.height[0], 0)
+        self.assertEqual(self.convexHull_short.depth[0], 0)
         # self.assertTrue(system in self.convexHull_short.lower_bound)
         # self.assertTrue(system in self.convexHull_short.upper_bound)
 
@@ -94,8 +96,11 @@ class GenConvexHull_Si_Test(unittest.TestCase):
         init_systems = self.populations[0]
         self.convexHull_1 = GeneralizedConvexHull(config=self.config)
         self.convexHull_1.extend([system for system in init_systems])
-        # lowest_energy_structure = sorted(init_systems, key=lambda x: x.enthalpy)[0]
-        # highest_energy_structure = sorted(init_systems, key=lambda x: x.enthalpy)[-1]
+        indices = np.argsort(np.fromiter((x.enthalpy for x in init_systems), dtype=float))
+        lowest_energy_structure_index = indices[0]
+        highest_energy_structure_index = indices[-1]
+        self.assertEqual(self.convexHull_1.height[lowest_energy_structure_index], 0)
+        self.assertEqual(self.convexHull_1.depth[highest_energy_structure_index], 0)
         # self.assertTrue(lowest_energy_structure in self.convexHull_1.lower_bound)
         # self.assertTrue(highest_energy_structure in self.convexHull_1.upper_bound)
 
@@ -106,8 +111,11 @@ class GenConvexHull_Si_Test(unittest.TestCase):
 
         self.convexHull = GeneralizedConvexHull(config=self.config)
         self.convexHull.extend([x for x in self.all_systems])
-        # lowest_energy_structure = sorted(self.all_systems, key=lambda x: x.enthalpy)[0]
-        # highest_energy_structure = sorted(self.all_systems, key=lambda x: x.enthalpy)[-1]
+        indices = np.argsort(np.fromiter((x.enthalpy for x in self.all_systems), dtype=float))
+        lowest_energy_structure_index = indices[0]
+        highest_energy_structure_index = indices[-1]
+        self.assertEqual(self.convexHull.height[lowest_energy_structure_index], 0)
+        self.assertEqual(self.convexHull.depth[highest_energy_structure_index], 0)
         # self.assertTrue(lowest_energy_structure in self.convexHull.lower_bound)
         # self.assertTrue(highest_energy_structure in self.convexHull.upper_bound)
 
@@ -125,6 +133,8 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
         self.convexHull_short = GeneralizedConvexHull(config=self.config)
         system = self.all_systems[0]
         self.convexHull_short.extend([system])
+        self.assertEqual(self.convexHull_short.height[0], 0)
+        self.assertEqual(self.convexHull_short.depth[0], 0)
         # self.assertTrue(system in self.convexHull_short.lower_bound)
         # self.assertTrue(system in self.convexHull_short.upper_bound)
 
@@ -135,8 +145,11 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
         init_systems = self.populations[0]
         self.convexHull_1 = GeneralizedConvexHull(config=self.config)
         self.convexHull_1.extend([system for system in init_systems])
-        # lowest_energy_structure = sorted(init_systems, key=lambda x: x.enthalpy)[0]
-        # highest_energy_structure = sorted(init_systems, key=lambda x: x.enthalpy)[-1]
+        indices = np.argsort(np.fromiter((x.enthalpy for x in init_systems), dtype=float))
+        lowest_energy_structure_index = indices[0]
+        highest_energy_structure_index = indices[-1]
+        self.assertEqual(self.convexHull_1.height[lowest_energy_structure_index], 0)
+        self.assertEqual(self.convexHull_1.depth[highest_energy_structure_index], 0)
         # self.assertTrue(lowest_energy_structure in self.convexHull_1.lower_bound)
         # self.assertTrue(highest_energy_structure in self.convexHull_1.upper_bound)
 
@@ -146,8 +159,11 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
             os.remove(df_0)
         self.convexHull = GeneralizedConvexHull(config=self.config)
         self.convexHull.extend([x for x in self.all_systems])
-        # lowest_energy_structure = sorted(self.all_systems, key=lambda x: x.enthalpy)[0]
-        # highest_energy_structure = sorted(self.all_systems, key=lambda x: x.enthalpy)[-1]
+        indices = np.argsort(np.fromiter((x.enthalpy for x in self.all_systems), dtype=float))
+        lowest_energy_structure_index = indices[0]
+        highest_energy_structure_index = indices[-1]
+        self.assertEqual(self.convexHull.height[lowest_energy_structure_index], 0)
+        self.assertEqual(self.convexHull.depth[highest_energy_structure_index], 0)
         # self.assertTrue(lowest_energy_structure in self.convexHull.lower_bound)
         # self.assertTrue(highest_energy_structure in self.convexHull.upper_bound)
 
