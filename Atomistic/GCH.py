@@ -6,13 +6,11 @@ import numpy as np
 
 from itertools import chain, combinations_with_replacement
 
-from .ConvexHull import ConvexHull
+from ..ConvexHull import ConvexHull
 
 
 # To which dimensionality we project our FP and consider
 MAX_DIMENSIONALITY = 7
-
-DEFAULT_DATA_FILE = 'gch.dump'
 
 
 class GeneralizedConvexHull(ConvexHull):
@@ -30,7 +28,7 @@ class GeneralizedConvexHull(ConvexHull):
     This is due to the projection mechanism which is based on previously found stuctures.
     '''
 
-    def __init__(self, config, dimensionality : int=None, saved_data : str=None):
+    def __init__(self, config, dimensionality : int=None):
         '''
         :param dimensionality: dimension of the FP projection
         :param saved_data: path to file, where will be stored temporary data
@@ -49,7 +47,8 @@ class GeneralizedConvexHull(ConvexHull):
             self.DIMENSIONALITY = np.min([1+d, MAX_DIMENSIONALITY])
         logger.info(f'Dimensionality of GCH = {self.DIMENSIONALITY}')
 
-        super().__init__(saved_data=saved_data, property='enthalpy_per_block')
+        self.orig_systems = []
+        super().__init__()
 
     def _flatten_fp(self, fingerprint):
         '''
@@ -68,18 +67,19 @@ class GeneralizedConvexHull(ConvexHull):
         :param systems: N * (ID + structure with enthalpy)
         '''
 
-        if len(systems) <= self.DIMENSIONALITY:  # not enough points to build GCH
-            for ID, system in systems:
-                self._df.loc[len(self._df)] = ID, None, None, 0.0, 0.0
+        self.orig_systems.extend(systems)
+        if len(self.orig_systems) <= self.DIMENSIONALITY:  # not enough points to build GCH
+            for i, system in enumerate(self.orig_systems):
+                self._df.loc[i] = system, None, None, 0.0, 0.0
             return
 
         from sklearn.decomposition import PCA
         pca = PCA(n_components=self.DIMENSIONALITY-1)
-        transformed = pca.fit_transform(np.array([self._flatten_fp(x.fingerprint) for _, x in systems]))
+        transformed = pca.fit_transform(np.array([self._flatten_fp(x.fingerprint) for x in self.orig_systems]))
 
-        for (_, system), coord in zip(systems, transformed):
-            system.principal_component = coord
+        systems_dicts = []
+        for system, coord in zip(self.orig_systems, transformed):
             composition = self.config.numBlocks(system.composition)
-            system.enthalpy_per_block = system.enthalpy/np.sum(composition)
+            systems_dicts.append({'argument': coord, 'property': system.enthalpy/np.sum(composition)})
 
-        super().extend(systems)
+        super().extend(systems_dicts)

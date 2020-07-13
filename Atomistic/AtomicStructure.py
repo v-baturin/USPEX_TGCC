@@ -408,9 +408,13 @@ class AtomicStructure(System):
         :rtype: bool
         :return: True if cosine distance in terms of fingerprints between two systems is within tolerance.
         """
-        f1 = self.fingerprint
-        f2 = other.fingerprint
-        return cosine_distance(f1.value, f2.value, f1.weights, f2.weights) < self.fingerprintTolerance
+        return self.dist(self, other) < self.fingerprintTolerance
+
+    @staticmethod
+    def dist(system1, system2):
+        f1 = system1.fingerprint
+        f2 = system2.fingerprint
+        return cosine_distance(f1.value, f2.value, f1.weights, f2.weights)
 
     def _calcFingerprint(self):
         """
