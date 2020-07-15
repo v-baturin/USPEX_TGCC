@@ -12,9 +12,8 @@ from sympy.combinatorics.partitions import Partition, RGS_rank
 
 from ..SpaceGroups.TopologicalNet import TopologicalNet
 from ..SpaceGroups.SpaceGroups3D import Group
-from ..VarOperator import VOFailed
 
-from .Random import Random, randomPermutation
+from .Random import Random, randomPermutation, VOFailed
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))

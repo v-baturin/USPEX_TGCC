@@ -6,7 +6,7 @@ import numpy as np
 import spglib
 from itertools import combinations_with_replacement
 
-from .Random import Random
+from .Random import Random, VOFailed
 from .symope.splitBigCell import splitBigCell
 from .symope.symope_crystal import symope_crystal
 from time import time

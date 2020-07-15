@@ -17,9 +17,9 @@ import os
 import json
 from itertools import combinations
 
-from USPEX.Common.Atomistic.mol.read_molecule import read_molecule
-from USPEX.Common.Atomistic.Crystal import Crystal
-from USPEX.Common.Atomistic.CrystalPool import CrystalPool
+from ...Atomistic.mol.read_molecule import read_molecule
+from ...Atomistic.Crystal import Crystal
+from ...Atomistic.CrystalPool import CrystalPool
 from ..Heredity import Heredity, VOFailed
 
 

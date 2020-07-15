@@ -17,9 +17,9 @@ import unittest
 import os
 import json
 
-from USPEX.Common.Atomistic.mol.read_molecule import read_molecule
-from USPEX.Common.Atomistic.Crystal import Crystal
-from USPEX.Common.Atomistic.CrystalPool import CrystalPool
+from ...Atomistic.mol.read_molecule import read_molecule
+from ...Atomistic.Crystal import Crystal
+from ...Atomistic.CrystalPool import CrystalPool
 from ..Transmutation import Transmutation, VOFailed
 
 
