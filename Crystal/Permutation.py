@@ -93,7 +93,7 @@ class Permutation(VarOperator):
                 # Here we generate a complete system
                 target = self.systemFactory(molecules=attempted_structure, cell=system.cell,
                                             optimizeLattice=True, **self.config)
-                if target.isGoodSystem():
+                if atLeastOnePermutation and target.isGoodSystem():
                     self._assign_data(target=target, ID=system.ID)
                     return target,
         except IndexError:
