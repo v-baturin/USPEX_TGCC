@@ -19,7 +19,7 @@ from ase.io.vasp import read_vasp
 from time import time
 from typing import List
 
-from USPEX.Common.VarOperator import VarOperator, VOFailed
+from ..VarOperator import VarOperator, VOFailed
 
 
 class Seeds(VarOperator):

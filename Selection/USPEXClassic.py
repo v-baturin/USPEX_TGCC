@@ -15,8 +15,8 @@ from typing import List, Tuple
 
 import numpy as np
 
-from USPEX.Common.Target import Target
-from USPEX.Common.VarOperator import VOFailed
+from ..Target import Target
+from ..VarOperator import VOFailed
 
 from .Autofrac import Autofrac
 

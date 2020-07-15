@@ -10,9 +10,9 @@ import time
 
 from sympy.combinatorics.partitions import Partition, RGS_rank
 
-from USPEX.Common.SpaceGroups.TopologicalNet import TopologicalNet
-from USPEX.Common.SpaceGroups.SpaceGroups3D import Group
-from USPEX.Common.VarOperator import VOFailed
+from ..SpaceGroups.TopologicalNet import TopologicalNet
+from ..SpaceGroups.SpaceGroups3D import Group
+from ..VarOperator import VOFailed
 
 from .Random import Random, randomPermutation
 

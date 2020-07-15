@@ -11,10 +11,9 @@ from .symope.splitBigCell import splitBigCell
 from .symope.symope_crystal import symope_crystal
 from time import time
 
-from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
-from USPEX.Common.Atomistic.calcDefaultVolume import calcVolume
-from USPEX.Common.SpaceGroups.SpaceGroups3D import Group
-from USPEX.Common.VarOperator import VOFailed
+from ..Atomistic.AtomicStructure import AtomicStructure
+from ..Atomistic.calcDefaultVolume import calcVolume
+from ..SpaceGroups.SpaceGroups3D import Group
 
 
 MAX_RANDOM_FAILED_DIST = 10000

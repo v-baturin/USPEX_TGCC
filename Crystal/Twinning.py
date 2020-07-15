@@ -16,10 +16,8 @@ import numpy as np
 from copy import copy
 from time import time
 
-from USPEX.Common.VarOperator import VarOperator, VOFailed
-from USPEX.Common.Atomistic.Element import Element
-from USPEX.Common.Atomistic.Fingerprints.Fingerprints import Fingerprints
-from USPEX.Common.Atomistic.Fingerprints.cosine_distance import cosine_distance
+from ..VarOperator import VarOperator, VOFailed
+from ..Atomistic.Element import Element
 
 class TwinningException(Exception):
     pass

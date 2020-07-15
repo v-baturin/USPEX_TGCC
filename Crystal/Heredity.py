@@ -14,10 +14,9 @@ logger = logging.getLogger(__name__)
 import numpy as np
 from copy import copy
 
-from USPEX.Common.Atomistic.Crystal import Crystal
-from USPEX.Common.Atomistic.calcDefaultVolume import calcVolumeForComposition
-from USPEX.Common.Atomistic.CompositionSpace import Composition
-from USPEX.Common.VarOperator import VarOperator, VOFailed
+from ..Atomistic.calcDefaultVolume import calcVolumeForComposition
+from ..Atomistic.CompositionSpace import Composition
+from ..VarOperator import VarOperator, VOFailed
 
 '''
 FunctionFolder/USPEX/3**/Heredity_3**.m

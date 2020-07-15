@@ -5,8 +5,8 @@ import numpy as np
 import itertools
 from copy import copy
 
-from USPEX.Common.VarOperator import VarOperator, VOFailed
-from USPEX.Common.Atomistic.calcDefaultVolume import calcVolumeForComposition
+from ..VarOperator import VarOperator, VOFailed
+from ..Atomistic.calcDefaultVolume import calcVolumeForComposition
 
 
 def randomPermutation(array, enumerate = False, maxSize = None):

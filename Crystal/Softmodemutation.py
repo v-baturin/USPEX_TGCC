@@ -5,8 +5,8 @@ import numpy as np
 from collections import namedtuple
 from copy import copy
 
-from USPEX.Common.VarOperator import VarOperator, VOFailed
-from USPEX.Common.Atomistic.softmodes.calcSoftModes import calcSoftModes
+from ..VarOperator import VarOperator, VOFailed
+from ..Atomistic.softmodes.calcSoftModes import calcSoftModes
 
 
 _MIN_VALID_FREQUENCY = 5.0e-4
