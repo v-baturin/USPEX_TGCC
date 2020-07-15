@@ -67,8 +67,9 @@ class Heredity_Test(unittest.TestCase):
 
     def test_molecular_fixed(self):
         mol_glycine = read_molecule(f'{HOMEPATH}/MOL_glycine')
+        mol_H2O = read_molecule(f'{HOMEPATH}/MOL_H2O')
         config = {}
-        pool = CrystalPool(symbols = [mol_glycine], blocks = [[4]], range = [[1, 1]])
+        pool = CrystalPool(symbols = [mol_glycine, mol_H2O], blocks = [[4, 2]], range = [[1, 1]])
         heredity = Heredity(Crystal, config, pool, initFrac=1.0)
         with open(f'{HOMEPATH}/molecular_structures_fixed', 'rt') as f:
             population = json.loads(f.read())
