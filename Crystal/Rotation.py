@@ -1,0 +1,59 @@
+import logging
+logger = logging.getLogger(__name__)
+
+import numpy as np
+import itertools
+from copy import copy
+
+from USPEX.Common.VarOperator import VarOperator, VOFailed
+
+
+class Rotation(VarOperator):
+    '''
+
+    '''
+
+
+    HOW_MANY_ATTEMPTS_ROTATION = 100
+
+
+    def tune(self,population):
+        pass
+
+    def prepare(self):
+        pass
+
+    def standby(self):
+        pass
+
+    def __call__(self, parent, moleculesToRotate = None, axesToRotate = None,
+                 dihedralToRotate = None, principleAngles = None, dihedralAngles = None) -> tuple:
+        randomize = moleculesToRotate is None
+        for i in range(self.HOW_MANY_ATTEMPTS_ROTATION):
+            newstructure = copy(parent)
+            if randomize:
+                totalNumMols = len(parent.molecules)
+                moleculesToRotate = np.random.choice(totalNumMols, np.random.randint(totalNumMols), replace=False)
+                axesToRotate = np.random.randint(3, size = len(moleculesToRotate))
+                # TODO add proper dihedrals
+                dihedralToRotate = [None]*len(moleculesToRotate)
+                principleAngles = np.random.randint(-45, 45, size = len(moleculesToRotate))
+                dihedralAngles = np.random.randint(-np.pi/2, np.pi/2, size = len(moleculesToRotate))
+            for molecule, axis, dihedral, principleAngle, dihedralAngle in \
+                    zip(moleculesToRotate, axesToRotate, dihedralToRotate, principleAngles, dihedralAngles):
+                newstructure.rotatePrinciple(molecule, axis, principleAngle)
+                if dihedral is not None:
+                    try:
+                        newstructure.rotateFlexDiherdal(molecule, dihedral, dihedralAngle)
+                    except RuntimeError as e:
+                        logger.exception(e)
+
+            if newstructure.isGoodSystem():
+                crystal = newstructure
+                self.pool.assignID(crystal)
+                crystal.howCome = self.name
+                crystal.parent = 'None'
+                logger.info(f"Structure {crystal.ID} created via rotation from {parent.ID} parent")
+                return (crystal,)
+
+        raise VOFailed
