@@ -32,7 +32,7 @@ class Heredity_Test(unittest.TestCase):
         config = {'externalPressure' : 100}
         compositionSpace = CompositionSpace(symbols = ['Mg', 'Al', 'O'], blocks = [[4, 8, 16]], range = [[1, 1]])
         pool = SystemPool()
-        heredity = Heredity(Crystal, config, pool, {'compositionSPace' : compositionSpace})
+        heredity = Heredity(Crystal, config, pool, {'compositionSpace' : compositionSpace})
         with open(f'{HOMEPATH}/atomic_structures_fixed', 'rt') as f:
             population = json.loads(f.read())
 
@@ -52,7 +52,7 @@ class Heredity_Test(unittest.TestCase):
         config = {}
         compositionSpace = CompositionSpace(symbols = ['Mo', 'B'], blocks = [[1, 0], [0, 1]], range = [[0, 18], [0, 18]])
         pool = SystemPool()
-        heredity = Heredity(Crystal, config, pool, {'compositionSPace' : compositionSpace})
+        heredity = Heredity(Crystal, config, pool, {'compositionSpace' : compositionSpace})
         with open(f'{HOMEPATH}/atomic_structures_variable', 'rt') as f:
             population = json.loads(f.read())
 
@@ -74,7 +74,7 @@ class Heredity_Test(unittest.TestCase):
         config = {}
         compositionSpace = CompositionSpace(symbols = [mol_glycine, mol_H2O], blocks = [[4, 2]], range = [[1, 1]])
         pool = SystemPool()
-        heredity = Heredity(Crystal, config, pool, {'compositionSPace' : compositionSpace})
+        heredity = Heredity(Crystal, config, pool, {'compositionSpace' : compositionSpace})
         with open(f'{HOMEPATH}/molecular_structures_fixed', 'rt') as f:
             population = json.loads(f.read())
 
@@ -104,7 +104,7 @@ class Heredity_Test(unittest.TestCase):
                            blocks = [[0,2,0,1,0], [1,0,0,0,0],[0,0,1,0,0],[0,0,0,0,1]],
                            range = [[1,2],[0,4],[0,4],[0,4]], minAt = 5, maxAt = 40)
         pool = SystemPool()
-        heredity = Heredity(Crystal, config, pool, {'compositionSPace' : compositionSpace})
+        heredity = Heredity(Crystal, config, pool, {'compositionSpace' : compositionSpace})
         with open(f'{HOMEPATH}/molecular_structures_variable', 'rt') as f:
             population = json.loads(f.read())
 
