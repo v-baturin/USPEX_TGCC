@@ -26,8 +26,9 @@ class Random(VarOperator):
 
     logger = logger
 
-    def __init__(self, systemFactory, config, pool, initFrac : float=0.0, minFrac : float=0.1, maxFrac : float=1.0):
-        super().__init__(systemFactory, config, pool, initFrac, minFrac, maxFrac)
+    def __init__(self, systemFactory, config, pool, utilities):
+        super().__init__(systemFactory, config, pool, utilities)
+        self.compositionSpace = utilities['compositionSpace']
         self.structs = None
         self.arxiv = {}
 
@@ -48,7 +49,7 @@ class Random(VarOperator):
     def populateStructure(self, lattice, composition, coordinates, operations):
         symbols = list(composition.keys())
         self.logger.debug("Populationg structure")
-        if self.pool.compositionSpace.molecules:
+        if self.compositionSpace.molecules:
             for i in list(range(self.HOW_MANY_ATTEMPTS_ROTATION)):
                 newstructure = self.systemFactory(molecules=[], cell=lattice, **self.config)
                 structureIncomplete = False
@@ -56,8 +57,8 @@ class Random(VarOperator):
                     for symbol in symbols:
                         atomCoordinates = coordinates[symbol]
                         atomOperations = operations[symbol]
-                        if symbol in self.pool.compositionSpace.molecules:
-                            moleculeRef = self.systemFactory.fromDICT(self.pool.compositionSpace.molecules[symbol])
+                        if symbol in self.compositionSpace.molecules:
+                            moleculeRef = self.systemFactory.fromDICT(self.compositionSpace.molecules[symbol])
                             moleculeRef.set_cell(lattice)
                             moleculeRef.rotate((360 * np.random.random_sample()), 'z')
                             # To make sphericaly symmetric distribution we need to get probability of theta angle
@@ -103,7 +104,7 @@ class Random(VarOperator):
     def __call__(self) -> tuple:
 
         for i in list(range(self.HOW_MANY_ATTEMPTS_COMPOSITION)):
-            composition = self.pool.compositionSpace.randomComposition()
+            composition = self.compositionSpace.randomComposition()
             self.logger.debug(f'Need {composition} composition')
 
             latVol = calcVolumeForComposition(composition, **self.config)

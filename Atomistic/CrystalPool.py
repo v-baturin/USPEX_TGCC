@@ -25,7 +25,6 @@ class CrystalPool(SystemPool):
         then the system is not added to extendedConvexHull.
     """
 
-    DEFAULT_FITNESS = [('formationEnergy', 'min_antiseeds')]
 
     def __init__(self, **kwargs):
         """

@@ -23,13 +23,11 @@ class TwinningException(Exception):
     pass
 
 class Twinning(VarOperator):
-    name = 'Twinning'
-
-
-    def __init__(self, systemFactory, config, pool, initFrac : float=0.0, minFrac : float=0.1, maxFrac : float=1.0,
+    def __init__(self, systemFactory, config, pool, utilities,
                  mode_weights : tuple=(1.5, 1.0, 0.5), axis_weights : tuple=(1.0, 1.0),
                  glide_weights : tuple=(1.0/6.0,1.0/6.0,1.0/3.0,1.0/3.0)):
-        super(Twinning, self).__init__(systemFactory, config, pool, initFrac, minFrac, maxFrac)
+        super(Twinning, self).__init__(systemFactory, config, pool, utilities)
+        self.compositionSpace = utilities['compositionSpace']
         self.MAX_ATTEMPTS = 100
         self.MAX_TIME = 60
         self.correlation_coefficient = None
@@ -44,8 +42,8 @@ class Twinning(VarOperator):
                            'inversion': []}  # change to dictionary with mode parameters!
         self.shift = None
         self.parameters = {}
-        if self.pool.compositionSpace.isFixedComposition:
-            self.desiredComposition = dict(zip(self.pool.compositionSpace.symbols, self.pool.compositionSpace.blocks[0]))
+        if self.compositionSpace.isFixedComposition:
+            self.desiredComposition = dict(zip(self.compositionSpace.symbols, self.compositionSpace.blocks[0]))
         else:
             self.desiredComposition = None
             # TODO: composition must respect blocks anyway
@@ -227,7 +225,7 @@ class Twinning(VarOperator):
                     self.remove_extra_atoms()
                     self.add_missing_atoms()
 
-                if self.distance_check() and  self.pool.compositionSpace.isGoodComposition(self.offspring.composition):
+                if self.distance_check() and  self.compositionSpace.isGoodComposition(self.offspring.composition):
                     if parent == self.offspring:
                         logger.debug('Twinning: child coincidences with parent!')
                         if attempt == self.MAX_ATTEMPTS - 1:

@@ -13,9 +13,8 @@ _MIN_VALID_FREQUENCY = 5.0e-4
 
 
 class Softmodemutation(VarOperator):
-    def __init__(self, systemFactory, config, pool, initFrac : float=0.0, minFrac : float=0.1, maxFrac : float=1.0,
-                 degree: float = None):
-        super().__init__(systemFactory, config, pool, initFrac, minFrac, maxFrac)
+    def __init__(self, systemFactory, config, pool, utilities, degree: float = None):
+        super().__init__(systemFactory, config, pool, utilities)
         self.degree= degree
         self.knownSystems = {}
 

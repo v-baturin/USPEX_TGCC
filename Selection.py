@@ -14,9 +14,9 @@ class Selection(object):
     """
     knownSelectionTypes = {}
     
-    def __init__(self, target, type: str, **kwargs):
+    def __init__(self, type: str, **kwargs):
         self.config = kwargs
-        self.createPopulation = self.knownSelectionTypes[type](target, **kwargs)
+        self.createPopulation = self.knownSelectionTypes[type](**kwargs)
 
     @classmethod
     def registerSelection(cls, name: str, selectionType: type):

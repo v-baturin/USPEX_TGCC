@@ -29,16 +29,14 @@ MAX_ATTEMPS = 50
 class Heredity(VarOperator):
 
 
-    name = 'Heredity'
-
-
-    def __init__(self, systemFactory, config, pool, initFrac : float=0.0, minFrac : float=0.1, maxFrac : float=1.0):
+    def __init__(self, systemFactory, config, pool, utilities):
         '''
         :param initFrac : float - initial fraction of population to be generated with heredity
         :param minFrac : float - minimal fraction of population to be generated with heredity
         :param config: reference to configuration space object
         '''
-        super(Heredity, self).__init__(systemFactory, config, pool, initFrac, minFrac, maxFrac)
+        super(Heredity, self).__init__(systemFactory, config, pool, utilities)
+        self.compositionSpace = utilities['compositionSpace']
         # assert 'percSliceShift' in params and isinstance(params['percSliceShift'], float)
         # self._percSliceShift = params['percSliceShift']
         self.correlationFO = 0        # fitness-order correlation
@@ -136,13 +134,13 @@ class Heredity(VarOperator):
                 child_bad = [child_bad[i] for i in np.argsort(order_bad)[:]]
 
             # calculate total composition of molecules in good_child
-            composition = np.zeros(len(self.pool.compositionSpace.symbols), dtype = float)
+            composition = np.zeros(len(self.compositionSpace.symbols), dtype = float)
             for molecule in child_good:
-                composition += self.pool.compositionSpace.numIons(molecule.composition)
+                composition += self.compositionSpace.numIons(molecule.composition)
 
             # determine desired composition of ofspring structure. this function is nondeterministic.
             if desiredComposition is None:
-                desiredComposition = self.pool.compositionSpace.findDesiredComposition(
+                desiredComposition = self.compositionSpace.findDesiredComposition(
                     system1.composition, system2.composition, composition)[0]
 
             if desiredComposition is None:
@@ -164,24 +162,24 @@ class Heredity(VarOperator):
             else:
                 # latVol = np.dot(desiredComposition, self.config.calcVolume())
                 latVol = calcVolumeForComposition(
-                    Composition(dict(zip(self.pool.compositionSpace.symbols, desiredComposition)),
-                                self.pool.compositionSpace.moleculesTypeToFormula), **self.config)
+                    Composition(dict(zip(self.compositionSpace.symbols, desiredComposition)),
+                                self.compositionSpace.moleculesTypeToFormula), **self.config)
             potentialLattice = temp_potLat * (latVol / volLat) ** (1.0 / 3.0)
 
             # remove extra molecules from child_good structure
             child_good_new = []
             for i, molecule in enumerate(child_good):
-                molIndex = self.pool.compositionSpace.symbols.index(molecule.molSymbol[0])
+                molIndex = self.compositionSpace.symbols.index(molecule.molSymbol[0])
                 current = composition[molIndex]
                 desired = desiredComposition[molIndex]
                 if current > desired:
-                    composition -= self.pool.compositionSpace.numIons(molecule.composition)
+                    composition -= self.compositionSpace.numIons(molecule.composition)
                 else:
                     child_good_new.append(molecule)
             child_good = child_good_new
 
             # add lacking molecules to good_child from bad_child
-            for symbol, current, desired in zip(self.pool.compositionSpace.symbols, composition, desiredComposition):
+            for symbol, current, desired in zip(self.compositionSpace.symbols, composition, desiredComposition):
                 needed = desired - current
                 if needed > 0:
                     for molecule in child_bad:
@@ -193,7 +191,7 @@ class Heredity(VarOperator):
 
             child_good = self.systemFactory(molecules=child_good, cell=potentialLattice, optimizeLattice=True, **self.config)
 
-            if child_good.isGoodSystem() and self.pool.compositionSpace.isGoodComposition(child_good.composition):
+            if child_good.isGoodSystem() and self.compositionSpace.isGoodComposition(child_good.composition):
                 crystal = child_good
                 self.pool.assignID(crystal)
                 crystal.howCome = self.name

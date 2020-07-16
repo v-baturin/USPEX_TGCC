@@ -109,8 +109,6 @@ def generateStructureWithRandomTopology(numberOfAtoms3, supercells = None, coord
 
 class RandTop(Random):
 
-    name = 'TopRandom'
-
     logger = logger
 
     def __init__(self, *args, supercells = None, **kwargs):
