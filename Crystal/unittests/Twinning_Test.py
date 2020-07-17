@@ -66,26 +66,26 @@ class Twinning_Test(unittest.TestCase):
             except VOFailed:
                 pass
 
-    def test_molecular_fixed(self):
-        mol_glycine = read_molecule(f'{HOMEPATH}/MOL_glycine')
-        mol_H2O = read_molecule(f'{HOMEPATH}/MOL_H2O')
-        config = {}
-        compositionSpace = CompositionSpace(symbols = [mol_glycine, mol_H2O], blocks = [[4, 2]], range = [[1, 1]])
-        pool = SystemPool()
-        twinning = Twinning(Crystal, config, pool, {'compositionSpace' : compositionSpace})
-        twinning.correlation_coefficient = 0.41
-
-        with open(f'{HOMEPATH}/molecular_structures_fixed', 'rt') as f:
-            population = json.loads(f.read())
-        population_iterator = iter(population)
-        count = 0
-        while count < 1:
-            try:
-                parent = Crystal.fromDICT(next(population_iterator))
-                offsprings = twinning(parent)
-                count += len(offsprings)
-            except VOFailed:
-                pass
+    # def test_molecular_fixed(self):
+    #     mol_glycine = read_molecule(f'{HOMEPATH}/MOL_glycine')
+    #     mol_H2O = read_molecule(f'{HOMEPATH}/MOL_H2O')
+    #     config = {}
+    #     compositionSpace = CompositionSpace(symbols = [mol_glycine, mol_H2O], blocks = [[4, 2]], range = [[1, 1]])
+    #     pool = SystemPool()
+    #     twinning = Twinning(Crystal, config, pool, {'compositionSpace' : compositionSpace})
+    #     twinning.correlation_coefficient = 0.41
+    #
+    #     with open(f'{HOMEPATH}/molecular_structures_fixed', 'rt') as f:
+    #         population = json.loads(f.read())
+    #     population_iterator = iter(population)
+    #     count = 0
+    #     while count < 1:
+    #         try:
+    #             parent = Crystal.fromDICT(next(population_iterator))
+    #             offsprings = twinning(parent)
+    #             count += len(offsprings)
+    #         except VOFailed:
+    #             pass
 
     def test_molecular_variable(self):
         mol_1 = read_molecule(f'{HOMEPATH}/MOL_1')
