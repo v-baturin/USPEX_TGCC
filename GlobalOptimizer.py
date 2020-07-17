@@ -11,8 +11,6 @@ import logging
 from typing import List, Tuple
 
 from .Target import Target
-from .Selection import Selection
-
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +22,7 @@ class GlobalOptimizer(object):
     """
 
     Fitness = None
+    knownSelectionTypes = {}
 
     def __init__(self, target: dict, selection: dict, fitness: List[Tuple[str, str]], output=None, **kwargs):
         """
@@ -45,7 +44,7 @@ class GlobalOptimizer(object):
         self.best = set()
         self._isStable = False
 
-        self.selection = Selection(**selection)
+        self.createPopulation = self.knownSelectionTypes[selection['type']](**selection)
 
         # List of new found structure on this particular step
         self.newStructures = None
@@ -53,7 +52,7 @@ class GlobalOptimizer(object):
         self.output = output
         if self.output is not None:
             self.output.targetConfig = self.target.config
-            self.output.selectionConfig = self.selection.config
+            self.output.selectionConfig = selection
 
     def run(self, population: list = None):
         """
@@ -63,7 +62,7 @@ class GlobalOptimizer(object):
         :return: list of structures.
         """
 
-        population, *analysis = self.selection.createPopulation(self.target, self.fitness, population, self.newStructures)
+        population, *analysis = self.createPopulation(self.target, self.fitness, population, self.newStructures)
 
         if self.output is not None:
             self.output.handleAnalysis(analysis)
@@ -100,3 +99,8 @@ class GlobalOptimizer(object):
     @classmethod
     def setFitnessType(cls, FitnessType: type):
         cls.Fitness = FitnessType
+
+    @classmethod
+    def registerSelection(cls, selectionType: type):
+        assert selectionType.__name__ not in cls.knownSelectionTypes
+        cls.knownSelectionTypes[selectionType.__name__] = selectionType
