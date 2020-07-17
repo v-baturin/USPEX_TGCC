@@ -48,7 +48,7 @@ class Permutation(VarOperator):
         '''
         Assignation of data to the output structure
         '''
-        target.howCome = self.name
+        target.howCome = self.__class__.__name__
         self.pool.assignID(target)
         target.parent = str(ID)
         logger.info(f"Structure {target.ID} formed by permutation from {target.parent}")

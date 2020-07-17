@@ -49,14 +49,14 @@ class Softmodemutation(VarOperator):
                 newsystem2.extend(molecule2)
             offsprings = ()
             if newsystem1.isGoodSystem() and newsystem1 != system:
-                newsystem1.howCome = 'Softmodemutation'
+                newsystem1.howCome = self.__class__.__name__
                 self.pool.assignID(newsystem1)
                 newsystem1.parent = str(system.ID)
                 logger.info(f"Structure {newsystem1.ID} created via Softmode mutation at {freq:.4f} mode"
                             f" from {system.ID} parent.")
                 offsprings += (newsystem1,)
             if newsystem2.isGoodSystem() and newsystem2 != newsystem1:
-                newsystem2.howCome = 'Softmodemutation'
+                newsystem2.howCome = self.__class__.__name__
                 self.pool.assignID(newsystem2)
                 newsystem2.parent = str(system.ID)
                 logger.info(f"Structure {newsystem2.ID} created via Softmode mutation at {freq:.4f} mode"

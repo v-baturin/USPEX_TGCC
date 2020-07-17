@@ -234,7 +234,7 @@ class Twinning(VarOperator):
                             continue
                     final_structure = self.offspring
                     self.pool.assignID(final_structure)
-                    final_structure.howCome = self.name
+                    final_structure.howCome = self.__class__.__name__
                     final_structure.parent = str(parent.ID)
                     logger.info(f"Structure {final_structure.ID} created via {mode} from {parent.ID} parent")
                     return (final_structure,)

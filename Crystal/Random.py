@@ -132,7 +132,7 @@ class Random(VarOperator):
             if newstructure.isGoodSystem():
                 crystal = newstructure
                 self.pool.assignID(crystal)
-                crystal.howCome = self.name
+                crystal.howCome = self.__class__.__name__
                 crystal.parent = 'None'
                 self.logger.info(f"Structure {crystal.ID} created with {composition} composition and {name} origin"
                             f" actual symmetry is {crystal.symmetry}.")

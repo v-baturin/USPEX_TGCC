@@ -101,7 +101,7 @@ class Transmutation(VarOperator):
             # Here we generate a complete system
             
             if target.isGoodSystem():
-                target.howCome = self.name
+                target.howCome = self.__class__.__name__
                 self.pool.assignID(target)
                 target.parent = str(system.ID)
                 logger.info(f"Structure {target.ID} formed by transmutation from {target.parent}")

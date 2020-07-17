@@ -10,7 +10,6 @@ Class implementing global optimizer
 import logging
 from typing import List, Tuple
 
-from .Fitness import Fitness
 from .Target import Target
 from .Selection import Selection
 
@@ -23,6 +22,8 @@ class GlobalOptimizer(object):
     Main purpose of this class is to generate new structures
     that will be then optimized and selected best of them to the output.
     """
+
+    Fitness = None
 
     def __init__(self, target: dict, selection: dict, fitness: List[Tuple[str, str]], output=None, **kwargs):
         """
@@ -38,7 +39,8 @@ class GlobalOptimizer(object):
 
         self.target = Target(**target)
 
-        self.fitness = Fitness()
+        assert self.Fitness is not None
+        self.fitness = self.Fitness()
         self.fitnessConvergence = fitness
         self.best = set()
         self._isStable = False
@@ -94,3 +96,7 @@ class GlobalOptimizer(object):
 
     def isGoalReached(self):
         return False
+
+    @classmethod
+    def setFitnessType(cls, FitnessType: type):
+        cls.Fitness = FitnessType

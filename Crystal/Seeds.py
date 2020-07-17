@@ -80,7 +80,7 @@ class Seeds(VarOperator):
                 if system.isGoodSystem():
                     seeds.append(system)
                     self.pool.assignID(system)
-                    system.howCome = self.name
+                    system.howCome = self.__class__.__name__
                     system.parent = 'None'
                     logger.info(f"Structure {system.ID} created from seed {filename}.")
                 else:

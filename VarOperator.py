@@ -46,9 +46,6 @@ class VarOperator(object):
 
     """
 
-    name = None
-    isActive = True
-
     VOFailed = VOFailed
 
     def __init__(self, systemFactory: Callable, config: dict, pool: SystemPool, utilities: dict,

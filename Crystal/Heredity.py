@@ -194,7 +194,7 @@ class Heredity(VarOperator):
             if child_good.isGoodSystem() and self.compositionSpace.isGoodComposition(child_good.composition):
                 crystal = child_good
                 self.pool.assignID(crystal)
-                crystal.howCome = self.name
+                crystal.howCome = self.__class__.__name__
                 crystal.parent = str(system1.ID) + ' ' + str(system2.ID)
                 logger.info(f"Structure {crystal.ID} created parents {system1.ID} and {system2.ID}")
                 return (crystal,)
