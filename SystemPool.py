@@ -40,6 +40,7 @@ class SystemPool(object):
         :param config: describes the chemical compositions configuration space.
         """
         self.uniqueSystems = []
+        self.allSystems = {}
         self._newID = 0
 
     def update(self, population: list):
@@ -111,3 +112,4 @@ class SystemPool(object):
         """
         system.ID = self._newID
         self._newID += 1
+        self.allSystems[system.ID] = system

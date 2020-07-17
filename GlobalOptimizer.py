@@ -44,30 +44,24 @@ class GlobalOptimizer(object):
         self.best = set()
         self._isStable = False
 
+        self.selectionConfig = selection
         self.createPopulation = self.knownSelectionTypes[selection['type']](**selection)
 
+        # List of structure recieved from update on this particular step
+        self.population = None
         # List of new found structure on this particular step
         self.newStructures = None
 
         self.output = output
-        if self.output is not None:
-            self.output.targetConfig = self.target.config
-            self.output.selectionConfig = selection
 
-    def run(self, population: list = None):
+    def run(self):
         """
         Here we generate new set of structures.
 
         :rtype: list
         :return: list of structures.
         """
-
-        population, *analysis = self.createPopulation(self.target, self.fitness, population, self.newStructures)
-
-        if self.output is not None:
-            self.output.handleAnalysis(analysis)
-
-        return population
+        return self.createPopulation(self.target, self.fitness, self.population, self.newStructures)
 
     def update(self, population: list):
         """
@@ -77,6 +71,7 @@ class GlobalOptimizer(object):
         :param population: list of systems which allows to update our knowledge about target space.
         """
         self.target.pool.cleanDuplicates(population)
+        self.population = population
         self.newStructures = self.target.pool.newFoundSystems(population)
         self.target.pool.update(self.newStructures)
         best = set(system.ID for system in self.fitness.sort(self.fitnessConvergence, self.target.pool.uniqueSystems,
@@ -87,12 +82,11 @@ class GlobalOptimizer(object):
             self._isStable = False
             self.best = best
 
-        if self.output is not None:
-            self.output.handlePool(self.target.pool)
-
+    @property
     def isStable(self):
         return self._isStable
 
+    @property
     def isGoalReached(self):
         return False
 

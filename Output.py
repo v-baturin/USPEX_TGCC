@@ -21,8 +21,7 @@ class Output(object):
     """
     Class handling output.
     """
-    def __init__(self, name: str, target: dict, selection: dict, numParallelCalcs: int, stages: list,
-                 output: dict = None, representationFactory=NoRepresentation, **kwargs):
+    def __init__(self, output: dict = None, representationFactory=NoRepresentation, **kwargs):
         """
         Initializes the class.
 
@@ -35,24 +34,14 @@ class Output(object):
         :param representationFactory:
         :param kwargs:
         """
-        self.numParallelCalcs = numParallelCalcs
-        self.numStages = len(stages)
-
         if output is None:
             output = {}
-        self.representation = representationFactory(name, selection['type'], target['type'], **output)
+        self.representation = representationFactory(**kwargs, **output)
 
-        if 'fitness' in target:
-            self.fitness = target['fitness']
-        else:
-            self.fitness = None
         self.populations = []
-        self.analyses = []
+        self.infos = []
         self.systems = {}
-        self.pools = []
-
-        self.selectionConfig = None
-        self.targetConfig = None
+        self.optimizers = []
 
     def handleSystem(self, system):
         try:
@@ -61,28 +50,29 @@ class Output(object):
                 self.systems[ID].append(copy(system))
             else:
                 self.systems[ID] = [copy(system)]
-            self.representation.presentSystems(self.systems, self.numStages, self.fitness)
+            optimizer = self.optimizers[-1] if self.optimizers else None
+            self.representation.presentSystems(self.systems, optimizer)
         except Exception as ex:
             logger.exception(ex)
 
     def handlePopulation(self, population):
         try:
             self.populations.append(copy(population))
-            self.representation.presentOutput(self.targetConfig, self.selectionConfig, self.numStages,
-                                              self.numParallelCalcs, self.populations, self.fitness)
+            optimizer = self.optimizers[-1] if self.optimizers else None
+            self.representation.presentOutput(self.populations, optimizer)
         except Exception as ex:
             logger.exception(ex)
 
-    def handleAnalysis(self, analysis):
+    def handleInfo(self, info):
         try:
-            self.analyses.append(copy(analysis))
-            self.representation.presentAnalysis(self.analyses)
+            self.infos.append(copy(info))
+            self.representation.presentInfo(self.infos)
         except Exception as ex:
             logger.exception(ex)
 
-    def handlePool(self, pool):
+    def handleOptimizer(self, optimizer):
         try:
-            self.pools.append(copy(pool))
-            self.representation.presentPool(self.pools, self.fitness)
+            self.optimizers.append(copy(optimizer))
+            self.representation.presentOptimizer(self.optimizers)
         except Exception as ex:
             logger.exception(ex)
