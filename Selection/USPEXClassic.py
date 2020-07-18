@@ -140,6 +140,21 @@ class USPEXClassic(object):
         return population, (autofrac.weightsLast, autofrac.weightsBest)
 
 def determineMostDiverse(population : list, howManyDiverse: int, tolerance: float):
+    """
+    Here we perform clusterization in terms of distances between systems, assuming such distance is defined.
+    For example atomic structures defines cosine distance in space of fingerprints.
+    Such clusterization is an algorithm of determining a given amount (*howManyDiverse*) of systems from *population*
+    so that the distances between them are greater than some threshold and all other systems in *population*
+    lie in their vicinity with regard to the same threshold.
+    The threshold determined automatically so such clusterization would be possible.
+    :type population: list
+    :param population: List of structures to be clusterized.
+    :type howManyDiverse: int
+    :param howManyDiverse: Amount of resulting structures.
+    :type tolerance: float
+    :param tolerance: Starting point for the threshold.
+    :return:
+    """
     deltaTol = tolerance / 2
     assert deltaTol > 0.000001
     while deltaTol > 0.000001:
