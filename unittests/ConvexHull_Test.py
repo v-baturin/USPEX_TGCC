@@ -12,7 +12,7 @@ import numpy as np
 import os
 
 
-from ..Fitness import Fintness
+from ..Fitness import Fitness
 
 
 # class System(object):
@@ -29,13 +29,13 @@ class ConvexHull_Test(unittest.TestCase):
         if os.path.exists(filename):
             os.remove(filename)
 
-        heights = Fintness.convexHullHeight(np.empty((1,0), dtype=float), np.array([-2.0]))
+        heights = Fitness.convexHullHeight(np.empty((1,0), dtype=float), np.array([-2.0]))
         self.assertTrue(np.allclose(heights, np.array([0])))
 
-        heights = Fintness.convexHullHeight(np.empty((2,0), dtype=float), np.array([-2.0, -4.0]))
+        heights = Fitness.convexHullHeight(np.empty((2,0), dtype=float), np.array([-2.0, -4.0]))
         self.assertTrue(np.allclose(heights, np.array([2.0,0])))
 
-        heights = Fintness.convexHullHeight(np.empty((3,0), dtype=float), np.array([-2.0,-4.0,-1.0]))
+        heights = Fitness.convexHullHeight(np.empty((3,0), dtype=float), np.array([-2.0,-4.0,-1.0]))
         self.assertTrue(np.allclose(heights, np.array([2.0,0,3.0])))
 
         # compositionSpace = CompositionSpace(symbols=['Mo'], blocks=[[1]], range=[[1, 18]])
@@ -70,35 +70,35 @@ class ConvexHull_Test(unittest.TestCase):
         if os.path.exists(filename):
             os.remove(filename)
 
-        heights = Fintness.convexHullHeight(np.array([[2.0/7.0]]),
+        heights = Fitness.convexHullHeight(np.array([[2.0/7.0]]),
                                             np.array([-5.0/14.0]))
         self.assertTrue(np.allclose(heights, np.array([0])))
 
-        heights = Fintness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0]]),
+        heights = Fitness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0]]),
                                             np.array([-5.0/14.0, -1.0]))
         self.assertTrue(np.allclose(heights, np.array([9.0/14.0, 0.0])))
 
-        heights = Fintness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5]]),
+        heights = Fitness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5]]),
                                             np.array([-5.0/14.0, -1.0, -0.5]))
         self.assertTrue(np.allclose(heights, np.array([0.642857, 0.0, 0.0])))
 
-        heights = Fintness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0]]),
+        heights = Fitness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0]]),
                                             np.array([-5.0/14.0, -1.0, -0.5, -0.25]))
         self.assertTrue(np.allclose(heights, np.array([0.642857, 0.0, 0.275, 0.0])))
 
-        heights = Fintness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0], [1.0]]),
+        heights = Fitness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0], [1.0]]),
                                             np.array([-5.0/14.0, -1.0, -0.5, -0.25, -0.5]))
         self.assertTrue(np.allclose(heights, np.array([0.642857, 0.0, 0.35, 0.25, 0.0])))
 
-        heights = Fintness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0], [1.0], [0.0]]),
+        heights = Fitness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0], [1.0], [0.0]]),
                                             np.array([-5.0/14.0, -1.0, -0.5, -0.25, -0.5, -1.2]))
         self.assertTrue(np.allclose(heights, np.array([0.642857, 0.0, 0.35, 0.25, 0.0, 0.0])))
 
-        heights = Fintness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0], [1.0], [0.0], [0.6]]),
+        heights = Fitness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0], [1.0], [0.0], [0.6]]),
                                             np.array([-5.0/14.0, -1.0, -0.5, -0.25, -0.5, -1.2, -0.2]))
         self.assertTrue(np.allclose(heights, np.array([0.642857, 0.0, 0.35, 0.25, 0.0, 0.0, 0.58])))
 
-        heights = Fintness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0], [1.0], [0.0], [0.6], [0.4]]),
+        heights = Fitness.convexHullHeight(np.array([[2.0/7.0], [2.0/7.0], [0.5], [1.0], [1.0], [0.0], [0.6], [0.4]]),
                                             np.array([-5.0/14.0, -1.0, -0.5, -0.25, -0.5, -1.2, -0.2, -1.6]))
         self.assertTrue(np.allclose(heights, np.array([1.128571, 0.485714, 0.916667, 0.25, 0.0, 0.0, 1.033333, 0.0])))
 
@@ -291,7 +291,7 @@ class ConvexHull_Test(unittest.TestCase):
         if os.path.exists(filename):
             os.remove(filename)
 
-        heights = Fintness.convexHullHeight(np.array([[0.3], [8.0/13.0], [0.25], [0.3], [13.0/18.0], [0.9]]),
+        heights = Fitness.convexHullHeight(np.array([[0.3], [8.0/13.0], [0.25], [0.3], [13.0/18.0], [0.9]]),
                                             np.array([-8.94225, -8.65781, -8.13805, -8.8125, -8.37417, -7.7661]))
         self.assertTrue(np.allclose(np.flatnonzero(heights), np.array([3])))
 
@@ -346,7 +346,7 @@ class ConvexHull_Test(unittest.TestCase):
         if os.path.exists(filename):
             os.remove(filename)
 
-        heights = Fintness.convexHullHeight(np.array([[0.25], [1.0], [0.25], [0.3], [1.0]]),
+        heights = Fitness.convexHullHeight(np.array([[0.25], [1.0], [0.25], [0.3], [1.0]]),
                                             np.array([-8.66625, -8.5888, -8.6701, -8.87155, -7.6904]))
         self.assertTrue(np.allclose(np.flatnonzero(heights), np.array([0, 4])))
 

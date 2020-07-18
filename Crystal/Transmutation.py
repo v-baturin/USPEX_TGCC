@@ -8,9 +8,7 @@ __author__='alex_a_marjewski'
 
 class Transmutation(VarOperator):
 
-    name = 'Permutation'
-
-    def __init__(self, systemFactory, config, pool, initFrac : float=0.0, howManyTrans : int=2, specificTrans : list=[], minFrac : float=0.1, maxFrac : float=1.0):
+    def __init__(self, systemFactory, config, pool, utilities, howManyTrans : int=2, specificTrans : list=[]):
         '''
         :param initFrac : float - initial fraction of population to be generated with permutation
         :param minFrac : float - minimal fraction of population to be generated with permutation
@@ -19,7 +17,8 @@ class Transmutation(VarOperator):
         :param specificTrans : list - only specific molecular type transmutations are allowed; for Mo<->B transmutations, input
          list should be either ['Mo', 'B'] or ['B', 'Mo'] - both will work.
         '''
-        super(Transmutation, self).__init__(systemFactory, config, pool, initFrac, minFrac, maxFrac)
+        super(Transmutation, self).__init__(systemFactory, config, pool, utilities)
+        self.compositionSpace = utilities['compositionSpace']
         self.correlationFO = 0        # fitness-order correlation | Ignoring this temporarily
         self.howManyTrans = howManyTrans
         self.specificTrans = [set(i) for i in specificTrans]
@@ -38,7 +37,7 @@ class Transmutation(VarOperator):
         # Initialize for creation of possible transmutation list
         # Each transmutation has the form of a list [index, 'molSymbol']
         indices = list(range(0, len(system.molecules)))
-        transmutations = [ [i, j] for i in indices for j in self.pool.compositionSpace.symbols if system.molSymbol[i] != j ]
+        transmutations = [ [i, j] for i in indices for j in self.compositionSpace.symbols if system.molSymbol[i] != j ]
 
         # Here we apply specificTrans constraint, if such is present.
         if len(self.specificTrans)>0:
@@ -73,7 +72,7 @@ class Transmutation(VarOperator):
                     target = self.systemFactory(molecules=attempted_structure, cell=system.cell,
                                                 optimizeLattice = True, **self.config)
 
-                    molecule_reference = self.systemFactory.fromDICT(self.pool.compositionSpace.molecules[transmute[1]])
+                    molecule_reference = self.systemFactory.fromDICT(self.compositionSpace.molecules[transmute[1]])
                     molecule_reference.set_cell(system.cell)
                     molecule_reference.rotate((360 * np.random.random_sample()), 'z')
                     theta = np.arcsin(np.sqrt(np.random.random_sample())) * 180 / np.pi
@@ -102,7 +101,7 @@ class Transmutation(VarOperator):
             # Here we generate a complete system
             
             if target.isGoodSystem():
-                target.howCome = self.name
+                target.howCome = self.__class__.__name__
                 self.pool.assignID(target)
                 target.parent = str(system.ID)
                 logger.info(f"Structure {target.ID} formed by transmutation from {target.parent}")

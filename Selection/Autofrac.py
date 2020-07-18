@@ -13,6 +13,7 @@ FunctionFolder/USPEX/src/update_STUFF.m
 
 import numpy as np
 from collections import Counter
+from typing import Dict
 
 
 class Autofrac(object):
@@ -20,7 +21,7 @@ class Autofrac(object):
 
     '''
 
-    def __init__(self, population : list, best : list, newFoundSystems : list, varOperators : list):
+    def __init__(self, fractions : Dict[str, tuple], population : list, best : list, newFoundSystems : list, varOperators : list):
         '''
 
         :param population:
@@ -41,9 +42,11 @@ class Autofrac(object):
         self.minFracs = {}
         self.maxFracs = {}
         for VO in varOperators:
-            self.initFracs[VO] = VO.initialFraction
-            self.minFracs[VO] = VO.minimalFraction
-            self.maxFracs[VO] = VO.maximalFraction
+            name = VO.__class__.__name__[0].lower() + VO.__class__.__name__[1:]
+            if name in fractions:
+                self.minFracs[VO], self.maxFracs[VO], self.initFracs[VO] = fractions[name]
+            else:
+                self.minFracs[VO], self.maxFracs[VO], self.initFracs[VO] = 0.0,0.0,0.0
 
     def howMany(self, varOperator, leftPopSize : int):
         '''

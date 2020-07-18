@@ -48,12 +48,10 @@ def determineOperations(lat, numIons, candidate):
 
 class RandSym(Random):
 
-    name = 'SymRandom'
-
     logger = logger
 
     def __init__(self, *args, nsymN=False, nsym=None, sym_coef=0.4, splitInto=[1], **kwargs):
-        super(Random, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.nsymN = nsymN
         if nsym is None:
             self.nsym = list(range(2, 230))
@@ -77,10 +75,10 @@ class RandSym(Random):
         CenterminDistMatrice = np.zeros((len(symbols), len(symbols)))
         radii = []
         for s in symbols:
-            if s not in self.pool.compositionSpace.molecules:
+            if s not in self.compositionSpace.molecules:
                 radii.append(0.22 * calcVolume(externalPressure, s, **volumeType) ** (1.0 / 3.0))
             else:
-                molecule = AtomicStructure.fromDICT(self.pool.compositionSpace.molecules[s])
+                molecule = AtomicStructure.fromDICT(self.compositionSpace.molecules[s])
                 molecule.set_masses([1] * len(molecule))
                 molecule.translate(-molecule.get_center_of_mass())
                 values, vectors = molecule.get_moments_of_inertia(vectors=True)

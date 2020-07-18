@@ -12,17 +12,17 @@ class NoRepresentation(object):
     """
     Empty output representation.
     """
-    def __init__(self, name : str, selection : str, target : str, **kwargs):
+    def __init__(self, **kwargs):
         pass
 
-    def presentSystems(self, systems, numStages, fitness):
+    def presentSystems(self, systems, optimizer):
         pass
 
-    def presentOutput(self, targetConfig, selectionConfig, numStages, numParallelCalcs, populations, fitness):
+    def presentOutput(self, populations, optimizer):
         pass
 
-    def presentAnalysis(self, analyses):
+    def presentInfo(self, info):
         pass
 
-    def presentPool(self, pools, fitness):
+    def presentOptimizer(self, optimizers):
         pass

@@ -19,8 +19,9 @@ import json
 import toml
 
 from ...Atomistic.mol.read_molecule import read_molecule
+from ...SystemPool import SystemPool
 from ...Atomistic.Crystal import Crystal
-from ...Atomistic.CrystalPool import CrystalPool
+from ...Atomistic.CompositionSpace import CompositionSpace
 from ..Permutation import Permutation, VOFailed
 
 
@@ -30,8 +31,9 @@ HOMEPATH = os.path.dirname(os.path.abspath(__file__))
 class Permutation_Test(unittest.TestCase):
     def test_atomic_fixed(self):
         config = {'externalPressure' : 100}
-        pool = CrystalPool(symbols = ['Mg', 'Al', 'O'], blocks = [[4, 8, 16]], range = [[1, 1]])
-        permutation = Permutation(Crystal, config, pool, initFrac=1.0)
+        compositionSpace = CompositionSpace(symbols = ['Mg', 'Al', 'O'], blocks = [[4, 8, 16]], range = [[1, 1]])
+        pool = SystemPool()
+        permutation = Permutation(Crystal, config, pool, {'compositionSpace' : compositionSpace})
         permutation.correlation_coefficient = 0.41
 
         with open(f'{HOMEPATH}/atomic_structures_fixed', 'rt') as f:
@@ -48,8 +50,9 @@ class Permutation_Test(unittest.TestCase):
 
     def test_atomic_variable(self):
         config = {}
-        pool = CrystalPool(symbols = ['Mo', 'B'], blocks = [[1, 0], [0, 1]], range = [[0, 18], [0, 18]])
-        permutation = Permutation(Crystal, config, pool, initFrac=1.0)
+        compositionSpace = CompositionSpace(symbols = ['Mo', 'B'], blocks = [[1, 0], [0, 1]], range = [[0, 18], [0, 18]])
+        pool = SystemPool()
+        permutation = Permutation(Crystal, config, pool, {'compositionSpace' : compositionSpace})
         permutation.correlation_coefficient = 0.41
 
         with open(f'{HOMEPATH}/atomic_structures_variable', 'rt') as f:
@@ -94,10 +97,11 @@ class Permutation_Test(unittest.TestCase):
                                     ('O','C') : 1.20, ('O','O') : 1.20, ('O','H') : 1.20, ('O','N') : 1.20,
                                     ('H','C') : 1.20, ('H','O') : 1.20, ('H','H') : 0.51, ('H','N') : 1.20,
                                     ('N','C') : 1.20, ('N','O') : 1.20, ('N','H') : 1.20, ('N','N') : 1.20}}
-        pool = CrystalPool(symbols = [mol_1, mol_2, mol_3, 'O', mol_5],
+        compositionSpace = CompositionSpace(symbols = [mol_1, mol_2, mol_3, 'O', mol_5],
                            blocks = [[0,2,0,1,0], [1,0,0,0,0],[0,0,1,0,0],[0,0,0,0,1]],
                            range = [[1,2],[0,4],[0,4],[0,4]], minAt = 5, maxAt = 40)
-        permutation = Permutation(Crystal, config, pool, initFrac=1.0)
+        pool = SystemPool()
+        permutation = Permutation(Crystal, config, pool, {'compositionSpace' : compositionSpace})
         permutation.correlation_coefficient = 0.41
 
         with open(f'{HOMEPATH}/molecular_structures_variable', 'rt') as f:

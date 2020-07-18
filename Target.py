@@ -11,7 +11,9 @@ Class describing target space
 import logging
 
 from types import SimpleNamespace
+from typing import List
 
+from .SystemPool import SystemPool
 from .VariationOperators import VariationOperators
 
 
@@ -52,30 +54,38 @@ class Target(object):
         :type kwargs: dict
         :param kwargs: parameters for initializing config.
         """
-        targetDef = SimpleNamespace(**self.knownTargetTypes[type])
-        self.systemType = targetDef.systemType
+        targetTypes = self.knownTargetTypes[type]
+        self.systemType = targetTypes.systemType
         self.config = kwargs['config']
-        self.pool = targetDef.poolType(**kwargs['pool'])
-        
+        self.pool = SystemPool()
+        self.utilities = {}
+        for untilityType in targetTypes.sharedUtilities:
+            name = untilityType.__name__[0].lower() + untilityType.__name__[1:]
+            self.utilities[name] = untilityType(**kwargs[name]) if name in kwargs else untilityType()
+
         self.hybridizations = []
-        for hybridizationType in targetDef.variationOperators.hybridizationTypes:
-            params = kwargs[hybridizationType.__name__] if hybridizationType.__name__ in kwargs else {}
-            self.hybridizations.append(hybridizationType(targetDef.systemType, self.config, self.pool, **params))
+        for hybridizationType in targetTypes.variationOperators.hybridizationTypes:
+            name = hybridizationType.__name__[0].lower() + hybridizationType.__name__[1:]
+            params = kwargs[name] if name in kwargs else {}
+            self.hybridizations.append(hybridizationType(self.systemType, self.config, self.pool, self.utilities,
+                                                         **params))
 
         self.mutations = []
-        for mutationType in targetDef.variationOperators.mutationTypes:
-            params = kwargs[mutationType.__name__] if mutationType.__name__ in kwargs else {}
-            self.mutations.append(mutationType(targetDef.systemType, self.config, self.pool, **params))
+        for mutationType in targetTypes.variationOperators.mutationTypes:
+            name = mutationType.__name__[0].lower() + mutationType.__name__[1:]
+            params = kwargs[name] if name in kwargs else {}
+            self.mutations.append(mutationType(self.systemType, self.config, self.pool, self.utilities, **params))
 
         self.creations = []
-        for creationType in targetDef.variationOperators.creationTypes:
-            params = kwargs[creationType.__name__] if creationType.__name__ in kwargs else {}
-            self.creations.append(creationType(targetDef.systemType, self.config, self.pool, **params))
+        for creationType in targetTypes.variationOperators.creationTypes:
+            name = creationType.__name__[0].lower() + creationType.__name__[1:]
+            params = kwargs[name] if name in kwargs else {}
+            self.creations.append(creationType(self.systemType, self.config, self.pool, self.utilities, **params))
 
         self.variationOperators = self.hybridizations + self.mutations + self.creations
 
     @classmethod
-    def registerTarget(cls, name: str, systemType: type, poolType: type, variationOperators: VariationOperators):
+    def registerTarget(cls, name: str, systemType: type, sharedUtilities: List[type], variationOperators: VariationOperators):
         """
         Register the target as known target.
 
@@ -89,5 +99,5 @@ class Target(object):
         :param variationOperators: variation operators.
         """
         assert name not in cls.knownTargetTypes
-        cls.knownTargetTypes[name] = {'systemType': systemType, 'poolType': poolType,
-                                      'variationOperators': variationOperators}
+        cls.knownTargetTypes[name] = SimpleNamespace(**{'systemType': systemType, 'sharedUtilities': sharedUtilities,
+                                                        'variationOperators': variationOperators})

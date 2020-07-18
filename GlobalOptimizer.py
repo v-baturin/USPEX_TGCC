@@ -8,10 +8,9 @@ Class implementing global optimizer
 """
 
 import logging
-from .Worker import Worker
-from .Target import Target
-from .Selection import Selection
+from typing import List, Tuple
 
+from .Target import Target
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,10 @@ class GlobalOptimizer(object):
     that will be then optimized and selected best of them to the output.
     """
 
-    def __init__(self, target: dict, selection: dict, output=None, **kwargs):
+    Fitness = None
+    knownSelectionTypes = {}
+
+    def __init__(self, target: dict, selection: dict, fitness: List[Tuple[str, str]], output=None, **kwargs):
         """
         Initializes the class.
 
@@ -35,34 +37,31 @@ class GlobalOptimizer(object):
         """
 
         self.target = Target(**target)
-        if 'fitness' in target:
-            self.fitness = target['fitness']
-        else:
-            self.fitness = self.target.pool.DEFAULT_FITNESS
 
-        self.selection = Selection(self.target, **selection)
+        assert self.Fitness is not None
+        self.fitness = self.Fitness()
+        self.fitnessConvergence = fitness
+        self.best = set()
+        self._isStable = False
+
+        self.selectionConfig = selection
+        self.createPopulation = self.knownSelectionTypes[selection['type']](**selection)
+
+        # List of structure recieved from update on this particular step
+        self.population = None
         # List of new found structure on this particular step
         self.newStructures = None
 
         self.output = output
-        if self.output is not None:
-            self.output.targetConfig = self.target.config
-            self.output.selectionConfig = self.selection.config
 
-    def run(self, population: list = None):
+    def run(self):
         """
         Here we generate new set of structures.
 
         :rtype: list
         :return: list of structures.
         """
-
-        population, *analysis = self.selection.createPopulation(population, self.newStructures, self.fitness)
-
-        if self.output is not None:
-            self.output.handleAnalysis(analysis)
-
-        return population
+        return self.createPopulation(self.target, self.fitness, self.population, self.newStructures)
 
     def update(self, population: list):
         """
@@ -72,16 +71,30 @@ class GlobalOptimizer(object):
         :param population: list of systems which allows to update our knowledge about target space.
         """
         self.target.pool.cleanDuplicates(population)
+        self.population = population
         self.newStructures = self.target.pool.newFoundSystems(population)
         self.target.pool.update(self.newStructures)
-        best = self.target.pool.sort(self.fitness, self.target.pool.uniqueSystems)[0]
-        self.target.pool.setBest(self.fitness, best)
+        best = set(system.ID for system in self.fitness.sort(self.fitnessConvergence, self.target.pool.uniqueSystems,
+                                                             self.target.pool.uniqueSystems)[0])
+        if best == self.best:
+            self._isStable = True
+        else:
+            self._isStable = False
+            self.best = best
 
-        if self.output is not None:
-            self.output.handlePool(self.target.pool)
-
+    @property
     def isStable(self):
-        return False
+        return self._isStable
 
+    @property
     def isGoalReached(self):
         return False
+
+    @classmethod
+    def setFitnessType(cls, FitnessType: type):
+        cls.Fitness = FitnessType
+
+    @classmethod
+    def registerSelection(cls, selectionType: type):
+        assert selectionType.__name__ not in cls.knownSelectionTypes
+        cls.knownSelectionTypes[selectionType.__name__] = selectionType

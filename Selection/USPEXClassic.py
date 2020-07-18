@@ -11,12 +11,9 @@
 import random
 from itertools import combinations, chain
 from copy import copy
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import numpy as np
-
-from ..Target import Target
-from ..VarOperator import VOFailed
 
 from .Autofrac import Autofrac
 
@@ -29,14 +26,15 @@ class USPEXClassic(object):
 
     '''
 
-    def __init__(self, target : Target, popSize : int, initialPopSize=None, bestFrac:float=0.7,
-                 howManyDiverse=None, diversityTolerance = 0.5, **kwargs):
+    def __init__(self, fitness : List[Tuple[str, str]], popSize : int, fractions : Dict[str, tuple],
+                 initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, **kwargs):
         '''
         :param target: reference to configuration space object
         :param params: dictionary contains following parameters:
         popSize : int - size of population
         '''
-        self.target = target
+        self.fitness = fitness
+        self.fractions = fractions
 
         self.popSize = popSize
 
@@ -50,7 +48,7 @@ class USPEXClassic(object):
         self.diversityTolerance = diversityTolerance
         self._mostDiverse = []
 
-    def __call__(self, population : list, newStructures : list, fitness : List[Tuple[str, str]]):
+    def __call__(self, target, fitness, population : list, newStructures : list):
         '''
         :param oldPopulation: generation of new
         :param best:
@@ -60,30 +58,30 @@ class USPEXClassic(object):
         '''
 
         if population is None:
-            autofrac = Autofrac(population=[], best=[], newFoundSystems=[], varOperators=self.target.variationOperators)
+            autofrac = Autofrac(self.fractions, population=[], best=[], newFoundSystems=[], varOperators=target.variationOperators)
             best, tournament, popSize = [], [], self.initialPopSize
         else:
-            for VO in self.target.variationOperators:
+            for VO in target.variationOperators:
                 VO.tune(population)
 
             extendedPopulation = copy(population)
             extendedPopulation.extend(self._mostDiverse)
-            sortedPopulation = list(chain.from_iterable(self.target.pool.sort(fitness, extendedPopulation)))
+            sortedPopulation = list(chain.from_iterable(fitness.sort(self.fitness, extendedPopulation, target.pool.uniqueSystems)))
 
             howManyProliferate = int(self.bestFrac * len(sortedPopulation))
             best = sortedPopulation[:howManyProliferate]
             tournament = [(i + 1.0) ** 2 for i in reversed(range(howManyProliferate))]
             tournament /= np.sum(tournament)
 
-            self._mostDiverse = self.target.systemType.determineMostDiverse(best, self.howManyDiverse, self.diversityTolerance)
-            autofrac = Autofrac(population, best, newStructures, self.target.variationOperators)
+            self._mostDiverse = determineMostDiverse(best, self.howManyDiverse, self.diversityTolerance)
+            autofrac = Autofrac(self.fractions, population, best, newStructures, target.variationOperators)
 
             popSize = self.popSize
 
         population = []
         actualParents = []
 
-        for mutation in self.target.mutations:
+        for mutation in target.mutations:
             mutation.prepare()
             howMany = autofrac.howMany(mutation, popSize - len(population))
             if best:
@@ -99,11 +97,11 @@ class USPEXClassic(object):
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.append(parent)
-                except VOFailed:
+                except mutation.VOFailed:
                     pass
             mutation.standby()
 
-        for hybridization in self.target.hybridizations:
+        for hybridization in target.hybridizations:
             hybridization.prepare()
             howMany = autofrac.howMany(hybridization, popSize - len(population))
             parents_pool = [parents for parents in combinations(range(len(best)), 2)]
@@ -122,22 +120,58 @@ class USPEXClassic(object):
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.extend([parent1, parent2])
-                except VOFailed:
+                except hybridization.VOFailed:
                     pass
             hybridization.standby()
 
-        for creation in self.target.creations:
+        for creation in target.creations:
             creation.prepare()
             howMany = autofrac.howMany(creation, popSize - len(population))
             while howMany > 0:
                 try:
                     offsprings = creation()
                     population.extend(offsprings)
-                except VOFailed:
+                except creation.VOFailed:
                     offsprings = tuple()
                 howMany -= len(offsprings)
             creation.standby()
 
-        self.target.pool.payPenalties(actualParents)
+        fitness.payPenalties(actualParents, target.pool.uniqueSystems)
         return population, (autofrac.weightsLast, autofrac.weightsBest)
 
+def determineMostDiverse(population : list, howManyDiverse: int, tolerance: float):
+    """
+    Here we perform clusterization in terms of distances between systems, assuming such distance is defined.
+    For example atomic structures defines cosine distance in space of fingerprints.
+    Such clusterization is an algorithm of determining a given amount (*howManyDiverse*) of systems from *population*
+    so that the distances between them are greater than some threshold and all other systems in *population*
+    lie in their vicinity with regard to the same threshold.
+    The threshold determined automatically so such clusterization would be possible.
+    :type population: list
+    :param population: List of structures to be clusterized.
+    :type howManyDiverse: int
+    :param howManyDiverse: Amount of resulting structures.
+    :type tolerance: float
+    :param tolerance: Starting point for the threshold.
+    :return:
+    """
+    deltaTol = tolerance / 2
+    assert deltaTol > 0.000001
+    while deltaTol > 0.000001:
+        mostDiverse = []
+        for system in population:
+            goodSystem = True
+            for ref_system in mostDiverse:
+                if system.dist(system, ref_system) < tolerance:
+                    goodSystem = False
+                    break
+            if goodSystem:
+                mostDiverse.append(system)
+        if len(mostDiverse) < howManyDiverse:
+            tolerance -= deltaTol
+        elif len(mostDiverse) > howManyDiverse:
+            tolerance += deltaTol
+        else:
+            break
+        deltaTol /= 2
+    return mostDiverse

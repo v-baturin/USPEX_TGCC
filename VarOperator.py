@@ -16,6 +16,13 @@ from USPEX.Common.SystemPool import SystemPool
 MAX_OUTPUT_SIZE = 8
 
 
+class VOFailed(Exception):
+    """
+    Should be raised when variation operator fails.
+    """
+    pass
+
+
 class VarOperator(object):
     """
     Variation Operators are wise methods of creation of new systems in some target space (see
@@ -39,10 +46,9 @@ class VarOperator(object):
 
     """
 
-    name = None
-    isActive = True
+    VOFailed = VOFailed
 
-    def __init__(self, systemFactory: Callable, config: dict, pool: SystemPool, initFrac: float, minFrac: float = 0.1, maxFrac: float = 1.0,
+    def __init__(self, systemFactory: Callable, config: dict, pool: SystemPool, utilities: dict,
                  maxOutputSize: int = MAX_OUTPUT_SIZE):
         """
         Initializes the class.
@@ -66,37 +72,7 @@ class VarOperator(object):
         self.systemFactory = systemFactory
         self.config = config
         self.pool = pool
-        assert 0.0 <= minFrac <= 1.0
-        assert 0.0 <= maxFrac <= 1.0
-        assert minFrac <= maxFrac
-        self._minimalFraction = minFrac
-        self._maximalFraction = maxFrac
-        self._initialFraction = initFrac
         self._MAX_OUTPUT_SIZE = int(maxOutputSize)
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def initialFraction(self):
-        """
-        Returns the initial fraction of this variation operator in search algorithm.
-        """
-        return self._initialFraction
-
-    @property
-    def minimalFraction(self):
-        """
-        Returns the minimal fraction of this variation operator in search algorithm.
-        """
-        return self._minimalFraction
-
-    @property
-    def maximalFraction(self):
-        """
-        Returns the maximal fraction of this variation operator in search algorithm.
-        """
-        return self._maximalFraction
 
     @property
     def maxOutputSize(self) -> int:
@@ -106,7 +82,7 @@ class VarOperator(object):
         return self._MAX_OUTPUT_SIZE
 
     def __hash__(self):
-        return hash(self.name)
+        return hash(self.__class__.__name__)
 
     def __call__(self, *args, **kwargs) -> tuple:
         """
@@ -139,10 +115,3 @@ class VarOperator(object):
 
     def standby(self):
         pass
-
-
-class VOFailed(Exception):
-    """
-    Should be raised when variation operator fails.
-    """
-    pass

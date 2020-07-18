@@ -18,8 +18,9 @@ import unittest
 import toml
 
 from ...Atomistic.mol.read_molecule import read_molecule
+from ...SystemPool import SystemPool
 from ...Atomistic.Crystal import Crystal
-from ...Atomistic.CrystalPool import CrystalPool
+from ...Atomistic.CompositionSpace import CompositionSpace
 from ..Seeds import Seeds, VOFailed
 
 
@@ -29,9 +30,11 @@ HOMEPATH = os.path.dirname(os.path.abspath(__file__))
 class Seeds_Test(unittest.TestCase):
     def test_atomic_fixed(self):
         config = {'externalPressure' : 100}
-        pool = CrystalPool(symbols = ['Mg', 'Al', 'O'], blocks = [[4, 8, 16]], range = [[1, 1]])
+        compositionSpace = CompositionSpace(symbols = ['Mg', 'Al', 'O'], blocks = [[4, 8, 16]], range = [[1, 1]])
+        pool = SystemPool()
         seeds_folder = os.path.join(HOMEPATH, 'Seeds/MgAl2O4')
-        seeds = Seeds(Crystal, config, pool, generations=[0], seedsFolders=[seeds_folder])
+        seeds = Seeds(Crystal, config, pool, {'compositionSpace' : compositionSpace},
+                      generations=[0], seedsFolders=[seeds_folder])
         seeds.prepare()
         count = 0
         while count < 1:
@@ -58,11 +61,13 @@ class Seeds_Test(unittest.TestCase):
                                     ('O','C') : 1.20, ('O','O') : 1.20, ('O','H') : 1.20, ('O','N') : 1.20,
                                     ('H','C') : 1.20, ('H','O') : 1.20, ('H','H') : 0.51, ('H','N') : 1.20,
                                     ('N','C') : 1.20, ('N','O') : 1.20, ('N','H') : 1.20, ('N','N') : 1.20}}
-        pool = CrystalPool(symbols = [mol_1, mol_2, mol_3, 'O', mol_5],
+        compositionSpace = CompositionSpace(symbols = [mol_1, mol_2, mol_3, 'O', mol_5],
                            blocks = [[0,2,0,1,0], [1,0,0,0,0],[0,0,1,0,0],[0,0,0,0,1]],
                            range = [[1,2],[0,4],[0,4],[0,4]], minAt = 5, maxAt = 40)
+        pool = SystemPool()
         seeds_folder = os.path.join(HOMEPATH, 'Seeds/CNHO')
-        seeds = Seeds(Crystal, config, pool, generations=[0], seedsFolders=[seeds_folder])
+        seeds = Seeds(Crystal, config, pool, {'compositionSpace' : compositionSpace},
+                      generations=[0], seedsFolders=[seeds_folder])
         seeds.prepare()
         count = 0
         while count < 1:

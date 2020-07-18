@@ -24,7 +24,7 @@ from .paretoRanking import paretoRanking
 DIMENSIONALITY = 7
 
 
-class Fintness(object):
+class Fitness(object):
 
     ANTISEEDS_MAX = 0.005
     ANTISEEDS_SIGMA = 0.001

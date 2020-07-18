@@ -7,17 +7,9 @@ Contains configuration of such space, parameters of what we are searching for
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
 
-from typing import List, Tuple
-import numpy as np
-
-from .Fitness import Fintness
 
 import logging
 logger = logging.getLogger(__name__)
-
-
-def _fitnessRepresentation(fitness: List[Tuple[str, str]]):
-    return '_'.join(f'{attr}_{direction}' for (attr, direction) in sorted(fitness, key=lambda entry: entry[0]))
 
 
 class SystemPool(object):
@@ -40,8 +32,6 @@ class SystemPool(object):
         list of all currently studied systems.
     """
 
-    DEFAULT_FITNESS = []
-
     def __init__(self):
         """
         Initializes the class.
@@ -49,10 +39,9 @@ class SystemPool(object):
         :type config: :class:`~USPEX.Common.Config.Config` or descendant
         :param config: describes the chemical compositions configuration space.
         """
-        self.best = {}
         self.uniqueSystems = []
+        self.allSystems = {}
         self._newID = 0
-        self.fitness = Fintness()
 
     def update(self, population: list):
         """
@@ -114,39 +103,6 @@ class SystemPool(object):
         population.clear()
         population.extend(cleanedPopulation)
 
-    def setBest(self, fitness: List[Tuple[str, str]], best: list):
-        """
-        Sets the best individuals as an attribute of the class.
-
-        :type fitness: list[tuple[str]]
-        :param fitness: list of tuples ('property', 'direction'), where direction is 'min' or 'max'.
-        :type best: list
-        :param best: best individuals according to the fitness.
-        """
-        self.best[_fitnessRepresentation(fitness)] = best
-
-    def getBest(self, fitness: List[Tuple[str, str]]):
-        """
-        Gets the best individuals according to the fitness.
-
-        :type fitness: list[tuple[str]]
-        :param fitness: list of tuples ('property', 'direction'), where direction is 'min' or 'max'.
-        """
-        return self.best[_fitnessRepresentation(fitness)]
-
-    def sort(self, fitness: List[Tuple[str, str]], population: list):
-        """
-        Method for sorting our population by fitness.
-
-        :type fitness: list[tuple[str]]
-        :param fitness: list of tuples ('property', 'direction'), where direction is 'min' or 'max'.
-        :type population: list
-        :param population: unsorted list of structures.
-        :rtype: list
-        :return: sorted population.
-        """
-        return self.fitness.sort(fitness, population, self.uniqueSystems)
-
     def assignID(self, system):
         """
         Assign ID to system.
@@ -156,6 +112,4 @@ class SystemPool(object):
         """
         system.ID = self._newID
         self._newID += 1
-
-    def payPenalties(self, systems):
-        self.fitness.payPenalties(systems, self.uniqueSystems)
+        self.allSystems[system.ID] = system

@@ -51,7 +51,7 @@ class Rotation(VarOperator):
             if newstructure.isGoodSystem():
                 crystal = newstructure
                 self.pool.assignID(crystal)
-                crystal.howCome = self.name
+                crystal.howCome = self.__class__.__name__
                 crystal.parent = 'None'
                 logger.info(f"Structure {crystal.ID} created via rotation from {parent.ID} parent")
                 return (crystal,)

@@ -24,17 +24,14 @@ from ..VarOperator import VarOperator, VOFailed
 
 class Seeds(VarOperator):
 
-    name = 'Seeds'
-
-
-    def __init__(self, systemFactory, config, pool, initFrac= 0.0, generations:list=None, seedsFolders:list=None):
+    def __init__(self, systemFactory, config, pool, utilities, generations:list=None, seedsFolders:list=None):
         '''
 
         :param config:
         :param generations:
         :param seedsFolders: default Seeds/POSCAR
         '''
-        super(Seeds, self).__init__(systemFactory, config, pool, initFrac)
+        super(Seeds, self).__init__(systemFactory, config, pool, utilities)
         self.generations = generations if generations is not None else []
         self.seedsFolders = seedsFolders if seedsFolders is not None else []
         self.active = False
@@ -83,7 +80,7 @@ class Seeds(VarOperator):
                 if system.isGoodSystem():
                     seeds.append(system)
                     self.pool.assignID(system)
-                    system.howCome = self.name
+                    system.howCome = self.__class__.__name__
                     system.parent = 'None'
                     logger.info(f"Structure {system.ID} created from seed {filename}.")
                 else:

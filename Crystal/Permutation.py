@@ -14,9 +14,8 @@ __author__='alex_a_marjewski'
 
 class Permutation(VarOperator):
 
-    name = 'Permutation'
-
-    def __init__(self, systemFactory, config, pool, initFrac : float=0.0, howManySwaps : int=5, specificSwaps : List[Tuple[str, str]]=None, minFrac : float=0.1, maxFrac : float=1.0):
+    def __init__(self, systemFactory, config, pool, utilities,
+                 howManySwaps : int=5, specificSwaps : List[Tuple[str, str]]=None):
         '''
         :param initFrac : float - initial fraction of population to be generated with permutation
         :param minFrac : float - minimal fraction of population to be generated with permutation
@@ -25,7 +24,7 @@ class Permutation(VarOperator):
         :param specificSwaps : list - only specific molecular types should be swapped; for Mo <-> B permutation, input
          list should be either ('Mo', 'B') or ('B', 'Mo') - both will work.
         '''
-        super(Permutation, self).__init__(systemFactory, config, pool, initFrac, minFrac, maxFrac)
+        super(Permutation, self).__init__(systemFactory, config, pool, utilities)
         self.correlationFO = 0        # fitness-order correlation | Ignoring this temporarily
         self.howManySwaps = howManySwaps
         if specificSwaps is not None:
@@ -49,7 +48,7 @@ class Permutation(VarOperator):
         '''
         Assignation of data to the output structure
         '''
-        target.howCome = self.name
+        target.howCome = self.__class__.__name__
         self.pool.assignID(target)
         target.parent = str(ID)
         logger.info(f"Structure {target.ID} formed by permutation from {target.parent}")
