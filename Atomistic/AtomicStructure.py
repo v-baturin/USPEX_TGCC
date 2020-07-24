@@ -60,6 +60,7 @@ class AtomicStructure(System):
                  valenceElectrons: Dict[str, float] = None,
                  fingerprints: Dict[str, float] = None,
                  externalPressure: float = 0.0001,
+                 cellVolume = None, cellLengthsAndAngles = None, cellVectors = None,
                  **kwargs):
         """
         :type molecules: list of :class:`AtomicStructure`
