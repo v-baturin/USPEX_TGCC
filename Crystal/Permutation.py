@@ -92,6 +92,28 @@ class Permutation(VarOperator):
                 # Here we generate a complete system
                 target = self.systemFactory(molecules=attempted_structure, cell=system.cell,
                                             optimizeLattice=True, **self.config)
+                if 'cellVectors' in self.config:
+                    cellVectors = np.asarray(self.config['cellVectors'], dtype=float)
+                    if cellVectors.shape == (3, 3):
+                        target.set_cell(cellVectors)
+                    else:
+                        logger.debug(f'Incorrect cellVectors specified in input parameters: {cellVectors}.')
+                elif 'cellLengthsAndAngles' in self.config:
+                    cellLengthsAndAngles = np.asarray(self.config['cellLengthsAndAngles'], dtype=float)
+                    if cellLengthsAndAngles.shape == (6,):
+                        target.set_cell(cellLengthsAndAngles)
+                    else:
+                        logger.debug(
+                            f'Incorrect cellLengthsAndAngles specified in input parameters: {cellLengthsAndAngles}.')
+                elif 'cellVolume' in self.config:
+                    cellVolume = self.config['cellVolume']
+                    if isinstance(cellVolume, float):
+                        cell = target.cell
+                        cell *= cellVolume / np.det(cell)
+                        target.set_cell(cell)
+                    else:
+                        logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
+
                 if atLeastOnePermutation and target.isGoodSystem():
                     self._assign_data(target=target, ID=system.ID)
                     return target,

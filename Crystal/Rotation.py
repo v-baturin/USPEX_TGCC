@@ -48,6 +48,28 @@ class Rotation(VarOperator):
                     except RuntimeError as e:
                         logger.exception(e)
 
+                if 'cellVectors' in self.config:
+                    cellVectors = np.asarray(self.config['cellVectors'], dtype=float)
+                    if cellVectors.shape == (3, 3):
+                        newstructure.set_cell(cellVectors)
+                    else:
+                        logger.debug(f'Incorrect cellVectors specified in input parameters: {cellVectors}.')
+                elif 'cellLengthsAndAngles' in self.config:
+                    cellLengthsAndAngles = np.asarray(self.config['cellLengthsAndAngles'], dtype=float)
+                    if cellLengthsAndAngles.shape == (6,):
+                        newstructure.set_cell(cellLengthsAndAngles)
+                    else:
+                        logger.debug(
+                            f'Incorrect cellLengthsAndAngles specified in input parameters: {cellLengthsAndAngles}.')
+                elif 'cellVolume' in self.config:
+                    cellVolume = self.config['cellVolume']
+                    if isinstance(cellVolume, float):
+                        cell = newstructure.cell
+                        cell *= cellVolume / np.det(cell)
+                        newstructure.set_cell(cell)
+                    else:
+                        logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
+
             if newstructure.isGoodSystem():
                 crystal = newstructure
                 self.pool.assignID(crystal)

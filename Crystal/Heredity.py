@@ -191,6 +191,27 @@ class Heredity(VarOperator):
 
             child_good = self.systemFactory(molecules=child_good, cell=potentialLattice, optimizeLattice=True, **self.config)
 
+            if 'cellVectors' in self.config:
+                cellVectors = np.asarray(self.config['cellVectors'], dtype=float)
+                if cellVectors.shape == (3,3):
+                    child_good.set_cell(cellVectors)
+                else:
+                    logger.debug(f'Incorrect cellVectors specified in input parameters: {cellVectors}.')
+            elif 'cellLengthsAndAngles' in self.config:
+                cellLengthsAndAngles = np.asarray(self.config['cellLengthsAndAngles'], dtype=float)
+                if cellLengthsAndAngles.shape == (6,):
+                    child_good.set_cell(cellLengthsAndAngles)
+                else:
+                    logger.debug(f'Incorrect cellLengthsAndAngles specified in input parameters: {cellLengthsAndAngles}.')
+            elif 'cellVolume' in self.config:
+                cellVolume = self.config['cellVolume']
+                if isinstance(cellVolume, float):
+                    cell = child_good.cell
+                    cell *= cellVolume/np.det(cell)
+                    child_good.set_cell(cell)
+                else:
+                    logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
+
             if child_good.isGoodSystem() and self.compositionSpace.isGoodComposition(child_good.composition):
                 crystal = child_good
                 self.pool.assignID(crystal)

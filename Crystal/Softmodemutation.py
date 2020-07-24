@@ -47,6 +47,34 @@ class Softmodemutation(VarOperator):
                 molecule2.translate(-translation)
                 newsystem1.extend(molecule1)
                 newsystem2.extend(molecule2)
+
+                if 'cellVectors' in self.config:
+                    cellVectors = np.asarray(self.config['cellVectors'], dtype=float)
+                    if cellVectors.shape == (3, 3):
+                        newsystem1.set_cell(cellVectors)
+                        newsystem2.set_cell(cellVectors)
+                    else:
+                        logger.debug(f'Incorrect cellVectors specified in input parameters: {cellVectors}.')
+                elif 'cellLengthsAndAngles' in self.config:
+                    cellLengthsAndAngles = np.asarray(self.config['cellLengthsAndAngles'], dtype=float)
+                    if cellLengthsAndAngles.shape == (6,):
+                        newsystem1.set_cell(cellLengthsAndAngles)
+                        newsystem2.set_cell(cellLengthsAndAngles)
+                    else:
+                        logger.debug(
+                            f'Incorrect cellLengthsAndAngles specified in input parameters: {cellLengthsAndAngles}.')
+                elif 'cellVolume' in self.config:
+                    cellVolume = self.config['cellVolume']
+                    if isinstance(cellVolume, float):
+                        cell = newsystem1.cell
+                        cell *= cellVolume / np.det(cell)
+                        newsystem1.set_cell(cell)
+                        cell = newsystem2.cell
+                        cell *= cellVolume / np.det(cell)
+                        newsystem2.set_cell(cell)
+                    else:
+                        logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
+
             offsprings = ()
             if newsystem1.isGoodSystem() and newsystem1 != system:
                 newsystem1.howCome = self.__class__.__name__
