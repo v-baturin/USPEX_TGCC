@@ -64,7 +64,7 @@ class Fitness(object):
                 numBlocks = np.asarray(numBlocks, dtype = float)[:len(blocks)].T
                 totalBlocks = numBlocks.sum(axis = 1)
                 numBlocks /= totalBlocks.reshape((-1,1))
-                enthalpies_per_block = np.asarray(enthalpies, dtype = float) / totalBlocks
+                enthalpies_per_block = np.nan_to_num(np.asarray(enthalpies, dtype = float)) / totalBlocks
                 logger.debug(f'numBlocks: {numBlocks[:,:-1]}, enthalpies_per_block: {enthalpies_per_block}')
                 values = self.convexHullHeight(numBlocks[:,:-1], enthalpies_per_block)[IDs]
             else:
