@@ -242,7 +242,7 @@ class Twinning(VarOperator):
                     cellVolume = self.config['cellVolume']
                     if isinstance(cellVolume, float):
                         cell = self.offspring.cell
-                        cell *= cellVolume / np.linalg.det(cell)
+                        cell *= (cellVolume/np.linalg.det(cell))**(1/3)
                         self.offspring.set_cell(cell, scale_atoms=True)
                     else:
                         logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')

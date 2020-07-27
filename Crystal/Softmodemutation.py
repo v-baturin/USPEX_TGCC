@@ -67,10 +67,10 @@ class Softmodemutation(VarOperator):
                     cellVolume = self.config['cellVolume']
                     if isinstance(cellVolume, float):
                         cell = newsystem1.cell
-                        cell *= cellVolume / np.linalg.det(cell)
+                        cell *= (cellVolume/np.linalg.det(cell))**(1/3)
                         newsystem1.set_cell(cell, scale_atoms=True)
                         cell = newsystem2.cell
-                        cell *= cellVolume / np.linalg.det(cell)
+                        cell *= (cellVolume/np.linalg.det(cell))**(1/3)
                         newsystem2.set_cell(cell, scale_atoms=True)
                     else:
                         logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
