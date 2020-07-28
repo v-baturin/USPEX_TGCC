@@ -99,7 +99,7 @@ class CompositionSpace(object):
         self.range = np.array(range, dtype=int)
         assert np.all([len(x) == 2 for x in range]) and len(range) == len(blocks)
 
-        self.isFixedComposition = bool(np.all([x[0] == x[1] for x in self.range]))
+        self.isFixedComposition = np.all([x1 == x2 for x1, x2 in self.range])
 
         self.predefinedCompositions = []
         minBlocks = np.fromiter((minBlocks for minBlocks, maxBlocks in self.range), dtype = int)
@@ -164,6 +164,8 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
+        # First we want use some predefined compositions: pure blocks.
+        # And only when we exhaust them we switch to true random.
         if self.predefinedCompositions:
             return self.predefinedCompositions.pop(0)
         while True:
