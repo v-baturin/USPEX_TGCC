@@ -145,7 +145,7 @@ class Random(VarOperator):
                 cellVolume = self.config['cellVolume']
                 if isinstance(cellVolume, float):
                     cell = newstructure.cell
-                    cell *= (cellVolume/np.linalg.det(cell))**(1/3)
+                    cell *= (cellVolume/np.linalg.det(cell))**(1.0/3.0)
                     newstructure.set_cell(cell, scale_atoms=True)
                 else:
                     self.logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')

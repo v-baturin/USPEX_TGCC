@@ -116,7 +116,7 @@ class Transmutation(VarOperator):
                 cellVolume = self.config['cellVolume']
                 if isinstance(cellVolume, float):
                     cell = target.cell
-                    cell *= (cellVolume/np.linalg.det(cell))**(1/3)
+                    cell *= (cellVolume/np.linalg.det(cell))**(1.0/3.0)
                     target.set_cell(cell, scale_atoms=True)
                 else:
                     logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
