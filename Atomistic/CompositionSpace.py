@@ -105,7 +105,9 @@ class CompositionSpace(object):
         minBlocks = np.fromiter((minBlocks for minBlocks, maxBlocks in self.range), dtype = int)
         numBlocksArray = np.tile(minBlocks, (len(self.blocks), 1)) + np.diag(np.logical_not(minBlocks))
         for numIons in np.dot(numBlocksArray, self.blocks):
-            numIons *= int(np.ceil(float(self.minAt)/float(numIons.sum())))
+            factor = int(np.ceil(float(self.minAt)/float(numIons.sum())))
+            if factor:
+                numIons *= factor
             assert numIons.sum() <= self.maxAt
             self.predefinedCompositions.append(Composition(dict(zip(self.symbols, numIons)), self.moleculesTypeToFormula))
 
@@ -166,8 +168,6 @@ class CompositionSpace(object):
         """
         # First we want use some predefined compositions: pure blocks.
         # And only when we exhaust them we switch to true random.
-        if self.predefinedCompositions:
-            return self.predefinedCompositions.pop(0)
         while True:
             numBlocks = np.fromiter((np.random.randint(low, high + 1) for low, high in self.range), dtype=int)
             numIons = np.dot(numBlocks, self.blocks)
