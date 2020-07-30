@@ -104,7 +104,10 @@ class Random(VarOperator):
     def __call__(self) -> tuple:
 
         for i in list(range(self.HOW_MANY_ATTEMPTS_COMPOSITION)):
-            composition = self.compositionSpace.randomComposition()
+            if i < len(self.compositionSpace.predefinedCompositions):
+                composition = self.compositionSpace.predefinedCompositions[i]
+            else:
+                composition = self.compositionSpace.randomComposition()
             self.logger.debug(f'Need {composition} composition')
 
             latVol = calcVolumeForComposition(composition, **self.config)
@@ -157,6 +160,8 @@ class Random(VarOperator):
                 crystal.parent = 'None'
                 self.logger.info(f"Structure {crystal.ID} created with {composition} composition and {name} origin"
                             f" actual symmetry is {crystal.symmetry}.")
+                if i < len(self.compositionSpace.predefinedCompositions):
+                    del self.compositionSpace.predefinedCompositions[i]
                 return (crystal,)
 
         raise VOFailed

@@ -99,8 +99,17 @@ class CompositionSpace(object):
         self.range = np.array(range, dtype=int)
         assert np.all([len(x) == 2 for x in range]) and len(range) == len(blocks)
 
-        self.isFixedComposition = bool(np.all([x[0] == x[1] for x in self.range]))
+        self.isFixedComposition = np.all([x1 == x2 for x1, x2 in self.range])
 
+        self.predefinedCompositions = []
+        minBlocks = np.fromiter((minBlocks for minBlocks, maxBlocks in self.range), dtype = int)
+        numBlocksArray = np.tile(minBlocks, (len(self.blocks), 1)) + np.diag(np.logical_not(minBlocks))
+        for numIons in np.dot(numBlocksArray, self.blocks):
+            factor = int(np.ceil(float(self.minAt)/float(numIons.sum())))
+            if factor:
+                numIons *= factor
+            assert numIons.sum() <= self.maxAt
+            self.predefinedCompositions.append(Composition(dict(zip(self.symbols, numIons)), self.moleculesTypeToFormula))
 
     def isGoodComposition(self, composition: Composition) -> bool:
         """
@@ -157,6 +166,8 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
+        # First we want use some predefined compositions: pure blocks.
+        # And only when we exhaust them we switch to true random.
         while True:
             numBlocks = np.fromiter((np.random.randint(low, high + 1) for low, high in self.range), dtype=int)
             numIons = np.dot(numBlocks, self.blocks)
