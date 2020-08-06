@@ -66,7 +66,7 @@ class USPEXClassic(object):
 
             extendedPopulation = copy(population)
             extendedPopulation.extend(self._mostDiverse)
-            sortedPopulation = list(chain.from_iterable(fitness.sort(self.fitness, extendedPopulation, target.pool.uniqueSystems)))
+            sortedPopulation = list(chain.from_iterable(fitness.sort(self.fitness, extendedPopulation)))
 
             howManyProliferate = int(self.bestFrac * len(sortedPopulation))
             best = sortedPopulation[:howManyProliferate]

@@ -39,7 +39,7 @@ class GlobalOptimizer(object):
         self.target = Target(**target)
 
         assert self.Fitness is not None
-        self.fitness = self.Fitness()
+        self.fitness = self.Fitness(self.target.pool.uniqueSystems)
         self.fitnessConvergence = fitness
         self.best = set()
         self._isStable = False
@@ -74,8 +74,7 @@ class GlobalOptimizer(object):
         self.population = population
         self.newStructures = self.target.pool.newFoundSystems(population)
         self.target.pool.update(self.newStructures)
-        best = set(system.ID for system in self.fitness.sort(self.fitnessConvergence, self.target.pool.uniqueSystems,
-                                                             self.target.pool.uniqueSystems)[0])
+        best = set(system.ID for system in self.fitness.sort(self.fitnessConvergence, self.target.pool.uniqueSystems)[0])
         if best == self.best:
             self._isStable = True
         else:
