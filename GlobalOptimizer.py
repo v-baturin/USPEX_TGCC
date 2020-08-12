@@ -39,7 +39,7 @@ class GlobalOptimizer(object):
         self.target = Target(**target)
 
         assert self.Fitness is not None
-        self.fitness = self.Fitness(self.target.pool.uniqueSystems)
+        self.fitness = self.Fitness(self.target.pool.uniqueSystems, self.target.utilities)
         self.fitnessConvergence = fitness
         self.best = set()
         self._isStable = False

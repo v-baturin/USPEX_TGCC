@@ -29,8 +29,9 @@ class Fitness(object):
     ANTISEEDS_MAX = 0.005
     ANTISEEDS_SIGMA = 0.001
 
-    def __init__(self, pool):
+    def __init__(self, pool, utilities):
         self.pool = pool
+        self.utilities = utilities
         self._antiseedsCorrections = {}
 
     def sort(self, fitness: tuple, population: list):
@@ -124,26 +125,22 @@ class Fitness(object):
 
     @staticmethod
     def convexHullHeight(space: np.ndarray) -> np.ndarray:
-        arguments = space[:,:-1]
-        properties = space[:,-1]
-        logger.debug(f'ConvexHull arguments: {arguments}, properties: {properties}')
-        systems = [{'argument': args, 'property': prop} for args, prop in zip(arguments, properties)]
-        convexHull = ConvexHull()
-        convexHull.extend(systems)
-        assert arguments.shape[0] == convexHull.height.shape[0]
-        return copy(convexHull.height)
+        return copy(ConvexHull(space).height)
+
+
+    def compositionBlocks(self, numIons: np.ndarray) -> np.ndarray:
+        blocks = self.utilities['compositionSpace'].blocks
+        return np.round(np.linalg.lstsq(blocks.T, numIons.T, rcond=None)[0]).astype(int).T
 
     @staticmethod
     def getRelativeCHSpace(arguments: np.ndarray, properties: np.ndarray) -> np.ndarray:
         assert arguments.shape[0] == properties.shape[0]
-        numBlocks, blocks = smp.Matrix(arguments).T.rref()
-        numBlocks = np.asarray(numBlocks, dtype=float)[:len(blocks)].T
-        totalBlocks = numBlocks.sum(axis=1)
-        numBlocks /= totalBlocks.reshape((-1, 1))
+        arguments = arguments.astype(float)
+        totalBlocks = arguments.sum(axis=1)
+        arguments /= totalBlocks.reshape((-1, 1))
         properties = np.nan_to_num(properties) / totalBlocks
-        assert numBlocks.shape[0] == properties.shape[0]
-        numBlocks[:,-1] = properties
-        return numBlocks
+        arguments[:,-1] = properties
+        return arguments
 
     @staticmethod
     def pareto(*arguments) -> np.ndarray:

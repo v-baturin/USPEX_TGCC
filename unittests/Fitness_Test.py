@@ -13,6 +13,7 @@ import os
 import json
 
 from ..Fitness import Fitness
+from ..Atomistic.CompositionSpace import CompositionSpace
 
 
 class System(object):
@@ -34,7 +35,8 @@ class Fitness_Test(unittest.TestCase):
                      System(7, {'Mg': 4, 'Al': 8, 'O': 16}, -652.042),
                      System(8, {'Mg': 4, 'Al': 8, 'O': 16}, -648.368),
                      System(9, {'Mg': 4, 'Al': 8, 'O': 16}, -648.335)]
-        self.fitness = Fitness(self.pool)
+        self.compositionSpace = CompositionSpace(symbols=['Mg','Al','O'], blocks=[[4,8,16]], range=[[1,1]])
+        self.fitness = Fitness(self.pool, {'compositionSpace': self.compositionSpace})
 
     def test_enthalpy(self):
         print(self.fitness.calcFitness('enthalpy'))
@@ -45,13 +47,19 @@ class Fitness_Test(unittest.TestCase):
     def test_tabulate(self):
         print(self.fitness.calcFitness(('tabulate', 'composition')))
 
+    def test_compositionBlocks(self):
+        print(self.fitness.calcFitness(('compositionBlocks', ('tabulate', 'composition'))))
+
     def test_getRelativeCHSpace(self):
-        print(self.fitness.calcFitness(('getRelativeCHSpace', ('tabulate', 'composition'), 'enthalpy')))
+        print(self.fitness.calcFitness(('getRelativeCHSpace',
+                                        ('compositionBlocks', ('tabulate', 'composition')), 'enthalpy')))
 
     def test_convexHullHeight(self):
         print(self.fitness.calcFitness(('convexHullHeight',
-                                                    ('getRelativeCHSpace', ('tabulate', 'composition'), 'enthalpy'))))
+                                                    ('getRelativeCHSpace',
+                                                     ('compositionBlocks', ('tabulate', 'composition')), 'enthalpy'))))
 
     def test_pareto(self):
         print(self.fitness.calcFitness(('pareto', ('convexHullHeight',
-                                                ('getRelativeCHSpace', ('tabulate', 'composition'), 'enthalpy')))))
+                                                ('getRelativeCHSpace', ('compositionBlocks',
+                                                                        ('tabulate', 'composition')), 'enthalpy')))))

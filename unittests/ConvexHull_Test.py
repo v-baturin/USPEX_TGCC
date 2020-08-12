@@ -29,13 +29,13 @@ class ConvexHull_Test(unittest.TestCase):
         if os.path.exists(filename):
             os.remove(filename)
 
-        heights = Fitness.convexHullHeight(np.empty((1,0), dtype=float), np.array([-2.0]))
+        heights = Fitness.convexHullHeight(np.array([-2.0]))
         self.assertTrue(np.allclose(heights, np.array([0])))
 
-        heights = Fitness.convexHullHeight(np.empty((2,0), dtype=float), np.array([-2.0, -4.0]))
+        heights = Fitness.convexHullHeight(np.array([-2.0, -4.0]))
         self.assertTrue(np.allclose(heights, np.array([2.0,0])))
 
-        heights = Fitness.convexHullHeight(np.empty((3,0), dtype=float), np.array([-2.0,-4.0,-1.0]))
+        heights = Fitness.convexHullHeight(np.array([-2.0,-4.0,-1.0]))
         self.assertTrue(np.allclose(heights, np.array([2.0,0,3.0])))
 
         # compositionSpace = CompositionSpace(symbols=['Mo'], blocks=[[1]], range=[[1, 18]])
