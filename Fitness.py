@@ -15,13 +15,12 @@ import pandas as pd
 import sympy as smp
 from copy import copy
 from typing import List, Tuple
+from collections.abc import Mapping
 from itertools import combinations, chain
 from sklearn.decomposition import PCA
 
 from .ConvexHull import ConvexHull
 from .paretoRanking import paretoRanking
-
-DIMENSIONALITY = 7
 
 
 class Fitness(object):
@@ -70,7 +69,8 @@ class Fitness(object):
         elif isinstance(fitness, str):
             return np.asarray([getattr(x, fitness) for x in self.pool])
         else:
-            raise RuntimeError(f'Incorrect type {type(fitness)} of fitness {fitness}.')
+            # just a parameter. return it without doing anything.
+            return fitness
 
     def payPenalties(self, population, pool):
         comb = list(combinations(population, 2))
@@ -111,22 +111,40 @@ class Fitness(object):
 
     @staticmethod
     def tabulate(systems: np.ndarray) -> np.ndarray:
-        return np.nan_to_num(pd.DataFrame(list(systems)).to_numpy())
+        keys = set()
+        for system in systems:
+            assert isinstance(system, Mapping)
+            keys.update(system.keys())
+        keys = list(keys)
+        table = []
+        for system in systems:
+            row = []
+            for key in keys:
+                # do not change to *if key in system*
+                try:
+                    row.append(system[key])
+                except KeyError:
+                    row.append(0)
+            table.append(row)
+        return np.asarray(table)
 
     @staticmethod
-    def getPrincipalComponents(systems: np.ndarray) -> np.ndarray:
-        poolSize, N = systems.shape
-        data_pd = pd.DataFrame(systems)
-        data_pd[data_pd.isna()] = data_pd.apply(lambda row: row.loc[row.isna()].apply(lambda x: -np.ones(N)))
-        data_np = np.hstack(np.array(data_pd.to_numpy().T.tolist(), dtype=float))
-        principalComponents = PCA(n_components=DIMENSIONALITY - 1).fit_transform(data_np)
-        assert principalComponents.shape[0] == poolSize
+    def hstack(table: np.ndarray) -> np.ndarray:
+        return np.hstack(table.transpose((1,2,0))).T
+
+    @staticmethod
+    def vstack(table: np.ndarray) -> np.ndarray:
+        return np.vstack(table.transpose((1,2,0))).T
+
+    @staticmethod
+    def getPrincipalComponents(dimensionality: int, data: np.ndarray) -> np.ndarray:
+        principalComponents = PCA(n_components=dimensionality).fit_transform(data)
+        assert principalComponents.shape[0] == data.shape[0]
         return principalComponents
 
     @staticmethod
     def convexHullHeight(space: np.ndarray) -> np.ndarray:
         return copy(ConvexHull(space).height)
-
 
     def compositionBlocks(self, numIons: np.ndarray) -> np.ndarray:
         blocks = self.utilities['compositionSpace'].blocks
@@ -141,6 +159,15 @@ class Fitness(object):
         properties = np.nan_to_num(properties) / totalBlocks
         arguments[:,-1] = properties
         return arguments
+
+    @staticmethod
+    def getAbsoluteCHSpace(arguments: np.ndarray, properties: np.ndarray) -> np.ndarray:
+        poolSize, argNum = arguments.shape
+        assert properties.shape == (poolSize,)
+        space = np.empty((poolSize, argNum + 1), dtype=float)
+        space[:, :-1] = arguments
+        space[:, -1] = np.nan_to_num(properties)
+        return space
 
     @staticmethod
     def pareto(*arguments) -> np.ndarray:

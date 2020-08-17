@@ -9,17 +9,19 @@ Fingerprint calculation function
 
 import numpy as np
 from scipy.special import erf
+from collections.abc import Mapping
 
 from .local_order import local_order
 
 
-class Fingerprint:
+class Fingerprint(Mapping):
     def __init__(self, value : dict, weights):
         sizes = [len(v) for v in value.values()]
         assert len(sizes) > 0
         self._value = value
         self._weights = weights
         self._size = sizes[0]
+        super().__init__()
 
     @property
     def value(self):
@@ -33,6 +35,20 @@ class Fingerprint:
     def weights(self):
         return self._weights
 
+    def __repr__(self):
+        return self._value.__repr__()
+
+    def __len__(self):
+        return self._value.__len__()
+
+    def __iter__(self):
+        return self._value.__iter__()
+
+    def __getitem__(self, item):
+        if item in self._value:
+            return self._value.__getitem__(item)
+        else:
+            return -np.ones(self._size)
 
 def fpWeights(system):
     '''

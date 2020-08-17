@@ -41,6 +41,8 @@ class Simplex:
         self.origin = self._coords[-1]
         if self.space_dim == self.simplex_dim + 1:
             self._aug = np.concatenate([coords, np.ones((self.space_dim, 1))], axis=-1)
+            if np.isclose(np.linalg.det(self._aug), 0.0):
+                raise ValueError('Error: vertex coordinates are degenerated!')
             self._aug_inv = np.linalg.inv(self._aug)
 
     def bary_coords(self, point):
