@@ -67,7 +67,14 @@ class Fitness(object):
             arguments = [self.calcFitness(param) for param in funcParams]
             return getattr(self, funcName)(*arguments)
         elif isinstance(fitness, str):
-            return np.asarray([getattr(x, fitness) for x in self.pool])
+            # unfortunately simple np.asarray spoils dictionaries
+            if len(self.pool):
+                value = np.empty((len(self.pool,)), dtype=type(getattr(self.pool[0], fitness)))
+            else:
+                value = np.empty((0,))
+            for i, x in enumerate(self.pool):
+                value[i] = getattr(x, fitness)
+            return value
         else:
             # just a parameter. return it without doing anything.
             return fitness
@@ -113,7 +120,7 @@ class Fitness(object):
     def tabulate(systems: np.ndarray) -> np.ndarray:
         keys = set()
         for system in systems:
-            assert isinstance(system, Mapping)
+            assert isinstance(system, Mapping), type(system)
             keys.update(system.keys())
         keys = list(keys)
         table = []
