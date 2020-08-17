@@ -122,7 +122,7 @@ class Fitness(object):
         for system in systems:
             assert isinstance(system, Mapping), type(system)
             keys.update(system.keys())
-        keys = list(keys)
+        keys = sorted(keys)
         table = []
         for system in systems:
             row = []

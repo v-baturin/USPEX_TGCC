@@ -40,52 +40,125 @@ class Fitness_Test(unittest.TestCase):
         self.fitness = Fitness(self.pool, {'compositionSpace': self.compositionSpace})
 
     def test_enthalpy(self):
-        print(self.fitness.calcFitness('enthalpy'))
+        ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
+        self.assertTrue(np.allclose(self.fitness.calcFitness('enthalpy'), ref))
 
     def test_composition(self):
-        print(self.fitness.calcFitness('composition'))
+        ref = [{'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16}]
+        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.calcFitness('composition'), ref)]))
 
     def test_tabulateComposition(self):
-        print(self.fitness.calcFitness(('tabulate', 'composition')))
+        ref = [[8, 4, 16, ],
+               [8, 4, 16, ],
+               [8, 4, 16, ],
+               [8, 4, 16, ],
+               [8, 4, 16, ],
+               [8, 4, 16, ],
+               [8, 4, 16, ],
+               [8, 4, 16, ],
+               [8, 4, 16, ]]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('tabulate', 'composition')), ref))
 
     def test_compositionBlocks(self):
-        print(self.fitness.calcFitness(('compositionBlocks', ('tabulate', 'composition'))))
+        ref = [[1], [1], [1], [1], [1], [1], [1], [1], [1]]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('compositionBlocks', ('tabulate', 'composition'))), ref))
 
     def test_getRelativeCHSpace(self):
-        print(self.fitness.calcFitness(('getRelativeCHSpace',
-                                        ('compositionBlocks', ('tabulate', 'composition')), 'enthalpy')))
+        ref = [[-646.695], [-644.48 ], [-650.098], [-649.082], [-651.279], [-643.925], [-652.042], [-648.368], [-648.335]]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('getRelativeCHSpace',
+                                        ('compositionBlocks', ('tabulate', 'composition')), 'enthalpy')), ref))
 
     def test_convexHullHeightComposition(self):
-        print(self.fitness.calcFitness(('convexHullHeight',
-                                                    ('getRelativeCHSpace',
-                                                     ('compositionBlocks', ('tabulate', 'composition')), 'enthalpy'))))
+        ref = [5.347, 7.562, 1.944, 2.96,  0.763, 8.117, 0., 3.674, 3.707]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('convexHullHeight',
+                                                              ('getRelativeCHSpace',
+                                                               ('compositionBlocks',
+                                                                ('tabulate', 'composition')), 'enthalpy'))), ref))
 
     def test_pareto(self):
-        print(self.fitness.calcFitness(('pareto', ('convexHullHeight',
-                                                ('getRelativeCHSpace', ('compositionBlocks',
-                                                                        ('tabulate', 'composition')), 'enthalpy')))))
+        ref = [6, 7, 2, 3, 1, 8, 0, 4, 5]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('pareto',
+                                                              ('convexHullHeight',
+                                                               ('getRelativeCHSpace',
+                                                                ('compositionBlocks',
+                                                                 ('tabulate', 'composition')), 'enthalpy')))), ref))
 
     def test_fingerprint(self):
-        print(self.fitness.calcFitness('fingerprint'))
+        ref = [{'a': [0.2, -0.2], 'b': [0.2, -0.2]},
+               {'a': [0.2, -0.2]},
+               {'a': [0.3, -0.3], 'b': [0.4, -0.4]},
+               {'b': [0.1, -0.5]},
+               {'a': [0.3, -0.3], 'b': [0.4, -0.4]},
+               {'a': [-0.3, -0.2], 'b': [0.7, -0.2]},
+               {'b': [0.1, -0.2]},
+               {'a': [0.2, -0.2], 'b': [0.2, -0.2]},
+               {'a': [0.2, -0.2], 'b': [0.2, -0.2]}]
+        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.calcFitness('fingerprint'), ref)]))
 
     def test_tabulateFingerprint(self):
-        print(self.fitness.calcFitness(('tabulate', 'fingerprint')))
+        ref = [[[ 0.2, -0.2], [ 0.2, -0.2]],
+               [[ 0.2, -0.2], [-1.,  -1. ]],
+               [[ 0.3, -0.3], [ 0.4, -0.4]],
+               [[-1.,  -1. ], [ 0.1, -0.5]],
+               [[ 0.3, -0.3], [ 0.4, -0.4]],
+               [[-0.3, -0.2], [ 0.7, -0.2]],
+               [[-1.,  -1. ], [ 0.1, -0.2]],
+               [[ 0.2, -0.2], [ 0.2, -0.2]],
+               [[ 0.2, -0.2], [ 0.2, -0.2]]]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('tabulate', 'fingerprint')), ref))
 
     def test_vstack(self):
-        print(self.fitness.calcFitness(('vstack', ('tabulate', 'fingerprint'))))
+        ref = [[0.2, -0.2, 0.2, -0.2],
+               [0.2, -0.2, -1.,  -1.],
+               [0.3, -0.3, 0.4, -0.4],
+               [-1.,  -1., 0.1, -0.5],
+               [0.3, -0.3, 0.4, -0.4],
+               [-0.3, -0.2, 0.7, -0.2],
+               [-1.,  -1., 0.1, -0.2],
+               [0.2, -0.2, 0.2, -0.2],
+               [0.2, -0.2, 0.2, -0.2]]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('vstack', ('tabulate', 'fingerprint'))), ref))
 
     def test_getPrincipalComponents(self):
-        print(self.fitness.calcFitness(('getPrincipalComponents', 2, ('vstack', ('tabulate', 'fingerprint')))))
+        ref = [[-0.33720674, -0.17273979],
+               [-0.53465894,  1.24425809],
+               [-0.36473363, -0.25874203],
+               [ 1.05472675,  0.24687327],
+               [-0.36473363, -0.25874203],
+               [ 0.14210271, -0.56868036],
+               [ 1.07891698,  0.11325245],
+               [-0.33720674, -0.17273979],
+               [-0.33720674, -0.17273979]]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('getPrincipalComponents', 2,
+                                                              ('vstack', ('tabulate', 'fingerprint')))), ref))
 
     def test_getAbsoluteCHSpace(self):
-        print(self.fitness.calcFitness(('getAbsoluteCHSpace',
-                                        ('getPrincipalComponents', 2, ('vstack', ('tabulate', 'fingerprint'))),
-                                        'enthalpy'
-                                        )))
+        ref = [[-3.37206745e-01, -1.72739794e-01, -6.46695000e+02],
+               [-5.34658944e-01,  1.24425809e+00, -6.44480000e+02],
+               [-3.64733632e-01, -2.58742032e-01, -6.50098000e+02],
+               [ 1.05472675e+00,  2.46873266e-01, -6.49082000e+02],
+               [-3.64733632e-01, -2.58742032e-01, -6.51279000e+02],
+               [ 1.42102712e-01, -5.68680363e-01, -6.43925000e+02],
+               [ 1.07891698e+00,  1.13252449e-01, -6.52042000e+02],
+               [-3.37206745e-01, -1.72739794e-01, -6.48368000e+02],
+               [-3.37206745e-01, -1.72739794e-01, -6.48335000e+02]]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('getAbsoluteCHSpace',
+                                                              ('getPrincipalComponents', 2,
+                                                               ('vstack', ('tabulate', 'fingerprint'))),
+                                                              'enthalpy')), ref))
 
     def test_convexHullHeightFingerprint(self):
-        print(self.fitness.calcFitness(('convexHullHeight',
-                                        ('getAbsoluteCHSpace',
-                                         ('getPrincipalComponents', 2, ('vstack', ('tabulate', 'fingerprint'))),
-                                         'enthalpy'
-                                         ))))
+        ref = [4.256279, 0., 1.181, 0., 0., 0., 0., 2.583279, 2.616279]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('convexHullHeight',
+                                                              ('getAbsoluteCHSpace',
+                                                               ('getPrincipalComponents', 2,
+                                                                ('vstack', ('tabulate', 'fingerprint'))),
+                                                               'enthalpy'))), ref))
