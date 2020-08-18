@@ -15,13 +15,12 @@ import pandas as pd
 import sympy as smp
 from copy import copy
 from typing import List, Tuple
-from itertools import combinations
+from collections.abc import Mapping
+from itertools import combinations, chain
 from sklearn.decomposition import PCA
 
 from .ConvexHull import ConvexHull
 from .paretoRanking import paretoRanking
-
-DIMENSIONALITY = 7
 
 
 class Fitness(object):
@@ -29,10 +28,12 @@ class Fitness(object):
     ANTISEEDS_MAX = 0.005
     ANTISEEDS_SIGMA = 0.001
 
-    def __init__(self):
+    def __init__(self, pool, utilities):
+        self.pool = pool
+        self.utilities = utilities
         self._antiseedsCorrections = {}
 
-    def sort(self, fitness: List[Tuple[str, str]], population: list, pool):
+    def sort(self, fitness: tuple, population: list):
         """
         Method for sorting our population by fitness.
 
@@ -43,61 +44,40 @@ class Fitness(object):
         :rtype: list
         :return: sorted population.
         """
-        IDs = []
-        for system in population:
-            for i, ref_system in enumerate(pool):
-                if system.ID == ref_system.ID:
-                    IDs.append(i)
-        IDs = np.asarray(IDs, dtype=int)
 
-        fitnessValues = []
-        for attribute, direction in fitness:
-            if attribute == 'formationEnergy':
-                enthalpies = []
-                compositions = []
-                for system in pool:
-                    composition = system.composition
-                    compositions.append(composition)
-                    enthalpies.append(system.enthalpy/sum(composition.values()))
-                numIons = self.tabulate(compositions)
-                numBlocks, blocks = smp.Matrix(numIons).T.rref()
-                numBlocks = np.asarray(numBlocks, dtype = float)[:len(blocks)].T
-                totalBlocks = numBlocks.sum(axis = 1)
-                numBlocks /= totalBlocks.reshape((-1,1))
-                enthalpies_per_block = np.nan_to_num(np.asarray(enthalpies, dtype = float)) / totalBlocks
-                logger.debug(f'numBlocks: {numBlocks[:,:-1]}, enthalpies_per_block: {enthalpies_per_block}')
-                values = self.convexHullHeight(numBlocks[:,:-1], enthalpies_per_block)[IDs]
+        pairs = list(zip(self.pool, self.calcFitness(fitness)))
+        values = []
+        for system in population:
+            for ref_system, value in pairs:
+                if system.ID == ref_system.ID:
+                    values.append(value)
+                    break
+        assert len(values) == len(population)
+
+        uniqueValues, ranking = np.unique(values, return_inverse=True)
+        return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueValues))]
+
+    def calcFitness(self, fitness):
+        if isinstance(fitness, tuple):
+            funcName, *funcParams = fitness
+            if not isinstance(funcName, str):
+                raise RuntimeError(f'Incorrect type {type(funcName)} of function {funcName}.')
+            elif not hasattr(self, funcName):
+                raise RuntimeError(f'Function {funcName} not found in {type(self)}.')
+            arguments = [self.calcFitness(param) for param in funcParams]
+            return getattr(self, funcName)(*arguments)
+        elif isinstance(fitness, str):
+            # unfortunately simple np.asarray spoils dictionaries
+            if len(self.pool):
+                value = np.empty((len(self.pool,)), dtype=type(getattr(self.pool[0], fitness)))
             else:
-                values = []
-                for system in population:
-                    if hasattr(system, attribute):
-                        values.append(getattr(system, attribute))
-                    else:
-                        logger.info(f'System {system.ID} does not have attribute {attribute}. '
-                                    f'Setting fitness value to 0.')
-                values = np.asarray(values, dtype=float)
-            try:
-                direction, tail = direction.split('_')
-                if tail == 'antiseeds':
-                    useAntiseeds = True
-                else:
-                    logger.info(f'Incorrect format of fitness: {tail} is unknown option.')
-                    useAntiseeds = False
-            except:
-                useAntiseeds = False
-            if direction == 'max':
-                values *= -1
-            elif direction != 'min':
-                logger.info('Incorrect optimization direction "{}" using default "min"'.format(direction))
-            if useAntiseeds:
-                values = self.getAntiseedsCorrections([{'ID': ID, 'value': value} for ID, value in zip(IDs, values)])
-            fitnessValues.append(values)
-        fitnessValues = np.nan_to_num(np.asarray(fitnessValues, dtype=float)).T
-        logger.debug('Fitnesses of this population are: {}'.format(fitnessValues))
-        ranking = paretoRanking(fitnessValues.tolist())
-        return [[population[index] for index in front] for front in ranking]
-        # uniqueFinesses, ranking = np.unique(populationFitnesses, return_inverse=True)
-        # return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueFinesses))]
+                value = np.empty((0,))
+            for i, x in enumerate(self.pool):
+                value[i] = getattr(x, fitness)
+            return value
+        else:
+            # just a parameter. return it without doing anything.
+            return fitness
 
     def payPenalties(self, population, pool):
         comb = list(combinations(population, 2))
@@ -122,34 +102,81 @@ class Fitness(object):
                     dist = system.dist(ref_system, system)
                     self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))
 
-    def getAntiseedsCorrections(self, systems: List[dict]) -> np.ndarray:
-        data_pd = pd.DataFrame(systems)
-        values = data_pd.value.to_numpy()
+    def getAntiseedsCorrections(self, values: np.ndarray) -> np.ndarray:
         corrections = []
-        for ID in data_pd.ID.to_list():
-            if ID in self._antiseedsCorrections:
-                corrections.append(self.ANTISEEDS_MAX * self._antiseedsCorrections[ID])
+        for system in self.pool:
+            if system.ID in self._antiseedsCorrections:
+                corrections.append(self.ANTISEEDS_MAX * self._antiseedsCorrections[system.ID])
             else:
                 corrections.append(0)
         values += (values.mean() - values.min()) * np.asarray(corrections, dtype=float)
         return values
 
     @staticmethod
-    def tabulate(systems: List[dict]) -> np.ndarray:
-        return np.nan_to_num(pd.DataFrame(systems).to_numpy())
+    def negate(values: np.ndarray) -> np.ndarray:
+        return values * (-1)
 
     @staticmethod
-    def getPrincipalComponents(systems: List[dict]) -> np.ndarray:
-        N = len(systems[0])
-        data_pd = pd.DataFrame(systems)
-        data_pd[data_pd.isna()] = data_pd.apply(lambda row: row.loc[row.isna()].apply(lambda x: -np.ones(N)))
-        data_np = np.hstack(np.array(data_pd.to_numpy().T.tolist(), dtype=float))
-        return PCA(n_components=DIMENSIONALITY - 1).fit_transform(data_np)
+    def tabulate(systems: np.ndarray) -> np.ndarray:
+        keys = set()
+        for system in systems:
+            assert isinstance(system, Mapping), type(system)
+            keys.update(system.keys())
+        keys = sorted(keys)
+        table = []
+        for system in systems:
+            row = []
+            for key in keys:
+                # do not change to *if key in system*
+                try:
+                    row.append(system[key])
+                except KeyError:
+                    row.append(0)
+            table.append(row)
+        return np.asarray(table)
 
     @staticmethod
-    def convexHullHeight(arguments: np.ndarray, properties: np.ndarray) -> np.ndarray:
+    def hstack(table: np.ndarray) -> np.ndarray:
+        return np.hstack(table.transpose((1,0,2)))
+
+    @staticmethod
+    def getPrincipalComponents(dimensionality: int, data: np.ndarray) -> np.ndarray:
+        principalComponents = PCA(n_components=dimensionality).fit_transform(data)
+        assert principalComponents.shape[0] == data.shape[0]
+        return principalComponents
+
+    @staticmethod
+    def convexHullHeight(space: np.ndarray) -> np.ndarray:
+        return copy(ConvexHull(space).height)
+
+    def compositionBlocks(self, numIons: np.ndarray) -> np.ndarray:
+        blocks = self.utilities['compositionSpace'].blocks
+        return np.round(np.linalg.lstsq(blocks.T, numIons.T, rcond=None)[0]).astype(int).T
+
+    @staticmethod
+    def getRelativeCHSpace(arguments: np.ndarray, properties: np.ndarray) -> np.ndarray:
         assert arguments.shape[0] == properties.shape[0]
-        systems = [{'argument': args, 'property': prop} for args, prop in zip(arguments, properties)]
-        convexHull = ConvexHull()
-        convexHull.extend(systems)
-        return copy(convexHull.height)
+        arguments = arguments.astype(float)
+        totalBlocks = arguments.sum(axis=1)
+        arguments /= totalBlocks.reshape((-1, 1))
+        properties = np.nan_to_num(properties) / totalBlocks
+        arguments[:,-1] = properties
+        return arguments
+
+    @staticmethod
+    def getAbsoluteCHSpace(arguments: np.ndarray, properties: np.ndarray) -> np.ndarray:
+        poolSize, argNum = arguments.shape
+        assert properties.shape == (poolSize,)
+        space = np.empty((poolSize, argNum + 1), dtype=float)
+        space[:, :-1] = arguments
+        space[:, -1] = np.nan_to_num(properties)
+        return space
+
+    @staticmethod
+    def pareto(*arguments) -> np.ndarray:
+        arguments = np.nan_to_num(np.asarray(arguments)).T.tolist()
+        values = np.empty((len(arguments),), dtype=int)
+        for i, front in enumerate(paretoRanking(arguments)):
+            for ind in front:
+                values[ind] = i
+        return values

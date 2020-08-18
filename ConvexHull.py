@@ -41,6 +41,8 @@ class Simplex:
         self.origin = self._coords[-1]
         if self.space_dim == self.simplex_dim + 1:
             self._aug = np.concatenate([coords, np.ones((self.space_dim, 1))], axis=-1)
+            if np.isclose(np.linalg.det(self._aug), 0.0):
+                raise ValueError('Error: vertex coordinates are degenerated!')
             self._aug_inv = np.linalg.inv(self._aug)
 
     def bary_coords(self, point):
@@ -52,24 +54,14 @@ class Simplex:
 
 class ConvexHull:
 
-    # ID of systems on the convex hull
-    # _systems = []
-    # all_IDs = []
-
-    def __init__(self, data: pd.DataFrame = None):
-        if data is not None:
-            self._df = copy(data)
-        else:
-            self._df = pd.DataFrame(columns=['system', 'argument', 'property', 'height', 'depth'])
-        self.systems = []
-
-    def extend(self, systems: List[dict]):
+    def __init__(self, systems: np.ndarray):
+        logger.debug(f'ConvexHull arguments: {systems[:,:-1]}, properties: {systems[:,-1]}')
         if not len(systems):
             return
 
-        self.systems.extend(systems)
-        for i, system in enumerate(self.systems):
-            self._df.loc[i] = system, system['argument'], system['property'], np.inf, -np.inf
+        self._df = pd.DataFrame(columns=['argument', 'property', 'height', 'depth'])
+        for i, system in enumerate(systems.tolist()):
+            self._df.loc[i] = system[:-1], system[-1], np.inf, -np.inf
 
         properties = self._df.property.tolist()
         coords = self._df.argument.tolist()
@@ -90,7 +82,7 @@ class ConvexHull:
         elif m <= n:    # Not enough point to build proper CH, so all structures are on CH
             for p1, coord1, (i, _) in zip(properties, coords, self._df.iterrows()):
                 _dists = []
-                for p2, coord2, (j, _) in zip(properties, coords, self._df.iterrows()):
+                for p2, coord2 in zip(properties, coords):
                     if np.allclose(coord1, coord2):
                         _dists.append(p1-p2)
                 self._df.at[i, 'height'] = np.max(_dists)
@@ -133,25 +125,25 @@ class ConvexHull:
         # assert set(qhull.vertices) == set(chain(self.lower_bound, self.upper_bound))
 
     @property
-    def lower_bound(self) -> list:
+    def lower_bound(self) -> List[int]:
         '''
         :return: IDs of structures, which are on the lower bound of CH
         '''
-        return list(x.system for _,x in self._df.iterrows() if np.isclose(x.height, 0.0))
+        return list(i for i,x in self._df.iterrows() if np.isclose(x.height, 0.0))
 
     @property
-    def upper_bound(self) -> list:
+    def upper_bound(self) -> List[int]:
         '''
         :return: IDs of structures, which are on the lower bound of CH
         '''
-        return list(x.system for _,x in self._df.iterrows() if np.isclose(x.depth, 0.0))
+        return list(i for i,x in self._df.iterrows() if np.isclose(x.depth, 0.0))
 
     @property
-    def depth(self):
+    def depth(self) -> np.ndarray:
         return self._df.depth.to_numpy()
 
     @property
-    def height(self):
+    def height(self) -> np.ndarray:
         return self._df.height.to_numpy()
 
 
