@@ -55,7 +55,7 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             super().__init__(Fitness(self.systems, []).calcFitness(('getAbsoluteCHSpace',
                                                                     ('getPrincipalComponents', self.DIMENSIONALITY - 1,
-                                                                     ('vstack', ('tabulate', 'fingerprint'))),
+                                                                     ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))
 
     @property
@@ -83,5 +83,5 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             super().__init__(Fitness(self.systems, []).calcFitness(('getAbsoluteCHSpace',
                                                                     ('getPrincipalComponents', self.DIMENSIONALITY - 1,
-                                                                     ('vstack', ('tabulate', 'fingerprint'))),
+                                                                     ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))

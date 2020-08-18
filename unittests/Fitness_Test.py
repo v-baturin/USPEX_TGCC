@@ -115,7 +115,7 @@ class Fitness_Test(unittest.TestCase):
                [[ 0.2, -0.2], [ 0.2, -0.2]]]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('tabulate', 'fingerprint')), ref))
 
-    def test_vstack(self):
+    def test_hstack(self):
         ref = [[0.2, -0.2, 0.2, -0.2],
                [0.2, -0.2, -1.,  -1.],
                [0.3, -0.3, 0.4, -0.4],
@@ -125,7 +125,7 @@ class Fitness_Test(unittest.TestCase):
                [-1.,  -1., 0.1, -0.2],
                [0.2, -0.2, 0.2, -0.2],
                [0.2, -0.2, 0.2, -0.2]]
-        self.assertTrue(np.allclose(self.fitness.calcFitness(('vstack', ('tabulate', 'fingerprint'))), ref))
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('hstack', ('tabulate', 'fingerprint'))), ref))
 
     def test_getPrincipalComponents(self):
         ref = [[-0.33720674, -0.17273979],
@@ -138,7 +138,7 @@ class Fitness_Test(unittest.TestCase):
                [-0.33720674, -0.17273979],
                [-0.33720674, -0.17273979]]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('getPrincipalComponents', 2,
-                                                              ('vstack', ('tabulate', 'fingerprint')))), ref))
+                                                              ('hstack', ('tabulate', 'fingerprint')))), ref))
 
     def test_getAbsoluteCHSpace(self):
         ref = [[-3.37206745e-01, -1.72739794e-01, -6.46695000e+02],
@@ -152,7 +152,7 @@ class Fitness_Test(unittest.TestCase):
                [-3.37206745e-01, -1.72739794e-01, -6.48335000e+02]]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('getAbsoluteCHSpace',
                                                               ('getPrincipalComponents', 2,
-                                                               ('vstack', ('tabulate', 'fingerprint'))),
+                                                               ('hstack', ('tabulate', 'fingerprint'))),
                                                               'enthalpy')), ref))
 
     def test_convexHullHeightFingerprint(self):
@@ -160,5 +160,5 @@ class Fitness_Test(unittest.TestCase):
         self.assertTrue(np.allclose(self.fitness.calcFitness(('convexHullHeight',
                                                               ('getAbsoluteCHSpace',
                                                                ('getPrincipalComponents', 2,
-                                                                ('vstack', ('tabulate', 'fingerprint'))),
+                                                                ('hstack', ('tabulate', 'fingerprint'))),
                                                                'enthalpy'))), ref))

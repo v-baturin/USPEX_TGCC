@@ -137,11 +137,7 @@ class Fitness(object):
 
     @staticmethod
     def hstack(table: np.ndarray) -> np.ndarray:
-        return np.hstack(table.transpose((1,2,0))).T
-
-    @staticmethod
-    def vstack(table: np.ndarray) -> np.ndarray:
-        return np.vstack(table.transpose((1,2,0))).T
+        return np.hstack(table.transpose((1,0,2)))
 
     @staticmethod
     def getPrincipalComponents(dimensionality: int, data: np.ndarray) -> np.ndarray:
