@@ -33,7 +33,7 @@ class Fitness(object):
         self.utilities = utilities
         self._antiseedsCorrections = {}
 
-    def sort(self, fitness: tuple, population: list):
+    def sort(self, fitness, population: list):
         """
         Method for sorting our population by fitness.
 
