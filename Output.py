@@ -10,7 +10,7 @@ Class handling output
 import logging
 from copy import copy
 
-from .Worker import Worker
+from .Presets import presetOutput
 from .NoRepresentation import NoRepresentation
 
 
@@ -21,7 +21,7 @@ class Output(object):
     """
     Class handling output.
     """
-    def __init__(self, output: dict = None, representationFactory=NoRepresentation, **kwargs):
+    def __init__(self, representationFactory=NoRepresentation, **kwargs):
         """
         Initializes the class.
 
@@ -34,14 +34,16 @@ class Output(object):
         :param representationFactory:
         :param kwargs:
         """
-        if output is None:
-            output = {}
-        self.representation = representationFactory(**kwargs, **output)
+        self.representation = representationFactory(presetOutput, **kwargs)
+        self.optimizer = None
 
         self.populations = []
         self.infos = []
         self.systems = {}
         self.optimizers = []
+
+    def setOptimizer(self, optimizer):
+        self.optimizer = optimizer
 
     def handleSystem(self, system):
         try:
@@ -50,16 +52,14 @@ class Output(object):
                 self.systems[ID].append(copy(system))
             else:
                 self.systems[ID] = [copy(system)]
-            optimizer = self.optimizers[-1] if self.optimizers else None
-            self.representation.presentSystems(self.systems, optimizer)
+            self.representation.presentSystems(self.systems, self.optimizer)
         except Exception as ex:
             logger.exception(ex)
 
     def handlePopulation(self, population):
         try:
             self.populations.append(copy(population))
-            optimizer = self.optimizers[-1] if self.optimizers else None
-            self.representation.presentOutput(self.populations, optimizer)
+            self.representation.presentOutput(self.populations, self.optimizer)
         except Exception as ex:
             logger.exception(ex)
 
@@ -73,6 +73,6 @@ class Output(object):
     def handleOptimizer(self, optimizer):
         try:
             self.optimizers.append(copy(optimizer))
-            self.representation.presentOptimizer(self.optimizers)
+            self.representation.presentOptimizer(self.optimizers, self.optimizer)
         except Exception as ex:
             logger.exception(ex)

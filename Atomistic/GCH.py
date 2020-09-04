@@ -9,6 +9,7 @@ from itertools import chain, combinations_with_replacement
 
 from ..ConvexHull import ConvexHull
 from ..Fitness import Fitness
+from ..SystemPool import SystemPool
 
 
 # To which dimensionality we project our FP and consider
@@ -53,7 +54,9 @@ class GeneralizedConvexHull(ConvexHull):
             for i, system in enumerate(systems):
                 self._df.loc[i] = None, None, 0.0, 0.0
         else:
-            super().__init__(Fitness(self.systems, []).calcFitness(('getAbsoluteCHSpace',
+            pool = SystemPool()
+            pool.update(self.systems)
+            super().__init__(Fitness(pool, []).calcFitness(('getAbsoluteCHSpace',
                                                                     ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))
@@ -81,7 +84,9 @@ class GeneralizedConvexHull(ConvexHull):
             for i, system in enumerate(systems):
                 self._df.loc[i] = None, None, 0.0, 0.0
         else:
-            super().__init__(Fitness(self.systems, []).calcFitness(('getAbsoluteCHSpace',
+            pool = SystemPool()
+            pool.update(self.systems)
+            super().__init__(Fitness(pool, []).calcFitness(('getAbsoluteCHSpace',
                                                                     ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))

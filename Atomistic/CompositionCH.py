@@ -2,15 +2,18 @@ from typing import List
 
 from ..ConvexHull import ConvexHull
 from ..Fitness import Fitness
+from ..SystemPool import SystemPool
 from .CompositionSpace import CompositionSpace
 
 
 class CompositionCH(ConvexHull):
     def __init__(self, systems: list, comositionSpace: CompositionSpace):
         self.systems = systems
+        pool = SystemPool()
+        pool.update(self.systems)
         self.compositionSpace = comositionSpace
-        super().__init__(Fitness(self.systems, [self.compositionSpace]).calcFitness(('getRelativeCHSpace',
-                                                                                   ('tabulate', 'composition'), 'enthalpy')))
+        super().__init__(Fitness(pool, {'compositionSpace': self.compositionSpace}).calcFitness(('getRelativeCHSpace',
+                                                                     ('compositionBlocks', ), 'enthalpy')))
 
     @property
     def lower_bound(self):
@@ -30,5 +33,7 @@ class CompositionCH(ConvexHull):
 
     def extend(self, systems: list):
         self.systems.extend(systems)
-        super().__init__(Fitness(self.systems, [self.compositionSpace]).calcFitness(('getRelativeCHSpace',
-                                                                                   ('tabulate', 'composition'), 'enthalpy')))
+        pool = SystemPool()
+        pool.update(self.systems)
+        super().__init__(Fitness(pool, {'compositionSpace': self.compositionSpace}).calcFitness(('getRelativeCHSpace',
+                                                                     ('compositionBlocks', ), 'enthalpy')))
