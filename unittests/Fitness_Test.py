@@ -72,27 +72,21 @@ class Fitness_Test(unittest.TestCase):
 
     def test_compositionBlocks(self):
         ref = [[1], [1], [1], [1], [1], [1], [1], [1], [1]]
-        self.assertTrue(np.allclose(self.fitness.calcFitness(('compositionBlocks', ('tabulate', 'composition'))), ref))
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('compositionBlocks', )), ref))
 
     def test_getRelativeCHSpace(self):
         ref = [[-646.695], [-644.48 ], [-650.098], [-649.082], [-651.279], [-643.925], [-652.042], [-648.368], [-648.335]]
-        self.assertTrue(np.allclose(self.fitness.calcFitness(('getRelativeCHSpace',
-                                        ('compositionBlocks', ('tabulate', 'composition')), 'enthalpy')), ref))
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('getRelativeCHSpace', ('compositionBlocks', ), 'enthalpy')), ref))
 
     def test_convexHullHeightComposition(self):
         ref = [5.347, 7.562, 1.944, 2.96,  0.763, 8.117, 0., 3.674, 3.707]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('convexHullHeight',
-                                                              ('getRelativeCHSpace',
-                                                               ('compositionBlocks',
-                                                                ('tabulate', 'composition')), 'enthalpy'))), ref))
+                                                              ('getRelativeCHSpace', ('compositionBlocks', ), 'enthalpy'))), ref))
 
     def test_pareto(self):
         ref = [6, 7, 2, 3, 1, 8, 0, 4, 5]
-        self.assertTrue(np.allclose(self.fitness.calcFitness(('pareto',
-                                                              ('convexHullHeight',
-                                                               ('getRelativeCHSpace',
-                                                                ('compositionBlocks',
-                                                                 ('tabulate', 'composition')), 'enthalpy')))), ref))
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('pareto', ('convexHullHeight',
+                                                               ('getRelativeCHSpace', ('compositionBlocks', ), 'enthalpy')))), ref))
 
     def test_fingerprint(self):
         ref = [{'a': [0.2, -0.2], 'b': [0.2, -0.2]},
