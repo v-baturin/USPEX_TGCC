@@ -24,7 +24,7 @@ class GlobalOptimizer(object):
     Fitness = None
     knownSelectionTypes = {}
 
-    def __init__(self, target: dict, selection: dict, fitness: List[Tuple[str, str]], stopFitness=None, output=None, **kwargs):
+    def __init__(self, target: dict, selection: dict, fitness, stopFitness=None, output=None, **kwargs):
         """
         Initializes the class.
 
@@ -84,8 +84,13 @@ class GlobalOptimizer(object):
             self.best = best
         if self.stopFitness is not None:
             for ID in list(self.best):
-                if round(self.fitness.getFitnessByID(self.fitnessConvergence, ID), ndigits=3) <=\
-                        round(self.stopFitness, ndigits=3):
+                value = self.fitness.getFitnessByID(self.fitnessConvergence, ID)
+                if value is None:
+                    try:
+                        value = getattr(self.target.pool.allSystems[ID], self.fitnessConvergence)
+                    except:
+                        pass
+                if round(value, ndigits=3) <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
 
     @property

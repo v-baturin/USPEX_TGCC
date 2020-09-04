@@ -13,6 +13,7 @@ import os
 import json
 
 from ..Fitness import Fitness
+from ..SystemPool import SystemPool
 from ..Atomistic.CompositionSpace import CompositionSpace
 from ..Atomistic.Fingerprints.fingerprint import Fingerprint
 
@@ -27,15 +28,17 @@ class System(object):
 
 class Fitness_Test(unittest.TestCase):
     def setUp(self) -> None:
-        self.pool = [System(0, {'Mg': 4, 'Al': 8, 'O': 16}, -646.695, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)),
-                     System(1, {'Mg': 4, 'Al': 8, 'O': 16}, -644.480, Fingerprint({'a':[0.2,-0.2]}, None)),
-                     System(2, {'Mg': 4, 'Al': 8, 'O': 16}, -650.098, Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)),
-                     System(3, {'Mg': 4, 'Al': 8, 'O': 16}, -649.082, Fingerprint({'b': [0.1,-0.5]}, None)),
-                     System(4, {'Mg': 4, 'Al': 8, 'O': 16}, -651.279, Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)),
-                     System(5, {'Mg': 4, 'Al': 8, 'O': 16}, -643.925, Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None)),
-                     System(6, {'Mg': 4, 'Al': 8, 'O': 16}, -652.042, Fingerprint({'b': [0.1,-0.2]}, None)),
-                     System(7, {'Mg': 4, 'Al': 8, 'O': 16}, -648.368, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)),
-                     System(8, {'Mg': 4, 'Al': 8, 'O': 16}, -648.335, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None))]
+        self.systems = [System(0, {'Mg': 4, 'Al': 8, 'O': 16}, -646.695, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)),
+                        System(1, {'Mg': 4, 'Al': 8, 'O': 16}, -644.480, Fingerprint({'a':[0.2,-0.2]}, None)),
+                         System(2, {'Mg': 4, 'Al': 8, 'O': 16}, -650.098, Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)),
+                         System(3, {'Mg': 4, 'Al': 8, 'O': 16}, -649.082, Fingerprint({'b': [0.1,-0.5]}, None)),
+                         System(4, {'Mg': 4, 'Al': 8, 'O': 16}, -651.279, Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)),
+                         System(5, {'Mg': 4, 'Al': 8, 'O': 16}, -643.925, Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None)),
+                         System(6, {'Mg': 4, 'Al': 8, 'O': 16}, -652.042, Fingerprint({'b': [0.1,-0.2]}, None)),
+                         System(7, {'Mg': 4, 'Al': 8, 'O': 16}, -648.368, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)),
+                         System(8, {'Mg': 4, 'Al': 8, 'O': 16}, -648.335, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None))]
+        self.pool = SystemPool()
+        self.pool.update(self.systems)
         self.compositionSpace = CompositionSpace(symbols=['Mg','Al','O'], blocks=[[4,8,16]], range=[[1,1]])
         self.fitness = Fitness(self.pool, {'compositionSpace': self.compositionSpace})
 
