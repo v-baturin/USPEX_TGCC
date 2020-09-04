@@ -2,12 +2,14 @@ import unittest
 import numpy as np
 import os
 
+from ...SystemPool import SystemPool
 from ..CompositionCH import CompositionCH
 from ..CompositionSpace import CompositionSpace
 
 class System(object):
 
-    def __init__(self, composition, enthalpy):
+    def __init__(self, ID, composition, enthalpy):
+        self.ID = ID
         self.composition = composition
         self.enthalpy = enthalpy
 
@@ -15,10 +17,10 @@ class System(object):
 class CompostionCH_Test(unittest.TestCase):
     def test_unocomponent(self):
         compositionSpace = CompositionSpace(symbols=['Mo'], blocks=[[1]], range=[[1, 18]])
-        system0 = System({'Mo': 1}, -2.0)
-        system1 = System({'Mo': 4}, -8.0)
-        system2 = System({'Mo': 4}, -16.0)
-        system3 = System({'Mo': 8}, -8.0)
+        system0 = System(0, {'Mo': 1}, -2.0)
+        system1 = System(1, {'Mo': 4}, -8.0)
+        system2 = System(2, {'Mo': 4}, -16.0)
+        system3 = System(3, {'Mo': 8}, -8.0)
         self.convexHull = CompositionCH([system0], compositionSpace)
 
         # ans = self.convexHull.height[0]
@@ -44,14 +46,14 @@ class CompostionCH_Test(unittest.TestCase):
     def test_bicomponent(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
-        system1 = System({'Mo': 4, 'B': 10}, -5.0)
-        system2 = System({'Mo': 4, 'B': 10}, -14.0)
-        system3 = System({'Mo': 8, 'B': 8}, -8.0)
-        system4 = System({'Mo': 8}, -2.0)
-        system5 = System({'Mo': 8}, -4.0)
-        system6 = System({'B': 10}, -12.0)
-        system7 = System({'Mo': 6, 'B': 4}, -2.0)
-        system8 = System({'Mo': 4, 'B': 6}, -16.0)
+        system1 = System(0, {'Mo': 4, 'B': 10}, -5.0)
+        system2 = System(1, {'Mo': 4, 'B': 10}, -14.0)
+        system3 = System(2, {'Mo': 8, 'B': 8}, -8.0)
+        system4 = System(3, {'Mo': 8}, -2.0)
+        system5 = System(4, {'Mo': 8}, -4.0)
+        system6 = System(5, {'B': 10}, -12.0)
+        system7 = System(6, {'Mo': 6, 'B': 4}, -2.0)
+        system8 = System(7, {'Mo': 4, 'B': 6}, -16.0)
 
 
 
@@ -131,14 +133,14 @@ class CompostionCH_Test(unittest.TestCase):
     def test_bicomponent1(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
-        system1 = System({'Mo': 4, 'B': 10}, -5.0)
-        system2 = System({'Mo': 4, 'B': 10}, -14.0)
-        system3 = System({'Mo': 8, 'B': 8}, -8.0)
-        system4 = System({'Mo': 8}, -2.0)
-        system5 = System({'Mo': 8}, -4.0)
-        system6 = System({'B': 10}, -12.0)
-        system7 = System({'Mo': 6, 'B': 4}, -2.0)
-        system8 = System({'Mo': 4, 'B': 6}, -16.0)
+        system1 = System(0, {'Mo': 4, 'B': 10}, -5.0)
+        system2 = System(1, {'Mo': 4, 'B': 10}, -14.0)
+        system3 = System(2, {'Mo': 8, 'B': 8}, -8.0)
+        system4 = System(3, {'Mo': 8}, -2.0)
+        system5 = System(4, {'Mo': 8}, -4.0)
+        system6 = System(5, {'B': 10}, -12.0)
+        system7 = System(6, {'Mo': 6, 'B': 4}, -2.0)
+        system8 = System(7, {'Mo': 4, 'B': 6}, -16.0)
 
         systems = [system1, system2, system3, system4, system5, system6, system7, system8]
         self.convexHull = CompositionCH(systems, compositionSpace)
@@ -224,12 +226,12 @@ class CompostionCH_Test(unittest.TestCase):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
 
-        system1 = System({'Mo': 6, 'B': 14}, -178.845)
-        system2 = System({'Mo': 16, 'B': 10}, -225.103)
-        system3 = System({'Mo': 5, 'B': 14}, -162.761)
-        system4 = System({'Mo': 6, 'B': 14}, -176.250)
-        system5 = System({'Mo': 13, 'B': 5}, -150.735)
-        system6 = System({'Mo': 9, 'B': 1}, -77.661)
+        system1 = System(0, {'Mo': 6, 'B': 14}, -178.845)
+        system2 = System(1, {'Mo': 16, 'B': 10}, -225.103)
+        system3 = System(2, {'Mo': 5, 'B': 14}, -162.761)
+        system4 = System(3, {'Mo': 6, 'B': 14}, -176.250)
+        system5 = System(4, {'Mo': 13, 'B': 5}, -150.735)
+        system6 = System(5, {'Mo': 9, 'B': 1}, -77.661)
         systems = [system1, system2, system3, system4, system5, system6]
 
         self.convexHull = CompositionCH(systems, compositionSpace)
@@ -270,11 +272,11 @@ class CompostionCH_Test(unittest.TestCase):
     def test_bicomponent3(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
-        system1 = System({'Mo': 5, 'B': 15}, -173.325)
-        system2 = System({'Mo': 5}, -42.944)
-        system3 = System({'Mo': 3, 'B': 9}, -104.041)
-        system4 = System({'Mo': 6, 'B': 14}, -177.431)
-        system5 = System({'Mo': 9}, -69.214)
+        system1 = System(0, {'Mo': 5, 'B': 15}, -173.325)
+        system2 = System(1, {'Mo': 5}, -42.944)
+        system3 = System(2, {'Mo': 3, 'B': 9}, -104.041)
+        system4 = System(3, {'Mo': 6, 'B': 14}, -177.431)
+        system5 = System(4, {'Mo': 9}, -69.214)
         systems = [system1, system2, system3, system4, system5]
 
         self.convexHull = CompositionCH(systems, compositionSpace)

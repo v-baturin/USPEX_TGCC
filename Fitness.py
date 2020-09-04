@@ -21,6 +21,7 @@ from sklearn.decomposition import PCA
 
 from .ConvexHull import ConvexHull
 from .paretoRanking import paretoRanking
+from .Presets import presetFitness
 
 
 class Fitness(object):
@@ -30,8 +31,17 @@ class Fitness(object):
 
     def __init__(self, pool, utilities):
         self.pool = pool
+        self._poolHash = hash(self.pool)
         self.utilities = utilities
         self._antiseedsCorrections = {}
+        self._storedFitnesses = {}
+
+    @property
+    def storedFitnesses(self):
+        if self._poolHash != hash(self.pool):
+            self._storedFitnesses = {}
+            self._poolHash = hash(self.pool)
+        return self._storedFitnesses
 
     def sort(self, fitness, population: list):
         """
@@ -45,7 +55,7 @@ class Fitness(object):
         :return: sorted population.
         """
 
-        pairs = list(zip(self.pool, self.calcFitness(fitness)))
+        pairs = list(zip(self.pool.uniqueSystems, self.calcFitness(fitness)))
         values = []
         for system in population:
             for ref_system, value in pairs:
@@ -58,26 +68,38 @@ class Fitness(object):
         return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueValues))]
 
     def calcFitness(self, fitness):
-        if isinstance(fitness, tuple):
-            funcName, *funcParams = fitness
-            if not isinstance(funcName, str):
-                raise RuntimeError(f'Incorrect type {type(funcName)} of function {funcName}.')
-            elif not hasattr(self, funcName):
-                raise RuntimeError(f'Function {funcName} not found in {type(self)}.')
-            arguments = [self.calcFitness(param) for param in funcParams]
-            return getattr(self, funcName)(*arguments)
-        elif isinstance(fitness, str):
-            # unfortunately simple np.asarray spoils dictionaries
-            if len(self.pool):
-                value = np.empty((len(self.pool,)), dtype=type(getattr(self.pool[0], fitness)))
+        if fitness in presetFitness:
+            fitness = presetFitness[fitness]
+        if fitness not in self.storedFitnesses:
+            if isinstance(fitness, tuple):
+                funcName, *funcParams = fitness
+                if not isinstance(funcName, str):
+                    raise RuntimeError(f'Incorrect type {type(funcName)} of function {funcName}.')
+                elif not hasattr(self, funcName):
+                    raise RuntimeError(f'Function {funcName} not found in {type(self)}.')
+                arguments = [self.calcFitness(param) for param in funcParams]
+                self.storedFitnesses[fitness] = getattr(self, funcName)(*arguments)
+            elif isinstance(fitness, str):
+                # unfortunately simple np.asarray spoils dictionaries
+                if len(self.pool.uniqueSystems):
+                    value = np.empty((len(self.pool.uniqueSystems,)), dtype=type(getattr(self.pool.uniqueSystems[0], fitness)))
+                else:
+                    value = np.empty((0,))
+                for i, x in enumerate(self.pool.uniqueSystems):
+                    value[i] = getattr(x, fitness)
+                return value
             else:
-                value = np.empty((0,))
-            for i, x in enumerate(self.pool):
-                value[i] = getattr(x, fitness)
-            return value
-        else:
-            # just a parameter. return it without doing anything.
-            return fitness
+                # just a parameter. return it without doing anything.
+                return fitness
+        return self.storedFitnesses[fitness]
+
+    def getFitnessByID(self, fitness, ID):
+        if fitness in presetFitness:
+            fitness = presetFitness[fitness]
+        try:
+            return self.storedFitnesses[fitness][[system.ID for system in self.pool.uniqueSystems].index(ID)]
+        except:
+            return None
 
     def payPenalties(self, population, pool):
         comb = list(combinations(population, 2))
@@ -104,7 +126,7 @@ class Fitness(object):
 
     def getAntiseedsCorrections(self, values: np.ndarray) -> np.ndarray:
         corrections = []
-        for system in self.pool:
+        for system in self.pool.uniqueSystems:
             if system.ID in self._antiseedsCorrections:
                 corrections.append(self.ANTISEEDS_MAX * self._antiseedsCorrections[system.ID])
             else:
@@ -149,9 +171,11 @@ class Fitness(object):
     def convexHullHeight(space: np.ndarray) -> np.ndarray:
         return copy(ConvexHull(space).height)
 
-    def compositionBlocks(self, numIons: np.ndarray) -> np.ndarray:
+    def compositionBlocks(self) -> np.ndarray:
+        numIons = self.calcFitness(('tabulate', 'composition'))
+        inds = np.argsort(self.utilities['compositionSpace'].symbols)
         blocks = self.utilities['compositionSpace'].blocks
-        return np.round(np.linalg.lstsq(blocks.T, numIons.T, rcond=None)[0]).astype(int).T
+        return np.round(np.linalg.lstsq(blocks.T[inds], numIons.T, rcond=None)[0]).astype(int).T
 
     @staticmethod
     def getRelativeCHSpace(arguments: np.ndarray, properties: np.ndarray) -> np.ndarray:

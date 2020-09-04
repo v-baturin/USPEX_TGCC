@@ -12,7 +12,7 @@ class NoRepresentation(object):
     """
     Empty output representation.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, *args , **kwargs):
         pass
 
     def presentSystems(self, systems, optimizer):
@@ -24,5 +24,5 @@ class NoRepresentation(object):
     def presentInfo(self, info):
         pass
 
-    def presentOptimizer(self, optimizers):
+    def presentOptimizer(self, optimizers, optimizer):
         pass

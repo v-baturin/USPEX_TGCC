@@ -39,9 +39,12 @@ class SystemPool(object):
         :type config: :class:`~USPEX.Common.Config.Config` or descendant
         :param config: describes the chemical compositions configuration space.
         """
-        self.uniqueSystems = []
+        self.uniqueSystems = ()
         self.allSystems = {}
         self._newID = 0
+
+    def __hash__(self):
+        return hash(tuple(system.ID for system in self.uniqueSystems))
 
     def update(self, population: list):
         """
@@ -55,11 +58,13 @@ class SystemPool(object):
 
         logger.info('Updating target: list of unique systems.')
         uniqueIDs = [system.ID for system in self.uniqueSystems]
+        uniqueSystems = list(self.uniqueSystems)
         for system in population:
             if system.ID not in uniqueIDs:
                 logger.debug('add new system %d to list of unique systems' % system.ID)
                 uniqueIDs.append(system.ID)
-                self.uniqueSystems.append(system)
+                uniqueSystems.append(system)
+        self.uniqueSystems = tuple(uniqueSystems)
 
     def newFoundSystems(self, population: list):
         """
@@ -89,9 +94,10 @@ class SystemPool(object):
         """
         logger.info('Looking for duplicates.')
         cleanedPopulation = []
+        uniqueSystems = list(self.uniqueSystems)
         for system in population:
             logger.debug(f'checking if system {system} is new')
-            for ref_system in self.uniqueSystems + cleanedPopulation:
+            for ref_system in uniqueSystems + cleanedPopulation:
                 if system == ref_system:
                     logger.debug(f'system {system} coincides with system {ref_system} found earlier')
                     system = ref_system
