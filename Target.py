@@ -12,6 +12,7 @@ import logging
 
 from types import SimpleNamespace
 from typing import List
+from copy import copy, deepcopy
 
 from .SystemPool import SystemPool
 from .VariationOperators import VariationOperators
@@ -83,6 +84,18 @@ class Target(object):
             self.creations.append(creationType(self.systemType, self.config, self.pool, self.utilities, **params))
 
         self.variationOperators = self.hybridizations + self.mutations + self.creations
+
+    def __copy__(self):
+        other = Target.__new__(Target)
+        other.systemType = self.systemType
+        other.config = self.config
+        other.pool = copy(self.pool)
+        other.utilities = deepcopy(self.utilities)
+        other.hybridizations = deepcopy(self.hybridizations)
+        other.mutations = deepcopy(self.mutations)
+        other.creations = deepcopy(self.creations)
+        other.variationOperators = other.hybridizations + other.mutations + other.creations
+        return other
 
     @classmethod
     def registerTarget(cls, name: str, systemType: type, sharedUtilities: List[type], variationOperators: VariationOperators):

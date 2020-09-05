@@ -11,6 +11,7 @@ Contains configuration of such space, parameters of what we are searching for
 import logging
 logger = logging.getLogger(__name__)
 
+from copy import copy
 
 class SystemPool(object):
     """
@@ -42,6 +43,13 @@ class SystemPool(object):
         self.uniqueSystems = ()
         self.allSystems = {}
         self._newID = 0
+
+    def __copy__(self):
+        other = SystemPool.__new__(SystemPool)
+        other.uniqueSystems = self.uniqueSystems
+        other.allSystems = copy(self.allSystems)
+        other._newID = self._newID
+        return other
 
     def __hash__(self):
         return hash(tuple(system.ID for system in self.uniqueSystems))

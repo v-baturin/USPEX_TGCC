@@ -8,6 +8,7 @@ Class implementing global optimizer
 """
 
 import logging
+from copy import copy
 from typing import List, Tuple
 
 from .Target import Target
@@ -55,6 +56,24 @@ class GlobalOptimizer(object):
         self.newStructures = None
 
         self.output = output
+
+    def __copy__(self):
+        other = GlobalOptimizer.__new__(GlobalOptimizer)
+        other.target = copy(self.target)
+        other.fitness = copy(self.fitness)
+        other.fitness.pool = other.target.pool
+        other.fitness.utilities = other.target.utilities
+        other.fitnessConvergence = self.fitnessConvergence
+        other.best = copy(self.best)
+        other._isStable = self._isStable
+        other.stopFitness = self.stopFitness
+        other._isGoalReached = self._isGoalReached
+        other.selectionConfig = self.selectionConfig
+        other.createPopulation = self.createPopulation
+        other.population = copy(self.population)
+        other.newStructures = copy(self.newStructures)
+        other.output = self.output
+        return other
 
     def run(self):
         """

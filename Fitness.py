@@ -36,6 +36,15 @@ class Fitness(object):
         self._antiseedsCorrections = {}
         self._storedFitnesses = {}
 
+    def __copy__(self):
+        other = Fitness.__new__(Fitness)
+        other.pool = self.pool
+        other._poolHash = self._poolHash
+        other.utilities = self.utilities
+        other._antiseedsCorrections = copy(self._antiseedsCorrections)
+        other._storedFitnesses = copy(self._storedFitnesses)
+        return other
+
     @property
     def storedFitnesses(self):
         if self._poolHash != hash(self.pool):
