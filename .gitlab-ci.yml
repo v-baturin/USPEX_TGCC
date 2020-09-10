@@ -18,21 +18,9 @@ build:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
   stage: build
   script:
-    - find . -name ".git*" | xargs rm -rf
-    - mkdir build
-    - mkdir build/USPEX
-    - mkdir build/USPEX/Common
-    - touch build/USPEX/__init__.py
     - mkdir onlytests
     - find . -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./onlytests/$(dirname {}) && mv {} ./onlytests/$(dirname {})'
-    - find . -maxdepth 1 -mindepth 1 ! -path ./build ! -path ./onlytests | xargs -I {} mv {} ./build/USPEX/Common
-    - cd ./build
-    - find . -type d -name "*tests*" | xargs rm -rf
-    - find . -type f \( -name "*.py" ! -name "__init__.py" \) | xargs -I {} -t sh -c 'cythonize -i {} && rm {}'
-    - find . -type f -name "*.c" | xargs -I {} rm {}
-    - cd ../
-    - mkdir Src
-    - cp -r ./build/USPEX/Common/* ./Src/
+    - python setup.py build_uspex -b ./Src
   artifacts:
     paths:
       - Src
@@ -43,8 +31,8 @@ unittesting_binaries:
   image: $CI_REGISTRY/uspex_python/uspex_again:master
   stage: unittesting_binaries
   script:
-    - cp -r ./onlytests/* ./Src
-    - cd ./Src
+    - cp -r ./onlytests/* ./Src/USPEX/Common
+    - cd ./Src/USPEX/Common
     - nosetests -v .
 
 trigger_build:
