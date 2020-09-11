@@ -32,8 +32,8 @@ from .Fingerprints.make_matrices import make_matrices
 from .Fingerprints.fingerprint import fingerprint, Fingerprint
 from .Fingerprints.fingerprint import fpWeights
 from .Fingerprints.cosine_distance import cosine_distance
-from .Fingerprints.quasientropy import quasientropy
-from .Fingerprints.structure_order import structure_order
+# from .Fingerprints.quasientropy import quasientropy
+# from .Fingerprints.structure_order import structure_order
 
 
 RMAX_DEFAULT = 10.0
