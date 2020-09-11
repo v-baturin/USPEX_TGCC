@@ -21,6 +21,7 @@ build:
     - mkdir onlytests
     - find . -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./onlytests/$(dirname {}) && mv {} ./onlytests/$(dirname {})'
     - python setup.py build_uspex -b ./Src
+    - touch Src/USPEX/__init__.py
   artifacts:
     paths:
       - Src
