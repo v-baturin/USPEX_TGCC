@@ -10,7 +10,6 @@ Basic class for variation operators
 
 from typing import Callable
 
-from USPEX.Common.Config import Config
 from USPEX.Common.SystemPool import SystemPool
 
 MAX_OUTPUT_SIZE = 8

@@ -52,7 +52,7 @@ class Simplex:
             raise ValueError('Error: simplex is not full-dimensional!')
 
 
-class ConvexHull:
+class ConvexHull(object):
 
     def __init__(self, systems: np.ndarray):
         logger.debug(f'ConvexHull arguments: {systems[:,:-1]}, properties: {systems[:,-1]}')
