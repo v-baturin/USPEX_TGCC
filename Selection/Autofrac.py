@@ -58,7 +58,7 @@ class Autofrac(object):
 
         if self.weightsLast[varOperator] == 0:
             initialNorm = sum(self.initFracs.values())
-            frac = self.initFracs[varOperator] / initialNorm
+            frac = self.initFracs[varOperator] / initialNorm if initialNorm > 0 else 0
             howMany = np.floor(frac * leftPopSize)
         else:
             minimalNorm = sum(self.minFracs.values())
