@@ -17,11 +17,11 @@ class CompositionCH(ConvexHull):
 
     @property
     def lower_bound(self):
-        return [self.systems[i] for i in super().lower_bound]
+        return [self.systems[i] for i in super(CompositionCH,self).lower_bound]
 
     @property
     def upper_bound(self):
-        return [self.systems[i] for i in super().upper_bound]
+        return [self.systems[i] for i in super(CompositionCH,self).upper_bound]
 
     @property
     def depth(self):

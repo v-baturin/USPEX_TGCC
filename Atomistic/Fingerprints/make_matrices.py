@@ -10,7 +10,7 @@ Functions used for fingerprint calculation
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from ..super_matrix import super_matrix
+from .super_matrix import super_matrix
 
 
 def make_matrices(coor: np.ndarray, lat: np.ndarray, numIons: np.ndarray, Rmax=10.0):

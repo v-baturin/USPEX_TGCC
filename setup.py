@@ -1,0 +1,108 @@
+from setuptools import Extension, setup
+from Cython.Build import cythonize
+from setuptools.command.build_ext import build_ext
+
+
+class build_uspex(build_ext):
+
+    """Build all extensions and copy data files to build directory."""
+
+    description = build_ext.description + " and copy data files to build directory."
+
+    def run(self):
+        build_ext.run(self)
+        build_py = self.get_finalized_command('build_py')
+        build_py.build_lib = self.build_lib
+        build_py.build_package_data()
+
+extensions = [
+    Extension("USPEX.Common.GlobalOptimizer", ["GlobalOptimizer.py"]),
+    Extension("USPEX.Common.Target", ["Target.py"]),
+    Extension("USPEX.Common.System", ["System.py"]),
+    Extension("USPEX.Common.SystemPool", ["SystemPool.py"]),
+    Extension("USPEX.Common.VarOperator", ["VarOperator.py"]),
+    Extension("USPEX.Common.Worker", ["Worker.py"]),
+    Extension("USPEX.Common.Fitness", ["Fitness.py"]),
+    Extension("USPEX.Common.ConvexHull", ["ConvexHull.py"]),
+    Extension("USPEX.Common.Output", ["Output.py"]),
+    Extension("USPEX.Common.NoRepresentation", ["NoRepresentation.py"]),
+    Extension("USPEX.Common.VariationOperators", ["VariationOperators.py"]),
+    Extension("USPEX.Common.paretoRanking", ["paretoRanking.py"]),
+    Extension("USPEX.Common.Presets", ["Presets.py"]),
+    Extension("USPEX.Common.Selection.USPEXClassic", ["Selection/USPEXClassic.py"]),
+    Extension("USPEX.Common.Selection.Autofrac", ["Selection/Autofrac.py"]),
+    Extension("USPEX.Common.SpaceGroups.SpaceGroups3D", ["SpaceGroups/SpaceGroups3D.py"]),
+    Extension("USPEX.Common.SpaceGroups.TopologicalNet", ["SpaceGroups/TopologicalNet.py"]),
+    Extension("USPEX.Common.XRay.SpectrumAnalyzer", ["XRay/SpectrumAnalyzer.py"]),
+    Extension("USPEX.Common.Atomistic.AtomicStructure", ["Atomistic/AtomicStructure.py"]),
+    Extension("USPEX.Common.Atomistic.Bonds", ["Atomistic/Bonds.py"]),
+    Extension("USPEX.Common.Atomistic.calcDefaultVolume", ["Atomistic/calcDefaultVolume.py"]),
+    Extension("USPEX.Common.Atomistic.CompositionCH", ["Atomistic/CompositionCH.py"]),
+    Extension("USPEX.Common.Atomistic.CompositionSpace", ["Atomistic/CompositionSpace.py"]),
+    Extension("USPEX.Common.Atomistic.Crystal", ["Atomistic/Crystal.py"]),
+    Extension("USPEX.Common.Atomistic.Element", ["Atomistic/Element.py"]),
+    Extension("USPEX.Common.Atomistic.GCH", ["Atomistic/GCH.py"]),
+    Extension("USPEX.Common.Atomistic.optLattice", ["Atomistic/optLattice.py"]),
+    Extension("USPEX.Common.Atomistic.Fingerprints.cosine_distance", ["Atomistic/Fingerprints/cosine_distance.py"]),
+    Extension("USPEX.Common.Atomistic.Fingerprints.fingerprint", ["Atomistic/Fingerprints/fingerprint.py"]),
+    Extension("USPEX.Common.Atomistic.Fingerprints.local_order", ["Atomistic/Fingerprints/local_order.py"]),
+    Extension("USPEX.Common.Atomistic.Fingerprints.make_matrices", ["Atomistic/Fingerprints/make_matrices.py"]),
+    Extension("USPEX.Common.Atomistic.Fingerprints.super_matrix", ["Atomistic/Fingerprints/super_matrix.py"]),
+    Extension("USPEX.Common.Atomistic.mol.coord2Zmatrix", ["Atomistic/mol/coord2Zmatrix.py"]),
+    Extension("USPEX.Common.Atomistic.mol.find_pair", ["Atomistic/mol/find_pair.py"]),
+    Extension("USPEX.Common.Atomistic.mol.read_molecule", ["Atomistic/mol/read_molecule.py"]),
+    Extension("USPEX.Common.Atomistic.mol.zmatrix2coord", ["Atomistic/mol/zmatrix2coord.py"]),
+    Extension("USPEX.Common.Atomistic.softmodes.calcHardness", ["Atomistic/softmodes/calcHardness.py"]),
+    Extension("USPEX.Common.Atomistic.softmodes.calcSoftModes", ["Atomistic/softmodes/calcSoftModes.py"]),
+    Extension("USPEX.Common.Atomistic.softmodes.getMinimalGraphBonds", ["Atomistic/softmodes/getMinimalGraphBonds.py"]),
+    Extension("USPEX.Common.Crystal.Heredity", ["Crystal/Heredity.py"]),
+    Extension("USPEX.Common.Crystal.Permutation", ["Crystal/Permutation.py"]),
+    Extension("USPEX.Common.Crystal.Random", ["Crystal/Random.py"]),
+    Extension("USPEX.Common.Crystal.RandSym", ["Crystal/RandSym.py"]),
+    Extension("USPEX.Common.Crystal.RandTop", ["Crystal/RandTop.py"]),
+    Extension("USPEX.Common.Crystal.Rotation", ["Crystal/Rotation.py"]),
+    Extension("USPEX.Common.Crystal.Seeds", ["Crystal/Seeds.py"]),
+    Extension("USPEX.Common.Crystal.Softmodemutation", ["Crystal/Softmodemutation.py"]),
+    Extension("USPEX.Common.Crystal.Transmutation", ["Crystal/Transmutation.py"]),
+    Extension("USPEX.Common.Crystal.Twinning", ["Crystal/Twinning.py"]),
+    Extension("USPEX.Common.Crystal.symope.fix_latticeStokes_after", ["Crystal/symope/fix_latticeStokes_after.py"]),
+    Extension("USPEX.Common.Crystal.symope.Get_Final_Struc", ["Crystal/symope/Get_Final_Struc.py"]),
+    Extension("USPEX.Common.Crystal.symope.Get_Init_Lattice", ["Crystal/symope/Get_Init_Lattice.py"]),
+    Extension("USPEX.Common.Crystal.symope.GetPermutation", ["Crystal/symope/GetPermutation.py"]),
+    Extension("USPEX.Common.Crystal.symope.GetPrimitiveCell", ["Crystal/symope/GetPrimitiveCell.py"]),
+    Extension("USPEX.Common.Crystal.symope.latConverter", ["Crystal/symope/latConverter.py"]),
+    Extension("USPEX.Common.Crystal.symope.Read_Stokes_output", ["Crystal/symope/Read_Stokes_output.py"]),
+    Extension("USPEX.Common.Crystal.symope.spaceGroups", ["Crystal/symope/spaceGroups.py"]),
+    Extension("USPEX.Common.Crystal.symope.splitBigCell", ["Crystal/symope/splitBigCell.py"]),
+    Extension("USPEX.Common.Crystal.symope.symope_crystal", ["Crystal/symope/symope_crystal.py"]),
+    Extension("USPEX.Common.Crystal.symope.unitCellFromPrimitive", ["Crystal/symope/unitCellFromPrimitive.py"]),
+    Extension("USPEX.Common.Crystal.symope.Write_Stokes_input", ["Crystal/symope/Write_Stokes_input.py"]),
+
+]
+setup(
+    name="USPEX-AGAIN",
+    packages=["USPEX.Common"],
+    package_dir={"USPEX.Common": "."},
+    package_data={
+        "USPEX.Common": [
+            "__init__.py",
+            "Atomistic/__init__.py",
+            "Atomistic/Fingerprints/__init__.py",
+            "Atomistic/mol/__init__.py",
+            "Atomistic/softmodes/__init__.py",
+            "Crystal/__init__.py",
+            "Crystal/idealnets.json",
+            "Crystal/symope/__init__.py",
+            "Crystal/symope/spacegroup/data/data_diperiodic.txt",
+            "Crystal/symope/spacegroup/data/data_space.txt",
+            "Crystal/symope/spacegroup/data/data_space2d.txt",
+            "Crystal/symope/spacegroup/data/data_wyckoff.txt",
+            "Selection/__init__.py",
+            "SpaceGroups/__init__.py",
+            "SpaceGroups/decompositions.json",
+            "XRay/__init__.py"
+        ],
+    },
+    ext_modules=cythonize(extensions, language_level=3),
+    cmdclass={'build_uspex': build_uspex},
+)
