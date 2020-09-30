@@ -90,11 +90,11 @@ class Target(object):
         other.systemType = self.systemType
         other.config = self.config
         other.pool = copy(self.pool)
-        other.utilities = deepcopy(self.utilities)
-        other.hybridizations = deepcopy(self.hybridizations)
-        other.mutations = deepcopy(self.mutations)
-        other.creations = deepcopy(self.creations)
-        other.variationOperators = other.hybridizations + other.mutations + other.creations
+        other.utilities = None
+        other.hybridizations = None
+        other.mutations = None
+        other.creations = None
+        other.variationOperators = None
         return other
 
     @classmethod

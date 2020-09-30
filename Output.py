@@ -48,10 +48,12 @@ class Output(object):
     def handleSystem(self, system):
         try:
             ID = system.ID
+            system = copy(system)
+            system.clean()
             if ID in self.systems:
-                self.systems[ID].append(copy(system))
+                self.systems[ID].append(system)
             else:
-                self.systems[ID] = [copy(system)]
+                self.systems[ID] = [system]
             self.representation.presentSystems(self.systems, self.optimizer)
         except Exception as ex:
             logger.exception(ex)
