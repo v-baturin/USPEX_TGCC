@@ -240,7 +240,7 @@ class AtomicStructure(System):
         self._valenceElectrons = {}
         self._mDM = None
         self._moleculeTypesToFormula = {}
-        self._fingerprint = {}
+        self.clean()
 
     def __add__(self, other):
         """
@@ -443,7 +443,7 @@ class AtomicStructure(System):
         n = len(uniqueSimbols)
         fp_value = {(s1,s2): fing[i*n+j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
         self._fingerprint = Fingerprint(value=fp_value, weights=fpWeights(self))
-        self._atomFingerprint = [{s:atom_fing[i,j] for j, s in enumerate(uniqueSimbols)} for i in revertIndices]
+        # self._atomFingerprint = [{s:atom_fing[i,j] for j, s in enumerate(uniqueSimbols)} for i in revertIndices]
 
     @property
     def fingerprint(self):
@@ -455,15 +455,18 @@ class AtomicStructure(System):
             self._calcFingerprint()
         return self._fingerprint
 
-    @property
-    def atomFingerprint(self):
-        '''
-        :rtype: List[Dict[str], np.ndarray]]
-        :return: atomic fingerprint of the structure.
-        '''
-        if not self._atomFingerprint:
-            self._calcFingerprint()
-        return self._atomFingerprint
+    def clean(self):
+        self._fingerprint = {}
+
+    # @property
+    # def atomFingerprint(self):
+    #     '''
+    #     :rtype: List[Dict[str], np.ndarray]]
+    #     :return: atomic fingerprint of the structure.
+    #     '''
+    #     if not self._atomFingerprint:
+    #         self._calcFingerprint()
+    #     return self._atomFingerprint
 
     @property
     def order(self):
@@ -810,7 +813,7 @@ class AtomicStructure(System):
         :type kwargs: dict
         :param kwargs: additional arguments and keywords to be passed to :meth:`ase.Atoms.set_cell`.
         """
-        self._fingerprint = {}
+        self.clean()
         self.atoms.set_cell(cell, **kwargs)
         if optimize:
             self.optimizeLattice()
@@ -832,7 +835,7 @@ class AtomicStructure(System):
         :param displacement: array of scaled distances.
         """
         self.atoms.translate(np.dot(displacement, self.atoms.cell))
-        self._fingerprint = {}
+        self.clean()
 
     def translate(self, displacement: np.ndarray):
         """
@@ -842,18 +845,18 @@ class AtomicStructure(System):
         :param displacement: array of absolute distances.
         """
         self.atoms.translate(displacement)
-        self._fingerprint = {}
+        self.clean()
 
     def rotate(self, *args, **kwargs):
-        self._fingerprint = {}
+        self.clean()
         return self.atoms.rotate(*args, **kwargs)
 
     def set_positions(self, *args, **kwargs):
-        self._fingerprint = {}
+        self.clean()
         return self.atoms.set_positions(*args, **kwargs)
 
     def set_scaled_positions(self, *args, **kwargs):
-        self._fingerprint = {}
+        self.clean()
         return self.atoms.set_scaled_positions(*args, **kwargs)
 
     def decomposeDisplacements(self, displacements: np.ndarray):

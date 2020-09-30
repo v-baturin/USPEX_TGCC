@@ -108,6 +108,7 @@ class SystemPool(object):
             for ref_system in uniqueSystems + cleanedPopulation:
                 if system == ref_system:
                     logger.debug(f'system {system} coincides with system {ref_system} found earlier')
+                    system.clean()
                     system = ref_system
                     break
 
