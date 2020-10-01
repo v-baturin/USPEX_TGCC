@@ -795,12 +795,14 @@ class AtomicStructure(System):
         """
         Optimize structure lattice in case of ill formed (too prolongated) structures.
         """
-        coor = self.get_positions()
-        lat = self.get_cell()
-        coor, lat = optLattice(coor, lat)
-        lat = AtomicStructure(cell = lat).get_cell_lengths_and_angles()
-        self.set_cell(lat)
-        self.set_positions(coor)
+        pass
+        # TODO optLattice appears to have a bug
+        # coor = self.get_positions()
+        # lat = self.get_cell()
+        # coor, lat = optLattice(coor, lat)
+        # lat = AtomicStructure(cell = lat).get_cell_lengths_and_angles()
+        # self.set_cell(lat)
+        # self.set_positions(coor)
 
     def set_cell(self, cell: np.ndarray, optimize: bool=False, **kwargs):
         """
