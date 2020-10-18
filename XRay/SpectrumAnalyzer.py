@@ -73,8 +73,11 @@ class SpectrumAnalyzer(object):
 
         fitness = 0
         pattern = calculator.get_pattern(structure, two_theta_range=(self.spectrum_starts, self.spectrum_ends))
-        th_angles = pattern.x
-        th_intensities = pattern.y
+
+        # ignore very small theoretical peaks (th_intensity < 1)
+        indices = np.nonzero(pattern.y > 1)
+        th_angles = pattern.x[indices]
+        th_intensities = pattern.y[indices]
 
         # match corresponding peaks
         exp_matches, th_matches = [], []
@@ -82,7 +85,7 @@ class SpectrumAnalyzer(object):
             partial = 0
             counter = 0
             for th_index, (th_angle, th_intensity) in enumerate(zip(th_angles, th_intensities)):
-                if np.abs(th_angle - exp_angle) < self.match_tol and th_intensity > 1:
+                if np.abs(th_angle - exp_angle) < self.match_tol:
                     counter += 1
                     exp_matches.append(exp_index)
                     th_matches.append(th_index)
@@ -100,20 +103,16 @@ class SpectrumAnalyzer(object):
 
         # experimental rest
         for angle, intensity in zip(exp_angles_rest, exp_intensities_rest):
-            factor = self.choose_factor(intensity)
-            fitness += factor * angle ** 2 / amplitude ** 2
-            fitness += factor * intensity ** 2 / 100 ** 2
+            fitness += self.choose_factor(intensity)
 
         # theoretical rest
         for angle, intensity in zip(th_angles_rest, th_intensities_rest):
-            factor = self.choose_factor(intensity)
-            fitness += factor * angle ** 2 / amplitude ** 2
-            fitness += factor * intensity ** 2 / 100 ** 2
+            fitness += self.choose_factor(intensity)
 
         return fitness
 
     @staticmethod
-    def parse(filename : str):
+    def parse(filename: str):
         """
         It parses a file containing information about the experimental spectrum and
         it returns a dictionary containing the parameters for class initialization.
@@ -149,7 +148,7 @@ class SpectrumAnalyzer(object):
         return dct
 
     @staticmethod
-    def choose_factor(intensity : float, choices=FACTORS):
+    def choose_factor(intensity: float, choices=FACTORS):
         """
         Simple auxiliary function which selects a factor based on the value of intensity.
 
