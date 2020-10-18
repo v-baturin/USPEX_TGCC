@@ -30,3 +30,4 @@ class Crystal_Test(unittest.TestCase):
 
     def test_xraydistance(self):
         self.assertAlmostEqual(self.system.xraydistance, 6.4739, places=4)
+        self.assertAlmostEqual(self.system.k, 1.016, places=3)

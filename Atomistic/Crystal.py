@@ -59,10 +59,13 @@ class Crystal(AtomicStructure):
         self.crystalConfig = {}
         if minVectorLength is not None:
             self.crystalConfig['minVectorLength'] = minVectorLength
+
         if xraydata is not None:
             assert isinstance(xraydata, dict)
             self.crystalConfig['xraydata'] = xraydata
         self._spectrumAnalyzer = None
+        self._xraydistance = None
+        self._k = None
 
         if sym_tolerance is not None:
             if isinstance(sym_tolerance, str):
@@ -96,22 +99,36 @@ class Crystal(AtomicStructure):
         cell = (lattice, coordinates, numbers)
         return '{:7s} {:4s}'.format(*[str(x) for x in spglib.get_spacegroup(cell, symprec=self.sym_tolerance).split()])
 
-    @property
-    def xraydistance(self):
+    def _calcXraydistance(self):
         """
         Method which takes a structure and calculates the distance (fitness function)
         between calculated and experimental X-ray spectrum.
-
-        :rtype: float
-        :return: distance between calculated and experimental spectrum.
         """
-        if self._spectrumAnalyzer is None:
+        if not self._spectrumAnalyzer:
             if 'xraydata' in self.crystalConfig:
                 self._spectrumAnalyzer = SpectrumAnalyzer(**self.crystalConfig['xraydata'])
             else:
-                raise RuntimeError('Cannot optimize the quantity xraydistance. No experimental X-ray data found.')
-        return self._spectrumAnalyzer(self)
+                raise RuntimeError('Cannot calculate the quantity xraydistance. No experimental X-ray data found.')
 
+        self._xraydistance = self._spectrumAnalyzer(self)
+        self._k = self._spectrumAnalyzer.k
+
+    @property
+    def xraydistance(self):
+        if not self._xraydistance:
+            self._calcXraydistance()
+        return self._xraydistance
+
+    @property
+    def k(self):
+        if not self._k:
+            self._calcXraydistance()
+        return self._k
+
+    def clean(self):
+        super().clean()
+        self._xraydistance = None
+        self._k = None
 
     @property
     def minVectorLength(self):
