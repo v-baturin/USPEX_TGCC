@@ -16,15 +16,6 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 
-FACTORS = (
-    5.0,            # fitness factor for I > 90
-    1.0,            # fitness factor for 50 < I <= 90
-    0.25,           # fitness factor for 10 < I <= 50
-    0.02,           # fitness factor for 1 < I <= 10
-    0.0             # fitness factor for I <= 1
-)
-
-
 class SpectrumAnalyzer(object):
     def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
                  exp_angles: list, exp_intensities: list):
@@ -132,19 +123,13 @@ class SpectrumAnalyzer(object):
         # initialize XRDCalculator
         calculator = XRDCalculator(wavelength=self.wavelength)
 
-        # get amplitude of the experimental spectrum
-        amplitude = self.spectrum_ends - self.spectrum_starts
-
         # apply lattice correction and get pattern
         k = params[0]
         candidate = deepcopy(structure)
         candidate.lattice = Lattice(np.diag([k, k, k]) @ candidate.lattice.matrix)
         pattern = calculator.get_pattern(candidate, two_theta_range=(self.spectrum_starts, self.spectrum_ends))
-
-        # ignore very small theoretical peaks (th_intensity < 1)
-        indices = np.nonzero(pattern.y > 1)
-        th_angles = pattern.x[indices]
-        th_intensities = pattern.y[indices]
+        th_angles = pattern.x
+        th_intensities = pattern.y
 
         # match corresponding peaks
         exp_matches, th_matches = [], []
@@ -156,46 +141,20 @@ class SpectrumAnalyzer(object):
                     counter += 1
                     exp_matches.append(exp_index)
                     th_matches.append(th_index)
-                    factor = self.choose_factor(exp_intensity)
-                    # partial += factor * np.abs(exp_angle - th_angle) ** 2 / amplitude ** 2
-                    partial += factor * np.abs(exp_intensity - th_intensity) ** 2 / 100 ** 2
+                    partial += ((exp_intensity - th_intensity) / 100) ** 2 * (exp_intensity / 100) ** 2
             # average out in the case when multiple theoretical peaks match to the same experimental peak
             if partial:
                 fitness += partial / counter
 
-        exp_angles_rest = np.delete(self.exp_angles, exp_matches)
         exp_intensities_rest = np.delete(self.exp_intensities, exp_matches)
-        th_angles_rest = np.delete(th_angles, th_matches)
         th_intensities_rest = np.delete(th_intensities, th_matches)
 
         # experimental rest
-        for angle, intensity in zip(exp_angles_rest, exp_intensities_rest):
-            fitness += self.choose_factor(intensity)
+        for intensity in exp_intensities_rest:
+            fitness += (intensity / 100) ** 2
 
         # theoretical rest
-        for angle, intensity in zip(th_angles_rest, th_intensities_rest):
-            fitness += self.choose_factor(intensity)
+        for intensity in th_intensities_rest:
+            fitness += (intensity / 100) ** 2
 
         return fitness
-
-    @staticmethod
-    def choose_factor(intensity: float, choices=FACTORS):
-        """
-        Simple auxiliary function which selects a factor based on the value of intensity.
-
-        :type intensity: float
-        :param intensity: value of intensity.
-        :type choices: tuple
-        :param choices: importance factors from which to choose.
-        :rtype: float
-        :return: importance factor chosen according to the intensity.
-        """
-        if intensity > 90:
-            return choices[0]
-        if 50 < intensity <= 90:
-            return choices[1]
-        if 10 < intensity <= 50:
-            return choices[2]
-        if 1 < intensity <= 10:
-            return choices[3]
-        return choices[4]
