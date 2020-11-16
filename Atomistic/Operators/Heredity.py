@@ -3,9 +3,10 @@ import numpy as np
 
 class Heredity:
 
-    def __init__(self, Slab, cellProcessing):
+    def __init__(self, Slab, cellProcessing, compositionSpace):
         self.Slab = Slab
         self.cellProcessing = cellProcessing
+        self.compositionSpace = compositionSpace
         self.correlation = 0
 
     def __call__(self, system1, system2, *args, **kwargs):
@@ -17,22 +18,65 @@ class Heredity:
         order2 = system2['order']
 
         axis = np.random.randint(3)
-        gaugesOfSlabs = tuple(np.random.randint(10,size=2).tolist())
+        gaugesOfSlabs = tuple(np.random.randint(10, size=2).tolist())
 
-        L = cell1.getAltitudes()[axis]
-        Lchar = 0.5 * (cell1.getVolume() / len(order1)) ** (1 / 3) # average 'radius' of a molecule in the cell
-        N = int(round(L / (Lchar + (L - Lchar) * (np.cos(self.correlation * np.pi / 2)) ** 2)))
-        slabs1 = [self.Slab.getSlabs(molecules = molecules1, inputCell = cell1, outputCell = cell1,
-                                     axis = axis, gaugesOfSlabs = gaugesOfSlabs,
-                                     transformation = randomTransformation)
-                  for randomTransformation in cell1.randomTransformations(N)]
-        slabs1SortedByOrder = np.argsort(order1[slab1.indices].sum() for slab1, slab2 in slabs1)
-        slab11, slab12 = slabs1[slabs1SortedByOrder[0]] if self.correlation > 0 else slabs1[slabs1SortedByOrder[-1]]
+        slab11, slab12 = self.Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=cell1,
+                                                  axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                                  order=order1, correlation=self.correlation, parity=0)
 
+        slab21, slab22 = self.Slab.getRandomSlabs(molecules=molecules2, inputCell=cell2, outputCell=cell2,
+                                                  axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                                  order=order2, correlation=self.correlation, parity=1)
 
+        goodCandidateMolecules = molecules1[slab11.indices] + molecules2[slab22.indices]
+        goodCandidateOrder = order1[slab11.indices] + order2[slab22.indices]
 
-        slab21, slab22 = self.Slab.getSlabs(molecules = molecules2, inputCell = cell2, outputCell = cell2,
-                                            axis = axis, gaugesOfSlabs = gaugesOfSlabs,
-                                            origin = cell2.randomOrigin(), orientation = cell2.randomOrientation())
+        badCandidateMolecules = molecules2[slab21.indices] + molecules1[slab12.indices]
+        badCandidateOrder = order2[slab21.indices] + order1[slab12.indices]
 
         outputCell = self.cellProcessing.getHybridCell(cell1, cell2)
+
+        composition1 = self.compositionSpace.calculateComposition(molecules1)
+        composition2 = self.compositionSpace.calculateComposition(molecules2)
+        composition = self.compositionSpace.calculateComposition(goodCandidateMolecules)
+        desiredComposition = self.compositionSpace.findDesiredComposition(composition1, composition2, composition)[0]
+
+        goodCandidateMolecules = removeExtra(goodCandidateMolecules[np.argsort(goodCandidateOrder)],
+                                             self.compositionSpace, desiredComposition)
+
+        composition = self.compositionSpace.calculateComposition(goodCandidateMolecules)
+        goodCandidateMolecules += addLacking(badCandidateMolecules[np.argsort(badCandidateOrder)],
+                                             desiredComposition - composition)
+
+
+def removeExtra(molecules, compositionSpace, desiredComposition):
+    """
+    remove extra molecules from child_good structure
+    :param molecules:
+    :param compositionSpace:
+    :param desiredComposition:
+    :return:
+    """
+    moleculesNew = []
+    for molecule in molecules:
+        if compositionSpace.calculateComposition(moleculesNew)[molecule] < desiredComposition[molecule]:
+            moleculesNew.append(molecule)
+    return moleculesNew
+
+
+def addLacking(molecules, desiredComposition):
+    """
+    add lacking molecules to good_child from bad_child
+    :param molecules:
+    :param desiredComposition:
+    :return:
+    """
+    moleculesNew = []
+    for symbol, desired in desiredComposition.items():
+        moleculesIter = iter(molecules)
+        while desired > 0:
+            molecule = next(moleculesIter)
+            if molecule.symbol == symbol:
+                moleculesNew.append(molecule)
+                desired -= 1
+    return moleculesNew

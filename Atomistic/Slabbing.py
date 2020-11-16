@@ -8,8 +8,10 @@ class Slab:
         self.transformations = transformations
 
     @staticmethod
-    def getSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, origin, orientation):
+    def getSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, transformation):
         assert inputCell is outputCell # for now we support only this case
+        origin = transformation.origin
+        orientation = transformation.oriantation
         origin = inputCell.wrapVector(origin)
         slabs = tuple(Slab([],[]) for i in gaugesOfSlabs)
         coordinateBounds = np.cumsum(gaugesOfSlabs)/np.sum(gaugesOfSlabs)
@@ -25,3 +27,16 @@ class Slab:
                     slabs[j].transformations.append((offset, orientation))
                     break
         return slabs
+
+    @staticmethod
+    def getRandomSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, order, correlation, parity):
+        L = inputCell.getAltitudes()[axis]
+        Lchar = 0.5 * (inputCell.getVolume() / len(molecules)) ** (1 / 3) # average 'radius' of a molecule in the cell
+        N = int(round(L / (Lchar + (L - Lchar) * (np.cos(correlation * np.pi / 2)) ** 2)))
+        slabsCandidates = [Slab.getSlabs(molecules = molecules, inputCell = inputCell, outputCell = outputCell,
+                                axis = axis, gaugesOfSlabs = gaugesOfSlabs,
+                                transformation = randomTransformation)
+                  for randomTransformation in inputCell.randomTransformations(N)]
+        candidatesCharacteristic = np.argsort(sum(order[slab.indices].sum()*(i%2+parity) for i, slab in enumerate(slabs))
+                                              for slabs in slabsCandidates)
+        return slabsCandidates[candidatesCharacteristic[0]] if correlation > 0 else slabsCandidates[candidatesCharacteristic[-1]]
