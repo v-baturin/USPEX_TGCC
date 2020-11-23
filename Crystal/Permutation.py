@@ -68,59 +68,52 @@ class Permutation(VarOperator):
         #  And then we shuffle the permutation list and enforce 'list' type of data
         permutations = np.random.permutation(permutations).tolist()
 
-        atLeastOnePermutation = False
-        try:
-            while len(permutations):
-                atLeastOnePermutation = False
-                # Create a work copy of molecules in our system
-                attempted_structure = copy(system.molecules)
+        while len(permutations):
+            # Create a work copy of molecules in our system
+            attempted_structure = copy(system.molecules)
 
-                # It's boring to permute molecules just one time. Let's do it from 1 to 'howManySwaps' times! Default howManySwaps is 5.
-                for _ in range(np.random.randint(self.howManySwaps)):
-                    # Get first permutation from the total list of permutations; then permute
-                    s1, s2 = permutations.pop(0)
-                    # Generate translation vector for molecules (geometric center of molecule 1 minus geometric center of molecule 2,
-                    # it's regular linear algebra).
-                    translation_1to2 = attempted_structure[s1].get_center_of_mass(scaled=True) - \
-                                       attempted_structure[s2].get_center_of_mass(scaled=True)
-                    # Translate molecule 1 to achieve coincidence of it's geometric center with geometric center of molecule 2
-                    attempted_structure[s1].translate_scaled(translation_1to2)
-                    # ...and the other way around.
-                    attempted_structure[s2].translate_scaled(-translation_1to2)
-                    atLeastOnePermutation = True
+            # It's boring to permute molecules just one time. Let's do it from 1 to 'howManySwaps' times! Default howManySwaps is 5.
+            for _ in range(np.random.randint(min(self.howManySwaps, len(permutations)))):
+                # Get first permutation from the total list of permutations; then permute
+                s1, s2 = permutations.pop(0)
+                # Generate translation vector for molecules (geometric center of molecule 1 minus geometric center of molecule 2,
+                # it's regular linear algebra).
+                translation_1to2 = attempted_structure[s1].get_center_of_mass(scaled=True) - \
+                                   attempted_structure[s2].get_center_of_mass(scaled=True)
+                # Translate molecule 1 to achieve coincidence of it's geometric center with geometric center of molecule 2
+                attempted_structure[s1].translate_scaled(translation_1to2)
+                # ...and the other way around.
+                attempted_structure[s2].translate_scaled(-translation_1to2)
 
-                # Here we generate a complete system
-                target = self.systemFactory(molecules=attempted_structure, cell=system.cell,
-                                            optimizeLattice=True, **self.config)
-                if 'cellVectors' in self.config:
-                    cellVectors = np.asarray(self.config['cellVectors'], dtype=float)
-                    if cellVectors.shape == (3, 3):
-                        target.set_cell(cellVectors, scale_atoms=True)
-                    else:
-                        logger.debug(f'Incorrect cellVectors specified in input parameters: {cellVectors}.')
-                elif 'cellLengthsAndAngles' in self.config:
-                    cellLengthsAndAngles = np.asarray(self.config['cellLengthsAndAngles'], dtype=float)
-                    if cellLengthsAndAngles.shape == (6,):
-                        target.set_cell(cellLengthsAndAngles, scale_atoms=True)
-                    else:
-                        logger.debug(
-                            f'Incorrect cellLengthsAndAngles specified in input parameters: {cellLengthsAndAngles}.')
-                elif 'cellVolume' in self.config:
-                    cellVolume = self.config['cellVolume']
-                    if isinstance(cellVolume, float):
-                        cell = target.cell
-                        cell *= (cellVolume/np.linalg.det(cell))**(1.0/3.0)
-                        target.set_cell(cell, scale_atoms=True)
-                    else:
-                        logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
+            # Here we generate a complete system
+            target = self.systemFactory(molecules=attempted_structure, cell=system.cell,
+                                        optimizeLattice=True, **self.config)
+            if 'cellVectors' in self.config:
+                cellVectors = np.asarray(self.config['cellVectors'], dtype=float)
+                if cellVectors.shape == (3, 3):
+                    target.set_cell(cellVectors, scale_atoms=True)
+                else:
+                    logger.debug(f'Incorrect cellVectors specified in input parameters: {cellVectors}.')
+            elif 'cellLengthsAndAngles' in self.config:
+                cellLengthsAndAngles = np.asarray(self.config['cellLengthsAndAngles'], dtype=float)
+                if cellLengthsAndAngles.shape == (6,):
+                    target.set_cell(cellLengthsAndAngles, scale_atoms=True)
+                else:
+                    logger.debug(
+                        f'Incorrect cellLengthsAndAngles specified in input parameters: {cellLengthsAndAngles}.')
+            elif 'cellVolume' in self.config:
+                cellVolume = self.config['cellVolume']
+                if isinstance(cellVolume, float):
+                    cell = target.cell
+                    cell *= (cellVolume/np.linalg.det(cell))**(1.0/3.0)
+                    target.set_cell(cell, scale_atoms=True)
+                else:
+                    logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
 
-                if atLeastOnePermutation and target.isGoodSystem():
-                    self._assign_data(target=target, ID=system.ID)
-                    return target,
-        except IndexError:
-            if atLeastOnePermutation and target.isGoodSystem():
+            if target.isGoodSystem():
                 self._assign_data(target=target, ID=system.ID)
                 return target,
+
         logger.info(f"Permutation failed on {system.ID}: exhausted possible permutations. "
                     f"This error may also indicate an attempt to apply permutation to a structure"
                     f" with a single type of atom or molecule.")
