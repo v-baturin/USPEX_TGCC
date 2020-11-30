@@ -9,17 +9,11 @@ Class which implements the fitness function for comparing X-ray spectra
 
 import numpy as np
 
+from copy import deepcopy
+from scipy.optimize import minimize
+from pymatgen.core.lattice import Lattice
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
-
-
-FACTORS = (
-    5.0,            # fitness factor for I > 90
-    1.0,            # fitness factor for 50 < I <= 90
-    0.25,           # fitness factor for 10 < I <= 50
-    0.02,           # fitness factor for 1 < I <= 10
-    0.0             # fitness factor for I <= 1
-)
 
 
 class SpectrumAnalyzer(object):
@@ -43,6 +37,8 @@ class SpectrumAnalyzer(object):
         :type exp_intensities: list[float]
         :param exp_intensities: intensities of the experimental spectrum.
         """
+        self.k = None
+
         self.spectrum_starts = spectrum_starts
         self.spectrum_ends = spectrum_ends
         self.wavelength = wavelength
@@ -59,61 +55,33 @@ class SpectrumAnalyzer(object):
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
-        # compute agreement
-        amplitude = self.spectrum_ends - self.spectrum_starts
-        calculator = XRDCalculator(wavelength=self.wavelength)
-
-        tmp = Structure(lattice=system.cell, species=system.get_chemical_symbols(), coords=system.scaled_coordinates)
-        string = tmp.to(fmt='cif', symprec=0.2)
-        structure = Structure.from_str(string, fmt='cif')
-
         # pure hydrogen gets low agreement
         if list(system.composition.keys()) == ['H']:
             return 100.0
 
-        fitness = 0
-        pattern = calculator.get_pattern(structure, two_theta_range=(self.spectrum_starts, self.spectrum_ends))
-        th_angles = pattern.x
-        th_intensities = pattern.y
+        # symmetrize the candidate structure
+        tmp = Structure(lattice=system.cell, species=system.get_chemical_symbols(), coords=system.scaled_coordinates)
+        string = tmp.to(fmt='cif', symprec=0.2)
+        structure = Structure.from_str(string, fmt='cif')
 
-        # match corresponding peaks
-        exp_matches, th_matches = [], []
-        for exp_index, (exp_angle, exp_intensity) in enumerate(zip(self.exp_angles, self.exp_intensities)):
-            partial = 0
-            counter = 0
-            for th_index, (th_angle, th_intensity) in enumerate(zip(th_angles, th_intensities)):
-                if np.abs(th_angle - exp_angle) < self.match_tol and th_intensity > 1:
-                    counter += 1
-                    exp_matches.append(exp_index)
-                    th_matches.append(th_index)
-                    factor = self.choose_factor(exp_intensity)
-                    partial += factor * np.abs(exp_angle - th_angle) ** 2 / amplitude ** 2
-                    partial += factor * np.abs(exp_intensity - th_intensity) ** 2 / 100 ** 2
-            # average out in the case when multiple theoretical peaks match to the same experimental peak
-            if partial:
-                fitness += partial / counter
+        # initialize the lattice factor k
+        params = np.array([1.0])
 
-        exp_angles_rest = np.delete(self.exp_angles, exp_matches)
-        exp_intensities_rest = np.delete(self.exp_intensities, exp_matches)
-        th_angles_rest = np.delete(th_angles, th_matches)
-        th_intensities_rest = np.delete(th_intensities, th_matches)
+        # compute the lattice factor which minimize fitness
+        result = minimize(self.fitness_function, params, (structure,), method='Powell', bounds=((0.98, 1.02),),
+                          options={'ftol': 1.0e-4})
 
-        # experimental rest
-        for angle, intensity in zip(exp_angles_rest, exp_intensities_rest):
-            factor = self.choose_factor(intensity)
-            fitness += factor * angle ** 2 / amplitude ** 2
-            fitness += factor * intensity ** 2 / 100 ** 2
+        if not result.success:
+            raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
 
-        # theoretical rest
-        for angle, intensity in zip(th_angles_rest, th_intensities_rest):
-            factor = self.choose_factor(intensity)
-            fitness += factor * angle ** 2 / amplitude ** 2
-            fitness += factor * intensity ** 2 / 100 ** 2
+        # extract the lattice factor
+        self.k = result.x[0]
 
-        return fitness
+        # return fitness
+        return result.fun
 
     @staticmethod
-    def parse(filename : str):
+    def parse(filename: str):
         """
         It parses a file containing information about the experimental spectrum and
         it returns a dictionary containing the parameters for class initialization.
@@ -148,26 +116,45 @@ class SpectrumAnalyzer(object):
                 current_line = f.readline()
         return dct
 
-    @staticmethod
-    def choose_factor(intensity : float, choices=FACTORS):
-        """
-        Simple auxiliary function which selects a factor based on the value of intensity.
+    def fitness_function(self, params, structure):
+        # initialize fitness
+        fitness = 0
 
-        :type intensity: float
-        :param intensity: value of intensity.
-        :type choices: tuple
-        :param choices: importance factors from which to choose.
-        :rtype: float
-        :return: importance factor chosen according to the intensity.
-        """
-        if intensity > 90:
-            factor = choices[0]
-        elif 50 < intensity <= 90:
-            factor = choices[1]
-        elif 10 < intensity <= 50:
-            factor = choices[2]
-        elif 1 < intensity <= 10:
-            factor = choices[3]
-        else:
-            factor = choices[4]
-        return factor
+        # initialize XRDCalculator
+        calculator = XRDCalculator(wavelength=self.wavelength)
+
+        # apply lattice correction and get pattern
+        k = params[0]
+        candidate = deepcopy(structure)
+        candidate.lattice = Lattice(np.diag([k, k, k]) @ candidate.lattice.matrix)
+        pattern = calculator.get_pattern(candidate, two_theta_range=(self.spectrum_starts, self.spectrum_ends))
+        th_angles = pattern.x
+        th_intensities = pattern.y
+
+        # match corresponding peaks
+        exp_matches, th_matches = [], []
+        for exp_index, (exp_angle, exp_intensity) in enumerate(zip(self.exp_angles, self.exp_intensities)):
+            partial = 0
+            counter = 0
+            for th_index, (th_angle, th_intensity) in enumerate(zip(th_angles, th_intensities)):
+                if np.abs(th_angle - exp_angle) < self.match_tol:
+                    counter += 1
+                    exp_matches.append(exp_index)
+                    th_matches.append(th_index)
+                    partial += ((exp_intensity - th_intensity) / 100) ** 2 * (exp_intensity / 100) ** 2
+            # average out in the case when multiple theoretical peaks match to the same experimental peak
+            if partial:
+                fitness += partial / counter
+
+        exp_intensities_rest = np.delete(self.exp_intensities, exp_matches)
+        th_intensities_rest = np.delete(th_intensities, th_matches)
+
+        # experimental rest
+        for intensity in exp_intensities_rest:
+            fitness += (intensity / 100) ** 2
+
+        # theoretical rest
+        for intensity in th_intensities_rest:
+            fitness += (intensity / 100) ** 2
+
+        return fitness
