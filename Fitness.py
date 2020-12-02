@@ -68,7 +68,7 @@ class Fitness(object):
         values = []
         for system in population:
             for ref_system, value in pairs:
-                if system.ID == ref_system.ID:
+                if system['ID'] == ref_system['ID']:
                     values.append(value)
                     break
         assert len(values) == len(population)
@@ -89,14 +89,23 @@ class Fitness(object):
                 arguments = [self.calcFitness(param) for param in funcParams]
                 self.storedFitnesses[fitness] = getattr(self, funcName)(*arguments)
             elif isinstance(fitness, str):
-                # unfortunately simple np.asarray spoils dictionaries
-                if len(self.pool.uniqueSystems):
-                    value = np.empty((len(self.pool.uniqueSystems,)), dtype=type(getattr(self.pool.uniqueSystems[0], fitness)))
+                fitness = fitness.split('.')
+                if len(fitness) == 1:
+                    fitness, = fitness
+                    value = [x[fitness] for x in self.pool.uniqueSystems]
+                elif len(fitness) == 2:
+                    utility, fitness = fitness
+                    value = [getattr(self.utilities[utility], fitness)(**x) for x in self.pool.uniqueSystems]
                 else:
-                    value = np.empty((0,))
-                for i, x in enumerate(self.pool.uniqueSystems):
-                    value[i] = getattr(x, fitness)
-                return value
+                    raise RuntimeError(f"Too complex fitness {'.'.join(fitness)}.")
+                # unfortunately simple np.asarray spoils dictionaries
+                if value and isinstance(value[0], Mapping):
+                    valueArray = np.empty((len(value,)), dtype=type(value[0]))
+                    for i, x in enumerate(value):
+                        valueArray[i] = x
+                else:
+                    valueArray = np.asarray(value)
+                return valueArray
             else:
                 # just a parameter. return it without doing anything.
                 return fitness
@@ -106,7 +115,7 @@ class Fitness(object):
         if fitness in presetFitness:
             fitness = presetFitness[fitness]
         try:
-            return self.storedFitnesses[fitness][[system.ID for system in self.pool.uniqueSystems].index(ID)]
+            return self.storedFitnesses[fitness][[system['ID'] for system in self.pool.uniqueSystems].index(ID)]
         except:
             return None
 
@@ -115,29 +124,29 @@ class Fitness(object):
         if comb:
             sigma = 0
             for s1, s2 in comb:
-                assert hasattr(s1, 'dist')
-                sigma += s1.dist(s1,s2)
+                assert hasattr(s1['structure'], 'dist')
+                sigma += s1['structure'].dist(s1['structure'],s2['structure'])
             sigma /= len(comb)
         else:
             sigma = 1
         sigma *= self.ANTISEEDS_SIGMA
         for system in pool:
-            assert hasattr(system, 'dist')
-            if system.ID in self._antiseedsCorrections:
+            assert hasattr(system['structure'], 'dist')
+            if system['ID'] in self._antiseedsCorrections:
                 for ref_system in population:
-                    dist = system.dist(ref_system, system)
-                    self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))
+                    dist = system['structure'].dist(ref_system['structure'], system['structure'])
+                    self._antiseedsCorrections[system['ID']] += np.exp(-dist**2/(2*sigma**2))
             else:
-                self._antiseedsCorrections[system.ID] = 0
+                self._antiseedsCorrections[system['ID']] = 0
                 for ref_system in pool:
-                    dist = system.dist(ref_system, system)
-                    self._antiseedsCorrections[system.ID] += np.exp(-dist**2/(2*sigma**2))
+                    dist = system['structure'].dist(ref_system['structure'], system['structure'])
+                    self._antiseedsCorrections[system['ID']] += np.exp(-dist**2/(2*sigma**2))
 
     def getAntiseedsCorrections(self, values: np.ndarray) -> np.ndarray:
         corrections = []
         for system in self.pool.uniqueSystems:
-            if system.ID in self._antiseedsCorrections:
-                corrections.append(self.ANTISEEDS_MAX * self._antiseedsCorrections[system.ID])
+            if system['ID'] in self._antiseedsCorrections:
+                corrections.append(self.ANTISEEDS_MAX * self._antiseedsCorrections[system['ID']])
             else:
                 corrections.append(0)
         values += (values.mean() - values.min()) * np.asarray(corrections, dtype=float)
@@ -179,12 +188,6 @@ class Fitness(object):
     @staticmethod
     def convexHullHeight(space: np.ndarray) -> np.ndarray:
         return copy(ConvexHull(space).height)
-
-    def compositionBlocks(self) -> np.ndarray:
-        numIons = self.calcFitness(('tabulate', 'composition'))
-        inds = np.argsort(self.utilities['compositionSpace'].symbols)
-        blocks = self.utilities['compositionSpace'].blocks
-        return np.round(np.linalg.lstsq(blocks.T[inds], numIons.T, rcond=None)[0]).astype(int).T
 
     @staticmethod
     def getRelativeCHSpace(arguments: np.ndarray, properties: np.ndarray) -> np.ndarray:

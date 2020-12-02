@@ -154,12 +154,12 @@ class Random(VarOperator):
                     self.logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
 
             if newstructure.isGoodSystem():
-                crystal = newstructure
+                crystal = {'structure': newstructure}
                 self.pool.assignID(crystal)
-                crystal.howCome = self.__class__.__name__
-                crystal.parent = 'None'
-                self.logger.info(f"Structure {crystal.ID} created with {composition} composition and {name} origin"
-                            f" actual symmetry is {crystal.symmetry}.")
+                crystal['howCome'] = self.__class__.__name__
+                crystal['parent'] = 'None'
+                self.logger.info(f"Structure {crystal['ID']} created with {composition} composition and {name} origin"
+                            f" actual symmetry is {crystal['structure'].symmetry}.")
                 if i < len(self.compositionSpace.predefinedCompositions):
                     del self.compositionSpace.predefinedCompositions[i]
                 return (crystal,)

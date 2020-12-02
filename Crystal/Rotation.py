@@ -30,9 +30,9 @@ class Rotation(VarOperator):
                  dihedralToRotate = None, principleAngles = None, dihedralAngles = None) -> tuple:
         randomize = moleculesToRotate is None
         for i in range(self.HOW_MANY_ATTEMPTS_ROTATION):
-            newstructure = copy(parent)
+            newstructure = copy(parent['structure'])
             if randomize:
-                totalNumMols = len(parent.molecules)
+                totalNumMols = len(parent['structure'].molecules)
                 moleculesToRotate = np.random.choice(totalNumMols, np.random.randint(totalNumMols), replace=False)
                 axesToRotate = np.random.randint(3, size = len(moleculesToRotate))
                 # TODO add proper dihedrals
@@ -71,11 +71,11 @@ class Rotation(VarOperator):
                         logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
 
             if newstructure.isGoodSystem():
-                crystal = newstructure
+                crystal = {'structure': newstructure}
                 self.pool.assignID(crystal)
-                crystal.howCome = self.__class__.__name__
-                crystal.parent = 'None'
-                logger.info(f"Structure {crystal.ID} created via rotation from {parent.ID} parent")
+                crystal['howCome'] = self.__class__.__name__
+                crystal['parent'] = 'None'
+                logger.info(f"Structure {crystal['ID']} created via rotation from {parent['ID']} parent")
                 return (crystal,)
 
         raise VOFailed

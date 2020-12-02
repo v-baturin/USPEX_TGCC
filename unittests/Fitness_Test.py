@@ -18,25 +18,48 @@ from ..Atomistic.CompositionSpace import CompositionSpace
 from ..Atomistic.Fingerprints.fingerprint import Fingerprint
 
 
+# class System(object):
+#     def __init__(self, ID: int, composition: dict, enthalpy: float, fingerprint: Fingerprint):
+#         self.ID = ID
+#         self.composition = composition
+#         self.enthalpy = enthalpy
+#         self.fingerprint = fingerprint
+
 class System(object):
-    def __init__(self, ID: int, composition: dict, enthalpy: float, fingerprint: Fingerprint):
-        self.ID = ID
+    def __init__(self, composition: dict):
         self.composition = composition
-        self.enthalpy = enthalpy
-        self.fingerprint = fingerprint
+
 
 
 class Fitness_Test(unittest.TestCase):
     def setUp(self) -> None:
-        self.systems = [System(0, {'Mg': 4, 'Al': 8, 'O': 16}, -646.695, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)),
-                        System(1, {'Mg': 4, 'Al': 8, 'O': 16}, -644.480, Fingerprint({'a':[0.2,-0.2]}, None)),
-                         System(2, {'Mg': 4, 'Al': 8, 'O': 16}, -650.098, Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)),
-                         System(3, {'Mg': 4, 'Al': 8, 'O': 16}, -649.082, Fingerprint({'b': [0.1,-0.5]}, None)),
-                         System(4, {'Mg': 4, 'Al': 8, 'O': 16}, -651.279, Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)),
-                         System(5, {'Mg': 4, 'Al': 8, 'O': 16}, -643.925, Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None)),
-                         System(6, {'Mg': 4, 'Al': 8, 'O': 16}, -652.042, Fingerprint({'b': [0.1,-0.2]}, None)),
-                         System(7, {'Mg': 4, 'Al': 8, 'O': 16}, -648.368, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)),
-                         System(8, {'Mg': 4, 'Al': 8, 'O': 16}, -648.335, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None))]
+        # self.systems = [System(0, {'Mg': 4, 'Al': 8, 'O': 16}, -646.695, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)),
+        #                 System(1, {'Mg': 4, 'Al': 8, 'O': 16}, -644.480, Fingerprint({'a':[0.2,-0.2]}, None)),
+        #                  System(2, {'Mg': 4, 'Al': 8, 'O': 16}, -650.098, Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)),
+        #                  System(3, {'Mg': 4, 'Al': 8, 'O': 16}, -649.082, Fingerprint({'b': [0.1,-0.5]}, None)),
+        #                  System(4, {'Mg': 4, 'Al': 8, 'O': 16}, -651.279, Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)),
+        #                  System(5, {'Mg': 4, 'Al': 8, 'O': 16}, -643.925, Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None)),
+        #                  System(6, {'Mg': 4, 'Al': 8, 'O': 16}, -652.042, Fingerprint({'b': [0.1,-0.2]}, None)),
+        #                  System(7, {'Mg': 4, 'Al': 8, 'O': 16}, -648.368, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)),
+        #                  System(8, {'Mg': 4, 'Al': 8, 'O': 16}, -648.335, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None))]
+        self.systems = [{'ID': 0, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -646.695,
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
+                        {'ID': 1, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -644.480,
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2]}, None)},
+                        {'ID': 2, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -650.098,
+                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
+                        {'ID': 3, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -649.082,
+                         'fingerprint': Fingerprint({'b': [0.1,-0.5]}, None)},
+                        {'ID': 4, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -651.279,
+                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
+                        {'ID': 5, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -643.925,
+                         'fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None)},
+                        {'ID': 6, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -652.042,
+                         'fingerprint': Fingerprint({'b': [0.1,-0.2]}, None)},
+                        {'ID': 7, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -648.368,
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
+                        {'ID': 8, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -648.335,
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)}]
         self.pool = SystemPool()
         self.pool.update(self.systems)
         self.compositionSpace = CompositionSpace(symbols=['Mg','Al','O'], blocks=[[4,8,16]], range=[[1,1]])
@@ -46,47 +69,47 @@ class Fitness_Test(unittest.TestCase):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
         self.assertTrue(np.allclose(self.fitness.calcFitness('enthalpy'), ref))
 
-    def test_composition(self):
-        ref = [{'Mg': 4, 'Al': 8, 'O': 16},
-               {'Mg': 4, 'Al': 8, 'O': 16},
-               {'Mg': 4, 'Al': 8, 'O': 16},
-               {'Mg': 4, 'Al': 8, 'O': 16},
-               {'Mg': 4, 'Al': 8, 'O': 16},
-               {'Mg': 4, 'Al': 8, 'O': 16},
-               {'Mg': 4, 'Al': 8, 'O': 16},
-               {'Mg': 4, 'Al': 8, 'O': 16},
-               {'Mg': 4, 'Al': 8, 'O': 16}]
-        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.calcFitness('composition'), ref)]))
+    # def test_composition(self):
+    #     ref = [{'Mg': 4, 'Al': 8, 'O': 16},
+    #            {'Mg': 4, 'Al': 8, 'O': 16},
+    #            {'Mg': 4, 'Al': 8, 'O': 16},
+    #            {'Mg': 4, 'Al': 8, 'O': 16},
+    #            {'Mg': 4, 'Al': 8, 'O': 16},
+    #            {'Mg': 4, 'Al': 8, 'O': 16},
+    #            {'Mg': 4, 'Al': 8, 'O': 16},
+    #            {'Mg': 4, 'Al': 8, 'O': 16},
+    #            {'Mg': 4, 'Al': 8, 'O': 16}]
+    #     self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.calcFitness('composition'), ref)]))
 
-    def test_tabulateComposition(self):
-        ref = [[8, 4, 16, ],
-               [8, 4, 16, ],
-               [8, 4, 16, ],
-               [8, 4, 16, ],
-               [8, 4, 16, ],
-               [8, 4, 16, ],
-               [8, 4, 16, ],
-               [8, 4, 16, ],
-               [8, 4, 16, ]]
-        self.assertTrue(np.allclose(self.fitness.calcFitness(('tabulate', 'composition')), ref))
+    def test_compositionSpace_numIons(self):
+        ref = [[4, 8, 16, ],
+               [4, 8, 16, ],
+               [4, 8, 16, ],
+               [4, 8, 16, ],
+               [4, 8, 16, ],
+               [4, 8, 16, ],
+               [4, 8, 16, ],
+               [4, 8, 16, ],
+               [4, 8, 16, ]]
+        self.assertTrue(np.allclose(self.fitness.calcFitness('compositionSpace.numIons'), ref))
 
-    def test_compositionBlocks(self):
+    def test_compositionSpace_numBlocks(self):
         ref = [[1], [1], [1], [1], [1], [1], [1], [1], [1]]
-        self.assertTrue(np.allclose(self.fitness.calcFitness(('compositionBlocks', )), ref))
+        self.assertTrue(np.allclose(self.fitness.calcFitness('compositionSpace.numBlocks'), ref))
 
     def test_getRelativeCHSpace(self):
         ref = [[-646.695], [-644.48 ], [-650.098], [-649.082], [-651.279], [-643.925], [-652.042], [-648.368], [-648.335]]
-        self.assertTrue(np.allclose(self.fitness.calcFitness(('getRelativeCHSpace', ('compositionBlocks', ), 'enthalpy')), ref))
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('getRelativeCHSpace', 'compositionSpace.numBlocks', 'enthalpy')), ref))
 
     def test_convexHullHeightComposition(self):
         ref = [5.347, 7.562, 1.944, 2.96,  0.763, 8.117, 0., 3.674, 3.707]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('convexHullHeight',
-                                                              ('getRelativeCHSpace', ('compositionBlocks', ), 'enthalpy'))), ref))
+                                                              ('getRelativeCHSpace', 'compositionSpace.numBlocks', 'enthalpy'))), ref))
 
     def test_pareto(self):
         ref = [6, 7, 2, 3, 1, 8, 0, 4, 5]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('pareto', ('convexHullHeight',
-                                                               ('getRelativeCHSpace', ('compositionBlocks', ), 'enthalpy')))), ref))
+                                                               ('getRelativeCHSpace', 'compositionSpace.numBlocks', 'enthalpy')))), ref))
 
     def test_fingerprint(self):
         ref = [{'a': [0.2, -0.2], 'b': [0.2, -0.2]},

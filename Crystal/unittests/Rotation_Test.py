@@ -33,7 +33,7 @@ class Rotation_Test(unittest.TestCase):
         count = 0
         while count < 1:
             try:
-                parent = Crystal.fromDICT(next(population_iterator))
+                parent = {'structure': Crystal.fromDICT(next(population_iterator)), 'ID': 0}
                 offsprings = rotation(parent)
                 count += len(offsprings)
             except VOFailed:
@@ -61,8 +61,8 @@ class Rotation_Test(unittest.TestCase):
         count = 0
         while count < 1:
             try:
-                parent = Crystal.fromDICT(next(population_iterator))
-                parent.config = config
+                parent = {'structure': Crystal.fromDICT(next(population_iterator)), 'ID': 0}
+                parent['structure'].config = config
                 offsprings = rotation(parent)
                 count += len(offsprings)
             except VOFailed:

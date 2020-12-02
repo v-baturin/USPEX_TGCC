@@ -40,7 +40,7 @@ class Permutation(VarOperator):
 
     def __call__(self, system) -> tuple:
 
-        logger.debug(f'Permutation: system {system.ID}, correlation coefficient {self.correlationFO}')
+        logger.debug(f"Permutation: system {system['ID']}, correlation coefficient {self.correlationFO}")
         crystal_tuple = self.permutation(system)
         return crystal_tuple
 
@@ -48,18 +48,18 @@ class Permutation(VarOperator):
         '''
         Assignation of data to the output structure
         '''
-        target.howCome = self.__class__.__name__
+        target['howCome'] = self.__class__.__name__
         self.pool.assignID(target)
-        target.parent = str(ID)
-        logger.info(f"Structure {target.ID} formed by permutation from {target.parent}")
+        target['parent'] = str(ID)
+        logger.info(f"Structure {target['ID']} formed by permutation from {target['parent']}")
 
     def permutation(self, system):
 
         # Initialize for creation of possible permutations list - create list of indices of molecules
         # Here we obtain all possible permutations
-        ms = system.molSymbol
+        ms = system['structure'].molSymbol
         # And here we remove permutations of molecules of one type
-        permutations = [(i1,i2) for (i1,i2) in combinations(range(len(system.molecules)), 2) if ms[i1] != ms[i2]]
+        permutations = [(i1,i2) for (i1,i2) in combinations(range(len(system['structure'].molecules)), 2) if ms[i1] != ms[i2]]
 
         # Here we apply specificSwaps constraint, if such is present.
         if self.specificSwaps:
@@ -70,7 +70,7 @@ class Permutation(VarOperator):
 
         while len(permutations):
             # Create a work copy of molecules in our system
-            attempted_structure = copy(system.molecules)
+            attempted_structure = copy(system['structure'].molecules)
 
             # It's boring to permute molecules just one time. Let's do it from 1 to 'howManySwaps' times! Default howManySwaps is 5.
             for _ in range(np.random.randint(min(self.howManySwaps, len(permutations)))):
@@ -86,7 +86,7 @@ class Permutation(VarOperator):
                 attempted_structure[s2].translate_scaled(-translation_1to2)
 
             # Here we generate a complete system
-            target = self.systemFactory(molecules=attempted_structure, cell=system.cell,
+            target = self.systemFactory(molecules=attempted_structure, cell=system['structure'].cell,
                                         optimizeLattice=True, **self.config)
             if 'cellVectors' in self.config:
                 cellVectors = np.asarray(self.config['cellVectors'], dtype=float)
@@ -111,10 +111,11 @@ class Permutation(VarOperator):
                     logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
 
             if target.isGoodSystem():
-                self._assign_data(target=target, ID=system.ID)
+                target = {'structure': target}
+                self._assign_data(target=target, ID=system['ID'])
                 return target,
 
-        logger.info(f"Permutation failed on {system.ID}: exhausted possible permutations. "
+        logger.info(f"Permutation failed on {system['ID']}: exhausted possible permutations. "
                     f"This error may also indicate an attempt to apply permutation to a structure"
                     f" with a single type of atom or molecule.")
         raise VOFailed
