@@ -131,7 +131,7 @@ class CompositionSpace(object):
                np.all(numBlocks <= self.range[:,1]) and \
                self.minAt <= np.sum(numIons) <= self.maxAt
 
-    def numIons(self, composition):
+    def numIons(self, composition = None, **kwargs):
         """
         Creates numIons array from given composition.
 
@@ -140,6 +140,9 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
+        if composition is None:
+            composition = kwargs['structure'].composition
+
         num = []
         for symbol in self.symbols:
             if symbol in composition:
@@ -148,7 +151,7 @@ class CompositionSpace(object):
                 num.append(0)
         return np.array(num, dtype=int)
 
-    def numBlocks(self, composition) -> np.ndarray:
+    def numBlocks(self, *args, **kwargs) -> np.ndarray:
         """
         Creates numBlocks array from given composition.
 
@@ -157,7 +160,7 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of blocks amounts corresponding *blocks* variable of this instance.
         """
-        return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition), rcond=None)[0]).astype(int)
+        return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(*args, **kwargs), rcond=None)[0]).astype(int)
 
     def randomComposition(self):
         """

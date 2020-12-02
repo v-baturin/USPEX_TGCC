@@ -162,7 +162,7 @@ def determineMostDiverse(population : list, howManyDiverse: int, tolerance: floa
         for system in population:
             goodSystem = True
             for ref_system in mostDiverse:
-                if system.dist(system, ref_system) < tolerance:
+                if system['structure'].dist(system['structure'], ref_system['structure']) < tolerance:
                     goodSystem = False
                     break
             if goodSystem:

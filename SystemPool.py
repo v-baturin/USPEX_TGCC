@@ -52,7 +52,7 @@ class SystemPool(object):
         return other
 
     def __hash__(self):
-        return hash(tuple(system.ID for system in self.uniqueSystems))
+        return hash(tuple(system['ID'] for system in self.uniqueSystems))
 
     def update(self, population: list):
         """
@@ -65,12 +65,12 @@ class SystemPool(object):
         self.best = {}
 
         logger.info('Updating target: list of unique systems.')
-        uniqueIDs = [system.ID for system in self.uniqueSystems]
+        uniqueIDs = [system['ID'] for system in self.uniqueSystems]
         uniqueSystems = list(self.uniqueSystems)
         for system in population:
-            if system.ID not in uniqueIDs:
-                logger.debug('add new system %d to list of unique systems' % system.ID)
-                uniqueIDs.append(system.ID)
+            if system['ID'] not in uniqueIDs:
+                logger.debug('add new system %d to list of unique systems' % system['ID'])
+                uniqueIDs.append(system['ID'])
                 uniqueSystems.append(system)
         self.uniqueSystems = tuple(uniqueSystems)
 
@@ -84,13 +84,13 @@ class SystemPool(object):
         :return: new found systems.
         """
         logger.info('Determine new systems.')
-        uniqueIDs = [system.ID for system in self.uniqueSystems]
+        uniqueIDs = [system['ID'] for system in self.uniqueSystems]
         newFoundSystems = []
         for system in population:
-            if system.ID not in uniqueIDs:
-                logger.debug('found new system %d' % system.ID)
+            if system['ID'] not in uniqueIDs:
+                logger.debug('found new system %d' % system['ID'])
                 newFoundSystems.append(system)
-                uniqueIDs.append(system.ID)
+                uniqueIDs.append(system['ID'])
         return newFoundSystems
 
     def cleanDuplicates(self, population: list):
@@ -104,15 +104,15 @@ class SystemPool(object):
         cleanedPopulation = []
         uniqueSystems = list(self.uniqueSystems)
         for system in population:
-            logger.debug(f'checking if system {system} is new')
+            logger.debug(f"checking if system {system['ID']} is new")
             for ref_system in uniqueSystems + cleanedPopulation:
-                if system == ref_system:
-                    logger.debug(f'system {system} coincides with system {ref_system} found earlier')
-                    system.clean()
+                if system['structure'] == ref_system['structure']:
+                    logger.debug(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
+                    system['structure'].clean()
                     system = ref_system
                     break
 
-            if not system.isBad:
+            if not system['isBad']:
                 cleanedPopulation.append(system)
 
         population.clear()
@@ -125,6 +125,6 @@ class SystemPool(object):
         :type system: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` descendant
         :param system: system to be labeled with ID.
         """
-        system.ID = self._newID
+        system['ID'] = self._newID
         self._newID += 1
-        self.allSystems[system.ID] = system
+        self.allSystems[system['ID']] = system

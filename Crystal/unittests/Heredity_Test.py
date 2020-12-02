@@ -41,8 +41,8 @@ class Heredity_Test(unittest.TestCase):
         while count < 1:
             try:
                 parents = next(parents_iterable)
-                parent0 = Crystal.fromDICT(parents[0])
-                parent1 = Crystal.fromDICT(parents[1])
+                parent0 = {'structure': Crystal.fromDICT(parents[0]), 'ID': parents[0]['ID']}
+                parent1 = {'structure': Crystal.fromDICT(parents[1]), 'ID': parents[1]['ID']}
                 offsprings = heredity(parent0, parent1)
                 count += len(offsprings)
             except VOFailed:
@@ -61,8 +61,8 @@ class Heredity_Test(unittest.TestCase):
         while count < 1:
             try:
                 parents = next(parents_iterable)
-                parent0 = Crystal.fromDICT(parents[0])
-                parent1 = Crystal.fromDICT(parents[1])
+                parent0 = {'structure': Crystal.fromDICT(parents[0]), 'ID': parents[0]['ID']}
+                parent1 = {'structure': Crystal.fromDICT(parents[1]), 'ID': parents[1]['ID']}
                 offsprings = heredity(parent0, parent1)
                 count += len(offsprings)
             except VOFailed:
@@ -83,8 +83,8 @@ class Heredity_Test(unittest.TestCase):
         while count < 1:
             try:
                 parents = next(parents_iterable)
-                parent0 = Crystal.fromDICT(parents[0])
-                parent1 = Crystal.fromDICT(parents[1])
+                parent0 = {'structure': Crystal.fromDICT(parents[0]), 'ID': parents[0]['ID']}
+                parent1 = {'structure': Crystal.fromDICT(parents[1]), 'ID': parents[1]['ID']}
                 offsprings = heredity(parent0, parent1)
                 count += len(offsprings)
             except VOFailed:
@@ -113,8 +113,8 @@ class Heredity_Test(unittest.TestCase):
         while count < 1:
             try:
                 parents = next(parents_iterable)
-                parent0 = Crystal.fromDICT(parents[0])
-                parent1 = Crystal.fromDICT(parents[1])
+                parent0 = {'structure': Crystal.fromDICT(parents[0]), 'ID': parents[0]['ID']}
+                parent1 = {'structure': Crystal.fromDICT(parents[1]), 'ID': parents[1]['ID']}
                 offsprings = heredity(parent0, parent1)
                 count += len(offsprings)
             except VOFailed:

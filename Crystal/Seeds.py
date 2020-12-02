@@ -78,11 +78,12 @@ class Seeds(VarOperator):
                 system = self.systemFactory.fromDICT(system_dict, old=False)
                 system.config = self.config
                 if system.isGoodSystem():
+                    system = {'structure': system}
                     seeds.append(system)
                     self.pool.assignID(system)
-                    system.howCome = self.__class__.__name__
-                    system.parent = 'None'
-                    logger.info(f"Structure {system.ID} created from seed {filename}.")
+                    system['howCome'] = self.__class__.__name__
+                    system['parent'] = 'None'
+                    logger.info(f"Structure {system['ID']} created from seed {filename}.")
                 else:
                     logger.info(f"Structure created from seed {filename} violates constraints.")
 

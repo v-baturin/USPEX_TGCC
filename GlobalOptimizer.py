@@ -95,7 +95,7 @@ class GlobalOptimizer(object):
         self.population = population
         self.newStructures = self.target.pool.newFoundSystems(population)
         self.target.pool.update(self.newStructures)
-        best = set(system.ID for system in self.fitness.sort(self.fitnessConvergence, list(self.target.pool.uniqueSystems))[0])
+        best = set(system['ID'] for system in self.fitness.sort(self.fitnessConvergence, list(self.target.pool.uniqueSystems))[0])
         if best == self.best:
             self._isStable = True
         else:
@@ -106,7 +106,7 @@ class GlobalOptimizer(object):
                 value = self.fitness.getFitnessByID(self.fitnessConvergence, ID)
                 if value is None:
                     try:
-                        value = getattr(self.target.pool.allSystems[ID], self.fitnessConvergence)
+                        value = self.target.pool.allSystems[ID][self.fitnessConvergence]
                     except:
                         pass
                 if round(value, ndigits=3) <= round(self.stopFitness, ndigits=3):

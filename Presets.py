@@ -7,7 +7,7 @@ FILENAME = join(expanduser('~'), '.uspex-again.py')
 
 if not exists(FILENAME):
     presetFitness = {
-        'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionBlocks',), 'enthalpy'))
+        'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', 'compositionSpace.numBlocks',  'enthalpy'))
     }
 
     presetOutput = {
