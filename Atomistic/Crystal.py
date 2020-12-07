@@ -14,7 +14,6 @@ from copy import copy
 
 from .AtomicStructure import AtomicStructure
 from .Element import Element
-from ..XRay.SpectrumAnalyzer import SpectrumAnalyzer
 
 
 # A minimal angle between any two vectors defining the lattice.
@@ -37,7 +36,7 @@ class Crystal(AtomicStructure):
     Sets **pbc** for ase.Atoms component to [True, True, True].
     """
 
-    def __init__(self, *args, minVectorLength: float = None, xraydata=None, sym_tolerance=None, **kwargs):
+    def __init__(self, *args, minVectorLength: float = None, sym_tolerance=None, **kwargs):
         """
         Initializes the class.
 
@@ -45,7 +44,6 @@ class Crystal(AtomicStructure):
         :type minVectorLength: float
         :param minVectorLength:
             sets the minimum length of a cell parameter of a newly generated structure.
-        :param xraydata:
         :type sym_tolerance: str or float
         :param sym_tolerance:
             a string ('high', 'medium' or 'low') or a number expressing symmetry tolerance.
@@ -59,13 +57,6 @@ class Crystal(AtomicStructure):
         self.crystalConfig = {}
         if minVectorLength is not None:
             self.crystalConfig['minVectorLength'] = minVectorLength
-
-        if xraydata is not None:
-            assert isinstance(xraydata, dict)
-            self.crystalConfig['xraydata'] = xraydata
-        self._spectrumAnalyzer = None
-        self._xraydistance = None
-        self._k = None
 
         if sym_tolerance is not None:
             if isinstance(sym_tolerance, str):
@@ -98,32 +89,6 @@ class Crystal(AtomicStructure):
         numbers = self.get_atomic_numbers()
         cell = (lattice, coordinates, numbers)
         return '{:7s} {:4s}'.format(*[str(x) for x in spglib.get_spacegroup(cell, symprec=self.sym_tolerance).split()])
-
-    def _calcXraydistance(self):
-        """
-        Method which takes a structure and calculates the distance (fitness function)
-        between calculated and experimental X-ray spectrum.
-        """
-        if not self._spectrumAnalyzer:
-            if 'xraydata' in self.crystalConfig:
-                self._spectrumAnalyzer = SpectrumAnalyzer(**self.crystalConfig['xraydata'])
-            else:
-                raise RuntimeError('Cannot calculate the quantity xraydistance. No experimental X-ray data found.')
-
-        self._xraydistance = self._spectrumAnalyzer(self)
-        self._k = self._spectrumAnalyzer.k
-
-    @property
-    def xraydistance(self):
-        if not self._xraydistance:
-            self._calcXraydistance()
-        return self._xraydistance
-
-    @property
-    def k(self):
-        if not self._k:
-            self._calcXraydistance()
-        return self._k
 
     def clean(self):
         super().clean()
