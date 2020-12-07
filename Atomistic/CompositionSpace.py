@@ -131,6 +131,11 @@ class CompositionSpace(object):
                np.all(numBlocks <= self.range[:,1]) and \
                self.minAt <= np.sum(numIons) <= self.maxAt
 
+    def composition(self, composition = None, **kwargs):
+        if composition is None:
+            composition = kwargs['structure'].composition
+        return composition
+
     def numIons(self, composition = None, **kwargs):
         """
         Creates numIons array from given composition.

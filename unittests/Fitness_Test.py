@@ -9,6 +9,7 @@ Class for Fitness testing
 
 import unittest
 import numpy as np
+from ase.io import read
 import os
 import json
 
@@ -16,7 +17,8 @@ from ..Fitness import Fitness
 from ..SystemPool import SystemPool
 from ..Atomistic.CompositionSpace import CompositionSpace
 from ..Atomistic.Fingerprints.fingerprint import Fingerprint
-
+from ..XRay.SpectrumAnalyzer import SpectrumAnalyzer
+from ..Atomistic.Crystal import Crystal
 
 # class System(object):
 #     def __init__(self, ID: int, composition: dict, enthalpy: float, fingerprint: Fingerprint):
@@ -24,6 +26,10 @@ from ..Atomistic.Fingerprints.fingerprint import Fingerprint
 #         self.composition = composition
 #         self.enthalpy = enthalpy
 #         self.fingerprint = fingerprint
+
+
+HOMEPATH = os.path.dirname(os.path.abspath(__file__))
+
 
 class System(object):
     def __init__(self, composition: dict):
@@ -69,17 +75,17 @@ class Fitness_Test(unittest.TestCase):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
         self.assertTrue(np.allclose(self.fitness.calcFitness('enthalpy'), ref))
 
-    # def test_composition(self):
-    #     ref = [{'Mg': 4, 'Al': 8, 'O': 16},
-    #            {'Mg': 4, 'Al': 8, 'O': 16},
-    #            {'Mg': 4, 'Al': 8, 'O': 16},
-    #            {'Mg': 4, 'Al': 8, 'O': 16},
-    #            {'Mg': 4, 'Al': 8, 'O': 16},
-    #            {'Mg': 4, 'Al': 8, 'O': 16},
-    #            {'Mg': 4, 'Al': 8, 'O': 16},
-    #            {'Mg': 4, 'Al': 8, 'O': 16},
-    #            {'Mg': 4, 'Al': 8, 'O': 16}]
-    #     self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.calcFitness('composition'), ref)]))
+    def test_composition(self):
+        ref = [{'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16},
+               {'Mg': 4, 'Al': 8, 'O': 16}]
+        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.calcFitness('compositionSpace.composition'), ref)]))
 
     def test_compositionSpace_numIons(self):
         ref = [[4, 8, 16, ],
@@ -182,3 +188,39 @@ class Fitness_Test(unittest.TestCase):
                                                                ('getPrincipalComponents', 2,
                                                                 ('hstack', ('tabulate', 'fingerprint'))),
                                                                'enthalpy'))), ref))
+
+
+class FitnessXray_Test(unittest.TestCase):
+    def setUp(self) -> None:
+        # 'externalPressure': 135,
+        with open(os.path.join(HOMEPATH,'XRay_POSCARS'), 'rt') as f:
+            aseSystems = [read(f, format='vasp') for i in range(10)]
+        enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
+        self.systems = []
+        for ID, atoms, enthalpy in zip(range(10), aseSystems, enthalpies):
+            system = {
+                'ID' : ID,
+                'enthalpy' : enthalpy,
+                'structure': Crystal(symbols=atoms.get_chemical_symbols(), cell=atoms.get_cell(),
+                                     positions=atoms.get_positions())
+            }
+            self.systems.append(system)
+        self.pool = SystemPool()
+        self.pool.update(self.systems)
+        self.compositionSpace = CompositionSpace(symbols = ['Ba', 'H'], blocks = [[1, 12]], range = [[4, 4]])
+        self.spectrumAmalyzer = SpectrumAnalyzer(**SpectrumAnalyzer.parse(os.path.join(HOMEPATH,'spectrum.txt')))
+        self.fitness = Fitness(self.pool, {'compositionSpace': self.compositionSpace,
+                                           'spectrumAnalyzer': self.spectrumAmalyzer})
+
+    def test_xraydistance(self):
+        ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]
+        self.assertTrue(np.allclose(np.round(self.fitness.calcFitness('spectrumAnalyzer.xraydistance'), decimals=3), ref))
+
+    def test_k(self):
+        ref = [1.003, 1.005,  1.003, 1.005, 1.006, 1.011, 0.994, 1.004, 1.005, 1.004]
+        self.assertTrue(np.allclose(np.round(self.fitness.calcFitness('spectrumAnalyzer.k'), decimals=3), ref))
+
+    def test_pareto(self):
+        ref = [0, 0,  0, 0, 0, 0, 1, 1, 1, 1]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('pareto', 'enthalpy', 'spectrumAnalyzer.xraydistance')),
+                                    ref))

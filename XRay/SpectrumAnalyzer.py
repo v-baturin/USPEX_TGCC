@@ -37,7 +37,7 @@ class SpectrumAnalyzer(object):
         :type exp_intensities: list[float]
         :param exp_intensities: intensities of the experimental spectrum.
         """
-        self.k = None
+        # self.k = None
 
         self.spectrum_starts = spectrum_starts
         self.spectrum_ends = spectrum_ends
@@ -46,7 +46,7 @@ class SpectrumAnalyzer(object):
         self.exp_angles = np.array(exp_angles)
         self.exp_intensities = np.array(exp_intensities) / max(exp_intensities) * 100
 
-    def __call__(self, system):
+    def analyze(self, system):
         """
         Special method which allows the '[]' operator. Calculates the agreement with the experimental X-ray spectrum.
 
@@ -55,12 +55,14 @@ class SpectrumAnalyzer(object):
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
+        structure = system['structure']
+        
         # pure hydrogen gets low agreement
-        if list(system.composition.keys()) == ['H']:
+        if list(structure.composition.keys()) == ['H']:
             return 100.0
 
         # symmetrize the candidate structure
-        tmp = Structure(lattice=system.cell, species=system.get_chemical_symbols(), coords=system.scaled_coordinates)
+        tmp = Structure(lattice=structure.cell, species=structure.get_chemical_symbols(), coords=structure.scaled_coordinates)
         string = tmp.to(fmt='cif', symprec=0.2)
         structure = Structure.from_str(string, fmt='cif')
 
@@ -74,11 +76,25 @@ class SpectrumAnalyzer(object):
         if not result.success:
             raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
 
-        # extract the lattice factor
-        self.k = result.x[0]
 
         # return fitness
-        return result.fun
+        system['xraydistance'] = result.fun
+        # extract the lattice factor
+        system['spectrumAnalyzer_k'] = result.x[0]
+        # self.k = result.x[0]
+        # return result.fun
+
+    def k(self, **system):
+        if 'spectrumAnalyzer_k' not in system:
+            self.analyze(system)
+        assert 'spectrumAnalyzer_k' in system
+        return system['spectrumAnalyzer_k']
+
+    def xraydistance(self, **system):
+        if 'xraydistance' not in system:
+            self.analyze(system)
+        assert 'xraydistance' in system
+        return system['xraydistance']
 
     @staticmethod
     def parse(filename: str):
