@@ -62,7 +62,11 @@ class Target(object):
         self.utilities = {}
         for untilityType in targetTypes.sharedUtilities:
             name = untilityType.__name__[0].lower() + untilityType.__name__[1:]
-            self.utilities[name] = untilityType(**kwargs[name]) if name in kwargs else untilityType()
+            try:
+                self.utilities[name] = untilityType(**kwargs[name]) if name in kwargs else untilityType()
+            except TypeError as e:
+                logger.debug("Utility 'SpectrumAnalyzer' lacks required spectrum data and wont be used.")
+                logger.debug(e)
 
         self.hybridizations = []
         for hybridizationType in targetTypes.variationOperators.hybridizationTypes:

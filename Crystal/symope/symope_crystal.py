@@ -3,8 +3,8 @@ import subprocess as sp
 
 import numpy as np
 
-from USPEX.Common.Atomistic.Crystal import Crystal
-from USPEX.Common.Atomistic.optLattice import optLattice
+from ...Atomistic.Crystal import Crystal
+from ...Atomistic.optLattice import optLattice
 
 from .GetPermutation import GetPermutation
 from .GetPrimitiveCell import GetPrimitiveCell

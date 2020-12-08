@@ -1,4 +1,4 @@
-from USPEX.Common.VariationOperators import VariationOperators
+from ..VariationOperators import VariationOperators
 from .RandTop import RandTop
 from .RandSym import RandSym
 from .Heredity import Heredity
