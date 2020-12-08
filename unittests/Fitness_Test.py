@@ -208,9 +208,9 @@ class FitnessXray_Test(unittest.TestCase):
         self.pool = SystemPool()
         self.pool.update(self.systems)
         self.compositionSpace = CompositionSpace(symbols = ['Ba', 'H'], blocks = [[1, 12]], range = [[4, 4]])
-        self.spectrumAmalyzer = SpectrumAnalyzer(**SpectrumAnalyzer.parse(os.path.join(HOMEPATH,'spectrum.txt')))
+        self.spectrumAnalyzer = SpectrumAnalyzer(**SpectrumAnalyzer.parse(os.path.join(HOMEPATH, 'spectrum.txt')))
         self.fitness = Fitness(self.pool, {'compositionSpace': self.compositionSpace,
-                                           'spectrumAnalyzer': self.spectrumAmalyzer})
+                                           'spectrumAnalyzer': self.spectrumAnalyzer})
 
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]
