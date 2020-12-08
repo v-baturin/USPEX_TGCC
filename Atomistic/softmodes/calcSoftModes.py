@@ -1,9 +1,9 @@
 from __future__ import division
 
-from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
+from ..AtomicStructure import AtomicStructure
 from .getMinimalGraphBonds import getMinimalGraphBonds
 
-from USPEX.Common.Atomistic.Element import Element
+from ..Element import Element
 
 
 

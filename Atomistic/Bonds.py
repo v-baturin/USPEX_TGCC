@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from itertools import combinations_with_replacement
 from typing import Dict, List, Union, Tuple
 
-from USPEX.Common.Atomistic.Element import Element
+from ..Atomistic.Element import Element
 
 
 @dataclass
