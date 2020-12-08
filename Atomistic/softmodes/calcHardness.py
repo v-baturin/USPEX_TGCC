@@ -6,7 +6,7 @@ from scipy.stats import gmean
 from itertools import chain
 
 from ..AtomicStructure import AtomicStructure
-from ..Atomistic.Element import Element
+from ..Element import Element
 from .getMinimalGraphBonds import getMinimalGraphBonds
 
 

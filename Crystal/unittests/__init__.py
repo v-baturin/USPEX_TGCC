@@ -1,4 +1,4 @@
-from .. import Crystal
+from ...Atomistic import Crystal
 import os
 
 PREFIX = os.path.dirname(os.path.abspath(__file__))
