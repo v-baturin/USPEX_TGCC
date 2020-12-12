@@ -1,0 +1,37 @@
+{
+    'optimizer': {
+        'type': 'GlobalOptimizer',
+        'target': {
+            'type': 'Crystal',
+            'config': {'externalPressure': 100},
+            'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
+                                 'blocks': [[4, 8, 16]],
+                                 'range': [[1, 1]]}
+        },
+        'fitness': 'enthalpy',
+        'stopFitness': -655.062,
+        'selection': {
+            'type': 'USPEXClassic',
+            'popSize': 10,
+            'fitness': ('getAntiseedsCorrections', 'enthalpy'),
+            'fractions': {
+                'heredity': [0.0, 1.0, 0.5],
+                'twinning': [0.0, 1.0, 0.1],
+                'softmodemutation': [0.0, 1.0, 0.1],
+                'randSym': [0.0, 1.0, 0.0],
+                'randTop': [0.0, 1.0, 0.2],
+                'permutation': [0.0, 1.0, 0.1]
+            }
+        }
+    },
+    'stages': ['gulp', 'gulp', 'gulp', 'gulp', 'gulp5'],
+    'numParallelCalcs': 2,
+    'numGenerations': 3,
+    'stopCrit': 3
+}
+
+#define gulp
+{'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions'}
+
+#define gulp5
+{'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions', 'ginput' : './Specific/ginput_4'}

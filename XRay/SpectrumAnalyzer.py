@@ -78,23 +78,23 @@ class SpectrumAnalyzer(object):
 
 
         # return fitness
-        system['xraydistance'] = result.fun
+        system['spectrumAnalyzer.xraydistance'] = result.fun
         # extract the lattice factor
-        system['spectrumAnalyzer_k'] = result.x[0]
+        system['spectrumAnalyzer.k'] = result.x[0]
         # self.k = result.x[0]
         # return result.fun
 
     def k(self, **system):
-        if 'spectrumAnalyzer_k' not in system:
+        if 'spectrumAnalyzer.k' not in system:
             self.analyze(system)
-        assert 'spectrumAnalyzer_k' in system
-        return system['spectrumAnalyzer_k']
+        assert 'spectrumAnalyzer.k' in system
+        return system['spectrumAnalyzer.k']
 
     def xraydistance(self, **system):
-        if 'xraydistance' not in system:
+        if 'spectrumAnalyzer.xraydistance' not in system:
             self.analyze(system)
-        assert 'xraydistance' in system
-        return system['xraydistance']
+        assert 'spectrumAnalyzer.xraydistance' in system
+        return system['spectrumAnalyzer.xraydistance']
 
     @staticmethod
     def parse(filename: str):

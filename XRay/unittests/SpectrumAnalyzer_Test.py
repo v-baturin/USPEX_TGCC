@@ -32,5 +32,5 @@ class SpectrumAnalyzer_Test(unittest.TestCase):
         xraydata = SpectrumAnalyzer.parse('{}/spectrum.txt'.format(PATH_WITH_TESTS))
         analyzer = SpectrumAnalyzer(**xraydata)
         analyzer.analyze(self.system)
-        fitness = self.system['xraydistance']
+        fitness = self.system['spectrumAnalyzer.xraydistance']
         self.assertAlmostEqual(fitness, 0.2303, places=4)
