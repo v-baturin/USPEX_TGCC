@@ -123,8 +123,8 @@ class CompositionSpace(object):
         if not set(composition.keys()) <= set(self.symbols):
             return False
 
-        numIons = self.numIons(composition)
-        numBlocks = self.numBlocks(composition)
+        numIons = self.numIons(composition = composition)
+        numBlocks = self.numBlocks(composition = composition)
 
         return np.all(np.dot(numBlocks, self.blocks) == numIons) and \
                np.all(numBlocks >= self.range[:,0]) and \

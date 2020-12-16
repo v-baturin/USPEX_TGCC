@@ -136,7 +136,7 @@ class Heredity(VarOperator):
             # calculate total composition of molecules in good_child
             composition = np.zeros(len(self.compositionSpace.symbols), dtype = float)
             for molecule in child_good:
-                composition += self.compositionSpace.numIons(molecule.composition)
+                composition += self.compositionSpace.numIons(composition = molecule.composition)
 
             # determine desired composition of ofspring structure. this function is nondeterministic.
             if desiredComposition is None:
@@ -173,7 +173,7 @@ class Heredity(VarOperator):
                 current = composition[molIndex]
                 desired = desiredComposition[molIndex]
                 if current > desired:
-                    composition -= self.compositionSpace.numIons(molecule.composition)
+                    composition -= self.compositionSpace.numIons(composition = molecule.composition)
                 else:
                     child_good_new.append(molecule)
             child_good = child_good_new
