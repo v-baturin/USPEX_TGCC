@@ -196,7 +196,7 @@ class CompositionSpace(object):
         :return: (numIons, numBlocks) to determine which atoms could be used to make a child.
         """
 
-        maxBlocks = self.numBlocks(composition1) + self.numBlocks(composition2)
+        maxBlocks = self.numBlocks(composition = composition1) + self.numBlocks(composition = composition2)
 
         # Initialize outputs:
         numIons = None
