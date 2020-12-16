@@ -116,7 +116,9 @@ class Fitness(object):
             fitness = presetFitness[fitness]
         value = None
         if fitness in self.storedFitnesses:
-            value =  self.storedFitnesses[fitness][[system['ID'] for system in self.pool.uniqueSystems].index(ID)]
+            IDs = [system['ID'] for system in self.pool.uniqueSystems]
+            if ID in IDs:
+                value =  self.storedFitnesses[fitness][IDs.index(ID)]
         elif isinstance(fitness, str):
             system = self.pool.allSystems[ID]
             if fitness in system:
