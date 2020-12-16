@@ -84,13 +84,13 @@ class SpectrumAnalyzer(object):
         # self.k = result.x[0]
         # return result.fun
 
-    def k(self, **system):
+    def k(self, system):
         if 'spectrumAnalyzer.k' not in system:
             self.analyze(system)
         assert 'spectrumAnalyzer.k' in system
         return system['spectrumAnalyzer.k']
 
-    def xraydistance(self, **system):
+    def xraydistance(self, system):
         if 'spectrumAnalyzer.xraydistance' not in system:
             self.analyze(system)
         assert 'spectrumAnalyzer.xraydistance' in system

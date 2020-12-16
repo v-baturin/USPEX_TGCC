@@ -206,13 +206,13 @@ class ConvexHull_old(object):
         elif item in self.elements:
             return 0
         else:
-            composition = self.config.numBlocks(item.composition)
+            composition = self.config.numBlocks(composition = item.composition)
             energy = item.enthalpy/sum(composition)
 
             composition_hull = []
             energy_hull = []
             for system in self.elements:
-                comp = self.config.numBlocks(system.composition)
+                comp = self.config.numBlocks(composition = system.composition)
                 composition_hull.append(comp)
                 energy_hull.append(system.enthalpy/sum(comp))
 

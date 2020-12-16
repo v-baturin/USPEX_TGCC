@@ -22,7 +22,10 @@ class Softmodemutation(VarOperator):
         if system['ID'] in self.knownSystems:
             frequencies, eigenVectors = self.knownSystems[system['ID']]
         else:
-            frequencies, eigenVectors = calcSoftModes(system['structure'])
+            try:
+                frequencies, eigenVectors = calcSoftModes(system['structure'])
+            except:
+                raise VOFailed
             self.knownSystems[system['ID']] = (frequencies, eigenVectors)
         while len(frequencies) > 0:
             freq = frequencies.pop(0)

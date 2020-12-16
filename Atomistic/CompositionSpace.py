@@ -123,20 +123,18 @@ class CompositionSpace(object):
         if not set(composition.keys()) <= set(self.symbols):
             return False
 
-        numIons = self.numIons(composition)
-        numBlocks = self.numBlocks(composition)
+        numIons = self.numIons(composition = composition)
+        numBlocks = self.numBlocks(composition = composition)
 
         return np.all(np.dot(numBlocks, self.blocks) == numIons) and \
                np.all(numBlocks >= self.range[:,0]) and \
                np.all(numBlocks <= self.range[:,1]) and \
                self.minAt <= np.sum(numIons) <= self.maxAt
 
-    def composition(self, composition = None, **kwargs):
-        if composition is None:
-            composition = kwargs['structure'].composition
-        return composition
+    def composition(self, system : dict = None, composition = None):
+        return system['structure'].composition if composition is None and system is not None else composition
 
-    def numIons(self, composition = None, **kwargs):
+    def numIons(self, system : dict = None, composition = None):
         """
         Creates numIons array from given composition.
 
@@ -145,8 +143,7 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
-        if composition is None:
-            composition = kwargs['structure'].composition
+        composition = self.composition(system, composition)
 
         num = []
         for symbol in self.symbols:
@@ -199,7 +196,7 @@ class CompositionSpace(object):
         :return: (numIons, numBlocks) to determine which atoms could be used to make a child.
         """
 
-        maxBlocks = self.numBlocks(composition1) + self.numBlocks(composition2)
+        maxBlocks = self.numBlocks(composition = composition1) + self.numBlocks(composition = composition2)
 
         # Initialize outputs:
         numIons = None
