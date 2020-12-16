@@ -131,12 +131,10 @@ class CompositionSpace(object):
                np.all(numBlocks <= self.range[:,1]) and \
                self.minAt <= np.sum(numIons) <= self.maxAt
 
-    def composition(self, composition = None, **kwargs):
-        if composition is None:
-            composition = kwargs['structure'].composition
-        return composition
+    def composition(self, system : dict = None, composition = None):
+        return system['structure'].composition if composition is None and system is not None else composition
 
-    def numIons(self, composition = None, **kwargs):
+    def numIons(self, system : dict = None, composition = None):
         """
         Creates numIons array from given composition.
 
@@ -145,8 +143,7 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
-        if composition is None:
-            composition = kwargs['structure'].composition
+        composition = self.composition(system, composition)
 
         num = []
         for symbol in self.symbols:
