@@ -105,7 +105,18 @@ class Twinning(VarOperator):
                 if mode in ['mirroring','axis']:
                     # Orthogonalize cell
                     lattice = self.offspring.cell
-                    lattice[2][0:2] = 0.0, 0.0
+                    if self.twin_plane_direction == 'x':
+                        if not np.isclose(lattice[0, 0], 0, atol=0.5):
+                            lattice[0][1] = 0.0
+                            lattice[0][2] = 0.0
+                    elif self.twin_plane_direction == 'y':
+                        if not np.isclose(lattice[1, 1], 0, atol=0.5):
+                            lattice[1][0] = 0.0
+                            lattice[1][2] = 0.0
+                    elif self.twin_plane_direction == 'z':
+                        if not np.isclose(lattice[2, 2], 0, atol=0.5):
+                            lattice[2][0] = 0.0
+                            lattice[2][1] = 0.0
                     self.offspring.set_cell(lattice)
                 self.molecules = self.offspring.molecules
                 self.offspring = []
