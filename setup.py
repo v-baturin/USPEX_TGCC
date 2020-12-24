@@ -29,6 +29,7 @@ extensions = [
     Extension("USPEX.Common.VariationOperators", ["VariationOperators.py"]),
     Extension("USPEX.Common.paretoRanking", ["paretoRanking.py"]),
     Extension("USPEX.Common.Presets", ["Presets.py"]),
+    Extension("USPEX.Common.InputParser", ["InputParser.py"]),
     Extension("USPEX.Common.Selection.USPEXClassic", ["Selection/USPEXClassic.py"]),
     Extension("USPEX.Common.Selection.Autofrac", ["Selection/Autofrac.py"]),
     Extension("USPEX.Common.SpaceGroups.SpaceGroups3D", ["SpaceGroups/SpaceGroups3D.py"]),

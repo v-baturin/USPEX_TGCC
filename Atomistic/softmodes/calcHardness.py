@@ -5,8 +5,8 @@ import numpy as np
 from scipy.stats import gmean
 from itertools import chain
 
-from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
-from USPEX.Common.Atomistic.Element import Element
+from ..AtomicStructure import AtomicStructure
+from ..Element import Element
 from .getMinimalGraphBonds import getMinimalGraphBonds
 
 

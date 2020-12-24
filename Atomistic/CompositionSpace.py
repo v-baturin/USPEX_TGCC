@@ -123,15 +123,18 @@ class CompositionSpace(object):
         if not set(composition.keys()) <= set(self.symbols):
             return False
 
-        numIons = self.numIons(composition)
-        numBlocks = self.numBlocks(composition)
+        numIons = self.numIons(composition = composition)
+        numBlocks = self.numBlocks(composition = composition)
 
         return np.all(np.dot(numBlocks, self.blocks) == numIons) and \
                np.all(numBlocks >= self.range[:,0]) and \
                np.all(numBlocks <= self.range[:,1]) and \
                self.minAt <= np.sum(numIons) <= self.maxAt
 
-    def numIons(self, composition):
+    def composition(self, system : dict = None, composition = None):
+        return system['structure'].composition if composition is None and system is not None else composition
+
+    def numIons(self, system : dict = None, composition = None):
         """
         Creates numIons array from given composition.
 
@@ -140,6 +143,8 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
+        composition = self.composition(system, composition)
+
         num = []
         for symbol in self.symbols:
             if symbol in composition:
@@ -148,7 +153,7 @@ class CompositionSpace(object):
                 num.append(0)
         return np.array(num, dtype=int)
 
-    def numBlocks(self, composition) -> np.ndarray:
+    def numBlocks(self, *args, **kwargs) -> np.ndarray:
         """
         Creates numBlocks array from given composition.
 
@@ -157,7 +162,7 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of blocks amounts corresponding *blocks* variable of this instance.
         """
-        return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(composition), rcond=None)[0]).astype(int)
+        return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(*args, **kwargs), rcond=None)[0]).astype(int)
 
     def randomComposition(self):
         """
@@ -191,7 +196,7 @@ class CompositionSpace(object):
         :return: (numIons, numBlocks) to determine which atoms could be used to make a child.
         """
 
-        maxBlocks = self.numBlocks(composition1) + self.numBlocks(composition2)
+        maxBlocks = self.numBlocks(composition = composition1) + self.numBlocks(composition = composition2)
 
         # Initialize outputs:
         numIons = None

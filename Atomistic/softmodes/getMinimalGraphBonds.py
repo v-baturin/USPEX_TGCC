@@ -5,7 +5,7 @@ from itertools import chain
 from scipy.sparse.csgraph import connected_components
 from typing import Dict, List, Union, Tuple
 
-from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
+from ..AtomicStructure import AtomicStructure
 from ..Bonds import Bond
 
 

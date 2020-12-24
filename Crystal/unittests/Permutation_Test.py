@@ -43,6 +43,7 @@ class Permutation_Test(unittest.TestCase):
         while count < 1:
             try:
                 parent = Crystal.fromDICT(next(population_iterator))
+                parent = {'structure': parent, 'ID': parent.ID}
                 offsprings = permutation(parent)
                 count += len(offsprings)
             except VOFailed:
@@ -62,6 +63,7 @@ class Permutation_Test(unittest.TestCase):
         while count < 1:
             try:
                 parent = Crystal.fromDICT(next(population_iterator))
+                parent = {'structure': parent, 'ID': parent.ID}
                 offsprings = permutation(parent)
                 count += len(offsprings)
             except VOFailed:
@@ -82,6 +84,7 @@ class Permutation_Test(unittest.TestCase):
     #     while count < 1:
     #         try:
     #             parent = Crystal.fromDICT(next(population_iterator))
+    #             parent = {'structure': parent, 'ID': parent.ID}
     #             offsprings = permutation(parent)
     #             count += len(offsprings)
     #         except VOFailed:
@@ -111,6 +114,7 @@ class Permutation_Test(unittest.TestCase):
         while count < 1:
             try:
                 parent = Crystal.fromDICT(next(population_iterator))
+                parent = {'structure': parent, 'ID': parent.ID}
                 offsprings = permutation(parent)
                 count += len(offsprings)
             except VOFailed:

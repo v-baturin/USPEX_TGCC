@@ -19,23 +19,26 @@ class Softmodemutation(VarOperator):
         self.knownSystems = {}
 
     def __call__(self, system):
-        if system.ID in self.knownSystems:
-            frequencies, eigenVectors = self.knownSystems[system.ID]
+        if system['ID'] in self.knownSystems:
+            frequencies, eigenVectors = self.knownSystems[system['ID']]
         else:
-            frequencies, eigenVectors = calcSoftModes(system)
-            self.knownSystems[system.ID] = (frequencies, eigenVectors)
+            try:
+                frequencies, eigenVectors = calcSoftModes(system['structure'])
+            except:
+                raise VOFailed
+            self.knownSystems[system['ID']] = (frequencies, eigenVectors)
         while len(frequencies) > 0:
             freq = frequencies.pop(0)
             eigenVector = eigenVectors.pop(0)
             if freq < _MIN_VALID_FREQUENCY:
                 continue
-            displacements = eigenVector.reshape((len(system),3))
-            degree = self.degree if self.degree else system.covalentRadii.mean() * 3
+            displacements = eigenVector.reshape((len(system['structure']),3))
+            degree = self.degree if self.degree else system['structure'].covalentRadii.mean() * 3
             displacements *= degree/np.max(np.linalg.norm(displacements, axis = 1))
-            newsystem1 = self.systemFactory(cell=system.cell, **self.config)
-            newsystem2 = self.systemFactory(cell=system.cell, **self.config)
-            for (translation, rotation, _), molecule1 in zip(system.decomposeDisplacements(displacements),
-                                                                               system.molecules):
+            newsystem1 = self.systemFactory(cell=system['structure'].cell, **self.config)
+            newsystem2 = self.systemFactory(cell=system['structure'].cell, **self.config)
+            for (translation, rotation, _), molecule1 in zip(system['structure'].decomposeDisplacements(displacements),
+                                                                               system['structure'].molecules):
 
                 molecule2 = copy(molecule1)
                 angle = np.linalg.norm(rotation)
@@ -76,19 +79,21 @@ class Softmodemutation(VarOperator):
                         logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
 
             offsprings = ()
-            if newsystem1.isGoodSystem() and newsystem1 != system:
-                newsystem1.howCome = self.__class__.__name__
+            newsystem1 = {'structure': newsystem1}
+            newsystem2 = {'structure': newsystem2}
+            if newsystem1['structure'].isGoodSystem() and newsystem1['structure'] != system['structure']:
+                newsystem1['howCome'] = self.__class__.__name__
                 self.pool.assignID(newsystem1)
-                newsystem1.parent = str(system.ID)
-                logger.info(f"Structure {newsystem1.ID} created via Softmode mutation at {freq:.4f} mode"
-                            f" from {system.ID} parent.")
+                newsystem1['parent'] = str(system['ID'])
+                logger.info(f"Structure {newsystem1['ID']} created via Softmode mutation at {freq:.4f} mode"
+                            f" from {system['ID']} parent.")
                 offsprings += (newsystem1,)
-            if newsystem2.isGoodSystem() and newsystem2 != newsystem1:
-                newsystem2.howCome = self.__class__.__name__
+            if newsystem2['structure'].isGoodSystem() and newsystem2['structure'] != newsystem1['structure']:
+                newsystem2['howCome'] = self.__class__.__name__
                 self.pool.assignID(newsystem2)
-                newsystem2.parent = str(system.ID)
-                logger.info(f"Structure {newsystem2.ID} created via Softmode mutation at {freq:.4f} mode"
-                            f" from {system.ID} parent.")
+                newsystem2['parent'] = str(system['ID'])
+                logger.info(f"Structure {newsystem2['ID']} created via Softmode mutation at {freq:.4f} mode"
+                            f" from {system['ID']} parent.")
                 offsprings += (newsystem2,)
             if offsprings:
                 return offsprings

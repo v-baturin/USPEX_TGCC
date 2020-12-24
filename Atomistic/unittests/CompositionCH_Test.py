@@ -8,19 +8,19 @@ from ..CompositionSpace import CompositionSpace
 
 class System(object):
 
-    def __init__(self, ID, composition, enthalpy):
-        self.ID = ID
+    def __init__(self, composition):
+        # self.ID = ID
         self.composition = composition
-        self.enthalpy = enthalpy
+        # self.enthalpy = enthalpy
 
 
 class CompostionCH_Test(unittest.TestCase):
     def test_unocomponent(self):
         compositionSpace = CompositionSpace(symbols=['Mo'], blocks=[[1]], range=[[1, 18]])
-        system0 = System(0, {'Mo': 1}, -2.0)
-        system1 = System(1, {'Mo': 4}, -8.0)
-        system2 = System(2, {'Mo': 4}, -16.0)
-        system3 = System(3, {'Mo': 8}, -8.0)
+        system0 = {'ID': 0, 'structure': System({'Mo': 1}), 'enthalpy': -2.0}
+        system1 = {'ID': 1, 'structure': System({'Mo': 4}), 'enthalpy': -8.0}
+        system2 = {'ID': 2, 'structure': System({'Mo': 4}), 'enthalpy': -16.0}
+        system3 = {'ID': 3, 'structure': System({'Mo': 8}), 'enthalpy': -8.0}
         self.convexHull = CompositionCH([system0], compositionSpace)
 
         # ans = self.convexHull.height[0]
@@ -29,31 +29,31 @@ class CompostionCH_Test(unittest.TestCase):
 
         self.convexHull.extend([system2])
         self.assertEqual(len(self.convexHull.lower_bound), 1)
-        self.assertEqual(set(self.convexHull.lower_bound), {system2})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {2})
         self.assertAlmostEqual(self.convexHull.height[0], 2.0)
-        self.assertEqual(set(self.convexHull.upper_bound), {system0})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.upper_bound), {0})
         self.assertAlmostEqual(self.convexHull.depth[1], -2.0)
 
         self.convexHull.extend([system3])
         self.assertEqual(len(self.convexHull.lower_bound), 1)
-        self.assertEqual(set(self.convexHull.lower_bound), {system2})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {2})
         self.assertAlmostEqual(self.convexHull.height[0], 2.0)
         self.assertAlmostEqual(self.convexHull.height[2], 3.0)
-        self.assertEqual(set(self.convexHull.upper_bound), {system3})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.upper_bound), {3})
         self.assertAlmostEqual(self.convexHull.depth[0], -1.0)
         self.assertAlmostEqual(self.convexHull.depth[1], -3.0)
 
     def test_bicomponent(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
-        system1 = System(0, {'Mo': 4, 'B': 10}, -5.0)
-        system2 = System(1, {'Mo': 4, 'B': 10}, -14.0)
-        system3 = System(2, {'Mo': 8, 'B': 8}, -8.0)
-        system4 = System(3, {'Mo': 8}, -2.0)
-        system5 = System(4, {'Mo': 8}, -4.0)
-        system6 = System(5, {'B': 10}, -12.0)
-        system7 = System(6, {'Mo': 6, 'B': 4}, -2.0)
-        system8 = System(7, {'Mo': 4, 'B': 6}, -16.0)
+        system1 = {'ID': 0, 'structure': System({'Mo': 4, 'B': 10}), 'enthalpy': -5.0}
+        system2 = {'ID': 1, 'structure': System({'Mo': 4, 'B': 10}), 'enthalpy': -14.0}
+        system3 = {'ID': 2, 'structure': System({'Mo': 8, 'B': 8}), 'enthalpy': -8.0}
+        system4 = {'ID': 3, 'structure': System({'Mo': 8}), 'enthalpy': -2.0}
+        system5 = {'ID': 4, 'structure': System({'Mo': 8}), 'enthalpy': -4.0}
+        system6 = {'ID': 5, 'structure': System({'B': 10}), 'enthalpy': -12.0}
+        system7 = {'ID': 6, 'structure': System({'Mo': 6, 'B': 4}), 'enthalpy': -2.0}
+        system8 = {'ID': 7, 'structure': System({'Mo': 4, 'B': 6}), 'enthalpy': -16.0}
 
 
 
@@ -78,14 +78,14 @@ class CompostionCH_Test(unittest.TestCase):
         # self.assertTrue(np.isinf(ans) and ans > 0)
         self.convexHull.extend([system3])
         self.assertEqual(len(self.convexHull.lower_bound), 2)
-        self.assertEqual(set(self.convexHull.lower_bound), {system2, system3})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {1, 2})
         self.assertAlmostEqual(self.convexHull.height[0], 0.642857)
 
         # ans = self.convexHull.height[3]
         # self.assertTrue(np.isinf(ans) and ans > 0)
         self.convexHull.extend([system4])
         self.assertEqual(len(self.convexHull.lower_bound), 2)
-        self.assertEqual(set(self.convexHull.lower_bound), {system2,system4})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {1,3})
         self.assertAlmostEqual(self.convexHull.height[0], 0.642857)
         self.assertAlmostEqual(self.convexHull.height[2], 0.275)
 
@@ -93,7 +93,7 @@ class CompostionCH_Test(unittest.TestCase):
         # self.assertTrue(np.isinf(ans) and ans > 0)
         self.convexHull.extend([system5])
         self.assertEqual(len(self.convexHull.lower_bound), 2)
-        self.assertEqual(set(self.convexHull.lower_bound), {system2, system5})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {1, 4})
         self.assertAlmostEqual(self.convexHull.height[0], 0.642857)
         self.assertAlmostEqual(self.convexHull.height[2], 0.35)
         self.assertAlmostEqual(self.convexHull.height[3], 0.25)
@@ -105,7 +105,7 @@ class CompostionCH_Test(unittest.TestCase):
         # self.assertTrue(np.isinf(ans) and ans > 0)
         self.convexHull.extend([system6])
         self.assertEqual(len(self.convexHull.lower_bound), 3)
-        self.assertEqual(set(self.convexHull.lower_bound), {system2, system5, system6})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {1, 4, 5})
         self.assertAlmostEqual(self.convexHull.height[0], 0.642857)
         self.assertAlmostEqual(self.convexHull.height[2], 0.35)
         self.assertAlmostEqual(self.convexHull.height[3], 0.25)
@@ -115,7 +115,7 @@ class CompostionCH_Test(unittest.TestCase):
 
         self.convexHull.extend([system7])
         self.assertEqual(len(self.convexHull.lower_bound), 3)
-        self.assertEqual(set(self.convexHull.lower_bound), {system2, system5, system6})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {1, 4, 5})
         self.assertAlmostEqual(self.convexHull.height[0], 0.642857)
         self.assertAlmostEqual(self.convexHull.height[2], 0.35)
         self.assertAlmostEqual(self.convexHull.height[3], 0.25)
@@ -123,7 +123,7 @@ class CompostionCH_Test(unittest.TestCase):
 
         self.convexHull.extend([system8])
         self.assertEqual(len(self.convexHull.lower_bound), 3)
-        self.assertEqual(set(self.convexHull.lower_bound), {system5, system6, system8})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {4, 5, 7})
         self.assertAlmostEqual(self.convexHull.height[0], 1.128571)
         self.assertAlmostEqual(self.convexHull.height[1], 0.485714)
         self.assertAlmostEqual(self.convexHull.height[2], 0.916667)
@@ -133,20 +133,20 @@ class CompostionCH_Test(unittest.TestCase):
     def test_bicomponent1(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
-        system1 = System(0, {'Mo': 4, 'B': 10}, -5.0)
-        system2 = System(1, {'Mo': 4, 'B': 10}, -14.0)
-        system3 = System(2, {'Mo': 8, 'B': 8}, -8.0)
-        system4 = System(3, {'Mo': 8}, -2.0)
-        system5 = System(4, {'Mo': 8}, -4.0)
-        system6 = System(5, {'B': 10}, -12.0)
-        system7 = System(6, {'Mo': 6, 'B': 4}, -2.0)
-        system8 = System(7, {'Mo': 4, 'B': 6}, -16.0)
+        system1 = {'ID': 0, 'structure': System({'Mo': 4, 'B': 10}), 'enthalpy': -5.0}
+        system2 = {'ID': 1, 'structure': System({'Mo': 4, 'B': 10}), 'enthalpy': -14.0}
+        system3 = {'ID': 2, 'structure': System({'Mo': 8, 'B': 8}), 'enthalpy': -8.0}
+        system4 = {'ID': 3, 'structure': System({'Mo': 8}), 'enthalpy': -2.0}
+        system5 = {'ID': 4, 'structure': System({'Mo': 8}), 'enthalpy': -4.0}
+        system6 = {'ID': 5, 'structure': System({'B': 10}), 'enthalpy': -12.0}
+        system7 = {'ID': 6, 'structure': System({'Mo': 6, 'B': 4}), 'enthalpy': -2.0}
+        system8 = {'ID': 7, 'structure': System({'Mo': 4, 'B': 6}), 'enthalpy': -16.0}
 
         systems = [system1, system2, system3, system4, system5, system6, system7, system8]
         self.convexHull = CompositionCH(systems, compositionSpace)
 
-        self.assertEqual(set(self.convexHull.lower_bound), {system5, system6, system8})
-        self.assertEqual(set(self.convexHull.upper_bound), {system1, system4, system6, system7})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {4, 5, 7})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.upper_bound), {0, 3, 5, 6})
 
         # ans = self.convexHull[system1]
         # self.assertTrue(np.isinf(ans) and ans < 0)
@@ -226,18 +226,18 @@ class CompostionCH_Test(unittest.TestCase):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
 
-        system1 = System(0, {'Mo': 6, 'B': 14}, -178.845)
-        system2 = System(1, {'Mo': 16, 'B': 10}, -225.103)
-        system3 = System(2, {'Mo': 5, 'B': 14}, -162.761)
-        system4 = System(3, {'Mo': 6, 'B': 14}, -176.250)
-        system5 = System(4, {'Mo': 13, 'B': 5}, -150.735)
-        system6 = System(5, {'Mo': 9, 'B': 1}, -77.661)
+        system1 = {'ID': 0, 'structure': System({'Mo': 6, 'B': 14}), 'enthalpy': -178.845}
+        system2 = {'ID': 1, 'structure': System({'Mo': 16, 'B': 10}), 'enthalpy': -225.103}
+        system3 = {'ID': 2, 'structure': System({'Mo': 5, 'B': 14}), 'enthalpy': -162.761}
+        system4 = {'ID': 3, 'structure': System({'Mo': 6, 'B': 14}), 'enthalpy': -176.250}
+        system5 = {'ID': 4, 'structure': System({'Mo': 13, 'B': 5}), 'enthalpy': -150.735}
+        system6 = {'ID': 5, 'structure': System({'Mo': 9, 'B': 1}), 'enthalpy': -77.661}
         systems = [system1, system2, system3, system4, system5, system6]
 
         self.convexHull = CompositionCH(systems, compositionSpace)
 
-        self.assertEqual(set(self.convexHull.lower_bound), {system1,system2,system3,system5,system6})
-        self.assertEqual(set(self.convexHull.upper_bound), {system3,system6})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {0,1,2,4,5})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.upper_bound), {2,5})
 
         # ans = self.convexHull[system1]
         # self.assertTrue(np.isinf(ans) and ans < 0)
@@ -272,17 +272,17 @@ class CompostionCH_Test(unittest.TestCase):
     def test_bicomponent3(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
-        system1 = System(0, {'Mo': 5, 'B': 15}, -173.325)
-        system2 = System(1, {'Mo': 5}, -42.944)
-        system3 = System(2, {'Mo': 3, 'B': 9}, -104.041)
-        system4 = System(3, {'Mo': 6, 'B': 14}, -177.431)
-        system5 = System(4, {'Mo': 9}, -69.214)
+        system1 = {'ID': 0, 'structure': System({'Mo': 5, 'B': 15}), 'enthalpy': -173.325}
+        system2 = {'ID': 1, 'structure': System({'Mo': 5}), 'enthalpy': -42.944}
+        system3 = {'ID': 2, 'structure': System({'Mo': 3, 'B': 9}), 'enthalpy': -104.041}
+        system4 = {'ID': 3, 'structure': System({'Mo': 6, 'B': 14}), 'enthalpy': -177.431}
+        system5 = {'ID': 4, 'structure': System({'Mo': 9}), 'enthalpy': -69.214}
         systems = [system1, system2, system3, system4, system5]
 
         self.convexHull = CompositionCH(systems, compositionSpace)
 
-        self.assertEqual(set(self.convexHull.lower_bound), {system2,system3,system4})
-        self.assertEqual(set(self.convexHull.upper_bound), {system1,system5})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {1,2,3})
+        self.assertEqual(set(s['ID'] for s in self.convexHull.upper_bound), {0,4})
 
         # ans = self.convexHull[system1]
         # self.assertTrue(np.isinf(ans) and ans < 0)

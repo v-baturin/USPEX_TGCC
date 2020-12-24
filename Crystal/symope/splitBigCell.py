@@ -2,7 +2,7 @@ from __future__ import division
 
 import numpy as np
 
-from USPEX.Common.Atomistic.AtomicStructure import AtomicStructure
+from ...Atomistic.AtomicStructure import AtomicStructure
 from .symope_crystal import symope_crystal
 
 

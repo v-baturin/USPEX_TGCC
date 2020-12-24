@@ -71,8 +71,8 @@ class Heredity(VarOperator):
         order = []
         enthalpy = []
         for system in population:
-            order.append(system.averageOrder)
-            enthalpy.append(system.enthalpy)
+            order.append(system['structure'].averageOrder)
+            enthalpy.append(system['structure'].enthalpy)
         self.correlationFO = np.corrcoef(order,enthalpy)[0,1]
         if np.isnan(self.correlationFO):
             self.correlationFO = 0
@@ -87,7 +87,7 @@ class Heredity(VarOperator):
         => example (coordinate) : 2.41 = 1.41 = 0.41 = -0.59 = - 1.59...
         '''
 
-        logger.debug(f'Heredity: system {system1.ID} and system {system2.ID}, correlation coefficient {self.correlationFO}')
+        logger.debug(f"Heredity: system {system1['ID']} and system {system2['ID']}, correlation coefficient {self.correlationFO}")
 
         if dimension is None or fracFrac is None or fracShift1 is None or fracShift2 is None\
                 or desiredComposition is None or fracLattice is None:
@@ -110,13 +110,13 @@ class Heredity(VarOperator):
             # make slabs from parents. each parent gives two slubs: good one and bad one.
             # good one is supposed to have better local order
             if fracShift1 is None:
-                child_good1, child_bad1, order_good1, order_bad1 = self._makeRandomSlab(system1, dimension, 0, fracFrac)
+                child_good1, child_bad1, order_good1, order_bad1 = self._makeRandomSlab(system1['structure'], dimension, 0, fracFrac)
             else:
-                child_good1, child_bad1, order_good1, order_bad1 = make_slab(system1, dimension, 0, fracFrac, fracShift1)
+                child_good1, child_bad1, order_good1, order_bad1 = make_slab(system1['structure'], dimension, 0, fracFrac, fracShift1)
             if fracShift2 is None:
-                child_good2, child_bad2, order_good2, order_bad2 = self._makeRandomSlab(system2, dimension, fracFrac, 1)
+                child_good2, child_bad2, order_good2, order_bad2 = self._makeRandomSlab(system2['structure'], dimension, fracFrac, 1)
             else:
-                child_good2, child_bad2, order_good2, order_bad2 = make_slab(system2, dimension, fracFrac, 1, fracShift2)
+                child_good2, child_bad2, order_good2, order_bad2 = make_slab(system2['structure'], dimension, fracFrac, 1, fracShift2)
 
             # child_good and child_bad are lists of molecules
             child_good = child_good1 + child_good2
@@ -136,12 +136,12 @@ class Heredity(VarOperator):
             # calculate total composition of molecules in good_child
             composition = np.zeros(len(self.compositionSpace.symbols), dtype = float)
             for molecule in child_good:
-                composition += self.compositionSpace.numIons(molecule.composition)
+                composition += self.compositionSpace.numIons(composition = molecule.composition)
 
             # determine desired composition of ofspring structure. this function is nondeterministic.
             if desiredComposition is None:
                 desiredComposition = self.compositionSpace.findDesiredComposition(
-                    system1.composition, system2.composition, composition)[0]
+                    system1['structure'].composition, system2['structure'].composition, composition)[0]
 
             if desiredComposition is None:
                 attempts_left -= 1
@@ -151,14 +151,14 @@ class Heredity(VarOperator):
             if fracLattice is None:
                 fracLattice = np.random.rand()
 
-            temp_potLat = fracLattice * system1.get_cell() + (1 - fracLattice) * system2.get_cell()
+            temp_potLat = fracLattice * system1['structure'].get_cell() + (1 - fracLattice) * system2['structure'].get_cell()
             volLat = np.linalg.det(temp_potLat)
             if volLat < 0:
                 temp_potLat = -1 * temp_potLat
 
             # scale the lattice to the volume we assume it approximately to be
-            if system1.get_chemical_formula() == system2.get_chemical_formula():
-                latVol = system1.get_volume() * fracFrac + system1.get_volume() * (1 - fracFrac)
+            if system1['structure'].get_chemical_formula() == system2['structure'].get_chemical_formula():
+                latVol = system1['structure'].get_volume() * fracFrac + system2['structure'].get_volume() * (1 - fracFrac)
             else:
                 # latVol = np.dot(desiredComposition, self.config.calcVolume())
                 latVol = calcVolumeForComposition(
@@ -173,7 +173,7 @@ class Heredity(VarOperator):
                 current = composition[molIndex]
                 desired = desiredComposition[molIndex]
                 if current > desired:
-                    composition -= self.compositionSpace.numIons(molecule.composition)
+                    composition -= self.compositionSpace.numIons(composition = molecule.composition)
                 else:
                     child_good_new.append(molecule)
             child_good = child_good_new
@@ -213,11 +213,11 @@ class Heredity(VarOperator):
                     logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
 
             if child_good.isGoodSystem() and self.compositionSpace.isGoodComposition(child_good.composition):
-                crystal = child_good
+                crystal = {'structure': child_good}
                 self.pool.assignID(crystal)
-                crystal.howCome = self.__class__.__name__
-                crystal.parent = str(system1.ID) + ' ' + str(system2.ID)
-                logger.info(f"Structure {crystal.ID} created parents {system1.ID} and {system2.ID}")
+                crystal['howCome'] = self.__class__.__name__
+                crystal['parent'] = str(system1['ID']) + ' ' + str(system2['ID'])
+                logger.info(f"Structure {crystal['ID']} created parents {system1['ID']} and {system2['ID']}")
                 return (crystal,)
 
             attempts_left -= 1

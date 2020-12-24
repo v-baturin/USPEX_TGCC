@@ -8,7 +8,7 @@ Class handling output
 """
 
 import logging
-from copy import copy
+from copy import copy, deepcopy
 
 from .Presets import presetOutput
 from .NoRepresentation import NoRepresentation
@@ -47,9 +47,9 @@ class Output(object):
 
     def handleSystem(self, system):
         try:
-            ID = system.ID
-            system = copy(system)
-            system.clean()
+            ID = system['ID']
+            system = deepcopy(system)
+            # system.clean()
             if ID in self.systems:
                 self.systems[ID].append(system)
             else:

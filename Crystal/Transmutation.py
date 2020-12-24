@@ -29,26 +29,26 @@ class Transmutation(VarOperator):
 
     def __call__(self, system) -> tuple:
 
-        logger.debug(f'Transmutation: system {system.ID}, correlation coefficient {self.correlationFO}')
+        logger.debug(f"Transmutation: system {system['ID']}, correlation coefficient {self.correlationFO}")
         crystal_tuple = self.transmutation(system)
         return crystal_tuple
 
     def transmutation(self, system):
         # Initialize for creation of possible transmutation list
         # Each transmutation has the form of a list [index, 'molSymbol']
-        indices = list(range(0, len(system.molecules)))
-        transmutations = [ [i, j] for i in indices for j in self.compositionSpace.symbols if system.molSymbol[i] != j ]
+        indices = list(range(0, len(system['structure'].molecules)))
+        transmutations = [ [i, j] for i in indices for j in self.compositionSpace.symbols if system['structure'].molSymbol[i] != j ]
 
         # Here we apply specificTrans constraint, if such is present.
         if len(self.specificTrans)>0:
-            transmutations = [i for i in transmutations if {system.molSymbol[i[0]], i[1]} in self.specificTrans]
+            transmutations = [i for i in transmutations if {system['structure'].molSymbol[i[0]], i[1]} in self.specificTrans]
 
         while True:
 
             atLeastOneTransmutation = False
 
             # Create a work copy of molecules in our system
-            attempted_structure = system.molecules
+            attempted_structure = system['structure'].molecules
 
             # It's boring to transmute molecules just one time. Let's do it from 1 to 'howManyTrans' times! Default howManyTrans is 2.
             for i in list(range(1, np.random.randint(1, self.howManyTrans) + 1)):
@@ -57,7 +57,7 @@ class Transmutation(VarOperator):
                     if atLeastOneTransmutation:
                         break
                     else:
-                        logger.info(f"Transmutation failed on {system.ID}: exhausted possible transmutations. "
+                        logger.info(f"Transmutation failed on {system['ID']}: exhausted possible transmutations. "
                                     f"This error may also indicate an attempt to apply transmutation to a structure"
                                     f" with a single unique molecule/atom type.")
                         raise VOFailed
@@ -69,11 +69,11 @@ class Transmutation(VarOperator):
                 molecular_geometric_center = attempted_structure[transmute[0]].get_center_of_mass(scaled=True)
 
                 try:
-                    target = self.systemFactory(molecules=attempted_structure, cell=system.cell,
+                    target = self.systemFactory(molecules=attempted_structure, cell=system['structure'].cell,
                                                 optimizeLattice = True, **self.config)
 
                     molecule_reference = self.systemFactory.fromDICT(self.compositionSpace.molecules[transmute[1]])
-                    molecule_reference.set_cell(system.cell)
+                    molecule_reference.set_cell(system['structure'].cell)
                     molecule_reference.rotate((360 * np.random.random_sample()), 'z')
                     theta = np.arcsin(np.sqrt(np.random.random_sample())) * 180 / np.pi
                     if np.random.randint(2):
@@ -90,10 +90,10 @@ class Transmutation(VarOperator):
                     target.extend(molecule_reference)
 
                 except KeyError:
-                    target = self.systemFactory(molecules=attempted_structure, cell=system.cell,
+                    target = self.systemFactory(molecules=attempted_structure, cell=system['structure'].cell,
                                                 optimizeLattice=True, **self.config)
                     target.removeMolecule(transmute[0])
-                    target.extend(self.systemFactory(symbols=[transmute[1]], cell=system.cell,
+                    target.extend(self.systemFactory(symbols=[transmute[1]], cell=system['structure'].cell,
                                                      scaled_positions=[molecular_geometric_center]))
 
                 atLeastOneTransmutation = True
@@ -122,9 +122,10 @@ class Transmutation(VarOperator):
                     logger.debug(f'Incorrect cellVolume specified in input parameters: {cellVolume}.')
 
             if target.isGoodSystem():
-                target.howCome = self.__class__.__name__
+                target = {'structure': target}
+                target['howCome'] = self.__class__.__name__
                 self.pool.assignID(target)
-                target.parent = str(system.ID)
-                logger.info(f"Structure {target.ID} formed by transmutation from {target.parent}")
+                target['parent'] = str(system['ID'])
+                logger.info(f"Structure {target['ID']} formed by transmutation from {target['parent']}")
                 return target,
 

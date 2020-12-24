@@ -64,8 +64,8 @@ class Twinning(VarOperator):
         order = []
         enthalpy = []
         for system in population:
-            order.append(system.averageOrder)
-            enthalpy.append(system.enthalpy)
+            order.append(system['structure'].averageOrder)
+            enthalpy.append(system['structure'].enthalpy)
         self.correlation_coefficient = np.corrcoef(order, enthalpy)[0, 1]
         if np.isnan(self.correlation_coefficient):
             self.correlation_coefficient = None
@@ -73,7 +73,9 @@ class Twinning(VarOperator):
     def __call__(self, parent):
 
         # Step 1. Select twinning mode: mirroring, rotation axis or inversion
-        logger.debug(f"Structure {parent.ID} is going to be a parent")
+        ID = parent['ID']
+        parent = parent['structure']
+        logger.debug(f"Structure {ID} is going to be a parent")
         self.modes = []
         self.used_shifts = {'mirroring': [],
                             'axis': [],
@@ -103,7 +105,18 @@ class Twinning(VarOperator):
                 if mode in ['mirroring','axis']:
                     # Orthogonalize cell
                     lattice = self.offspring.cell
-                    lattice[2][0:2] = 0.0, 0.0
+                    if self.twin_plane_direction == 'x':
+                        if not np.isclose(lattice[0, 0], 0, atol=0.5):
+                            lattice[0][1] = 0.0
+                            lattice[0][2] = 0.0
+                    elif self.twin_plane_direction == 'y':
+                        if not np.isclose(lattice[1, 1], 0, atol=0.5):
+                            lattice[1][0] = 0.0
+                            lattice[1][2] = 0.0
+                    elif self.twin_plane_direction == 'z':
+                        if not np.isclose(lattice[2, 2], 0, atol=0.5):
+                            lattice[2][0] = 0.0
+                            lattice[2][1] = 0.0
                     self.offspring.set_cell(lattice)
                 self.molecules = self.offspring.molecules
                 self.offspring = []
@@ -254,16 +267,16 @@ class Twinning(VarOperator):
                             raise VOFailed
                         else:
                             continue
-                    final_structure = self.offspring
+                    final_structure = {'structure': self.offspring}
                     self.pool.assignID(final_structure)
-                    final_structure.howCome = self.__class__.__name__
-                    final_structure.parent = str(parent.ID)
-                    logger.info(f"Structure {final_structure.ID} created via {mode} from {parent.ID} parent")
+                    final_structure['howCome'] = self.__class__.__name__
+                    final_structure['parent'] = str(ID)
+                    logger.info(f"Structure {final_structure['ID']} created via {mode} from {ID} parent")
                     return (final_structure,)
                 else:
-                    logger.debug(f"Failed generate structure via {mode} from {parent.ID} parent")
+                    logger.debug(f"Failed generate structure via {mode} from {ID} parent")
             except TwinningException:
-                logger.debug(f"Failed generate structure via {mode} from {parent.ID} parent")
+                logger.debug(f"Failed generate structure via {mode} from {ID} parent")
                 continue
 
         raise VOFailed

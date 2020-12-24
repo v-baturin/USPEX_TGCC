@@ -1,41 +1,41 @@
-import json
-from ast import literal_eval
-from pprint import pformat
-from os.path import join, expanduser, exists
+from os.path import join, expanduser, exists, dirname
+from os import makedirs
 
-FILENAME = join(expanduser('~'), '.uspex-again.py')
+from .InputParser import read, write
+
+
+FILENAME = join(expanduser('~'), '.config/uspex-again/presets.uspex')
+makedirs(dirname(FILENAME), exist_ok=True)
+
 
 if not exists(FILENAME):
-    presetFitness = {
-        'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionBlocks',), 'enthalpy'))
-    }
-
-    presetOutput = {
-        'CrystalFixComp': {
-            'columns': [
-                ('enthalpy', 'Enthalpy (eV)'),
-                ('volume', 'Volume (A^3)'),
-                ('symmetry', 'SYMMETRY (N)')
-            ]
+    definitions = {
+        'presetFitness': {
+            'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', 'compositionSpace.numBlocks',  'enthalpy'))
         },
-        'CrystalVarComp': {
-            'columns': [
-                ('enthalpy', 'Enthalpy (eV)'),
-                ('volume', 'Volume (A^3)'),
-                ('symmetry', 'SYMMETRY (N)'),
-                ('enthalpyCCH', 'Enthalpy per Block above CCH (eV)')
-            ]
+
+        'presetOutput': {
+            'CrystalFixComp': {
+                'columns': [
+                    ('enthalpy', 'Enthalpy (eV)'),
+                    ('volume', 'Volume (A^3)'),
+                    ('symmetry', 'SYMMETRY (N)')
+                ]
+            },
+            'CrystalVarComp': {
+                'columns': [
+                    ('enthalpy', 'Enthalpy (eV)'),
+                    ('volume', 'Volume (A^3)'),
+                    ('symmetry', 'SYMMETRY (N)'),
+                    ('enthalpyCCH', 'Enthalpy per Block above CCH (eV)')
+                ]
+            }
         }
     }
 
-    content = {
-        'presetFitness' : pformat(presetFitness, indent=4),
-        'presetOutput' : pformat(presetOutput, indent=4)
-    }
-    with open(FILENAME, 'wt') as f:
-        json.dump(content, f, indent=4)
+    write(FILENAME, definitions)
 else:
-    with open(FILENAME, 'rt') as f:
-        content = json.load(f)
-    presetFitness = literal_eval(content['presetFitness'])
-    presetOutput = literal_eval(content['presetOutput'])
+    definitions = read(FILENAME)
+
+presetFitness = definitions['presetFitness']
+presetOutput = definitions['presetOutput']

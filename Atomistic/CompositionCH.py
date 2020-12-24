@@ -13,7 +13,8 @@ class CompositionCH(ConvexHull):
         pool.update(self.systems)
         self.compositionSpace = comositionSpace
         super().__init__(Fitness(pool, {'compositionSpace': self.compositionSpace}).calcFitness(('getRelativeCHSpace',
-                                                                     ('compositionBlocks', ), 'enthalpy')))
+                                                                                                 'compositionSpace.numBlocks',
+                                                                                                 'enthalpy')))
 
     @property
     def lower_bound(self):
@@ -36,4 +37,5 @@ class CompositionCH(ConvexHull):
         pool = SystemPool()
         pool.update(self.systems)
         super().__init__(Fitness(pool, {'compositionSpace': self.compositionSpace}).calcFitness(('getRelativeCHSpace',
-                                                                     ('compositionBlocks', ), 'enthalpy')))
+                                                                                                 'compositionSpace.numBlocks',
+                                                                                                 'enthalpy')))

@@ -32,11 +32,11 @@ class Autofrac(object):
 
         self.weightsLast = Counter()
         for system in population:
-            self.weightsLast[system.howCome] += 1
+            self.weightsLast[system['howCome']] += 1
         self.weightsBest = Counter()
         for system in best:
             if system not in newFoundSystems:
-                self.weightsBest[system.howCome] += 1
+                self.weightsBest[system['howCome']] += 1
 
         self.initFracs = {}
         self.minFracs = {}
