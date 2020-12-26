@@ -5,41 +5,50 @@ from scipy.spatial.transform import Rotation
 class Transformation:
     # not finished yet
     # Is represented in direct coordinates.
-    # Can be imported from fractional when created, and exported to it while applied
 
-    def __init__(self, rotationMatrix, transitionVector, rotationVector, rotationAngle):
-        self.rotationMatrix = rotationMatrix
-        self.transitVector = transitionVector
-        self.rotationVector = rotationVector
-        self.rotationAxe = rotationAngle
+    def __init__(self, rot_matrix, trans_vec, rot_vec, rot_angle):
+        self.rot_matrix = rot_matrix
+        self.trans_vec = trans_vec
+        self.rot_vec = rot_vec
+        self.rot_angle = rot_angle
 
-    def fractional_copy(self, cell):
+    '''def fractional_copy(self, cell):
         # ??
-        return Transformation.initFromMatrix(cell * self.rotationMatrix * cell ** -1, self.rotationVector * cell)
+        return Transformation.initFromMatrix(cell * self.rot_matrix * cell ** -1, self.rot_vec * cell)'''
 
-    def transition(self, cluster_coord):
-        return cluster_coord + self.transitVector
+    def transition(self, struc_coord, cell):
+        return struc_coord + cell * self.trans_vec
 
-    def rotation(self, cluster_coord, cell, coordinates='direct'):
-        pass
-
-    @staticmethod
-    def move_origin(cluster_coord, cell, coordinates='direct', destination='center'):
-        pass
-
-    def transform(self, cluster_coord, cell):
-        pass
+    def rotation(self, struc_coord, cell):
+        return cell * self.rot_matrix * (cell ** -1) * struc_coord
 
     @staticmethod
-    def initFromMatrix(rotationMatrix, transitionVector, coordinates='direct', cellVectors=[]):
-        # coordinates = 'direct' or 'fractional'
-        if coordinates == 'direct':
-            rotation_sc = Rotation.from_matrix(rotationMatrix)
-            rot_vect_angle = rotation_sc.as_rotvec()
-            rotationAngle = np.dot(rot_vect_angle, rot_vect_angle) ** 0.5
-            rotationVector = rot_vect_angle / rotationAngle
-            return Transformation(rotationMatrix, transitionVector, rotationVector, rotationAngle)
+    def move_origin(struc_coord, direction='to_center'):
+        if direction == 'to_center':
+            return struc_coord - np.array([0.5, 0.5, 0.5])
+        elif direction == 'to_corner':
+            return struc_coord + np.array([0.5, 0.5, 0.5])
+
+    def transform(self, struc_coord, cell):
+        # methods, that "know" about cell: transform, transition, rotation
+        # struc_coord is fractional (no direct yet)
+        struc_coord_transformed = Transformation.move_origin(struc_coord, direction='to_center')
+        struc_coord_transformed = self.rotation(struc_coord_transformed, cell)
+        struc_coord_transformed = self.transition(struc_coord_transformed, cell)
+        struc_coord_transformed = Transformation.move_origin(struc_coord_transformed, direction='to_corner')
+        return struc_coord_transformed
 
     @staticmethod
-    def initFromAngle(rotationVector, rotationAxe, transitionVector, coordinates='direct'):
-        pass
+    def from_matrix(rot_matrix, trans_vec):
+        # Transformation attributes are in 'direct' format (only!)
+        rotation_sc = Rotation.from_matrix(rot_matrix)
+        rot_vect_angle = rotation_sc.as_rotvec()
+        rot_angle = np.dot(rot_vect_angle, rot_vect_angle) ** 0.5
+        rot_vec = rot_vect_angle / rot_angle
+        return Transformation(rot_matrix, trans_vec, rot_vec, rot_angle)
+
+    @staticmethod
+    def from_angle(rot_vec, rot_angle, trans_vec):
+        rotation_sc = Rotation.from_rotvec(rot_angle * rot_vec)
+        rot_matrix = rotation_sc.as_matrix()
+        return Transformation(rot_matrix, trans_vec, rot_vec, rot_angle)
