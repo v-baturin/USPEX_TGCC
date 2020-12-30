@@ -13,7 +13,8 @@ class VariationOperators(object):
     """
     Class describing a collection of types of variation operators.
     """
-    def __init__(self, hybridizationTypes: List[type], mutationTypes: List[type], creationTypes: List[type]):
+    def __init__(self, hybridizationTypes: List[type], mutationTypes: List[type],
+                 creationTypes: List[type], seedsType: type = None):
         """
         Initializes the class.
 
@@ -23,7 +24,11 @@ class VariationOperators(object):
         :param mutationTypes: list of types of mutation operators.
         :type creationTypes: list
         :param creationTypes: list of types of mutation operators.
+        :type seedsType: type
+        :param seedsType: type of Seeds operator.
+
         """
         self.hybridizationTypes = hybridizationTypes
         self.mutationTypes = mutationTypes
         self.creationTypes = creationTypes
+        self.seedsType = seedsType

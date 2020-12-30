@@ -21,7 +21,7 @@ from ...Atomistic.mol.read_molecule import read_molecule
 from ...SystemPool import SystemPool
 from ...Atomistic.Crystal import Crystal
 from ...Atomistic.CompositionSpace import CompositionSpace
-from ..Seeds import Seeds, VOFailed
+from ..Seeds import Seeds
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -35,21 +35,7 @@ class Seeds_Test(unittest.TestCase):
         seeds_folder = os.path.join(HOMEPATH, 'Seeds/MgAl2O4')
         seeds = Seeds(Crystal, config, pool, {'compositionSpace' : compositionSpace},
                       generations=[0], seedsFolders=[seeds_folder])
-        seeds.prepare()
-        count = 0
-        while count < 1:
-            try:
-                offsprings = seeds()
-                count += len(offsprings)
-            except VOFailed:
-                pass
-
-        seeds.standby()
-        # population = []
-        # population.append(offsprings[0].toDICT())
-        # with open(f'{HOMEPATH}/atomic_structures_fixed', 'wt') as f:
-        #     f.write(json.dumps(population))
-
+        offsprings = seeds()
 
     def test_molecular_variable(self):
         mol_1 = read_molecule(f'{HOMEPATH}/MOL_1')
@@ -68,17 +54,4 @@ class Seeds_Test(unittest.TestCase):
         seeds_folder = os.path.join(HOMEPATH, 'Seeds/CNHO')
         seeds = Seeds(Crystal, config, pool, {'compositionSpace' : compositionSpace},
                       generations=[0], seedsFolders=[seeds_folder])
-        seeds.prepare()
-        count = 0
-        while count < 1:
-            try:
-                offsprings = seeds()
-                count += len(offsprings)
-            except VOFailed:
-                pass
-
-        seeds.standby()
-        # population = []
-        # population.append(offsprings[0].toDICT())
-        # with open(f'{HOMEPATH}/molecular_structures_variable', 'wt') as f:
-        #     f.write(json.dumps(population))
+        offsprings = seeds()

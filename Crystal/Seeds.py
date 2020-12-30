@@ -19,10 +19,8 @@ from ase.io.vasp import read_vasp
 from time import time
 from typing import List
 
-from ..VarOperator import VarOperator, VOFailed
 
-
-class Seeds(VarOperator):
+class Seeds(object):
 
     def __init__(self, systemFactory, config, pool, utilities, generations:list=None, seedsFolders:list=None):
         '''
@@ -31,52 +29,46 @@ class Seeds(VarOperator):
         :param generations:
         :param seedsFolders: default Seeds/POSCAR
         '''
-        super(Seeds, self).__init__(systemFactory, config, pool, utilities)
+        self.systemFactory = systemFactory
+        self.config = config
+        self.pool = pool
         self.generations = generations if generations is not None else []
         self.seedsFolders = seedsFolders if seedsFolders is not None else []
-        self.active = False
         self.currentGeneration = 0
 
-    def prepare(self):
-        if self.active:
-            logger.debug('Warning: Seeds was not deactivated properly.')
-        self.active = True
-
-    def standby(self):
-        if self.active:
-            logger.debug(f'Warning: Seeds was not called in generation {self.currentGeneration}.')
-            self.active = False
-        self.currentGeneration += 1
-
     def __call__(self):
-        if not self.active:
-            logger.debug('Warning: Seeds was already deactivated for this generation')
-            raise VOFailed
-
-        self.active = False
 
         if self.currentGeneration not in self.generations:
             logger.debug(f'No Seeds specified for generation {self.currentGeneration}.')
-            raise VOFailed
+            self.currentGeneration += 1
+            return ()
 
         ind = self.generations.index(self.currentGeneration)
         seedsFolder = self.seedsFolders[ind]
 
         if not os.path.isdir(seedsFolder):
-            raise VOFailed
+            logger.debug(f"Seeds folder {seedsFolder} doesn't exist.")
+            self.currentGeneration += 1
+            return ()
 
         seeds = []
 
         for filename in os.listdir(seedsFolder):
             filename = os.path.join(seedsFolder, filename)
             if os.path.isfile(filename):
-                with open(filename, "rt") as f:
-                    try:
+                try:
+                    with open(filename, "rt") as f:
                         system_dict = toml.load(f)
+                    system = self.systemFactory.fromDICT(system_dict, old=False)
+                    system.config = self.config
+                except:
+                    try:
+                        tmp = read_vasp(filename)
+                        system = self.systemFactory(symbols = tmp.get_chemical_symbols(),
+                                                    cell = tmp.get_cell(),
+                                                    positions = tmp.get_positions(), **self.config)
                     except:
                         continue
-                system = self.systemFactory.fromDICT(system_dict, old=False)
-                system.config = self.config
                 if system.isGoodSystem():
                     system = {'structure': system}
                     seeds.append(system)
@@ -87,4 +79,5 @@ class Seeds(VarOperator):
                 else:
                     logger.info(f"Structure created from seed {filename} violates constraints.")
 
+        self.currentGeneration += 1
         return tuple(seeds)

@@ -87,6 +87,14 @@ class Target(object):
             params = kwargs[name] if name in kwargs else {}
             self.creations.append(creationType(self.systemType, self.config, self.pool, self.utilities, **params))
 
+        seedsType = targetTypes.variationOperators.seedsType
+        if seedsType is not None:
+            name = seedsType.__name__[0].lower() + seedsType.__name__[1:]
+            params = kwargs[name] if name in kwargs else {}
+            self.seeds = seedsType(self.systemType, self.config, self.pool, self.utilities, **params)
+        else:
+            self.seeds = None
+
         self.variationOperators = self.hybridizations + self.mutations + self.creations
 
     def __copy__(self):
