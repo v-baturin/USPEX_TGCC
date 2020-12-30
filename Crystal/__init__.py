@@ -9,4 +9,5 @@ from .Transmutation import Transmutation
 from .Seeds import Seeds
 variationOperators = VariationOperators(hybridizationTypes = [Heredity],
                                         mutationTypes = [Twinning, Softmodemutation, Permutation, Transmutation],
-                                        creationTypes = [Seeds, RandTop, RandSym])
+                                        creationTypes = [RandTop, RandSym],
+                                        seedsType = Seeds)

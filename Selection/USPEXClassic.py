@@ -137,6 +137,10 @@ class USPEXClassic(object):
             creation.standby()
 
         fitness.payPenalties(actualParents, target.pool.uniqueSystems)
+
+        if target.seeds is not None:
+            population.extend(target.seeds())
+
         return population, (autofrac.weightsLast, autofrac.weightsBest)
 
 def determineMostDiverse(population : list, howManyDiverse: int, tolerance: float):
