@@ -9,7 +9,7 @@ variables:
   DOCKER_DRIVER: overlay2
 
 unittesting_source:
-  image: $CI_REGISTRY/uspex_python/uspex_again:master
+  image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: unittesting_source
   script:
     - nosetests -v .
@@ -29,7 +29,7 @@ build:
     expire_in: 1 mos 1 day
 
 unittesting_binaries:
-  image: $CI_REGISTRY/uspex_python/uspex_again:master
+  image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: unittesting_binaries
   script:
     - cp -r ./onlytests/* ./Src/USPEX/Common
