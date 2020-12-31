@@ -27,37 +27,37 @@ from ..RandSym import RandSym, VOFailed
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
 
 
-class RandSym_Test(unittest.TestCase):
-    def test_atomic_fixed(self):
-        config = {'externalPressure' : 100}
-        compositionSpace = CompositionSpace(symbols = ['Mg', 'Al', 'O'], blocks = [[4, 8, 16]], range = [[1, 1]])
-        pool = SystemPool()
-        randtop = RandSym(Crystal, config, pool, {'compositionSpace' : compositionSpace})
-        randtop.prepare()
-        count = 0
-        while count < 1:
-            try:
-                offsprings = randtop()
-                count += len(offsprings)
-            except VOFailed:
-                pass
-
-        randtop.standby()
-
-    def test_atomic_variable(self):
-        config = {}
-        compositionSpace = CompositionSpace(symbols = ['Mo', 'B'], blocks = [[1, 0], [0, 1]], range = [[0, 18], [0, 18]])
-        pool = SystemPool()
-        randtop = RandSym(Crystal, config, pool, {'compositionSpace' : compositionSpace})
-        randtop.prepare()
-        count = 0
-        while count < 1:
-            try:
-                offsprings = randtop()
-                count += len(offsprings)
-            except VOFailed:
-                pass
-        randtop.standby()
+# class RandSym_Test(unittest.TestCase):
+#     def test_atomic_fixed(self):
+#         config = {'externalPressure' : 100}
+#         compositionSpace = CompositionSpace(symbols = ['Mg', 'Al', 'O'], blocks = [[4, 8, 16]], range = [[1, 1]])
+#         pool = SystemPool()
+#         randtop = RandSym(Crystal, config, pool, {'compositionSpace' : compositionSpace})
+#         randtop.prepare()
+#         count = 0
+#         while count < 1:
+#             try:
+#                 offsprings = randtop()
+#                 count += len(offsprings)
+#             except VOFailed:
+#                 pass
+#
+#         randtop.standby()
+#
+#     def test_atomic_variable(self):
+#         config = {}
+#         compositionSpace = CompositionSpace(symbols = ['Mo', 'B'], blocks = [[1, 0], [0, 1]], range = [[0, 18], [0, 18]])
+#         pool = SystemPool()
+#         randtop = RandSym(Crystal, config, pool, {'compositionSpace' : compositionSpace})
+#         randtop.prepare()
+#         count = 0
+#         while count < 1:
+#             try:
+#                 offsprings = randtop()
+#                 count += len(offsprings)
+#             except VOFailed:
+#                 pass
+#         randtop.standby()
     #
     # def test_molecular_fixed(self):
     #     mol = read_molecule(f'{HOMEPATH}/MOL_glycine')
