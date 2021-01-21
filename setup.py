@@ -43,6 +43,7 @@ extensions = [
     Extension("USPEX.Common.Atomistic.Crystal", ["Atomistic/Crystal.py"]),
     Extension("USPEX.Common.Atomistic.Element", ["Atomistic/Element.py"]),
     Extension("USPEX.Common.Atomistic.GCH", ["Atomistic/GCH.py"]),
+    Extension("USPEX.Common.Atomistic.RadialDistributionUtility", ["Atomistic/RadialDistributionUtility.py"]),
     Extension("USPEX.Common.Atomistic.optLattice", ["Atomistic/optLattice.py"]),
     Extension("USPEX.Common.Atomistic.Fingerprints.cosine_distance", ["Atomistic/Fingerprints/cosine_distance.py"]),
     Extension("USPEX.Common.Atomistic.Fingerprints.fingerprint", ["Atomistic/Fingerprints/fingerprint.py"]),
