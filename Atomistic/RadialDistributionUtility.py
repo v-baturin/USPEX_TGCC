@@ -42,7 +42,8 @@ class Fingerprint(Mapping):
     @property
     def order(self):
         # eq. 5 in CPC-2010
-        return np.sqrt(float(np.sum(self._weights[key] * np.sum(self._value[key] ** 2) for key in self._value.keys())))
+        return np.sqrt(np.sum(np.fromiter((self._weights[key] * np.sum(self._value[key] ** 2)
+                                           for key in self._value.keys()), dtype=float)))
 
     def __repr__(self):
         return self._value.__repr__()
