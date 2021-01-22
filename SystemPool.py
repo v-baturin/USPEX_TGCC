@@ -27,8 +27,6 @@ class SystemPool(object):
         For default implementation this list is empty.
     :ivar config:
         link to implementation of :class:`~USPEX.Common.Config.Config` interface.
-    :ivar best:
-        list of currently best known systems.
     :ivar uniqueSystems:
         list of all currently studied systems.
     """
@@ -62,8 +60,6 @@ class SystemPool(object):
         :param population: list of systems which allows to update our knowledge about target space.
         """
 
-        self.best = {}
-
         logger.info('Updating target: list of unique systems.')
         uniqueIDs = [system['ID'] for system in self.uniqueSystems]
         uniqueSystems = list(self.uniqueSystems)
@@ -92,31 +88,6 @@ class SystemPool(object):
                 newFoundSystems.append(system)
                 uniqueIDs.append(system['ID'])
         return newFoundSystems
-
-    def cleanDuplicates(self, population: list):
-        """
-        Method for cleaning duplicates.
-
-        :type population: list of :class:`~USPEX.Common.System.System` descendants
-        :param population: list of systems which allows to update our knowledge about target space.
-        """
-        logger.info('Looking for duplicates.')
-        cleanedPopulation = []
-        uniqueSystems = list(self.uniqueSystems)
-        for system in population:
-            logger.debug(f"checking if system {system['ID']} is new")
-            for ref_system in uniqueSystems + cleanedPopulation:
-                if system['structure'] == ref_system['structure']:
-                    logger.debug(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
-                    system['structure'].clean()
-                    system = ref_system
-                    break
-
-            if not system['isBad']:
-                cleanedPopulation.append(system)
-
-        population.clear()
-        population.extend(cleanedPopulation)
 
     def assignID(self, system):
         """

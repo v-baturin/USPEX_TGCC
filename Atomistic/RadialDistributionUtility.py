@@ -160,36 +160,48 @@ class RadialDistributionUtility(object):
         :return: structure quasientropy.
         """
 
-        # assert check1DArray(numIons, int)
-        structure = system['structure']
-        atomFing = self.atomFingerprints(system)
-        uniqueSymbols, inverse, numIons = np.unique(structure.get_chemical_symbols(),
-                                                    return_inverse=True,
-                                                    return_counts=True)
-        sQE = 0.0
-        weight = numIons / np.sum(numIons)
+        if not 'radialDistribitionUtility.quasientropy' in system:
+            structure = system['structure']
+            atomFing = self.atomFingerprints(system)
+            uniqueSymbols, inverse, numIons = np.unique(structure.get_chemical_symbols(),
+                                                        return_inverse=True,
+                                                        return_counts=True)
+            sQE = 0.0
+            weight = numIons / np.sum(numIons)
 
-        for i in range(numIons.shape[0]):
-            if numIons[i] > 1:
-                tmp = 0
-                indices = np.flatnonzero(inverse == i)
-                comb = list(combinations(indices, 2))
-                for j1, j2 in comb:
-                    tmp_fing1 = atomFing[j1]
-                    tmp_fing2 = atomFing[j2]
+            for i in range(numIons.shape[0]):
+                if numIons[i] > 1:
+                    tmp = 0
+                    indices = np.flatnonzero(inverse == i)
+                    comb = list(combinations(indices, 2))
+                    for j1, j2 in comb:
+                        tmp_fing1 = atomFing[j1]
+                        tmp_fing2 = atomFing[j2]
 
-                    dist = Fingerprint.cosine_distance(tmp_fing1, tmp_fing2)
+                        dist = Fingerprint.cosine_distance(tmp_fing1, tmp_fing2)
 
-                    '''
-                    if abs(dist - 1.0) < 0.000001:
-                        dist = 0.99999
-                    '''
+                        '''
+                        if abs(dist - 1.0) < 0.000001:
+                            dist = 0.99999
+                        '''
 
-                    tmp += (1 - dist) * np.log(1 - dist)
+                        tmp += (1 - dist) * np.log(1 - dist)
 
-                sQE += weight[i] * tmp / len(comb)
+                    sQE += weight[i] * tmp / len(comb)
+            system['radialDistribitionUtility.quasientropy'] = -sQE
+        return system['radialDistribitionUtility.quasientropy']
 
-        return -sQE
+    def clean(self, system):
+        if 'radialDistribitionUtility.structureFingerprint' in system:
+            del system['radialDistribitionUtility.structureFingerprint']
+        if 'radialDistribitionUtility.structureOrder' in system:
+            del system['radialDistribitionUtility.structureOrder']
+        if 'radialDistribitionUtility.atomFingerprints' in system:
+            del system['radialDistribitionUtility.atomFingerprints']
+        if 'radialDistribitionUtility.order' in system:
+            del system['radialDistribitionUtility.order']
+        if 'radialDistribitionUtility.quasientropy' in system:
+            del system['radialDistribitionUtility.quasientropy']
 
     def _calcFingerprint(self, system):
         """
