@@ -35,9 +35,6 @@ class AtomicStructure:
     def getCell(self):
         return copy(self.cell)
 
-    def getTransformedStructure(self):
-        pass
-
     @staticmethod
     def initFormFractionalCoordinates(atomTypes, coordinates, cell, **kwargs):
         return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, **kwargs)
@@ -84,15 +81,3 @@ class AtomicDisassembler:
         assert len(atomTypesNotYet) == len(coordinatesNotYet)
         assert len(coordinatesNotYet) == len(self.environment.getStructure())
         return {'molecules': molecules, 'cell': atomicStructure.getCell(), 'environment': copy(self.environment)}
-
-
-class AtomicInvariants:
-
-    def __init__(self):
-        pass
-
-    def getFingerprint(self):
-        pass
-
-    def __eq__(self, other):
-        pass
