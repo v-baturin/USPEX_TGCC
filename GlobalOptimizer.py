@@ -19,13 +19,16 @@ logger = logging.getLogger(__name__)
 class GlobalOptimizer(object):
     """
     Main purpose of this class is to generate new structures
-    that will be then optimized and selected best of them to the output.
+
+    :ivar best:
+        list of currently best known systems.
+
     """
 
     Fitness = None
     knownSelectionTypes = {}
 
-    def __init__(self, target: dict, selection: dict, fitness, stopFitness=None, output=None, **kwargs):
+    def __init__(self, target: dict, selection: dict, fitness, fingerprintUtility, stopFitness=None, **kwargs):
         """
         Initializes the class.
 
@@ -33,11 +36,10 @@ class GlobalOptimizer(object):
         :param target: name of target system and its parameters; obligatory
         :type selection: dict{type, params}
         :param selection: name of selection to launch and its parameters; obligatory
-        :type output: :class:`~USPEX.Common.Output.Output`
-        :param output: instance of class handling output.
         """
 
         self.target = Target(**target)
+        self.fingerprintUtility = self.target.utilities[fingerprintUtility]
 
         assert self.Fitness is not None
         self.fitness = self.Fitness(self.target.pool, self.target.utilities)
@@ -48,14 +50,12 @@ class GlobalOptimizer(object):
         self._isGoalReached = False
 
         self.selectionConfig = selection
-        self.createPopulation = self.knownSelectionTypes[selection['type']](**selection)
+        self.createPopulation = self.knownSelectionTypes[selection['type']](self.fingerprintUtility ,**selection)
 
         # List of structure recieved from update on this particular step
         self.population = None
         # List of new found structure on this particular step
         self.newStructures = None
-
-        self.output = output
 
     def __copy__(self):
         other = GlobalOptimizer.__new__(GlobalOptimizer)
@@ -72,7 +72,6 @@ class GlobalOptimizer(object):
         other.createPopulation = self.createPopulation
         other.population = copy(self.population)
         other.newStructures = copy(self.newStructures)
-        other.output = self.output
         return other
 
     def run(self):
@@ -86,12 +85,12 @@ class GlobalOptimizer(object):
 
     def update(self, population: list):
         """
-        Updates state of optimized structures and write current state of them into the output.
+        Updates state of optimized structures.
 
         :type population: list
         :param population: list of systems which allows to update our knowledge about target space.
         """
-        self.target.pool.cleanDuplicates(population)
+        self.cleanDuplicates(population)
         self.population = population
         self.newStructures = self.target.pool.newFoundSystems(population)
         self.target.pool.update(self.newStructures)
@@ -111,6 +110,28 @@ class GlobalOptimizer(object):
                         pass
                 if round(value, ndigits=3) <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
+
+    def cleanDuplicates(self, population: list):
+        """
+        Method for cleaning duplicates.
+
+        :type population: list of :class:`~USPEX.Common.System.System` descendants
+        :param population: list of systems which allows to update our knowledge about target space.
+        """
+        logger.info('Looking for duplicates.')
+        cleanedPopulation = []
+        for system in population:
+            for ref_system in list(self.target.pool.uniqueSystems) + cleanedPopulation:
+                if self.fingerprintUtility.equal(system, ref_system):
+                    logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
+                    self.fingerprintUtility.clean(system)
+                    system = ref_system
+                    break
+
+            if not system['isBad']:
+                cleanedPopulation.append(system)
+        population[:] = cleanedPopulation
+
 
     @property
     def isStable(self):
