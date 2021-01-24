@@ -4,7 +4,7 @@ class Slab:
 
     def __init__(self, indices, depths, transformation):
         self.indices = np.asarray(indices, dtype=int)
-        self.depths = np.array(depths, dtype=float)
+        self.depths = depths
         self.transformation = transformation
 
     @staticmethod
@@ -19,8 +19,9 @@ class Slab:
             coordinate = outputCell.cartesianToFractional(centerOfMassCoordinates)[axis]
             for j, upperBoundCoordinate in enumerate(coordinateBounds):
                 if coordinate <= upperBoundCoordinate:
-                    slabs[j][0].append(i)
-                    slabs[j][1].append(np.min((upperBoundCoordinate - coordinate, coordinate - coordinateBounds[j-1])))
+                    indices, depths = slabs[j]
+                    indices.append(i)
+                    depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - coordinateBounds[j-1])))
                     break
         return tuple(Slab(indices, depths, transformation) for indices, depths in slabs)
 
