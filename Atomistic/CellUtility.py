@@ -61,11 +61,11 @@ class Cell:
         pass
 
     @staticmethod
-    def initFromCellParameters(a, b, c, alpha, beta, gamma):
+    def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):
         va = np.array([a, 0, 0])
         vb = np.array([b*np.cos(gamma), b*np.sin(gamma), 0])
         cx = np.cos(beta)
         cy = (np.cos(alpha) - np.cos(gamma) * np.cos(beta)) / np.sin(gamma)
         cz = (1. - cx ** 2 - cy ** 2) ** 0.5
-        vc = np.array([cx, cy, cz])
-        return np.vstack((va, vb, vc))
+        vc = c * np.array([cx, cy, cz])
+        return Cell(np.vstack((va, vb, vc)), pbc)
