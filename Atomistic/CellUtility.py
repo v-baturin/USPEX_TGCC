@@ -3,11 +3,30 @@ import numpy as np
 
 class CellUtility:
 
-    def __init__(self):
-        pass
+    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None):
+        self._pbc = pbc
+        if cellVectors is not None:
+            self._cell = Cell(cellVectors, pbc)
+            self._volume = None
+            assert cellParameters is None and cellVolume is None
+        elif cellParameters is not None:
+            self._cell = Cell.initFromCellParameters(**cellParameters, pbc = pbc)
+            self._volume = None
+            assert cellVectors is None and cellVolume is None
+        elif cellVolume is not None:
+            self._cell = None
+            self._volume = cellVolume
+            assert cellVectors is None and cellParameters is None
+        else:
+            self._cell = None
+            self._volume = None
+            # calcVolumeForComposition(composition, **self.config)
 
     def getRandomCell(self):
         pass
+
+    def adjustCell(self, cell):
+        return self._cell if self._cell is not None else cell * np.power(self._volume / cell.getVolume(), 1.0 / 3.0)
 
     def getHybridCell(self, cell1, cell2):
         pass
@@ -35,7 +54,7 @@ class Cell:
         return a, b, c, alpha, beta, gamma
 
     def getVolume(self): 
-        return abs(np.dot(self._cellVectors[0], np.cross(self._cellVectors[1, :], self._cellVectors[2, :])))
+        return np.abs(np.linalg.det(self._cellVectors))
 
     def getAltitudes(self):
         volime = self.getVolume()
