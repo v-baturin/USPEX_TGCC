@@ -1,6 +1,8 @@
 import numpy as np
 from copy import copy
 
+from .Transformation import Transformation
+
 
 class AtomicStructure:
 
@@ -135,5 +137,5 @@ class AtomicDisassembler:
                 translation = displacements[inds]
                 rotation = np.array([0., 0., 0.])
                 atomicDisplacements = np.array([[0.,0.,0.]])
-            molecularDispacements.append((translation, rotation, atomicDisplacements))
+            molecularDispacements.append((Transformation.fromRotVector(rotation, translation), atomicDisplacements))
         return molecularDispacements

@@ -9,6 +9,9 @@ class Transformation:
         self.transVec = trans_vec
         self.rotVec = rot_vec
 
+    def __neg__(self):
+        return Transformation(-self.rotMatrix, -self.transVec, -self.rotVec)
+
     def _transition(self, struc_coord):
         return struc_coord + self.transVec
 

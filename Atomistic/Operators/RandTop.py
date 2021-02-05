@@ -114,7 +114,7 @@ class RandTop:
                                             else:
                                                 self.arxiv[name] = [all_coordinates]
                                             return ({'molecules' : molecules, 'cell': cell},)
-        raise RuntimeError("Operator failed.")
+        raise RuntimeError("RandTop failed.")
 
 
 def randomPermutation(array, enumerate = False, maxSize = None):
