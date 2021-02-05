@@ -20,16 +20,23 @@ with open(f'{HOMEPATH}/idealnets.json', 'rt') as f:
     TOPOLOGICAL_NETS = pandas.DataFrame.from_dict(json.load(f)).T
 
 MAX_SUPERSIZE = 4
+ATTEMPTS_ROTATION = 100
+ATTEMPTS_POINT_GROUP = 10
 
 
 class RandTop:
-    def __init__(self, cellUtility, compositionSpace, radialDistributionUtility,
-                 supercells: list = None, maxSupersize: int = MAX_SUPERSIZE):
+    def __init__(self, cellUtility, compositionSpace, simpleMoleculeUtility, ionDistances, conditions,
+                 supercells: list = None, maxSupersize: int = MAX_SUPERSIZE,
+                 attemptsRotation: int = ATTEMPTS_ROTATION, attemptsPointGroup: int = ATTEMPTS_POINT_GROUP):
         self.cellUtility = cellUtility
         self.compositionSpace = compositionSpace
-        self.radialDistributionUtility = radialDistributionUtility
+        self.simpleMoleculeUtility = simpleMoleculeUtility
+        self.ionDistances = ionDistances
+        self.conditions = conditions
         self.supercells = supercells
         self.maxSupersize = maxSupersize
+        self.attemptsRotation = attemptsRotation
+        self.attemptsPointGroup = attemptsPointGroup
         self.arxiv = {}
 
     def __call__(self, *args, **kwargs):
@@ -86,23 +93,27 @@ class RandTop:
                                     for ind in zeroInds:
                                         coordinates.insert(ind, [])
                                         operations.insert(ind, [])
-                                    all_coordinates = np.vstack([*itertools.chain(*coordinates)])
-                                    if name in self.arxiv:
-                                        for arxivCoordinates in self.arxiv[name]:
-                                            if (all_coordinates.shape == arxivCoordinates.shape) and \
-                                                    np.allclose(all_coordinates, arxivCoordinates):
-                                                continue
-                                    if name in self.arxiv:
-                                        self.arxiv[name].append(all_coordinates)
-                                    else:
-                                        self.arxiv[name] = [all_coordinates]
 
                                     cell = self.cellUtility.adjustCell(cell)
                                     operations = dict(zip(symbols, operations))
+                                    coordinates = dict(zip(symbols, coordinates))
 
-                                    molecules = self.compositionSpace.populateStructure(cell, operations)
-
-                                    return ({'molecules' : molecules, 'cell': cell},)
+                                    for i in range(self.attemptsRotation):
+                                        molecules = self.compositionSpace.populateStructure(cell, coordinates, operations)
+                                        atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
+                                        minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                                        if atomDistances >= minDistMatrix:
+                                            all_coordinates = np.vstack([*itertools.chain(*coordinates)])
+                                            if name in self.arxiv:
+                                                for arxivCoordinates in self.arxiv[name]:
+                                                    if (all_coordinates.shape == arxivCoordinates.shape) and \
+                                                            np.allclose(all_coordinates, arxivCoordinates):
+                                                        continue
+                                            if name in self.arxiv:
+                                                self.arxiv[name].append(all_coordinates)
+                                            else:
+                                                self.arxiv[name] = [all_coordinates]
+                                            return ({'molecules' : molecules, 'cell': cell},)
         raise RuntimeError("Operator failed.")
 
 

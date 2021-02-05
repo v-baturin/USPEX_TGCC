@@ -5,8 +5,8 @@ logger = logging.getLogger(__name__)
 import numpy as np
 from collections import Counter
 from typing import Dict, Union
-from copy import copy
 
+from .Transformation import Transformation
 
 class Composition(dict):
     """
@@ -284,54 +284,22 @@ class CompositionSpace(object):
 
         return numIons, numBlocks
 
-    def populateStructure(self, cell, coordinates, operations, attemptsRotation, attemptsPointGroup):
-        symbols = list(operations.keys())
+    def populateStructure(self, cell, coordinates, operations):
         logger.debug("Populating structure")
-        for i in list(range(attemptsRotation)):
-            molecules = []
-            structureIncomplete = False
-            try:
-                for symbol in symbols:
-                    atomCoordinates = coordinates[symbol]
-                    atomOperations = operations[symbol]
-                    if symbol in self.molecules:
-                        moleculeRef = self.systemFactory.fromDICT(self.molecules[symbol])
-                        moleculeRef.set_cell(cell)
-                        moleculeRef.rotate((360 * np.random.random_sample()), 'z')
-                        # To make sphericaly symmetric distribution we need to get probability of theta angle
-                        #  to have some value to be proportional to the radius of respective parallel.
-                        theta = np.arcsin(np.sqrt(np.random.random_sample())) * 180 / np.pi
-                        if np.random.randint(2):
-                            theta = 180 - theta
-                        moleculeRef.rotate(theta, 'y')
-                        moleculeRef.rotate((360 * np.random.random_sample()), 'z')
-                        for nodeCoordinates, groups in zip(atomCoordinates, atomOperations):
-                            structureIncomplete = True
-                            for group in randomPermutation(groups, maxSize=attemptsPointGroup):
-                                if len(group.operators) == len(nodeCoordinates):
-                                    nodeOperations = group.operators
-                                    for coordinate, operation in zip(nodeCoordinates, nodeOperations):
-                                        molecule = copy(moleculeRef)
-                                        molecule.set_scaled_positions(np.dot(molecule.get_scaled_positions(), operation[0:3, 0:3]))
-                                        molecule.translate_scaled(coordinate)
-                                        molecules.append(molecule)
-                                    structureIncomplete = False
-                                    break
-                    else:
-                        nodeCoordinates = np.vstack(atomCoordinates)
-                        for coordinate in nodeCoordinates:
-                            molecules.append(self.systemFactory(symbols = [symbol], cell=cell, scaled_positions=coordinate))
-            except Exception as e:
-                logger.exception(e)
-                continue
-
-            if structureIncomplete:
-                logger.debug("Structure incomplete")
-                break
-            yield molecules
-        raise RuntimeError("Can not populate structure.")
-
-def randomPermutation(array, enumerate = False, maxSize = None):
-    maxSize = maxSize if maxSize is not None else len(array)
-    for i in np.random.permutation(list(range(len(array))))[0:maxSize]:
-        yield (i, array[i]) if enumerate else array[i]
+        molecules = []
+        for symbol, atomCoordinates, atomOperations in zip(operations.keys(), coordinates.values(), operations.values()):
+            molecule = self.molecules[symbol]
+            if len(molecule) > 1:
+                for nodeCoordinates, groups in zip(atomCoordinates, atomOperations):
+                    molecule = Transformation.fromRotVector(Transformation.randomRotVector(),
+                                                            [0., 0., 0.]).transform(molecule)
+                    for coordinate, operation in zip(nodeCoordinates, np.random.choice(groups, 1).operators):
+                        transformation = Transformation.fromMatrix(cell.fractionalToCartesian(operation[0:3, 0:3]),
+                                                                   cell.fractionalToCartesian(coordinate))
+                        molecules.append(transformation.transform(molecule))
+            else:
+                for nodeCoordinates in atomCoordinates:
+                    for coordinate in nodeCoordinates:
+                        transformation = Transformation.fromRotVector([0.,0.,0.], cell.fractionalToCartesian(coordinate))
+                        molecules.append(transformation.transform(molecule))
+        return molecules

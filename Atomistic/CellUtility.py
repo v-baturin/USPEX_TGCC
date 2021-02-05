@@ -20,13 +20,13 @@ class CellUtility:
         else:
             self._cell = None
             self._volume = None
-            # calcVolumeForComposition(composition, **self.config)
 
-    def getRandomCell(self):
+    def getRandomCell(self, conditions):
         pass
 
-    def adjustCell(self, cell):
-        return self._cell if self._cell is not None else cell * np.power(self._volume / cell.getVolume(), 1.0 / 3.0)
+    def adjustCell(self, cell, composition, conditions):
+        volume = self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
+        return self._cell if self._cell is not None else cell * np.power(volume / cell.getVolume(), 1.0 / 3.0)
 
     def getHybridCell(self, cell1, cell2):
         pass

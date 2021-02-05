@@ -31,3 +31,7 @@ class Transformation:
         rotation_sc = Rotation.from_rotvec(rot_vec)
         rot_matrix = rotation_sc.as_matrix()
         return Transformation(rot_matrix, trans_vec, rot_vec)
+
+    @staticmethod
+    def randomRotVector():
+        pass

@@ -1,3 +1,4 @@
+import numpy as np
 from copy import copy
 
 
@@ -6,7 +7,7 @@ class AtomicStructure:
     def __init__(self, atomTypes, coordinates, cell = None, edges = None, zmatrixConfig = None, **kwargs):
         assert len(atomTypes) == len(coordinates)
         self.atomTypes = copy(atomTypes)
-        self.coordeinates = copy(coordinates)
+        self.coordinates = copy(coordinates)
         self.cell = copy(cell)
         self.edges = copy(edges)
         self.zmatrixConfig = copy(zmatrixConfig)
@@ -18,11 +19,11 @@ class AtomicStructure:
         return copy(self.atomTypes)
 
     def getCortesianCoordinates(self):
-        return copy(self.coordeinates)
+        return copy(self.coordinates)
 
     def getFractionalCooordinates(self):
         if self.cell is not None:
-            return self.cell.cartesianToFractional(self.coordeinates)
+            return self.cell.cartesianToFractional(self.coordinates)
         else:
             raise RuntimeError("Call for fractional coordinates when cell is not set up.")
 
@@ -31,6 +32,24 @@ class AtomicStructure:
 
     def getCenterOfMassFractionalCoordinates(self):
         pass
+
+    def getPrincipleAxes(self):
+        """
+        :rtype: 3x3 numpy array
+        :return: principle axes, main axes of inertia tensor (with all atom masses set to be equal).
+        """
+        coordinates = self.coordinates - self.coordinates.mean(axis=0)
+        inertia = np.zeros((3, 3), dtype=float)  # moment of inertia tensor
+        inertia[0, 0] = (coordinates[:, 1] ** 2 + coordinates[:, 2] ** 2).sum()
+        inertia[1, 1] = (coordinates[:, 0] ** 2 + coordinates[:, 2] ** 2).sum()
+        inertia[2, 2] = (coordinates[:, 0] ** 2 + coordinates[:, 1] ** 2).sum()
+        inertia[0, 1] = -(coordinates[:, 0] * coordinates[:, 1]).sum()
+        inertia[1, 2] = -(coordinates[:, 1] * coordinates[:, 2]).sum()
+        inertia[2, 0] = -(coordinates[:, 2] * coordinates[:, 0]).sum()
+        inertia[1, 0] = -(coordinates[:, 0] * coordinates[:, 1]).sum()
+        inertia[2, 1] = -(coordinates[:, 1] * coordinates[:, 2]).sum()
+        inertia[0, 2] = -(coordinates[:, 2] * coordinates[:, 0]).sum()
+        return np.linalg.eigh(inertia)
 
     def getCell(self):
         return copy(self.cell)
@@ -81,3 +100,40 @@ class AtomicDisassembler:
         assert len(atomTypesNotYet) == len(coordinatesNotYet)
         assert len(coordinatesNotYet) == len(self.environment.getStructure())
         return {'molecules': molecules, 'cell': atomicStructure.getCell(), 'environment': copy(self.environment)}
+
+    def decomposeDisplacements(self, displacements, structure):
+        """
+        Decompose atomic displacements into molecular translations and rotations and intramolecular atomic displacements.
+        :type displacements: numpy array N*3
+        :param displacements: array of atomic displacements, where N is number of atoms in structure.
+        :rtype: List[Tuple[vector, vector, array of vectors]]
+        :return: List of tuples for each molecule with translation vector, rotation vector and array of intramolecular
+        atomic displacements.
+        """
+        assert len(displacements) == len(structure)
+        molecularDispacements = []
+        molecules = self.disassemble(structure)['molecules']
+        for molecule, inds in zip(molecules, self.indices):
+            if len(molecule) > 1:
+                atomicDisplacements = displacements[inds]
+                centerCoordinates = molecule.coordinates.mean(axis=0)
+                atomicCoordinates = molecule.coordinates - centerCoordinates
+                inertia = np.linalg.norm(atomicCoordinates) ** 2
+                atomicDistances = np.linalg.norm(atomicCoordinates, axis=1)
+                nonCentralAtoms = np.nonzero(atomicDistances > 0.001)
+                centralAtoms = np.nonzero(atomicDistances <= 0.001)
+                atomicCoordinatesNonCentral = atomicCoordinates[nonCentralAtoms]
+                atomicDistancesNonCentral = atomicDistances[nonCentralAtoms]
+                atomicDisplacementsNonCentral = atomicDisplacements[nonCentralAtoms]
+                atomicNormalsNonCentral = atomicCoordinatesNonCentral / atomicDistancesNonCentral.reshape((-1,1))
+                translation = (np.sum(np.sum(atomicDisplacementsNonCentral * atomicNormalsNonCentral, axis=1).reshape((-1,1))
+                                      * atomicNormalsNonCentral, axis=0) +
+                               np.sum(atomicDisplacements[centralAtoms], axis=0)) / len(inds)
+                rotation = np.sum(np.cross(atomicDisplacements, atomicCoordinates), axis=0) / inertia
+                atomicDisplacements -= translation.reshape((1,3)) + np.cross(atomicCoordinates, rotation.reshape((1,3)))
+            else:
+                translation = displacements[inds]
+                rotation = np.array([0., 0., 0.])
+                atomicDisplacements = np.array([[0.,0.,0.]])
+            molecularDispacements.append((translation, rotation, atomicDisplacements))
+        return molecularDispacements
