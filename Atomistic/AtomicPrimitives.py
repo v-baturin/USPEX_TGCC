@@ -18,7 +18,7 @@ class AtomicStructure:
     def getAtomTypes(self):
         return copy(self.atomTypes)
 
-    def getCortesianCoordinates(self):
+    def getCartesianCoordinates(self):
         return copy(self.coordinates)
 
     def getFractionalCooordinates(self):

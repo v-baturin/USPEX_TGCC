@@ -94,7 +94,7 @@ class RandTop:
                                         coordinates.insert(ind, [])
                                         operations.insert(ind, [])
 
-                                    cell = self.cellUtility.adjustCell(cell)
+                                    cell = self.cellUtility.adjustCell(cell, composition, self.conditions)
                                     operations = dict(zip(symbols, operations))
                                     coordinates = dict(zip(symbols, coordinates))
 

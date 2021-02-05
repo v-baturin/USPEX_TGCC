@@ -7,26 +7,28 @@ class CellUtility:
         self._pbc = pbc
         if cellVectors is not None:
             self._cell = Cell(cellVectors, pbc)
-            self._volume = None
+            self._volume = self._cell.getVolume()
             assert cellParameters is None and cellVolume is None
         elif cellParameters is not None:
             self._cell = Cell.initFromCellParameters(**cellParameters, pbc = pbc)
-            self._volume = None
-            assert cellVectors is None and cellVolume is None
+            self._volume = self._cell.getVolume()
+            assert cellVolume is None
         elif cellVolume is not None:
             self._cell = None
             self._volume = cellVolume
-            assert cellVectors is None and cellParameters is None
         else:
             self._cell = None
             self._volume = None
 
-    def getRandomCell(self, conditions):
+    def getCellVolume(self, composition, conditions):
+        return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
+
+    def getRandomCell(self, composition, conditions):
         pass
 
     def adjustCell(self, cell, composition, conditions):
-        volume = self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
-        return self._cell if self._cell is not None else cell * np.power(volume / cell.getVolume(), 1.0 / 3.0)
+        return self._cell if self._cell is not None \
+            else cell * np.power(self.getCellVolume(composition, conditions) / cell.getVolume(), 1.0 / 3.0)
 
     def getHybridCell(self, cell1, cell2):
         pass
