@@ -54,11 +54,11 @@ class Softmodemutation:
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules1, cell)
             minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
             if atomDistances >= minDistMatrix:
-                offsprings += ({'molecules' : molecules, 'cell': cell},)
+                offsprings += ({'molecules' : molecules1, 'cell': cell},)
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules2, cell)
             minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
             if atomDistances >= minDistMatrix:
-                offsprings += ({'molecules' : molecules, 'cell': cell},)
+                offsprings += ({'molecules' : molecules2, 'cell': cell},)
             if offsprings:
                 return offsprings
 

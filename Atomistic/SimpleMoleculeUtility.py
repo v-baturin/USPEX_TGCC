@@ -1,5 +1,4 @@
 import numpy as np
-from itertools import combinations_with_replacement
 
 from .Element import Element
 from .Transformation import Transformation
@@ -51,8 +50,39 @@ class SimpleMoleculeUtility(object):
 
         return structure.getAtomTypes(), actualDistances
 
+    def rotationClearance(self, inertiaValues):
+        minValue = np.min(inertiaValues)
+        if np.isclose(minValue, 0):
+            clearance = np.zeros(inertiaValues.shape)
+            clearance[np.argmin(inertiaValues)] = np.pi
+        else:
+            clearance = np.pi*minValue/inertiaValues
+        return clearance
 
-    def molecule_CN(self, molecule):
+    def rotateFlexDiherdal(self, molecule, j: int, angle: float):
+        """
+        Rotate the *j* th flexible dihedral angle of *i* th molecule by the angle *angle* .
+
+        :type i: int
+        :param i: index of molecule to rotate.
+        :type j: int
+        :param j: index of flexible dihedral angle to rotate.
+        :type angle: float
+        :param angle: angle by which the dihedral should be rotated.
+        """
+        assert j < len(molecule.zmatrixConfig.flex_dihedral)
+        zmatrix = self.coordToZmatrix(molecule.getCartesianCoordinates, np.asarray(molecule.zmatrixConfig.format, dtype=int))
+        zmatrix[molecule.zmatrixConfig.flex_dihedral[j], 2] += angle
+        molecule_mod = type(molecule)(molecule.getAtomTypes(),
+                                      self.zmatrixToCoord(zmatrix, np.asarray(molecule.zmatrixConfig.format, dtype=int)),
+                                      cell = molecule.cell)
+        if np.array_equal(self.molecule_CN(molecule_mod), self.molecule_CN(molecule)):
+            return molecule_mod
+        else:
+            return molecule
+
+    @staticmethod
+    def molecule_CN(molecule):
         """
         Method which roughly (very roughly!!!) estimates the coordination numbers of a molecule.
 
@@ -61,33 +91,99 @@ class SimpleMoleculeUtility(object):
         :rtype: numpy array
         :return: Array of coordination numbers.
         """
-        radiu = np.array([Element(atom).covalent_radius for atom in molecule.get_chemical_symbols()])
+        radiu = np.array([Element(atom).covalent_radius for atom in molecule.getAtomTypes()])
         CN = np.fromiter((len(neighbours) for neighbours in find_pair(molecule.coordinates, radiu)), dtype=int)
         return CN
 
-    def rotatePrinciple(self, molecule, axis: int, angle: float):
+    @staticmethod
+    def zmatrixToCoord(zmatrix, fmt):
         """
-        Rotate the *i* th molecule with respect to *axis* =[0,1,2] principle axis by the angle *angle* .
+        Function that transforms Z-matrix to XYZ coordinates. Remember that the Z-matrix of a molecule is defined
+        in spherical coordinates, so we need a lot of transformations from (r, theta, phi) to (x, y, z).
 
-        :type i: int
-        :param i: index of molecule to rotate.
-        :type axis: int
-        :param axis: index of axis [0,1,2] with respect to which the molecule should be rotated.
-        :type angle: float
-        :param angle: angle by which the molecule should be rotated.
+        :type zmatrix: numpy array
+        :param zmatrix:
+            Z-matrix of a molecule.
+        :type fmt: numpy array
+        :param fmt:
+            for each atom in the molecule are listed the indices of three other atoms,
+            with respect to which the parameters of the Z-matrix are calculated.
+        :rtype: numpy array
+        :return:
+            XYZ coordinates of atoms in the molecule.
         """
-        assert axis < 3
-        values, vectors = molecule.getPrincipleAxes()
-        ref = np.max(values)
-        value = values[axis]
-        vector = vectors[axis]
-        vector /= np.linalg.norm(vector)
-        if value > 0.0001:
-            angle *= ref/value
-            vector *= angle
-        else:
-            vector *= 0
-        return Transformation.fromRotVector(vector, [0.,0.,0.,]).transform(molecule)
+        N_atom = len(zmatrix)
+        coords = np.zeros((N_atom, 3))
+        origin = zmatrix[0, :]
+        if N_atom > 1:
+            coords[1, 2] = zmatrix[1, 0]*np.cos(zmatrix[1, 1])
+            coords[1, 0] = zmatrix[1, 0]*np.sin(zmatrix[1, 1])*np.cos(zmatrix[1, 2])
+            coords[1, 1] = zmatrix[1, 0]*np.sin(zmatrix[1, 1])*np.sin(zmatrix[1, 2])
+            if N_atom > 2:
+                for i in range(2, N_atom):
+                    if i == 2:
+                        ref = coords[fmt[2, :2] - 1, :]
+                    else:
+                        ref = coords[fmt[i, :] - 1, :]
+                    coords[i, :] = GetXYZ(ref, zmatrix[i, :])
+        coords += origin
+        return coords
+
+    @staticmethod
+    def coordToZmatrix(coords, fmt):
+        """
+        Function that transforms XYZ to Z-matrix coordinates. Remember that the Z-matrix of a molecule is defined
+        in spherical coordinates, so we need a lot of transformations from (x, y, z) to (r, theta, phi).
+
+        :type coords: numpy array
+        :param coords:
+            XYZ coordinates.
+        :type fmt: numpy array
+        :param fmt:
+            for each atom in the molecule are listed the indices of three other atoms,
+            with respect to which the parameters of the Z-matrix are calculated.
+        :rtype: numpy array
+        :return:
+            Z-matrix of the molecule.
+        """
+        fmt = np.copy(fmt)
+        coords = np.copy(coords)
+        coords = np.real(coords)
+
+        Zmatrix = np.copy(coords)  # 1st atom always = coords
+        N_atom = coords.shape[0]
+
+        if N_atom > 1:
+            coords -= coords[0, :]
+            # 2nd atom, define it in spherical coordinates
+            Zmatrix[1, 0] = np.real(np.linalg.norm(coords[1, :]))
+            if coords[1, 2] == 0:
+                Zmatrix[1, 1] = np.pi * 0.5
+            else:
+                Zmatrix[1, 1] = np.arccos(coords[1, 2] / Zmatrix[1, 0])
+
+            if coords[1, 1] == 0:
+                Zmatrix[1, 2] = 0
+            else:
+                Zmatrix[1, 2] = np.arctan2(coords[1, 1], coords[1, 0])
+
+            for ind in range(2, N_atom):
+                a1 = coords[ind, :]
+                a2 = coords[fmt[ind, 0] - 1, :]  # there and below: python indexing from 0
+                a3 = coords[fmt[ind, 1] - 1, :]
+                Zmatrix[ind, 0] = np.real(np.linalg.norm(a2 - a1))
+                Zmatrix[ind, 1] = GetAngle(a1, a2, a3)
+                if ind == 2:  # the dihedral angle between 1-2-3 and XY plane
+                    a4 = a3 + np.array([1.0, 0.0, 0.0])
+                    # Zmatrix(ind, 3) = -1*GetDihedral(a1, a2, a3, a4);
+                else:
+                    a4 = coords[fmt[ind, 2] - 1, :]
+                    # Zmatrix(ind, 3) = -1*GetDihedral(a1, a2, a3, a4);
+
+                Zmatrix[ind, 2] = GetDihedral(a1, a2, a3, a4)
+
+        Zmatrix = np.real(Zmatrix)
+        return Zmatrix
 
 def find_pair(coor, radii):
     """
@@ -120,3 +216,81 @@ def find_pair(coor, radii):
                 print('Please check your MOL file again. Serious WARNING.... ')
 
     return pair
+
+def GetAngle(a1, a2, a3):
+    """
+    Returns the angle between three atoms from their respective coordinates.
+
+    :type a1: numpy array
+    :param a1: 1x3 array with the coordinates of the first atom.
+    :type a2: numpy array
+    :param a2: 1x3 array with the coordinates of the second atom.
+    :type a3: numpy array
+    :param a3: 1x3 array with the coordinates of the third atom.
+    :rtype: float
+    :return: angle in radians between the three atoms.
+    """
+    v1 = a1 - a2
+    v2 = a3 - a2
+    angle = np.arccos(np.dot(v1, v2)/np.linalg.norm(v1)/np.linalg.norm(v2))
+    return angle
+
+def GetDihedral(a1, a2, a3, a4):
+    """
+    Returns the dihedral angle between four atoms from their respective coordinates.
+
+    :type a1: numpy array
+    :param a1: 1x3 array with the coordinates of the first atom.
+    :type a2: numpy array
+    :param a2: 1x3 array with the coordinates of the second atom.
+    :type a3: numpy array
+    :param a3: 1x3 array with the coordinates of the third atom.
+    :type a4: numpy array
+    :param a4: 1x3 array with the coordinates of the fourth atom.
+    :rtype: float
+    :return: dihedral angle in radians between the four atoms.
+    """
+    p = a2 - a1
+    q = a3 - a2
+    r = a4 - a3
+    n1 = np.cross(p, q)
+    n2 = np.cross(q, r)
+    torsion = np.arccos(np.dot(n1, n2) / (np.linalg.norm(n1) * np.linalg.norm(n2)))
+    center = (a1 + a2 + a3) / 3.0
+    if np.dot(n1, a4 - center) < 0:
+        torsion *= -1
+
+    return torsion
+
+def GetXYZ(ref, zmatrix):
+    """
+    Get the XYZ coordinates of the current atom from its Z-matrix coordinates
+    and the XYZ coordinates of the reference atoms.
+
+    :type ref: numpy array
+    :param ref: XYZ coordinates of the reference atoms.
+    :type zmatrix: numpy array
+    :param zmatrix: Z-matrix coordinates of the current atom.
+    :rtype: numpy array
+    :return: XYZ coordinates of the current atom.
+    """
+    r = zmatrix[0]
+    theta = zmatrix[1]
+    phi = -zmatrix[2]
+
+    coor = np.array([r*np.sin(theta)*np.cos(phi), r*np.sin(theta)*np.sin(phi), r*np.cos(theta)])
+    u1 = ref[1, :] - ref[0, :]
+    if len(ref) == 2:
+        u2 = np.array([1, 0, 0])
+    else:
+        u2 = ref[2, :] - ref[1, :]
+
+    z = u1/np.linalg.norm(u1)
+    y = np.cross(u1, u2)
+    y = y/np.linalg.norm(y)
+    x = np.cross(y, z)
+    x = x/np.linalg.norm(x)
+
+    # coor = coor / (np.stack([x, y, z]).T)
+    coor = np.linalg.lstsq(np.stack([x, y, z]), coor)[0]
+    return coor + ref[0, :]
