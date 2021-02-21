@@ -1,0 +1,13 @@
+#!/bin/sh
+#BSUB -sp 100
+#BSUB -a  intelmpi
+#BSUB -R  "span[ptile=8]"
+#BSUB -J  USPEX
+#BSUB -n  8
+#BSUB -W  06:00
+#BSUB -q  intel
+#BSUB -o  output
+#
+#
+#            -__-  have fun in Rurik cluster @ MIPT !
+#

@@ -1,0 +1,8 @@
+Relaxation: starting relaxation cfg#1
+cfg 1	itr 0	 dx 0	 md 2.51247	e/a -0.771362	ent 2.19835	frc 0	str 4.42393
+cfg 1	itr 1	 dx 0.02223	 md 2.49024	e/a -0.695888	ent 2.19569	frc 0	str 2.8656
+cfg 1	itr 2	 dx 0.00864478	 md 2.49889	e/a -0.727368	ent 2.19443	frc 0	str 0.354309
+cfg 1	itr 3	 dx 0.00095713	 md 2.49793	e/a -0.724032	ent 2.19441	frc 0	str 0.000850034
+cfg 1	itr 4	 dx 2.28903e-06	 md 2.49793	e/a -0.72404	ent 2.19441	frc 0	str 2.43506e-07
+Relaxation of cfg#1 completed successfully
+

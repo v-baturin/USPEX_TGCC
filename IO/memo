@@ -1,0 +1,44 @@
+SURFACES_PAPERS = '''\
+'Zhu Q., Li L., Oganov A.R., Allen P.B. (2013)',
+'Evolutionary method for predicting surface reconstructions',
+'with variable stoichiometry.',
+'Phys. Rev. B, 87, 195317',\
+'''
+
+POLYMERS_PAPERS = '''\
+'Zhu, Q., Sharma V., Oganov A.R., Ramprasad R. (2014)',
+'Predicting polymeric crystal structures by evolutionary algorithms.',
+'J. Chem. Phys. 141, 154102',\
+'''
+
+CRYSTALS_2D_PAPERS = '''\
+'Zhou X.-F., Dong X., Oganov A.R., Zhu Q., Tian Y., Wang H.-T. (2014)',
+'Semimetallic Two-Dimensional Boron Allotrope with Massless Dirac Fermions.',
+'Phys. Rev. Lett. 112, 085502',\
+'''
+
+
+'''
+    Class that analyze structures that were obtained and write necessary outputs to a files:
+        * OUTPUT.txt - summarizes input variables, structures produced by USPEX, and their characteristics.
+        * Parameters.txt - this is a copy of the INPUT.txt file used in this calculation, for your reference.
+        * Individuals - gives details of all produced structures (energies, unit cell volumes, space groups,
+                        variation operators that were used to produce the structures, k-points mesh used
+                        to compute the structures' Final energy, degrees of order, etc.).
+                        File BESTIndividuals gives this information for the best structures from each generation.
+        * convex hull - only for variable-composition calculations, where it gives all thermodynamically stable compositions,
+                        and their enthalpies (per atom).
+        * gatheredPOSCARS - relaxed structures (in the VASP5 POSCAR format).
+        * BESTgatheredPOSCARS - the same data for the best structure in each generation.
+        * gatheredPOSCARS_unrelaxed - gives all structures produced by USPEX before relaxation.
+        * enthalpies_complete.dat - gives the enthalpies for all structures in each stage of relaxation.
+        * origin - shows which structures originated from which parents and through which variation operators.
+        * gatheredPOSCARS_order - gives the same information as gatheredPOSCARS,
+                                  and in addition for each atom it gives the value of the order parameter.
+        * goodStructures_POSCARS and extended_convex_hull_POSCARS
+                (for fixed- and variable-composition calculations correspondingly) are report all of the different structures
+                in order of decreasing stability, starting from the most stable structure and ending with the least stable.
+        * compositionStatistics - is a file containing statistic of the compositions
+                                  in terms of which variation operators produced these compositions.
+        * graphical files
+'''
