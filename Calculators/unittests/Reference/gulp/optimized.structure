@@ -1,0 +1,25 @@
+# 
+# Keywords:
+# 
+opti prop conp stress  
+# 
+# Options:
+# 
+cell
+   5.265000   5.265000   5.265000  90.000000  90.000000  90.000000
+fractional  1   
+Ar    core 0.0000000 0.0000000 0.0000000 0.00000000 1.00000 0.00000             
+Ar    core 0.0000000 0.5000000 0.5000000 0.00000000 1.00000 0.00000             
+Ar    core 0.5000000 0.0000000 0.5000000 0.00000000 1.00000 0.00000             
+Ar    core 0.5000000 0.5000000 0.0000000 0.00000000 1.00000 0.00000             
+space
+  1
+totalenergy            -0.3429499087 eV
+species   1
+Ar     core    0.000000                  
+lennard 12  6     
+Ar    core Ar    core  100298.65      64.356500      0.000 10.000
+stepmx opt     0.000000
+maxcyc opt        0
+maxcyc fit        0
+dump every   1 optimized.structure                                         

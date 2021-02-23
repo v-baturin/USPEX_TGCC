@@ -1,0 +1,144 @@
+LAMMPS (29 Oct 2020)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:94)
+  using 1 OpenMP thread(s) per MPI task
+variable f string lammps.dump
+##########################################################
+# Simple cell relaxation CUBIC CELL
+##########################################################
+
+units           metal
+newton          on
+dimension       3
+boundary        p p p   # periodic boundary conditions (f ? aperiodic/ p - periodic)
+atom_style 	atomic      # Define what style of atoms to use in a simulation. http://lammps.sandia.gov/doc/atom_style.html
+
+
+read_data STRUC
+Reading data file ...
+  triclinic box = (0.0000000 0.0000000 0.0000000) to (7.9747644 7.9747644 2.6517029) with tilt (0.0000000 0.0000000 0.0000000)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  16 atoms
+  read_data CPU = 0.002 seconds
+
+pair_style tersoff                 # Potential type http://lammps.sandia.gov/doc/pair_style.html
+pair_coeff * * SiC.tersoff C            # potential http://lammps.sandia.gov/doc/pair_coeff.html
+mass 1 12.0107
+neigh_modify 	every 1 delay 0 check yes   # When the neighbours list will be updated http://lammps.sandia.gov/doc/neigh_modify.html
+
+compute 	_rg all gyration                # All atoms will be involved in the simulation http://lammps.sandia.gov/doc/compute.html
+#---------------------------------------
+
+
+min_style 	cg                                    # The algoritm of relaxation
+min_modify 	line backtrack                        # The parameters of minimzation algoritm
+#fix 1 all box/relax iso 1000.0 dilate partial      # Cell relaxation
+fix 1 all npt temp 50 50 1 iso 1000 1000 1     # Cell relaxation, !!!!!!!USPEX use this to
+dump d1 all custom 1000 ${f} id type x y z vx vy vz fx fy fz
+dump d1 all custom 1000 lammps.dump id type x y z vx vy vz fx fy fz
+
+
+#----------- geometry optimization----------------------
+
+#minimize        1.0e-16 1.0e-8 15000 30000       # Perform an energy minimization of the system http://lammps.sandia.gov/doc/minimize.html
+run 1000
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 4.1
+  ghost atom cutoff = 4.1
+  binsize = 2.05, bins = 4 4 2
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair tersoff, perpetual
+      attributes: full, newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 4.320 | 4.320 | 4.320 Mbytes
+Step Temp E_pair E_mol TotEng Press Volume 
+       0            0   -20.396681            0   -20.396681   -2336130.1       168.64 
+    1000    32.903935   -103.86862            0   -103.80482   -5734.6505    148.51632 
+Loop time of 0.0907038 on 1 procs for 1000 steps with 16 atoms
+
+Performance: 952.551 ns/day, 0.025 hours/ns, 11024.897 timesteps/s
+99.4% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.078111   | 0.078111   | 0.078111   |   0.0 | 86.12
+Neigh   | 0.00032207 | 0.00032207 | 0.00032207 |   0.0 |  0.36
+Comm    | 0.003367   | 0.003367   | 0.003367   |   0.0 |  3.71
+Output  | 0.00027649 | 0.00027649 | 0.00027649 |   0.0 |  0.30
+Modify  | 0.0066805  | 0.0066805  | 0.0066805  |   0.0 |  7.37
+Other   |            | 0.001946   |            |       |  2.15
+
+Nlocal:        16.0000 ave          16 max          16 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:        272.000 ave         272 max         272 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:        0.00000 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:      560.000 ave         560 max         560 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 560
+Ave neighs/atom = 35.000000
+Neighbor list builds = 4
+Dangerous builds = 0
+
+##########################################################
+# Writing Output Enthalpy and Cell Parameters.
+##########################################################
+variable v equal vol
+print "volume"
+volume
+print "$v"
+148.516315687277
+variable e equal etotal
+print "energy"
+energy
+print "$e"
+-103.804823748268
+variable a equal cellalpha
+variable b equal cellbeta
+variable o equal cellgamma
+variable g equal cella
+variable h equal cellb
+variable y equal cellc
+print "Lattice parameters"
+Lattice parameters
+variable a1 equal $g
+variable a1 equal 7.64403007024631
+print "${a1} 0.00  0.00"
+7.64403007024631 0.00  0.00
+variable b1 equal $h*cos($o*PI/180)
+variable b1 equal 7.64403007024631*cos($o*PI/180)
+variable b1 equal 7.64403007024631*cos(90*PI/180)
+variable b2 equal $h*sin($o*PI/180)
+variable b2 equal 7.64403007024631*sin($o*PI/180)
+variable b2 equal 7.64403007024631*sin(90*PI/180)
+print "${b1} ${b2}  0.00"
+4.68061847905663e-16 7.64403007024631  0.00
+variable c1 equal $y*cos($b*PI/180)
+variable c1 equal 2.54172987340705*cos($b*PI/180)
+variable c1 equal 2.54172987340705*cos(90*PI/180)
+variable c2 equal $y*(cos($a*PI/180)-cos($b*PI/180)*cos($o*PI/180))/sin($o*PI/180)
+variable c2 equal 2.54172987340705*(cos($a*PI/180)-cos($b*PI/180)*cos($o*PI/180))/sin($o*PI/180)
+variable c2 equal 2.54172987340705*(cos(90*PI/180)-cos($b*PI/180)*cos($o*PI/180))/sin($o*PI/180)
+variable c2 equal 2.54172987340705*(cos(90*PI/180)-cos(90*PI/180)*cos($o*PI/180))/sin($o*PI/180)
+variable c2 equal 2.54172987340705*(cos(90*PI/180)-cos(90*PI/180)*cos(90*PI/180))/sin($o*PI/180)
+variable c2 equal 2.54172987340705*(cos(90*PI/180)-cos(90*PI/180)*cos(90*PI/180))/sin(90*PI/180)
+variable c3 equal $y*sqrt(1+2*cos($a*PI/180)*cos($b*PI/180)*cos($o*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 2.54172987340705*sqrt(1+2*cos($a*PI/180)*cos($b*PI/180)*cos($o*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 2.54172987340705*sqrt(1+2*cos(90*PI/180)*cos($b*PI/180)*cos($o*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 2.54172987340705*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos($o*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 2.54172987340705*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 2.54172987340705*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos(90*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 2.54172987340705*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos(90*PI/180)^2-cos(90*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 2.54172987340705*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos(90*PI/180)^2-cos(90*PI/180)^2-cos(90*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 2.54172987340705*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos(90*PI/180)^2-cos(90*PI/180)^2-cos(90*PI/180)^2)/sin(90*PI/180)
+print "${c1}  ${c2}  ${c3}"
+1.55636067688258e-16  1.55636067688258e-16  2.54172987340705
+#---------------------------------------
+Total wall time: 0:00:00

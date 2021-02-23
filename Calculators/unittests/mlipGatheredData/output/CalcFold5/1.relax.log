@@ -1,0 +1,20 @@
+Relaxation: Correcting minimal distance in cfg#1
+cfg 1	step 0	dx 0	md(11,11)=2.631865;	md(11,17)=2.631865;	md(17,17)=3.223353
+cfg 1	step 1	dx 0.0428366	md(11,11)=2.685866;	md(11,17)=2.632750;	md(17,17)=3.233157
+Relaxation: Mindist for cfg#1 fixed
+Relaxation: starting relaxation cfg#1
+cfg 1	itr 0	 dx 0	 md 2.63297	e/a -1.99314	ent 3.35679	frc 0.0625686	str 20.3302
+cfg 1	itr 1	 dx 0.0428437	 md 2.60856	e/a -1.96039	ent 3.21505	frc 0.0390701	str 18.5904
+cfg 1	itr 2	 dx 0.0321328	 md 2.59026	e/a -1.9321	ent 3.12256	frc 0.0299719	str 16.3699
+cfg 1	itr 3	 dx 0.0330507	 md 2.57155	e/a -1.90173	ent 3.04512	frc 0.0376217	str 13.7277
+cfg 1	itr 4	 dx 0.0383248	 md 2.54986	e/a -1.86044	ent 2.97601	frc 0.0101157	str 10.0394
+cfg 1	itr 5	 dx 0.0276775	 md 2.53499	e/a -1.83257	ent 2.94223	frc 0.0076034	str 7.35778
+cfg 1	itr 6	 dx 0.040893	 md 2.51436	e/a -1.79429	ent 2.91138	frc 0.0224079	str 3.51271
+cfg 1	itr 7	 dx 0.0424345	 md 2.49569	e/a -1.75558	ent 2.90073	frc 0.0638601	str 1.42901
+cfg 1	itr 8	 dx 0.00548726	 md 2.50057	e/a -1.76478	ent 2.90002	frc 0.0224198	str 0.616194
+cfg 1	itr 9	 dx 0.0054538	 md 2.49956	e/a -1.76495	ent 2.89973	frc 0.00729377	str 0.179156
+cfg 1	itr 10	 dx 0.00241921	 md 2.49904	e/a -1.76479	ent 2.89971	frc 0.00313691	str 0.0483581
+cfg 1	itr 11	 dx 0.000186886	 md 2.4992	e/a -1.76503	ent 2.8997	frc 9.95637e-06	str 0.000845488
+cfg 1	itr 12	 dx 5.78257e-06	 md 2.4992	e/a -1.76504	ent 2.8997	frc 2.08817e-06	str 2.74141e-05
+Relaxation of cfg#1 completed successfully
+

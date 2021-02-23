@@ -1,0 +1,6 @@
+1 2
+IN.ATOM = atom.config
+JOB = relax
+RELAX_DETAIL = 1 100 0.01 1 0.05
+Ecut = 60
+Ecut2 = 240
