@@ -1,0 +1,31 @@
+Relaxation: starting relaxation cfg#1
+cfg 1	itr 0	 dx 0	 md 2.75774	e/a -1.41718	ent 6.42358	frc 1.51262	str 8.66251
+cfg 1	itr 1	 dx 0.0376517	 md 2.72748	e/a -1.42156	ent 6.29165	frc 1.35801	str 7.1087
+cfg 1	itr 2	 dx 0.0281466	 md 2.70517	e/a -1.42212	ent 6.20406	frc 1.23532	str 5.76686
+cfg 1	itr 3	 dx 0.0332754	 md 2.68189	e/a -1.42766	ent 6.11809	frc 1.08686	str 4.29673
+cfg 1	itr 4	 dx 0.0270524	 md 2.66323	e/a -1.42989	ent 6.05737	frc 0.960749	str 2.90032
+cfg 1	itr 5	 dx 0.0259601	 md 2.64747	e/a -1.43646	ent 6.0088	frc 0.848395	str 1.91097
+cfg 1	itr 6	 dx 0.0454024	 md 2.62035	e/a -1.44419	ent 5.93888	frc 0.653864	str 1.10421
+cfg 1	itr 7	 dx 0.0448156	 md 2.59764	e/a -1.46187	ent 5.88411	frc 0.500259	str 3.18137
+cfg 1	itr 8	 dx 0.0336897	 md 2.5808	e/a -1.47309	ent 5.85113	frc 0.337381	str 5.55638
+cfg 1	itr 9	 dx 0.0256035	 md 2.56938	e/a -1.48755	ent 5.8276	frc 0.215402	str 6.65034
+cfg 1	itr 10	 dx 0.0329919	 md 2.51949	e/a -1.50391	ent 5.80619	frc 0.0274815	str 7.40708
+cfg 1	itr 11	 dx 0.0324369	 md 2.50403	e/a -1.51436	ent 5.79354	frc 0.124394	str 6.60816
+cfg 1	itr 12	 dx 0.0376584	 md 2.50191	e/a -1.52036	ent 5.77906	frc 0.129895	str 5.54135
+cfg 1	itr 13	 dx 0.0282438	 md 2.5002	e/a -1.52442	ent 5.76962	frc 0.150771	str 4.98482
+cfg 1	itr 14	 dx 0.0307878	 md 2.50151	e/a -1.52527	ent 5.75893	frc 0.182062	str 4.85053
+cfg 1	itr 15	 dx 0.0269394	 md 2.50258	e/a -1.52576	ent 5.75021	frc 0.21165	str 4.69034
+cfg 1	itr 16	 dx 0.0471439	 md 2.50426	e/a -1.526	ent 5.73665	frc 0.26833	str 4.31767
+cfg 1	itr 17	 dx 0.0475669	 md 2.51552	e/a -1.52556	ent 5.7225	frc 0.28533	str 3.74015
+cfg 1	itr 18	 dx 0.0375223	 md 2.51453	e/a -1.52464	ent 5.71291	frc 0.301526	str 3.22422
+cfg 1	itr 19	 dx 0.0327619	 md 2.51212	e/a -1.52286	ent 5.70376	frc 0.289184	str 2.72129
+cfg 1	itr 20	 dx 0.0286667	 md 2.51004	e/a -1.52095	ent 5.69677	frc 0.279755	str 2.25986
+cfg 1	itr 21	 dx 0.0457358	 md 2.50822	e/a -1.51555	ent 5.68672	frc 0.248514	str 1.60893
+cfg 1	itr 22	 dx 0.0323176	 md 2.51316	e/a -1.51635	ent 5.67938	frc 0.133196	str 0.661199
+cfg 1	itr 23	 dx 0.0351794	 md 2.51822	e/a -1.51219	ent 5.67627	frc 0.0036019	str 0.22678
+cfg 1	itr 24	 dx 0.0015187	 md 2.51781	e/a -1.50969	ent 5.67621	frc 0.000135338	str 0.127616
+cfg 1	itr 25	 dx 0.000833415	 md 2.5174	e/a -1.50777	ent 5.6762	frc 0.000208088	str 0.0137642
+cfg 1	itr 26	 dx 0.000328052	 md 2.51739	e/a -1.50771	ent 5.67619	frc 0.000148561	str 0.0026061
+cfg 1	itr 27	 dx 0.000138357	 md 2.51741	e/a -1.50771	ent 5.67619	frc 2.41373e-05	str 0.000265347
+Relaxation of cfg#1 completed successfully
+

@@ -1,0 +1,31 @@
+&CONTROL
+  calculation  = "relax",
+  restart_mode = "from_scratch",
+  prefix       = "pp",
+  pseudo_dir   = "./",
+  outdir       = "./",
+  wf_collect   = false
+  nstep = 250
+  disk_io = 'none'
+/
+&SYSTEM
+  ibrav     = 0 
+  nat       = 8
+  ntyp      = 1
+  ecutwfc   = 40.D0 
+  nosym     = .true.
+ occupations='smearing'
+ degauss=0.02
+ smearing='marzari-vanderbilt'
+/
+&ELECTRONS
+  conv_thr    = 1.D-06,
+  mixing_beta=0.5,
+  electron_maxstep = 250
+/
+&IONS
+  ion_dynamics='bfgs'
+  trust_radius_max = 0.2
+/
+ATOMIC_SPECIES
+C  12. C.pbe-van_bm.upf

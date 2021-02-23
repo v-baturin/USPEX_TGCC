@@ -1,0 +1,49 @@
+******************************************
+*      TYPE OF RUN AND SYSTEM            *
+******************************************
+USPEX  : calculationMethod (USPEX, VCNEB, META)
+300    : calculationType (dimension: 0-3; molecule: 0/1; varcomp: 0/1)
+1      : optType (1=enthalpy, 2=volume, 3=hardness, 4=struc_order,...)
+1      : AutoFrac
+
+% atomType
+Mg Al O
+% EndAtomType
+
+% numSpecies
+4 8 16
+% EndNumSpecies
+
+******************************************
+*               POPULATION               *
+******************************************
+40    : populationSize 
+40    : initialPopSize 
+60    : numGenerations 
+30    : stopCrit 
+0     : reoptOld 
+0.6   : bestFrac 
+
+******************************************
+*          VARIATION OPERATORS           *
+******************************************
+0.50  : fracGene 
+0.20  : fracRand 
+0.10  : fracPerm 
+0.20  : fracAtomsMut 
+0.00  : fracLatMut
+
+*****************************************
+*   DETAILS OF AB INITIO CALCULATIONS   * 
+*****************************************
+% abinitioCode 
+3 3 3 3
+% ENDabinit
+
+% commandExecutable
+gulp < input > output
+% EndExecutable
+
+1      : numParallelCalcs
+0      : whichCluster
+100    : ExternalPressure (GPa)

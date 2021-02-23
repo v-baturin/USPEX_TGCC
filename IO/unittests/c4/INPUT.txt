@@ -1,0 +1,53 @@
+******************************************
+*      TYPE OF RUN AND SYSTEM            *
+******************************************
+USPEX : calculationMethod (USPEX, VCNEB, META)
+300   : calculationType (dimension: 0-3; molecule: 0/1; varcomp: 0/1)
+1     : AutoFrac
+
+% optType
+1
+% EndOptType
+
+% atomType
+C
+% EndAtomType
+
+% numSpecies
+16
+% EndNumSpecies
+
+******************************************
+*               POPULATION               *
+******************************************
+30    : populationSize (how many individuals per generation)
+30    : initialPopSize 
+50    : numGenerations (how many generations shall be calculated)
+20    : stopCrit 
+1     : reoptOld 
+******************************************
+*          VARIATION OPERATORS           *
+******************************************
+0.50  : fracGene 
+0.10  : fracRand 
+0.20  : fracAtomsMut 
+0.20  : fracPerm 
+****************************************
+*             CONSTRAINTS              *
+****************************************
+% IonDistances
+1.0
+% EndDistances
+*****************************************
+*   DETAILS OF AB INITIO CALCULATIONS   * 
+*****************************************
+% abinitioCode 
+4 4 4 4 4   
+% ENDabinit
+
+% commandExecutable
+lammps < lammps.in > lammps.out
+% EndExecutable
+
+1    : numParallelCalcs 
+0    : whichCluster 

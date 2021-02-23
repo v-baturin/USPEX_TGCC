@@ -1,0 +1,24 @@
+BEGIN_CFG
+ Size
+    3
+ Supercell
+         3.956820      0.000000      0.000000
+         1.978410      3.426706      0.000000
+        -0.000000     -0.000000      3.227792
+ AtomData:  id type       cartes_x      cartes_y      cartes_z           fx          fy          fz
+             1   11       1.978410      1.142236      2.089430     0.000000    0.000000    0.000002
+             2   11       0.000000      0.000000      0.062431    -0.000000   -0.000000   -0.000002
+             3   17       3.956820      2.284471      1.075931     0.000000   -0.000000    0.000000
+ Energy
+         -5.295117382789
+ PlusStress:  xx          yy          zz          yz          xz          xy
+         8.19481     8.19482     8.19482     0.00000     0.00000    -0.00000
+ Feature   EFS_by	MultiMTP289
+ Feature   MV_grade	1.146382
+ Feature   PV	8.194822
+ Feature   enthalpy	2.899705
+ Feature   external_pressure,[GPa]	30.000000
+ Feature   from	relaxation_OK
+ Feature   mindist	2.499198
+END_CFG
+
