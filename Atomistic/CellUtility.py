@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.spatial.transform import Rotation
+from Atomistic.Transformation import Transformation
 
 
 class CellUtility:
@@ -79,7 +81,29 @@ class Cell:
         return np.divmod(coordinates, (1,1,1))[1]
 
     def randomTransformation(self):
-        pass
+        # direct coordinates
+        pbc = self.getPBC()
+        if pbc == (0, 0, 0) or (1, 1, 1):
+            rotMatrix = Rotation.random().as_matrix()
+            if pbc == (0,0,0):
+                transVec = np.zeros(3)
+            else:
+                transVec = np.random.rand(3)
+        else:
+            if pbc == (0,0,1) or (0,1,0) or (1,0,0):
+                rotAngle = np.pi * np.random.random()
+                rotVec = rotAngle * np.array(list(pbc))
+                transVec = np.random.random() * np.array(list(pbc))
+            else:
+                rotAngle = np.pi * np.random.random()
+                rotVec = - rotAngle * (np.array(list(pbc)) - 1)
+                transVec = np.random.rand(3) * np.array(list(pbc))
+            rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
+        relMatrix = self.getCellVectors().T
+        relMatrixInv = np.linalg.inv(relMatrix)
+        rotMatrixDirCoord = np.matmul(relMatrixInv, np.matmul(rotMatrix, relMatrix))
+        transVecDirCoord = -np.dot(rotMatrixDirCoord, np.array([0.5, 0.5, 0.5])) + transVec
+        return Transformation.fromMatrix(rotMatrixDirCoord, transVecDirCoord)
 
     @staticmethod
     def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):
