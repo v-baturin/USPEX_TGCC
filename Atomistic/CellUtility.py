@@ -81,26 +81,29 @@ class Cell:
         return np.divmod(coordinates, (1,1,1))[1]
 
     def randomTransformation(self):
-        pbc = self.getPBC()
-        if pbc == (0, 0, 0) or (1, 1, 1):
+        pbcVec = np.array(list(self.getPBC()))
+        pbcSum = np.sum(pbcVec)
+        matrixDirToCart = self.getCellVectors().T
+        if pbcSum == 0 or 3:
             rotMatrix = Rotation.random().as_matrix()
-            if pbc == (0,0,0):
-                transVecDirCoord = np.zeros(3)
+            if pbcSum == 0:
+                transVec = np.zeros(3)
             else:
-                transVecDirCoord = np.random.rand(3)
+                transVec = np.dot(matrixDirToCart, np.random.rand(3))
         else:
-            if pbc == (0,0,1) or (0,1,0) or (1,0,0):
+            if pbcSum == 1:
                 rotAngle = np.pi * np.random.random()
-                rotVec = rotAngle * np.array(list(pbc))
-                transVecDirCoord = np.random.random() * np.array(list(pbc))
+                pbcVecCart = np.dot(matrixDirToCart, pbcVec)
+                rotVec = rotAngle * pbcVecCart / np.linalg.norm(pbcVecCart)
+                transVec = np.random.random() * pbcVecCart  # pbcVec without norm here
             else:
                 rotAngle = np.pi * np.random.random()
-                rotVec = - rotAngle * (np.array(list(pbc)) - 1)
-                transVecDirCoord = np.random.rand(3) * np.array(list(pbc))
+                pbcVectorsCart = self._cellVectors[np.nonzero(pbcVec)]
+                rotVecWithoutNorm = np.cross(pbcVectorsCart[0,:], pbcVectorsCart[1,:])
+                rotVec = rotAngle * rotVecWithoutNorm/np.linalg.norm(rotVecWithoutNorm)
+                transVec = np.dot(np.random.rand(2) * pbcVectorsCart)
             rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
-        relMatrix = self.getCellVectors().T
-        transVec = np.dot(relMatrix, transVecDirCoord)
-        centerCellVec = np.dot(relMatrix, np.array([0.5, 0.5, 0.5]))
+        centerCellVec = np.dot(matrixDirToCart, np.array([0.5, 0.5, 0.5]))
         transVec = transVec - np.dot(rotMatrix, centerCellVec)
         return Transformation.fromMatrix(rotMatrix, transVec)
 
