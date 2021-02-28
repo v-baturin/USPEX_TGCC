@@ -15,10 +15,13 @@ from pymatgen.core.lattice import Lattice
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
+from .get_reflections import get_reflections
+
 
 class SpectrumAnalyzer(object):
-    def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
-                 exp_angles: list, exp_intensities: list):
+    def __init__(self, spectrum_starts: float = None, spectrum_ends: float = None, wavelength: float = None,
+                 match_tol: float = None, exp_angles: list = None, exp_intensities: list = None,
+                 exp_reflections: list = None):
         """
         Initializes the class.
 
@@ -36,15 +39,20 @@ class SpectrumAnalyzer(object):
         :param exp_angles: angles of the experimental spectrum.
         :type exp_intensities: list[float]
         :param exp_intensities: intensities of the experimental spectrum.
+        :type exp_reflections: list[float, tuple(int, int, int), float]
+        :param exp_reflections: single crystal experimental reflections.
         """
-        # self.k = None
-
-        self.spectrum_starts = spectrum_starts
-        self.spectrum_ends = spectrum_ends
-        self.wavelength = wavelength
-        self.match_tol = match_tol
-        self.exp_angles = np.array(exp_angles)
-        self.exp_intensities = np.array(exp_intensities) / max(exp_intensities) * 100
+        if exp_reflections is not None:
+            self.mode = 'scxrd'
+            self.exp_reflections = np.array(exp_reflections)
+        else:
+            self.mode = 'powder'
+            self.spectrum_starts = spectrum_starts
+            self.spectrum_ends = spectrum_ends
+            self.wavelength = wavelength
+            self.match_tol = match_tol
+            self.exp_angles = np.array(exp_angles)
+            self.exp_intensities = np.array(exp_intensities) / max(exp_intensities) * 100
 
     def analyze(self, system):
         """
@@ -56,33 +64,66 @@ class SpectrumAnalyzer(object):
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
         structure = system['structure']
-        
+
         # pure hydrogen gets low agreement
         if list(structure.composition.keys()) == ['H']:
             return 100.0
 
-        # symmetrize the candidate structure
-        tmp = Structure(lattice=structure.cell, species=structure.get_chemical_symbols(), coords=structure.scaled_coordinates)
-        string = tmp.to(fmt='cif', symprec=0.2)
-        structure = Structure.from_str(string, fmt='cif')
+        # create a pymatgen Structure object
+        structure = Structure(lattice=structure.cell, species=structure.get_chemical_symbols(),
+                              coords=structure.scaled_coordinates)
 
-        # initialize the lattice factor k
-        params = np.array([1.0])
+        if self.mode == 'powder':
+            # symmetrize the candidate structure
+            cif_string = structure.to(fmt='cif', symprec=0.2)
+            structure = Structure.from_str(cif_string, fmt='cif')
 
-        # compute the lattice factor which minimize fitness
-        result = minimize(self.fitness_function, params, (structure,), method='Powell', bounds=((0.98, 1.02),),
-                          options={'ftol': 1.0e-4})
+            # initialize the lattice factor k
+            params = np.array([1.0])
 
-        if not result.success:
-            raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
+            # compute the lattice factor which minimize fitness
+            result = minimize(self.fitness_function, params, (structure,), method='Powell', bounds=((0.98, 1.02),),
+                              options={'ftol': 1.0e-4})
 
+            if not result.success:
+                raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
 
-        # return fitness
-        system['spectrumAnalyzer.xraydistance'] = result.fun
-        # extract the lattice factor
-        system['spectrumAnalyzer.k'] = result.x[0]
-        # self.k = result.x[0]
-        # return result.fun
+            system['spectrumAnalyzer.xraydistance'] = result.fun
+            system['spectrumAnalyzer.k'] = result.x[0]
+        else:
+            # compute minimum d spacing
+            min_d_spacing = 10000
+            for reflection in self.exp_reflections:
+                hkl = list(reflection[1])
+                d_spacing = structure.lattice.d_hkl(hkl)
+                if d_spacing < min_d_spacing:
+                    min_d_spacing = d_spacing
+
+            th_reflections = get_reflections(structure, min_d_spacing)
+            th_reflections = np.array(th_reflections)
+
+            # scale theoretical intensities according to experimental maximum
+            th_reflections[:, 0] = th_reflections[:, 0] / max(th_reflections[:, 0]) * max(self.exp_reflections[:, 0])
+
+            # compute R-factor
+            numerator = 0
+            denominator = 0
+            for i_hkl, hkl, sigma_hkl in self.exp_reflections:
+                th_hkls = [r[1] for r in th_reflections]
+
+                if hkl in th_hkls:
+                    index = th_hkls.index(hkl)
+                elif (-hkl[0], -hkl[1], -hkl[2]) in th_hkls:
+                    index = th_hkls.index((-hkl[0], -hkl[1], -hkl[2]))
+                else:
+                    raise ValueError(f'Experimental reflection {hkl} with intensity {i_hkl} not found in theory.')
+
+                numerator += (1 / sigma_hkl ** 2) * (i_hkl - th_reflections[index][0]) ** 2
+                denominator += (1 / sigma_hkl ** 2) * i_hkl ** 2
+
+            wR = np.sqrt(numerator / denominator)       # weighted R-factor
+
+            system['spectrumAnalyzer.xraydistance'] = wR
 
     def k(self, system):
         if 'spectrumAnalyzer.k' not in system:
@@ -109,27 +150,42 @@ class SpectrumAnalyzer(object):
         """
         dct = {}
         with open(filename, 'r') as f:
-            current_line = f.readline()
-            while current_line != '':
-                values = current_line.split()
-                if values[0] == 'start':
-                    dct['spectrum_starts'] = float(values[1])
-                elif values[0] == 'end':
-                    dct['spectrum_ends'] = float(values[1])
-                elif values[0] == 'wavelength':
-                    dct['wavelength'] = float(values[1])
-                elif values[0] == 'match_tol':
-                    dct['match_tol'] = float(values[1])
-                elif values[0] == 'peaks':
-                    dct['exp_angles'] = [float(values[1])]
-                    dct['exp_intensities'] = [float(values[2])]
-                    current_line = f.readline()
-                    while current_line != '':
-                        values = current_line.split()
-                        dct['exp_angles'].append(float(values[0]))
-                        dct['exp_intensities'].append(float(values[1]))
-                        current_line = f.readline()
+            if filename.endswith('.hkl'):
+                dct['exp_reflections'] = []
+                for line in f:
+                    values = line.split()
+
+                    # the hkl file terminates with all zeros
+                    if values == ['0', '0', '0', '0.00', '0.00']:
+                        break
+
+                    hkl = (int(values[0]), int(values[1]), int(values[2]))
+                    i_hkl = float(values[3])
+                    sigma_hkl = float(values[4])
+
+                    dct['exp_reflections'].append([i_hkl, hkl, sigma_hkl])
+            else:
                 current_line = f.readline()
+                while current_line != '':
+                    values = current_line.split()
+                    if values[0] == 'start':
+                        dct['spectrum_starts'] = float(values[1])
+                    elif values[0] == 'end':
+                        dct['spectrum_ends'] = float(values[1])
+                    elif values[0] == 'wavelength':
+                        dct['wavelength'] = float(values[1])
+                    elif values[0] == 'match_tol':
+                        dct['match_tol'] = float(values[1])
+                    elif values[0] == 'peaks':
+                        dct['exp_angles'] = [float(values[1])]
+                        dct['exp_intensities'] = [float(values[2])]
+                        current_line = f.readline()
+                        while current_line != '':
+                            values = current_line.split()
+                            dct['exp_angles'].append(float(values[0]))
+                            dct['exp_intensities'].append(float(values[1]))
+                            current_line = f.readline()
+                    current_line = f.readline()
         return dct
 
     def fitness_function(self, params, structure):
