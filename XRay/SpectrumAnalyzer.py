@@ -99,6 +99,7 @@ class SpectrumAnalyzer(object):
                 if d_spacing < min_d_spacing:
                     min_d_spacing = d_spacing
 
+            min_d_spacing = np.floor(min_d_spacing * 1000) / 1000
             th_reflections = get_reflections(structure, min_d_spacing)
             th_reflections = np.array(th_reflections)
 
