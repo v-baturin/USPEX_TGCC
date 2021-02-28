@@ -35,6 +35,7 @@ extensions = [
     Extension("USPEX.Common.SpaceGroups.SpaceGroups3D", ["SpaceGroups/SpaceGroups3D.py"]),
     Extension("USPEX.Common.SpaceGroups.TopologicalNet", ["SpaceGroups/TopologicalNet.py"]),
     Extension("USPEX.Common.XRay.SpectrumAnalyzer", ["XRay/SpectrumAnalyzer.py"]),
+    Extension("USPEX.Common.XRay.get_reflections", ["XRay/get_reflections.py"]),
     Extension("USPEX.Common.Atomistic.AtomicStructure", ["Atomistic/AtomicStructure.py"]),
     Extension("USPEX.Common.Atomistic.Bonds", ["Atomistic/Bonds.py"]),
     Extension("USPEX.Common.Atomistic.calcDefaultVolume", ["Atomistic/calcDefaultVolume.py"]),
