@@ -141,7 +141,8 @@ setup(
             "Selection/__init__.py",
             "SpaceGroups/__init__.py",
             "SpaceGroups/decompositions.json",
-            "XRay/__init__.py"
+            "XRay/__init__.py",
+            "XRay/atomic_scattering_params.json"
         ],
     },
     ext_modules=cythonize(extensions, language_level=3),
