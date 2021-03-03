@@ -26,9 +26,6 @@ class CellUtility:
     def getCellVolume(self, composition, conditions):
         return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
 
-    # def getRandomCell(self, composition, conditions):
-    #     pass
-
     def adjustCell(self, cell, composition, conditions):
         return self._cell if self._cell is not None \
             else cell * np.power(self.getCellVolume(composition, conditions) / cell.getVolume(), 1.0 / 3.0)
@@ -108,6 +105,27 @@ class Cell:
         centerCellVec = np.dot(matrixDirToCart, np.array([0.5, 0.5, 0.5]))
         transVec = transVec - np.dot(rotMatrix, centerCellVec)
         return Transformation.fromMatrix(rotMatrix, transVec)
+
+    def getFittedTransformations(self, cell):
+        vectors = cell.getCellVectors()[np.nonzero(cell.getPBC())]
+        allFittedVectors = tuple([] for i in range(len(vectors)))
+        for fittedVectors, vector in zip(allFittedVectors, vectors):
+            k = 0
+            while True:
+                candidateVector = self.cartesianToFractional(k*vector)
+                fittedVectors.append(candidateVector)
+                if np.any(candidateVector > (1.,1.,1.)):
+                    break
+                k += 1
+        allFittedVectors = np.asarray(allFittedVectors)
+        for i, fittedVectors in enumerate(allFittedVectors):
+            shape = fittedVectors.shape
+            for j in range(i):
+                shape  = (1,) + shape
+            allFittedVectors[i] = fittedVectors.reshape(shape)
+        allFittedVectors = np.sum(allFittedVectors, axis = 0)
+        for vector in allFittedVectors.reshape((-1,3)):
+            yield Transformation.fromRotVector([0.,0.,0.], vector)
 
     @staticmethod
     def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):

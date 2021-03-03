@@ -4,36 +4,35 @@ from scipy.spatial.transform import Rotation
 
 class Transformation:
 
-    def __init__(self, rot_matrix, trans_vec, rot_vec):
-        self.rotMatrix = rot_matrix
-        self.transVec = trans_vec
-        self.rotVec = rot_vec
+    def __init__(self, rotMatrix, transVec, rotVec):
+        self.rotMatrix = rotMatrix
+        self.transVec = transVec
+        self.rotVec = rotVec
 
     def __neg__(self):
         return Transformation(-self.rotMatrix, -self.transVec, -self.rotVec)
 
-    def _transition(self, struc_coord):
-        return struc_coord + self.transVec
+    def composition(self, transformation):
+        pass
 
-    def _rotation(self, struc_coord):
-        return np.dot(self.rotMatrix, struc_coord)
+    def getTransformedCoordinates(self, coordinates):
+        return np.dot(self.rotMatrix, coordinates) + self.transVec
 
-    def transform(self, struc_coord):
-        struc_coord_transformed = self._rotation(struc_coord)
-        struc_coord_transformed = self._transition(struc_coord_transformed)
-        return struc_coord_transformed
+    def transform(self, structure):
+        coord = self.getTransformedCoordinates(structure.getCartesianCoordinates())
+        return type(structure)(structure.getAtomTypes(), coord, cell = structure.getCell())
 
     @staticmethod
-    def fromMatrix(rot_matrix, trans_vec):
-        rotation_sc = Rotation.from_matrix(rot_matrix)
+    def fromMatrix(rotMatrix, transVec):
+        rotation_sc = Rotation.from_matrix(rotMatrix)
         rot_vec = rotation_sc.as_rotvec()
-        return Transformation(rot_matrix, trans_vec, rot_vec)
+        return Transformation(rotMatrix, transVec, rot_vec)
 
     @staticmethod
-    def fromRotVector(rot_vec, trans_vec):
-        rotation_sc = Rotation.from_rotvec(rot_vec)
+    def fromRotVector(rotVec, transVec):
+        rotation_sc = Rotation.from_rotvec(rotVec)
         rot_matrix = rotation_sc.as_matrix()
-        return Transformation(rot_matrix, trans_vec, rot_vec)
+        return Transformation(rot_matrix, transVec, rotVec)
 
     @staticmethod
     def randomRotVector():

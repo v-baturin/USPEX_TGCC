@@ -38,13 +38,13 @@ class Heredity:
             axis = np.random.randint(3)
             gaugesOfSlabs = tuple(np.random.randint(10, size=self.nslubs).tolist())
 
-            transformation1, *slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=cell1,
-                                                 axis=axis, gaugesOfSlabs=gaugesOfSlabs,
-                                                 order=order1, correlation=self.correlation, parity=0)
+            slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
+                                         axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                         order=order1, correlation=self.correlation, parity=0)
 
-            transformation2, *slabs2 = Slab.getRandomSlabs(molecules=molecules2, inputCell=cell2, outputCell=cell2,
-                                                 axis=axis, gaugesOfSlabs=gaugesOfSlabs,
-                                                 order=order2, correlation=self.correlation, parity=1)
+            slabs2 = Slab.getRandomSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
+                                         axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                         order=order2, correlation=self.correlation, parity=1)
 
             goodCandidateMolecules = []
             goodCandidateMoleculeTypes = []
@@ -57,18 +57,18 @@ class Heredity:
             parity = 0
             for slab1, slab2 in zip(slabs1, slabs2):
                 if not parity:
-                    goodCandidateMolecules.extend(transformation1.transform(molecules1[i]) for i in slab1.indices)
+                    goodCandidateMolecules.extend(slab1.transformation.transform(molecules1[i]) for i in slab1.indices)
                     goodCandidateMoleculeTypes.extend(moleculeTypes1[i] for i in slab1.indices)
                     goodCandidateDepths.extend(slab1.depths)
-                    badCandidateMolecules.extend(transformation2.transform(molecules2[i]) for i in slab2.indices)
+                    badCandidateMolecules.extend(slab2.transformation.transform(molecules2[i]) for i in slab2.indices)
                     badCandidateMoleculeTypes.extend(moleculeTypes2[i] for i in slab2.indices)
                     badCandidateDepths.extend(slab2.depths)
                     parity = 1
                 else:
-                    badCandidateMolecules.extend(transformation1.transform(molecules1[i]) for i in slab1.indices)
+                    badCandidateMolecules.extend(slab1.transformation.transform(molecules1[i]) for i in slab1.indices)
                     badCandidateMoleculeTypes.extend(moleculeTypes1[i] for i in slab1.indices)
                     badCandidateDepths.extend(slab1.depths)
-                    goodCandidateMolecules.extend(transformation2.transform(molecules2[i]) for i in slab2.indices)
+                    goodCandidateMolecules.extend(slab2.transformation.transform(molecules2[i]) for i in slab2.indices)
                     goodCandidateMoleculeTypes.extend(moleculeTypes2[i] for i in slab2.indices)
                     goodCandidateDepths.extend(slab2.depths)
                     parity = 0
