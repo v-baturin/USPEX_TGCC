@@ -11,10 +11,10 @@ class Rotation():
 
     HOW_MANY_ATTEMPTS_ROTATION = 100
 
-    def __init__(self, simpleMoleculeUtility, ionDistances, conditions):
-        self.simpleMoleculeUtility = simpleMoleculeUtility
-        self.ionDistances = ionDistances
-        self.conditions = conditions
+    def __init__(self, utilities):
+        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.ionDistances = utilities.ionDistances
+        self.conditions = utilities.conditions
 
 
     def __call__(self, system) -> tuple:

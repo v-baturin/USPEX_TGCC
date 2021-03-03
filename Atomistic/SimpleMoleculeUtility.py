@@ -5,8 +5,33 @@ from .Transformation import Transformation
 
 
 class SimpleMoleculeUtility(object):
-    def __init__(self, atomicStructureFactory):
-        self.atomicStructureFactory = atomicStructureFactory
+    def __init__(self, atomicStructureFactory, molecules : dict):
+        self.systemFactory = atomicStructureFactory
+        self.molecules = {el.short_name : self.systemFactory([el], [[0., 0., 0.]]) for el in Element.all_elements()}
+        self.molecules.update(molecules)
+        self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
+
+    def populateStructure(self, cell, coordinates, operations):
+        molecules = []
+        for symbol, atomCoordinates, atomOperations in zip(operations.keys(), coordinates.values(), operations.values()):
+            molecule = self.molecules[symbol]
+            if len(molecule) > 1:
+                for nodeCoordinates, groups in zip(atomCoordinates, atomOperations):
+                    molecule = Transformation.fromRotVector(Transformation.randomRotVector(),
+                                                            [0., 0., 0.]).transform(molecule)
+                    for coordinate, operation in zip(nodeCoordinates, np.random.choice(groups, 1).operators):
+                        transformation = Transformation.fromMatrix(cell.fractionalToCartesian(operation[0:3, 0:3]),
+                                                                   cell.fractionalToCartesian(coordinate))
+                        molecules.append(transformation.transform(molecule))
+            else:
+                for nodeCoordinates in atomCoordinates:
+                    for coordinate in nodeCoordinates:
+                        transformation = Transformation.fromRotVector([0.,0.,0.], cell.fractionalToCartesian(coordinate))
+                        molecules.append(transformation.transform(molecule))
+        return molecules
+
+    def determineMoleculeType(self, molecule):
+        return self.formulaToTypeMap[molecule.getFormula()]
 
     def getMinDistances(self, molecules, cell):
         """
@@ -32,7 +57,7 @@ class SimpleMoleculeUtility(object):
         #     if not inMolecule: return False
         # return True
 
-        structure, disassembler = self.atomicStructureFactory.assemble(molecules, cell)
+        structure, disassembler = self.systemFactory.assemble(molecules, cell)
         N = len(structure)
         if N < 2:
             return True
@@ -50,7 +75,8 @@ class SimpleMoleculeUtility(object):
 
         return structure.getAtomTypes(), actualDistances
 
-    def rotationClearance(self, inertiaValues):
+    @staticmethod
+    def rotationClearance(inertiaValues):
         minValue = np.min(inertiaValues)
         if np.isclose(minValue, 0):
             clearance = np.zeros(inertiaValues.shape)

@@ -1,17 +1,18 @@
 import numpy as np
 from copy import copy
+from collections import Counter
 
 from .Transformation import Transformation
 
 
 class AtomicStructure:
 
-    def __init__(self, atomTypes, coordinates, cell = None, edges = None, zmatrixConfig = None, **kwargs):
+    def __init__(self, atomTypes, coordinates, cell = None, bonds = None, zmatrixConfig = None, **kwargs):
         assert len(atomTypes) == len(coordinates)
-        self.atomTypes = copy(atomTypes)
-        self.coordinates = copy(coordinates)
+        self.atomTypes = np.asarray(atomTypes)
+        self.coordinates = np.asarray(coordinates)
         self.cell = copy(cell)
-        self.edges = copy(edges)
+        self.bonds = copy(bonds)
         self.zmatrixConfig = copy(zmatrixConfig)
 
     def __len__(self):
@@ -19,6 +20,12 @@ class AtomicStructure:
 
     def getAtomTypes(self):
         return copy(self.atomTypes)
+
+    def getComposition(self):
+        return Counter(dict(zip(*np.unique(self.atomTypes, return_counts=True))))
+
+    def getFormula(self):
+        return ''.join(f'{element.short_name}{amount}' for element, amount in self.getComposition().items())
 
     def getCartesianCoordinates(self):
         return copy(self.coordinates)
@@ -68,7 +75,7 @@ class AtomicStructure:
         for molecule in molecules:
             atomTypes.extend(molecule.atomTypes)
             coordinates.extend(molecule.coordinates)
-            moleculesData.append({'size': len(molecule), 'cell': molecule.cell, 'edges': molecule.edges,
+            moleculesData.append({'size': len(molecule), 'cell': molecule.cell, 'bonds': molecule.bonds,
                                   'zmatrixConfig': molecule.zmatrixConfig})
         offsetVector = environment.calculateOffset(molecules, cell)
         structure = AtomicStructure(atomTypes, coordinates, cell, **kwargs)
@@ -97,7 +104,7 @@ class AtomicDisassembler:
             coordinates = coordinatesNotYet[:moleculeSize]
             del coordinatesNotYet[:moleculeSize]
             molecule = AtomicStructure(atomTypes, coordinates, moleculeData['cell'],
-                                       edges=moleculeData['edges'], zmatrixConfig=moleculeData['zmatrixConfig'])
+                                       bonds=moleculeData['bonds'], zmatrixConfig=moleculeData['zmatrixConfig'])
             molecules.append(molecule)
         assert len(atomTypesNotYet) == len(coordinatesNotYet)
         assert len(coordinatesNotYet) == len(self.environment.getStructure())

@@ -4,7 +4,7 @@ from copy import copy
 
 class Permutation:
 
-    def __init__(self, howManySwaps = 5):
+    def __init__(self, utilities, howManySwaps = 5):
         self.specificSwaps = []
         self.howManySwaps = howManySwaps
 

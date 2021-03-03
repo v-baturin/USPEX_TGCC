@@ -2,10 +2,9 @@ import numpy as np
 
 class Slab:
 
-    def __init__(self, indices, depths, transformation):
+    def __init__(self, indices, depths):
         self.indices = np.asarray(indices, dtype=int)
-        self.depths = depths
-        self.transformation = transformation
+        self.depths = np.asarray(depths, dtype=float)
 
     @staticmethod
     def getSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, transformation):
@@ -23,7 +22,7 @@ class Slab:
                     indices.append(i)
                     depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - coordinateBounds[j-1])))
                     break
-        return tuple(Slab(indices, depths, transformation) for indices, depths in slabs)
+        return transformation, *(Slab(indices, depths) for indices, depths in slabs)
 
     @staticmethod
     def getRandomSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, order, correlation, parity: int):

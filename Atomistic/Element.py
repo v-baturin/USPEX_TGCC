@@ -203,6 +203,10 @@ class Element(object):
         self.mass = _ELEMENTS_LIST[pos].mass
 
     @staticmethod
+    def all_elements() -> list:
+        return [Element(x.z) for x in _ELEMENTS_LIST]
+
+    @staticmethod
     def all_z() -> List[int]:
         return [x.z for x in _ELEMENTS_LIST]
 

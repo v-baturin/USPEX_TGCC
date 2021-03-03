@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
-from Atomistic.Transformation import Transformation
+
+from .Transformation import Transformation
 
 
 class CellUtility:
@@ -25,15 +26,16 @@ class CellUtility:
     def getCellVolume(self, composition, conditions):
         return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
 
-    def getRandomCell(self, composition, conditions):
-        pass
+    # def getRandomCell(self, composition, conditions):
+    #     pass
 
     def adjustCell(self, cell, composition, conditions):
         return self._cell if self._cell is not None \
             else cell * np.power(self.getCellVolume(composition, conditions) / cell.getVolume(), 1.0 / 3.0)
 
-    def getHybridCell(self, cell1, cell2):
-        pass
+    def getHybridCell(self, cell1, cell2, fraction):
+        assert 0 <= fraction <= 1
+        return Cell(fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors(), self._pbc)
 
 
 class Cell:

@@ -5,10 +5,10 @@ from ..Slab import Slab
 
 class Twinning:
 
-    def __init__(self, cellUtility, compositionSpace, radialDistributionUtility):
-        self.cellUtility = cellUtility
-        self.compositionSpace = compositionSpace
-        self.radialDistributionUtility = radialDistributionUtility
+    def __init__(self, utilities):
+        self.cellUtility = utilities.cellUtility
+        self.compositionSpace = utilities.compositionSpace
+        self.radialDistributionUtility = utilities.radialDistributionUtility
         self.correlation = 0
 
     def __call__(self, system, *args, **kwargs):

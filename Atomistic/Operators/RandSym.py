@@ -46,13 +46,12 @@ def determineOperations(lat, numIons, candidate):
 
 
 class RandSym:
-    def __init__(self, cellUtility, compositionSpace, simpleMoleculeUtility, ionDistances, conditions,
-                 nsymN=False, nsym=None, sym_coef=0.4, splitInto=[1]):
-        self.cellUtility = cellUtility
-        self.compositionSpace = compositionSpace
-        self.simpleMoleculeUtility = simpleMoleculeUtility
-        self.ionDistances = ionDistances
-        self.conditions = conditions
+    def __init__(self, utilities, nsymN=False, nsym=None, sym_coef=0.4, splitInto=[1]):
+        self.cellUtility = utilities.cellUtility
+        self.compositionSpace = utilities.compositionSpace
+        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.ionDistances = utilities.ionDistances
+        self.conditions = utilities.conditions
         self.nsymN = nsymN
         if nsym is None:
             self.nsym = list(range(2, 230))
@@ -76,7 +75,7 @@ class RandSym:
         CenterminDistMatrice = np.zeros((len(symbols), len(symbols)))
         radii = []
         for s in symbols:
-            molecule = self.compositionSpace.molecules[s]
+            molecule = self.simpleMoleculeUtility.molecules[s]
             if len(molecule) == 1:
                 atomRaduis = self.conditions.calcAtomVolume(s) ** (1.0 / 3.0)
                 radii.append(0.22 * atomRaduis)
@@ -139,7 +138,7 @@ class RandSym:
                                                     self.sym_coef)
                 name, cell, coordinates, operations = determineOperations(lat, numIons, candidate)
                 cell = self.cellUtility.adjustCell(cell, composition, self.conditions)
-                molecules = self.compositionSpace.populateStructure(cell, coordinates, operations)
+                molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
                 if atomDistances >= minDistMatrix:

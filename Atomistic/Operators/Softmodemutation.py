@@ -11,10 +11,10 @@ _MIN_VALID_FREQUENCY = 5.0e-4
 
 
 class Softmodemutation:
-    def __init__(self, simpleMoleculeUtility, ionDistances, conditions, degree: float = None):
-        self.simpleMoleculeUtility = simpleMoleculeUtility
-        self.ionDistances = ionDistances
-        self.conditions = conditions
+    def __init__(self, utilities, degree: float = None):
+        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.ionDistances = utilities.ionDistances
+        self.conditions = utilities.conditions
         self.degree= degree
         self.knownSystems = {}
 
@@ -22,7 +22,7 @@ class Softmodemutation:
         ID = system['ID']
         molecules = system['molecules']
         cell = system['cell']
-        structure, disassembler = self.simpleMoleculeUtility.atomicStructureFactory.assemble(molecules, cell)
+        structure, disassembler = self.simpleMoleculeUtility.systemFactory.assemble(molecules, cell)
         if ID in self.knownSystems:
             frequencies, eigenVectors = self.knownSystems[ID]
         else:
@@ -62,4 +62,4 @@ class Softmodemutation:
             if offsprings:
                 return offsprings
 
-        raise RuntimeError("RandTop failed.")
+        raise RuntimeError("Softmutation failed.")

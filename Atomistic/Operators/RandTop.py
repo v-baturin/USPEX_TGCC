@@ -25,14 +25,13 @@ ATTEMPTS_POINT_GROUP = 10
 
 
 class RandTop:
-    def __init__(self, cellUtility, compositionSpace, simpleMoleculeUtility, ionDistances, conditions,
-                 supercells: list = None, maxSupersize: int = MAX_SUPERSIZE,
+    def __init__(self, utilities, supercells: list = None, maxSupersize: int = MAX_SUPERSIZE,
                  attemptsRotation: int = ATTEMPTS_ROTATION, attemptsPointGroup: int = ATTEMPTS_POINT_GROUP):
-        self.cellUtility = cellUtility
-        self.compositionSpace = compositionSpace
-        self.simpleMoleculeUtility = simpleMoleculeUtility
-        self.ionDistances = ionDistances
-        self.conditions = conditions
+        self.cellUtility = utilities.cellUtility
+        self.compositionSpace = utilities.compositionSpace
+        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.ionDistances = utilities.ionDistances
+        self.conditions = utilities.conditions
         self.supercells = supercells
         self.maxSupersize = maxSupersize
         self.attemptsRotation = attemptsRotation
@@ -99,7 +98,7 @@ class RandTop:
                                     coordinates = dict(zip(symbols, coordinates))
 
                                     for i in range(self.attemptsRotation):
-                                        molecules = self.compositionSpace.populateStructure(cell, coordinates, operations)
+                                        molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
                                         atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
                                         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
                                         if atomDistances >= minDistMatrix:
