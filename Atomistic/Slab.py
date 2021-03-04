@@ -16,7 +16,7 @@ class Slab:
             centerOfMassCoordinates = molecule.getCenterOfMassCartesianCoordinates()
             centerOfMassCoordinates = inputCell.getWrapedCartesianCoordinates(centerOfMassCoordinates)
             for fittedTransformation in fittedTransformations:
-                compositTransformation = transformation.composition(fittedTransformation)
+                compositTransformation = transformation * fittedTransformation
                 centerOfMassCoordinates = compositTransformation.getTransformedCoordinates(centerOfMassCoordinates)
                 centerOfMassCoordinates = outputCell.getWrapedCartesianCoordinates(centerOfMassCoordinates)
                 coordinate = outputCell.cartesianToFractional(centerOfMassCoordinates)[axis]

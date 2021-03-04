@@ -67,17 +67,16 @@ class Cell:
         return np.array([l0, l1, l2])
 
     def cartesianToFractional(self, coordinates):
-        pass
+        return np.linalg.solve(self._cellVectors, coordinates)
 
     def fractionalToCartesian(self, coordinates):
-        pass
+        return np.dot(self._cellVectors, coordinates)
 
     def getWrapedCartesianCoordinates(self, coordinates):
         return self.fractionalToCartesian(self.getWrapedFractionalCoordinates(self.cartesianToFractional(coordinates)))
 
-    @staticmethod
-    def getWrapedFractionalCoordinates(coordinates):
-        return np.divmod(coordinates, (1,1,1))[1]
+    def getWrapedFractionalCoordinates(self, coordinates):
+        return np.divmod(coordinates, 1/np.asarray(self._pbc, dtype=float))[1]
 
     def randomTransformation(self):
         pbcVec = np.array(list(self.getPBC()))
@@ -104,7 +103,7 @@ class Cell:
             rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
         centerCellVec = np.dot(matrixDirToCart, np.array([0.5, 0.5, 0.5]))
         transVec = transVec - np.dot(rotMatrix, centerCellVec)
-        return Transformation.fromMatrix(rotMatrix, transVec)
+        return Transformation.fromMatrix(rotMatrix, np.dot(rotMatrix, transVec))
 
     def getFittedTransformations(self, cell):
         vectors = cell.getCellVectors()[np.nonzero(cell.getPBC())]

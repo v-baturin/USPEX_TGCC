@@ -4,16 +4,15 @@ from scipy.spatial.transform import Rotation
 
 class Transformation:
 
-    def __init__(self, rotMatrix, transVec, rotVec):
+    def __init__(self, rotMatrix, transVec):
         self.rotMatrix = rotMatrix
         self.transVec = transVec
-        self.rotVec = rotVec
 
     def __neg__(self):
-        return Transformation(-self.rotMatrix, -self.transVec, -self.rotVec)
+        return Transformation(-self.rotMatrix, -self.transVec)
 
-    def composition(self, transformation):
-        pass
+    def __mul__(self, other):
+        return Transformation(np.dot(self.rotMatrix, other.rotMatrix), self.transVec + np.dot(self.rotMatrix, other.transVec))
 
     def getTransformedCoordinates(self, coordinates):
         return np.dot(self.rotMatrix, coordinates) + self.transVec
@@ -24,16 +23,15 @@ class Transformation:
 
     @staticmethod
     def fromMatrix(rotMatrix, transVec):
-        rotation_sc = Rotation.from_matrix(rotMatrix)
-        rot_vec = rotation_sc.as_rotvec()
-        return Transformation(rotMatrix, transVec, rot_vec)
+        return Transformation(rotMatrix, transVec)
 
     @staticmethod
     def fromRotVector(rotVec, transVec):
         rotation_sc = Rotation.from_rotvec(rotVec)
         rot_matrix = rotation_sc.as_matrix()
-        return Transformation(rot_matrix, transVec, rotVec)
+        return Transformation(rot_matrix, transVec)
 
     @staticmethod
     def randomRotVector():
-        pass
+        return Rotation.random().as_rotvec()
+
