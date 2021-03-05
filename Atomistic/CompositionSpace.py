@@ -117,10 +117,7 @@ class CompositionSpace(object):
                np.all(numBlocks <= self.range[:,1]) and \
                self.minAt <= np.sum(numIons) <= self.maxAt
 
-    def composition(self, system : dict = None, composition = None):
-        return system['structure'].composition if composition is None and system is not None else composition
-
-    def numIons(self, system : dict = None, composition = None):
+    def numIons(self, composition):
         """
         Creates numIons array from given composition.
 
@@ -129,8 +126,6 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
-        composition = self.composition(system, composition)
-
         num = []
         for symbol in self.symbols:
             if symbol in composition:
@@ -150,6 +145,18 @@ class CompositionSpace(object):
         """
         return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(*args, **kwargs), rcond=None)[0]).astype(int)
 
+    def numBlocksFromCompositions(self, compositions: np.ndarray):
+        numBlocks = []
+        for composition in compositions:
+            numBlocks.append(self.numBlocks(composition))
+        return np.asarray(numBlocks)
+
+    def numMolsFromCompositions(self, compositions: np.ndarray):
+        numMols = []
+        for composition in compositions:
+            numMols.append(self.numIons(composition))
+        return np.asarray(numMols)
+
     def randomComposition(self):
         """
         Creates random numIons array respecting configuration parameters: blocks, range, minAt and maxAt.
@@ -165,7 +172,7 @@ class CompositionSpace(object):
             if self.minAt <= np.sum(numIons) <= self.maxAt:
                 return Counter(dict(zip(self.symbols, numIons)))
 
-    def findDesiredComposition(self, composition1, composition2,
+    def findDesiredComposition(self, compositionMax,
                                composition, debug: bool=False):
         """
         Find a composition that requires the least addition/deleting of atoms from child.
@@ -182,8 +189,8 @@ class CompositionSpace(object):
         :return: (numIons, numBlocks) to determine which atoms could be used to make a child.
         """
 
-        maxBlocks = self.numBlocks(composition = composition1) + self.numBlocks(composition = composition2)
-        numIons_start = np.fromiter(composition[symbol] for symbol in self.symbols)
+        maxBlocks = self.numBlocks(composition = compositionMax)
+        numIons_start = np.fromiter((composition[symbol] for symbol in self.symbols), dtype = str)
 
         maxAtoms = np.dot(maxBlocks, self.blocks)
         maxAdded = maxAtoms - numIons_start  # how many atoms one could possibly add

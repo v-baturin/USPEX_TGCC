@@ -23,13 +23,13 @@ class Heredity:
     def __call__(self, system1, system2):
         cell1 = system1['cell']
         molecules1 = system1['molecules']
-        moleculeTypes1 = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in molecules1]
-        composition1 = Counter(dict(zip(*np.unique(moleculeTypes1, return_counts=True))))
+        moleculeTypes1 = self.simpleMoleculeUtility.moleculeTypes(system1)
+        composition1 = self.simpleMoleculeUtility.composition(system1)
         order1 = self.radialDistributionUtility.order(system1)
         cell2 = system2['cell']
         molecules2 = system1['molecules']
-        moleculeTypes2 = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in molecules2]
-        composition2 = Counter(dict(zip(*np.unique(moleculeTypes2, return_counts=True))))
+        moleculeTypes2 = self.simpleMoleculeUtility.moleculeTypes(system2)
+        composition2 = self.simpleMoleculeUtility.composition(system2)
         order2 = self.radialDistributionUtility.order(system2)
 
         outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction = np.random.rand())
@@ -82,7 +82,7 @@ class Heredity:
             badCandidateMoleculeTypes = [badCandidateMoleculeTypes[i] for i in badCandidateSortOrder]
 
             composition = Counter(dict(zip(*np.unique(goodCandidateMoleculeTypes, return_counts=True))))
-            desiredComposition = self.compositionSpace.findDesiredComposition(composition1, composition2, composition)
+            desiredComposition = self.compositionSpace.findDesiredComposition(composition1 + composition2, composition)
 
             goodCandidateIndices = self.compositionSpace.choose(goodCandidateMoleculeTypes, desiredComposition)
             badCandidateIndices = self.compositionSpace.choose(badCandidateMoleculeTypes, desiredComposition - composition)

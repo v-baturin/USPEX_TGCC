@@ -1,4 +1,5 @@
 import numpy as np
+from collections import Counter
 
 from .Element import Element
 from .Transformation import Transformation
@@ -32,6 +33,18 @@ class SimpleMoleculeUtility(object):
 
     def determineMoleculeType(self, molecule):
         return self.formulaToTypeMap[molecule.getFormula()]
+
+    def moleculeTypes(self, system : dict):
+        if 'simpleMoleculeUtility.moleculeTypes' not in system:
+            moleculeTypes = [self.determineMoleculeType(molecule) for molecule in system['molecules']]
+            system['simpleMoleculeUtility.moleculeTypes'] = moleculeTypes
+        return system['simpleMoleculeUtility.moleculeTypes']
+
+    def composition(self, system : dict):
+        if 'simpleMoleculeUtility.composition' not in system:
+            composition = Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
+            system['simpleMoleculeUtility.composition'] = composition
+        return system['simpleMoleculeUtility.composition']
 
     def getMinDistances(self, molecules, cell):
         """
