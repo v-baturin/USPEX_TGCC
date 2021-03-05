@@ -16,7 +16,8 @@ class SimpleMoleculeUtility(object):
 
     def populateStructure(self, cell, coordinates, operations):
         molecules = []
-        for symbol, atomCoordinates, atomOperations in zip(operations.keys(), coordinates.values(), operations.values()):
+        for symbol, atomCoordinates in coordinates.items():
+            atomOperations = operations[symbol]
             molecule = self.molecules[symbol]
             if len(molecule) > 1:
                 for nodeCoordinates, groups in zip(atomCoordinates, atomOperations):

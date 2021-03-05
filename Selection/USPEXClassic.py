@@ -97,6 +97,10 @@ class USPEXClassic(object):
                     break
                 try:
                     offsprings = mutation(parent)
+                    for offspring in offsprings:
+                        target.pool.assignID(offspring)
+                        offspring['howCome'] = type(mutation).__name__
+                        offspring['parent'] = f"{parent['ID']}"
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.append(parent)
@@ -122,6 +126,10 @@ class USPEXClassic(object):
                     break
                 try:
                     offsprings = hybridization(parent1,parent2)
+                    for offspring in offsprings:
+                        target.pool.assignID(offspring)
+                        offspring['howCome'] = type(hybridization).__name__
+                        offspring['parent'] = f"{parent1['ID']} {parent2['ID']}"
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.extend([parent1, parent2])
@@ -137,6 +145,10 @@ class USPEXClassic(object):
             while howMany > 0:
                 try:
                     offsprings = creation()
+                    for offspring in offsprings:
+                        target.pool.assignID(offspring)
+                        offspring['howCome'] = type(creation).__name__
+                        offspring['parent'] = "None"
                     population.extend(offsprings)
                 except:
                     offsprings = tuple()

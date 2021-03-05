@@ -112,20 +112,18 @@ class AtomicDisassembler:
         self.environment = copy(environment)
 
     def disassemble(self, atomicStructure):
-        atomTypesNotYet = atomicStructure.getAtomTypes()
-        coordinatesNotYet = atomicStructure.getCartesianCoordinates()
+        atomTypesNotYet = list(atomicStructure.getAtomTypes())
+        coordinatesNotYet = list(atomicStructure.getCartesianCoordinates())
         molecules = []
         for moleculeData in self.moleculesData:
             moleculeSize = moleculeData['size']
-            atomTypes = atomTypesNotYet[:moleculeSize]
-            del atomTypesNotYet[:moleculeSize]
-            coordinates = coordinatesNotYet[:moleculeSize]
-            del coordinatesNotYet[:moleculeSize]
+            atomTypes = [atomTypesNotYet.pop(0) for i in range(moleculeSize)]
+            coordinates = [coordinatesNotYet.pop(0) for i in range(moleculeSize)]
             molecule = AtomicStructure(atomTypes, coordinates, moleculeData['cell'],
                                        bonds=moleculeData['bonds'], zmatrixConfig=moleculeData['zmatrixConfig'])
             molecules.append(molecule)
         assert len(atomTypesNotYet) == len(coordinatesNotYet)
-        assert len(coordinatesNotYet) == len(self.environment.getStructure())
+        assert len(coordinatesNotYet) == 0 # len(self.environment.getStructure())
         return {'molecules': molecules, 'cell': atomicStructure.getCell(), 'environment': copy(self.environment)}
 
     def decomposeDisplacements(self, displacements, structure):

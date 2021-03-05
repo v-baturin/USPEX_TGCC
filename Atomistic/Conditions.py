@@ -241,9 +241,9 @@ class Conditions:
         :return: volume of the element.
         """
 
-        volumeAtomic = calcVolumePure(self.externalPressure, elementSymbol, 'atom') if self.volumeType > 0 else 0
-        volumeMolecular = calcVolumePure(self.externalPressure, elementSymbol, 'mol') if self.volumeType < 1 else 0
-        return (self.volumeType * volumeAtomic + (1 - self.volumeType) * volumeMolecular)
+        volumeAtomic = calcVolumePure(self.externalPressure, elementSymbol, 'atom') if self.volumeType < 1 else 0
+        volumeMolecular = calcVolumePure(self.externalPressure, elementSymbol, 'mol') if self.volumeType > 0 else 0
+        return (self.volumeType * volumeMolecular + (1 - self.volumeType) * volumeAtomic)
 
     def calcCompositionVolume(self, composition):
         """
@@ -254,3 +254,6 @@ class Conditions:
         :return: volume
         """
         return sum(self.calcAtomVolume(symbol) * amount for symbol, amount in composition.items())
+
+    def putConditions(self, system):
+        system['externalPressure'] = self.externalPressure

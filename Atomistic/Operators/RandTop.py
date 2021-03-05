@@ -42,7 +42,7 @@ class RandTop:
         composition = self.compositionSpace.randomComposition()
 
         symbols = list(composition.keys())
-        numIons = list(composition.values())
+        numIons = list(composition[symbol] for symbol in symbols)
         inds = np.flatnonzero(numIons)
         zeroInds = np.sort(list(set(range(len(numIons))) - set(inds)))
         # generateStructureWithRandomTopology properly works if all elements in numIons are nonzero.
@@ -74,10 +74,10 @@ class RandTop:
                         for nodePartition in randomPartitionSampler(len(flavour.multiplicities), len(numberOfAtoms), 50):
                             logger.debug(f'Trying {nodePartition} partition')
                             for atoms3 in randomPermutation(atomPermutations):
-                                permutationAtoms, numberOfAtoms = zip(*atoms3)
+                                permutationAtoms, numberOfAtomsPermutated = zip(*atoms3)
                                 numberOfNodes = [np.sum(flavour.multiplicities[np.asarray(nodeTypeGroup, dtype=int)])
                                                  for nodeTypeGroup in nodePartition]
-                                if np.all(np.asarray(numberOfNodes) == np.asarray(numberOfAtoms)):
+                                if np.all(np.asarray(numberOfNodes) == np.asarray(numberOfAtomsPermutated)):
                                     coordinates = []
                                     operations = []
                                     for atomNumber in np.argsort(permutationAtoms):
@@ -113,7 +113,9 @@ class RandTop:
                                                 self.arxiv[name].append(all_coordinates)
                                             else:
                                                 self.arxiv[name] = [all_coordinates]
-                                            return ({'molecules' : molecules, 'cell': cell},)
+                                            system = {'molecules' : molecules, 'cell': cell}
+                                            self.conditions.putConditions(system)
+                                            return (system,)
         raise RuntimeError("RandTop failed.")
 
 
