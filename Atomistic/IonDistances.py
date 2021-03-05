@@ -7,6 +7,7 @@ class IonDistances():
         self._distances = kwargs
 
     def getDistances(self, symbols, volumeUtility):
+        symbols = [symbol.short_name for symbol in symbols]
         uniqueSimbols = np.unique(symbols)
         minDistMatrix = {}
         radii = {symbol: volumeUtility.calcAtomVolume(symbol) ** (1.0 / 3.0)

@@ -63,7 +63,8 @@ class USPEXClassic(object):
             best, tournament, popSize = [], [], self.initialPopSize
         else:
             for VO in target.variationOperators:
-                VO.tune(population)
+                if hasattr(VO, 'tune'):
+                    VO.tune(population)
 
             extendedPopulation = copy(population)
             extendedPopulation.extend(self._mostDiverse)
@@ -83,7 +84,8 @@ class USPEXClassic(object):
         actualParents = []
 
         for mutation in target.mutations:
-            mutation.prepare()
+            if hasattr(mutation, 'prepare'):
+                mutation.prepare()
             howMany = autofrac.howMany(mutation, popSize - len(population))
             if best:
                 possibleParents = np.random.choice(len(best), size=howMany, replace=True, p=tournament)
@@ -98,12 +100,14 @@ class USPEXClassic(object):
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.append(parent)
-                except mutation.VOFailed:
+                except:
                     pass
-            mutation.standby()
+            if hasattr(mutation, 'standby'):
+                mutation.standby()
 
         for hybridization in target.hybridizations:
-            hybridization.prepare()
+            if hasattr(hybridization, 'prepare'):
+                hybridization.prepare()
             howMany = autofrac.howMany(hybridization, popSize - len(population))
             parents_pool = [parents for parents in combinations(range(len(best)), 2)]
             double_tournament = [tournament[parents[0]] * tournament[parents[1]] for parents in parents_pool]
@@ -121,21 +125,24 @@ class USPEXClassic(object):
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.extend([parent1, parent2])
-                except hybridization.VOFailed:
+                except:
                     pass
-            hybridization.standby()
+            if hasattr(hybridization, 'standby'):
+                hybridization.standby()
 
         for creation in target.creations:
-            creation.prepare()
+            if hasattr(creation, 'prepare'):
+                creation.prepare()
             howMany = autofrac.howMany(creation, popSize - len(population))
             while howMany > 0:
                 try:
                     offsprings = creation()
                     population.extend(offsprings)
-                except creation.VOFailed:
+                except:
                     offsprings = tuple()
                 howMany -= len(offsprings)
-            creation.standby()
+            if hasattr(creation, 'standby'):
+                creation.standby()
 
         fitness.payPenalties(actualParents, target.pool.uniqueSystems)
 

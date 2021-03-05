@@ -202,6 +202,9 @@ class Element(object):
         self.good_bonds = _ELEMENTS_LIST[pos].good_bonds
         self.mass = _ELEMENTS_LIST[pos].mass
 
+    def __lt__(self, other):
+        return self.z < other.z
+
     @staticmethod
     def all_elements() -> list:
         return [Element(x.z) for x in _ELEMENTS_LIST]

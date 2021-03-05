@@ -1,10 +1,20 @@
 from .Target import Target
-from .Atomistic.Crystal import Crystal
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from .XRay.SpectrumAnalyzer import SpectrumAnalyzer
-from .Crystal import variationOperators
-Target.registerTarget('Crystal', Crystal, [CompositionSpace, SpectrumAnalyzer, RadialDistributionUtility], variationOperators)
+from .Atomistic.CellUtility import CellUtility
+from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from .Atomistic.Conditions import Conditions
+from .Atomistic.IonDistances import IonDistances
+# from .XRay.SpectrumAnalyzer import SpectrumAnalyzer
+from .Atomistic.Operators.Heredity import Heredity
+from .Atomistic.Operators.RandTop import RandTop
+from .Atomistic.Operators.Softmodemutation import Softmodemutation
+from .VariationOperators import VariationOperators
+variationOperators = VariationOperators(hybridizationTypes=[Heredity],
+                                        mutationTypes=[Softmodemutation],
+                                        creationTypes=[RandTop])
+Target.registerTarget('Crystal', [CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
+                                  Conditions, IonDistances], variationOperators)
 
 from .GlobalOptimizer import GlobalOptimizer
 from .Fitness import Fitness

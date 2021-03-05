@@ -36,6 +36,18 @@ class AtomicStructure:
         else:
             raise RuntimeError("Call for fractional coordinates when cell is not set up.")
 
+    def getAllDistances(self):
+        from ase.geometry import get_distances
+        cell = self.cell.getCellVectors() if self.cell is not None else None
+        pbc = self.cell.getPBC() if self.cell is not None else None
+        return get_distances(self.coordinates, cell = cell, pbc = pbc)[1]
+
+    def getAllPairVectors(self):
+        from ase.geometry import get_distances
+        cell = self.cell.getCellVectors() if self.cell is not None else None
+        pbc = self.cell.getPBC() if self.cell is not None else None
+        return get_distances(self.coordinates, cell = cell, pbc = pbc)[0]
+
     def getCenterOfMassCartesianCoordinates(self):
         pass
 
@@ -68,29 +80,35 @@ class AtomicStructure:
         return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, **kwargs)
 
     @staticmethod
-    def assemble(molecules, cell, environment, **kwargs):
+    def assemble(molecules, cell, environment = None, **kwargs):
         atomTypes = []
         coordinates = []
         moleculesData = []
+        indices = []
+        lowerBound = 0
         for molecule in molecules:
             atomTypes.extend(molecule.atomTypes)
             coordinates.extend(molecule.coordinates)
             moleculesData.append({'size': len(molecule), 'cell': molecule.cell, 'bonds': molecule.bonds,
                                   'zmatrixConfig': molecule.zmatrixConfig})
-        offsetVector = environment.calculateOffset(molecules, cell)
+            size = len(molecule)
+            indices.append(list(range(lowerBound, lowerBound + size)))
+            lowerBound += size
+        # offsetVector = environment.calculateOffset(molecules, cell)
         structure = AtomicStructure(atomTypes, coordinates, cell, **kwargs)
-        structure.translate(offsetVector)
-        coordinates = structure.getCortesianCoordinates()
-        atomTypes.extend(environment.getStructure().getAtomTypes())
-        coordinates.extend(environment.getStructure().getCortesianCoordinates())
+        # structure.translate(offsetVector)
+        coordinates = structure.getCartesianCoordinates()
+        # atomTypes.extend(environment.getStructure().getAtomTypes())
+        # coordinates.extend(environment.getStructure().getCortesianCoordinates())
         return (AtomicStructure(atomTypes, coordinates, cell, **kwargs),
-                AtomicDisassembler(moleculesData, environment))
+                AtomicDisassembler(moleculesData, indices, environment))
 
 
 class AtomicDisassembler:
 
-    def __init__(self, moleculesData, environment):
+    def __init__(self, moleculesData, indices, environment):
         self.moleculesData = copy(moleculesData)
+        self.indices = indices
         self.environment = copy(environment)
 
     def disassemble(self, atomicStructure):

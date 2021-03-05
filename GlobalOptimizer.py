@@ -39,7 +39,7 @@ class GlobalOptimizer(object):
         """
 
         self.target = Target(**target)
-        self.fingerprintUtility = self.target.utilities[fingerprintUtility]
+        self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
 
         assert self.Fitness is not None
         self.fitness = self.Fitness(self.target.pool, self.target.utilities)

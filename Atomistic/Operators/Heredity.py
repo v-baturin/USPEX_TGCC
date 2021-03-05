@@ -20,6 +20,12 @@ class Heredity:
         self.attempts = attempts
         self.correlation = 0
 
+    def tune(self, population, fitness):
+        order = [self.radialDistributionUtility.averageOrder(system) for system in population]
+        self.correlationFO = np.corrcoef(order, fitness)[0,1]
+        if np.isnan(self.correlationFO):
+            self.correlationFO = 0
+
     def __call__(self, system1, system2):
         cell1 = system1['cell']
         molecules1 = system1['molecules']

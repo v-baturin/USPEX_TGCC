@@ -15,7 +15,7 @@ class Transformation:
         return Transformation(np.dot(self.rotMatrix, other.rotMatrix), self.transVec + np.dot(self.rotMatrix, other.transVec))
 
     def getTransformedCoordinates(self, coordinates):
-        return np.dot(self.rotMatrix, coordinates) + self.transVec
+        return np.moveaxis(np.dot(self.rotMatrix, np.moveaxis(coordinates, -1, 0)), 0, -1) + self.transVec
 
     def transform(self, structure):
         coord = self.getTransformedCoordinates(structure.getCartesianCoordinates())

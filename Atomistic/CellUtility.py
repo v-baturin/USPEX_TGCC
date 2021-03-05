@@ -27,8 +27,13 @@ class CellUtility:
         return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
 
     def adjustCell(self, cell, composition, conditions):
-        return self._cell if self._cell is not None \
-            else cell * np.power(self.getCellVolume(composition, conditions) / cell.getVolume(), 1.0 / 3.0)
+        if self._cell is not None:
+            cell = self._cell
+        else:
+            cell = Cell(cellVectors = cell, pbc = self._pbc)
+            factor = np.power(self.getCellVolume(composition, conditions) / cell.getVolume(), 1.0 / 3.0)
+            cell = Cell(cellVectors = cell.getCellVectors() * factor, pbc = self._pbc)
+        return cell
 
     def getHybridCell(self, cell1, cell2, fraction):
         assert 0 <= fraction <= 1
@@ -67,10 +72,10 @@ class Cell:
         return np.array([l0, l1, l2])
 
     def cartesianToFractional(self, coordinates):
-        return np.linalg.solve(self._cellVectors, coordinates)
+        return np.moveaxis(np.linalg.solve(self._cellVectors, np.moveaxis(coordinates, -1, 0)), 0, -1)
 
     def fractionalToCartesian(self, coordinates):
-        return np.dot(self._cellVectors, coordinates)
+        return np.moveaxis(np.dot(self._cellVectors, np.moveaxis(coordinates, -1, 0)), 0, -1)
 
     def getWrapedCartesianCoordinates(self, coordinates):
         return self.fractionalToCartesian(self.getWrapedFractionalCoordinates(self.cartesianToFractional(coordinates)))

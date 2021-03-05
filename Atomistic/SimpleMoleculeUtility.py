@@ -1,15 +1,17 @@
 import numpy as np
 from collections import Counter
 
+from .AtomicPrimitives import AtomicStructure
 from .Element import Element
 from .Transformation import Transformation
 
 
 class SimpleMoleculeUtility(object):
-    def __init__(self, atomicStructureFactory, molecules : dict):
+    def __init__(self, molecules : dict = None, atomicStructureFactory = AtomicStructure):
         self.systemFactory = atomicStructureFactory
         self.molecules = {el.short_name : self.systemFactory([el], [[0., 0., 0.]]) for el in Element.all_elements()}
-        self.molecules.update(molecules)
+        if molecules is not None:
+            self.molecules.update(molecules)
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
 
     def populateStructure(self, cell, coordinates, operations):
@@ -45,6 +47,17 @@ class SimpleMoleculeUtility(object):
             composition = Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
             system['simpleMoleculeUtility.composition'] = composition
         return system['simpleMoleculeUtility.composition']
+
+    def getElementalComposition(self, composition):
+        comp = Counter()
+        for symbol, amount in composition.items():
+            molecule = self.molecules[symbol]
+            if len(molecule) == 1:
+                comp[symbol] += amount
+            else:
+                for symbol, value in molecule.getComposition.items():
+                    comp[symbol] += value*amount
+        return comp
 
     def getMinDistances(self, molecules, cell):
         """

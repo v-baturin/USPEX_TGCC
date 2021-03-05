@@ -20,7 +20,7 @@ with open(f'{HOMEPATH}/idealnets.json', 'rt') as f:
     TOPOLOGICAL_NETS = pandas.DataFrame.from_dict(json.load(f)).T
 
 MAX_SUPERSIZE = 4
-ATTEMPTS_ROTATION = 100
+ATTEMPTS_ROTATION = 1
 ATTEMPTS_POINT_GROUP = 10
 
 
@@ -93,7 +93,8 @@ class RandTop:
                                         coordinates.insert(ind, [])
                                         operations.insert(ind, [])
 
-                                    cell = self.cellUtility.adjustCell(cell, composition, self.conditions)
+                                    elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
+                                    cell = self.cellUtility.adjustCell(cell, elementalComposition, self.conditions)
                                     operations = dict(zip(symbols, operations))
                                     coordinates = dict(zip(symbols, coordinates))
 
@@ -101,7 +102,7 @@ class RandTop:
                                         molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
                                         atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
                                         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
-                                        if atomDistances >= minDistMatrix:
+                                        if np.all(atomDistances >= minDistMatrix):
                                             all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                             if name in self.arxiv:
                                                 for arxivCoordinates in self.arxiv[name]:
