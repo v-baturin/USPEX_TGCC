@@ -23,7 +23,7 @@ class CrystalPoolRepresentation(object):
         if toDraw is None:
             self.toDraw = [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('dep', 'enthalpy', 'per_atom', 'volume', 'per_atom'),
+                           # ('dep', 'enthalpy', 'per_atom', 'volume', 'per_atom'),
                            ('stat', 'enthalpy', 'per_atom', '', '')]
         else:
             self.toDraw = toDraw
@@ -55,19 +55,25 @@ class CrystalPoolRepresentation(object):
         for opt in optimizers:
             pool = opt.target.pool
             for ID in opt.best:
-                write(io_BESTgatheredPOSCARS, pool.allSystems[ID]['structure'].atoms, 'vasp', label=f'EA{ID}',
-                      sort=True, direct=True, vasp5=True)
+                try:
+                    write(io_BESTgatheredPOSCARS, pool.allSystems[ID]['structure'].atoms, 'vasp', label=f'EA{ID}',
+                          sort=True, direct=True, vasp5=True)
+                except:
+                    pass
         with open(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), 'w') as fp:
             io_BESTgatheredPOSCARS.seek(0)
             shutil.copyfileobj(io_BESTgatheredPOSCARS, fp)
 
-        if len(optimizer.target.utilities['compositionSpace'].blocks) == 1:
+        if len(optimizer.target.utilities.compositionSpace.blocks) == 1:
             fronts = optimizer.fitness.sort(fitness, list(optimizer.target.pool.uniqueSystems))
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
-                    write(io_goodStructuresPOSCARS, system['structure'].atoms, 'vasp', label=f"EA{system['ID']}",
-                          sort=True, direct=True, vasp5=True)
+                    try:
+                        write(io_goodStructuresPOSCARS, system['structure'].atoms, 'vasp', label=f"EA{system['ID']}",
+                              sort=True, direct=True, vasp5=True)
+                    except:
+                        pass
 
             with open(pj(self.RES_FOLDER, 'goodStructures'), 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
@@ -105,13 +111,16 @@ class CrystalPoolRepresentation(object):
 
             for front in fronts:
                 for system in front:
-                    write(io_extendedConvexHullPOSCARS, system['structure'].atoms, 'vasp', label=f"EA{system['ID']}",
-                          sort=True, direct=True, vasp5=True)
+                    try:
+                        write(io_extendedConvexHullPOSCARS, system['structure'].atoms, 'vasp', label=f"EA{system['ID']}",
+                              sort=True, direct=True, vasp5=True)
+                    except:
+                        pass
             with open(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'), 'w') as fp:
                 io_extendedConvexHullPOSCARS.seek(0)
                 shutil.copyfileobj(io_extendedConvexHullPOSCARS, fp)
 
-            compositionSpace = optimizer.target.utilities['compositionSpace']
+            compositionSpace = optimizer.target.utilities.compositionSpace
             if len(compositionSpace.blocks) == 2 and convexHull:
                 self._drawExtendedConvexHull2(compositionSpace, convexHull, extendedConvexHull)
             elif len(compositionSpace.blocks) == 3 and convexHull:
@@ -128,15 +137,11 @@ class CrystalPoolRepresentation(object):
                 for system in uniqueSystems:
                     if propertyX in system:
                         valueX = system[propertyX]
-                    elif hasattr(system['structure'], propertyX):
-                        valueX = getattr(system['structure'], propertyX)
                     else:
                         raise RuntimeError(f"Property {propertyX} is undefined.")
 
                     if propertyY in system:
                         valueY = system[propertyY]
-                    elif hasattr(system['structure'], propertyY):
-                        valueY = getattr(system['structure'], propertyY)
                     else:
                         raise RuntimeError(f"Property {propertyY} is undefined.")
 

@@ -123,8 +123,6 @@ class Fitness(object):
             system = self.pool.allSystems[ID]
             if fitness in system:
                 value = system[fitness]
-            elif hasattr(system['structure'], fitness):
-                value = getattr(system['structure'], fitness)
         return value
 
     def payPenalties(self, population, pool):

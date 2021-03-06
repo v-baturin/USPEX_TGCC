@@ -17,7 +17,7 @@ class SystemsTable(object):
     def __init__(self, columns, isRank=False):
         self.columns = columns
         self.isRank = isRank
-        columnNames = ['ID', 'Origin', 'Composition']
+        columnNames = ['ID', 'Origin'] #, 'Composition'
         if self.isRank:
             columnNames.insert(1, 'Rank')
         for column, columnName in self.columns:
@@ -27,7 +27,7 @@ class SystemsTable(object):
 
 
     def update(self, ID: int, system, fitness, rank=None):
-        row = [ID, system['howCome'], system['structure'].get_chemical_formula()]
+        row = [ID, system['howCome']] #, system['structure'].get_chemical_formula()
         if self.isRank:
             row.insert(1, rank)
         for column, columnName in self.columns:
@@ -35,8 +35,6 @@ class SystemsTable(object):
             if value is None and isinstance(column, str):
                 if column in system:
                     value = system[column]
-                elif hasattr(system['structure'], column):
-                    value = getattr(system['structure'], column)
             if isinstance(value, float):
                 value = f'{value: 6.3f}'
             row.append(value)
@@ -58,8 +56,11 @@ class CrystalSystemRepresentation(object):
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            write(io_gatheredPOSCARS_unrelaxed, system[0]['structure'].atoms, 'vasp', label=f'EA{ID}',
-                  sort=True, direct=True, vasp5=True, long_format=False)
+            try:
+                write(io_gatheredPOSCARS_unrelaxed, system[0]['structure'].atoms, 'vasp', label=f'EA{ID}',
+                      sort=True, direct=True, vasp5=True, long_format=False)
+            except:
+                pass
             content_origin += f"{ID} {system[0]['howCome']} {system[0]['parent']}\n"
 
             if len(system) > 1:
@@ -67,8 +68,11 @@ class CrystalSystemRepresentation(object):
 
             if len(system) == self.numStages + 1:
                 table_Individuals.update(ID, optimizer.target.pool.allSystems[ID], optimizer.fitness)
-                write(io_gatheredPOSCARS, system[self.numStages]['structure'].atoms, 'vasp', label=f'EA{ID}',
-                      sort=True, direct=True, vasp5=True, long_format=False)
+                try:
+                    write(io_gatheredPOSCARS, system[self.numStages]['structure'].atoms, 'vasp', label=f'EA{ID}',
+                          sort=True, direct=True, vasp5=True, long_format=False)
+                except:
+                    pass
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
