@@ -11,7 +11,7 @@ class Slab:
     def getSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, transformation):
         slabs = tuple(([],[],[]) for i in gaugesOfSlabs)
         coordinateBounds = np.cumsum(gaugesOfSlabs)/np.sum(gaugesOfSlabs)
-        fittedTransformations = outputCell.getFittedTransformations(inputCell)
+        fittedTransformations = list(outputCell.getFittedTransformations(inputCell))
         for i, molecule in enumerate(molecules):
             centerOfMassCoordinates = molecule.getCenterOfMassCartesianCoordinates()
             centerOfMassCoordinates = inputCell.getWrapedCartesianCoordinates(centerOfMassCoordinates)

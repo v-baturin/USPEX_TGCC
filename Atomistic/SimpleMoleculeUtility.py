@@ -85,9 +85,6 @@ class SimpleMoleculeUtility(object):
         # return True
 
         structure, disassembler = self.systemFactory.assemble(molecules, cell)
-        N = len(structure)
-        if N < 2:
-            return True
         actualDistances = structure.getAllDistances()
         constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
         for inds, molecule in zip(disassembler.indices, molecules):

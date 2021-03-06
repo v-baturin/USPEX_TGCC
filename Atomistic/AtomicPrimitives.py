@@ -37,6 +37,9 @@ class AtomicStructure:
             raise RuntimeError("Call for fractional coordinates when cell is not set up.")
 
     def getAllDistances(self):
+        N = len(self.atomTypes)
+        if N < 2:
+            return np.zeros((N, N), dtype=float)
         from ase.geometry import get_distances
         cell = self.cell.getCellVectors() if self.cell is not None else None
         pbc = self.cell.getPBC() if self.cell is not None else None
