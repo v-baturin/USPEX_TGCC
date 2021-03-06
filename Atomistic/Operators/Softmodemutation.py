@@ -23,6 +23,7 @@ class Softmodemutation:
         molecules = system['molecules']
         cell = system['cell']
         structure, disassembler = self.simpleMoleculeUtility.systemFactory.assemble(molecules, cell)
+        degree = self.degree if self.degree else np.mean([el.covalent_radius for el in structure.getAtomTypes()]) * 3
         if ID in self.knownSystems:
             frequencies, eigenVectors = self.knownSystems[ID]
         else:
@@ -34,7 +35,6 @@ class Softmodemutation:
             if freq < _MIN_VALID_FREQUENCY:
                 continue
             displacements = eigenVector.reshape((len(structure),3))
-            degree = self.degree if self.degree else system.covalentRadii.mean() * 3
             displacements *= degree/np.max(np.linalg.norm(displacements, axis = 1))
             molecules1 = []
             molecules2 = []
@@ -47,18 +47,22 @@ class Softmodemutation:
                 molecule2 = (-transformation).transform(molecule)
                 molecule1 = offset.transform(molecule1)
                 molecule2 = offset.transform(molecule2)
-                molecules1.extend(molecule1)
-                molecules2.extend(molecule2)
+                molecules1.append(molecule1)
+                molecules2.append(molecule2)
 
             offsprings = ()
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules1, cell)
             minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
-            if atomDistances >= minDistMatrix:
-                offsprings += ({'molecules' : molecules1, 'cell': cell},)
+            if np.all(atomDistances >= minDistMatrix):
+                system = {'molecules': molecules1, 'cell': cell}
+                self.conditions.putConditions(system)
+                offsprings += (system,)
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules2, cell)
             minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
-            if atomDistances >= minDistMatrix:
-                offsprings += ({'molecules' : molecules2, 'cell': cell},)
+            if np.all(atomDistances >= minDistMatrix):
+                system = {'molecules': molecules2, 'cell': cell}
+                self.conditions.putConditions(system)
+                offsprings += (system,)
             if offsprings:
                 return offsprings
 

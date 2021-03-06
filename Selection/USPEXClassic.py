@@ -7,6 +7,9 @@
 @brief       Class that describes configuration space of systems under consideration.
 '''
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 import random
 from itertools import combinations, chain
@@ -62,9 +65,9 @@ class USPEXClassic(object):
             autofrac = Autofrac(self.fractions, population=[], best=[], newFoundSystems=[], varOperators=target.variationOperators)
             best, tournament, popSize = [], [], self.initialPopSize
         else:
-            for VO in target.variationOperators:
-                if hasattr(VO, 'tune'):
-                    VO.tune(population)
+            # for VO in target.variationOperators:
+            #     if hasattr(VO, 'tune'):
+            #         VO.tune(population)
 
             extendedPopulation = copy(population)
             extendedPopulation.extend(self._mostDiverse)
@@ -101,11 +104,13 @@ class USPEXClassic(object):
                         target.pool.assignID(offspring)
                         offspring['howCome'] = type(mutation).__name__
                         offspring['parent'] = f"{parent['ID']}"
+                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator"
+                                    f"from {offspring['parent']} parent")
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.append(parent)
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(e, exc_info=1)
             if hasattr(mutation, 'standby'):
                 mutation.standby()
 
@@ -130,11 +135,13 @@ class USPEXClassic(object):
                         target.pool.assignID(offspring)
                         offspring['howCome'] = type(hybridization).__name__
                         offspring['parent'] = f"{parent1['ID']} {parent2['ID']}"
+                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator"
+                                    f"from {offspring['parent']} parents")
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.extend([parent1, parent2])
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(e, exc_info=1)
             if hasattr(hybridization, 'standby'):
                 hybridization.standby()
 
@@ -149,10 +156,12 @@ class USPEXClassic(object):
                         target.pool.assignID(offspring)
                         offspring['howCome'] = type(creation).__name__
                         offspring['parent'] = "None"
+                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator")
                     population.extend(offsprings)
-                except:
-                    offsprings = tuple()
-                howMany -= len(offsprings)
+                    howMany -= len(offsprings)
+                except Exception as e:
+                    logger.error(e, exc_info=1)
+
             if hasattr(creation, 'standby'):
                 creation.standby()
 

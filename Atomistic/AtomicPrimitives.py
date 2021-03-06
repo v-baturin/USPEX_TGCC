@@ -49,10 +49,10 @@ class AtomicStructure:
         return get_distances(self.coordinates, cell = cell, pbc = pbc)[0]
 
     def getCenterOfMassCartesianCoordinates(self):
-        pass
+        return np.mean(self.getCartesianCoordinates(), axis=0)
 
     def getCenterOfMassFractionalCoordinates(self):
-        pass
+        return np.mean(self.getFractionalCooordinates(), axis=0)
 
     def getPrincipleAxes(self):
         """

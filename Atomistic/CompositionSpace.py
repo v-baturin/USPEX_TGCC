@@ -190,7 +190,7 @@ class CompositionSpace(object):
         """
 
         maxBlocks = self.numBlocks(composition = compositionMax)
-        numIons_start = np.fromiter((composition[symbol] for symbol in self.symbols), dtype = str)
+        numIons_start = np.fromiter((composition[symbol] for symbol in self.symbols), dtype = int)
 
         maxAtoms = np.dot(maxBlocks, self.blocks)
         maxAdded = maxAtoms - numIons_start  # how many atoms one could possibly add

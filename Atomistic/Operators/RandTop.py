@@ -103,16 +103,16 @@ class RandTop:
                                         atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
                                         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
                                         if np.all(atomDistances >= minDistMatrix):
-                                            all_coordinates = np.vstack([*itertools.chain(*coordinates)])
-                                            if name in self.arxiv:
-                                                for arxivCoordinates in self.arxiv[name]:
-                                                    if (all_coordinates.shape == arxivCoordinates.shape) and \
-                                                            np.allclose(all_coordinates, arxivCoordinates):
-                                                        continue
-                                            if name in self.arxiv:
-                                                self.arxiv[name].append(all_coordinates)
-                                            else:
-                                                self.arxiv[name] = [all_coordinates]
+                                            # all_coordinates = np.vstack([*itertools.chain(*coordinates)])
+                                            # if name in self.arxiv:
+                                            #     for arxivCoordinates in self.arxiv[name]:
+                                            #         if (all_coordinates.shape == arxivCoordinates.shape) and \
+                                            #                 np.allclose(all_coordinates, arxivCoordinates):
+                                            #             continue
+                                            # if name in self.arxiv:
+                                            #     self.arxiv[name].append(all_coordinates)
+                                            # else:
+                                            #     self.arxiv[name] = [all_coordinates]
                                             system = {'molecules' : molecules, 'cell': cell}
                                             self.conditions.putConditions(system)
                                             return (system,)

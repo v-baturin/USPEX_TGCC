@@ -27,7 +27,7 @@ class Slab:
                         depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - coordinateBounds[j-1])))
                         transformations.append(compositTransformation)
                         break
-        return (Slab(indices, depths, transformation) for indices, depths, transformation in slabs)
+        return (Slab(indices, depths, transformations) for indices, depths, transformations in slabs)
 
     @staticmethod
     def getRandomSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, order, correlation, parity: int):

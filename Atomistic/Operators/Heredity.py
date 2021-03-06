@@ -63,18 +63,22 @@ class Heredity:
             parity = 0
             for slab1, slab2 in zip(slabs1, slabs2):
                 if not parity:
-                    goodCandidateMolecules.extend(slab1.transformation.transform(molecules1[i]) for i in slab1.indices)
+                    goodCandidateMolecules.extend(transformation.transform(molecules1[i])
+                                                  for i, transformation in zip(slab1.indices, slab1.transformations))
                     goodCandidateMoleculeTypes.extend(moleculeTypes1[i] for i in slab1.indices)
                     goodCandidateDepths.extend(slab1.depths)
-                    badCandidateMolecules.extend(slab2.transformation.transform(molecules2[i]) for i in slab2.indices)
+                    badCandidateMolecules.extend(transformation.transform(molecules2[i])
+                                                  for i, transformation in zip(slab2.indices, slab2.transformations))
                     badCandidateMoleculeTypes.extend(moleculeTypes2[i] for i in slab2.indices)
                     badCandidateDepths.extend(slab2.depths)
                     parity = 1
                 else:
-                    badCandidateMolecules.extend(slab1.transformation.transform(molecules1[i]) for i in slab1.indices)
+                    badCandidateMolecules.extend(transformation.transform(molecules1[i])
+                                                 for i, transformation in zip(slab1.indices, slab1.transformations))
                     badCandidateMoleculeTypes.extend(moleculeTypes1[i] for i in slab1.indices)
                     badCandidateDepths.extend(slab1.depths)
-                    goodCandidateMolecules.extend(slab2.transformation.transform(molecules2[i]) for i in slab2.indices)
+                    goodCandidateMolecules.extend(transformation.transform(molecules2[i])
+                                                  for i, transformation in zip(slab2.indices, slab2.transformations))
                     goodCandidateMoleculeTypes.extend(moleculeTypes2[i] for i in slab2.indices)
                     goodCandidateDepths.extend(slab2.depths)
                     parity = 0
@@ -98,8 +102,10 @@ class Heredity:
 
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, outputCell)
             minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
-            if atomDistances >= minDistMatrix:
-                return ({'molecules' : molecules, 'cell': outputCell},)
+            if np.all(atomDistances >= minDistMatrix):
+                system = {'molecules': molecules, 'cell': outputCell}
+                self.conditions.putConditions(system)
+                return (system,)
 
         raise RuntimeError("Heredity failed.")
 

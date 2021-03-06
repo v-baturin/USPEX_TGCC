@@ -66,9 +66,9 @@ class Cell:
 
     def getAltitudes(self):
         volime = self.getVolume()
-        l0 = volime / np.linalg.norm(np.cross(self._cellVectors()[1, :], self._cellVectors()[2, :]))
-        l1 = volime / np.linalg.norm(np.cross(self._cellVectors()[0, :], self._cellVectors()[2, :]))
-        l2 = volime / np.linalg.norm(np.cross(self._cellVectors()[0, :], self._cellVectors()[1, :]))
+        l0 = volime / np.linalg.norm(np.cross(self._cellVectors[1, :], self._cellVectors[2, :]))
+        l1 = volime / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[2, :]))
+        l2 = volime / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[1, :]))
         return np.array([l0, l1, l2])
 
     def cartesianToFractional(self, coordinates):
@@ -112,7 +112,8 @@ class Cell:
 
     def getFittedTransformations(self, cell):
         vectors = cell.getCellVectors()[np.nonzero(cell.getPBC())]
-        allFittedVectors = tuple([] for i in range(len(vectors)))
+        N = len(vectors)
+        allFittedVectors = tuple([] for i in range(N))
         for fittedVectors, vector in zip(allFittedVectors, vectors):
             k = 0
             while True:
@@ -121,15 +122,19 @@ class Cell:
                 if np.any(candidateVector > (1.,1.,1.)):
                     break
                 k += 1
-        allFittedVectors = np.asarray(allFittedVectors)
-        for i, fittedVectors in enumerate(allFittedVectors):
-            shape = fittedVectors.shape
-            for j in range(i):
-                shape  = (1,) + shape
-            allFittedVectors[i] = fittedVectors.reshape(shape)
-        allFittedVectors = np.sum(allFittedVectors, axis = 0)
-        for vector in allFittedVectors.reshape((-1,3)):
-            yield Transformation.fromRotVector([0.,0.,0.], vector)
+        if N > 0:
+            for aVector in allFittedVectors[0]:
+                if N > 1:
+                    for bVector in allFittedVectors[1]:
+                        if N > 2:
+                            for cVector in allFittedVectors[2]:
+                                yield Transformation.fromRotVector([0.,0.,0.], aVector + bVector + cVector)
+                        else:
+                            yield Transformation.fromRotVector([0., 0., 0.], aVector + bVector)
+                else:
+                    yield Transformation.fromRotVector([0., 0., 0.], aVector)
+        else:
+            return [Transformation.fromRotVector([0., 0., 0.], [0., 0., 0.])]
 
     @staticmethod
     def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):

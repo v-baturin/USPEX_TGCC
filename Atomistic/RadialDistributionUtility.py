@@ -122,7 +122,7 @@ class RadialDistributionUtility(object):
                 order =  np.nan
             else:
                 order = np.fromiter((atomFing.order for atomFing in self.atomFingerprints(system)), dtype = float)
-                order *= np.sqrt(self.delta / (structure.volume / len(structure)) ** (1.0 / 3.0))
+                order *= np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
             system['radialDistribitionUtility.order'] = order
         return system['radialDistribitionUtility.order']
 
@@ -148,7 +148,7 @@ class RadialDistributionUtility(object):
             systemFactory = type(molecules[1])
             structure, disassembler = systemFactory.assemble(**system)
             fingerprint = self.structureFingerprint(system)
-            s_order = fingerprint.order * np.sqrt(self.delta / (structure.volume / len(structure)) ** (1.0 / 3.0))
+            s_order = fingerprint.order * np.sqrt(self.delta / (structure.getCell().getVolume / len(structure)) ** (1.0 / 3.0))
             system['radialDistribitionUtility.structureOrder'] = s_order
         return system['radialDistribitionUtility.structureOrder']
 
