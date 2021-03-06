@@ -42,7 +42,7 @@ class GlobalOptimizer(object):
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
 
         assert self.Fitness is not None
-        self.fitness = self.Fitness(self.target.pool, self.target.utilities)
+        self.fitness = self.Fitness(self.target.pool, self.target.utilities, self.fingerprintUtility)
         self.fitnessConvergence = fitness
         self.best = set()
         self._isStable = False

@@ -29,10 +29,11 @@ class Fitness(object):
     ANTISEEDS_MAX = 0.005
     ANTISEEDS_SIGMA = 0.001
 
-    def __init__(self, pool, utilities):
+    def __init__(self, pool, utilities, fingerprintUtility):
         self.pool = pool
         self._poolHash = hash(self.pool)
         self.utilities = utilities
+        self.fingerprintUtility = fingerprintUtility
         self._antiseedsCorrections = {}
         self._storedFitnesses = {}
 
@@ -130,22 +131,20 @@ class Fitness(object):
         if comb:
             sigma = 0
             for s1, s2 in comb:
-                assert hasattr(s1['structure'], 'dist')
-                sigma += s1['structure'].dist(s1['structure'],s2['structure'])
+                sigma += self.fingerprintUtility.dist(s1, s2)
             sigma /= len(comb)
         else:
             sigma = 1
         sigma *= self.ANTISEEDS_SIGMA
         for system in pool:
-            assert hasattr(system['structure'], 'dist')
             if system['ID'] in self._antiseedsCorrections:
                 for ref_system in population:
-                    dist = system['structure'].dist(ref_system['structure'], system['structure'])
+                    dist = self.fingerprintUtility.dist(ref_system, system)
                     self._antiseedsCorrections[system['ID']] += np.exp(-dist**2/(2*sigma**2))
             else:
                 self._antiseedsCorrections[system['ID']] = 0
                 for ref_system in pool:
-                    dist = system['structure'].dist(ref_system['structure'], system['structure'])
+                    dist = self.fingerprintUtility.dist(ref_system, system)
                     self._antiseedsCorrections[system['ID']] += np.exp(-dist**2/(2*sigma**2))
 
     def getAntiseedsCorrections(self, values: np.ndarray) -> np.ndarray:
