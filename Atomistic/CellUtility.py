@@ -86,7 +86,7 @@ class Cell:
     def randomTransformation(self):
         pbcVec = np.array(list(self.getPBC()))
         pbcSum = np.sum(pbcVec)
-        matrixDirToCart = self.getCellVectors().T
+        matrixDirToCart = np.array(self.getCellVectors()).T
         if pbcSum == 0 or 3:
             rotMatrix = Rotation.random().as_matrix()
             if pbcSum == 0:
