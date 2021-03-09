@@ -17,9 +17,13 @@ class Transformation:
     def getTransformedCoordinates(self, coordinates):
         return np.moveaxis(np.dot(self.rotMatrix, np.moveaxis(coordinates, -1, 0)), 0, -1) + self.transVec
 
+    def transformCell(self, cell):
+        return type(cell)(self.getTransformedCoordinates(cell.getCellVectors()), cell.getPBC())
+
     def transform(self, structure):
         coord = self.getTransformedCoordinates(structure.getCartesianCoordinates())
-        return type(structure)(structure.getAtomTypes(), coord, cell = structure.getCell())
+        cell = self.transformCell(structure.getCell()) if structure.getCell() is not None else None
+        return type(structure)(structure.getAtomTypes(), coord, cell = cell)
 
     @staticmethod
     def fromMatrix(rotMatrix, transVec):

@@ -2,32 +2,33 @@ import numpy as np
 
 class Slab:
 
-    def __init__(self, indices, depths, transformations):
+    def __init__(self, indices, depths, molecules):
         self.indices = np.asarray(indices, dtype=int)
         self.depths = np.asarray(depths, dtype=float)
-        self.transformations = np.asarray(transformations)
+        self.molecules = molecules
 
     @staticmethod
     def getSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, transformation):
+        cellTransformation = type(transformation).fromMatrix(transformation.rotMatrix, [0.,0.,0.])
+        inputCell = cellTransformation.transformCell(inputCell)
         slabs = tuple(([],[],[]) for i in gaugesOfSlabs)
         coordinateBounds = np.cumsum(gaugesOfSlabs)/np.sum(gaugesOfSlabs)
-        fittedTransformations = list(outputCell.getFittedTransformations(inputCell))
         for i, molecule in enumerate(molecules):
             centerOfMassCoordinates = molecule.getCenterOfMassCartesianCoordinates()
-            centerOfMassCoordinates = inputCell.getWrapedCartesianCoordinates(centerOfMassCoordinates)
-            for fittedTransformation in fittedTransformations:
-                compositTransformation = transformation * fittedTransformation
-                centerOfMassCoordinates = compositTransformation.getTransformedCoordinates(centerOfMassCoordinates)
-                centerOfMassCoordinates = outputCell.getWrapedCartesianCoordinates(centerOfMassCoordinates)
-                coordinate = outputCell.cartesianToFractional(centerOfMassCoordinates)[axis]
+            centerOfMassCoordinates = transformation.getTransformedCoordinates(centerOfMassCoordinates)
+            for fittedTransformation in outputCell.getFittedTransformations(centerOfMassCoordinates, inputCell):
+                coordinates = outputCell.cartesianToFractional(fittedTransformation.getTransformedCoordinates(centerOfMassCoordinates))
+                assert np.all(0. <= coordinates) and np.all(coordinates < 1.)
+                coordinate = coordinates[axis]
                 for j, upperBoundCoordinate in enumerate(coordinateBounds):
                     if coordinate <= upperBoundCoordinate:
-                        indices, depths, transformations = slabs[j]
+                        lowerBoundCoordinate = 0 if j < 1 else coordinateBounds[j-1]
+                        indices, depths, mols = slabs[j]
                         indices.append(i)
-                        depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - coordinateBounds[j-1])))
-                        transformations.append(compositTransformation)
+                        depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - lowerBoundCoordinate)))
+                        mols.append((fittedTransformation * transformation).transform(molecule))
                         break
-        return (Slab(indices, depths, transformations) for indices, depths, transformations in slabs)
+        return (Slab(indices, depths, molecules) for indices, depths, molecules in slabs)
 
     @staticmethod
     def getRandomSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, order, correlation, parity: int):

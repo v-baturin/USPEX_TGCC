@@ -220,7 +220,7 @@ class CompositionSpace(object):
         # 'greedy' algorithm won't give the best answer, but it should be good in most cases.
         # We repeat greedy algorithm 10 (MR: 20?) times and choose the best answer.
 
-        numBlocks = maxAtoms
+        numBlocks = maxBlocks
 
         if tmp > 0:  # greedy algorithm
             bestGreed = np.sum(maxAtoms)

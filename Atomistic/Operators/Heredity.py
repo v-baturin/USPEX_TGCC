@@ -3,7 +3,7 @@ from collections import Counter
 
 from ..Slab import Slab
 
-ATTEMPTS = 10
+ATTEMPTS = 100
 NSLUBS = 2
 
 
@@ -29,20 +29,18 @@ class Heredity:
     def __call__(self, system1, system2):
         cell1 = system1['cell']
         molecules1 = system1['molecules']
-        moleculeTypes1 = self.simpleMoleculeUtility.moleculeTypes(system1)
         composition1 = self.simpleMoleculeUtility.composition(system1)
         order1 = self.radialDistributionUtility.order(system1)
         cell2 = system2['cell']
         molecules2 = system1['molecules']
-        moleculeTypes2 = self.simpleMoleculeUtility.moleculeTypes(system2)
         composition2 = self.simpleMoleculeUtility.composition(system2)
         order2 = self.radialDistributionUtility.order(system2)
 
-        outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction = np.random.rand())
-
         for i in range(self.attempts):
+            outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand())
+
             axis = np.random.randint(3)
-            gaugesOfSlabs = tuple(np.random.randint(10, size=self.nslubs).tolist())
+            gaugesOfSlabs = tuple(np.random.randint(1, 10, size=self.nslubs).tolist())
 
             slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
                                          axis=axis, gaugesOfSlabs=gaugesOfSlabs,
@@ -53,59 +51,46 @@ class Heredity:
                                          order=order2, correlation=self.correlation, parity=1)
 
             goodCandidateMolecules = []
-            goodCandidateMoleculeTypes = []
             goodCandidateDepths = []
-
             badCandidateMolecules = []
-            badCandidateMoleculeTypes = []
             badCandidateDepths = []
 
             parity = 0
             for slab1, slab2 in zip(slabs1, slabs2):
-                if not parity:
-                    goodCandidateMolecules.extend(transformation.transform(molecules1[i])
-                                                  for i, transformation in zip(slab1.indices, slab1.transformations))
-                    goodCandidateMoleculeTypes.extend(moleculeTypes1[i] for i in slab1.indices)
+                if parity == 0:
+                    goodCandidateMolecules.extend(slab1.molecules)
                     goodCandidateDepths.extend(slab1.depths)
-                    badCandidateMolecules.extend(transformation.transform(molecules2[i])
-                                                  for i, transformation in zip(slab2.indices, slab2.transformations))
-                    badCandidateMoleculeTypes.extend(moleculeTypes2[i] for i in slab2.indices)
+                    badCandidateMolecules.extend(slab2.molecules)
                     badCandidateDepths.extend(slab2.depths)
                     parity = 1
                 else:
-                    badCandidateMolecules.extend(transformation.transform(molecules1[i])
-                                                 for i, transformation in zip(slab1.indices, slab1.transformations))
-                    badCandidateMoleculeTypes.extend(moleculeTypes1[i] for i in slab1.indices)
+                    badCandidateMolecules.extend(slab1.molecules)
                     badCandidateDepths.extend(slab1.depths)
-                    goodCandidateMolecules.extend(transformation.transform(molecules2[i])
-                                                  for i, transformation in zip(slab2.indices, slab2.transformations))
-                    goodCandidateMoleculeTypes.extend(moleculeTypes2[i] for i in slab2.indices)
+                    goodCandidateMolecules.extend(slab2.molecules)
                     goodCandidateDepths.extend(slab2.depths)
                     parity = 0
 
+            goodCandidateMolecules = [goodCandidateMolecules[i] for i in reversed(np.argsort(goodCandidateDepths))]
+            badCandidateMolecules = [badCandidateMolecules[i] for i in np.argsort(badCandidateDepths)]
 
-            goodCandidateSortOrder = reversed(np.argsort(goodCandidateDepths))
-            goodCandidateMolecules = [goodCandidateMolecules[i] for i in goodCandidateSortOrder]
-            goodCandidateMoleculeTypes = [goodCandidateMoleculeTypes[i] for i in goodCandidateSortOrder]
-            badCandidateSortOrder = np.argsort(badCandidateDepths)
-            badCandidateMolecules = [badCandidateMolecules[i] for i in badCandidateSortOrder]
-            badCandidateMoleculeTypes = [badCandidateMoleculeTypes[i] for i in badCandidateSortOrder]
-
+            goodCandidateMoleculeTypes = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in goodCandidateMolecules]
+            badCandidateMoleculeTypes = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in badCandidateMolecules]
             composition = Counter(dict(zip(*np.unique(goodCandidateMoleculeTypes, return_counts=True))))
             desiredComposition = self.compositionSpace.findDesiredComposition(composition1 + composition2, composition)
-
             goodCandidateIndices = self.compositionSpace.choose(goodCandidateMoleculeTypes, desiredComposition)
             badCandidateIndices = self.compositionSpace.choose(badCandidateMoleculeTypes, desiredComposition - composition)
 
             molecules = [goodCandidateMolecules[i] for i in goodCandidateIndices] + \
                         [badCandidateMolecules[i] for i in badCandidateIndices]
-
-            atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, outputCell)
-            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
-            if np.all(atomDistances >= minDistMatrix):
-                system = {'molecules': molecules, 'cell': outputCell}
-                self.conditions.putConditions(system)
-                return (system,)
+            moleculeTypes = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in molecules]
+            composition = Counter(dict(zip(*np.unique(moleculeTypes, return_counts=True))))
+            if composition == desiredComposition:
+                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, outputCell)
+                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                if np.all(atomDistances >= minDistMatrix):
+                    system = {'molecules': molecules, 'cell': outputCell}
+                    self.conditions.putConditions(system)
+                    return (system,)
 
         raise RuntimeError("Heredity failed.")
 

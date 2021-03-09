@@ -327,7 +327,7 @@ class GULP_Interface(SHELL_Interface):
 
         # GULP prints the fractional coordinates before the Final lattice vectors
         # so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
-        fractional_coordinates = False
+        fractional_coordinates = None
         for i, line in enumerate(content):
             if line.find('Final cartesian coordinates of atoms') != -1:
                 s = i + 5
@@ -351,7 +351,7 @@ class GULP_Interface(SHELL_Interface):
                     for k in range(3):
                         lattice_vectors[j - s][k] = float(temp[k])
                 cell = cellFactory(lattice_vectors, pbc = structure.getCell().getPBC())
-                if fractional_coordinates != False:
+                if fractional_coordinates is not None:
                     positions = cell.fractionalToCartesian(fractional_coordinates)
 
             elif line.find('Final fractional coordinates of atoms') != -1:
@@ -366,7 +366,7 @@ class GULP_Interface(SHELL_Interface):
                     xyz = content[s].split()[3:6]
                     XYZ = [float(x) for x in xyz]
                     scaled_positions.append(XYZ)
-                fractional_coordinates = scaled_positions
+                fractional_coordinates = np.asarray(scaled_positions)
         system.update(disassembler.disassemble(systemFactory(structure.getAtomTypes(), positions, cell = cell)))
 
     def readForces(self, content, numAtoms : int):

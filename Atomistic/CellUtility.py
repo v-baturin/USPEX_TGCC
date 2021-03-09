@@ -37,7 +37,10 @@ class CellUtility:
 
     def getHybridCell(self, cell1, cell2, fraction):
         assert 0 <= fraction <= 1
-        return Cell(fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors(), self._pbc)
+        vectors = fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors()
+        vectors /= np.power(np.linalg.det(vectors), 1./3.)
+        volume = fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()
+        return Cell(vectors * np.power(volume, 1./3.), self._pbc)
 
 
 class Cell:
@@ -71,11 +74,19 @@ class Cell:
         l2 = volime / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[1, :]))
         return np.array([l0, l1, l2])
 
+    def getCornersCoordinates(self):
+        coordinates = []
+        for i in range(2):
+            for j in range(2):
+                for k in range(2):
+                    coordinates.append(i*self._cellVectors[0] + j*self._cellVectors[1] + k*self._cellVectors[2])
+        return np.asarray(coordinates, dtype = float)
+
     def cartesianToFractional(self, coordinates):
-        return np.moveaxis(np.linalg.solve(self._cellVectors, np.moveaxis(coordinates, -1, 0)), 0, -1)
+        return np.linalg.solve(self._cellVectors, coordinates.T).T
 
     def fractionalToCartesian(self, coordinates):
-        return np.moveaxis(np.dot(self._cellVectors, np.moveaxis(coordinates, -1, 0)), 0, -1)
+        return np.dot(self._cellVectors, coordinates.T).T
 
     def getWrapedCartesianCoordinates(self, coordinates):
         return self.fractionalToCartesian(self.getWrapedFractionalCoordinates(self.cartesianToFractional(coordinates)))
@@ -110,31 +121,28 @@ class Cell:
         transVec = transVec - np.dot(rotMatrix, centerCellVec)
         return Transformation.fromMatrix(rotMatrix, np.dot(rotMatrix, transVec))
 
-    def getFittedTransformations(self, cell):
+    def getFittedTransformations(self, initialCoordinates, cell):
+        minAndMax = [(np.min(coords), np.max(coords))
+                     for coords in cell.cartesianToFractional(self.getCornersCoordinates()).T[np.nonzero(cell.getPBC())]]
         vectors = cell.getCellVectors()[np.nonzero(cell.getPBC())]
-        N = len(vectors)
-        allFittedVectors = tuple([] for i in range(N))
-        for fittedVectors, vector in zip(allFittedVectors, vectors):
-            k = 0
-            while True:
-                candidateVector = self.cartesianToFractional(k*vector)
-                fittedVectors.append(candidateVector)
-                if np.any(candidateVector > (1.,1.,1.)):
-                    break
-                k += 1
-        if N > 0:
-            for aVector in allFittedVectors[0]:
-                if N > 1:
-                    for bVector in allFittedVectors[1]:
-                        if N > 2:
-                            for cVector in allFittedVectors[2]:
-                                yield Transformation.fromRotVector([0.,0.,0.], aVector + bVector + cVector)
-                        else:
-                            yield Transformation.fromRotVector([0., 0., 0.], aVector + bVector)
-                else:
-                    yield Transformation.fromRotVector([0., 0., 0.], aVector)
-        else:
-            return [Transformation.fromRotVector([0., 0., 0.], [0., 0., 0.])]
+        closeCoordinates = [cell.getWrapedCartesianCoordinates(initialCoordinates)]
+        N = len(closeCoordinates)
+        while True:
+            for probeCoordinates in closeCoordinates[:]:
+                for vector, (minCoordinate, maxCoordinate) in zip(vectors, minAndMax):
+                    closeCoordinates.extend(_findClose(probeCoordinates + vector,  vector,  minCoordinate,  maxCoordinate))
+                    closeCoordinates.extend(_findClose(probeCoordinates - vector, -vector, -maxCoordinate, -minCoordinate))
+            closeCoordinates = _removeDuplicates(closeCoordinates)
+            if len(closeCoordinates) == N:
+                break
+            else:
+                N = len(closeCoordinates)
+
+        fittedCoordinates = [coord for coord in closeCoordinates if (np.all(0. <= self.cartesianToFractional(coord)) and
+                                                                     np.all(self.cartesianToFractional(coord) < 1.))]
+
+        return [Transformation.fromRotVector([0.,0.,0.], finalCoordinates - initialCoordinates)
+                for finalCoordinates in fittedCoordinates]
 
     @staticmethod
     def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):
@@ -145,3 +153,32 @@ class Cell:
         cz = (1. - cx ** 2 - cy ** 2) ** 0.5
         vc = c * np.array([cx, cy, cz])
         return Cell(np.vstack((va, vb, vc)), pbc)
+
+
+def _findClose(coordinates, vector, minCoordinate, maxCoordinate):
+    coordinate = np.dot(coordinates, vector) / (np.linalg.norm(vector) ** 2)
+    initialCoordinate = coordinate
+    closeCoordinates = []
+    oldDiff = np.inf
+    while True:
+        diff = min(abs(coordinate - minCoordinate), abs(coordinate - maxCoordinate))
+        if minCoordinate <= coordinate <= maxCoordinate:
+            closeCoordinates.append(coordinates + vector * (coordinate - initialCoordinate))
+        elif diff <= oldDiff:
+            oldDiff = diff
+        else:
+            break
+        coordinate += 1
+    return closeCoordinates
+
+def _removeDuplicates(coordinates):
+    cleanedCoordinates = []
+    for probe in coordinates:
+        isDuplicate = False
+        for ref in cleanedCoordinates:
+            if np.allclose(probe, ref):
+                isDuplicate = True
+                break
+        if not isDuplicate:
+            cleanedCoordinates.append(probe)
+    return cleanedCoordinates
