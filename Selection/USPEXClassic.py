@@ -30,7 +30,7 @@ class USPEXClassic(object):
     '''
 
     def __init__(self, fingerprintUtility, fitness : List[Tuple[str, str]], popSize : int, fractions : Dict[str, tuple],
-                 initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, **kwargs):
+                 initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False, **kwargs):
         '''
         :param target: reference to configuration space object
         :param params: dictionary contains following parameters:
@@ -51,6 +51,10 @@ class USPEXClassic(object):
         self.howManyDiverse = howManyDiverse if howManyDiverse else np.round(0.15*self.popSize)
         self.diversityTolerance = diversityTolerance
         self._mostDiverse = []
+        if debug:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
 
     def __call__(self, target, fitness, population : list, newStructures : list):
         '''
@@ -91,7 +95,7 @@ class USPEXClassic(object):
                 mutation.prepare()
             howMany = autofrac.howMany(mutation, popSize - len(population))
             if best:
-                possibleParents = np.random.choice(len(best), size=howMany, replace=True, p=tournament)
+                possibleParents = np.random.choice(len(best), size=2*howMany, replace=True, p=tournament)
             else:
                 possibleParents = np.empty(0)
             for i in possibleParents:
@@ -99,6 +103,7 @@ class USPEXClassic(object):
                 if howMany <= 0:
                     break
                 try:
+                    logger.debug(f"Trying {parent['ID']} parent.")
                     offsprings = mutation(parent)
                     for offspring in offsprings:
                         target.pool.assignID(offspring)
@@ -123,13 +128,14 @@ class USPEXClassic(object):
             double_tournament = np.array(double_tournament) / sum(double_tournament)
             if parents_pool:
                 pairs = [(best[parents_pool[ind][0]], best[parents_pool[ind][1]])
-                         for ind in np.random.choice(len(parents_pool), size=howMany, p=double_tournament)]
+                         for ind in np.random.choice(len(parents_pool), size=2*howMany, p=double_tournament)]
             else:
                 pairs = []
             for parent1, parent2 in random.sample(pairs, len(pairs)):
                 if howMany <= 0:
                     break
                 try:
+                    logger.debug(f"Trying {parent1['ID']} {parent2['ID']} parents.")
                     offsprings = hybridization(parent1,parent2)
                     for offspring in offsprings:
                         target.pool.assignID(offspring)

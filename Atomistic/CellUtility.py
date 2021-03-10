@@ -83,10 +83,10 @@ class Cell:
         return np.asarray(coordinates, dtype = float)
 
     def cartesianToFractional(self, coordinates):
-        return np.linalg.solve(self._cellVectors, coordinates.T).T
+        return np.linalg.solve(self._cellVectors.T, coordinates.T).T
 
     def fractionalToCartesian(self, coordinates):
-        return np.dot(self._cellVectors, coordinates.T).T
+        return np.dot(self._cellVectors.T, coordinates.T).T
 
     def getWrapedCartesianCoordinates(self, coordinates):
         return self.fractionalToCartesian(self.getWrapedFractionalCoordinates(self.cartesianToFractional(coordinates)))

@@ -1,15 +1,19 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
 import numpy as np
 from collections import Counter
 
 from ..Slab import Slab
 
-ATTEMPTS = 100
+ATTEMPTS = 10
 NSLUBS = 2
 
 
 class Heredity:
 
-    def __init__(self, utilities, nslubs = NSLUBS, attempts = ATTEMPTS):
+    def __init__(self, utilities, nslubs = NSLUBS, attempts = ATTEMPTS, debug = False):
         self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.radialDistributionUtility = utilities.radialDistributionUtility
@@ -18,6 +22,10 @@ class Heredity:
         self.conditions = utilities.conditions
         self.nslubs = nslubs
         self.attempts = attempts
+        if debug:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
         self.correlation = 0
 
     def tune(self, population, fitness):
@@ -41,6 +49,8 @@ class Heredity:
 
             axis = np.random.randint(3)
             gaugesOfSlabs = tuple(np.random.randint(1, 10, size=self.nslubs).tolist())
+
+            logger.debug(f"trying {outputCell.getCellParameters()} cell and {gaugesOfSlabs}-size slabs.")
 
             slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
                                          axis=axis, gaugesOfSlabs=gaugesOfSlabs,
