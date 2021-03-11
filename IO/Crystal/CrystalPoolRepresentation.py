@@ -11,7 +11,7 @@ from os.path import join as pj
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from .CrystalSystemRepresentation import SystemsTable
+from .CrystalSystemRepresentation import SystemsTable, writeAtomicStructure
 
 EXTENDED_CONVEX_HULL_ENERGY_RANGE = 0.5
 
@@ -23,7 +23,7 @@ class CrystalPoolRepresentation(object):
         if toDraw is None:
             self.toDraw = [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           # ('dep', 'enthalpy', 'per_atom', 'volume', 'per_atom'),
+                           ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
                            ('stat', 'enthalpy', 'per_atom', '', '')]
         else:
             self.toDraw = toDraw
@@ -55,11 +55,7 @@ class CrystalPoolRepresentation(object):
         for opt in optimizers:
             pool = opt.target.pool
             for ID in opt.best:
-                try:
-                    write(io_BESTgatheredPOSCARS, pool.allSystems[ID]['structure'].atoms, 'vasp', label=f'EA{ID}',
-                          sort=True, direct=True, vasp5=True)
-                except:
-                    pass
+                writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
         with open(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), 'w') as fp:
             io_BESTgatheredPOSCARS.seek(0)
             shutil.copyfileobj(io_BESTgatheredPOSCARS, fp)
@@ -70,11 +66,7 @@ class CrystalPoolRepresentation(object):
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
-                    try:
-                        write(io_goodStructuresPOSCARS, system['structure'].atoms, 'vasp', label=f"EA{system['ID']}",
-                              sort=True, direct=True, vasp5=True)
-                    except:
-                        pass
+                    writeAtomicStructure(io_goodStructuresPOSCARS, system)
 
             with open(pj(self.RES_FOLDER, 'goodStructures'), 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
@@ -113,11 +105,7 @@ class CrystalPoolRepresentation(object):
 
             for front in fronts:
                 for system in front:
-                    try:
-                        write(io_extendedConvexHullPOSCARS, system['structure'].atoms, 'vasp', label=f"EA{system['ID']}",
-                              sort=True, direct=True, vasp5=True)
-                    except:
-                        pass
+                    writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
             with open(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'), 'w') as fp:
                 io_extendedConvexHullPOSCARS.seek(0)
                 shutil.copyfileobj(io_extendedConvexHullPOSCARS, fp)
@@ -128,34 +116,25 @@ class CrystalPoolRepresentation(object):
             elif len(compositionSpace.blocks) == 3 and convexHull:
                 self._drawExtendedConvexHull3(compositionSpace, convexHull, extendedConvexHull)
 
-        self._drawProperties(optimizer.target.pool.uniqueSystems)
+        self._drawProperties(optimizer.target.pool.uniqueSystems, optimizer.fitness)
 
 
-    def _drawProperties(self, uniqueSystems):
+    def _drawProperties(self, uniqueSystems, fitness):
         for type, propertyY, typeY, propertyX, typeX in self.toDraw:
             if type == 'dep':
                 Y = []
                 X = []
                 for system in uniqueSystems:
-                    if propertyX in system:
-                        valueX = system[propertyX]
-                    else:
-                        raise RuntimeError(f"Property {propertyX} is undefined.")
-
-                    if propertyY in system:
-                        valueY = system[propertyY]
-                    else:
-                        raise RuntimeError(f"Property {propertyY} is undefined.")
-
+                    valueX = fitness.getFitnessByID(propertyX, system['ID'])
+                    valueY = fitness.getFitnessByID(propertyY, system['ID'])
                     if typeY == 'raw':
                         Y.append(valueY)
                     elif typeY == 'per_atom':
-                        Y.append(valueY/len(system))
-
+                        Y.append(valueY/len(system['molecules']))
                     if typeX == 'raw':
                         X.append(valueX)
                     elif typeX == 'per_atom':
-                        X.append(valueX/len(system))
+                        X.append(valueX/len(system['molecules']))
                 plt.clf()
                 plt.plot(X,Y,'go')
                 plt.ylabel(f'{propertyY}({typeY})')
@@ -164,12 +143,12 @@ class CrystalPoolRepresentation(object):
             elif type == 'stat':
                 Y = []
                 for system in uniqueSystems:
-                    value = system[propertyY]
+                    value = fitness.getFitnessByID(propertyY, system['ID'])
                     if not np.isinf(value):
                         if typeY == 'raw':
                             Y.append(value)
                         elif typeY == 'per_atom':
-                            Y.append(value/len(system))
+                            Y.append(value/len(system['molecules']))
                 plt.clf()
                 plt.hist(Y, len(Y)//10+1, facecolor='g', alpha=0.75)
                 plt.savefig(pj(self.RES_FOLDER, f'{propertyY}({typeY})_statistics.svg'))

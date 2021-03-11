@@ -4,6 +4,7 @@ import shutil
 import matplotlib
 import numpy as np
 
+from ase.atoms import Atoms
 from ase.io import write
 from os.path import join as pj
 from prettytable import PrettyTable
@@ -53,11 +54,7 @@ class CrystalSystemRepresentation(object):
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            try:
-                write(io_gatheredPOSCARS_unrelaxed, system[0]['structure'].atoms, 'vasp', label=f'EA{ID}',
-                      sort=True, direct=True, vasp5=True, long_format=False)
-            except:
-                pass
+            writeAtomicStructure(io_gatheredPOSCARS_unrelaxed, system[0])
             content_origin += f"{ID} {system[0]['howCome']} {system[0]['parent']}\n"
 
             if len(system) > 1:
@@ -65,11 +62,7 @@ class CrystalSystemRepresentation(object):
 
             if len(system) == self.numStages + 1:
                 table_Individuals.update(ID, optimizer.target.pool.allSystems[ID], optimizer.fitness)
-                try:
-                    write(io_gatheredPOSCARS, system[self.numStages]['structure'].atoms, 'vasp', label=f'EA{ID}',
-                          sort=True, direct=True, vasp5=True, long_format=False)
-                except:
-                    pass
+                writeAtomicStructure(io_gatheredPOSCARS, system[self.numStages])
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
@@ -102,3 +95,10 @@ class CrystalSystemRepresentation(object):
             plt.ylabel(f'E{i+2}')
             plt.xlabel(f'E{i+1}')
         plt.savefig(pj(self.RES_FOLDER, 'E_series.svg'))
+
+
+def writeAtomicStructure(fileDescriptor, system):
+    structure, disassembler = type(system['molecules'][0]).assemble(**system)
+    atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(),
+                  cell = structure.getCell().getCellVectors())
+    write(fileDescriptor, atoms, 'vasp', label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
