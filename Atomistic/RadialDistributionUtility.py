@@ -219,7 +219,7 @@ class RadialDistributionUtility(object):
         uniqueSimbols, inverse, numIons = np.unique(structure.getAtomTypes(), return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
         revertIndices = np.argsort(indices)
-        coordinates = structure.getFractionalCooordinates()[indices]
+        coordinates = structure.getFractionalCoordinates()[indices]
         dist_matrix = make_matrices(coordinates, structure.getCell().getCellVectors(), numIons, Rmax=self.Rmax)
 
         V = structure.getCell().getVolume()

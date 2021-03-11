@@ -3,14 +3,18 @@ logger = logging.getLogger(__name__)
 
 
 import numpy as np
+import spglib
 from scipy.spatial.transform import Rotation
 
 from .Transformation import Transformation
 
 
+_DEFAULT_SYMMETRY_TOLERANCE = 0.05
+
+
 class CellUtility:
 
-    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None, debug = False):
+    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None, symTolerance=None, debug = False):
         self._pbc = pbc
         if cellVectors is not None:
             self._cell = Cell(cellVectors, pbc)
@@ -26,6 +30,23 @@ class CellUtility:
         else:
             self._cell = None
             self._volume = None
+
+        if symTolerance is not None:
+            if isinstance(symTolerance, str):
+                if 'high' in symTolerance:
+                    self.symTolerance = 0.05
+                elif 'medium' in symTolerance:
+                    self.symTolerance = 0.1
+                elif 'low' in symTolerance:
+                    self.symTolerance = 0.2
+                else:
+                    self.symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
+            elif isinstance(symTolerance, (float, int)):
+                self.symTolerance = float(symTolerance)
+            else:
+                self.symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
+        else:
+            self.symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
 
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -51,6 +72,24 @@ class CellUtility:
         vectors /= np.power(np.linalg.det(vectors), 1./3.)
         volume = fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()
         return Cell(vectors * np.power(volume, 1./3.), self._pbc)
+
+    @staticmethod
+    def volume(system: dict):
+        return system['cell'].getVolume()
+
+    def symmetry(self, system: dict):
+        cell = system['cell']
+        molecules = system['molecules']
+        structure, disassembler = type(molecules[0]).assemble(molecules, cell)
+        lattice = cell.getCellVectors()
+        coordinates = structure.getFractionalCoordinates()
+        numbers = [el.z for el in structure.getAtomTypes()]
+        if cell.getPBC() == (1,1,1):
+            symmetry = '{:7s} {:4s}'.format(*[str(x) for x in spglib.get_spacegroup((lattice, coordinates, numbers),
+                                                                                    symprec=self.symTolerance).split()])
+        else:
+            symmetry = None
+        return symmetry
 
 
 class Cell:

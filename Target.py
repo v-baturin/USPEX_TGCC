@@ -103,7 +103,7 @@ class Target(object):
         # other.systemType = self.systemType
         # other.config = self.config
         other.pool = copy(self.pool)
-        other.utilities = None
+        other.utilities = self.utilities
         other.hybridizations = None
         other.mutations = None
         other.creations = None

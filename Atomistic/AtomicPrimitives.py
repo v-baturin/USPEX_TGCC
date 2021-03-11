@@ -30,7 +30,7 @@ class AtomicStructure:
     def getCartesianCoordinates(self):
         return copy(self.coordinates)
 
-    def getFractionalCooordinates(self):
+    def getFractionalCoordinates(self):
         if self.cell is not None:
             return self.cell.cartesianToFractional(self.coordinates)
         else:
@@ -55,7 +55,7 @@ class AtomicStructure:
         return np.mean(self.getCartesianCoordinates(), axis=0)
 
     def getCenterOfMassFractionalCoordinates(self):
-        return np.mean(self.getFractionalCooordinates(), axis=0)
+        return np.mean(self.getFractionalCoordinates(), axis=0)
 
     def getPrincipleAxes(self):
         """

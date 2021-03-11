@@ -18,15 +18,15 @@ if not exists(FILENAME):
             'CrystalFixComp': {
                 'columns': [
                     ('enthalpy', 'Enthalpy (eV)'),
-                    ('volume', 'Volume (A^3)'),
-                    ('symmetry', 'SYMMETRY (N)')
+                    ('cellUtility.volume', 'Volume (A^3)'),
+                    ('cellUtility.symmetry', 'SYMMETRY (N)')
                 ]
             },
             'CrystalVarComp': {
                 'columns': [
                     ('enthalpy', 'Enthalpy (eV)'),
-                    ('volume', 'Volume (A^3)'),
-                    ('symmetry', 'SYMMETRY (N)'),
+                    ('cellUtility.volume', 'Volume (A^3)'),
+                    ('cellUtility.symmetry', 'SYMMETRY (N)'),
                     ('enthalpyCCH', 'Enthalpy per Block above CCH (eV)')
                 ]
             }

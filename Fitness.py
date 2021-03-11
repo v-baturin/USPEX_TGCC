@@ -87,7 +87,7 @@ class Fitness(object):
                     value = [x[fitness] for x in self.pool.uniqueSystems]
                 elif len(fitness) == 2:
                     utility, fitness = fitness
-                    value = [getattr(self.utilities[utility], fitness)(x) for x in self.pool.uniqueSystems]
+                    value = [getattr(getattr(self.utilities, utility), fitness)(x) for x in self.pool.uniqueSystems]
                 else:
                     raise RuntimeError(f"Too complex fitness {'.'.join(fitness)}.")
                 # unfortunately simple np.asarray spoils dictionaries
@@ -116,8 +116,16 @@ class Fitness(object):
                 value =  self.storedFitnesses[fitness][IDs.index(ID)]
         elif isinstance(fitness, str):
             system = self.pool.allSystems[ID]
-            if fitness in system:
-                value = system[fitness]
+            fitness = fitness.split('.')
+            if len(fitness) == 1:
+                fitness, = fitness
+                if fitness in system:
+                    value = system[fitness]
+            elif len(fitness) == 2:
+                utility, fitness = fitness
+                value = getattr(getattr(self.utilities, utility), fitness)(system)
+            else:
+                raise RuntimeError(f"Too complex fitness {'.'.join(fitness)}.")
         return value
 
     def payPenalties(self, population, pool):
