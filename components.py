@@ -8,11 +8,12 @@ from .Atomistic.IonDistances import IonDistances
 # from .XRay.SpectrumAnalyzer import SpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
+from .Atomistic.Operators.RandSym import RandSym
 from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .VariationOperators import VariationOperators
 variationOperators = VariationOperators(hybridizationTypes=[Heredity],
                                         mutationTypes=[Softmodemutation],
-                                        creationTypes=[RandTop])
+                                        creationTypes=[RandTop, RandSym])
 Target.registerTarget('Crystal', [CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
                                   Conditions, IonDistances], variationOperators)
 

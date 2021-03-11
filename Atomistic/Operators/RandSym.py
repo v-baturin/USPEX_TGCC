@@ -16,6 +16,7 @@ from ...SpaceGroups.SpaceGroups3D import Group
 
 MAX_RANDOM_FAILED_DIST = 10000
 MAX_RANDOM_TIME = 300
+ATTEMPTS_ROTATION = 1
 
 
 def determineOperations(lat, numIons, candidate):
@@ -46,7 +47,8 @@ def determineOperations(lat, numIons, candidate):
 
 
 class RandSym:
-    def __init__(self, utilities, nsymN=False, nsym=None, sym_coef=0.4, splitInto=[1]):
+    def __init__(self, utilities, nsymN=False, nsym=None, sym_coef=0.4, splitInto=[1],
+                 attemptsRotation: int = ATTEMPTS_ROTATION):
         self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
@@ -59,6 +61,8 @@ class RandSym:
             self.nsym = nsym
         self.sym_coef = sym_coef
         self.splitInto = splitInto
+        self.attemptsRotation = attemptsRotation
+
         self.fixRndSeed = False
 
     def __call__(self, *args, **kwargs):
@@ -137,12 +141,18 @@ class RandSym:
                                                     self.cellUtility.getCellVolume(composition, self.conditions),
                                                     self.sym_coef)
                 name, cell, coordinates, operations = determineOperations(lat, numIons, candidate)
-                cell = self.cellUtility.adjustCell(cell, composition, self.conditions)
-                molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
-                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
-                if atomDistances >= minDistMatrix:
-                    return ({'molecules': molecules, 'cell': cell},)
+                operations = dict(zip(symbols, operations))
+                coordinates = dict(zip(symbols, coordinates))
+                elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
+                cell = self.cellUtility.adjustCell(cell, elementalComposition, self.conditions)
+                for i in range(self.attemptsRotation):
+                    molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                    atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
+                    minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                    if np.all(atomDistances >= minDistMatrix):
+                        system = {'molecules': molecules, 'cell': cell}
+                        self.conditions.putConditions(system)
+                        return (system,)
             except Exception as e:
                 logger.exception(e)
 
