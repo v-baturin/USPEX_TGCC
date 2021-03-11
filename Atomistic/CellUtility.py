@@ -1,3 +1,7 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -6,7 +10,7 @@ from .Transformation import Transformation
 
 class CellUtility:
 
-    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None):
+    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None, debug = False):
         self._pbc = pbc
         if cellVectors is not None:
             self._cell = Cell(cellVectors, pbc)
@@ -22,6 +26,12 @@ class CellUtility:
         else:
             self._cell = None
             self._volume = None
+
+        if debug:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
+
 
     def getCellVolume(self, composition, conditions):
         return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
@@ -122,21 +132,27 @@ class Cell:
         return Transformation.fromMatrix(rotMatrix, np.dot(rotMatrix, transVec))
 
     def getFittedTransformations(self, initialCoordinates, cell):
-        minAndMax = [(np.min(coords), np.max(coords))
-                     for coords in cell.cartesianToFractional(self.getCornersCoordinates()).T[np.nonzero(cell.getPBC())]]
-        vectors = cell.getCellVectors()[np.nonzero(cell.getPBC())]
-        closeCoordinates = [cell.getWrapedCartesianCoordinates(initialCoordinates)]
-        N = len(closeCoordinates)
-        while True:
-            for probeCoordinates in closeCoordinates[:]:
-                for vector, (minCoordinate, maxCoordinate) in zip(vectors, minAndMax):
-                    closeCoordinates.extend(_findClose(probeCoordinates + vector,  vector,  minCoordinate,  maxCoordinate))
-                    closeCoordinates.extend(_findClose(probeCoordinates - vector, -vector, -maxCoordinate, -minCoordinate))
-            closeCoordinates = _removeDuplicates(closeCoordinates)
-            if len(closeCoordinates) == N:
-                break
-            else:
-                N = len(closeCoordinates)
+        inds = np.nonzero(cell.getPBC())
+        vectors = cell.getCellVectors()[inds]
+        minAndMax = np.asarray([(np.min(coords), np.max(coords))
+                                for coords in cell.cartesianToFractional(self.getCornersCoordinates()).T[inds]],
+                               dtype = float)\
+                    - cell.cartesianToFractional(initialCoordinates)[inds].reshape((-1,1))
+        minAndMax = np.asarray(np.ceil(minAndMax), dtype=int)
+        if np.all(minAndMax.T[1] > minAndMax.T[0]):
+            closeShifts = []
+            for minCoordinate, maxCoordinate in minAndMax:
+                if closeShifts:
+                    newCloseShifts = []
+                    for shift in closeShifts:
+                        newCloseShifts.extend([shift + (i,) for i in range(minCoordinate, maxCoordinate)])
+                    closeShifts = newCloseShifts
+                else:
+                    closeShifts = [(i,) for i in range(minCoordinate, maxCoordinate)]
+            closeShifts = np.asarray(closeShifts, dtype=int)
+            closeCoordinates = initialCoordinates + np.dot(closeShifts, vectors)
+        else:
+            closeCoordinates = []
 
         fittedCoordinates = [coord for coord in closeCoordinates if (np.all(0. <= self.cartesianToFractional(coord)) and
                                                                      np.all(self.cartesianToFractional(coord) < 1.))]
@@ -153,32 +169,3 @@ class Cell:
         cz = (1. - cx ** 2 - cy ** 2) ** 0.5
         vc = c * np.array([cx, cy, cz])
         return Cell(np.vstack((va, vb, vc)), pbc)
-
-
-def _findClose(coordinates, vector, minCoordinate, maxCoordinate):
-    coordinate = np.dot(coordinates, vector) / (np.linalg.norm(vector) ** 2)
-    initialCoordinate = coordinate
-    closeCoordinates = []
-    oldDiff = np.inf
-    while True:
-        diff = min(abs(coordinate - minCoordinate), abs(coordinate - maxCoordinate))
-        if minCoordinate <= coordinate <= maxCoordinate:
-            closeCoordinates.append(coordinates + vector * (coordinate - initialCoordinate))
-        elif diff <= oldDiff:
-            oldDiff = diff
-        else:
-            break
-        coordinate += 1
-    return closeCoordinates
-
-def _removeDuplicates(coordinates):
-    cleanedCoordinates = []
-    for probe in coordinates:
-        isDuplicate = False
-        for ref in cleanedCoordinates:
-            if np.allclose(probe, ref):
-                isDuplicate = True
-                break
-        if not isDuplicate:
-            cleanedCoordinates.append(probe)
-    return cleanedCoordinates

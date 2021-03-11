@@ -7,7 +7,7 @@ from collections import Counter
 
 from ..Slab import Slab
 
-ATTEMPTS = 10
+ATTEMPTS = 100
 NSLUBS = 2
 
 

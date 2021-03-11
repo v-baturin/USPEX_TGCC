@@ -109,8 +109,8 @@ class USPEXClassic(object):
                         target.pool.assignID(offspring)
                         offspring['howCome'] = type(mutation).__name__
                         offspring['parent'] = f"{parent['ID']}"
-                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator"
-                                    f"from {offspring['parent']} parent")
+                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
+                                    f"from {offspring['parent']} parent.")
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.append(parent)
@@ -141,8 +141,8 @@ class USPEXClassic(object):
                         target.pool.assignID(offspring)
                         offspring['howCome'] = type(hybridization).__name__
                         offspring['parent'] = f"{parent1['ID']} {parent2['ID']}"
-                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator"
-                                    f"from {offspring['parent']} parents")
+                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
+                                    f"from {offspring['parent']} parents.")
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                     actualParents.extend([parent1, parent2])
@@ -162,7 +162,7 @@ class USPEXClassic(object):
                         target.pool.assignID(offspring)
                         offspring['howCome'] = type(creation).__name__
                         offspring['parent'] = "None"
-                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator")
+                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator.")
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                 except Exception as e:
