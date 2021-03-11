@@ -53,7 +53,8 @@ class Fitness(object):
             self._poolHash = hash(self.pool)
         return self._storedFitnesses
 
-    def sort(self, fitness, population: list):
+    @staticmethod
+    def sort(population: list, allFitnesses: dict):
         """
         Method for sorting our population by fitness.
 
@@ -64,17 +65,7 @@ class Fitness(object):
         :rtype: list
         :return: sorted population.
         """
-
-        pairs = list(zip(self.pool.uniqueSystems, self.calcFitness(fitness)))
-        values = []
-        for system in population:
-            for ref_system, value in pairs:
-                if system['ID'] == ref_system['ID']:
-                    values.append(value)
-                    break
-        assert len(values) == len(population)
-
-        uniqueValues, ranking = np.unique(values, return_inverse=True)
+        uniqueValues, ranking = np.unique([allFitnesses[s['ID']] for s in population], return_inverse=True)
         return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueValues))]
 
     def calcFitness(self, fitness):
@@ -111,6 +102,9 @@ class Fitness(object):
                 # just a parameter. return it without doing anything.
                 return fitness
         return self.storedFitnesses[fitness]
+
+    def getAllFitnesses(self, fitness):
+        return dict(zip([s['ID'] for s in self.pool.uniqueSystems], self.calcFitness(fitness)))
 
     def getFitnessByID(self, fitness, ID):
         if fitness in presetFitness:

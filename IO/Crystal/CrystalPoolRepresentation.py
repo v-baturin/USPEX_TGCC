@@ -65,7 +65,8 @@ class CrystalPoolRepresentation(object):
             shutil.copyfileobj(io_BESTgatheredPOSCARS, fp)
 
         if len(optimizer.target.utilities.compositionSpace.blocks) == 1:
-            fronts = optimizer.fitness.sort(fitness, list(optimizer.target.pool.uniqueSystems))
+            allFitnesses = optimizer.fitness.getAllFitnesses(fitness)
+            fronts = optimizer.fitness.sort(list(optimizer.target.pool.uniqueSystems), allFitnesses)
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
@@ -101,7 +102,8 @@ class CrystalPoolRepresentation(object):
                                   in zip(optimizer.target.pool.uniqueSystems, optimizer.fitness.calcFitness('enthalpyCCH'))
                                   if value < self.rangeECH]
 
-            fronts = optimizer.fitness.sort(fitness, extendedConvexHull)
+            allFitnesses = optimizer.fitness.getAllFitnesses(fitness)
+            fronts = optimizer.fitness.sort(extendedConvexHull, allFitnesses)
 
             for rank, front in enumerate(fronts):
                 for system in front:

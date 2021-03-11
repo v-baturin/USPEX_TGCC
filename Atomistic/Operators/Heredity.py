@@ -28,11 +28,12 @@ class Heredity:
             logger.setLevel(logging.INFO)
         self.correlation = 0
 
-    def tune(self, population, fitness):
+    def tune(self, population, allFitnesses):
+        fitness = [allFitnesses[s['ID']] for s in population]
         order = [self.radialDistributionUtility.averageOrder(system) for system in population]
-        self.correlationFO = np.corrcoef(order, fitness)[0,1]
-        if np.isnan(self.correlationFO):
-            self.correlationFO = 0
+        self.correlation = np.corrcoef(order, fitness)[0,1]
+        if np.isnan(self.correlation):
+            self.correlation = 0
 
     def __call__(self, system1, system2):
         cell1 = system1['cell']

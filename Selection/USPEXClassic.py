@@ -69,13 +69,10 @@ class USPEXClassic(object):
             autofrac = Autofrac(self.fractions, population=[], best=[], newFoundSystems=[], varOperators=target.variationOperators)
             best, tournament, popSize = [], [], self.initialPopSize
         else:
-            # for VO in target.variationOperators:
-            #     if hasattr(VO, 'tune'):
-            #         VO.tune(population)
-
             extendedPopulation = copy(population)
             extendedPopulation.extend(self._mostDiverse)
-            sortedPopulation = list(chain.from_iterable(fitness.sort(self.fitness, extendedPopulation)))
+            allFitnesses = fitness.getAllFitnesses(self.fitness)
+            sortedPopulation = list(chain.from_iterable(fitness.sort(extendedPopulation, allFitnesses)))
 
             howManyProliferate = int(self.bestFrac * len(sortedPopulation))
             best = sortedPopulation[:howManyProliferate]
@@ -115,7 +112,7 @@ class USPEXClassic(object):
                     howMany -= len(offsprings)
                     actualParents.append(parent)
                 except Exception as e:
-                    logger.error(e, exc_info=1)
+                    logger.error(e, exc_info=True)
             if hasattr(mutation, 'standby'):
                 mutation.standby()
 
@@ -147,7 +144,7 @@ class USPEXClassic(object):
                     howMany -= len(offsprings)
                     actualParents.extend([parent1, parent2])
                 except Exception as e:
-                    logger.error(e, exc_info=1)
+                    logger.error(e, exc_info=True)
             if hasattr(hybridization, 'standby'):
                 hybridization.standby()
 
@@ -166,7 +163,7 @@ class USPEXClassic(object):
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                 except Exception as e:
-                    logger.error(e, exc_info=1)
+                    logger.error(e, exc_info=True)
 
             if hasattr(creation, 'standby'):
                 creation.standby()
