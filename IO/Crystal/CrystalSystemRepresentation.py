@@ -17,7 +17,7 @@ class SystemsTable(object):
     def __init__(self, columns, isRank=False):
         self.columns = columns
         self.isRank = isRank
-        columnNames = ['ID', 'Origin'] #, 'Composition'
+        columnNames = ['ID', 'Origin', 'Composition']
         if self.isRank:
             columnNames.insert(1, 'Rank')
         for column, columnName in self.columns:
@@ -27,14 +27,11 @@ class SystemsTable(object):
 
 
     def update(self, ID: int, system, fitness, rank=None):
-        row = [ID, system['howCome']] #, system['structure'].get_chemical_formula()
+        row = [ID, system['howCome'], fitness.getFitnessByID('simpleMoleculeUtility.composition', ID)]
         if self.isRank:
             row.insert(1, rank)
         for column, columnName in self.columns:
             value = fitness.getFitnessByID(column, ID)
-            if value is None and isinstance(column, str):
-                if column in system:
-                    value = system[column]
             if isinstance(value, float):
                 value = f'{value: 6.3f}'
             row.append(value)
