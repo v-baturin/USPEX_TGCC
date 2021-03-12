@@ -11,7 +11,8 @@ makedirs(dirname(FILENAME), exist_ok=True)
 if not exists(FILENAME):
     definitions = {
         'presetFitness': {
-            'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', 'compositionSpace.numBlocks',  'enthalpy'))
+            'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
+                                                                        'simpleMoleculeUtility.composition'), 'enthalpy'))
         },
 
         'presetOutput': {

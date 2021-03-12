@@ -76,10 +76,17 @@ class Fitness(object):
                 funcName, *funcParams = fitness
                 if not isinstance(funcName, str):
                     raise RuntimeError(f'Incorrect type {type(funcName)} of function {funcName}.')
-                elif not hasattr(self, funcName):
-                    raise RuntimeError(f'Function {funcName} not found in {type(self)}.')
-                arguments = [self.calcFitness(param) for param in funcParams]
-                self.storedFitnesses[fitness] = getattr(self, funcName)(*arguments)
+                else:
+                    funcName = funcName.split('.')
+                    arguments = [self.calcFitness(param) for param in funcParams]
+                    if len(funcName) == 1:
+                        funcName, = funcName
+                        self.storedFitnesses[fitness] = getattr(self, funcName)(*arguments)
+                    elif len(funcName) == 2:
+                        utility, funcName = funcName
+                        self.storedFitnesses[fitness] = getattr(getattr(self.utilities, utility), funcName)(*arguments)
+                    else:
+                        raise RuntimeError(f"Too complex fitness {'.'.join(fitness)}.")
             elif isinstance(fitness, str):
                 fitness = fitness.split('.')
                 if len(fitness) == 1:

@@ -11,11 +11,13 @@ import unittest
 import numpy as np
 from ase.io import read
 import os
-import json
+from types import SimpleNamespace
 
 from ..Fitness import Fitness
 from ..SystemPool import SystemPool
 from ..Atomistic.CompositionSpace import CompositionSpace
+from ..Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ..Atomistic.CellUtility import Cell
 from ..Atomistic.Fingerprints.fingerprint import Fingerprint
 from ..XRay.SpectrumAnalyzer import SpectrumAnalyzer
 from ..Atomistic.Crystal import Crystal
@@ -48,28 +50,36 @@ class Fitness_Test(unittest.TestCase):
         #                  System(6, {'Mg': 4, 'Al': 8, 'O': 16}, -652.042, Fingerprint({'b': [0.1,-0.2]}, None)),
         #                  System(7, {'Mg': 4, 'Al': 8, 'O': 16}, -648.368, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)),
         #                  System(8, {'Mg': 4, 'Al': 8, 'O': 16}, -648.335, Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None))]
-        self.systems = [{'ID': 0, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -646.695,
+        self.simpleMoleculeUtility = SimpleMoleculeUtility()
+        coordinates = {'Mg':[[np.asarray([0.,0.,0.,])]*4],
+                       'Al':[[np.asarray([0.,0.,0.,])]*8],
+                       'O':[[np.asarray([0.,0.,0.,])]*16]}
+        molecules = self.simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                                 coordinates, None)
+        self.systems = [{'ID': 0, 'molecules': molecules, 'enthalpy': -646.695,
                          'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
-                        {'ID': 1, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -644.480,
+                        {'ID': 1, 'molecules': molecules, 'enthalpy': -644.480,
                          'fingerprint': Fingerprint({'a':[0.2,-0.2]}, None)},
-                        {'ID': 2, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -650.098,
+                        {'ID': 2, 'molecules': molecules, 'enthalpy': -650.098,
                          'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
-                        {'ID': 3, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -649.082,
+                        {'ID': 3, 'molecules': molecules, 'enthalpy': -649.082,
                          'fingerprint': Fingerprint({'b': [0.1,-0.5]}, None)},
-                        {'ID': 4, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -651.279,
+                        {'ID': 4, 'molecules': molecules, 'enthalpy': -651.279,
                          'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
-                        {'ID': 5, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -643.925,
+                        {'ID': 5, 'molecules': molecules, 'enthalpy': -643.925,
                          'fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None)},
-                        {'ID': 6, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -652.042,
+                        {'ID': 6, 'molecules': molecules, 'enthalpy': -652.042,
                          'fingerprint': Fingerprint({'b': [0.1,-0.2]}, None)},
-                        {'ID': 7, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -648.368,
+                        {'ID': 7, 'molecules': molecules, 'enthalpy': -648.368,
                          'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
-                        {'ID': 8, 'structure': System({'Mg': 4, 'Al': 8, 'O': 16}), 'enthalpy': -648.335,
+                        {'ID': 8, 'molecules': molecules, 'enthalpy': -648.335,
                          'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)}]
         self.pool = SystemPool()
         self.pool.update(self.systems)
         self.compositionSpace = CompositionSpace(symbols=['Mg','Al','O'], blocks=[[4,8,16]], range=[[1,1]])
-        self.fitness = Fitness(self.pool, {'compositionSpace': self.compositionSpace})
+        utilities = SimpleNamespace(compositionSpace = self.compositionSpace,
+                                    simpleMoleculeUtility = self.simpleMoleculeUtility)
+        self.fitness = Fitness(self.pool, utilities, None)
 
     def test_enthalpy(self):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
@@ -85,7 +95,7 @@ class Fitness_Test(unittest.TestCase):
                {'Mg': 4, 'Al': 8, 'O': 16},
                {'Mg': 4, 'Al': 8, 'O': 16},
                {'Mg': 4, 'Al': 8, 'O': 16}]
-        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.calcFitness('compositionSpace.composition'), ref)]))
+        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.calcFitness('simpleMoleculeUtility.composition'), ref)]))
 
     def test_compositionSpace_numIons(self):
         ref = [[4, 8, 16, ],
@@ -97,25 +107,33 @@ class Fitness_Test(unittest.TestCase):
                [4, 8, 16, ],
                [4, 8, 16, ],
                [4, 8, 16, ]]
-        self.assertTrue(np.allclose(self.fitness.calcFitness('compositionSpace.numIons'), ref))
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('compositionSpace.numMolsFromCompositions',
+                                                              'simpleMoleculeUtility.composition')), ref))
 
     def test_compositionSpace_numBlocks(self):
         ref = [[1], [1], [1], [1], [1], [1], [1], [1], [1]]
-        self.assertTrue(np.allclose(self.fitness.calcFitness('compositionSpace.numBlocks'), ref))
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('compositionSpace.numBlocksFromCompositions',
+                                                              'simpleMoleculeUtility.composition')), ref))
 
     def test_getRelativeCHSpace(self):
         ref = [[-646.695], [-644.48 ], [-650.098], [-649.082], [-651.279], [-643.925], [-652.042], [-648.368], [-648.335]]
-        self.assertTrue(np.allclose(self.fitness.calcFitness(('getRelativeCHSpace', 'compositionSpace.numBlocks', 'enthalpy')), ref))
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('getRelativeCHSpace',
+                                                              ('compositionSpace.numBlocksFromCompositions',
+                                                              'simpleMoleculeUtility.composition'), 'enthalpy')), ref))
 
     def test_convexHullHeightComposition(self):
         ref = [5.347, 7.562, 1.944, 2.96,  0.763, 8.117, 0., 3.674, 3.707]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('convexHullHeight',
-                                                              ('getRelativeCHSpace', 'compositionSpace.numBlocks', 'enthalpy'))), ref))
+                                                              ('getRelativeCHSpace',
+                                                               ('compositionSpace.numBlocksFromCompositions',
+                                                              'simpleMoleculeUtility.composition'), 'enthalpy'))), ref))
 
     def test_pareto(self):
         ref = [6, 7, 2, 3, 1, 8, 0, 4, 5]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('pareto', ('convexHullHeight',
-                                                               ('getRelativeCHSpace', 'compositionSpace.numBlocks', 'enthalpy')))), ref))
+                                                               ('getRelativeCHSpace',
+                                                                ('compositionSpace.numBlocksFromCompositions',
+                                                              'simpleMoleculeUtility.composition'), 'enthalpy')))), ref))
 
     def test_fingerprint(self):
         ref = [{'a': [0.2, -0.2], 'b': [0.2, -0.2]},

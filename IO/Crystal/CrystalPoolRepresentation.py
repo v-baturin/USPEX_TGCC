@@ -154,14 +154,14 @@ class CrystalPoolRepresentation(object):
                 plt.savefig(pj(self.RES_FOLDER, f'{propertyY}({typeY})_statistics.svg'))
 
     def _drawExtendedConvexHull2(self, compositionSpace, convexHull, extendedConvexHull):
-        leftNumBlocks = np.asarray(compositionSpace.numBlocks(convexHull[0]), dtype = float)
+        leftNumBlocks = np.asarray(compositionSpace.numBlocks(convexHull[0]['simpleMoleculeUtility.composition']), dtype = float)
         leftNumBlocksTotal = np.sum(leftNumBlocks)
         leftNumBlocks /= leftNumBlocksTotal
         leftEnthalpy = convexHull[0]['enthalpy']/leftNumBlocksTotal
         rightNumBlocks = leftNumBlocks
         rightEnthalpy = leftEnthalpy
         for system in convexHull:
-            numBlocks = np.asarray(compositionSpace.numBlocks(system), dtype = float)
+            numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
             numBlocksTotal = np.sum(numBlocks)
             numBlocks /= numBlocksTotal
             if numBlocks[1] < leftNumBlocks[1]:
@@ -173,7 +173,7 @@ class CrystalPoolRepresentation(object):
         Xch = []
         Ych = []
         for system in convexHull:
-            numBlocks = np.asarray(compositionSpace.numBlocks(system), dtype = float)
+            numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
             numBlocksTotal = np.sum(numBlocks)
             numBlocks /= numBlocksTotal
             C = np.array([leftNumBlocks, rightNumBlocks])
@@ -187,7 +187,7 @@ class CrystalPoolRepresentation(object):
         X = []
         Y = []
         for system in extendedConvexHull:
-            numBlocks = np.asarray(compositionSpace.numBlocks(system), dtype = float)
+            numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
             numBlocksTotal = np.sum(numBlocks)
             numBlocks /= numBlocksTotal
             C = np.array([leftNumBlocks, rightNumBlocks])

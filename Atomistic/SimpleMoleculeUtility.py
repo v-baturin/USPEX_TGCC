@@ -17,10 +17,9 @@ class SimpleMoleculeUtility(object):
     def populateStructure(self, cell, coordinates, operations):
         molecules = []
         for symbol, atomCoordinates in coordinates.items():
-            atomOperations = operations[symbol]
             molecule = self.molecules[symbol]
             if len(molecule) > 1:
-                for nodeCoordinates, groups in zip(atomCoordinates, atomOperations):
+                for nodeCoordinates, groups in zip(atomCoordinates, operations[symbol]):
                     molecule = Transformation.fromRotVector(Transformation.randomRotVector(),
                                                             [0., 0., 0.]).transform(molecule)
                     for coordinate, operation in zip(nodeCoordinates, np.random.choice(groups, 1).operators):
