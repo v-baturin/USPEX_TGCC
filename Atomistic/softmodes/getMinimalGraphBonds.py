@@ -2,7 +2,7 @@ import numpy as np
 
 from ase.atoms import Atoms
 from ase.neighborlist import primitive_neighbor_list
-from itertools import chain
+from itertools import chain, combinations_with_replacement
 from scipy.sparse.csgraph import connected_components
 from typing import Dict, List, Union, Tuple
 
@@ -43,7 +43,7 @@ def _connectedComponents(N, bonds):
     return len(np.unique(labels[np.asarray(indices)]))
 
 
-def getMinimalGraphBonds(SYSTEM : AtomicStructure) -> list:
+def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds = None) -> list:
     '''
     Calculates bond graph minimal for the structure to be 3D connected.
 
@@ -52,7 +52,8 @@ def getMinimalGraphBonds(SYSTEM : AtomicStructure) -> list:
     '''
 
     N_atom = len(SYSTEM)
-    goodBonds = {s.short_name:s.good_bonds for s in SYSTEM.getAtomTypes()}
+    goodBonds = {frozenset((s1.short_name, s2.short_name)):np.power(s1.good_bonds*s2.good_bonds, 0.5)
+                 for s1,s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} if goodBonds is None else goodBonds
     structure = Atoms(symbols=[s.short_name for s in SYSTEM.getAtomTypes()],
                       positions = SYSTEM.getCartesianCoordinates(),
                       cell = SYSTEM.getCell().getCellVectors(),
@@ -99,7 +100,7 @@ def getMinimalGraphBonds(SYSTEM : AtomicStructure) -> list:
     # delete short bonds
     for bond_group in bond_total:
         a,b = bond_group[0].symbols
-        small_bond = -0.37 * np.log(np.power(goodBonds[a] * goodBonds[b], 0.5))
+        small_bond = -0.37 * np.log(goodBonds[frozenset((a,b))])
         if min([bond.delta for bond in bond_group]) < small_bond:
             bond_in.append(bond_group)    # Add by group
         else:
