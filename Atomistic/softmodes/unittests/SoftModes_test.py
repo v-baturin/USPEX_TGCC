@@ -7,7 +7,14 @@ from ase.io.vasp import read_vasp
 from os.path import join as pj
 
 from ..calcSoftModes import calcSoftModes
+from ...CellUtility import Cell
+from ...AtomicPrimitives import AtomicStructure
+from ...Element import Element
 from ...Crystal import Crystal
+
+
+def symbolsToElements(symbols):
+    return [Element(s) for s in symbols]
 
 
 class SoftModes_test(unittest.TestCase):
@@ -21,33 +28,48 @@ class SoftModes_test(unittest.TestCase):
     def test_MgAlO_system_1(self):
         print('Test MgAlO 1')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'MgAlO_system_1.vasp'))
-        system = Crystal(scaled_positions=tmp.get_scaled_positions(),
-                         cell=tmp.get_cell(),
-                         symbols=tmp.get_chemical_symbols())
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # system = Crystal(scaled_positions=tmp.get_scaled_positions(),
+        #                  cell=tmp.get_cell(),
+        #                  symbols=tmp.get_chemical_symbols())
         freq, eigvector = calcSoftModes(system)
 
     def test_MgAlO_system_2(self):
         print('Test MgAlO 2')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'MgAlO_system_2.vasp'))
-        system = Crystal(scaled_positions=tmp.get_scaled_positions(),
-                         cell=tmp.get_cell(),
-                         symbols=tmp.get_chemical_symbols())
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # system = Crystal(scaled_positions=tmp.get_scaled_positions(),
+        #                  cell=tmp.get_cell(),
+        #                  symbols=tmp.get_chemical_symbols())
         freq, eigvector = calcSoftModes(system)
 
     def test_MgAlO_system_3(self):
         print('Test MgAlO 3')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'MgAlO_system_3.vasp'))
-        system = Crystal(scaled_positions=tmp.get_scaled_positions(),
-                         cell=tmp.get_cell(),
-                         symbols=tmp.get_chemical_symbols())
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # system = Crystal(scaled_positions=tmp.get_scaled_positions(),
+        #                  cell=tmp.get_cell(),
+        #                  symbols=tmp.get_chemical_symbols())
         freq, eigvector = calcSoftModes(system)
 
     # Carbon systems
     def test_graphite(self):
         print('Test graphite')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'graphite.POSCAR'))
-        symbols = tmp.get_chemical_symbols()
-        graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        graphite = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         N = len(graphite)
         freq, eigvector = calcSoftModes(graphite)
 
@@ -60,9 +82,13 @@ class SoftModes_test(unittest.TestCase):
     def test_graphite_supercell(self):
         print('Test graphite supercell 1')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'graphite.POSCAR'))
-        symbols = tmp.get_chemical_symbols()
-        graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        graphite *= 2
+        tmp *= 2
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        graphite = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
+        # graphite *= 2
         N = len(graphite)
         freq, eigvector = calcSoftModes(graphite)
 
@@ -97,8 +123,11 @@ class SoftModes_test(unittest.TestCase):
     def test_diamond(self):
         print('Test dimanod')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'diamond.POSCAR'))
-        symbols = tmp.get_chemical_symbols()
-        diamond = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        diamond = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # diamond = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         N = len(diamond)
         freq, eigvector = calcSoftModes(diamond)
         freq_ref = [ -2.22044605e-16, -2.22044605e-16, -2.22044605e-16,  1.66088535e+00, 1.66088535e+00,  1.66088535e+00]
@@ -108,9 +137,13 @@ class SoftModes_test(unittest.TestCase):
     def test_diamond_supercell(self):
         print('Test dimanod supercell')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'diamond.POSCAR'))
-        symbols = tmp.get_chemical_symbols()
-        diamond = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
-        diamond *= 2
+        tmp *= 2
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        diamond = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # diamond = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
+        # diamond *= 2
         N = len(diamond)
         freq, eigvector = calcSoftModes(diamond)
 
@@ -133,15 +166,21 @@ class SoftModes_test(unittest.TestCase):
     def test_MgO_1(self):
         print('Test MgO 1')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'MgO_system_1.vasp'))
-        symbols = tmp.get_chemical_symbols()
-        system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
 
         freq, eigvector = calcSoftModes(system)
 
     def test_MgO_2(self):
         print('Test MgO 2')
         tmp = read_vasp(pj(self.CURRENT_DIR, 'MgO_system_2.vasp'))
-        symbols = tmp.get_chemical_symbols()
-        system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
 
         freq, eigvector = calcSoftModes(system)
