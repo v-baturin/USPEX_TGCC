@@ -1,4 +1,5 @@
 from typing import List
+from types import SimpleNamespace
 
 from ..ConvexHull import ConvexHull
 from ..Fitness import Fitness
@@ -7,14 +8,16 @@ from .CompositionSpace import CompositionSpace
 
 
 class CompositionCH(ConvexHull):
-    def __init__(self, systems: list, comositionSpace: CompositionSpace):
+    def __init__(self, systems: list, compositionSpace: CompositionSpace, simpleMoleculeUtility):
         self.systems = systems
         pool = SystemPool()
         pool.update(self.systems)
-        self.compositionSpace = comositionSpace
-        super().__init__(Fitness(pool, {'compositionSpace': self.compositionSpace}).calcFitness(('getRelativeCHSpace',
-                                                                                                 'compositionSpace.numBlocks',
-                                                                                                 'enthalpy')))
+        self.compositionSpace = compositionSpace
+        self.simpleMoleculeUtility = simpleMoleculeUtility
+        utilities = SimpleNamespace(compositionSpace = compositionSpace, simpleMoleculeUtility = simpleMoleculeUtility)
+        super().__init__(Fitness(pool, utilities, None).calcFitness(('getRelativeCHSpace',
+                                                               ('compositionSpace.numBlocksFromCompositions',
+                                                              'simpleMoleculeUtility.composition'), 'enthalpy')))
 
     @property
     def lower_bound(self):
@@ -36,6 +39,7 @@ class CompositionCH(ConvexHull):
         self.systems.extend(systems)
         pool = SystemPool()
         pool.update(self.systems)
-        super().__init__(Fitness(pool, {'compositionSpace': self.compositionSpace}).calcFitness(('getRelativeCHSpace',
-                                                                                                 'compositionSpace.numBlocks',
-                                                                                                 'enthalpy')))
+        utilities = SimpleNamespace(compositionSpace = self.compositionSpace, simpleMoleculeUtility = self.simpleMoleculeUtility)
+        super().__init__(Fitness(pool, utilities, None).calcFitness(('getRelativeCHSpace',
+                                                               ('compositionSpace.numBlocksFromCompositions',
+                                                              'simpleMoleculeUtility.composition'), 'enthalpy')))

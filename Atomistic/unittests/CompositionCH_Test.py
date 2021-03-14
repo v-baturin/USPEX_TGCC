@@ -5,6 +5,8 @@ import os
 from ...SystemPool import SystemPool
 from ..CompositionCH import CompositionCH
 from ..CompositionSpace import CompositionSpace
+from ..SimpleMoleculeUtility import SimpleMoleculeUtility
+from ..CellUtility import Cell
 
 class System(object):
 
@@ -17,11 +19,17 @@ class System(object):
 class CompostionCH_Test(unittest.TestCase):
     def test_unocomponent(self):
         compositionSpace = CompositionSpace(symbols=['Mo'], blocks=[[1]], range=[[1, 18]])
-        system0 = {'ID': 0, 'structure': System({'Mo': 1}), 'enthalpy': -2.0}
-        system1 = {'ID': 1, 'structure': System({'Mo': 4}), 'enthalpy': -8.0}
-        system2 = {'ID': 2, 'structure': System({'Mo': 4}), 'enthalpy': -16.0}
-        system3 = {'ID': 3, 'structure': System({'Mo': 8}), 'enthalpy': -8.0}
-        self.convexHull = CompositionCH([system0], compositionSpace)
+        simpleMoleculeUtility = SimpleMoleculeUtility()
+
+        system0 = {'ID': 0, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0.,0.,0.,])]*1]}, None), 'enthalpy': -2.0}
+        system1 = {'ID': 1, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0.,0.,0.,])]*4]}, None), 'enthalpy': -8.0}
+        system2 = {'ID': 2, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0.,0.,0.,])]*4]}, None), 'enthalpy': -16.0}
+        system3 = {'ID': 3, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0.,0.,0.,])]*8]}, None), 'enthalpy': -8.0}
+        self.convexHull = CompositionCH([system0], compositionSpace, simpleMoleculeUtility)
 
         # ans = self.convexHull.height[0]
         # self.assertTrue(np.isinf(ans) and ans > 0)
@@ -46,20 +54,36 @@ class CompostionCH_Test(unittest.TestCase):
     def test_bicomponent(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
-        system1 = {'ID': 0, 'structure': System({'Mo': 4, 'B': 10}), 'enthalpy': -5.0}
-        system2 = {'ID': 1, 'structure': System({'Mo': 4, 'B': 10}), 'enthalpy': -14.0}
-        system3 = {'ID': 2, 'structure': System({'Mo': 8, 'B': 8}), 'enthalpy': -8.0}
-        system4 = {'ID': 3, 'structure': System({'Mo': 8}), 'enthalpy': -2.0}
-        system5 = {'ID': 4, 'structure': System({'Mo': 8}), 'enthalpy': -4.0}
-        system6 = {'ID': 5, 'structure': System({'B': 10}), 'enthalpy': -12.0}
-        system7 = {'ID': 6, 'structure': System({'Mo': 6, 'B': 4}), 'enthalpy': -2.0}
-        system8 = {'ID': 7, 'structure': System({'Mo': 4, 'B': 6}), 'enthalpy': -16.0}
+        simpleMoleculeUtility = SimpleMoleculeUtility()
+
+
+        system1 = {'ID': 0, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 10]}, None), 'enthalpy': -5.0}
+        system2 = {'ID': 1, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 10]}, None), 'enthalpy': -14.0}
+        system3 = {'ID': 2, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 8]}, None), 'enthalpy': -8.0}
+        system4 = {'ID': 3, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8]}, None), 'enthalpy': -2.0}
+        system5 = {'ID': 4, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8]}, None), 'enthalpy': -4.0}
+        system6 = {'ID': 5, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'B': [[np.asarray([0., 0., 0., ])] * 10]}, None), 'enthalpy': -12.0}
+        system7 = {'ID': 6, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 4]}, None), 'enthalpy': -2.0}
+        system8 = {'ID': 7, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 6]}, None), 'enthalpy': -16.0}
 
 
 
         # ans = self.convexHull.height[0]
         # self.assertTrue(np.isinf(ans) and ans > 0)
-        self.convexHull = CompositionCH([system1], compositionSpace)
+        self.convexHull = CompositionCH([system1], compositionSpace, simpleMoleculeUtility)
         self.assertEqual(len(self.convexHull.lower_bound), 1)
 
         # ans = self.convexHull.height[1]
@@ -133,17 +157,31 @@ class CompostionCH_Test(unittest.TestCase):
     def test_bicomponent1(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
-        system1 = {'ID': 0, 'structure': System({'Mo': 4, 'B': 10}), 'enthalpy': -5.0}
-        system2 = {'ID': 1, 'structure': System({'Mo': 4, 'B': 10}), 'enthalpy': -14.0}
-        system3 = {'ID': 2, 'structure': System({'Mo': 8, 'B': 8}), 'enthalpy': -8.0}
-        system4 = {'ID': 3, 'structure': System({'Mo': 8}), 'enthalpy': -2.0}
-        system5 = {'ID': 4, 'structure': System({'Mo': 8}), 'enthalpy': -4.0}
-        system6 = {'ID': 5, 'structure': System({'B': 10}), 'enthalpy': -12.0}
-        system7 = {'ID': 6, 'structure': System({'Mo': 6, 'B': 4}), 'enthalpy': -2.0}
-        system8 = {'ID': 7, 'structure': System({'Mo': 4, 'B': 6}), 'enthalpy': -16.0}
+        simpleMoleculeUtility = SimpleMoleculeUtility()
+        system1 = {'ID': 0, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 10]}, None), 'enthalpy': -5.0}
+        system2 = {'ID': 1, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 10]}, None), 'enthalpy': -14.0}
+        system3 = {'ID': 2, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 8]}, None), 'enthalpy': -8.0}
+        system4 = {'ID': 3, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8]}, None), 'enthalpy': -2.0}
+        system5 = {'ID': 4, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8]}, None), 'enthalpy': -4.0}
+        system6 = {'ID': 5, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'B': [[np.asarray([0., 0., 0., ])] * 10]}, None), 'enthalpy': -12.0}
+        system7 = {'ID': 6, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 4]}, None), 'enthalpy': -2.0}
+        system8 = {'ID': 7, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 6]}, None), 'enthalpy': -16.0}
 
         systems = [system1, system2, system3, system4, system5, system6, system7, system8]
-        self.convexHull = CompositionCH(systems, compositionSpace)
+        self.convexHull = CompositionCH(systems, compositionSpace, simpleMoleculeUtility)
 
         self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {4, 5, 7})
         self.assertEqual(set(s['ID'] for s in self.convexHull.upper_bound), {0, 3, 5, 6})
@@ -225,16 +263,29 @@ class CompostionCH_Test(unittest.TestCase):
     def test_bicomponent2(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
+        simpleMoleculeUtility = SimpleMoleculeUtility()
 
-        system1 = {'ID': 0, 'structure': System({'Mo': 6, 'B': 14}), 'enthalpy': -178.845}
-        system2 = {'ID': 1, 'structure': System({'Mo': 16, 'B': 10}), 'enthalpy': -225.103}
-        system3 = {'ID': 2, 'structure': System({'Mo': 5, 'B': 14}), 'enthalpy': -162.761}
-        system4 = {'ID': 3, 'structure': System({'Mo': 6, 'B': 14}), 'enthalpy': -176.250}
-        system5 = {'ID': 4, 'structure': System({'Mo': 13, 'B': 5}), 'enthalpy': -150.735}
-        system6 = {'ID': 5, 'structure': System({'Mo': 9, 'B': 1}), 'enthalpy': -77.661}
+        system1 = {'ID': 0, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 14]}, None), 'enthalpy': -178.845}
+        system2 = {'ID': 1, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 16],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 10]}, None), 'enthalpy': -225.103}
+        system3 = {'ID': 2, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 5],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 14]}, None), 'enthalpy': -162.761}
+        system4 = {'ID': 3, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 14]}, None), 'enthalpy': -176.250}
+        system5 = {'ID': 4, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 13],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 5]}, None), 'enthalpy': -150.735}
+        system6 = {'ID': 5, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 9],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 1]}, None), 'enthalpy': -77.661}
         systems = [system1, system2, system3, system4, system5, system6]
 
-        self.convexHull = CompositionCH(systems, compositionSpace)
+        self.convexHull = CompositionCH(systems, compositionSpace, simpleMoleculeUtility)
 
         self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {0,1,2,4,5})
         self.assertEqual(set(s['ID'] for s in self.convexHull.upper_bound), {2,5})
@@ -272,14 +323,24 @@ class CompostionCH_Test(unittest.TestCase):
     def test_bicomponent3(self):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
-        system1 = {'ID': 0, 'structure': System({'Mo': 5, 'B': 15}), 'enthalpy': -173.325}
-        system2 = {'ID': 1, 'structure': System({'Mo': 5}), 'enthalpy': -42.944}
-        system3 = {'ID': 2, 'structure': System({'Mo': 3, 'B': 9}), 'enthalpy': -104.041}
-        system4 = {'ID': 3, 'structure': System({'Mo': 6, 'B': 14}), 'enthalpy': -177.431}
-        system5 = {'ID': 4, 'structure': System({'Mo': 9}), 'enthalpy': -69.214}
+        simpleMoleculeUtility = SimpleMoleculeUtility()
+
+        system1 = {'ID': 0, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 5],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 15]}, None), 'enthalpy': -173.325}
+        system2 = {'ID': 1, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 5]}, None), 'enthalpy': -42.944}
+        system3 = {'ID': 2, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 3],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 9]}, None), 'enthalpy': -104.041}
+        system4 = {'ID': 3, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
+                                                             'B': [[np.asarray([0., 0., 0., ])] * 14]}, None), 'enthalpy': -177.431}
+        system5 = {'ID': 4, 'molecules': simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 9]}, None), 'enthalpy': -69.214}
         systems = [system1, system2, system3, system4, system5]
 
-        self.convexHull = CompositionCH(systems, compositionSpace)
+        self.convexHull = CompositionCH(systems, compositionSpace, simpleMoleculeUtility)
 
         self.assertEqual(set(s['ID'] for s in self.convexHull.lower_bound), {1,2,3})
         self.assertEqual(set(s['ID'] for s in self.convexHull.upper_bound), {0,4})
