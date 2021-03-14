@@ -40,7 +40,7 @@ def calcHardness(system : AtomicStructure) -> float:
     # nu_factor should be normalized to satisfy sum rule.
     nu_factor = []
 
-    for k, symbol in enumerate(system.chemicalSymbols):
+    for k, symbol in enumerate(system.getAtomTypes()):
         nu_full = 0.0
 
         for bond in chain(*bonds):  # how many type of bonds
@@ -49,7 +49,7 @@ def calcHardness(system : AtomicStructure) -> float:
                 nu_full += np.exp(-bond.delta / 0.37)
             if b == k:
                 nu_full += np.exp(-bond.delta / 0.37)
-        nu_factor.append(system.valences[symbol] / nu_full)
+        nu_factor.append(symbol.valence / nu_full)
 
     '''
     Apply the bond hardness model here. Two for loops here:
@@ -72,13 +72,13 @@ def calcHardness(system : AtomicStructure) -> float:
                 R_a = Element(a).covalent_radius + bond.delta / 2
                 R_b = Element(b).covalent_radius + bond.delta / 2
                 nu = np.exp(-bond.delta / 0.37)
-                EN_a = 0.481 * system.valenceElectrons[a] / R_a  # electronegativity
-                EN_b = 0.481 * system.valenceElectrons[b] / R_b
+                EN_a = 0.481 * Element(a).valence_electrons / R_a  # electronegativity
+                EN_b = 0.481 * Element(b).valence_electrons / R_b
 
                 # Effective CN that describes the atomic valence:
                 a1, b1 = bond.indicies
-                CN_a = system.valences[a] / (nu * nu_factor[a1])
-                CN_b = system.valences[b] / (nu * nu_factor[b1])
+                CN_a = Element(a).valence / (nu * nu_factor[a1])
+                CN_b = Element(b).valence / (nu * nu_factor[b1])
 
                 f_ab = 0.25 * abs(EN_a - EN_b) / np.sqrt(EN_a * EN_b)  # ionicity indicator
                 X_ab = np.sqrt(EN_a * EN_b / (CN_a * CN_b))  # electron-holding energy
@@ -87,6 +87,6 @@ def calcHardness(system : AtomicStructure) -> float:
         H = H * h_tmp
 
     # Final equation:
-    H = 423.8 * len(bonds) * (H ** (1.0 / len(bonds))) / system.volume - 3.4
+    H = 423.8 * len(bonds) * (H ** (1.0 / len(bonds))) / system.getCell().getVolume() - 3.4
 
     return H
