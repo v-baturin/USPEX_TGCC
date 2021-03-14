@@ -92,8 +92,8 @@ class CompileParams_Test(unittest.TestCase):
             'output': {
                 'columns': [
                     ('enthalpy', 'Enthalpy (eV)'),
-                    ('volume', 'Volume (A^3)'),
-                    ('symmetry', 'SYMMETRY (N)')
+                    ('cellUtility.volume', 'Volume (A^3)'),
+                    ('cellUtility.symmetry', 'SYMMETRY (N)')
                 ]
             }
         }
@@ -139,8 +139,8 @@ class CompileParams_Test(unittest.TestCase):
             'output': {
                 'columns': [
                     ('enthalpy', 'Enthalpy (eV)'),
-                    ('volume', 'Volume (A^3)'),
-                    ('symmetry', 'SYMMETRY (N)')
+                    ('cellUtility.volume', 'Volume (A^3)'),
+                    ('cellUtility.symmetry', 'SYMMETRY (N)')
                 ]
             }
         }
@@ -186,8 +186,8 @@ class CompileParams_Test(unittest.TestCase):
             'output': {
                 'columns': [
                     ('enthalpy', 'Enthalpy (eV)'),
-                    ('volume', 'Volume (A^3)'),
-                    ('symmetry', 'SYMMETRY (N)')
+                    ('cellUtility.volume', 'Volume (A^3)'),
+                    ('cellUtility.symmetry', 'SYMMETRY (N)')
                 ]
             }
         }
