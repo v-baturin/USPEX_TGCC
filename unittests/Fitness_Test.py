@@ -215,20 +215,29 @@ class FitnessXray_Test(unittest.TestCase):
             aseSystems = [read(f, format='vasp') for i in range(10)]
         enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
         self.systems = []
+        simpleMoleculeUtility = SimpleMoleculeUtility()
         for ID, atoms, enthalpy in zip(range(10), aseSystems, enthalpies):
+            cell = Cell(atoms.get_cell().array, (1,1,1))
+            symbols, indices = np.unique(atoms.get_chemical_symbols(), return_inverse=True)
+            coordinates = {s: [] for s in symbols}
+            for index, coord in zip(indices, atoms.get_scaled_positions()):
+                coordinates[symbols[index]].append([coord])
             system = {
                 'ID' : ID,
                 'enthalpy' : enthalpy,
-                'structure': Crystal(symbols=atoms.get_chemical_symbols(), cell=atoms.get_cell(),
-                                     positions=atoms.get_positions())
+                'molecules' : simpleMoleculeUtility.populateStructure(cell, coordinates, None),
+                'cell' : cell
             }
             self.systems.append(system)
         self.pool = SystemPool()
         self.pool.update(self.systems)
         self.compositionSpace = CompositionSpace(symbols = ['Ba', 'H'], blocks = [[1, 12]], range = [[4, 4]])
         self.spectrumAnalyzer = SpectrumAnalyzer(**SpectrumAnalyzer.parse(os.path.join(HOMEPATH, 'spectrum.txt')))
-        self.fitness = Fitness(self.pool, {'compositionSpace': self.compositionSpace,
-                                           'spectrumAnalyzer': self.spectrumAnalyzer})
+
+        utilities = SimpleNamespace(compositionSpace = self.compositionSpace,
+                                    spectrumAnalyzer = self.spectrumAnalyzer,
+                                    simpleMoleculeUtility = simpleMoleculeUtility)
+        self.fitness = Fitness(self.pool, utilities, None)
 
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]
