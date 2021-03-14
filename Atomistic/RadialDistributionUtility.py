@@ -116,7 +116,7 @@ class RadialDistributionUtility(object):
     def order(self, system):
         if not 'radialDistribitionUtility.order' in system:
             molecules = system['molecules']
-            systemFactory = type(molecules[1])
+            systemFactory = type(molecules[0])
             structure, disassembler = systemFactory.assemble(**system)
             if len(structure) == 0:
                 order =  np.nan
@@ -145,10 +145,10 @@ class RadialDistributionUtility(object):
         """
         if not 'radialDistribitionUtility.structureOrder' in system:
             molecules = system['molecules']
-            systemFactory = type(molecules[1])
+            systemFactory = type(molecules[0])
             structure, disassembler = systemFactory.assemble(**system)
             fingerprint = self.structureFingerprint(system)
-            s_order = fingerprint.order * np.sqrt(self.delta / (structure.getCell().getVolume / len(structure)) ** (1.0 / 3.0))
+            s_order = fingerprint.order * np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
             system['radialDistribitionUtility.structureOrder'] = s_order
         return system['radialDistribitionUtility.structureOrder']
 
@@ -166,7 +166,7 @@ class RadialDistributionUtility(object):
 
         if not 'radialDistribitionUtility.quasientropy' in system:
             molecules = system['molecules']
-            systemFactory = type(molecules[1])
+            systemFactory = type(molecules[0])
             structure, disassembler = systemFactory.assemble(**system)
             atomFing = self.atomFingerprints(system)
             uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
@@ -214,7 +214,7 @@ class RadialDistributionUtility(object):
         Calculates fingerprint and related things.
         """
         molecules = system['molecules']
-        systemFactory = type(molecules[1])
+        systemFactory = type(molecules[0])
         structure, disassembler = systemFactory.assemble(**system)
         uniqueSimbols, inverse, numIons = np.unique(structure.getAtomTypes(), return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)

@@ -1,9 +1,12 @@
 import os
 import unittest
+import numpy as np
 from os.path import join as pj
 from ase.io.vasp import read_vasp
 
 from ..RadialDistributionUtility import RadialDistributionUtility
+from ..SimpleMoleculeUtility import SimpleMoleculeUtility
+from ..CellUtility import Cell
 from ..Crystal import Crystal
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
@@ -16,20 +19,37 @@ class RadialDistributionUtility_Test(unittest.TestCase):
         self.systemRDU2 = {}
         self.systemRDU3 = {}
 
+        simpleMoleculeUtilityt = SimpleMoleculeUtility()
+
         tmp1 = read_vasp(pj(PATH_WITH_TESTS, "systemRDU1.POSCAR"))
-        self.systemRDU1['structure'] = Crystal(symbols=tmp1.get_chemical_symbols(),
-                                               cell=tmp1.get_cell(),
-                                               positions=tmp1.get_positions())
+        cell = Cell(tmp1.get_cell().array, (1,1,1))
+        symbols, indices = np.unique(tmp1.get_chemical_symbols(), return_inverse = True)
+        all_coordinates = tmp1.get_scaled_positions()
+        coordinates = {s: [] for s in symbols}
+        for index, coord in zip(indices, all_coordinates):
+            coordinates[symbols[index]].append([coord])
+        self.systemRDU1['molecules'] = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
+        self.systemRDU1['cell'] = cell
 
         tmp2 = read_vasp(pj(PATH_WITH_TESTS, "systemRDU2.POSCAR"))
-        self.systemRDU2['structure'] = Crystal(symbols=tmp2.get_chemical_symbols(),
-                                               cell=tmp2.get_cell(),
-                                               positions=tmp2.get_positions())
+        cell = Cell(tmp2.get_cell().array, (1,1,1))
+        symbols, indices = np.unique(tmp2.get_chemical_symbols(), return_inverse = True)
+        all_coordinates = tmp2.get_scaled_positions()
+        coordinates = {s: [] for s in symbols}
+        for index, coord in zip(indices, all_coordinates):
+            coordinates[symbols[index]].append([coord])
+        self.systemRDU2['molecules'] = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
+        self.systemRDU2['cell'] = cell
 
         tmp3 = read_vasp(pj(PATH_WITH_TESTS, "systemRDU3.POSCAR"))
-        self.systemRDU3['structure'] = Crystal(symbols=tmp3.get_chemical_symbols(),
-                                               cell=tmp3.get_cell(),
-                                               positions=tmp3.get_positions())
+        cell = Cell(tmp3.get_cell().array, (1,1,1))
+        symbols, indices = np.unique(tmp3.get_chemical_symbols(), return_inverse = True)
+        all_coordinates = tmp3.get_scaled_positions()
+        coordinates = {s: [] for s in symbols}
+        for index, coord in zip(indices, all_coordinates):
+            coordinates[symbols[index]].append([coord])
+        self.systemRDU3['molecules'] = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
+        self.systemRDU3['cell'] = cell
 
 
     def test_structureOrder(self):
