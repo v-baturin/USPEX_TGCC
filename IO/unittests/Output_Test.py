@@ -4,7 +4,7 @@ import json
 import filecmp
 import shutil
 
-from ...components import Crystal, GlobalOptimizer
+from ...components import GlobalOptimizer, CrystalSystemRepresentation
 from ..OutputRepresentation import OutputRepresentation
 
 TESTPATH = os.path.dirname(os.path.abspath(__file__))
@@ -17,9 +17,10 @@ class Output_Test(unittest.TestCase):
 
         optimizerConfig = {'type': 'GlobalOptimizer',
                            'target': {'type': 'Crystal',
-                                      'config': {'externalPressure': 100},
+                                      'conditions': {'externalPressure': 100, 'volumeType': 0},
                                       'compositionSpace': {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]],
-                                                           'range': [[1, 1]]}
+                                                           'range': [[1, 1]]},
+                                      'cellUtility': {'pbc': (1,1,1)}
                                       },
                            'fingerprintUtility': 'radialDistributionUtility',
                            'fitness': 'enthalpy',
@@ -56,11 +57,11 @@ class Output_Test(unittest.TestCase):
                 system = []
                 for j in range(numStages + 1):
                     try:
-                        with open(os.path.join(TESTPATH, f"output_data/system{gen*popSize+i}s{j}"), "r") as f:
-                            structure = Crystal.fromJSON(f.read())
-                            system.append({'ID': structure.ID, 'structure': structure,
-                                           'howCome': structure.howCome, 'parent': structure.parent,
-                                           'enthalpy': structure.enthalpy})
+                        with open(os.path.join(TESTPATH, f"output_data/system{gen * popSize + i}s{j}"), "r") as f:
+                            structure = json.load(f)
+                        with open(os.path.join(TESTPATH, f"output_data/system{gen*popSize+i}s{j}.vasp"), "r") as f:
+                            structure.update(CrystalSystemRepresentation.readAtomicStructure(f))
+                        system.append(structure)
                     except FileNotFoundError:
                         break
                 systems[system[0]['ID']] = system
