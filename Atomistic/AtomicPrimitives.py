@@ -79,21 +79,18 @@ class AtomicStructure:
         return copy(self.cell)
 
     @staticmethod
-    def initFormFractionalCoordinates(atomTypes, coordinates, cell, **kwargs):
+    def initFromFractionalCoordinates(atomTypes, coordinates, cell, **kwargs):
         return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, **kwargs)
 
     @staticmethod
     def assemble(molecules, cell, environment = None, **kwargs):
         atomTypes = []
         coordinates = []
-        moleculesData = []
         indices = []
         lowerBound = 0
         for molecule in molecules:
             atomTypes.extend(molecule.atomTypes)
             coordinates.extend(molecule.coordinates)
-            moleculesData.append({'size': len(molecule), 'cell': molecule.cell, 'bonds': molecule.bonds,
-                                  'zmatrixConfig': molecule.zmatrixConfig})
             size = len(molecule)
             indices.append(list(range(lowerBound, lowerBound + size)))
             lowerBound += size
@@ -104,29 +101,27 @@ class AtomicStructure:
         # atomTypes.extend(environment.getStructure().getAtomTypes())
         # coordinates.extend(environment.getStructure().getCortesianCoordinates())
         return (AtomicStructure(atomTypes, coordinates, cell, **kwargs),
-                AtomicDisassembler(moleculesData, indices, environment))
+                AtomicDisassembler(indices, environment))
 
 
 class AtomicDisassembler:
 
-    def __init__(self, moleculesData, indices, environment):
-        self.moleculesData = copy(moleculesData)
+    def __init__(self, indices, environment):
         self.indices = indices
         self.environment = copy(environment)
 
+    @staticmethod
+    def createFlatDisassembler(N):
+        return AtomicDisassembler([[i] for i in range(N)], None)
+
     def disassemble(self, atomicStructure):
-        atomTypesNotYet = list(atomicStructure.getAtomTypes())
-        coordinatesNotYet = list(atomicStructure.getCartesianCoordinates())
+        atomTypes = list(atomicStructure.getAtomTypes())
+        coordinates = list(atomicStructure.getCartesianCoordinates())
         molecules = []
-        for moleculeData in self.moleculesData:
-            moleculeSize = moleculeData['size']
-            atomTypes = [atomTypesNotYet.pop(0) for i in range(moleculeSize)]
-            coordinates = [coordinatesNotYet.pop(0) for i in range(moleculeSize)]
-            molecule = AtomicStructure(atomTypes, coordinates, moleculeData['cell'],
-                                       bonds=moleculeData['bonds'], zmatrixConfig=moleculeData['zmatrixConfig'])
-            molecules.append(molecule)
-        assert len(atomTypesNotYet) == len(coordinatesNotYet)
-        assert len(coordinatesNotYet) == 0 # len(self.environment.getStructure())
+        for indices in self.indices:
+            molecules.append(AtomicStructure([atomTypes[i] for i in indices], [coordinates[i] for i in indices]))
+        # assert len(atomTypesNotYet) == len(coordinatesNotYet)
+        # assert len(coordinatesNotYet) == 0 # len(self.environment.getStructure())
         return {'molecules': molecules, 'cell': atomicStructure.getCell(), 'environment': copy(self.environment)}
 
     def decomposeDisplacements(self, displacements, structure):

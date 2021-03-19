@@ -5,7 +5,7 @@ import matplotlib
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.io import write
+from ase.io.vasp import write_vasp, read_vasp
 from os.path import join as pj
 from prettytable import PrettyTable
 
@@ -41,6 +41,12 @@ class SystemsTable(object):
 
 
 class CrystalSystemRepresentation(object):
+
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
+
     def __init__(self, RES_FOLDER: str, numStages: int, columns, **kwargs):
         self.RES_FOLDER = RES_FOLDER
         self.numStages = numStages
@@ -54,7 +60,7 @@ class CrystalSystemRepresentation(object):
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            writeAtomicStructure(io_gatheredPOSCARS_unrelaxed, system[0])
+            self.writeAtomicStructure(io_gatheredPOSCARS_unrelaxed, system[0])
             content_origin += f"{ID} {system[0]['howCome']} {system[0]['parent']}\n"
 
             if len(system) > 1:
@@ -62,7 +68,7 @@ class CrystalSystemRepresentation(object):
 
             if len(system) == self.numStages + 1:
                 table_Individuals.update(ID, optimizer.target.pool.allSystems[ID], optimizer.fitness)
-                writeAtomicStructure(io_gatheredPOSCARS, system[self.numStages])
+                self.writeAtomicStructure(io_gatheredPOSCARS, system[self.numStages])
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
@@ -97,8 +103,24 @@ class CrystalSystemRepresentation(object):
         plt.savefig(pj(self.RES_FOLDER, 'E_series.svg'))
 
 
-def writeAtomicStructure(fileDescriptor, system):
-    structure, disassembler = type(system['molecules'][0]).assemble(**system)
-    atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(),
-                  cell = structure.getCell().getCellVectors())
-    write(fileDescriptor, atoms, 'vasp', label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+    @classmethod
+    def writeAtomicStructure(cls, fileDescriptor, system: dict):
+        structure, disassembler = cls.structureType.assemble(**system)
+        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(),
+                      cell = structure.getCell().getCellVectors())
+        write_vasp(fileDescriptor, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+
+    @classmethod
+    def readAtomicStructure(cls, fileDescriptor, disassembler = None) -> dict:
+        atoms = read_vasp(fileDescriptor)
+        disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(atoms)) if disassembler is None else disassembler
+        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
+        cell = cls.cellType(atoms.get_cell().array, atoms.get_pbc())
+        return disassembler.disassemble(cls.structureType(atomTypes, atoms.get_positions(), cell = cell))
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType

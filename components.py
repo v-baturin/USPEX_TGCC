@@ -26,5 +26,13 @@ GlobalOptimizer.registerSelection(USPEXClassic)
 from .Controllers.GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 
+from .Atomistic.Element import Element
+from .Atomistic.CellUtility import Cell
+from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
+from .IO.Crystal.CrystalSystemRepresentation import CrystalSystemRepresentation
+CrystalSystemRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Calculators.GULP_Interface import GULP_Interface
+GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+
 from .InputParser import read
 from .IO.compileParams import compileParams

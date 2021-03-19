@@ -205,6 +205,15 @@ class Element(object):
     def __lt__(self, other):
         return self.z < other.z
 
+    def __eq__(self, other):
+        return self.z == other.z
+
+    def __repr__(self):
+        return self.short_name
+
+    def __hash__(self):
+        return hash(self.z)
+
     @staticmethod
     def all_elements() -> list:
         return [Element(x.z) for x in _ELEMENTS_LIST]

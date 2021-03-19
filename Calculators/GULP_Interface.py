@@ -27,6 +27,10 @@ class GULP_Interface(SHELL_Interface):
     '''
 
     _DEFAULT_SLEEP_TIME = 10
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
 
     def __init__(self, tag : str, ginput : str = None, goptions : str = None, libs:List[str] = None,
                  moleculeSpecifics : dict = None, perturbate : bool = True, fix_cell:bool=False, **kwargs):
@@ -318,12 +322,9 @@ class GULP_Interface(SHELL_Interface):
         # fractional for bulk
         # cartesian for surface
 
-        structure = system['structure']
-        del system['structure']
+        cell = system['cell']
         disassembler = system['disassembler']
         del system['disassembler']
-        systemFactory = type(structure)
-        cellFactory = type(structure.getCell())
 
         # GULP prints the fractional coordinates before the Final lattice vectors
         # so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
@@ -332,15 +333,17 @@ class GULP_Interface(SHELL_Interface):
             if line.find('Final cartesian coordinates of atoms') != -1:
                 s = i + 5
                 positions = []
+                atomTypes = []
                 while True:
                     s = s + 1
                     if content[s].find("------------") != -1:
                         break
                     if content[s].find(" s ") != -1:
                         continue
-                    xyz = content[s].split()[3:6]
+                    element, _, *xyz = content[s].split()[1:6]
                     XYZ = [float(x) for x in xyz]
                     positions.append(XYZ)
+                    atomTypes.append(self.atomType(element))
                 positions = np.array(positions)
 
             elif line.find('Final Cartesian lattice vectors') != -1:
@@ -350,24 +353,26 @@ class GULP_Interface(SHELL_Interface):
                     temp = content[j].split()
                     for k in range(3):
                         lattice_vectors[j - s][k] = float(temp[k])
-                cell = cellFactory(lattice_vectors, pbc = structure.getCell().getPBC())
+                cell = self.cellType(lattice_vectors, pbc = cell.getPBC())
                 if fractional_coordinates is not None:
                     positions = cell.fractionalToCartesian(fractional_coordinates)
 
             elif line.find('Final fractional coordinates of atoms') != -1:
                 s = i + 5
                 scaled_positions = []
+                atomTypes = []
                 while True:
                     s = s + 1
                     if content[s].find("------------") != -1:
                         break
                     if content[s].find(" s ") != -1:
                         continue
-                    xyz = content[s].split()[3:6]
+                    element, _, *xyz = content[s].split()[1:6]
                     XYZ = [float(x) for x in xyz]
                     scaled_positions.append(XYZ)
+                    atomTypes.append(self.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
-        system.update(disassembler.disassemble(systemFactory(structure.getAtomTypes(), positions, cell = cell)))
+        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell = cell)))
 
     def readForces(self, content, numAtoms : int):
         assert numAtoms > 0
@@ -395,3 +400,10 @@ class GULP_Interface(SHELL_Interface):
             if line.lower().startswith('* Version'):
                 number = line[12:17]
         return number
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType

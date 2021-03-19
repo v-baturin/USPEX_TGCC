@@ -11,7 +11,7 @@ from os.path import join as pj
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from .CrystalSystemRepresentation import SystemsTable, writeAtomicStructure
+from .CrystalSystemRepresentation import SystemsTable, CrystalSystemRepresentation
 
 EXTENDED_CONVEX_HULL_ENERGY_RANGE = 0.5
 
@@ -55,7 +55,7 @@ class CrystalPoolRepresentation(object):
         for opt in optimizers:
             pool = opt.target.pool
             for ID in opt.best:
-                writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
+                CrystalSystemRepresentation.writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
         with open(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), 'w') as fp:
             io_BESTgatheredPOSCARS.seek(0)
             shutil.copyfileobj(io_BESTgatheredPOSCARS, fp)
@@ -66,7 +66,7 @@ class CrystalPoolRepresentation(object):
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
-                    writeAtomicStructure(io_goodStructuresPOSCARS, system)
+                    CrystalSystemRepresentation.writeAtomicStructure(io_goodStructuresPOSCARS, system)
 
             with open(pj(self.RES_FOLDER, 'goodStructures'), 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
@@ -105,7 +105,7 @@ class CrystalPoolRepresentation(object):
 
             for front in fronts:
                 for system in front:
-                    writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
+                    CrystalSystemRepresentation.writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
             with open(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'), 'w') as fp:
                 io_extendedConvexHullPOSCARS.seek(0)
                 shutil.copyfileobj(io_extendedConvexHullPOSCARS, fp)
