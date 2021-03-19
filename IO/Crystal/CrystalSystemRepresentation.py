@@ -115,7 +115,7 @@ class CrystalSystemRepresentation(object):
         atoms = read_vasp(fileDescriptor)
         disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(atoms)) if disassembler is None else disassembler
         atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
-        cell = cls.cellType(atoms.get_cell().array, atoms.get_pbc())
+        cell = cls.cellType(atoms.get_cell().array, tuple(atoms.get_pbc()))
         return disassembler.disassemble(cls.structureType(atomTypes, atoms.get_positions(), cell = cell))
 
     @classmethod
