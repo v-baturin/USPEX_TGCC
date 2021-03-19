@@ -10,7 +10,6 @@ from ase.io.vasp import write_vasp
 from ...CellUtility import Cell
 from ...AtomicPrimitives import AtomicStructure
 from ...Element import Element
-from ...Crystal import Crystal
 from ..calcHardness import calcHardness
 
 

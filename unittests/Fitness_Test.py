@@ -20,7 +20,6 @@ from ..Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 from ..Atomistic.CellUtility import Cell
 from ..Atomistic.Fingerprints.fingerprint import Fingerprint
 from ..XRay.SpectrumAnalyzer import SpectrumAnalyzer
-from ..Atomistic.Crystal import Crystal
 
 # class System(object):
 #     def __init__(self, ID: int, composition: dict, enthalpy: float, fingerprint: Fingerprint):

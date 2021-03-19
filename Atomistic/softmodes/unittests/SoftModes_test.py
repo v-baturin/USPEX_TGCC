@@ -10,7 +10,6 @@ from ..calcSoftModes import calcSoftModes
 from ...CellUtility import Cell
 from ...AtomicPrimitives import AtomicStructure
 from ...Element import Element
-from ...Crystal import Crystal
 
 
 def symbolsToElements(symbols):

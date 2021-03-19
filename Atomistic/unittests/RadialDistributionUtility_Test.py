@@ -7,7 +7,6 @@ from ase.io.vasp import read_vasp
 from ..RadialDistributionUtility import RadialDistributionUtility
 from ..SimpleMoleculeUtility import SimpleMoleculeUtility
 from ..CellUtility import Cell
-from ..Crystal import Crystal
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 

@@ -2,7 +2,6 @@ from ..getMinimalGraphBonds import getMinimalGraphBonds
 from ...CellUtility import Cell
 from ...AtomicPrimitives import AtomicStructure
 from ...Element import Element
-from ...Crystal import Crystal
 
 
 from ase.io.vasp import read_vasp
