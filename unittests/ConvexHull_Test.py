@@ -15,7 +15,7 @@ from scipy.spatial import ConvexHull
 from typing import List
 
 
-from ..ConvexHull import ConvexHull, Simplex
+from ..ConvexHull import Simplex
 
 square = np.array([[2,4], [4,12], [12,10], [10,2]])
 
@@ -158,7 +158,6 @@ class Simplex_Test2(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.coords = np.array([[0.8, 0.0], [1.0, 0.0], [0.8, 0.2]])
-        cls.energies = np.array([-8.0, -6.5, -7.5])
         cls.simplex = Simplex(cls.coords)
 
     def test_out(self):
