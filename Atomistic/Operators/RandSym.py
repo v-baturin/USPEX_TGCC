@@ -94,13 +94,13 @@ class RandSym:
                 radii.append(0.45 * atomRaduis + height_map[ind])
         for i, j in combinations_with_replacement(range(len(radii)), 2):
             CenterminDistMatrice[i, j] = CenterminDistMatrice[j, i] = (radii[i] + radii[j])
-        originalCenterminDistMatrice = copy(CenterminDistMatrice)
+        distCoeff = 1.0
 
         while True:
             endTime = time()
             failedTime = endTime - startTime
             if failedDist > MAX_RANDOM_FAILED_DIST or failedTime > MAX_RANDOM_TIME:
-                if CenterminDistMatrice[0][0] > 0.8 * originalCenterminDistMatrice[0][0]:
+                if distCoeff > 0.8:
                     if failedTime > MAX_RANDOM_TIME:
                         logger.debug(f'WARNING! Can not generate a structure after {MAX_RANDOM_TIME / 60} minutes. '
                                            'The minimum distance threshold will be lowered by 10%.')
@@ -109,7 +109,7 @@ class RandSym:
                                            'The minimum distance threshold will be lowered by 10%.')
                     failedDist = 0
                     startTime = time()
-                    CenterminDistMatrice *= 0.9
+                    distCoeff *= 0.9
 
                 else:
                     msg = f'Could not generate a structure after {MAX_RANDOM_FAILED_DIST} tries or {MAX_RANDOM_TIME / 60} minutes.\n'
@@ -133,11 +133,11 @@ class RandSym:
             try:
                 if sum(self.splitInto) > 3:  # split cell
                     lat = self.cellUtility.getRandomCell(composition, self.conditions).getCellParameters()
-                    lat, candidate = splitBigCell(CenterminDistMatrice, False, self.fixRndSeed, lat,
+                    lat, candidate = splitBigCell(distCoeff * CenterminDistMatrice, False, self.fixRndSeed, lat,
                                                   np.random.choice(self.splitInto, 1), numIons, nsym, self.sym_coef)
                 else:
 
-                    candidate, lat = symope_crystal(CenterminDistMatrice, False, self.fixRndSeed, nsym, numIons_tmp,
+                    candidate, lat = symope_crystal(distCoeff * CenterminDistMatrice, False, self.fixRndSeed, nsym, numIons_tmp,
                                                     self.cellUtility.getCellVolume(composition, self.conditions),
                                                     self.sym_coef)
                 name, cell, coordinates, operations = determineOperations(lat, numIons, candidate)
@@ -149,11 +149,11 @@ class RandSym:
                     molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
                     atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
-                    if np.all(atomDistances >= minDistMatrix):
+                    if np.all(atomDistances >= distCoeff * minDistMatrix):
                         system = {'molecules': molecules, 'cell': cell}
                         self.conditions.putConditions(system)
                         return (system,)
             except Exception as e:
-                logger.exception(e)
+                logger.debug(e, exc_info=True)
 
             failedDist += 1
