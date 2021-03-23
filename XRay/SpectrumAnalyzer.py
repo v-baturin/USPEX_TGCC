@@ -44,7 +44,7 @@ class SpectrumAnalyzer(object):
         """
         if exp_reflections is not None:
             self.mode = 'scxrd'
-            self.exp_reflections = np.array(exp_reflections)
+            self.exp_reflections = np.array(exp_reflections, dtype=object)
         else:
             self.mode = 'powder'
             self.spectrum_starts = spectrum_starts
@@ -101,7 +101,7 @@ class SpectrumAnalyzer(object):
 
             min_d_spacing = np.floor(min_d_spacing * 1000) / 1000
             th_reflections = get_reflections(structure, min_d_spacing)
-            th_reflections = np.array(th_reflections)
+            th_reflections = np.array(th_reflections, dtype=object)
 
             # scale theoretical intensities according to experimental maximum
             th_reflections[:, 0] = th_reflections[:, 0] / max(th_reflections[:, 0]) * max(self.exp_reflections[:, 0])
