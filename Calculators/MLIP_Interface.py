@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 
 '''
@@ -20,7 +21,7 @@ from .Common.MLIPCfgParser import readcfg, savecfg
 from .Common.SHELL_Interface import SHELL_Interface
 
 
-EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
+EV_PER_CUBIC_ANGSTREM_PER_GPA = 1 / 160.21766208
 
 
 class MLIP_Interface(SHELL_Interface):
@@ -34,7 +35,7 @@ class MLIP_Interface(SHELL_Interface):
 
     # working output files
     out_cfg_file = 'relaxed.cfg_0'
-
+    out_sampled_file = 'sampled.cfg_0'
 
     _DEFAULT_SLEEP_TIME = 10
 
@@ -71,28 +72,39 @@ class MLIP_Interface(SHELL_Interface):
                 content = f.read()
             if content:
                 return True
+            # if the structure ended up unrelaxed because of extrapolation
+            elif os.path.isfile(pj(calcFolder, self.out_sampled_file)):
+                with open(pj(calcFolder, self.errorFile)) as stderr:
+                    content = stderr.read()
+                if not content:
+                    return True
         return False
 
     def readOutput(self, system, calcFolder: str):
         atoms = readcfg(pj(calcFolder, self.out_cfg_file))
+        if atoms:
+            system['structure'].set_cell(atoms.get_cell(), optimize=True)
+            system['structure'].set_positions(atoms.get_positions())
+            system['enthalpy'] = atoms.energy + system['structure'].get_volume() * \
+                                 system['structure'].externalPressure * EV_PER_CUBIC_ANGSTREM_PER_GPA
 
-        system['structure'].set_cell(atoms.get_cell(), optimize=True)
-        system['structure'].set_positions(atoms.get_positions())
-        system['enthalpy'] = atoms.energy + system['structure'].get_volume() * \
-                             system['structure'].externalPressure * EV_PER_CUBIC_ANGSTREM_PER_GPA
+            try:
+                stress_tensor = np.zeros((3, 3))
+                stress_tensor[0, 0] = atoms.stresses[0]
+                stress_tensor[1, 1] = atoms.stresses[1]
+                stress_tensor[2, 2] = atoms.stresses[2]
+                stress_tensor[1, 2] = atoms.stresses[3]
+                stress_tensor[2, 1] = atoms.stresses[3]
+                stress_tensor[0, 2] = atoms.stresses[4]
+                stress_tensor[2, 0] = atoms.stresses[4]
+                stress_tensor[0, 1] = atoms.stresses[5]
+                stress_tensor[1, 0] = atoms.stresses[5]
 
-        try:
-            stress_tensor = np.zeros((3, 3))
-            stress_tensor[0, 0] = atoms.stresses[0]
-            stress_tensor[1, 1] = atoms.stresses[1]
-            stress_tensor[2, 2] = atoms.stresses[2]
-            stress_tensor[1, 2] = atoms.stresses[3]
-            stress_tensor[2, 1] = atoms.stresses[3]
-            stress_tensor[0, 2] = atoms.stresses[4]
-            stress_tensor[2, 0] = atoms.stresses[4]
-            stress_tensor[0, 1] = atoms.stresses[5]
-            stress_tensor[1, 0] = atoms.stresses[5]
-
-            system['stressTensor'] = stress_tensor
-        except:
-            logger.debug('Pressure tensor can\'t be find in output')
+                system['stressTensor'] = stress_tensor
+            except:
+                logger.debug('Pressure tensor can\'t be find in output')
+        else:
+            ID = system['ID']
+            logger.info(f'structure {ID} led to extrapolation and will be discarded.')
+            system['structure'].set_cell(np.identity(3) * system['structure'].minVectorLength * 0.9)
+            system['enthalpy'] = 1000

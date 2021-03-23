@@ -111,7 +111,10 @@ class ConvexHull(object):
                 _dists = []
                 for e, s in zip(props, simplecies):
                     y = s.bary_coords(coord)
-                    if np.abs(np.sum(np.sign(y))) == len(y) or np.any(np.isclose(y, 0.0)):
+                    # Filter zeros from the weights. Then we have proper comparison of weights.
+                    # if all weights are the same sign - point is somewhere inside or on the border of simplex.
+                    y1 = list(filter(lambda x: not np.isclose(x, 0.0), y))
+                    if np.abs(np.sum(np.sign(y1))) == len(y1):
                         _dists.append(np.round(p - np.dot(y, e), 6))
                 self._df.at[i, 'height'] = np.max(_dists)
                 self._df.at[i, 'depth'] = np.min(_dists)

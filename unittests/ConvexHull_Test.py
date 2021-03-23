@@ -19,6 +19,7 @@ from ..ConvexHull import Simplex
 
 square = np.array([[2,4], [4,12], [12,10], [10,2]])
 
+
 class ConvexHull_Square_Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -151,3 +152,33 @@ class Simplex_Test(unittest.TestCase):
         print(f'test_outside of point {p1}')
         p1_heights = self.get_heights(p1)
         print(f'{p1_heights}\n===================')
+
+
+class Simplex_Test2(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.coords = np.array([[0.8, 0.0], [1.0, 0.0], [0.8, 0.2]])
+        cls.simplex = Simplex(cls.coords)
+
+    def test_out(self):
+        coords = [[0.0,0.0], [0.0,0.2], [1.2,0.0], [0.8, -1.0], [0.8, 1.0]]
+        print('Out of simplex:\n')
+        for x in coords:
+            y = self.simplex.bary_coords(x)
+            y = list(filter(lambda x: not np.isclose(x, 0.0), y))
+            self.assertNotEqual(np.abs(np.sum(np.sign(y))), len(y))
+
+    def test_vertices(self):
+        print('Out of vertices:\n')
+        for x in self.coords:
+            y = self.simplex.bary_coords(x)
+            y = list(filter(lambda x: not np.isclose(x, 0.0), y))
+            self.assertEqual(np.abs(np.sum(np.sign(y))), len(y))
+
+    def test_edges(self):
+        coords = [[0.8, 0.1], [0.9, 0.0], [0.9, 0.1]]
+        print('Edges:\n')
+        for x in coords:
+            y = self.simplex.bary_coords(x)
+            y = list(filter(lambda x: not np.isclose(x, 0.0), y))
+            self.assertEqual(np.abs(np.sum(np.sign(y))), len(y))
