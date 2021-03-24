@@ -195,6 +195,11 @@ class Element(object):
                 self.z = _ELEMENTS_LIST[pos].z
             else:
                 raise ValueError
+        elif isinstance(input, Element):
+            self.short_name = input.short_name
+            self.z = input.z
+            self.long_name = input.long_name
+            pos = [x.z for x in _ELEMENTS_LIST].index(input.z)
 
         self.valence = _ELEMENTS_LIST[pos].valence
         self.valence_electrons = _ELEMENTS_LIST[pos].v_electrons

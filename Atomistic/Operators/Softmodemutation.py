@@ -22,7 +22,7 @@ class Softmodemutation:
         ID = system['ID']
         molecules = system['molecules']
         cell = system['cell']
-        structure, disassembler = self.simpleMoleculeUtility.systemFactory.assemble(molecules, cell)
+        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
         degree = self.degree if self.degree else np.mean([el.covalent_radius for el in structure.getAtomTypes()]) * 3
         if ID in self.knownSystems:
             frequencies, eigenVectors = self.knownSystems[ID]

@@ -20,7 +20,7 @@ with open(f'{HOMEPATH}/idealnets.json', 'rt') as f:
     TOPOLOGICAL_NETS = pandas.DataFrame.from_dict(json.load(f)).T
 
 MAX_SUPERSIZE = 4
-ATTEMPTS_ROTATION = 1
+ATTEMPTS_ROTATION = 50
 ATTEMPTS_POINT_GROUP = 10
 
 
@@ -101,6 +101,8 @@ class RandTop:
 
                                     for i in range(self.attemptsRotation):
                                         molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                                        if len(molecules) != totalAtomNubmber:
+                                            continue
                                         atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
                                         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
                                         if np.all(atomDistances >= minDistMatrix):

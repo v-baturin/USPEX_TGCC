@@ -69,8 +69,9 @@ def calcVolumePure(targetPress: float, atomType, systemType: str = 'atom'):  # R
     """
 
     moleculeType = [1, 6, 7, 8, 9, 15, 16, 17, 33, 34, 35, 52, 53]
+    atomType = Element(atomType)
 
-    if Element(atomType).z in moleculeType and systemType == 'mol':
+    if atomType.z in moleculeType and systemType == 'mol':
         #             atomType   B0       B0'  V at 0GPa  V at 500GPa
         fitParameter = [
             [1, 8.937200, 4.77840, 7.0100, 1.1796],
@@ -192,7 +193,7 @@ def calcVolumePure(targetPress: float, atomType, systemType: str = 'atom'):  # R
     # ---------------------------------------------------------------------------
 
     for ii, parms in enumerate(fitParameter):
-        if Element(parms[0]).short_name == atomType:
+        if Element(parms[0]) == atomType:
             i = ii
             break
 

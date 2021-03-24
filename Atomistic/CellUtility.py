@@ -137,6 +137,9 @@ class Cell:
     def fractionalToCartesian(self, coordinates):
         return np.dot(self._cellVectors.T, coordinates.T).T
 
+    def fractionalToCartesianOperator(self, operator):
+        return np.linalg.solve(self._cellVectors.T, np.dot(self._cellVectors.T, operator.T).T).T
+
     def getWrapedCartesianCoordinates(self, coordinates):
         return self.fractionalToCartesian(self.getWrapedFractionalCoordinates(self.cartesianToFractional(coordinates)))
 

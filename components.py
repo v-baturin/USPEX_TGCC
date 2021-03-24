@@ -29,6 +29,8 @@ GenerationController.registerOptimizer(GlobalOptimizer)
 from .Atomistic.Element import Element
 from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
+
+SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .IO.Crystal.CrystalSystemRepresentation import CrystalSystemRepresentation
 CrystalSystemRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Calculators.GULP_Interface import GULP_Interface

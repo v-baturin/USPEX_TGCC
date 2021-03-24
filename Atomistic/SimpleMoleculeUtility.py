@@ -1,18 +1,36 @@
 import numpy as np
 from collections import Counter
 
-from .AtomicPrimitives import AtomicStructure
-from .Element import Element
 from .Transformation import Transformation
 
 
 class SimpleMoleculeUtility(object):
-    def __init__(self, molecules : dict = None, atomicStructureFactory = AtomicStructure):
-        self.systemFactory = atomicStructureFactory
-        self.molecules = {el.short_name : self.systemFactory([el], [[0., 0., 0.]]) for el in Element.all_elements()}
+
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
+
+    def __init__(self, molecules : dict = None):
+        if molecules is not None:
+            for symbol, molDct in list(molecules.items()):
+                atomTypes = [self.atomType(s) for s in molDct['symbols']]
+                coordinates = molDct['positions']
+                molecule = self.structureType(atomTypes, coordinates)
+                offset = Transformation.fromRotVector([0.,0.,0.], -molecule.getCenterOfMassCartesianCoordinates())
+                molecule = offset.transform(molecule)
+                molecules[symbol] = molecule
+        self.molecules = {el.short_name : self.structureType([el], [[0., 0., 0.]]) for el in self.atomType.all_elements()}
         if molecules is not None:
             self.molecules.update(molecules)
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def populateStructure(self, cell, coordinates, operations):
         molecules = []
@@ -22,14 +40,14 @@ class SimpleMoleculeUtility(object):
                 for nodeCoordinates, groups in zip(atomCoordinates, operations[symbol]):
                     molecule = Transformation.fromRotVector(Transformation.randomRotVector(),
                                                             [0., 0., 0.]).transform(molecule)
-                    for coordinate, operation in zip(nodeCoordinates, np.random.choice(groups, 1).operators):
-                        transformation = Transformation.fromMatrix(cell.fractionalToCartesian(operation[0:3, 0:3]),
-                                                                   cell.fractionalToCartesian(coordinate))
+                    for position, operation in zip(nodeCoordinates, np.random.choice(groups, 1)[0].operators):
+                        transformation = Transformation.fromMatrix(cell.fractionalToCartesianOperator(operation[0:3, 0:3]),
+                                                                   cell.fractionalToCartesian(position))
                         molecules.append(transformation.transform(molecule))
             else:
                 for nodeCoordinates in atomCoordinates:
-                    for coordinate in nodeCoordinates:
-                        transformation = Transformation.fromRotVector([0.,0.,0.], cell.fractionalToCartesian(coordinate))
+                    for position in nodeCoordinates:
+                        transformation = Transformation.fromRotVector([0.,0.,0.], cell.fractionalToCartesian(position))
                         molecules.append(transformation.transform(molecule))
         return molecules
 
@@ -55,7 +73,7 @@ class SimpleMoleculeUtility(object):
             if len(molecule) == 1:
                 comp[symbol] += amount
             else:
-                for symbol, value in molecule.getComposition.items():
+                for symbol, value in molecule.getComposition().items():
                     comp[symbol] += value*amount
         return comp
 
@@ -83,7 +101,7 @@ class SimpleMoleculeUtility(object):
         #     if not inMolecule: return False
         # return True
 
-        structure, disassembler = self.systemFactory.assemble(molecules, cell)
+        structure, disassembler = self.structureType.assemble(molecules, cell)
         actualDistances = structure.getAllDistances()
         constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
         for inds, molecule in zip(disassembler.indices, molecules):
@@ -130,8 +148,8 @@ class SimpleMoleculeUtility(object):
         else:
             return molecule
 
-    @staticmethod
-    def molecule_CN(molecule):
+    @classmethod
+    def molecule_CN(cls, molecule):
         """
         Method which roughly (very roughly!!!) estimates the coordination numbers of a molecule.
 
@@ -140,7 +158,7 @@ class SimpleMoleculeUtility(object):
         :rtype: numpy array
         :return: Array of coordination numbers.
         """
-        radiu = np.array([Element(atom).covalent_radius for atom in molecule.getAtomTypes()])
+        radiu = np.array([cls.atomType(atom).covalent_radius for atom in molecule.getAtomTypes()])
         CN = np.fromiter((len(neighbours) for neighbours in find_pair(molecule.coordinates, radiu)), dtype=int)
         return CN
 

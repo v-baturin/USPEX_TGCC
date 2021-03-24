@@ -372,6 +372,7 @@ class GULP_Interface(SHELL_Interface):
                     scaled_positions.append(XYZ)
                     atomTypes.append(self.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
+                positions = cell.fractionalToCartesian(fractional_coordinates)
         system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell = cell)))
 
     def readForces(self, content, numAtoms : int):

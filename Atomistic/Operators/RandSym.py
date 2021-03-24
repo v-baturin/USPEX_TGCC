@@ -48,7 +48,7 @@ def determineOperations(lat, numIons, candidate):
 
 class RandSym:
     def __init__(self, utilities, nsymN=False, nsym=None, sym_coef=0.4, splitInto=[1],
-                 attemptsRotation: int = ATTEMPTS_ROTATION):
+                 attemptsRotation: int = ATTEMPTS_ROTATION, debug = False):
         self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
@@ -62,6 +62,8 @@ class RandSym:
         self.sym_coef = sym_coef
         self.splitInto = splitInto
         self.attemptsRotation = attemptsRotation
+        if debug:
+            logger.setLevel(logging.DEBUG)
 
         self.fixRndSeed = False
 
@@ -76,7 +78,7 @@ class RandSym:
         logger.debug(f"Trying {nsym} symmetry")
         badSymmetryCounter = 0
         startTime = time()
-        CenterminDistMatrice = np.zeros((len(symbols), len(symbols)))
+        centerMinDistMatrix = np.zeros((len(symbols), len(symbols)))
         radii = []
         for s in symbols:
             molecule = self.simpleMoleculeUtility.molecules[s]
@@ -93,7 +95,7 @@ class RandSym:
                 atomRaduis = self.conditions.calcAtomVolume(molecule.getAtomTypes())[ind] ** (1.0 / 3.0)
                 radii.append(0.45 * atomRaduis + height_map[ind])
         for i, j in combinations_with_replacement(range(len(radii)), 2):
-            CenterminDistMatrice[i, j] = CenterminDistMatrice[j, i] = (radii[i] + radii[j])
+            centerMinDistMatrix[i, j] = centerMinDistMatrix[j, i] = (radii[i] + radii[j])
         distCoeff = 1.0
 
         while True:
@@ -133,11 +135,11 @@ class RandSym:
             try:
                 if sum(self.splitInto) > 3:  # split cell
                     lat = self.cellUtility.getRandomCell(composition, self.conditions).getCellParameters()
-                    lat, candidate = splitBigCell(distCoeff * CenterminDistMatrice, False, self.fixRndSeed, lat,
+                    lat, candidate = splitBigCell(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, lat,
                                                   np.random.choice(self.splitInto, 1), numIons, nsym, self.sym_coef)
                 else:
 
-                    candidate, lat = symope_crystal(distCoeff * CenterminDistMatrice, False, self.fixRndSeed, nsym, numIons_tmp,
+                    candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,
                                                     self.cellUtility.getCellVolume(composition, self.conditions),
                                                     self.sym_coef)
                 name, cell, coordinates, operations = determineOperations(lat, numIons, candidate)
