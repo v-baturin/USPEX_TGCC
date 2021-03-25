@@ -101,6 +101,9 @@ class Cell:
     def getCellVectors(self):
         return self._cellVectors
 
+    def getCellVectorsPBC(self):
+        return self._cellVectors[np.nonzero(self._pbc)]
+
     def getPBC(self):
         return self._pbc
 
@@ -147,30 +150,21 @@ class Cell:
         return np.divmod(coordinates, 1/np.asarray(self._pbc, dtype=float))[1]
 
     def randomTransformation(self):
-        pbcVec = np.array(list(self.getPBC()))
-        pbcSum = np.sum(pbcVec)
-        matrixDirToCart = np.array(self.getCellVectors()).T
-        if pbcSum == 0 or 3:
+        pbcVectorsCart = self.getCellVectorsPBC()
+        pbcSum = len(pbcVectorsCart)
+        transVec = np.dot(np.random.rand(pbcSum), pbcVectorsCart)
+        if pbcSum == 0:
             rotMatrix = Rotation.random().as_matrix()
-            if pbcSum == 0:
-                transVec = np.zeros(3)
-            else:
-                transVec = np.dot(matrixDirToCart, np.random.rand(3))
-        else:
-            if pbcSum == 1:
-                rotAngle = np.pi * np.random.random()
-                pbcVecCart = np.dot(matrixDirToCart, pbcVec)
-                rotVec = rotAngle * pbcVecCart / np.linalg.norm(pbcVecCart)
-                transVec = np.random.random() * pbcVecCart  # pbcVec without norm here
-            else:
-                rotAngle = np.pi * np.random.random()
-                pbcVectorsCart = self._cellVectors[np.nonzero(pbcVec)]
-                rotVecWithoutNorm = np.cross(pbcVectorsCart[0,:], pbcVectorsCart[1,:])
-                rotVec = rotAngle * rotVecWithoutNorm/np.linalg.norm(rotVecWithoutNorm)
-                transVec = np.dot(np.random.rand(2) * pbcVectorsCart)
+        elif pbcSum == 1:
+            axis = pbcVectorsCart[0]
+            rotVec = np.pi * np.random.random() * axis / np.linalg.norm(axis)
             rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
-        centerCellVec = np.dot(matrixDirToCart, np.array([0.5, 0.5, 0.5]))
-        transVec = transVec - np.dot(rotMatrix, centerCellVec)
+        # elif pbcSum == 2:
+        #     axis = np.cross(pbcVectorsCart[0,:], pbcVectorsCart[1,:])
+        else:
+            rotMatrix = np.eye(3)
+        centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
+        transVec = transVec - centerCellVec + np.dot(rotMatrix.T, centerCellVec)
         return Transformation.fromMatrix(rotMatrix, np.dot(rotMatrix, transVec))
 
     def getFittedTransformations(self, initialCoordinates, cell):
