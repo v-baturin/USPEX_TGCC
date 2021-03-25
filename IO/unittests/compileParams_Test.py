@@ -155,7 +155,7 @@ class CompileParams_Test(unittest.TestCase):
                     'target': {
                         'type': 'Crystal',
                         'config': {'externalPressure': 100},
-                        'spectrumAnalyzer': 'spectrum.txt',
+                        'powderSpectrumAnalyzer': 'spectrum.txt',
                         'compositionSpace': {'symbols': ['Na', 'Cl'],
                                              'blocks': [[8,24]],
                                              'range': [[1,1]]}
