@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from ..compileParams import compileParams, read_molecule, SpectrumAnalyzer
+from ..compileParams import compileParams, read_molecule, PowderSpectrumAnalyzer
 
 
 TESTPATH = os.path.dirname(os.path.abspath(__file__))
@@ -173,7 +173,7 @@ class CompileParams_Test(unittest.TestCase):
                 'target': {
                     'type': 'Crystal',
                     'config': {'externalPressure': 100},
-                    'spectrumAnalyzer': SpectrumAnalyzer.parse('spectrum.txt'),
+                    'powderSpectrumAnalyzer': PowderSpectrumAnalyzer.parse('spectrum.txt'),
                     'compositionSpace': {'symbols': ['Na', 'Cl'],
                                          'blocks': [[8,24]],
                                          'range': [[1,1]]}
