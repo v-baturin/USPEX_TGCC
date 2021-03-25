@@ -98,8 +98,9 @@ class RandTop:
                                     operations = dict(zip(symbols, operations))
                                     all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                     coordinates = dict(zip(symbols, coordinates))
+                                    attemptsRotation = 1 if composition == elementalComposition else self.attemptsRotation
 
-                                    for i in range(self.attemptsRotation):
+                                    for i in range(attemptsRotation):
                                         molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
                                         if len(molecules) != totalAtomNubmber:
                                             continue
