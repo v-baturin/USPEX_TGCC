@@ -2,9 +2,11 @@ from .Target import Target
 from .Atomistic.Crystal import Crystal
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from .XRay.SpectrumAnalyzer import SpectrumAnalyzer
+from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
+from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Crystal import variationOperators
-Target.registerTarget('Crystal', Crystal, [CompositionSpace, SpectrumAnalyzer, RadialDistributionUtility], variationOperators)
+Target.registerTarget('Crystal', Crystal, [CompositionSpace, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,
+                                           RadialDistributionUtility], variationOperators)
 
 from .GlobalOptimizer import GlobalOptimizer
 from .Fitness import Fitness
