@@ -2,40 +2,49 @@ import numpy as np
 from itertools import combinations
 from copy import copy
 
+from ..Transformation import Transformation
+
+
+_SWAP_ATTEMPTS = 1000
+
+
 class Permutation:
 
-    def __init__(self, utilities, howManySwaps = 5):
+    def __init__(self, utilities, howManySwaps = 5, swapAttempts = _SWAP_ATTEMPTS):
+        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.ionDistances = utilities.ionDistances
+        self.conditions = utilities.conditions
         self.specificSwaps = []
         self.howManySwaps = howManySwaps
+        self.swapAttempts = swapAttempts
 
     def __call__(self, system, *args, **kwargs):
         molecules = system['molecules']
-        indices = list(range(len(molecules)))
-        symbols = [molecule.symbol for molecule in molecules]
-        excluded = [{s,s} for s in np.unique(symbols)]
+        cell = system['cell']
+        symbols = self.simpleMoleculeUtility.moleculeTypes(system)
 
-        swaps = [{i1,i2} for (i1,i2) in combinations(indices, 2) if {symbols[i1], symbols[i2]} not in excluded]
+        swaps = [{i1,i2} for i1,i2 in combinations(range(len(molecules)), 2) if symbols[i1] != symbols[i2]]
 
-        permutations = []
-        for numberOfSwaps in range(1, self.howManySwaps + 1):
-            for permutation in combinations(swaps, numberOfSwaps):
-                # ensure that every molecule swapped only once
-                if len(set.union(*permutation)) == numberOfSwaps*2:
-                    permutations.append(permutation)
+        for _ in range(self.swapAttempts):
+            numberOfSwaps = np.random.randint(1, self.howManySwaps + 1)
+            permutation = np.random.choice(swaps, numberOfSwaps)
+            if len(set.union(*permutation)) == numberOfSwaps*2: # ensure that each molecule swapped not more than once
+                offspringMolecules = copy(molecules)
 
+                for i1, i2 in permutation:
+                    transVec = molecules[i2].getCenterOfMassCartesianCoordinates() -\
+                                       molecules[i1].getCenterOfMassCartesianCoordinates()
+                    transformation = Transformation.fromRotVector([0.,0.,0.], transVec)
+                    offspringMolecules[i1] = transformation.transform(molecules[i1])
+                    offspringMolecules[i2] = (-transformation).transform(molecules[i2])
 
-        for permutation in np.random.permutation(permutations):
-            attempted_structure = copy(molecules)
+                offsprings = ()
+                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
+                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                if np.all(atomDistances >= minDistMatrix):
+                    system = {'molecules': offspringMolecules, 'cell': cell}
+                    self.conditions.putConditions(system)
+                    offsprings += (system,)
+                    return offsprings
 
-            # It's boring to permute molecules just one time. Let's do it from 1 to 'howManySwaps' times! Default howManySwaps is 5.
-            for s1, s2 in permutation:
-                # Get first permutation from the total list of permutations; then permute
-                # Generate translation vector for molecules (geometric center of molecule 1 minus geometric center of molecule 2,
-                # it's regular linear algebra).
-                translation_1to2 = attempted_structure[s1].get_center_of_mass(scaled=True) - \
-                                   attempted_structure[s2].get_center_of_mass(scaled=True)
-                # Translate molecule 1 to achieve coincidence of it's geometric center with geometric center of molecule 2
-                attempted_structure[s1].translate_scaled(translation_1to2)
-                # ...and the other way around.
-                attempted_structure[s2].translate_scaled(-translation_1to2)
-                atLeastOnePermutation = True
+        raise RuntimeError("Permutation failed.")
