@@ -171,7 +171,13 @@ class USPEXClassic(object):
         fitness.payPenalties(actualParents, target.pool.uniqueSystems)
 
         if target.seeds is not None:
-            population.extend(target.seeds())
+            seeds = target.seeds()
+            for seed in seeds:
+                target.pool.assignID(seed)
+                seed['howCome'] = type(target.seeds).__name__
+                seed['parent'] = "None"
+                logger.info(f"Structure {seed['ID']} created from seed {seed['filename']}.")
+            population.extend(seeds)
 
         return population, (autofrac.weightsLast, autofrac.weightsBest)
 

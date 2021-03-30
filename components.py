@@ -10,10 +10,12 @@ from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
 from .Atomistic.Operators.Softmodemutation import Softmodemutation
+from .Atomistic.Operators.Seeds import Seeds
 from .VariationOperators import VariationOperators
 variationOperators = VariationOperators(hybridizationTypes=[Heredity],
                                         mutationTypes=[Softmodemutation],
-                                        creationTypes=[RandTop, RandSym])
+                                        creationTypes=[RandTop, RandSym],
+                                        seedsType=Seeds)
 Target.registerTarget('Crystal', [CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
                                   Conditions, IonDistances], variationOperators)
 
@@ -35,6 +37,8 @@ from .IO.Crystal.CrystalSystemRepresentation import CrystalSystemRepresentation
 CrystalSystemRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Calculators.GULP_Interface import GULP_Interface
 GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+
+Seeds.registerTypes(CrystalSystemRepresentation)
 
 from .InputParser import read
 from .IO.compileParams import compileParams
