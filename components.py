@@ -11,10 +11,11 @@ from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
 from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .Atomistic.Operators.Permutation import Permutation
+from .Atomistic.Operators.Transmutation import Transmutation
 from .Atomistic.Operators.Seeds import Seeds
 from .VariationOperators import VariationOperators
 variationOperators = VariationOperators(hybridizationTypes=[Heredity],
-                                        mutationTypes=[Softmodemutation, Permutation],
+                                        mutationTypes=[Softmodemutation, Permutation, Transmutation],
                                         creationTypes=[RandTop, RandSym],
                                         seedsType=Seeds)
 Target.registerTarget('Crystal', [CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,

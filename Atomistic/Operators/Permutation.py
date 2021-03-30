@@ -38,13 +38,11 @@ class Permutation:
                     offspringMolecules[i1] = transformation.transform(molecules[i1])
                     offspringMolecules[i2] = (-transformation).transform(molecules[i2])
 
-                offsprings = ()
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
                 if np.all(atomDistances >= minDistMatrix):
-                    system = {'molecules': offspringMolecules, 'cell': cell}
-                    self.conditions.putConditions(system)
-                    offsprings += (system,)
-                    return offsprings
+                    offspring = {'molecules': offspringMolecules, 'cell': cell}
+                    self.conditions.putConditions(offspring)
+                    return (offspring,)
 
         raise RuntimeError("Permutation failed.")

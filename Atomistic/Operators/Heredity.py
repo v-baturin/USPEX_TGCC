@@ -41,7 +41,7 @@ class Heredity:
         composition1 = self.simpleMoleculeUtility.composition(system1)
         order1 = self.radialDistributionUtility.order(system1)
         cell2 = system2['cell']
-        molecules2 = system1['molecules']
+        molecules2 = system2['molecules']
         composition2 = self.simpleMoleculeUtility.composition(system2)
         order2 = self.radialDistributionUtility.order(system2)
 
