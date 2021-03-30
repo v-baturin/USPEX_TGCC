@@ -46,4 +46,4 @@ class Transmutation:
                 self.conditions.putConditions(offspring)
                 return (offspring,)
 
-        raise RuntimeError("Permutation failed.")
+        raise RuntimeError("Transmutation failed.")
