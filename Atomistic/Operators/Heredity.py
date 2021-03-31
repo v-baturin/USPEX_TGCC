@@ -49,7 +49,7 @@ class Heredity:
             outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand())
 
             axis = np.random.randint(3)
-            gaugesOfSlabs = tuple(np.random.randint(1, 10, size=self.nslubs).tolist())
+            gaugesOfSlabs = tuple(np.random.randint(3, 9, size=self.nslubs).tolist())
 
             logger.debug(f"trying {outputCell.getCellParameters()} cell and {gaugesOfSlabs}-size slabs.")
 
