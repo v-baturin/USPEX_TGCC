@@ -48,7 +48,7 @@ extensions = [
     Extension("USPEX.Common.Atomistic.GCH", ["Atomistic/GCH.py"]),
     Extension("USPEX.Common.Atomistic.IonDistances", ["Atomistic/IonDistances.py"]),
     Extension("USPEX.Common.Atomistic.RadialDistributionUtility", ["Atomistic/RadialDistributionUtility.py"]),
-    Extension("USPEX.Common.Atomistic.SimleMoleculeUtility", ["Atomistic/SimpleMoleculeUtility.py"]),
+    Extension("USPEX.Common.Atomistic.SimpleMoleculeUtility", ["Atomistic/SimpleMoleculeUtility.py"]),
     Extension("USPEX.Common.Atomistic.Slab", ["Atomistic/Slab.py"]),
     Extension("USPEX.Common.Atomistic.Transformation", ["Atomistic/Transformation.py"]),
     Extension("USPEX.Common.Atomistic.optLattice", ["Atomistic/optLattice.py"]),
