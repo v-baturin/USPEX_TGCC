@@ -72,7 +72,6 @@ extensions = [
     Extension("USPEX.Common.Atomistic.Operators.Seeds", ["Atomistic/Operators/Seeds.py"]),
     Extension("USPEX.Common.Atomistic.Operators.Softmodemutation", ["Atomistic/Operators/Softmodemutation.py"]),
     Extension("USPEX.Common.Atomistic.Operators.Transmutation", ["Atomistic/Operators/Transmutation.py"]),
-    Extension("USPEX.Common.Atomistic.Operators.Twinning", ["Atomistic/Operators/Twinning.py"]),
     Extension("USPEX.Common.Atomistic.Operators.symope.fix_latticeStokes_after", ["Atomistic/Operators/symope/fix_latticeStokes_after.py"]),
     Extension("USPEX.Common.Atomistic.Operators.symope.Get_Final_Struc", ["Atomistic/Operators/symope/Get_Final_Struc.py"]),
     Extension("USPEX.Common.Atomistic.Operators.symope.Get_Init_Lattice", ["Atomistic/Operators/symope/Get_Init_Lattice.py"]),
