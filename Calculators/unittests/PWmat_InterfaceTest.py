@@ -15,9 +15,8 @@ import unittest
 import numpy as np
 
 
-from ...Atomistic.AtomicStructure import AtomicStructure
+from ...components import CrystalSystemRepresentation
 from ..PWmat_Interface import  PWmat_Interface
-from . import Si4System
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -34,15 +33,16 @@ class PWmat_InterfaceTest(unittest.TestCase):
 
         cls.knownSystemEnergy = -858.0749767374361
 
-        tag = Si4System['tag']
-        ID = Si4System['ID']
-        params = {'tag': tag, 'kresol': 0.05, 'etot_input': '{}/Specific/etot.input_1'.format(HOMEPATH),
+        params = {'tag': 's0', 'kresol': 0.05, 'etot_input': '{}/Specific/etot.input_1'.format(HOMEPATH),
                   'potcars': ['{}/Specific/Si.SG15.PBE.UPF'.format(HOMEPATH)]}
 
         cls.vcEmpty = PWmat_Interface(**params)
-        cls.testSystem = {'structure': AtomicStructure.fromDICT(Si4System)}
+        with open(os.path.join(HOMEPATH, 'Si4System.vasp'), 'rt') as f:
+            cls.testSystem = CrystalSystemRepresentation.readAtomicStructure(f)
+        cls.testSystem['ID'] = 0
+        cls.testSystem['externalPressure'] = 0.00001
 
-        cls.CALC_FOLDER = os.path.join(HOMEPATH, CALC_FOLDER_TEMPLATE.format(ID, tag))
+        cls.CALC_FOLDER = os.path.join(HOMEPATH, CALC_FOLDER_TEMPLATE.format(0, 's0'))
         cls.REFERENCE_FOLDER = os.path.join(HOMEPATH , 'Reference/PWmat/')
         print(cls.CALC_FOLDER)
     @classmethod
@@ -96,6 +96,8 @@ class PWmat_InterfaceTest(unittest.TestCase):
         self.assertTrue(self.vcEmpty.isConverged(self.CALC_FOLDER))
         self.vcEmpty.readOutput(self.testSystem, self.CALC_FOLDER)
         #self.vcEmpty.clean(self.testSystem)
-        self.assertTrue(np.allclose(self.POSITIONS_FINAL, self.testSystem['structure'].get_positions(), atol=1.0e-3))
-        self.assertTrue(np.allclose(self.LATTICE_FINAL, self.testSystem['structure'].get_cell(), atol=1.0e-3))
+
+        structure, disassembler = type(self.testSystem['molecules'][0]).assemble(**self.testSystem)
+        self.assertTrue(np.allclose(self.POSITIONS_FINAL, structure.getCartesianCoordinates(), atol=1.0e-3))
+        self.assertTrue(np.allclose(self.LATTICE_FINAL, structure.getCell().getCellVectors(), atol=1.0e-3))
         self.assertAlmostEqual(self.knownSystemEnergy, self.testSystem['enthalpy'], delta=1.0e-3)
