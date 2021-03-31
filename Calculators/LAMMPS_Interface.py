@@ -17,7 +17,9 @@ import numpy as np
 from ase.io import read
 from typing import List
 from os.path import join as pj
+from scipy.spatial.transform.rotation import Rotation
 
+from ..Atomistic.Transformation import Transformation
 from .Common.SHELL_Interface import SHELL_Interface
 logger = logging.getLogger(__name__)
 
@@ -62,7 +64,6 @@ class LAMMPS_Interface(SHELL_Interface):
         :param system:
         :param calcFolder:
         '''
-        system = system['structure']
         if not os.path.exists(calcFolder):
             os.makedirs(calcFolder)
         # shutil.copy2(self.lammps_in, pj(calcFolder, self.inputFile))
@@ -179,6 +180,11 @@ class LAMMPS_Interface(SHELL_Interface):
         return lammps_completed and tolerance_achieved
 
     def readOutput(self, system, calcFolder : str):
+        disassembler = system['disassembler']
+        del system['disassembler']
+        structure = system['structure']
+        del system['structure']
+
         from ase.io.lammpsrun import read_lammps_dump
         atoms = read_lammps_dump(pj(calcFolder, 'lammps.dump'))
         # TODO appears to be buggy
@@ -189,8 +195,9 @@ class LAMMPS_Interface(SHELL_Interface):
         #     cdisp.append(-float(line.split()[0]))
         # atoms.translate(cdisp)
 
-        system['structure'].set_cell(atoms.get_cell())
-        system['structure'].set_scaled_positions(atoms.get_scaled_positions())
+        cell = structure.getCell()
+        system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), atoms.get_positions(),
+                                                               cell=type(cell)(atoms.get_cell().array, cell.getPBC()))))
 
         properties = self.readProperties(calcFolder)
         system['enthalpy'] = properties['TotEng']
@@ -274,14 +281,22 @@ def write_cfg(fname, item):
         f.write("\n")
     
 def write_data(system, filename, comment=None):
+    molecules = system['molecules']
+    cell = system['cell']
+    systemFactory = type(molecules[0])
+    structure, disassembler = systemFactory.assemble(molecules, cell=cell)
+    system['structure'] = structure
+    system['disassembler'] = disassembler
+
     from ase.data import atomic_masses, atomic_numbers
-    a = system.get_cell()[0]
-    v = np.array([np.linalg.norm(a), 0.0, 0.0])
-    system.rotate(a, v, rotate_cell=True)
-    cell = system.get_cell()
+    a = cell.getCellVectors()[0]
+    rotation, _ = Rotation.align_vectors(a.reshape(1,3), np.array([[1.0, 0.0, 0.0]]))
+    transformation = Transformation.fromRotVector(rotation.as_rotvec(), [0.,0.,0.])
+    structure = transformation.transform(structure)
+    cell = structure.getCell().getCellVectors()
     # specorder = system.specorder
-    specorder, atom_ids = np.unique(system.get_chemical_symbols(), return_inverse=True)
-    positions = system.get_positions()
+    specorder, atom_ids = np.unique([el.short_name for el in structure.getAtomTypes()], return_inverse=True)
+    positions = structure.getCartesianCoordinates()
     num_unique_types = len(specorder)
     # atom_ids = [specorder.index(item)+1 for item in system.get_chemical_symbols()]
     masses = [atomic_masses[atomic_numbers[item]] for item in specorder]
@@ -291,7 +306,7 @@ def write_data(system, filename, comment=None):
             comment = 'LAMMPS_Interface data file'
         f.write(comment.strip() + '\n\n')
 
-        f.write('{} atoms\n'.format(len(system)))
+        f.write('{} atoms\n'.format(len(structure)))
         f.write('{} atom types\n'.format(num_unique_types))
         f.write('\n')
         f.write('{0:16.8e} {1:16.8e} xlo xhi\n'.format(0.0, cell[0, 0]))
