@@ -116,7 +116,7 @@ def splitBigCell(CenterminDistMatrice, constLattice, fixRndSeed, startLat, split
 
         for l1 in range(5):
             #os.chdir(ORG_STRUC['homePath'] + '/CalcFoldTemp')
-            coord_splitter, lat1 = symope_crystal(CenterminDistMatrice, constLattice, fixRndSeed, nsym, genAtoms, volume, sym_coef)
+            coord_splitter, lat1 = symope_crystal(CenterminDistMatrice, constLattice, fixRndSeed, nsym, genAtoms, lat1, sym_coef)
             #os.chdir(ORG_STRUC['homePath'])
             # Resulted lattice from symope_crystal() is 3x3, so need to convert it to 1x6 and make 1-D:
             tmpNA = Crystal(cell = lat1)
