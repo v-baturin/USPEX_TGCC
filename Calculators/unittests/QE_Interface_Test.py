@@ -6,7 +6,8 @@ import filecmp
 from os.path import join as pj
 
 
-from ...Atomistic.Crystal import Crystal
+from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
+from ...components import CrystalSystemRepresentation
 from ..QE_Interface import QE_Interface
 
 
@@ -23,10 +24,14 @@ class QE_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         qe = QE_Interface(tag='1', options=pj(SPECIFICPATH, 'qEspresso_options_1'),
                           libs=[pj(SPECIFICPATH, 'SiC.C.pbe-van_bm.upf')], kresol=0.16)
+        radialDistributionUtility = RadialDistributionUtility()
+
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
-                system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
+            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
+                system = CrystalSystemRepresentation.readAtomicStructure(f)
+                system['ID'] = ID
+                system['externalPressure'] = 0.0001
             os.mkdir(WORKPATH)
             qe.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -40,7 +45,6 @@ class QE_CalculatorTest2(unittest.TestCase):
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             qe.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            system['structure']._fingerprint = None
-            with open(pj(folder, f"system{system['ID']}"), 'rt') as f:
-                systemRef = system['structure'].fromJSON(f.read())
-            self.assertEqual(system['structure'], systemRef)
+            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
+                systemRef = CrystalSystemRepresentation.readAtomicStructure(f)
+            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
