@@ -127,7 +127,16 @@ class CompileParams_Test(unittest.TestCase):
                 'target': {
                     'type': 'Crystal',
                     'config': {'externalPressure': 100},
-                    'compositionSpace': {'symbols': [read_molecule('MOL_H2O')],
+                    'simpleMoleculeUtility': {'molecules': {'mol_h2o': {'symbols': ['H', 'O', 'H'],
+                                                                        'positions': [[0.0, -0.1988, -0.7632],
+                                                                                      [0.0, 0.3975, 0.0],
+                                                                                      [0.0, -0.1988, 0.7632]],
+                                                                        'molecules': [[0, 1, 2]],
+                                                                        'molFormats': [[[0, 0, 0], [1, 0, 0], [2, 1, 0]]],
+                                                                        'molFlexDihedrals': [[]],
+                                                                        'molSymbols': ['MOL_H2O'],
+                                                                        'pbc': [False, False, False]}}},
+                    'compositionSpace': {'symbols': ['mol_h2o'],
                                          'blocks': [[4]],
                                          'range': [[1,1]]}
                 },
