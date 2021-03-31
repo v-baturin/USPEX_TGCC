@@ -14,9 +14,10 @@ import filecmp
 
 from os.path import join as pj
 
-from ...Atomistic.Crystal import Crystal
 
+from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from ..ABINIT_Interface import ABINIT_Interface
+from ...components import CrystalSystemRepresentation
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -33,10 +34,14 @@ class ABINIT_Interface_Test(unittest.TestCase):
     def test_life(self):
         abinit = ABINIT_Interface(tag='0', in_file=pj(SPECIFICPATH, 'abinit.in_1'), kresol=0.13,
                                   pp_files=[pj(SPECIFICPATH, 'H.psp8'), pj(SPECIFICPATH, 'Eu.psp8')])
+        radialDistributionUtility = RadialDistributionUtility()
+
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
-                system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
+            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
+                system = CrystalSystemRepresentation.readAtomicStructure(f)
+                system['ID'] = ID
+                system['externalPressure'] = 130.0
             os.mkdir(WORKPATH)
             abinit.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -50,7 +55,6 @@ class ABINIT_Interface_Test(unittest.TestCase):
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             abinit.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            system['structure']._fingerprint = None
-            with open(pj(folder, f"system{system['ID']}"), 'rt') as f:
-                systemRef = system['structure'].fromJSON(f.read())
-            self.assertEqual(system['structure'], systemRef)
+            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
+                systemRef = CrystalSystemRepresentation.readAtomicStructure(f)
+            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
