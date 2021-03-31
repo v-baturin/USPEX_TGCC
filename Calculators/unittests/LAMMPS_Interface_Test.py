@@ -6,9 +6,6 @@ import unittest
 import filecmp
 
 from os.path import join as pj
-from ase.io.vasp import write_vasp
-
-from ...Atomistic.Crystal import Crystal
 
 from ..LAMMPS_Interface import LAMMPS_Interface
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility

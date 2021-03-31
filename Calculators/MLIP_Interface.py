@@ -16,6 +16,7 @@ import shutil
 import numpy as np
 
 from os.path import join as pj
+from ase.atoms import Atoms
 
 from .Common.MLIPCfgParser import readcfg, savecfg
 from .Common.SHELL_Interface import SHELL_Interface
@@ -53,12 +54,21 @@ class MLIP_Interface(SHELL_Interface):
             self.potential = pj(os.getcwd(), 'Specific/potential.mtp')
 
     def prepareLocalCalculation(self, system, calcFolder: str):
+        molecules = system['molecules']
+        cell = system['cell']
+        systemFactory = type(molecules[0])
+        structure, disassembler = systemFactory.assemble(molecules, cell=cell)
+        system['structure'] = structure
+        system['disassembler'] = disassembler
+
         # create empty input file
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
         # cfg file
-        savecfg(pj(calcFolder, self.in_cfg_file), system['structure'].atoms)
+        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], positions = structure.getCartesianCoordinates(),
+                      cell = structure.getCell().getCellVectors())
+        savecfg(pj(calcFolder, self.in_cfg_file), atoms)
 
         # input file
         shutil.copy2(self.input, calcFolder)
@@ -81,12 +91,19 @@ class MLIP_Interface(SHELL_Interface):
         return False
 
     def readOutput(self, system, calcFolder: str):
+        disassembler = system['disassembler']
+        del system['disassembler']
+        structure = system['structure']
+        del system['structure']
+
         atoms = readcfg(pj(calcFolder, self.out_cfg_file))
         if atoms:
-            system['structure'].set_cell(atoms.get_cell(), optimize=True)
-            system['structure'].set_positions(atoms.get_positions())
-            system['enthalpy'] = atoms.energy + system['structure'].get_volume() * \
-                                 system['structure'].externalPressure * EV_PER_CUBIC_ANGSTREM_PER_GPA
+            cell = structure.getCell()
+            system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), atoms.get_positions(),
+                                                                   cell=type(cell)(atoms.get_cell().array,
+                                                                                   cell.getPBC()))))
+            system['enthalpy'] = atoms.energy + atoms.get_volume() * \
+                                 system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
 
             try:
                 stress_tensor = np.zeros((3, 3))
@@ -106,5 +123,5 @@ class MLIP_Interface(SHELL_Interface):
         else:
             ID = system['ID']
             logger.info(f'structure {ID} led to extrapolation and will be discarded.')
-            system['structure'].set_cell(np.identity(3) * system['structure'].minVectorLength * 0.9)
+            # system['structure'].set_cell(np.identity(3) * system['structure'].minVectorLength * 0.9)
             system['enthalpy'] = 1000
