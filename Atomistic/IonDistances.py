@@ -5,6 +5,9 @@ from itertools import combinations_with_replacement
 class IonDistances():
     def __init__(self, **kwargs):
         self._distances = kwargs
+        for key, value in kwargs.items():
+            assert isinstance(key, tuple) and len(key) == 2 and isinstance(key[0], str) and isinstance(key[1], str)
+            assert np.isfinite(value)
 
     def getDistances(self, symbols, volumeUtility):
         symbols = [symbol.short_name for symbol in symbols]
