@@ -60,7 +60,7 @@ class SystemPool(object):
         :param population: list of systems which allows to update our knowledge about target space.
         """
 
-        logger.info('Updating target: list of unique systems.')
+        logger.debug('Updating target: list of unique systems.')
         uniqueIDs = [system['ID'] for system in self.uniqueSystems]
         uniqueSystems = list(self.uniqueSystems)
         for system in population:
@@ -79,7 +79,7 @@ class SystemPool(object):
         :rtype: list
         :return: new found systems.
         """
-        logger.info('Determine new systems.')
+        logger.debug('Determine new systems.')
         uniqueIDs = [system['ID'] for system in self.uniqueSystems]
         newFoundSystems = []
         for system in population:

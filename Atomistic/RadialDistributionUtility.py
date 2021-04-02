@@ -115,12 +115,14 @@ class RadialDistributionUtility(object):
 
     def order(self, system):
         if not 'radialDistribitionUtility.order' in system:
-            structure = system['structure']
+            molecules = system['molecules']
+            systemFactory = type(molecules[0])
+            structure, disassembler = systemFactory.assemble(**system)
             if len(structure) == 0:
                 order =  np.nan
             else:
                 order = np.fromiter((atomFing.order for atomFing in self.atomFingerprints(system)), dtype = float)
-                order *= np.sqrt(self.delta / (structure.volume / len(structure)) ** (1.0 / 3.0))
+                order *= np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
             system['radialDistribitionUtility.order'] = order
         return system['radialDistribitionUtility.order']
 
@@ -142,9 +144,11 @@ class RadialDistributionUtility(object):
 
         """
         if not 'radialDistribitionUtility.structureOrder' in system:
-            structure = system['structure']
+            molecules = system['molecules']
+            systemFactory = type(molecules[0])
+            structure, disassembler = systemFactory.assemble(**system)
             fingerprint = self.structureFingerprint(system)
-            s_order = fingerprint.order * np.sqrt(self.delta / (structure.volume / len(structure)) ** (1.0 / 3.0))
+            s_order = fingerprint.order * np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
             system['radialDistribitionUtility.structureOrder'] = s_order
         return system['radialDistribitionUtility.structureOrder']
 
@@ -161,9 +165,11 @@ class RadialDistributionUtility(object):
         """
 
         if not 'radialDistribitionUtility.quasientropy' in system:
-            structure = system['structure']
+            molecules = system['molecules']
+            systemFactory = type(molecules[0])
+            structure, disassembler = systemFactory.assemble(**system)
             atomFing = self.atomFingerprints(system)
-            uniqueSymbols, inverse, numIons = np.unique(structure.get_chemical_symbols(),
+            uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
                                                         return_inverse=True,
                                                         return_counts=True)
             sQE = 0.0
@@ -207,14 +213,16 @@ class RadialDistributionUtility(object):
         """
         Calculates fingerprint and related things.
         """
-        structure = system['structure']
-        uniqueSimbols, inverse, numIons = np.unique(structure.chemicalSymbols, return_inverse=True, return_counts=True)
+        molecules = system['molecules']
+        systemFactory = type(molecules[0])
+        structure, disassembler = systemFactory.assemble(**system)
+        uniqueSimbols, inverse, numIons = np.unique(structure.getAtomTypes(), return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
         revertIndices = np.argsort(indices)
-        coordinates = structure.scaled_coordinates[indices]
-        dist_matrix = make_matrices(coordinates, structure.cell, numIons, Rmax=self.Rmax)
+        coordinates = structure.getFractionalCoordinates()[indices]
+        dist_matrix = make_matrices(coordinates, structure.getCell().getCellVectors(), numIons, Rmax=self.Rmax)
 
-        V = structure.volume
+        V = structure.getCell().getVolume()
         N_type = numIons.shape[0]
         N_atom = np.sum(numIons)
         N_pair = dist_matrix.shape[0]  # the number of atomic pairs being considered
@@ -357,11 +365,11 @@ class RadialDistributionUtility(object):
                         4.0 * np.pi * numIons[i] * numIons[j] * self.delta) - normalizer
 
         n = len(uniqueSimbols)
-        fing = {(s1, s2): fing[i * n + j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
+        fing = {(s1.short_name, s2.short_name): fing[i * n + j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
         atomFing = []
-        weights = {s: w for s, w in zip(uniqueSimbols, numIons / np.sum(numIons))}
+        weights = {s.short_name: w for s, w in zip(uniqueSimbols, numIons / np.sum(numIons))}
         for i in revertIndices:
-            f = Fingerprint(value={s: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)},
+            f = Fingerprint(value={s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)},
                             weights=weights)
             atomFing.append(f)
 
@@ -382,10 +390,9 @@ class RadialDistributionUtility(object):
         :rtype: Dict[Tuple[str,str], float]
         :return: weights of fingerprints of each atom type pair to be used in cosine distance calculation.
         '''
-        uniqueSimbols = np.unique(structure.chemicalSymbols)
-        comp = structure.composition.elementalComposition
+        comp = structure.getComposition()
         # TODO Whether we really need to duplicate weights Like Fe-C and C-Fe
-        weights = {(s1,s2): comp[s1]*comp[s2] for i,s1 in enumerate(uniqueSimbols) for s2 in uniqueSimbols}
+        weights = {(s1.short_name, s2.short_name): am1*am2 for s1, am1 in comp.items() for s2, am2 in comp.items()}
         weightSum = np.sum(list(weights.values()))
         for key in weights:
             weights[key] /= weightSum

@@ -75,6 +75,11 @@ class ABINIT_Interface(SHELL_Interface):
         self.failedSystems = []
 
     def readOutput(self, system, calcFolder: str):
+        disassembler = system['disassembler']
+        del system['disassembler']
+        structure = system['structure']
+        del system['structure']
+
         if not os.path.isfile(pj(calcFolder, self.gsr_file_name)):
             msg = (f'file {self.gsr_file_name:s} not found in {os.path.basename(calcFolder):s}.'
                    'Your ABINIT executable needs to be compiled with NETCDF support in order to be used with USPEX.')
@@ -82,14 +87,15 @@ class ABINIT_Interface(SHELL_Interface):
 
         gsr = abilab.abiopen(pj(calcFolder, self.gsr_file_name))
 
-        system['structure'].set_cell(gsr.structure.lattice.matrix, optimize=True)
+        cell = type(structure.getCell())(gsr.structure.lattice.matrix, structure.getCell().getPBC())
         tmp_positions = gsr.structure.cart_coords
         positions = np.empty(tmp_positions.shape, dtype=float)
-        for i, position in zip(np.argsort(system['structure'].get_chemical_symbols()), tmp_positions):
+        atomSymbols = [el.short_name for el in structure.getAtomTypes()]
+        for i, position in zip(np.argsort(atomSymbols), tmp_positions):
             positions[i] = position
-        system['structure'].set_positions(positions)
+        system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), positions, cell=cell)))
         system['enthalpy'] = float(gsr.energy) + \
-                            system['structure'].get_volume() * system['structure'].externalPressure * EV_PER_CUBIC_ANGSTREM_PER_GPA
+                            cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
         # system.forces = np.copy(gsr.cart_forces)
         system['stressTensor'] = np.copy(gsr.cart_stress_tensor)
 
@@ -98,8 +104,15 @@ class ABINIT_Interface(SHELL_Interface):
         :param system: our system
         :return:
         """
+        molecules = system['molecules']
+        cell = system['cell']
+        systemFactory = type(molecules[0])
+        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
+        system['structure'] = structure
+        system['disassembler'] = disassembler
 
-        system = system['structure']
+
+        atomTypes = structure.getAtomTypes()
         ############################# FILES FILE ################################
         for pp_file_path in self.pp_files:
             shutil.copy2(pp_file_path, calcFolder)
@@ -142,9 +155,9 @@ class ABINIT_Interface(SHELL_Interface):
         with open(pj(calcFolder, self.in_file_name), 'wt') as f:
             f.write(clean_in_file)
 
-        if system.externalPressure:
+        if system['externalPressure']:
             with open(pj(calcFolder, self.in_file_name), 'a') as myfile:
-                abipressure = -1 * system.externalPressure * GPA_TO_HARTREE_PER_CUBIC_BOHR
+                abipressure = -1 * system['externalPressure'] * GPA_TO_HARTREE_PER_CUBIC_BOHR
                 myfile.write(f'strtarget {abipressure:.2e} {abipressure:.2e} {abipressure:.2e} 0.0 0.0 0.0\n')
         if calcFolder in self.failedSystems:
             if 'kptopt' not in user_params:
@@ -153,7 +166,7 @@ class ABINIT_Interface(SHELL_Interface):
 
         # K-GRID
         try:
-            kPoints = self.kPoints.build(system)
+            kPoints = self.kPoints.build(structure)
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
@@ -166,20 +179,20 @@ class ABINIT_Interface(SHELL_Interface):
             f.write('shiftk  0 0 0\n')
 
         # DEFINITION OF THE ATOM TYPES AND UNIT CELL
-        species = list(set(system.get_atomic_numbers()))
+        species = list(set(el.z for el in atomTypes))
 
         with open(pj(calcFolder, self.in_file_name), 'a') as f:
             f.write('\n# Definition of the unit cell\n')
             f.write('acell 1 1 1 angstrom\n')
             f.write('rprim\n')
-            for v in system.cell:
+            for v in structure.getCell().getCellVectors():
                 f.write('%18.14f %18.14f %18.14f\n' % tuple(v))
 
             if 'chkprim' not in user_params:
                 f.write('chkprim 0  # allow non-primitive cells\n')
 
             f.write('\n# Definition of the atom types\n')
-            f.write('natom  %d\n' % (len(system)))
+            f.write('natom  %d\n' % (len(structure)))
             f.write('ntypat %d\n' % (len(species)))
             f.write('znucl ')
             for Z in species:
@@ -189,20 +202,20 @@ class ABINIT_Interface(SHELL_Interface):
             f.write('\n# Enumerate different atomic species\n')
             f.write('typat\n')
             types = []
-            for Z in system.numbers:
+            for Z in [el.z for el in atomTypes]:
                 for n, Zs in enumerate(species):
                     if Z == Zs:
                         types.append(n + 1)
             n_entries_int = 20  # integer entries per line
-            for n, type in enumerate(types):
-                f.write(' %d' % (type))
+            for n, type_ in enumerate(types):
+                f.write(' %d' % (type_))
                 if n > 1 and ((n % n_entries_int) == 1):
                     f.write('\n')
             f.write('\n')
 
             f.write('\n# Definition of the atoms\n')
             f.write('xred\n')
-            for pos in system.get_scaled_positions():
+            for pos in structure.getFractionalCoordinates():
                 f.write('%18.14f %18.14f %18.14f\n' % tuple(pos))
 
 

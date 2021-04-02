@@ -15,7 +15,8 @@ import filecmp
 from os.path import join as pj
 
 
-from ...Atomistic.Crystal import Crystal
+from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
+from ...components import CrystalSystemRepresentation
 from ..MLIP_Interface import MLIP_Interface
 
 
@@ -32,10 +33,13 @@ class MLIP_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         mlip = MLIP_Interface(tag='1', input=pj(SPECIFICPATH, 'input_1.ini'),
                               potential=pj(SPECIFICPATH, 'potential.mtp'))
+        radialDistributionUtility = RadialDistributionUtility()
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
-                system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
+            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
+                system = CrystalSystemRepresentation.readAtomicStructure(f)
+            system['externalPressure'] = 100
+            system['ID'] = ID
             os.mkdir(WORKPATH)
             mlip.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -43,13 +47,12 @@ class MLIP_CalculatorTest2(unittest.TestCase):
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
                 match = match and not dcmp.subdirs[common_dir].diff_files
-            shutil.rmtree(WORKPATH)
             self.assertTrue(match)
+            shutil.rmtree(WORKPATH)
             folder = pj(GATHEREDPATH, 'output')
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             mlip.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            system['structure']._fingerprint = None
-            with open(pj(folder, f"system{system['ID']}"), 'rt') as f:
-                systemRef = system['structure'].fromJSON(f.read())
-            self.assertEqual(system['structure'], systemRef)
+            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
+                systemRef = CrystalSystemRepresentation.readAtomicStructure(f)
+            self.assertTrue(radialDistributionUtility.equal(system, systemRef))

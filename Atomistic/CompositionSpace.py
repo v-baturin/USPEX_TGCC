@@ -1,3 +1,7 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
 import numpy as np
 from collections import Counter
 from typing import Dict, Union
@@ -63,27 +67,9 @@ class CompositionSpace(object):
 
         """
 
-        self.molecules = {}
-        self.moleculesTypeToFormula = {}
         self.symbols = []
-        self.chemicalSymbols = []
-
-        chemicalSymbols = []
         for symbol in symbols:
-            if isinstance(symbol, dict):
-                assert 'molSymbols' in symbol and len(symbol['molSymbols']) == 1
-                molSymbol = symbol['molSymbols'][0]
-                self.molecules[molSymbol] = symbol
-                formula = dict(zip(*np.unique(symbol['symbols'], return_counts=True)))
-                self.moleculesTypeToFormula[molSymbol] =  formula
-                self.symbols.append(molSymbol)
-                chemicalSymbols.extend(symbol['symbols'])
-            else:
-                self.symbols.append(symbol)
-                chemicalSymbols.append(symbol)
-
-        indexes = np.unique(chemicalSymbols, return_index=True)[1]  # alphabetical reordering is not wanted!
-        self.chemicalSymbols = [chemicalSymbols[index] for index in sorted(indexes)]
+            self.symbols.append(symbol)
 
         self.blocks = np.asarray(blocks, dtype=int)
         assert len(self.blocks.shape) == 2 and self.blocks.shape[1] == len(self.symbols)
@@ -109,9 +95,9 @@ class CompositionSpace(object):
             if factor:
                 numIons *= factor
             assert numIons.sum() <= self.maxAt
-            self.predefinedCompositions.append(Composition(dict(zip(self.symbols, numIons)), self.moleculesTypeToFormula))
+            self.predefinedCompositions.append(Counter(dict(zip(self.symbols, numIons))))
 
-    def isGoodComposition(self, composition: Composition) -> bool:
+    def isGoodComposition(self, composition) -> bool:
         """
         Method which checks if the structure meets the composition constraints.
 
@@ -131,10 +117,7 @@ class CompositionSpace(object):
                np.all(numBlocks <= self.range[:,1]) and \
                self.minAt <= np.sum(numIons) <= self.maxAt
 
-    def composition(self, system : dict = None, composition = None):
-        return system['structure'].composition if composition is None and system is not None else composition
-
-    def numIons(self, system : dict = None, composition = None):
+    def numIons(self, composition):
         """
         Creates numIons array from given composition.
 
@@ -143,8 +126,6 @@ class CompositionSpace(object):
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
-        composition = self.composition(system, composition)
-
         num = []
         for symbol in self.symbols:
             if symbol in composition:
@@ -164,6 +145,18 @@ class CompositionSpace(object):
         """
         return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(*args, **kwargs), rcond=None)[0]).astype(int)
 
+    def numBlocksFromCompositions(self, compositions: np.ndarray):
+        numBlocks = []
+        for composition in compositions:
+            numBlocks.append(self.numBlocks(composition))
+        return np.asarray(numBlocks)
+
+    def numMolsFromCompositions(self, compositions: np.ndarray):
+        numMols = []
+        for composition in compositions:
+            numMols.append(self.numIons(composition))
+        return np.asarray(numMols)
+
     def randomComposition(self):
         """
         Creates random numIons array respecting configuration parameters: blocks, range, minAt and maxAt.
@@ -177,10 +170,10 @@ class CompositionSpace(object):
             numBlocks = np.fromiter((np.random.randint(low, high + 1) for low, high in self.range), dtype=int)
             numIons = np.dot(numBlocks, self.blocks)
             if self.minAt <= np.sum(numIons) <= self.maxAt:
-                return Composition(dict(zip(self.symbols, numIons)), self.moleculesTypeToFormula)
+                return Counter(dict(zip(self.symbols, numIons)))
 
-    def findDesiredComposition(self, composition1: Union[dict, Composition], composition2: Union[dict, Composition],
-                               numIons_start: np.ndarray, debug: bool=False):
+    def findDesiredComposition(self, compositionMax,
+                               composition, debug: bool=False):
         """
         Find a composition that requires the least addition/deleting of atoms from child.
 
@@ -196,11 +189,8 @@ class CompositionSpace(object):
         :return: (numIons, numBlocks) to determine which atoms could be used to make a child.
         """
 
-        maxBlocks = self.numBlocks(composition = composition1) + self.numBlocks(composition = composition2)
-
-        # Initialize outputs:
-        numIons = None
-        numBlocks = None
+        maxBlocks = self.numBlocks(composition = compositionMax)
+        numIons_start = np.fromiter((composition[symbol] for symbol in self.symbols), dtype = int)
 
         maxAtoms = np.dot(maxBlocks, self.blocks)
         maxAdded = maxAtoms - numIons_start  # how many atoms one could possibly add
@@ -229,6 +219,8 @@ class CompositionSpace(object):
         # Now we do 'greedy' algorithm for big amount of combinations and exhaustive search for small one.
         # 'greedy' algorithm won't give the best answer, but it should be good in most cases.
         # We repeat greedy algorithm 10 (MR: 20?) times and choose the best answer.
+
+        numBlocks = maxBlocks
 
         if tmp > 0:  # greedy algorithm
             bestGreed = np.sum(maxAtoms)
@@ -272,9 +264,16 @@ class CompositionSpace(object):
                     bestGreed = np.sum(abs(numIons_start - np.dot(blockN, blocks)))
                     numBlocks = blockN
 
-            try:
-                numIons = np.dot(numBlocks, blocks)
-            except:
-                numIons = None
+        return Counter(dict(zip(self.symbols, np.dot(numBlocks, blocks))))
 
-        return numIons, numBlocks
+    @staticmethod
+    def choose(moleculeTypes, desiredComposition):
+        indices = []
+        composition = Counter()
+        for i, moleculeType in enumerate(moleculeTypes):
+            if composition[moleculeType] < desiredComposition[moleculeType]:
+                indices.append(i)
+                composition[moleculeType] += 1
+        return np.asarray(indices)
+
+

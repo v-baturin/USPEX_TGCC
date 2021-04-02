@@ -11,7 +11,7 @@ from os.path import join as pj
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from .CrystalSystemRepresentation import SystemsTable
+from .CrystalSystemRepresentation import SystemsTable, CrystalSystemRepresentation
 
 EXTENDED_CONVEX_HULL_ENERGY_RANGE = 0.5
 
@@ -23,7 +23,7 @@ class CrystalPoolRepresentation(object):
         if toDraw is None:
             self.toDraw = [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('dep', 'enthalpy', 'per_atom', 'volume', 'per_atom'),
+                           ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
                            ('stat', 'enthalpy', 'per_atom', '', '')]
         else:
             self.toDraw = toDraw
@@ -55,19 +55,18 @@ class CrystalPoolRepresentation(object):
         for opt in optimizers:
             pool = opt.target.pool
             for ID in opt.best:
-                write(io_BESTgatheredPOSCARS, pool.allSystems[ID]['structure'].atoms, 'vasp', label=f'EA{ID}',
-                      sort=True, direct=True, vasp5=True)
+                CrystalSystemRepresentation.writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
         with open(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), 'w') as fp:
             io_BESTgatheredPOSCARS.seek(0)
             shutil.copyfileobj(io_BESTgatheredPOSCARS, fp)
 
-        if len(optimizer.target.utilities['compositionSpace'].blocks) == 1:
-            fronts = optimizer.fitness.sort(fitness, list(optimizer.target.pool.uniqueSystems))
+        if len(optimizer.target.utilities.compositionSpace.blocks) == 1:
+            allFitnesses = optimizer.fitness.getAllFitnesses(fitness)
+            fronts = optimizer.fitness.sort(list(optimizer.target.pool.uniqueSystems), allFitnesses)
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
-                    write(io_goodStructuresPOSCARS, system['structure'].atoms, 'vasp', label=f"EA{system['ID']}",
-                          sort=True, direct=True, vasp5=True)
+                    CrystalSystemRepresentation.writeAtomicStructure(io_goodStructuresPOSCARS, system)
 
             with open(pj(self.RES_FOLDER, 'goodStructures'), 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
@@ -95,7 +94,8 @@ class CrystalPoolRepresentation(object):
                                   in zip(optimizer.target.pool.uniqueSystems, optimizer.fitness.calcFitness('enthalpyCCH'))
                                   if value < self.rangeECH]
 
-            fronts = optimizer.fitness.sort(fitness, extendedConvexHull)
+            allFitnesses = optimizer.fitness.getAllFitnesses(fitness)
+            fronts = optimizer.fitness.sort(extendedConvexHull, allFitnesses)
 
             for rank, front in enumerate(fronts):
                 for system in front:
@@ -105,50 +105,36 @@ class CrystalPoolRepresentation(object):
 
             for front in fronts:
                 for system in front:
-                    write(io_extendedConvexHullPOSCARS, system['structure'].atoms, 'vasp', label=f"EA{system['ID']}",
-                          sort=True, direct=True, vasp5=True)
+                    CrystalSystemRepresentation.writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
             with open(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'), 'w') as fp:
                 io_extendedConvexHullPOSCARS.seek(0)
                 shutil.copyfileobj(io_extendedConvexHullPOSCARS, fp)
 
-            compositionSpace = optimizer.target.utilities['compositionSpace']
+            compositionSpace = optimizer.target.utilities.compositionSpace
             if len(compositionSpace.blocks) == 2 and convexHull:
                 self._drawExtendedConvexHull2(compositionSpace, convexHull, extendedConvexHull)
             elif len(compositionSpace.blocks) == 3 and convexHull:
                 self._drawExtendedConvexHull3(compositionSpace, convexHull, extendedConvexHull)
 
-        self._drawProperties(optimizer.target.pool.uniqueSystems)
+        self._drawProperties(optimizer.target.pool.uniqueSystems, optimizer.fitness)
 
 
-    def _drawProperties(self, uniqueSystems):
+    def _drawProperties(self, uniqueSystems, fitness):
         for type, propertyY, typeY, propertyX, typeX in self.toDraw:
             if type == 'dep':
                 Y = []
                 X = []
                 for system in uniqueSystems:
-                    if propertyX in system:
-                        valueX = system[propertyX]
-                    elif hasattr(system['structure'], propertyX):
-                        valueX = getattr(system['structure'], propertyX)
-                    else:
-                        raise RuntimeError(f"Property {propertyX} is undefined.")
-
-                    if propertyY in system:
-                        valueY = system[propertyY]
-                    elif hasattr(system['structure'], propertyY):
-                        valueY = getattr(system['structure'], propertyY)
-                    else:
-                        raise RuntimeError(f"Property {propertyY} is undefined.")
-
+                    valueX = fitness.getFitnessByID(propertyX, system['ID'])
+                    valueY = fitness.getFitnessByID(propertyY, system['ID'])
                     if typeY == 'raw':
                         Y.append(valueY)
                     elif typeY == 'per_atom':
-                        Y.append(valueY/len(system))
-
+                        Y.append(valueY/len(system['molecules']))
                     if typeX == 'raw':
                         X.append(valueX)
                     elif typeX == 'per_atom':
-                        X.append(valueX/len(system))
+                        X.append(valueX/len(system['molecules']))
                 plt.clf()
                 plt.plot(X,Y,'go')
                 plt.ylabel(f'{propertyY}({typeY})')
@@ -157,25 +143,25 @@ class CrystalPoolRepresentation(object):
             elif type == 'stat':
                 Y = []
                 for system in uniqueSystems:
-                    value = system[propertyY]
+                    value = fitness.getFitnessByID(propertyY, system['ID'])
                     if not np.isinf(value):
                         if typeY == 'raw':
                             Y.append(value)
                         elif typeY == 'per_atom':
-                            Y.append(value/len(system))
+                            Y.append(value/len(system['molecules']))
                 plt.clf()
                 plt.hist(Y, len(Y)//10+1, facecolor='g', alpha=0.75)
                 plt.savefig(pj(self.RES_FOLDER, f'{propertyY}({typeY})_statistics.svg'))
 
     def _drawExtendedConvexHull2(self, compositionSpace, convexHull, extendedConvexHull):
-        leftNumBlocks = np.asarray(compositionSpace.numBlocks(convexHull[0]), dtype = float)
+        leftNumBlocks = np.asarray(compositionSpace.numBlocks(convexHull[0]['simpleMoleculeUtility.composition']), dtype = float)
         leftNumBlocksTotal = np.sum(leftNumBlocks)
         leftNumBlocks /= leftNumBlocksTotal
         leftEnthalpy = convexHull[0]['enthalpy']/leftNumBlocksTotal
         rightNumBlocks = leftNumBlocks
         rightEnthalpy = leftEnthalpy
         for system in convexHull:
-            numBlocks = np.asarray(compositionSpace.numBlocks(system), dtype = float)
+            numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
             numBlocksTotal = np.sum(numBlocks)
             numBlocks /= numBlocksTotal
             if numBlocks[1] < leftNumBlocks[1]:
@@ -187,7 +173,7 @@ class CrystalPoolRepresentation(object):
         Xch = []
         Ych = []
         for system in convexHull:
-            numBlocks = np.asarray(compositionSpace.numBlocks(system), dtype = float)
+            numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
             numBlocksTotal = np.sum(numBlocks)
             numBlocks /= numBlocksTotal
             C = np.array([leftNumBlocks, rightNumBlocks])
@@ -201,7 +187,7 @@ class CrystalPoolRepresentation(object):
         X = []
         Y = []
         for system in extendedConvexHull:
-            numBlocks = np.asarray(compositionSpace.numBlocks(system), dtype = float)
+            numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
             numBlocksTotal = np.sum(numBlocks)
             numBlocks /= numBlocksTotal
             C = np.array([leftNumBlocks, rightNumBlocks])

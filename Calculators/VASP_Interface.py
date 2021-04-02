@@ -23,6 +23,7 @@ from typing import List
 
 from .Common.KPoints import KPoints, BadKPoints
 from .Common.SHELL_Interface import SHELL_Interface
+from ..IO.Crystal.CrystalSystemRepresentation import CrystalSystemRepresentation
 
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
 
@@ -112,16 +113,23 @@ class VASP_Interface(SHELL_Interface):
         :return:
         '''
 
-        system = system['structure']
+        molecules = system['molecules']
+        cell = system['cell']
+        systemFactory = type(molecules[0])
+        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
+        system['structure'] = structure
+        system['disassembler'] = disassembler
+
+
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
         ############################## INCAR ##################################
         shutil.copy2(self.incar, pj(calcFolder, self.incar_file))
 
-        if system.externalPressure:
+        if system['externalPressure']:
             with open(pj(calcFolder, self.incar_file), 'a') as myfile:
-                myfile.write(f'\nPSTRESS={10 * system.externalPressure:10f}\n')
+                myfile.write(f"\nPSTRESS={10 * system['externalPressure']:10f}\n")
         if calcFolder in self.failedSystems:
             with open(pj(calcFolder, self.incar_file), 'a') as myfile:
                 myfile.write('ISYM=0\n')
@@ -140,8 +148,8 @@ class VASP_Interface(SHELL_Interface):
         if os.path.exists(pj(calcFolder, 'POTCAR')):
             os.remove(pj(calcFolder, 'POTCAR'))
 
-        for type in np.unique(system.get_chemical_symbols()):
-            potcarPath = pj(self.potcarsPath, f'POTCAR_{type}')
+        for atomType in np.unique([el.short_name for el in structure.getAtomTypes()]):
+            potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType}')
             os.system(f'cat {potcarPath} >>  {calcFolder}/POTCAR ')
 
 
@@ -161,13 +169,12 @@ class VASP_Interface(SHELL_Interface):
         #     from ase.io.vasp import write_vasp
         #     write_vasp(pj(calcFolder, self.poscar_file), system, sort=True, direct=True, vasp5=True, long_format=False)
 
-        from ase.io.vasp import write_vasp
-        write_vasp(pj(calcFolder, self.poscar_file), system, sort=True, direct=True, vasp5=True, long_format=False)
-
+        with open(pj(calcFolder, self.poscar_file), 'wt') as f:
+            CrystalSystemRepresentation.writeAtomicStructure(f, system)
 
         ############################# KPOINTS #################################
         try:
-            kPoints = self.kPoints.build(system)
+            kPoints = self.kPoints.build(structure)
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
@@ -384,17 +391,27 @@ class VASP_Interface(SHELL_Interface):
 
     def readStructure(self, system, calcFolder : str):
 
+        disassembler = system['disassembler']
+        del system['disassembler']
+        structure = system['structure']
+        del system['structure']
+
         with open(pj(calcFolder, self.outcar_file)) as fp:
             tmp = read_vasp_out(fp)
         if tmp:
-            system['structure'].set_cell(tmp.get_cell(), optimize=True)
             tmp_positions = tmp.get_positions()
             positions = np.empty(tmp_positions.shape,dtype = float)
-            for i, position in zip(np.argsort(system['structure'].get_chemical_symbols()), tmp_positions):
+            atomTypes = structure.getAtomTypes()
+            atomSymbols = [el.short_name for el in atomTypes]
+            for i, position in zip(np.argsort(atomSymbols), tmp_positions):
                 positions[i] = position
-            system['structure'].set_positions(positions)
+
+            cell = structure.getCell()
+            system.update(disassembler.disassemble(type(structure)(atomTypes, positions,
+                                                                   cell = type(cell)(tmp.get_cell().array, cell.getPBC()))))
+
             system['enthalpy'] = float(tmp.get_calculator().results['energy']) + \
-                              system['structure'].get_volume() * system['structure'].externalPressure * EV_PER_CUBIC_ANGSTREM_PER_GPA
+                              tmp.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
             # system.forces = np.copy(tmp.get_calculator().results['forces'])
 
     # TODO check this out

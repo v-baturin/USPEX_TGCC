@@ -55,14 +55,16 @@ class SpectrumAnalyzer(object):
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
-        structure = system['structure']
-        
+        structure, disassembler = type(system['molecules'][0]).assemble(**system)
+
         # pure hydrogen gets low agreement
-        if list(structure.composition.keys()) == ['H']:
+        if list(structure.getComposition().keys()) == ['H']:
             return 100.0
 
         # symmetrize the candidate structure
-        tmp = Structure(lattice=structure.cell, species=structure.get_chemical_symbols(), coords=structure.scaled_coordinates)
+        tmp = Structure(lattice=structure.getCell().getCellVectors(),
+                        species=[el.short_name for el in structure.getAtomTypes()],
+                        coords=structure.getFractionalCoordinates())
         string = tmp.to(fmt='cif', symprec=0.2)
         structure = Structure.from_str(string, fmt='cif')
 

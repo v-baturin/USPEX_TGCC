@@ -61,8 +61,8 @@ def calcSoftModes(system : AtomicStructure, kVector0=np.zeros(3)):
     # assert isinstance(system.bonds, Bonds)
 
     # Convert everything to ndarray:
-    lat = system.cell
-    coords = system.scaled_coordinates
+    lat = system.getCell().getCellVectors()
+    # coords = system.getFractionalCoordinates()
 
     rec_lat = np.zeros((3, 3))
     det_lat = np.linalg.det(lat)
@@ -82,7 +82,7 @@ def calcSoftModes(system : AtomicStructure, kVector0=np.zeros(3)):
     nu_factor = []
 
     # atomTypes, atom_type_seq = atomTypeCounter(system.chemicalSymbols)
-    for k, symbol in enumerate(system.chemicalSymbols):
+    for k, symbol in enumerate(system.getAtomTypes()):
         nu_full = 0.0
 
         for bond in chain(*bonds):  # how many type of bonds
@@ -91,7 +91,7 @@ def calcSoftModes(system : AtomicStructure, kVector0=np.zeros(3)):
                 nu_full += np.exp(-bond.delta / 0.37)
             if b == k:
                 nu_full += np.exp(-bond.delta / 0.37)
-        nu_factor.append(system.valences[symbol] / nu_full)
+        nu_factor.append(symbol.valence / nu_full)
 
     for bond_group in bonds:
         for bond in bond_group:
@@ -104,10 +104,10 @@ def calcSoftModes(system : AtomicStructure, kVector0=np.zeros(3)):
             R_a = R_val(s1)/R_val_sum * R
             R_b = R_val(s2)/R_val_sum * R
             nu = np.exp(-bond.delta / 0.37)
-            EN_a = 0.481 * system.valenceElectrons[s1] / R_a
-            EN_b = 0.481 * system.valenceElectrons[s2] / R_b
-            CN_a = system.valences[s1] / (nu * nu_factor[i1])
-            CN_b = system.valences[s2] / (nu * nu_factor[i2])
+            EN_a = 0.481 * Element(s1).valence_electrons / R_a
+            EN_b = 0.481 * Element(s2).valence_electrons / R_b
+            CN_a = Element(s1).valence / (nu * nu_factor[i1])
+            CN_b = Element(s2).valence / (nu * nu_factor[i2])
 
             f_ab = 0.25 * np.abs(EN_a - EN_b) / np.sqrt(EN_a * EN_b)
             X_ab = np.sqrt(EN_a * EN_b / (CN_a * CN_b))

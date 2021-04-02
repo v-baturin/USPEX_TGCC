@@ -68,13 +68,6 @@ class PWmat_Interface(SHELL_Interface):
         """
         self.readStructure(system, calcFolder)
 
-        try:  # read energy
-            #with open(os.path.join(calcFolder , self.REPORT),'r') as fp:
-            system['enthalpy'] = self.readEnergy(os.path.join(calcFolder , self.REPORT)) + \
-                                 system['structure'].get_volume() * system['structure'].externalPressure * EV_PER_CUBIC_ANGSTREM_PER_GPA
-        except:
-            logging.debug('enthalpy can\'t be find in output')
-
         try:
             #with open(os.path.join(calcFolder , self.MOVEMENT),'r') as fp:
                 system['pressureTensor'] = self.readPressureTensor(os.path.join(calcFolder , self.MOVEMENT))
@@ -87,15 +80,23 @@ class PWmat_Interface(SHELL_Interface):
         :param system: our system
         :return:
         '''
-        system = system['structure']
+        molecules = system['molecules']
+        cell = system['cell']
+        systemFactory = type(molecules[0])
+        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
+        system['structure'] = structure
+        system['disassembler'] = disassembler
+
+        atomTypes = structure.getAtomTypes()
+        atomSymbols = [el.short_name for el in atomTypes]
 
         ############################# POTCAR ##################################
         try:
             # TODO varcomp ??? DO we need it here?
             # if self.state.varcomp or not os.path.exists('POTCAR_' + str(self.step)):  # we prefer this way
             f_potcar = (lambda pattern, filesname_list: [x for x in filesname_list if re.match(pattern, x)])
-            for type in np.unique(system.get_chemical_symbols()):
-                pattern = '.*' + type + '.*UPF'
+            for el in np.unique(atomSymbols):
+                pattern = '.*' + el + '.*UPF'
                 potcarPath = f_potcar(pattern, self.potcars)[0]
                 shutil.copy2(potcarPath, calcFolder)
         except:
@@ -108,7 +109,7 @@ class PWmat_Interface(SHELL_Interface):
 
         # set mp_n123
         try:
-            kPoints = self.kPoints.build(system)
+            kPoints = self.kPoints.build(structure)
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logging.info('K poins cannot be built, so it\'s set as   [1, 1, 1]')
@@ -120,18 +121,18 @@ class PWmat_Interface(SHELL_Interface):
 
             files_in_calcFolder = os.listdir(calcFolder)
             tmp_i = 1
-            for type in np.unique(system.get_chemical_symbols()):
-                pattern = type + '.*.UPF'
+            for el in np.unique(atomSymbols):
+                pattern = el + '.*.UPF'
                 PSP_name = f_potcar(pattern, files_in_calcFolder)
                 INPSP = 'IN.PSP' + str(tmp_i) + '=' + PSP_name[0] + '\n'
                 fp.write(INPSP)
                 tmp_i += 1
         # set IN.RELAXOPT
-        if system.externalPressure:
+        if system['externalPressure']:
             with open(os.path.join(calcFolder, 'etot.input'), 'a') as fp:
                 fp.write('IN.RELAXOPT = T\n')
             with open(os.path.join(calcFolder, 'IN.RELAXOPT'), 'a') as fp:
-                fp.write('PSTRESS_EXTERNAL= %10f\n' % (system.externalPressure))
+                fp.write('PSTRESS_EXTERNAL= %10f\n' % (system['externalPressure']))
 
 
 
@@ -140,7 +141,7 @@ class PWmat_Interface(SHELL_Interface):
 
         # def writeAtomconfig(self,system : dict):
         with open(os.path.join(calcFolder, 'atom.config'), 'w') as fp:
-            symbols = system.composition
+            symbols = structure.getComposition()
             totalatom = 0
             for key, value in symbols.items():
                 totalatom = totalatom + value
@@ -149,15 +150,17 @@ class PWmat_Interface(SHELL_Interface):
             fp.write(' LATTICE\n')
 
             latt_form = ' %15.8f %14.8f %14.8f\n'
+            cell_ = structure.getCell().getCellVectors()
             for i in range(3):
-                latt = tuple(system.lattice[i])
+                latt = tuple(cell_[i])
                 fp.write(latt_form % latt)
 
             fp.write(' POSITION\n')
 
             coord_form = '  %d %14.8f %14.8f %14.8f 1 1 1\n'
+            coords = structure.getFractionalCoordinates()
             for i in range(totalatom):
-                coord = (system.get_atomic_numbers()[i],) + tuple(system.get_scaled_positions()[i])
+                coord = (atomTypes[i].z,) + tuple(coords[i])
                 fp.write(coord_form % coord)
             '''
             if system.externalPressure:
@@ -201,6 +204,12 @@ class PWmat_Interface(SHELL_Interface):
 
     def readStructure(self, system, calcFolder : str):
 
+        disassembler = system['disassembler']
+        del system['disassembler']
+        structure = system['structure']
+        del system['structure']
+
+
         files_in_calcFolder = os.listdir(calcFolder)
         if 'final.config' not in files_in_calcFolder:
             os.system('cp %s %s' % (os.path.join(calcFolder, 'atom.config'), os.path.join(calcFolder, 'final.config')))
@@ -222,10 +231,17 @@ class PWmat_Interface(SHELL_Interface):
                     temp = content[n + 1 + i].split()
                     coor += [[float(temp[1]), float(temp[2]), float(temp[3])]]
 
-        system['structure'].set_cell(lat, optimize=True)
+        cell = structure.getCell()
+        system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), coor,
+                                                               cell=type(cell)(lat, cell.getPBC()))))
 
-        coor = np.array(coor)
-        system['structure'].set_positions(coor)
+        try:  # read energy
+            #with open(os.path.join(calcFolder , self.REPORT),'r') as fp:
+            system['enthalpy'] = self.readEnergy(os.path.join(calcFolder , self.REPORT)) + \
+                                 system['cell'].getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+        except:
+            logging.debug('enthalpy can\'t be find in output')
+
 
     def readPressureTensor(self, filename='MOVEMENT', index=-1):
         '''

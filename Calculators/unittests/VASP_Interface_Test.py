@@ -17,8 +17,9 @@ import filecmp
 from os.path import join as pj
 
 
-from ...Atomistic.Crystal import Crystal
+from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from ..VASP_Interface import VASP_Interface
+from ...components import CrystalSystemRepresentation
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -33,10 +34,14 @@ class VASP_CalculatorTest2(unittest.TestCase):
     """
     def test_life(self):
         vasp = VASP_Interface(tag='1', incar=pj(SPECIFICPATH, 'INCAR_1'), potcarsPath=SPECIFICPATH, kresol=0.13)
+        radialDistributionUtility = RadialDistributionUtility()
+
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
-                system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
+            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
+                system = CrystalSystemRepresentation.readAtomicStructure(f)
+                system['ID'] = ID
+                system['externalPressure'] = 0.0001
             os.mkdir(WORKPATH)
             vasp.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -50,10 +55,9 @@ class VASP_CalculatorTest2(unittest.TestCase):
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             vasp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            system['structure']._fingerprint = None
-            with open(pj(folder, f"system{system['ID']}"), 'rt') as f:
-                systemRef = system['structure'].fromJSON(f.read())
-            self.assertEqual(system['structure'], systemRef)
+            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
+                systemRef = CrystalSystemRepresentation.readAtomicStructure(f)
+            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
 
 class VASP_interfaceTest(unittest.TestCase):

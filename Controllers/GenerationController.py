@@ -111,10 +111,10 @@ class GenerationController(object):
                 processedSystems.append(copy(system))
             self.systems[ID].append(deepcopy(system))
             # TODO this is ugly workaround
-            if not system['structure'].isGoodSystem():
-                logger.info(f'system {ID} violates constraints')
-                system['isBad'] = True
-                break
+            # if not system['structure'].isGoodSystem():
+            #     logger.info(f'system {ID} violates constraints')
+            #     system['isBad'] = True
+            #     break
 
             state.save()
 

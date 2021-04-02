@@ -4,7 +4,8 @@ import shutil
 import matplotlib
 import numpy as np
 
-from ase.io import write
+from ase.atoms import Atoms
+from ase.io.vasp import write_vasp, read_vasp
 from os.path import join as pj
 from prettytable import PrettyTable
 
@@ -27,16 +28,11 @@ class SystemsTable(object):
 
 
     def update(self, ID: int, system, fitness, rank=None):
-        row = [ID, system['howCome'], system['structure'].get_chemical_formula()]
+        row = [ID, system['howCome'], fitness.getFitnessByID('simpleMoleculeUtility.composition', ID)]
         if self.isRank:
             row.insert(1, rank)
         for column, columnName in self.columns:
             value = fitness.getFitnessByID(column, ID)
-            if value is None and isinstance(column, str):
-                if column in system:
-                    value = system[column]
-                elif hasattr(system['structure'], column):
-                    value = getattr(system['structure'], column)
             if isinstance(value, float):
                 value = f'{value: 6.3f}'
             row.append(value)
@@ -45,6 +41,12 @@ class SystemsTable(object):
 
 
 class CrystalSystemRepresentation(object):
+
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
+
     def __init__(self, RES_FOLDER: str, numStages: int, columns, **kwargs):
         self.RES_FOLDER = RES_FOLDER
         self.numStages = numStages
@@ -58,8 +60,7 @@ class CrystalSystemRepresentation(object):
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            write(io_gatheredPOSCARS_unrelaxed, system[0]['structure'].atoms, 'vasp', label=f'EA{ID}',
-                  sort=True, direct=True, vasp5=True, long_format=False)
+            self.writeAtomicStructure(io_gatheredPOSCARS_unrelaxed, system[0])
             content_origin += f"{ID} {system[0]['howCome']} {system[0]['parent']}\n"
 
             if len(system) > 1:
@@ -67,8 +68,7 @@ class CrystalSystemRepresentation(object):
 
             if len(system) == self.numStages + 1:
                 table_Individuals.update(ID, optimizer.target.pool.allSystems[ID], optimizer.fitness)
-                write(io_gatheredPOSCARS, system[self.numStages]['structure'].atoms, 'vasp', label=f'EA{ID}',
-                      sort=True, direct=True, vasp5=True, long_format=False)
+                self.writeAtomicStructure(io_gatheredPOSCARS, system[self.numStages])
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
@@ -101,3 +101,26 @@ class CrystalSystemRepresentation(object):
             plt.ylabel(f'E{i+2}')
             plt.xlabel(f'E{i+1}')
         plt.savefig(pj(self.RES_FOLDER, 'E_series.svg'))
+
+
+    @classmethod
+    def writeAtomicStructure(cls, fileDescriptor, system: dict):
+        structure, disassembler = cls.structureType.assemble(**system)
+        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(),
+                      cell = structure.getCell().getCellVectors())
+        write_vasp(fileDescriptor, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+
+    @classmethod
+    def readAtomicStructure(cls, fileDescriptor, disassembler = None) -> dict:
+        atoms = read_vasp(fileDescriptor)
+        disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(atoms)) if disassembler is None else disassembler
+        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
+        cell = cls.cellType(atoms.get_cell().array, tuple(atoms.get_pbc()))
+        return disassembler.disassemble(cls.structureType(atomTypes, atoms.get_positions(), cell = cell))
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
