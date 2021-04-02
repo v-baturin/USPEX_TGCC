@@ -32,9 +32,9 @@ def Write_Stokes_input(numIons, minD, nsym, lat1, fixRndSeed, sym_coef):
     content += '%4d ! space group \n' % nsym
 
     # Lattice:
-    empty = Atoms(cell=lat1[0], pbc=True)
-    content += '{:6.3f} ! volume of primitive unit cell\n'.format(empty.get_volume())
-    #content += '%6.3f %6.3f %6.3f %6.3f %6.3f %6.3f ! lattice of primitive unit cell\n' % tuple(lat1[0, 0:6])
+    # empty = Atoms(cell=lat1[0], pbc=True)
+    # content += '{:6.3f} ! volume of primitive unit cell\n'.format(empty.get_volume())
+    content += '%6.3f %6.3f %6.3f %6.3f %6.3f %6.3f ! lattice of primitive unit cell\n' % tuple(lat1[0, 0:6])
 
     # Number of atoms part:
     content += '%4d ! number of types of atoms\n' % len(numIons)
