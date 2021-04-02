@@ -195,12 +195,33 @@ class Element(object):
                 self.z = _ELEMENTS_LIST[pos].z
             else:
                 raise ValueError
+        elif isinstance(input, Element):
+            self.short_name = input.short_name
+            self.z = input.z
+            self.long_name = input.long_name
+            pos = [x.z for x in _ELEMENTS_LIST].index(input.z)
 
         self.valence = _ELEMENTS_LIST[pos].valence
         self.valence_electrons = _ELEMENTS_LIST[pos].v_electrons
         self.covalent_radius = _ELEMENTS_LIST[pos].R_covalent
         self.good_bonds = _ELEMENTS_LIST[pos].good_bonds
         self.mass = _ELEMENTS_LIST[pos].mass
+
+    def __lt__(self, other):
+        return self.z < other.z
+
+    def __eq__(self, other):
+        return self.z == other.z
+
+    def __repr__(self):
+        return self.short_name
+
+    def __hash__(self):
+        return hash(self.z)
+
+    @staticmethod
+    def all_elements() -> list:
+        return [Element(x.z) for x in _ELEMENTS_LIST]
 
     @staticmethod
     def all_z() -> List[int]:

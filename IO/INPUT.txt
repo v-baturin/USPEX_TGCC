@@ -1,0 +1,241 @@
+// 1. TYPE OF RUN AND SYSTEM
+
+USPEX: calculationMethod
+300: calculationType
+
+% optType
+1
+% end
+
+% atomType
+Mg Si O
+% end
+
+% numSpecies
+4 8 16
+% end
+
+100: ExternalPressure
+
+% valences
+2 4 2
+% end
+
+% goodBonds
+10.0 10.0 0.2
+0.0 10.0 0.5
+0.0 0.0 10.0
+% end
+
+1: checkMolecules
+
+1: checkConnectivity
+
+// 2. POPULATION
+
+20: populationSize
+20: initialPopSize
+50: numGenerations
+20: stopCrit
+
+// 3. SURVIVAL OF THE FITTEST AND SELECTION
+
+0.7: bestFrac
+3: keepBestHM # how many - remove
+1: reoptOld
+
+// 4. STRUCTURE GENERATION AND VARIATIONAL OPERATORS
+
+% symmetries
+195-198 200 215-230
+% end
+
+
+## min, max - hardcode
+0.50: fracGene
+0.20: fracRand
+0.10: fracTopRand
+0.10: fracPerm
+0.10 : fracAtomsMut # softmutation / coormutation
+0.10 : fracRotMut
+0.10 : fracLatMut # default 0
+0.10 : fracTwin #new
+# operators for clusters
+
+5: howManySwaps
+
+% specificSwaps
+1 2
+% end
+
+2.5: mutationDegree #
+0.5: mutationRate # make default if related to latmt
+1.0: DisplaceInLatmutation # default only
+1: AutoFrac
+
+// 5. CONSTRAINTS
+
+2.0: minVectorLength # used only in meta, use default otherwise
+
+% IonDistances
+1.0 1.0 0.8
+0.0 1.0 0.8
+0.0 0.0 1.0
+% end
+
+1: constraint_enhancement
+
+% MolCenters
+5.5 9.7
+0.0 9.7
+% end
+
+// 6. CELL
+
+% Latticevalues
+125.00
+% end
+
+% splitInto
+1 2 4
+% end
+
+// 7. RESTART
+
+10: pickUpGen
+5: pickUpFolder
+
+// 8. DETAILS OF ABINITIO CALCULATIONS
+
+% abinitioCode
+3 3 3 3 3
+% end
+
+% KResolStart
+0.2 0.16 0.12 0.08 0.04
+% end
+
+% vacuumSize
+10 10 10 15 20
+% end
+
+10: numParallelCalcs
+
+% commandExecutable
+gulp < input > output
+% end
+
+0: whichCluster
+
+test: remoteFolder
+
+1: PhaseDiagram
+
+// 9. FINGERPRINT SETTINGS
+
+10.0: RMaxFing
+0.08: deltaFing
+0.03: sigmaFing
+
+// 10. ANTISEEDS SETTINGS
+
+5000: antiSeedsActivation
+0.01: antiSeedsMax
+0.005: antiSeedsSigma
+
+// 11. SPACE GROUP DETERMINATION
+
+1: doSpaceGroup
+medium: SymTolerance
+
+// 12. KEYWORDS FOR DEVELOPERS
+
+20: repeatForStatistics
+-100.00: stopFitness
+1: collectForces
+
+// 13. SELDOM USED
+
+1: ordering_active
+1: symmetrize
+
+% valenceElectr
+2 6
+% end
+
+0.5: perSliceShift # remove
+2: dynamicalBestHM # remove
+
+% softMutOnly # remove
+1-5
+% end
+
+0.5: maxDistHeredity # remove
+
+0: manyParents # comment out
+
+1: minSlice # keep for zebra
+2: maxSlice @ same
+
+2: numberparents # for clusters, check it before removing
+
+// SURFACES
+
+2.0: thicknessS
+3.0: thicknessB
+1: reconstruct
+
+// VARCOMP
+
+11: firstGeneMax
+10: minAt
+20: maxAt
+
+0.1: fracTrans
+0.2: howManyTrans
+
+% specificTrans
+1 2
+% end
+
+// METADYNAMICS
+
+0.80: GaussianWidth
+2000: GaussianHeight
+
+2: FullRelax # make default
+
+# %abinitioCode
+# 3 3 3 3 3 (3 3)
+# %end
+
+20.0 : maxVectorLength
+
+// PSO
+
+1: PSO_softMut
+1: PSO_BestStruc
+1: PSO_BestEver
+
+//VCNEB
+
+111: vcnebType
+13: numImages
+500: numSteps
+1: optReadImages
+1: optimizerType
+3: optRelaxType
+0.1: dt
+0.005: ConvThreshold
+0.3: VarPathLength
+3: K_min
+6: K_max
+4: K_constant
+1: optFreezing
+1: optMethodCIDI
+200: startCIDIStep
+% pickupImages
+9 11 17
+% end
+2: FormatType
+10: PrintStep

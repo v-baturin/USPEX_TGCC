@@ -1,0 +1,66 @@
+LAMMPS (29 Oct 2020)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:94)
+  using 1 OpenMP thread(s) per MPI task
+Reading data file ...
+  triclinic box = (0.0000000 0.0000000 0.0000000) to (2.7625267 2.7625267 22.097728) with tilt (0.0000000 0.0000000 0.0000000)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  16 atoms
+  read_data CPU = 0.002 seconds
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 4.1
+  ghost atom cutoff = 4.1
+  binsize = 2.05, bins = 2 2 11
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair tersoff, perpetual
+      attributes: full, newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+Setting up Verlet run ...
+  Unit style    : metal
+  Current step  : 0
+  Time step     : 0.001
+Per MPI rank memory allocation (min/avg/max) = 4.328 | 4.328 | 4.328 Mbytes
+Step Temp E_pair E_mol TotEng Press Volume 
+       0            0   -2.1101718            0   -2.1101718   -973607.59       168.64 
+    1000    114.43476   -89.051247            0   -88.829369   -25002.772    92.046603 
+Loop time of 0.184789 on 1 procs for 1000 steps with 16 atoms
+
+Performance: 467.560 ns/day, 0.051 hours/ns, 5411.577 timesteps/s
+98.6% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.16941    | 0.16941    | 0.16941    |   0.0 | 91.68
+Neigh   | 0.00091941 | 0.00091941 | 0.00091941 |   0.0 |  0.50
+Comm    | 0.0056451  | 0.0056451  | 0.0056451  |   0.0 |  3.05
+Output  | 0.00018568 | 0.00018568 | 0.00018568 |   0.0 |  0.10
+Modify  | 0.00635    | 0.00635    | 0.00635    |   0.0 |  3.44
+Other   |            | 0.00228    |            |       |  1.23
+
+Nlocal:        16.0000 ave          16 max          16 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:        476.000 ave         476 max         476 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:        0.00000 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:      736.000 ave         736 max         736 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 736
+Ave neighs/atom = 46.000000
+Neighbor list builds = 10
+Dangerous builds = 0
+volume
+92.046602979452
+energy
+-88.8293688132576
+Lattice parameters
+2.25764444821834 0.00  0.00
+1.38240852356169e-16 2.25764444821834  0.00
+1.10580239878235e-15  1.10580239878235e-15  18.0591236518521
+Total wall time: 0:00:00
