@@ -1,7 +1,8 @@
 import numpy as np
 
+from ase.atoms import Atoms
 from ase.neighborlist import primitive_neighbor_list
-from itertools import chain
+from itertools import chain, combinations_with_replacement
 from scipy.sparse.csgraph import connected_components
 from typing import Dict, List, Union, Tuple
 
@@ -42,7 +43,7 @@ def _connectedComponents(N, bonds):
     return len(np.unique(labels[np.asarray(indices)]))
 
 
-def getMinimalGraphBonds(SYSTEM : AtomicStructure) -> list:
+def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds = None) -> list:
     '''
     Calculates bond graph minimal for the structure to be 3D connected.
 
@@ -51,16 +52,21 @@ def getMinimalGraphBonds(SYSTEM : AtomicStructure) -> list:
     '''
 
     N_atom = len(SYSTEM)
-    goodBonds = SYSTEM.goodBonds
+    goodBonds = {frozenset((s1.short_name, s2.short_name)):np.power(s1.good_bonds*s2.good_bonds, 0.5)
+                 for s1,s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} if goodBonds is None else goodBonds
+    structure = Atoms(symbols=[s.short_name for s in SYSTEM.getAtomTypes()],
+                      positions = SYSTEM.getCartesianCoordinates(),
+                      cell = SYSTEM.getCell().getCellVectors(),
+                      pbc = SYSTEM.getCell().getPBC())
 
 
     # 1) Calculate bonds within upper bound to max_bond.
     # 2) Group bonds by using same_bond criterion.
     bonds = []
-    i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=SYSTEM.pbc,
-                                                                cell=SYSTEM.get_cell(complete=True),
-                                                                positions=SYSTEM.get_scaled_positions(),
-                                                                cutoff=Bond.MAX_BOND, numbers=SYSTEM.numbers,
+    i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=structure.pbc,
+                                                                cell=structure.get_cell(complete=True),
+                                                                positions=structure.get_scaled_positions(),
+                                                                cutoff=Bond.MAX_BOND, numbers=structure.numbers,
                                                                 use_scaled_positions=True)
 
     for i, j, dist, vec, dir in zip(i_init, j_init, dists, vecs, dirs):
@@ -68,7 +74,7 @@ def getMinimalGraphBonds(SYSTEM : AtomicStructure) -> list:
         # if np.abs(dist - tmp_Rval) > cutoff or dist < 0.5:
         if dist < 0.5 or j < i:
             continue
-        bonds.append(Bond(atom1=SYSTEM[i], atom2=SYSTEM[j], dir2=dir))
+        bonds.append(Bond(atom1=structure[i], atom2=structure[j], dir2=dir))
 
     tmp_bonds = sorted(bonds, key=lambda x: x.delta)
 
@@ -92,13 +98,13 @@ def getMinimalGraphBonds(SYSTEM : AtomicStructure) -> list:
     bond_left = []
 
     # delete short bonds
-    for bond_total in bond_total:
-        a,b = bond_total[0].symbols
-        small_bond = -0.37 * np.log(goodBonds[(a,b)])
-        if min([bond.delta for bond in bond_total]) < small_bond:
-            bond_in.append(bond_total)    # Add by group
+    for bond_group in bond_total:
+        a,b = bond_group[0].symbols
+        small_bond = -0.37 * np.log(goodBonds[frozenset((a,b))])
+        if min([bond.delta for bond in bond_group]) < small_bond:
+            bond_in.append(bond_group)    # Add by group
         else:
-            bond_left.append(bond_total)
+            bond_left.append(bond_group)
     # del bond_group[0]
 
     # 5, check 3D connectivity, if not satisfied, add more bonds

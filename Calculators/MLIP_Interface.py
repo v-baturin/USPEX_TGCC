@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 
 '''
@@ -15,12 +16,13 @@ import shutil
 import numpy as np
 
 from os.path import join as pj
+from ase.atoms import Atoms
 
 from .Common.MLIPCfgParser import readcfg, savecfg
 from .Common.SHELL_Interface import SHELL_Interface
 
 
-EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
+EV_PER_CUBIC_ANGSTREM_PER_GPA = 1 / 160.21766208
 
 
 class MLIP_Interface(SHELL_Interface):
@@ -34,7 +36,7 @@ class MLIP_Interface(SHELL_Interface):
 
     # working output files
     out_cfg_file = 'relaxed.cfg_0'
-
+    out_sampled_file = 'sampled.cfg_0'
 
     _DEFAULT_SLEEP_TIME = 10
 
@@ -52,12 +54,21 @@ class MLIP_Interface(SHELL_Interface):
             self.potential = pj(os.getcwd(), 'Specific/potential.mtp')
 
     def prepareLocalCalculation(self, system, calcFolder: str):
+        molecules = system['molecules']
+        cell = system['cell']
+        systemFactory = type(molecules[0])
+        structure, disassembler = systemFactory.assemble(molecules, cell=cell)
+        system['structure'] = structure
+        system['disassembler'] = disassembler
+
         # create empty input file
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
         # cfg file
-        savecfg(pj(calcFolder, self.in_cfg_file), system['structure'].atoms)
+        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], positions = structure.getCartesianCoordinates(),
+                      cell = structure.getCell().getCellVectors())
+        savecfg(pj(calcFolder, self.in_cfg_file), atoms)
 
         # input file
         shutil.copy2(self.input, calcFolder)
@@ -71,28 +82,46 @@ class MLIP_Interface(SHELL_Interface):
                 content = f.read()
             if content:
                 return True
+            # if the structure ended up unrelaxed because of extrapolation
+            elif os.path.isfile(pj(calcFolder, self.out_sampled_file)):
+                with open(pj(calcFolder, self.errorFile)) as stderr:
+                    content = stderr.read()
+                if not content:
+                    return True
         return False
 
     def readOutput(self, system, calcFolder: str):
+        disassembler = system['disassembler']
+        del system['disassembler']
+        structure = system['structure']
+        del system['structure']
+
         atoms = readcfg(pj(calcFolder, self.out_cfg_file))
+        if atoms:
+            cell = structure.getCell()
+            system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), atoms.get_positions(),
+                                                                   cell=type(cell)(atoms.get_cell().array,
+                                                                                   cell.getPBC()))))
+            system['enthalpy'] = atoms.energy + atoms.get_volume() * \
+                                 system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
 
-        system['structure'].set_cell(atoms.get_cell(), optimize=True)
-        system['structure'].set_positions(atoms.get_positions())
-        system['enthalpy'] = atoms.energy + system['structure'].get_volume() * \
-                             system['structure'].externalPressure * EV_PER_CUBIC_ANGSTREM_PER_GPA
+            try:
+                stress_tensor = np.zeros((3, 3))
+                stress_tensor[0, 0] = atoms.stresses[0]
+                stress_tensor[1, 1] = atoms.stresses[1]
+                stress_tensor[2, 2] = atoms.stresses[2]
+                stress_tensor[1, 2] = atoms.stresses[3]
+                stress_tensor[2, 1] = atoms.stresses[3]
+                stress_tensor[0, 2] = atoms.stresses[4]
+                stress_tensor[2, 0] = atoms.stresses[4]
+                stress_tensor[0, 1] = atoms.stresses[5]
+                stress_tensor[1, 0] = atoms.stresses[5]
 
-        try:
-            stress_tensor = np.zeros((3, 3))
-            stress_tensor[0, 0] = atoms.stresses[0]
-            stress_tensor[1, 1] = atoms.stresses[1]
-            stress_tensor[2, 2] = atoms.stresses[2]
-            stress_tensor[1, 2] = atoms.stresses[3]
-            stress_tensor[2, 1] = atoms.stresses[3]
-            stress_tensor[0, 2] = atoms.stresses[4]
-            stress_tensor[2, 0] = atoms.stresses[4]
-            stress_tensor[0, 1] = atoms.stresses[5]
-            stress_tensor[1, 0] = atoms.stresses[5]
-
-            system['stressTensor'] = stress_tensor
-        except:
-            logger.debug('Pressure tensor can\'t be find in output')
+                system['stressTensor'] = stress_tensor
+            except:
+                logger.debug('Pressure tensor can\'t be find in output')
+        else:
+            ID = system['ID']
+            logger.info(f'structure {ID} led to extrapolation and will be discarded.')
+            # system['structure'].set_cell(np.identity(3) * system['structure'].minVectorLength * 0.9)
+            system['enthalpy'] = 1000

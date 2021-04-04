@@ -1,5 +1,7 @@
 from ..getMinimalGraphBonds import getMinimalGraphBonds
-from ...Crystal import Crystal
+from ...CellUtility import Cell
+from ...AtomicPrimitives import AtomicStructure
+from ...Element import Element
 
 
 from ase.io.vasp import read_vasp
@@ -13,6 +15,10 @@ import numpy as np
 CURRENT_DIR = dirname(abspath(__file__))
 
 
+def symbolsToElements(symbols):
+    return [Element(s) for s in symbols]
+
+
 class test_BondHardness(unittest.TestCase):
     '''
     
@@ -22,16 +28,20 @@ class test_BondHardness(unittest.TestCase):
 
     def test_diamond(self):
         tmp = read_vasp(pj(CURRENT_DIR, 'diamond.POSCAR'))
-        system = Crystal(symbols=tmp.get_chemical_symbols(),
-                                 scaled_positions=tmp.get_scaled_positions(),
-                                 cell=tmp.get_cell(), goodBonds = {('C', 'C'): 0.5})
-        bond_in = getMinimalGraphBonds(system)
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()), cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell = cell)
+        # system = Crystal(symbols=tmp.get_chemical_symbols(),
+        #                          scaled_positions=tmp.get_scaled_positions(),
+        #                          cell=tmp.get_cell(), goodBonds = {('C', 'C'): 0.5})
+        bond_in = getMinimalGraphBonds(system, goodBonds = {frozenset(('C', 'C')): 0.5})
 
 
     def test_1(self):
-        scaled_positions = [[0., 0., 0.], [0.33333, 0.66667, 0.], [0., 0., 0.5], [0.66667, 0.33334, 0.5]]
-        cell = [[2.456, 0., 0.], [-1.228, 2.126958, 0.], [0., 0., 6.696]]
-        system = Crystal(symbols=4 * ['C'], scaled_positions=scaled_positions, cell=cell, goodBonds = {('C', 'C'): 0.5})
+        scaled_positions = np.array([[0., 0., 0.], [0.33333, 0.66667, 0.], [0., 0., 0.5], [0.66667, 0.33334, 0.5]])
+        cell = Cell(np.array([[2.456, 0., 0.], [-1.228, 2.126958, 0.], [0., 0., 6.696]]), (1,1,1))
+        system = AtomicStructure(symbolsToElements(4 * ['C']), cell.fractionalToCartesian(scaled_positions), cell = cell)
+        # Crystal(symbols=4 * ['C'], scaled_positions=scaled_positions, cell=cell)
         # params = {'symbols' : ['C'], 'blocks' : [[32]], 'fixed' : [[1,1]],
         #           'goodBonds': np.array([[0.5]]), 'minDistMatrice': np.array([[0.8]]),
         #           'minAngle': 0, 'minDiagAngle': 0, 'minVectorLength': 0,}
@@ -48,7 +58,7 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((0, 2, 1.828, 1, 0., 0., -1.))
         bonds_ref.append((0, 2, 1.828, 1, 0., 0., 0.))
 
-        bonds = getMinimalGraphBonds(system)
+        bonds = getMinimalGraphBonds(system, goodBonds = {frozenset(('C', 'C')): 0.5})
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -64,8 +74,8 @@ class test_BondHardness(unittest.TestCase):
         self.assertTrue(count == len_bonds == len(bonds_ref))
 
     def test_2(self):
-        cell = [[  4.912, 0., 0. ], [ -2.456, 4.253916, 0.], [0., 0., 13.392]]
-        scaled_positions = [[ 0. , 0.  , 0.],
+        cell = Cell(np.array([[  4.912, 0., 0. ], [ -2.456, 4.253916, 0.], [0., 0., 13.392]]), (1,1,1))
+        scaled_positions = np.array([[ 0. , 0.  , 0.],
             [ 0. ,  0.5,   0. ],
             [ 0.5,  0. ,   0. ],
             [ 0.5,  0.5,   0. ],
@@ -96,9 +106,10 @@ class test_BondHardness(unittest.TestCase):
             [ 0.333335 , 0.16667 ,  0.75    ],
             [ 0.333335 , 0.66667 ,  0.75    ],
             [ 0.833335 , 0.16667 ,  0.75    ],
-            [ 0.833335 , 0.66667 ,  0.75    ]]
+            [ 0.833335 , 0.66667 ,  0.75    ]])
 
-        system = Crystal(symbols=32 * ['C'], scaled_positions=scaled_positions, cell=cell, goodBonds = {('C','C'): 0.5})
+        system = AtomicStructure(symbolsToElements(32 * ['C']), cell.fractionalToCartesian(scaled_positions), cell = cell)
+        # system = Crystal(symbols=32 * ['C'], scaled_positions=scaled_positions, cell=cell, goodBonds = {('C','C'): 0.5})
 
         # params = {'symbols' : ['C'], 'blocks' : [[32]], 'fixed' : [[1,1]],
         #           'goodBonds': np.array([[0.5]]), 'minDistMatrice': np.array([[0.8]]),
@@ -173,7 +184,7 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((  6, 22, 1.828 , 1,   0. ,     0.  ,    0.   ))
 
 
-        bonds = getMinimalGraphBonds(system)
+        bonds = getMinimalGraphBonds(system, goodBonds = {frozenset(('C', 'C')): 0.5})
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -190,9 +201,9 @@ class test_BondHardness(unittest.TestCase):
 
     def test_3(self):
 
-        cell = [[ 4.608,  0.   ,  0.   ], [-0.192693,  3.708998,  0.      ],[-2.197042, -1.825517,  3.724799]]
+        cell = Cell(np.array([[ 4.608,  0.   ,  0.   ], [-0.192693,  3.708998,  0.      ],[-2.197042, -1.825517,  3.724799]]), (1,1,1))
         composition = 4 * ['Mg'] + 8 * ['Al'] + 16 * ['O']
-        scaled_positions = [[ 0.5      , 0.5      , 0.5],
+        scaled_positions = np.array([[ 0.5      , 0.5      , 0.5],
         [ 0.765421 , 0.935787 , 0.064529],
         [ 0.797228 , 0.670421 , 0.211417],
         [ 0.459366 , 0.073058 , 0.469905],
@@ -219,10 +230,11 @@ class test_BondHardness(unittest.TestCase):
         [ 0.117971 , 0.26263  , 0.215085],
         [ 0.313428 , 0.183023 , 0.690758],
         [ 0.903796 , 0.748461 , 0.862665],
-        [ 0.527341 , 0.851466 , 0.140968]]
-        system = Crystal(symbols=composition, scaled_positions=scaled_positions, cell=cell,
-                         goodBonds = {('Mg','Mg'): 0.1, ('Mg','Al'): 0.14142136, ('Mg','O'): 0.17320508,
-                                      ('Al','Al'): 0.2, ('Al','O'): 0.24494897, ('O', 'O'): 0.3})
+        [ 0.527341 , 0.851466 , 0.140968]])
+        system = AtomicStructure(symbolsToElements(composition), cell.fractionalToCartesian(scaled_positions), cell = cell)
+        # system = Crystal(symbols=composition, scaled_positions=scaled_positions, cell=cell,
+        #                  goodBonds = {('Mg','Mg'): 0.1, ('Mg','Al'): 0.14142136, ('Mg','O'): 0.17320508,
+        #                               ('Al','Al'): 0.2, ('Al','O'): 0.24494897, ('O', 'O'): 0.3})
 
 
         # goodBonds = {'Mg-Mg': 0.1, 'Mg-Al': 0.14142136, 'Mg-O':0.17320508,
@@ -633,7 +645,9 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((2, 6, 0.750275712322, 99, -1.0 , 0.0 , 0.0))
         bonds_ref.append((0, 1, 0.762998361337, 100, 0.0 , 0.0 , 0.0))
 
-        bonds = getMinimalGraphBonds(system)
+        bonds = getMinimalGraphBonds(system, goodBonds = {frozenset(('Mg','Mg')): 0.1, frozenset(('Mg','Al')): 0.14142136,
+                                                          frozenset(('Mg','O')): 0.17320508, frozenset(('Al','Al')): 0.2,
+                                                          frozenset(('Al','O')): 0.24494897, frozenset(('O', 'O')): 0.3})
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -650,10 +664,10 @@ class test_BondHardness(unittest.TestCase):
 
     def test_MgAlO_new1(self):
         symbols = 4*['Mg'] + 8*['Al'] + 16*['O']
-        cell = [[5.33332300000000 ,  0  , 0],
+        cell = Cell(np.array([[5.33332300000000 ,  0  , 0],
                 [1.29439479190448 ,  4.59444298831747 ,   0],
-                [-1.33982421702407,  -0.0145756339008623, 8.28570550370264]]
-        scaled_positions = [[0.4273819  , 0.4169689 ,  0.9961479],
+                [-1.33982421702407,  -0.0145756339008623, 8.28570550370264]]), (1,1,1))
+        scaled_positions = np.array([[0.4273819  , 0.4169689 ,  0.9961479],
                             [0.7802706  , 0.3254624 ,  0.3365667],
                             [0.1237048  , 0.9129726 ,  0.8229303],
                             [0.8074686  , 0.8263651 ,  0.4853215],
@@ -680,44 +694,51 @@ class test_BondHardness(unittest.TestCase):
                             [0.30412  , 0.6500147 ,  0.6769173],
                             [0.9112982  , 0.1318755 ,  0.6224672],
                             [0.1501313  , 0.1671769 ,  0.1373762],
-                            [0.8067350  , 0.6081254 ,  0.1830761]]
+                            [0.8067350  , 0.6081254 ,  0.1830761]])
 
 
 
-        system = Crystal(symbols=symbols, scaled_positions=scaled_positions, cell=cell,
-                         goodBonds = {('Mg','Mg'): 0.1, ('Mg','Al'): 0.14142136, ('Mg','O'):0.17320508,
-                                      ('Al','Al'): 0.2, ('Al','O'): 0.24494897, ('O','O'): 0.3})
-        bond_in = getMinimalGraphBonds(system)
+        system = AtomicStructure(symbolsToElements(symbols), cell.fractionalToCartesian(scaled_positions), cell = cell)
+        # system = Crystal(symbols=symbols, scaled_positions=scaled_positions, cell=cell,
+        #                  goodBonds = {('Mg','Mg'): 0.1, ('Mg','Al'): 0.14142136, ('Mg','O'):0.17320508,
+        #                               ('Al','Al'): 0.2, ('Al','O'): 0.24494897, ('O','O'): 0.3})
+        bond_in = getMinimalGraphBonds(system, goodBonds = {frozenset(('Mg','Mg')): 0.1, frozenset(('Mg','Al')): 0.14142136,
+                                                            frozenset(('Mg','O')):0.17320508, frozenset(('Al','Al')): 0.2,
+                                                            frozenset(('Al','O')): 0.24494897, frozenset(('O','O')): 0.3})
 
         print('1')
 
 
     def test_MgO_new1(self):
         symbols = 4*['Mg'] + 4*['O']
-        cell = [[ 4.257976  ,   0.000000 ,    0.000000],
+        cell = Cell(np.array([[ 4.257976  ,   0.000000 ,    0.000000],
                 [ 0.000000   ,  4.257976  ,   0.000000],
-                [ 0.000000   ,  0.000000  ,   4.257977]]
-        scaled_positions = [[0.0, 0.0, 0.0],
+                [ 0.000000   ,  0.000000  ,   4.257977]]), (1,1,1))
+        scaled_positions = np.array([[0.0, 0.0, 0.0],
                             [0.5, 0.5, 0.0],
                             [0.0, 0.5, 0.5],
                             [0.5, 0.0, 0.5],
                             [0.5, 0.0, 0.0],
                             [0.0, 0.5, 0.0],
                             [0.0, 0.0, 0.5],
-                            [0.5, 0.5, 0.5]]
+                            [0.5, 0.5, 0.5]])
 
 
 
-        system = Crystal(symbols=symbols, scaled_positions=scaled_positions, cell=cell,
-                         goodBonds = {('Mg', 'Mg'): 0.1, ('Mg', 'O'):0.17320508, ('O', 'O'): 0.3})
-        bond_in = getMinimalGraphBonds(system)
+        system = AtomicStructure(symbolsToElements(symbols), cell.fractionalToCartesian(scaled_positions), cell = cell)
+        # system = Crystal(symbols=symbols, scaled_positions=scaled_positions, cell=cell,
+        #                  goodBonds = {('Mg', 'Mg'): 0.1, ('Mg', 'O'):0.17320508, ('O', 'O'): 0.3})
+        bond_in = getMinimalGraphBonds(system, goodBonds = {frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'O')):0.17320508,
+                                                            frozenset(('O', 'O')): 0.3})
         print('MgO_new1')
 
     def test_graphite2(self):
         tmp = read_vasp(pj(CURRENT_DIR, 'graphite2.POSCAR'))
         symbols = tmp.get_chemical_symbols()
-        graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell(),
-                           goodBonds = {('C','C'): 0.5})
+        cell = Cell(tmp.get_cell().array, (1,1,1))
+        graphite = AtomicStructure(symbolsToElements(symbols), cell.fractionalToCartesian(tmp.get_scaled_positions()), cell = cell)
+        # graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell(),
+        #                    goodBonds = {('C','C'): 0.5})
 
         bonds_ref = []
         bonds_ref.append((4, 7, -0.09794277, 0, 1., -0., -0.))
@@ -737,7 +758,7 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((0, 5,  1.79558711, 1,-0., -1., -1.))
         bonds_ref.append((3, 4,  1.80766622, 1,-1., -0., -1.))
 
-        bonds = getMinimalGraphBonds(graphite)
+        bonds = getMinimalGraphBonds(graphite, goodBonds = {frozenset(('C','C')): 0.5})
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):

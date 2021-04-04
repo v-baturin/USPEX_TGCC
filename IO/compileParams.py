@@ -7,8 +7,8 @@ from copy import copy
 
 from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
-from ..Atomistic.mol.read_molecule import read_molecule
 from ..Presets import presetOutput
+from .read_molecule import read_molecule
 
 
 def compileParams(main: dict, **definitions) -> dict:
@@ -46,15 +46,18 @@ def compileParams(main: dict, **definitions) -> dict:
         if 'compositionSpace' in target:
             assert 'symbols' in target['compositionSpace']
             symbols = target['compositionSpace']['symbols']
+            molecules = {}
             for i, symbol in enumerate(symbols):
                 if symbol in definitions:
                     try: 
-                        mol = read_molecule(definitions[symbol]['filename'])
-                        symbols[i] = mol
+                        molDct = read_molecule(definitions[symbol]['filename'])
+                        molecules[symbol] = molDct
                     except Exception as ex:
                         logger.exception(ex)
                         exc_info = sys.exc_info()
                         raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
+            if molecules:
+                target['simpleMoleculeUtility'] = {'molecules': molecules}
     if 'output' not in main:
         if np.fromiter((minBlock == maxBlock for minBlock, maxBlock
                         in main['optimizer']['target']['compositionSpace']['range']), dtype=bool).all():

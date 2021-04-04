@@ -39,10 +39,10 @@ class GlobalOptimizer(object):
         """
 
         self.target = Target(**target)
-        self.fingerprintUtility = self.target.utilities[fingerprintUtility]
+        self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
 
         assert self.Fitness is not None
-        self.fitness = self.Fitness(self.target.pool, self.target.utilities)
+        self.fitness = self.Fitness(self.target.pool, self.target.utilities, self.fingerprintUtility)
         self.fitnessConvergence = fitness
         self.best = set()
         self._isStable = False
@@ -94,7 +94,11 @@ class GlobalOptimizer(object):
         self.population = population
         self.newStructures = self.target.pool.newFoundSystems(population)
         self.target.pool.update(self.newStructures)
-        best = set(system['ID'] for system in self.fitness.sort(self.fitnessConvergence, list(self.target.pool.uniqueSystems))[0])
+        allFitnesses = self.fitness.getAllFitnesses(self.fitnessConvergence)
+        for VO in self.target.variationOperators:
+            if hasattr(VO, 'tune'):
+                VO.tune(population, allFitnesses)
+        best = set(system['ID'] for system in self.fitness.sort(list(self.target.pool.uniqueSystems), allFitnesses)[0])
         if best == self.best:
             self._isStable = True
         else:

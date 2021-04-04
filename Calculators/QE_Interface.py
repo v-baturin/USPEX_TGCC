@@ -49,22 +49,38 @@ class QE_Interface(SHELL_Interface):
         self.kPoints = KPoints(kresol)
 
     def readOutput(self, system : dict, calcFolder: str):
+        disassembler = system['disassembler']
+        del system['disassembler']
+        structure = system['structure']
+        del system['structure']
+
         with open(pj(calcFolder, self.outputFile), 'rt') as f:
             tmp = next(read_espresso_out(f, index=slice(None, -2, -1)))
         if tmp:
-            system['structure'].set_positions(tmp.get_positions())
+            cell = structure.getCell()
+            system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), tmp.get_positions(),
+                                                                   cell = type(cell)(tmp.get_cell().array, cell.getPBC()))))
+
             system['enthalpy'] = tmp.get_calculator().results['energy']
             # system.forces = np.copy(tmp.get_calculator().results['forces'])
 
     def prepareLocalCalculation(self, system: dict, calcFolder: str):
-        system = system['structure']
-        numIons_size = len(np.unique(system.get_chemical_symbols()))
+        molecules = system['molecules']
+        cell = system['cell']
+        systemFactory = type(molecules[0])
+        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
+        system['structure'] = structure
+        system['disassembler'] = disassembler
+
+
+        atomTypes = structure.getAtomTypes()
+        numIons_size = len(np.unique(atomTypes))
 
         with open(self.options, 'rt') as source:
             data = source.readlines()
         for i, line in enumerate(data):
             if 'AAAA' in line:
-                data[i] = line.replace('AAAA', '{}'.format(len(system)))
+                data[i] = line.replace('AAAA', '{}'.format(len(structure)))
             elif 'BBBB' in line:
                 data[i] = line.replace('BBBB', '{}'.format(numIons_size))
 
@@ -73,7 +89,7 @@ class QE_Interface(SHELL_Interface):
 
         BOHR = 0.52917721067  # Angstrom
         #lat = latConverter(latConverter(LATTICE)) / BOHR
-        lat = system.get_cell() / BOHR#_lengths_and_angles()
+        lat = structure.getCell().getCellVectors() / BOHR#_lengths_and_angles()
 
         data.append('{:8.4f} {:8.4f} {:8.4f}\n'.format(*lat[0, :]))
         data.append('{:8.4f} {:8.4f} {:8.4f}\n'.format(*lat[1, :]))
@@ -81,13 +97,13 @@ class QE_Interface(SHELL_Interface):
 
         data.append('ATOMIC_POSITIONS {crystal} \n')
 
-        for symbol, coord in zip(system.get_chemical_symbols(), system.get_scaled_positions()):
-            data.append('{:4s} {:12.6f} {:12.6f} {:12.6f}\n'.format(symbol, *coord))
+        for symbol, coord in zip(atomTypes, structure.getFractionalCoordinates()):
+            data.append('{:4s} {:12.6f} {:12.6f} {:12.6f}\n'.format(symbol.short_name, *coord))
 
 
         ############################# KPOINTS #################################
         try:
-            kPoints = self.kPoints.build(system)
+            kPoints = self.kPoints.build(structure)
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')

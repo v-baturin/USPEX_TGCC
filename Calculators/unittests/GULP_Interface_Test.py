@@ -17,9 +17,8 @@ import filecmp
 
 from os.path import join as pj
 
-from ...Atomistic.Crystal import Crystal
-
-from ..GULP_Interface import GULP_Interface
+from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
+from ...components import CrystalSystemRepresentation, GULP_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -32,15 +31,16 @@ class GULP_CalculatorTest(unittest.TestCase):
 
 
     def test_life(self):
-        config = {'externalPressure' : 100}
 
         gulp = GULP_Interface(tag='0', perturbate=False,
                               goptions=pj(SPECIFICPATH, 'goptions'), ginput=pj(SPECIFICPATH, 'ginput_1'))
+        radialDistributionUtility = RadialDistributionUtility()
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
-                system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
-            system['structure'].config = config
+            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
+                system = CrystalSystemRepresentation.readAtomicStructure(f)
+            system['externalPressure'] = 100
+            system['ID'] = ID
             os.mkdir(WORKPATH)
             gulp.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -54,10 +54,9 @@ class GULP_CalculatorTest(unittest.TestCase):
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             gulp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            system['structure']._fingerprint = None
-            with open(pj(folder, f"system{system['ID']}"), 'rt') as f:
-                systemRef = system['structure'].fromJSON(f.read())
-            self.assertEqual(system['structure'], systemRef)
+            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
+                systemRef = CrystalSystemRepresentation.readAtomicStructure(f)
+            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
 
 class GULP_InterfaceTest(unittest.TestCase):
@@ -67,8 +66,12 @@ class GULP_InterfaceTest(unittest.TestCase):
         # Only output will be parsed and properties checked
         interface = GULP_Interface(tag='1', ginput=pj(HOMEPATH, 'Specific', 'ginput_1'),
                                             goptions=pj(HOMEPATH, 'Specific', 'goptions_1'))
-        with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
-            system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
+        # with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
+        #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
+        with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
+            system = CrystalSystemRepresentation.readAtomicStructure(f)
+        system['ID'] = 0
+        system['disassembler'] = CrystalSystemRepresentation.atomicDisassemblerType.createFlatDisassembler(len(system['molecules']))
 
         interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'gulp_test'))
         self.assertTrue(np.isclose(system['enthalpy'], -645.80329121))

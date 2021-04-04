@@ -27,6 +27,10 @@ class GULP_Interface(SHELL_Interface):
     '''
 
     _DEFAULT_SLEEP_TIME = 10
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
 
     def __init__(self, tag : str, ginput : str = None, goptions : str = None, libs:List[str] = None,
                  moleculeSpecifics : dict = None, perturbate : bool = True, fix_cell:bool=False, **kwargs):
@@ -78,7 +82,12 @@ class GULP_Interface(SHELL_Interface):
 
         # system = AtomicStructure.fromDICT(system)
         # twoDimensional = -3 == system.dimension or 2 == system.dimension
-        system = system['structure']
+        molecules = system['molecules']
+        cell = system['cell']
+        systemFactory = type(molecules[0])
+        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
+        system['structure'] = structure
+        system['disassembler'] = disassembler
 
         files_to_delete = ['output', 'optimized.structure']
         for f in files_to_delete:
@@ -100,7 +109,7 @@ class GULP_Interface(SHELL_Interface):
         # else:
 
         # lattice = latConverter(system.lattice)
-        lattice = system.get_cell_lengths_and_angles()
+        lattice = cell.getCellParameters()
         # lattice[3:] = lattice[3:] * 180.0 / np.pi  # convert angles to degrees
 
         content_to_write = ''
@@ -117,49 +126,49 @@ class GULP_Interface(SHELL_Interface):
 
         content_to_write += 'fractional\n'
 
+        coordinates = structure.getCartesianCoordinates()
         # TODO properly perturnb system
         if self.perturbate:
-            perturb = 0.1 * (np.random.rand(*system.scaled_coordinates.shape) - 0.5)
-            system.translate(perturb)
+            coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
 
-        symbols = []
-        for molSymbol, molecule in zip(system.molSymbol,system.molecules):
-            if molSymbol in self.moleculeSpecifics:
-                symbols.extend(self.moleculeSpecifics[molSymbol]['elementInLib'])
-            else:
-                symbols.extend(molecule.get_chemical_symbols())
+        # symbols = []
+        # for molSymbol, molecule in zip(system.molSymbol,system.molecules):
+        #     if molSymbol in self.moleculeSpecifics:
+        #         symbols.extend(self.moleculeSpecifics[molSymbol]['elementInLib'])
+        #     else:
+        #         symbols.extend(molecule.get_chemical_symbols())
 
-        if system.has('initial_charges') or system.has('charges'):
-            for symbol, coord, charge in zip(symbols, system.get_scaled_positions(wrap = False), system.get_initial_charges()):
-                tuple_to_format = tuple([symbol] + coord.tolist() + [charge])
-                # if twoDimensional:
-                #     # TODO implement this.
-                #     # if POP_STRUC['POPULATION'][Ind_No]['chanAList'][coordLoop] == 1:
-                #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 1 1 1\n' % tuple_to_format
-                #     # else:
-                #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 0 0 0\n' % tuple_to_format
-                #     pass
-                # else:
-                #     content_to_write += '%4s %12.6f %12.6f %12.6f   core %12.6f\n' % tuple_to_format
-                content_to_write += '%4s %12.6f %12.6f %12.6f   core %12.6f\n' % tuple_to_format
-        else:
-            for symbol, coord in zip(symbols, system.get_scaled_positions(wrap = False)):
-                tuple_to_format = tuple([symbol] + coord.tolist())
-                # if twoDimensional:
-                #     # TODO implement this.
-                #     # if POP_STRUC['POPULATION'][Ind_No]['chanAList'][coordLoop] == 1:
-                #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 1 1 1\n' % tuple_to_format
-                #     # else:
-                #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 0 0 0\n' % tuple_to_format
-                #     pass
-                # else:
-                #     content_to_write += '%4s %12.6f %12.6f %12.6f\n' % tuple_to_format
-                content_to_write += '%4s %12.6f %12.6f %12.6f\n' % tuple_to_format
+        # if system.has('initial_charges') or system.has('charges'):
+        #     for symbol, coord, charge in zip(symbols, system.get_scaled_positions(wrap = False), system.get_initial_charges()):
+        #         tuple_to_format = tuple([symbol] + coord.tolist() + [charge])
+        #         # if twoDimensional:
+        #         #     # TODO implement this.
+        #         #     # if POP_STRUC['POPULATION'][Ind_No]['chanAList'][coordLoop] == 1:
+        #         #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 1 1 1\n' % tuple_to_format
+        #         #     # else:
+        #         #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 0 0 0\n' % tuple_to_format
+        #         #     pass
+        #         # else:
+        #         #     content_to_write += '%4s %12.6f %12.6f %12.6f   core %12.6f\n' % tuple_to_format
+        #         content_to_write += '%4s %12.6f %12.6f %12.6f   core %12.6f\n' % tuple_to_format
+        # else:
+        for symbol, coord in zip(structure.getAtomTypes(), cell.cartesianToFractional(coordinates)):
+            tuple_to_format = tuple([symbol.short_name] + coord.tolist())
+            # if twoDimensional:
+            #     # TODO implement this.
+            #     # if POP_STRUC['POPULATION'][Ind_No]['chanAList'][coordLoop] == 1:
+            #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 1 1 1\n' % tuple_to_format
+            #     # else:
+            #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 0 0 0\n' % tuple_to_format
+            #     pass
+            # else:
+            #     content_to_write += '%4s %12.6f %12.6f %12.6f\n' % tuple_to_format
+            content_to_write += '%4s %12.6f %12.6f %12.6f\n' % tuple_to_format
 
         # Write part:
         total_content = self.goptions + '\n' + content_to_write + self.ginput + '\n'
-        if system.externalPressure >= 0.05:
-            total_content += f'pressure {system.externalPressure:.1f}\n'
+        if system['externalPressure'] >= 0.05:
+            total_content += f"pressure {system['externalPressure']:.1f}\n"
         total_content += 'dump every optimized.structure\n'
 
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
@@ -313,24 +322,29 @@ class GULP_Interface(SHELL_Interface):
         # fractional for bulk
         # cartesian for surface
 
+        cell = system['cell']
+        disassembler = system['disassembler']
+        del system['disassembler']
+
         # GULP prints the fractional coordinates before the Final lattice vectors
         # so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
-        fractional_coordinates = False
+        fractional_coordinates = None
         for i, line in enumerate(content):
             if line.find('Final cartesian coordinates of atoms') != -1:
                 s = i + 5
                 positions = []
+                atomTypes = []
                 while True:
                     s = s + 1
                     if content[s].find("------------") != -1:
                         break
                     if content[s].find(" s ") != -1:
                         continue
-                    xyz = content[s].split()[3:6]
+                    element, _, *xyz = content[s].split()[1:6]
                     XYZ = [float(x) for x in xyz]
                     positions.append(XYZ)
+                    atomTypes.append(self.atomType(element))
                 positions = np.array(positions)
-                system['structure'].set_positions(positions)
 
             elif line.find('Final Cartesian lattice vectors') != -1:
                 lattice_vectors = np.zeros((3, 3))
@@ -339,24 +353,27 @@ class GULP_Interface(SHELL_Interface):
                     temp = content[j].split()
                     for k in range(3):
                         lattice_vectors[j - s][k] = float(temp[k])
-                system['structure'].set_cell(lattice_vectors, optimize=True)
-                if fractional_coordinates != False:
-                    fractional_coordinates = np.array(fractional_coordinates)
-                    system['structure'].set_scaled_positions(fractional_coordinates)
+                cell = self.cellType(lattice_vectors, pbc = cell.getPBC())
+                if fractional_coordinates is not None:
+                    positions = cell.fractionalToCartesian(fractional_coordinates)
 
             elif line.find('Final fractional coordinates of atoms') != -1:
                 s = i + 5
                 scaled_positions = []
+                atomTypes = []
                 while True:
                     s = s + 1
                     if content[s].find("------------") != -1:
                         break
                     if content[s].find(" s ") != -1:
                         continue
-                    xyz = content[s].split()[3:6]
+                    element, _, *xyz = content[s].split()[1:6]
                     XYZ = [float(x) for x in xyz]
                     scaled_positions.append(XYZ)
-                fractional_coordinates = scaled_positions
+                    atomTypes.append(self.atomType(element))
+                fractional_coordinates = np.asarray(scaled_positions)
+                positions = cell.fractionalToCartesian(fractional_coordinates)
+        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell = cell)))
 
     def readForces(self, content, numAtoms : int):
         assert numAtoms > 0
@@ -384,3 +401,10 @@ class GULP_Interface(SHELL_Interface):
             if line.lower().startswith('* Version'):
                 number = line[12:17]
         return number
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType

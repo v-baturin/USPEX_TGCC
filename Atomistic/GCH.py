@@ -37,7 +37,7 @@ class GeneralizedConvexHull(ConvexHull):
         self.config = config
 
         # Set of unique chemical symbols
-        self._symbols = set(config.chemicalSymbols)
+        self._symbols = set(config.symbols)
 
         # If dimension is not set we define it like:
         if dimensionality is not None:
@@ -56,7 +56,7 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             pool = SystemPool()
             pool.update(self.systems)
-            super().__init__(Fitness(pool, []).calcFitness(('getAbsoluteCHSpace',
+            super().__init__(Fitness(pool, [], None).calcFitness(('getAbsoluteCHSpace',
                                                                     ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))
@@ -86,7 +86,7 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             pool = SystemPool()
             pool.update(self.systems)
-            super().__init__(Fitness(pool, []).calcFitness(('getAbsoluteCHSpace',
+            super().__init__(Fitness(pool, [], None).calcFitness(('getAbsoluteCHSpace',
                                                                     ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))

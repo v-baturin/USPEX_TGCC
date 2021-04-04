@@ -56,8 +56,8 @@ class Target(object):
         :param kwargs: parameters for initializing config.
         """
         targetTypes = self.knownTargetTypes[type]
-        self.systemType = targetTypes.systemType
-        self.config = kwargs['config']
+        # self.systemType = targetTypes.systemType
+        # self.config = kwargs['config']
         self.pool = SystemPool()
         self.utilities = {}
         for untilityType in targetTypes.sharedUtilities:
@@ -67,31 +67,32 @@ class Target(object):
             except TypeError as e:
                 logger.debug("Utility 'SpectrumAnalyzer' lacks required spectrum data and wont be used.")
                 logger.debug(e)
+        self.utilities = SimpleNamespace(**self.utilities)
 
         self.hybridizations = []
         for hybridizationType in targetTypes.variationOperators.hybridizationTypes:
             name = hybridizationType.__name__[0].lower() + hybridizationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
-            self.hybridizations.append(hybridizationType(self.systemType, self.config, self.pool, self.utilities,
+            self.hybridizations.append(hybridizationType(self.utilities,
                                                          **params))
 
         self.mutations = []
         for mutationType in targetTypes.variationOperators.mutationTypes:
             name = mutationType.__name__[0].lower() + mutationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
-            self.mutations.append(mutationType(self.systemType, self.config, self.pool, self.utilities, **params))
+            self.mutations.append(mutationType(self.utilities, **params))
 
         self.creations = []
         for creationType in targetTypes.variationOperators.creationTypes:
             name = creationType.__name__[0].lower() + creationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
-            self.creations.append(creationType(self.systemType, self.config, self.pool, self.utilities, **params))
+            self.creations.append(creationType(self.utilities, **params))
 
         seedsType = targetTypes.variationOperators.seedsType
         if seedsType is not None:
             name = seedsType.__name__[0].lower() + seedsType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
-            self.seeds = seedsType(self.systemType, self.config, self.pool, self.utilities, **params)
+            self.seeds = seedsType(self.utilities, **params)
         else:
             self.seeds = None
 
@@ -99,10 +100,10 @@ class Target(object):
 
     def __copy__(self):
         other = Target.__new__(Target)
-        other.systemType = self.systemType
-        other.config = self.config
+        # other.systemType = self.systemType
+        # other.config = self.config
         other.pool = copy(self.pool)
-        other.utilities = None
+        other.utilities = self.utilities
         other.hybridizations = None
         other.mutations = None
         other.creations = None
@@ -110,7 +111,7 @@ class Target(object):
         return other
 
     @classmethod
-    def registerTarget(cls, name: str, systemType: type, sharedUtilities: List[type], variationOperators: VariationOperators):
+    def registerTarget(cls, name: str, sharedUtilities: List[type], variationOperators: VariationOperators):
         """
         Register the target as known target.
 
@@ -124,5 +125,5 @@ class Target(object):
         :param variationOperators: variation operators.
         """
         assert name not in cls.knownTargetTypes
-        cls.knownTargetTypes[name] = SimpleNamespace(**{'systemType': systemType, 'sharedUtilities': sharedUtilities,
+        cls.knownTargetTypes[name] = SimpleNamespace(**{'sharedUtilities': sharedUtilities,
                                                         'variationOperators': variationOperators})
