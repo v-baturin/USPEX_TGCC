@@ -34,7 +34,9 @@ extensions = [
     Extension("USPEX.Common.Selection.Autofrac", ["Selection/Autofrac.py"]),
     Extension("USPEX.Common.SpaceGroups.SpaceGroups3D", ["SpaceGroups/SpaceGroups3D.py"]),
     Extension("USPEX.Common.SpaceGroups.TopologicalNet", ["SpaceGroups/TopologicalNet.py"]),
-    Extension("USPEX.Common.XRay.SpectrumAnalyzer", ["XRay/SpectrumAnalyzer.py"]),
+    Extension("USPEX.Common.XRay.PowderSpectrumAnalyzer", ["XRay/PowderSpectrumAnalyzer.py"]),
+    Extension("USPEX.Common.XRay.SingleCrystalSpectrumAnalyzer", ["XRay/SingleCrystalSpectrumAnalyzer.py"]),
+    Extension("USPEX.Common.XRay.get_reflections", ["XRay/get_reflections.py"]),
     Extension("USPEX.Common.Atomistic.AtomicStructure", ["Atomistic/AtomicStructure.py"]),
     Extension("USPEX.Common.Atomistic.AtomicPrimitives", ["Atomistic/AtomicPrimitives.py"]),
     Extension("USPEX.Common.Atomistic.Bonds", ["Atomistic/Bonds.py"]),
@@ -146,7 +148,8 @@ setup(
             "Selection/__init__.py",
             "SpaceGroups/__init__.py",
             "SpaceGroups/decompositions.json",
-            "XRay/__init__.py"
+            "XRay/__init__.py",
+            "XRay/atomic_scattering_params.json"
         ],
     },
     ext_modules=cythonize(extensions, language_level=3),

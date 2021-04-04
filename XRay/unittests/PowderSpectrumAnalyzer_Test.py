@@ -1,8 +1,8 @@
 """
-USPEX.Common.XRay.unittests.SpectrumAnalyzer_Test
-=================================================
+USPEX.Common.XRay.unittests.PowderSpectrumAnalyzer_Test
+=======================================================
 
-Class for SpectrumAnalyzer testing
+Class for PowderSpectrumAnalyzer testing
 
 .. codeauthor:: Michele Galasso <m.galasso@yandex.com>
 """
@@ -13,10 +13,9 @@ import numpy as np
 
 from ase.io.vasp import read_vasp
 from ...Atomistic.CellUtility import Cell
-from ...Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
-from ...Atomistic.AtomicStructure import AtomicStructure
+from ...components import SimpleMoleculeUtility
 
-from ..SpectrumAnalyzer import SpectrumAnalyzer
+from ..PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,8 +36,8 @@ class SpectrumAnalyzer_Test(unittest.TestCase):
         }
 
     def test(self):
-        xraydata = SpectrumAnalyzer.parse('{}/spectrum.txt'.format(PATH_WITH_TESTS))
-        analyzer = SpectrumAnalyzer(**xraydata)
+        xraydata = PowderSpectrumAnalyzer.parse('{}/spectrum.txt'.format(PATH_WITH_TESTS))
+        analyzer = PowderSpectrumAnalyzer(**xraydata)
         analyzer.analyze(self.system)
-        fitness = self.system['spectrumAnalyzer.xraydistance']
+        fitness = self.system['powderSpectrumAnalyzer.xraydistance']
         self.assertAlmostEqual(fitness, 0.2303, places=4)

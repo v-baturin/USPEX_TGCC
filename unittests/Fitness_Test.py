@@ -12,14 +12,13 @@ import numpy as np
 from ase.io import read
 import os
 from types import SimpleNamespace
-
 from ..Fitness import Fitness
 from ..SystemPool import SystemPool
-from ..Atomistic.CompositionSpace import CompositionSpace
-from ..Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ..components import CompositionSpace
+from ..components import SimpleMoleculeUtility
 from ..Atomistic.CellUtility import Cell
 from ..Atomistic.Fingerprints.fingerprint import Fingerprint
-from ..XRay.SpectrumAnalyzer import SpectrumAnalyzer
+from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
 # class System(object):
 #     def __init__(self, ID: int, composition: dict, enthalpy: float, fingerprint: Fingerprint):
@@ -231,22 +230,25 @@ class FitnessXray_Test(unittest.TestCase):
         self.pool = SystemPool()
         self.pool.update(self.systems)
         self.compositionSpace = CompositionSpace(symbols = ['Ba', 'H'], blocks = [[1, 12]], range = [[4, 4]])
-        self.spectrumAnalyzer = SpectrumAnalyzer(**SpectrumAnalyzer.parse(os.path.join(HOMEPATH, 'spectrum.txt')))
+
+        self.powderSpectrumAnalyzer = PowderSpectrumAnalyzer(**PowderSpectrumAnalyzer.parse(os.path.join(HOMEPATH, 'spectrum.txt')))
 
         utilities = SimpleNamespace(compositionSpace = self.compositionSpace,
-                                    spectrumAnalyzer = self.spectrumAnalyzer,
+                                    powderSpectrumAnalyzer = self.powderSpectrumAnalyzer,
                                     simpleMoleculeUtility = simpleMoleculeUtility)
+
         self.fitness = Fitness(self.pool, utilities, None)
 
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]
-        self.assertTrue(np.allclose(np.round(self.fitness.calcFitness('spectrumAnalyzer.xraydistance'), decimals=3), ref))
+        self.assertTrue(np.allclose(np.round(self.fitness.calcFitness('powderSpectrumAnalyzer.xraydistance'),
+                                             decimals=3), ref))
 
     def test_k(self):
         ref = [1.003, 1.005,  1.003, 1.005, 1.006, 1.011, 0.994, 1.004, 1.005, 1.004]
-        self.assertTrue(np.allclose(np.round(self.fitness.calcFitness('spectrumAnalyzer.k'), decimals=3), ref))
+        self.assertTrue(np.allclose(np.round(self.fitness.calcFitness('powderSpectrumAnalyzer.k'), decimals=3), ref))
 
     def test_pareto(self):
-        ref = [0, 0,  0, 0, 0, 0, 1, 1, 1, 1]
-        self.assertTrue(np.allclose(self.fitness.calcFitness(('pareto', 'enthalpy', 'spectrumAnalyzer.xraydistance')),
-                                    ref))
+        ref = [0, 0, 0, 0, 0, 0, 1, 1, 1, 1]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('pareto', 'enthalpy',
+                                                              'powderSpectrumAnalyzer.xraydistance')), ref))

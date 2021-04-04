@@ -1,8 +1,8 @@
 """
-USPEX.Common.XRay.SpectrumAnalyzer
-==================================
+USPEX.Common.XRay.PowderSpectrumAnalyzer
+========================================
 
-Class which implements the fitness function for comparing X-ray spectra
+Class which implements the fitness function for comparing powder X-ray spectra
 
 .. codeauthor:: Michele Galasso <m.galasso@yandex.com>
 """
@@ -16,7 +16,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 
-class SpectrumAnalyzer(object):
+class PowderSpectrumAnalyzer(object):
     def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
                  exp_angles: list, exp_intensities: list):
         """
@@ -37,8 +37,6 @@ class SpectrumAnalyzer(object):
         :type exp_intensities: list[float]
         :param exp_intensities: intensities of the experimental spectrum.
         """
-        # self.k = None
-
         self.spectrum_starts = spectrum_starts
         self.spectrum_ends = spectrum_ends
         self.wavelength = wavelength
@@ -61,12 +59,13 @@ class SpectrumAnalyzer(object):
         if list(structure.getComposition().keys()) == ['H']:
             return 100.0
 
-        # symmetrize the candidate structure
-        tmp = Structure(lattice=structure.getCell().getCellVectors(),
+        # create a pymatgen Structure object
+        structure = Structure(lattice=structure.getCell().getCellVectors(),
                         species=[el.short_name for el in structure.getAtomTypes()],
                         coords=structure.getFractionalCoordinates())
-        string = tmp.to(fmt='cif', symprec=0.2)
-        structure = Structure.from_str(string, fmt='cif')
+        # symmetrize the candidate structure
+        cif_string = structure.to(fmt='cif', symprec=0.2)
+        structure = Structure.from_str(cif_string, fmt='cif')
 
         # initialize the lattice factor k
         params = np.array([1.0])
@@ -78,25 +77,20 @@ class SpectrumAnalyzer(object):
         if not result.success:
             raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
 
-
-        # return fitness
-        system['spectrumAnalyzer.xraydistance'] = result.fun
-        # extract the lattice factor
-        system['spectrumAnalyzer.k'] = result.x[0]
-        # self.k = result.x[0]
-        # return result.fun
-
-    def k(self, system):
-        if 'spectrumAnalyzer.k' not in system:
-            self.analyze(system)
-        assert 'spectrumAnalyzer.k' in system
-        return system['spectrumAnalyzer.k']
+        system['powderSpectrumAnalyzer.xraydistance'] = result.fun
+        system['powderSpectrumAnalyzer.k'] = result.x[0]
 
     def xraydistance(self, system):
-        if 'spectrumAnalyzer.xraydistance' not in system:
+        if 'powderSpectrumAnalyzer.xraydistance' not in system:
             self.analyze(system)
-        assert 'spectrumAnalyzer.xraydistance' in system
-        return system['spectrumAnalyzer.xraydistance']
+        assert 'powderSpectrumAnalyzer.xraydistance' in system
+        return system['powderSpectrumAnalyzer.xraydistance']
+
+    def k(self, system):
+        if 'powderSpectrumAnalyzer.k' not in system:
+            self.analyze(system)
+        assert 'powderSpectrumAnalyzer.k' in system
+        return system['powderSpectrumAnalyzer.k']
 
     @staticmethod
     def parse(filename: str):

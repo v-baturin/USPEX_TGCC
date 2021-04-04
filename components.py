@@ -5,7 +5,8 @@ from .Atomistic.CellUtility import CellUtility
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 from .Atomistic.Conditions import Conditions
 from .Atomistic.IonDistances import IonDistances
-# from .XRay.SpectrumAnalyzer import SpectrumAnalyzer
+from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
+from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
@@ -19,7 +20,7 @@ variationOperators = VariationOperators(hybridizationTypes=[Heredity],
                                         creationTypes=[RandTop, RandSym],
                                         seedsType=Seeds)
 Target.registerTarget('Crystal', [CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
-                                  Conditions, IonDistances], variationOperators)
+                                  Conditions, IonDistances, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer], variationOperators)
 
 from .GlobalOptimizer import GlobalOptimizer
 from .Fitness import Fitness

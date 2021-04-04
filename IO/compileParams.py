@@ -5,7 +5,8 @@ import sys
 import numpy as np
 from copy import copy
 
-from ..XRay.SpectrumAnalyzer import SpectrumAnalyzer
+from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
+from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from ..Presets import presetOutput
 from .read_molecule import read_molecule
 
@@ -26,10 +27,18 @@ def compileParams(main: dict, **definitions) -> dict:
 
     if 'optimizer' in main and 'target' in main['optimizer']:
         target = main['optimizer']['target']
-        if 'spectrumAnalyzer' in target:
-            filename = target['spectrumAnalyzer']
+        if 'powderSpectrumAnalyzer' in target:
+            filename = target['powderSpectrumAnalyzer']
             try:
-                target['spectrumAnalyzer'] = SpectrumAnalyzer.parse(filename)
+                target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(filename)
+            except Exception as ex:
+                logger.exception(ex)
+                exc_info = sys.exc_info()
+                raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
+        if 'singleCrystalSpectrumAnalyzer' in target:
+            filename = target['singleCrystalSpectrumAnalyzer']
+            try:
+                target['singleCrystalSpectrumAnalyzer'] = SingleCrystalSpectrumAnalyzer.parse(filename)
             except Exception as ex:
                 logger.exception(ex)
                 exc_info = sys.exc_info()
