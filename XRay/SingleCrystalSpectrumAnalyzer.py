@@ -33,15 +33,16 @@ class SingleCrystalSpectrumAnalyzer(object):
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
-        structure = system['structure']
+        structure, disassembler = type(system['molecules'][0]).assemble(**system)
 
         # pure hydrogen gets low agreement
-        if list(structure.composition.keys()) == ['H']:
+        if list(structure.getComposition().keys()) == ['H']:
             return 100.0
 
         # create a pymatgen Structure object
-        structure = Structure(lattice=structure.cell, species=structure.get_chemical_symbols(),
-                              coords=structure.scaled_coordinates)
+        structure = Structure(lattice=structure.getCell().getCellVectors(),
+                        species=[el.short_name for el in structure.getAtomTypes()],
+                        coords=structure.getFractionalCoordinates())
 
         # compute minimum d spacing
         min_d_spacing = 10000
