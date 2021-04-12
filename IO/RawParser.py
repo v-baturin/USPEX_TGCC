@@ -38,10 +38,15 @@ false = lexeme(string('false')).result(False)
 null = lexeme(string('null')).result(None)
 quote = string('"') | string("'")
 
-def number():
+def number_float():
     return lexeme(
-        regex(r'-?(0|[1-9][0-9]*)([.][0-9]+)?([eE][+-]?[0-9]+)?')
+        regex(r'-?(0|[1-9][0-9]*)([.][0-9]+)([eE][+-]?[0-9]+)?')
     ).parsecmap(float)
+
+def number_int():
+    return lexeme(
+        regex(r'-?(0|[1-9][0-9]*)')
+    ).parsecmap(int)
 
 def to_chr(value):
     return chr(int(value[1:], 16))
@@ -106,7 +111,7 @@ def json_object():
     yield many(comment) << rbrace
     raise StopGenerator(dict(pairs))
 
-value = quoted | number() | json_object | array | tuple_object | true | false | null
+value = quoted | number_float() | number_int() | json_object | array | tuple_object | true | false | null
 
 parser = whitespace >> (json_object | array | tuple_object)
 
