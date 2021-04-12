@@ -10,6 +10,8 @@ class Transmutation:
         self.compositionSpace = utilities.compositionSpace
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
+        if self.simpleMoleculeUtility.isTrueMolecular:
+            raise RuntimeError("Transmutation does not currently work in molecular regime.")
         self.specificTrans = []
         self.howManyTrans = howManyTrans
         self.transAttempts = transAttempts

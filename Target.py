@@ -73,20 +73,34 @@ class Target(object):
         for hybridizationType in targetTypes.variationOperators.hybridizationTypes:
             name = hybridizationType.__name__[0].lower() + hybridizationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
-            self.hybridizations.append(hybridizationType(self.utilities,
-                                                         **params))
+            try:
+                self.hybridizations.append(hybridizationType(self.utilities, **params))
+            except RuntimeError as e:
+                logger.info(e)
+            except Exception as e:
+                logger.error(e, exc_info=True)
 
         self.mutations = []
         for mutationType in targetTypes.variationOperators.mutationTypes:
             name = mutationType.__name__[0].lower() + mutationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
-            self.mutations.append(mutationType(self.utilities, **params))
+            try:
+                self.mutations.append(mutationType(self.utilities, **params))
+            except RuntimeError as e:
+                logger.info(e)
+            except Exception as e:
+                logger.error(e, exc_info=True)
 
         self.creations = []
         for creationType in targetTypes.variationOperators.creationTypes:
             name = creationType.__name__[0].lower() + creationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
-            self.creations.append(creationType(self.utilities, **params))
+            try:
+                self.creations.append(creationType(self.utilities, **params))
+            except RuntimeError as e:
+                logger.info(e)
+            except Exception as e:
+                logger.error(e, exc_info=True)
 
         seedsType = targetTypes.variationOperators.seedsType
         if seedsType is not None:

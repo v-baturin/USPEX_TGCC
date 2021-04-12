@@ -23,6 +23,9 @@ class SimpleMoleculeUtility(object):
         self.molecules = {el.short_name : self.structureType([el], [[0., 0., 0.]]) for el in self.atomType.all_elements()}
         if molecules is not None:
             self.molecules.update(molecules)
+            self.isTrueMolecular = True
+        else:
+            self.isTrueMolecular = False
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
 
     @classmethod
