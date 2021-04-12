@@ -63,6 +63,8 @@ class RandSym:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
+        if self.simpleMoleculeUtility.isTrueMolecular:
+            raise RuntimeError("RandSym does not currently work in molecular regime.")
         self.nsymN = nsymN
         if nsym is None:
             self.nsym = list(range(2, 230))
