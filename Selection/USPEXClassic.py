@@ -120,15 +120,14 @@ class USPEXClassic(object):
             if hasattr(hybridization, 'prepare'):
                 hybridization.prepare()
             howMany = autofrac.howMany(hybridization, popSize - len(population))
-            parents_pool = [parents for parents in combinations(range(len(best)), 2)]
-            double_tournament = [tournament[parents[0]] * tournament[parents[1]] for parents in parents_pool]
-            double_tournament = np.array(double_tournament) / sum(double_tournament)
-            if parents_pool:
-                pairs = [(best[parents_pool[ind][0]], best[parents_pool[ind][1]])
-                         for ind in np.random.choice(len(parents_pool), size=2*howMany, p=double_tournament)]
+            if best:
+                pairs = zip(np.random.choice(best, size=2 * howMany, replace=True, p=tournament),
+                            np.random.choice(best, size=2 * howMany, replace=True, p=tournament))
             else:
                 pairs = []
-            for parent1, parent2 in random.sample(pairs, len(pairs)):
+            for parent1, parent2 in pairs:
+                if parent1['ID'] == parent2['ID']:
+                    continue
                 if howMany <= 0:
                     break
                 try:
