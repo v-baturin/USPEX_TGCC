@@ -29,6 +29,8 @@ lbrace = lexeme(string('{'))
 rbrace = lexeme(string('}'))
 lbrack = lexeme(string('['))
 rbrack = lexeme(string(']'))
+lbround = lexeme(string('('))
+rbround = lexeme(string(')'))
 colon = lexeme(string(':'))
 comma = lexeme(string(','))
 true = lexeme(string('true')).result(True)
@@ -81,6 +83,13 @@ def array():
     yield rbrack << many(comment)
     raise StopGenerator(elements)
 
+@generate
+def tuple_object():
+    yield lbround << many(comment)
+    elements = yield sepBy(value, comma)
+    yield rbround << many(comment)
+    raise StopGenerator(tuple(elements))
+
 
 @generate
 def object_pair():
@@ -97,9 +106,9 @@ def json_object():
     yield many(comment) << rbrace
     raise StopGenerator(dict(pairs))
 
-value = quoted | number() | json_object | array | true | false | null
+value = quoted | number() | json_object | array | tuple_object | true | false | null
 
-parser = whitespace >> (json_object | array)
+parser = whitespace >> (json_object | array | tuple_object)
 
 def parse(text):
     """

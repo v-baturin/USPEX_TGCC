@@ -1,6 +1,7 @@
 from copy import copy
-from ast import literal_eval
 from pprint import pformat
+
+from .IO.RawParser import parse
 
 
 def read(filename):
@@ -8,17 +9,15 @@ def read(filename):
         content = f.read()
     sections = content.split('#define ')
 
-    try:
-        definitions = {
-            'main': literal_eval(sections.pop(0))
-        }
-    except SyntaxError:
-        # TODO add logger
-        definitions = {}
+    definitions = {}
+    content = sections.pop(0)
+    if content:
+        definitions['main'] = parse(content)
+
     for section in sections:
         name, definition = section.split('\n', 1)
         assert name != 'main'
-        definitions[name] = literal_eval(definition)
+        definitions[name] = parse(definition)
 
     return definitions
 
