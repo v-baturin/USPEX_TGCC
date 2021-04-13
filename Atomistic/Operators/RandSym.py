@@ -20,29 +20,38 @@ ATTEMPTS_ROTATION = 1
 
 
 def determineOperations(lat, numIons, candidate):
-    logger.debug("Determinig operations variants")
-    cell = (lat, candidate, np.repeat(list(range(len(numIons))), numIons))
-    dataset = spglib.get_symmetry_dataset(cell, symprec=1e-2)
-    symbol = dataset['international']
-    group = Group.getGroupFromSymbol(symbol)
-    equivalent_atoms = dataset['equivalent_atoms']
-    coordinates = []
-    operations = []
-    i = 0
-    for n in numIons:
-        atomCoordinates = []
-        atomOperations = []
-        equivalent_atoms_one_type = equivalent_atoms[i:i + n]
-        for index in np.unique(equivalent_atoms_one_type):
-            nodeIndices = np.where(equivalent_atoms==index)[0]
-            assert len(nodeIndices) == len(np.where(equivalent_atoms_one_type==index)[0])
-            atomCoordinates.append(candidate[nodeIndices])
-            atomOperations.append(group.getNotPositionInvariantSubgroups(candidate[nodeIndices[0]]))
-        coordinates.append(atomCoordinates)
-        operations.append(atomOperations)
-        i += n
+    # logger.debug("Determinig operations variants")
+    # cell = (lat, candidate, np.repeat(list(range(len(numIons))), numIons))
+    # dataset = spglib.get_symmetry_dataset(cell, symprec=1e-2)
+    # symbol = dataset['international']
+    # group = Group.getGroupFromSymbol(symbol)
+    # equivalent_atoms = dataset['equivalent_atoms']
+    # coordinates = []
+    # operations = []
+    # i = 0
+    # for n in numIons:
+    #     atomCoordinates = []
+    #     atomOperations = []
+    #     equivalent_atoms_one_type = equivalent_atoms[i:i + n]
+    #     for index in np.unique(equivalent_atoms_one_type):
+    #         nodeIndices = np.where(equivalent_atoms==index)[0]
+    #         assert len(nodeIndices) == len(np.where(equivalent_atoms_one_type==index)[0])
+    #         atomCoordinates.append(candidate[nodeIndices])
+    #         atomOperations.append(group.getNotPositionInvariantSubgroups(candidate[nodeIndices[0]]))
+    #     coordinates.append(atomCoordinates)
+    #     operations.append(atomOperations)
+    #     i += n
 
-    return symbol, lat, coordinates, operations
+    coordinates = []
+    offset = 0
+    for n in numIons:
+        tmp_coordinates = []
+        for i in range(n):
+            tmp_coordinates.append(candidate[i + offset])
+        coordinates.append([tmp_coordinates])
+        offset += n
+
+    return None, lat, coordinates, [None] * len(coordinates)
 
 
 
@@ -54,6 +63,8 @@ class RandSym:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
+        if self.simpleMoleculeUtility.isTrueMolecular:
+            raise RuntimeError("RandSym does not currently work in molecular regime.")
         self.nsymN = nsymN
         if nsym is None:
             self.nsym = list(range(2, 230))

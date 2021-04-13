@@ -137,6 +137,7 @@ setup(
             "IO/compileParams.py",
             "IO/formatters.py",
             "IO/InputParser.py",
+            "IO/RawParser.py",
             "IO/OutputRepresentation.py",
             "IO/USPEXOutput.py",
             "IO/read_molecule.py",

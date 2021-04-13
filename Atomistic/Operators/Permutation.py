@@ -11,9 +11,12 @@ _SWAP_ATTEMPTS = 1000
 class Permutation:
 
     def __init__(self, utilities, howManySwaps = 5, swapAttempts = _SWAP_ATTEMPTS):
+        self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
+        if len(self.compositionSpace.symbols) == 1:
+            raise RuntimeError("Permutation does not work when number of symbols in calculation is 1.")
         self.specificSwaps = []
         self.howManySwaps = howManySwaps
         self.swapAttempts = swapAttempts
