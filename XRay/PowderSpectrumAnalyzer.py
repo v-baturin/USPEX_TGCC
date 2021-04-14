@@ -56,7 +56,8 @@ class PowderSpectrumAnalyzer(object):
         structure, disassembler = type(system['molecules'][0]).assemble(**system)
 
         # pure hydrogen gets low agreement
-        if list(structure.getComposition().keys()) == ['H']:
+        elementList = list(structure.getComposition().keys())
+        if len(elementList) == 1 and elementList[0].short_name == 'H':
             return 100.0
 
         # create a pymatgen Structure object
