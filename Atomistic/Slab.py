@@ -16,32 +16,37 @@ class Slab:
         for i, molecule in enumerate(molecules):
             centerOfMassCoordinatesInitial = molecule.getCenterOfMassCartesianCoordinates()
             centerOfMassCoordinates = transformation.getTransformedCoordinates(centerOfMassCoordinatesInitial)
-            # for fittedTransformation in outputCell.getFittedTransformations(centerOfMassCoordinates, inputCell):
-            #     coordinates = outputCell.cartesianToFractional(fittedTransformation.getTransformedCoordinates(centerOfMassCoordinates))
-            #     assert np.all(0. <= coordinates) and np.all(coordinates < 1.)
-            #     coordinate = coordinates[axis]
-            #     for j, upperBoundCoordinate in enumerate(coordinateBounds):
-            #         if coordinate <= upperBoundCoordinate:
-            #             lowerBoundCoordinate = 0 if j < 1 else coordinateBounds[j-1]
-            #             indices, depths, mols = slabs[j]
-            #             indices.append(i)
-            #             depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - lowerBoundCoordinate)))
-            #             mols.append((fittedTransformation * transformation).transform(molecule))
-            #             break
-            coordinates = inputCell.cartesianToFractional(centerOfMassCoordinates)
-            coordinates = inputCell.getWrapedFractionalCoordinates(coordinates)
-            coordinate = coordinates[axis]
-            for j, upperBoundCoordinate in enumerate(coordinateBounds):
-                if coordinate <= upperBoundCoordinate:
-                    lowerBoundCoordinate = 0 if j < 1 else coordinateBounds[j-1]
-                    indices, depths, mols = slabs[j]
-                    indices.append(i)
-                    depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - lowerBoundCoordinate)))
-                    transVector = outputCell.fractionalToCartesian(coordinates) - \
-                                  np.dot(transformation.rotMatrix, centerOfMassCoordinatesInitial)
-                    finalTransformation = type(transformation).fromMatrix(transformation.rotMatrix, transVector)
-                    mols.append(finalTransformation.transform(molecule))
-                    break
+            dimensionality = np.sum(outputCell.getPBC())
+            if dimensionality == 0 or dimensionality == 1:
+                for fittedTransformation in outputCell.getFittedTransformations(centerOfMassCoordinates, inputCell):
+                    coordinates = outputCell.cartesianToFractional(fittedTransformation.getTransformedCoordinates(centerOfMassCoordinates))
+                    assert np.all(0. <= coordinates) and np.all(coordinates < 1.)
+                    coordinate = coordinates[axis]
+                    for j, upperBoundCoordinate in enumerate(coordinateBounds):
+                        if coordinate <= upperBoundCoordinate:
+                            lowerBoundCoordinate = 0 if j < 1 else coordinateBounds[j-1]
+                            indices, depths, mols = slabs[j]
+                            indices.append(i)
+                            depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - lowerBoundCoordinate)))
+                            mols.append((fittedTransformation * transformation).transform(molecule))
+                            break
+            elif dimensionality == 2 or dimensionality == 3:
+                coordinates = inputCell.cartesianToFractional(centerOfMassCoordinates)
+                coordinates = inputCell.getWrapedFractionalCoordinates(coordinates)
+                coordinate = coordinates[axis]
+                for j, upperBoundCoordinate in enumerate(coordinateBounds):
+                    if coordinate <= upperBoundCoordinate:
+                        lowerBoundCoordinate = 0 if j < 1 else coordinateBounds[j-1]
+                        indices, depths, mols = slabs[j]
+                        indices.append(i)
+                        depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - lowerBoundCoordinate)))
+                        transVector = outputCell.fractionalToCartesian(coordinates) - \
+                                      np.dot(transformation.rotMatrix, centerOfMassCoordinatesInitial)
+                        finalTransformation = type(transformation).fromMatrix(transformation.rotMatrix, transVector)
+                        mols.append(finalTransformation.transform(molecule))
+                        break
+            else:
+                assert False
         return (Slab(indices, depths, molecules) for indices, depths, molecules in slabs)
 
     @staticmethod

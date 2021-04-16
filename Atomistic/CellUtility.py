@@ -159,10 +159,12 @@ class Cell:
             axis = pbcVectorsCart[0]
             rotVec = np.pi * np.random.random() * axis / np.linalg.norm(axis)
             rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
-        # elif pbcSum == 2:
-        #     axis = np.cross(pbcVectorsCart[0,:], pbcVectorsCart[1,:])
+        elif pbcSum == 2:
+            axis = np.cross(pbcVectorsCart[0,:], pbcVectorsCart[1,:])
+            rotVec = np.pi * np.random.random() * axis / np.linalg.norm(axis)
+            rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
         else:
-            rotMatrix = np.eye(3)
+            rotMatrix = Rotation.random().as_matrix()
         centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
         transVec = transVec - centerCellVec + np.dot(rotMatrix.T, centerCellVec)
         return Transformation.fromMatrix(rotMatrix, np.dot(rotMatrix, transVec))
