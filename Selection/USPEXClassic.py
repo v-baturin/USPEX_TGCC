@@ -15,6 +15,7 @@ import random
 from itertools import combinations, chain
 from copy import copy
 from typing import List, Tuple, Dict
+from collections import Counter
 
 import numpy as np
 
@@ -51,6 +52,7 @@ class USPEXClassic(object):
         self.howManyDiverse = howManyDiverse if howManyDiverse else np.round(0.15*self.popSize)
         self.diversityTolerance = diversityTolerance
         self._mostDiverse = []
+        self.weightsLast = Counter()
         if debug:
             logger.setLevel(logging.DEBUG)
         else:
@@ -66,7 +68,7 @@ class USPEXClassic(object):
         '''
 
         if population is None:
-            autofrac = Autofrac(self.fractions, population=[], best=[], newFoundSystems=[], varOperators=target.variationOperators)
+            autofrac = Autofrac(self.fractions, Counter(), best=[], newFoundSystems=[], varOperators=target.variationOperators)
             best, tournament, popSize = [], [], self.initialPopSize
         else:
             extendedPopulation = copy(population)
@@ -80,90 +82,97 @@ class USPEXClassic(object):
             tournament /= np.sum(tournament)
 
             self._mostDiverse = self.determineMostDiverse(best, self.howManyDiverse, self.diversityTolerance)
-            autofrac = Autofrac(self.fractions, population, best, newStructures, target.variationOperators)
+            autofrac = Autofrac(self.fractions, self.weightsLast, best, newStructures, target.variationOperators)
 
             popSize = self.popSize
 
         population = []
         actualParents = []
 
-        for mutation in target.mutations:
-            if hasattr(mutation, 'prepare'):
-                mutation.prepare()
-            howMany = autofrac.howMany(mutation, popSize - len(population))
-            if best:
-                possibleParents = np.random.choice(len(best), size=2*howMany, replace=True, p=tournament)
-            else:
-                possibleParents = np.empty(0)
-            for i in possibleParents:
-                parent = best[i]
-                if howMany <= 0:
-                    break
-                try:
-                    logger.debug(f"Trying {parent['ID']} parent.")
-                    offsprings = mutation(parent)
-                    for offspring in offsprings:
-                        target.pool.assignID(offspring)
-                        offspring['howCome'] = type(mutation).__name__
-                        offspring['parent'] = f"{parent['ID']}"
-                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
-                                    f"from {offspring['parent']} parent.")
-                    population.extend(offsprings)
-                    howMany -= len(offsprings)
-                    actualParents.append(parent)
-                except Exception as e:
-                    logger.error(e, exc_info=True)
-            if hasattr(mutation, 'standby'):
-                mutation.standby()
+        if best:
+            for mutation in target.mutations:
+                howCome = type(mutation).__name__
+                if hasattr(mutation, 'prepare'):
+                    mutation.prepare()
+                howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+                self.weightsLast[howCome] = howMany
+                possibleParents = np.random.choice(best, size=2*howMany, replace=True, p=tournament)
+                for parent in possibleParents:
+                    if howMany <= 0:
+                        break
+                    try:
+                        logger.debug(f"Trying {parent['ID']} parent.")
+                        offsprings = mutation(parent)
+                        for offspring in offsprings:
+                            target.pool.assignID(offspring)
+                            offspring['howCome'] = howCome
+                            offspring['parent'] = f"{parent['ID']}"
+                            logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
+                                        f"from {offspring['parent']} parent.")
+                        population.extend(offsprings)
+                        howMany -= len(offsprings)
+                        actualParents.append(parent)
+                    except RuntimeError as e:
+                        logger.debug(e)
+                    except Exception as e:
+                        logger.error(e, exc_info=True)
+                if hasattr(mutation, 'standby'):
+                    mutation.standby()
 
-        for hybridization in target.hybridizations:
-            if hasattr(hybridization, 'prepare'):
-                hybridization.prepare()
-            howMany = autofrac.howMany(hybridization, popSize - len(population))
-            if best:
+            for hybridization in target.hybridizations:
+                howCome = type(hybridization).__name__
+                if hasattr(hybridization, 'prepare'):
+                    hybridization.prepare()
+                howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+                self.weightsLast[howCome] = howMany
                 pairs = zip(np.random.choice(best, size=2 * howMany, replace=True, p=tournament),
                             np.random.choice(best, size=2 * howMany, replace=True, p=tournament))
-            else:
-                pairs = []
-            for parent1, parent2 in pairs:
-                if parent1['ID'] == parent2['ID']:
-                    continue
-                if howMany <= 0:
-                    break
-                try:
-                    logger.debug(f"Trying {parent1['ID']} {parent2['ID']} parents.")
-                    offsprings = hybridization(parent1,parent2)
-                    for offspring in offsprings:
-                        target.pool.assignID(offspring)
-                        offspring['howCome'] = type(hybridization).__name__
-                        offspring['parent'] = f"{parent1['ID']} {parent2['ID']}"
-                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
-                                    f"from {offspring['parent']} parents.")
-                    population.extend(offsprings)
-                    howMany -= len(offsprings)
-                    actualParents.extend([parent1, parent2])
-                except Exception as e:
-                    logger.error(e, exc_info=True)
-            if hasattr(hybridization, 'standby'):
-                hybridization.standby()
+                for parent1, parent2 in pairs:
+                    if parent1['ID'] == parent2['ID']:
+                        continue
+                    if howMany <= 0:
+                        break
+                    try:
+                        logger.debug(f"Trying {parent1['ID']} {parent2['ID']} parents.")
+                        offsprings = hybridization(parent1,parent2)
+                        for offspring in offsprings:
+                            target.pool.assignID(offspring)
+                            offspring['howCome'] = howCome
+                            offspring['parent'] = f"{parent1['ID']} {parent2['ID']}"
+                            logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
+                                        f"from {offspring['parent']} parents.")
+                        population.extend(offsprings)
+                        howMany -= len(offsprings)
+                        actualParents.extend([parent1, parent2])
+                    except RuntimeError as e:
+                        logger.debug(e)
+                    except Exception as e:
+                        logger.error(e, exc_info=True)
+                if hasattr(hybridization, 'standby'):
+                    hybridization.standby()
 
         for creation in target.creations:
+            howCome = type(creation).__name__
             if hasattr(creation, 'prepare'):
                 creation.prepare()
-            howMany = autofrac.howMany(creation, popSize - len(population))
-            while howMany > 0:
+            howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            self.weightsLast[howCome] = howMany
+            for i in range(2 * howMany):
+                if howMany <= 0:
+                    break
                 try:
                     offsprings = creation()
                     for offspring in offsprings:
                         target.pool.assignID(offspring)
-                        offspring['howCome'] = type(creation).__name__
+                        offspring['howCome'] = howCome
                         offspring['parent'] = "None"
                         logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator.")
                     population.extend(offsprings)
                     howMany -= len(offsprings)
+                except RuntimeError as e:
+                    logger.debug(e)
                 except Exception as e:
                     logger.error(e, exc_info=True)
-
             if hasattr(creation, 'standby'):
                 creation.standby()
 
