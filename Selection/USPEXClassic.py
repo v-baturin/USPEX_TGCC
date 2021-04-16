@@ -89,13 +89,13 @@ class USPEXClassic(object):
         population = []
         actualParents = []
 
-        if best:
-            for mutation in target.mutations:
-                howCome = type(mutation).__name__
+        for mutation in target.mutations:
+            howCome = type(mutation).__name__
+            howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            if best:
+                self.weightsLast[howCome] = howMany
                 if hasattr(mutation, 'prepare'):
                     mutation.prepare()
-                howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
-                self.weightsLast[howCome] = howMany
                 possibleParents = np.random.choice(best, size=2*howMany, replace=True, p=tournament)
                 for parent in possibleParents:
                     if howMany <= 0:
@@ -119,12 +119,13 @@ class USPEXClassic(object):
                 if hasattr(mutation, 'standby'):
                     mutation.standby()
 
-            for hybridization in target.hybridizations:
-                howCome = type(hybridization).__name__
+        for hybridization in target.hybridizations:
+            howCome = type(hybridization).__name__
+            howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            if best:
+                self.weightsLast[howCome] = howMany
                 if hasattr(hybridization, 'prepare'):
                     hybridization.prepare()
-                howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
-                self.weightsLast[howCome] = howMany
                 pairs = zip(np.random.choice(best, size=2 * howMany, replace=True, p=tournament),
                             np.random.choice(best, size=2 * howMany, replace=True, p=tournament))
                 for parent1, parent2 in pairs:
@@ -153,10 +154,10 @@ class USPEXClassic(object):
 
         for creation in target.creations:
             howCome = type(creation).__name__
-            if hasattr(creation, 'prepare'):
-                creation.prepare()
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
             self.weightsLast[howCome] = howMany
+            if hasattr(creation, 'prepare'):
+                creation.prepare()
             for i in range(2 * howMany):
                 if howMany <= 0:
                     break
