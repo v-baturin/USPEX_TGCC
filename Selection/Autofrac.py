@@ -14,6 +14,7 @@ FunctionFolder/USPEX/src/update_STUFF.m
 import numpy as np
 from collections import Counter
 from typing import Dict
+from copy import copy
 
 
 class Autofrac(object):
@@ -21,7 +22,7 @@ class Autofrac(object):
 
     '''
 
-    def __init__(self, fractions : Dict[str, tuple], population : list, best : list, newFoundSystems : list, varOperators : list):
+    def __init__(self, fractions : Dict[str, tuple], weightsLast, best : list, newFoundSystems : list, varOperators : list):
         '''
 
         :param population:
@@ -30,51 +31,49 @@ class Autofrac(object):
         :param varOperators:
         '''
 
-        self.weightsLast = Counter()
-        for system in population:
-            self.weightsLast[system['howCome']] += 1
+        self.weightsLast = copy(weightsLast)
         self.weightsBest = Counter()
         for system in best:
-            if system not in newFoundSystems:
+            if system['howCome'] != 'Seeds' and system in newFoundSystems:
                 self.weightsBest[system['howCome']] += 1
 
-        self.initFracs = {}
+        self.initWeights = {}
         self.minFracs = {}
         self.maxFracs = {}
         for VO in varOperators:
-            name = VO.__class__.__name__[0].lower() + VO.__class__.__name__[1:]
-            if name in fractions:
-                self.minFracs[VO], self.maxFracs[VO], self.initFracs[VO] = fractions[name]
-            else:
-                self.minFracs[VO], self.maxFracs[VO], self.initFracs[VO] = 0.0,0.0,0.0
+            name = type(VO).__name__
+            nl = name[0].lower() + name[1:]
+            self.minFracs[name], self.maxFracs[name], self.initWeights[name] = fractions[nl] if nl in fractions else (0.0, 0.0, 0.0)
 
-    def howMany(self, varOperator, leftPopSize : int):
+    def howMany(self, howCome, leftPopSize : int, totalPopSize : int):
         '''
 
-        :param varOperator:
+        :param howCome:
         :param leftPopSize:
         :return:
         '''
 
-        if self.weightsLast[varOperator] == 0:
-            initialNorm = sum(self.initFracs.values())
-            frac = self.initFracs[varOperator] / initialNorm if initialNorm > 0 else 0
+        if self.weightsLast[howCome] == 0:
+            initialNorm = sum(self.initWeights.values())
+            frac = self.initWeights[howCome] / initialNorm if initialNorm > 0 else 0
             howMany = np.floor(frac * leftPopSize)
         else:
-            minimalNorm = sum(self.minFracs.values())
             lastNorm = np.fromiter((value for value in self.weightsLast.values()), dtype=int).sum()
-            # bestNorm = np.fromiter((value for value in self.weightsBest.values()), dtype=int).sum()
-            weightsNorm = np.fromiter(
-                (bestN ** 2 / lastN for lastN, bestN in zip(self.weightsLast.values(), self.weightsBest.values())),
-                dtype=float).sum()
-            weight = self.weightsBest[varOperator] ** 2 / self.weightsLast[varOperator]
-            frac = max(self.minFracs[varOperator] / minimalNorm,
-                       (self.weightsLast[varOperator] / lastNorm + weight / weightsNorm) / 2)
+            lastFrac = self.weightsLast[howCome] / lastNorm if lastNorm != 0 else 0
+            weightsNorm = 0
+            for key in set.union(set(self.weightsLast.keys()), set(self.weightsBest.keys())):
+                weightsNorm += self.weightsBest[key] ** 2 / self.weightsLast[key] if self.weightsLast[key] != 0 else 0
+            weight = self.weightsBest[howCome] ** 2 / self.weightsLast[howCome]
+            frac = (lastFrac + weight / weightsNorm) / 2 if weightsNorm != 0 else lastFrac/2
             howMany = np.floor(frac * leftPopSize)
+            howManyMin = np.floor(self.minFracs[howCome] * totalPopSize)
+            howManyMax = np.floor(self.maxFracs[howCome] * totalPopSize)
+            howMany = max(howManyMin, howMany)
+            howMany = min(howManyMax, howMany)
 
-        del self.weightsLast[varOperator]
-        del self.weightsBest[varOperator]
-        del self.initFracs[varOperator]
-        del self.minFracs[varOperator]
-        del self.maxFracs[varOperator]
+        del self.weightsLast[howCome]
+        del self.weightsBest[howCome]
+        del self.initWeights[howCome]
+        del self.minFracs[howCome]
+        del self.maxFracs[howCome]
         return int(howMany)
