@@ -67,7 +67,7 @@ class RandSym:
             raise RuntimeError("RandSym does not currently work in molecular regime.")
         self.nsymN = nsymN
         if nsym is None:
-            self.nsym = list(range(2, 230))
+            self.nsym = list(range(2, 231))
         else:
             self.nsym = nsym
         self.sym_coef = sym_coef
@@ -85,7 +85,7 @@ class RandSym:
         numIons = list(composition.values())
         numIons_tmp = np.copy(numIons)
         failedDist = 0
-        nsym = self.nsym[np.random.randint(0, len(self.nsym))]
+        nsym, = np.random.choice(self.nsym, 1)
         logger.debug(f"Trying {nsym} symmetry")
         badSymmetryCounter = 0
         startTime = time()
@@ -137,7 +137,7 @@ class RandSym:
                 badSymmetryCounter = 0
                 # change the symmetry group if can't generate the crystal
                 # Pick a random group from those specified by user (different from Matlab implementation):
-                nsym = self.nsym[np.random.randint(0, len(self.nsym))]
+                nsym, = np.random.choice(self.nsym, 1)
                 logger.debug(f"Trying {nsym} symmetry")
             else:
                 badSymmetryCounter += 1
