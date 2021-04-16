@@ -59,12 +59,12 @@ class Autofrac(object):
             howMany = np.floor(frac * leftPopSize)
         else:
             lastNorm = np.fromiter((value for value in self.weightsLast.values()), dtype=int).sum()
-            # bestNorm = np.fromiter((value for value in self.weightsBest.values()), dtype=int).sum()
-            weightsNorm = np.fromiter(
-                (bestN ** 2 / lastN for lastN, bestN in zip(self.weightsLast.values(), self.weightsBest.values())),
-                dtype=float).sum()
+            lastFrac = self.weightsLast[howCome] / lastNorm if lastNorm != 0 else 0
+            weightsNorm = 0
+            for key in set.union(set(self.weightsLast.keys()), set(self.weightsBest.keys())):
+                weightsNorm += self.weightsBest[key] ** 2 / self.weightsLast[key] if self.weightsLast[key] != 0 else 0
             weight = self.weightsBest[howCome] ** 2 / self.weightsLast[howCome]
-            frac = (self.weightsLast[howCome] / lastNorm + weight / weightsNorm) / 2
+            frac = (lastFrac + weight / weightsNorm) / 2 if weightsNorm != 0 else lastFrac/2
             howMany = np.floor(frac * leftPopSize)
             howManyMin = np.floor(self.minFracs[howCome] * totalPopSize)
             howManyMax = np.floor(self.maxFracs[howCome] * totalPopSize)
