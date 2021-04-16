@@ -33,9 +33,9 @@ lbround = lexeme(string('('))
 rbround = lexeme(string(')'))
 colon = lexeme(string(':'))
 comma = lexeme(string(','))
-true = lexeme(string('true')).result(True)
-false = lexeme(string('false')).result(False)
-null = lexeme(string('null')).result(None)
+true = lexeme(string('True')).result(True)
+false = lexeme(string('False')).result(False)
+null = lexeme(string('None')).result(None)
 quote = string('"') | string("'")
 
 def number_float():
