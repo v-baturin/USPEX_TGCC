@@ -116,6 +116,25 @@ class Cell:
         gamma = 180 / np.pi * np.arccos(np.dot(self._cellVectors[0, :], self._cellVectors[1, :]) / (a * b))
         return a, b, c, alpha, beta, gamma
 
+    def addVacuum(self, cartCoords, vacuumSize):
+        """
+        @param cartCoords: cartesian atomic coordinates
+        @param vacuumSize: ordered container of vacuum distances along cartesian coordinates
+        @return:  new cell parameters
+        """
+        pbc = self.getPBC()  # Why not just write _pbc?
+        dims = np.sum(pbc)
+
+        if dims == 0:
+            circum_box = np.max(cartCoords, 0) - np.min(cartCoords, 0)
+            newCell = (circum_box + vacuumSize)
+            newCoords = cartCoords - cartCoords.mean(axis=0) + 0.5 * circum_box
+            return newCell, newCoords
+        elif dims == 1:
+            zDim = np.where(np.array(pbc) == 0)
+
+
+
     def getVolume(self): 
         return np.abs(np.linalg.det(self._cellVectors))
 
