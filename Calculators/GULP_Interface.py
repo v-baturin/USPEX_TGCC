@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 @date        30 August 2016
 @brief       Class for remote QM/MM calculations with GULP
 '''
-
+# TODO: Vacuumsize before each stage
 import numpy as np
 import os
 import re
@@ -18,13 +18,15 @@ import shutil
 from .Common.SHELL_Interface import SHELL_Interface
 from os.path import join as pj
 from typing import List
+from ..Atomistic.CellUtility import Cell
+from ..Atomistic.AtomicPrimitives import AtomicStructure
 
 
 class GULP_Interface(SHELL_Interface):
-    '''
+    """
     Calculator for Gulp.
     Local running
-    '''
+    """
 
     _DEFAULT_SLEEP_TIME = 10
     structureType = None
@@ -67,6 +69,9 @@ class GULP_Interface(SHELL_Interface):
         else:
             self.moleculeSpecifics = {}
 
+        if 'vacuumSize' in kwargs:
+            self.vacuumSize = kwargs['vacuumSize']
+
         self.perturbate = perturbate
         self.fix_cell = fix_cell
         logger.debug('GULP calculator created.')
@@ -88,6 +93,10 @@ class GULP_Interface(SHELL_Interface):
         structure, disassembler = systemFactory.assemble(molecules, cell = cell)
         system['structure'] = structure
         system['disassembler'] = disassembler
+
+        if hasattr(self, 'vacuumSize'):
+            system['cell'], system['structure'] = Cell.addVacuum(cell, structure, self.vacuumSize)
+            cell = system['cell']
 
         files_to_delete = ['output', 'optimized.structure']
         for f in files_to_delete:

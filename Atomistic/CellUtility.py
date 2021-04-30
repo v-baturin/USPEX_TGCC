@@ -7,7 +7,7 @@ import spglib
 from scipy.spatial.transform import Rotation
 
 from .Transformation import Transformation
-
+from .AtomicPrimitives import AtomicStructure
 
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
@@ -116,23 +116,14 @@ class Cell:
         gamma = 180 / np.pi * np.arccos(np.dot(self._cellVectors[0, :], self._cellVectors[1, :]) / (a * b))
         return a, b, c, alpha, beta, gamma
 
-    def addVacuum(self, cartCoords, vacuumSize):
-        """
-        @param cartCoords: cartesian atomic coordinates
-        @param vacuumSize: ordered container of vacuum distances along cartesian coordinates
-        @return:  new cell parameters
-        """
-        pbc = self.getPBC()  # Why not just write _pbc?
-        dims = np.sum(pbc)
-
-        if dims == 0:
-            circum_box = np.max(cartCoords, 0) - np.min(cartCoords, 0)
-            newCell = (circum_box + vacuumSize)
-            newCoords = cartCoords - cartCoords.mean(axis=0) + 0.5 * circum_box
-            return newCell, newCoords
-        elif dims == 1:
-            zDim = np.where(np.array(pbc) == 0)
-
+    def center(self, coordinates, affectedDims=(1, 1, 1), toPrincipalAxes=True):
+        centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
+        coordinates -= coordinates.mean(axis=0) * np.array(affectedDims).reshape((1, 3))
+        if toPrincipalAxes:
+            forAxes = coordinates * affectedDims
+            _, rotMatrix = np.linalg.eigh(np.eye(3) * np.sum(forAxes ** 2) - np.dot(forAxes.T, forAxes))
+            coordinates = np.dot(coordinates, rotMatrix.T)
+        return coordinates + centerCellVec*np.array(affectedDims).reshape((1, 3))
 
 
     def getVolume(self): 
@@ -226,3 +217,30 @@ class Cell:
         cz = (1. - cx ** 2 - cy ** 2) ** 0.5
         vc = c * np.array([cx, cy, cz])
         return Cell(np.vstack((va, vb, vc)), pbc)
+
+    @staticmethod
+    def addVacuum(oldcell, struct_info, vacuumSize):
+        """
+        @param struct_info: cartesian atomic coordinates
+        @param vacuumSize: ordered container of vacuum distances along cartesian coordinates
+        @return:  new cell parameters
+        structure = AtomicStructure(structure.getAtomTypes(), newCoords, cell=cell)
+        """
+        if hasattr(struct_info, 'coordinates'):
+            cartCoords = struct_info.coordinates
+        else:
+            cartCoords = struct_info
+        pbc = oldcell.getPBC()  # Why not just write _pbc?
+        dims = np.sum(pbc)
+
+        if dims == 3:
+            logger.warning("Vacuum size is set for 3D calculation. Please check your input")
+            return
+
+        newCellVectors = np.diag(np.max(cartCoords, 0) - np.min(cartCoords, 0) + vacuumSize)
+        newCellVectors[np.nonzero(pbc)] = oldcell.getCellVectorsPBC()
+        newCell = Cell(newCellVectors, pbc)
+        newCoords = newCell.center(cartCoords, affectedDims=1 - np.array(pbc), toPrincipalAxes=True)
+        if hasattr(struct_info, 'coordinates'):
+            return newCell, AtomicStructure(struct_info.getAtomTypes(), newCoords, cell=newCell)
+        return newCell, newCoords
