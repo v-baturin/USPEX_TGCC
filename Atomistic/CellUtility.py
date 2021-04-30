@@ -126,7 +126,7 @@ class Cell:
         return coordinates + centerCellVec*np.array(affectedDims).reshape((1, 3))
 
 
-    def getVolume(self): 
+    def getVolume(self):
         return np.abs(np.linalg.det(self._cellVectors))
 
     def getAltitudes(self):
@@ -169,12 +169,10 @@ class Cell:
             axis = pbcVectorsCart[0]
             rotVec = np.pi * np.random.random() * axis / np.linalg.norm(axis)
             rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
-        elif pbcSum == 2:
-            axis = np.cross(pbcVectorsCart[0,:], pbcVectorsCart[1,:])
-            rotVec = np.pi * np.random.random() * axis / np.linalg.norm(axis)
-            rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
+        # elif pbcSum == 2:
+        #     axis = np.cross(pbcVectorsCart[0,:], pbcVectorsCart[1,:])
         else:
-            rotMatrix = Rotation.random().as_matrix()
+            rotMatrix = np.eye(3)
         centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
         transVec = transVec - centerCellVec + np.dot(rotMatrix.T, centerCellVec)
         return Transformation.fromMatrix(rotMatrix, np.dot(rotMatrix, transVec))
