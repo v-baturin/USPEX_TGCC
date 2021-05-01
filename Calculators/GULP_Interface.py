@@ -74,6 +74,8 @@ class GULP_Interface(SHELL_Interface):
 
         self.perturbate = perturbate
         self.fix_cell = fix_cell
+        if 'vacuumsize' in kwargs:
+            self.vacuumSize = kwargs['vacuumsize']
         logger.debug('GULP calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -96,6 +98,7 @@ class GULP_Interface(SHELL_Interface):
 
         if hasattr(self, 'vacuumSize'):
             system['cell'], system['structure'] = Cell.addVacuum(cell, structure, self.vacuumSize)
+            structure = system['structure']
             cell = system['cell']
 
         files_to_delete = ['output', 'optimized.structure']

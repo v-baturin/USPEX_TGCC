@@ -117,13 +117,28 @@ class Cell:
         return a, b, c, alpha, beta, gamma
 
     def center(self, coordinates, affectedDims=(1, 1, 1), toPrincipalAxes=True):
+        """
+        Center atoms in unit cell.
+
+        Centers the coordinates in the unit cell, so there is the same
+        amount of vacuum on all sides specified by affectedDims.
+
+        :param coordinates: list of coordinates of N atoms (Nx3 np.array)
+        :param affectedDims: iterable of floats or ints dimensions to act on. Default - act on all dimensions (1,1,1)
+        :param toPrincipalAxes: Applies rotation to principal axes, but limited to affectedDims. E.g. for 1d structures
+                                affectedDims=(1,1,0) since we don't want to touch z-direction. That means only two
+                                principal axes will be found for (x_i, y_i) coordinates and the structure will be turned
+                                around z-axis accordingly
+        :return:
+        """
+        affectedDims = np.array(affectedDims).reshape((1, 3))
         centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
-        coordinates -= coordinates.mean(axis=0) * np.array(affectedDims).reshape((1, 3))
+        coordinates -= coordinates.mean(axis=0) * affectedDims
         if toPrincipalAxes:
             forAxes = coordinates * affectedDims
             _, rotMatrix = np.linalg.eigh(np.eye(3) * np.sum(forAxes ** 2) - np.dot(forAxes.T, forAxes))
-            coordinates = np.dot(coordinates, rotMatrix.T)
-        return coordinates + centerCellVec*np.array(affectedDims).reshape((1, 3))
+            coordinates = np.dot(coordinates, rotMatrix)
+        return coordinates + centerCellVec*affectedDims
 
 
     def getVolume(self):
