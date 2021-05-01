@@ -8,7 +8,7 @@ from ..Transformation import Transformation
 
 from time import time
 
-from projects.Common.Atomistic.CellUtility import Cell
+from ....Common.Atomistic.CellUtility import Cell
 
 from pyxtal import pyxtal
 
