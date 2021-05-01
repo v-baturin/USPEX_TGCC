@@ -10,7 +10,7 @@ from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
-from .Atomistic.Operators.RandSym0D import RandSym0D
+# from .Atomistic.Operators.RandSym0D import RandSym0D
 from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .Atomistic.Operators.Permutation import Permutation
 from .Atomistic.Operators.Transmutation import Transmutation
@@ -18,7 +18,7 @@ from .Atomistic.Operators.Seeds import Seeds
 from .VariationOperators import VariationOperators
 variationOperators = VariationOperators(hybridizationTypes=[Heredity],
                                         mutationTypes=[Softmodemutation, Permutation, Transmutation],
-                                        creationTypes=[RandTop, RandSym, RandSym0D],
+                                        creationTypes=[RandTop, RandSym],  # RandSym0D],
                                         seedsType=Seeds)
 Target.registerTarget('Crystal', [CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
                                   Conditions, IonDistances, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer], variationOperators)
