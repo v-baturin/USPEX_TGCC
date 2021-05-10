@@ -81,7 +81,7 @@ class SingleCrystalSpectrumAnalyzer(object):
         system['singleCrystalSpectrumAnalyzer.xraydistance'] = wR
 
     def xraydistance(self, system):
-        if 'sincleCrystalSpectrumAnalyzer.xraydistance' not in system:
+        if 'singleCrystalSpectrumAnalyzer.xraydistance' not in system:
             self.analyze(system)
         assert 'singleCrystalSpectrumAnalyzer.xraydistance' in system
         return system['singleCrystalSpectrumAnalyzer.xraydistance']
