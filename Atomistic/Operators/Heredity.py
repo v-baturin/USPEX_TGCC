@@ -13,7 +13,7 @@ NSLUBS = 2
 
 class Heredity:
 
-    def __init__(self, utilities, nslubs = NSLUBS, attempts = ATTEMPTS, debug = False):
+    def __init__(self, utilities, nslubs = None, attempts = ATTEMPTS, debug = False):
         self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.radialDistributionUtility = utilities.radialDistributionUtility
@@ -47,9 +47,25 @@ class Heredity:
 
         for i in range(self.attempts):
             outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand())
-
             axis = np.random.randint(3)
-            gaugesOfSlabs = tuple(np.random.randint(3, 9, size=self.nslubs).tolist())
+            if self.nslubs is None:
+                if composition1 == composition2:
+                    nslubs = 2
+                else:
+                    elementalComposition1 = self.simpleMoleculeUtility.getElementalComposition(composition1)
+                    elementalComposition2 = self.simpleMoleculeUtility.getElementalComposition(composition2)
+                    elements = set(elementalComposition1.keys()).union(set(elementalComposition2.keys()))
+                    radii = np.fromiter((2 * el.covalent_radius for el in elements), dtype=float)
+                    minSlice = radii.min()
+                    maxSlice = radii.max()
+                    medSlice = (minSlice + maxSlice) / 2
+                    nslubs = int(np.round(outputCell.getCellParameters()[axis] / medSlice))
+                    if nslubs < 2:
+                        nslubs = 2
+            else:
+                nslubs = self.nslubs
+
+            gaugesOfSlabs = tuple(np.random.randint(3, 9, size=nslubs).tolist())
 
             logger.debug(f"trying {outputCell.getCellParameters()} cell and {gaugesOfSlabs}-size slabs.")
 
