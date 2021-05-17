@@ -28,7 +28,7 @@ class GlobalOptimizer(object):
     Fitness = None
     knownSelectionTypes = {}
 
-    def __init__(self, target: dict, selection: dict, fitness, fingerprintUtility, stopFitness=None, **kwargs):
+    def __init__(self, target: dict, selection: dict, fitness, fingerprintUtility, stopFitness=None, stopSystems=None, **kwargs):
         """
         Initializes the class.
 
@@ -48,6 +48,12 @@ class GlobalOptimizer(object):
         self._isStable = False
         self.stopFitness = stopFitness
         self._isGoalReached = False
+        if stopSystems is not None and self.target.seeds is not None:
+            Seeds = type(self.target.seeds)
+            seeds = Seeds(self.target.utilities, generations = [0], seedsFolders=[stopSystems])
+            self.stopSystems = seeds()
+        else:
+            self.stopSystems = None
 
         self.selectionConfig = selection
         self.createPopulation = self.knownSelectionTypes[selection['type']](self.fingerprintUtility ,**selection)
@@ -114,6 +120,16 @@ class GlobalOptimizer(object):
                         pass
                 if round(value, ndigits=3) <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
+        if self.stopSystems is not None and not self._isGoalReached:
+            stopSystems = list(self.stopSystems)
+            for system in self.target.pool.uniqueSystems:
+                for i, stopSystem in enumerate(stopSystems):
+                    if self.fingerprintUtility.equal(system, stopSystem):
+                        del stopSystems[i]
+                        break
+                if not stopSystems:
+                    break
+            self._isGoalReached = not stopSystems
 
     def cleanDuplicates(self, population: list):
         """
