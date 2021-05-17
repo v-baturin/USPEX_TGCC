@@ -74,7 +74,7 @@ class SimpleMoleculeUtility(object):
         for symbol, amount in composition.items():
             molecule = self.molecules[symbol]
             if len(molecule) == 1:
-                comp[symbol] += amount
+                comp[self.atomType(symbol)] += amount
             else:
                 for symbol, value in molecule.getComposition().items():
                     comp[symbol] += value*amount
