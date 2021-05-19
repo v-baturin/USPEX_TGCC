@@ -108,22 +108,9 @@ class RadialDistributionUtility(object):
             self._calcFingerprint(system)
         return system['radialDistribitionUtility.structureFingerprint']
 
-    def atomFingerprints(self, system):
-        if not 'radialDistribitionUtility.atomFingerprints' in system:
-            self._calcFingerprint(system)
-        return system['radialDistribitionUtility.atomFingerprints']
-
     def order(self, system):
         if not 'radialDistribitionUtility.order' in system:
-            molecules = system['molecules']
-            systemFactory = type(molecules[0])
-            structure, disassembler = systemFactory.assemble(**system)
-            if len(structure) == 0:
-                order =  np.nan
-            else:
-                order = np.fromiter((atomFing.order for atomFing in self.atomFingerprints(system)), dtype = float)
-                order *= np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
-            system['radialDistribitionUtility.order'] = order
+            self._calcFingerprint(system)
         return system['radialDistribitionUtility.order']
 
     def averageOrder(self, system):
@@ -131,12 +118,9 @@ class RadialDistributionUtility(object):
         :rtype: float
         :return: average local order for the structure.
         '''
-        order = np.asarray(self.order(system), dtype=float)
-        if np.any(np.isfinite(order)):
-            a_order = np.mean(order[np.isfinite(order)])
-        else:
-            a_order = np.nan
-        return a_order
+        if not 'radialDistribitionUtility.averageOrder' in system:
+            self._calcFingerprint(system)
+        return system['radialDistribitionUtility.averageOrder']
 
     def structureOrder(self, system):
         """
@@ -144,57 +128,18 @@ class RadialDistributionUtility(object):
 
         """
         if not 'radialDistribitionUtility.structureOrder' in system:
-            molecules = system['molecules']
-            systemFactory = type(molecules[0])
-            structure, disassembler = systemFactory.assemble(**system)
-            fingerprint = self.structureFingerprint(system)
-            s_order = fingerprint.order * np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
-            system['radialDistribitionUtility.structureOrder'] = s_order
+            self._calcFingerprint(system)
         return system['radialDistribitionUtility.structureOrder']
 
     def quasientropy(self, system):
         """
         Calculate structure quasientropy.
-
-        :type structure: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` or descendant
-        :param structure: system for which we want to calculate quasientropy.
-        :type atom_fing: numpy array
-        :param atom_fing: atomic fingerprint.
         :rtype: numpy array
         :return: structure quasientropy.
         """
 
         if not 'radialDistribitionUtility.quasientropy' in system:
-            molecules = system['molecules']
-            systemFactory = type(molecules[0])
-            structure, disassembler = systemFactory.assemble(**system)
-            atomFing = self.atomFingerprints(system)
-            uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
-                                                        return_inverse=True,
-                                                        return_counts=True)
-            sQE = 0.0
-            weight = numIons / np.sum(numIons)
-
-            for i in range(numIons.shape[0]):
-                if numIons[i] > 1:
-                    tmp = 0
-                    indices = np.flatnonzero(inverse == i)
-                    comb = list(combinations(indices, 2))
-                    for j1, j2 in comb:
-                        tmp_fing1 = atomFing[j1]
-                        tmp_fing2 = atomFing[j2]
-
-                        dist = Fingerprint.cosine_distance(tmp_fing1, tmp_fing2)
-
-                        '''
-                        if abs(dist - 1.0) < 0.000001:
-                            dist = 0.99999
-                        '''
-
-                        tmp += (1 - dist) * np.log(1 - dist)
-
-                    sQE += weight[i] * tmp / len(comb)
-            system['radialDistribitionUtility.quasientropy'] = -sQE
+            self._calcFingerprint(system)
         return system['radialDistribitionUtility.quasientropy']
 
     def clean(self, system):
@@ -220,7 +165,8 @@ class RadialDistributionUtility(object):
         indices = np.argsort(inverse)
         revertIndices = np.argsort(indices)
         coordinates = structure.getFractionalCoordinates()[indices]
-        dist_matrix = make_matrices(coordinates, structure.getCell().getCellVectors(), numIons, Rmax=self.Rmax)
+        molIndices = [revertIndices[inds] for inds in disassembler.indices]
+        dist_matrix = make_matrices(coordinates, molIndices, structure.getCell().getCellVectors(), numIons, Rmax=self.Rmax)
 
         V = structure.getCell().getVolume()
         N_type = numIons.shape[0]
@@ -366,16 +312,56 @@ class RadialDistributionUtility(object):
 
         n = len(uniqueSimbols)
         fing = {(s1.short_name, s2.short_name): fing[i * n + j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
-        atomFing = []
+        atomFings = []
         weights = {s.short_name: w for s, w in zip(uniqueSimbols, numIons / np.sum(numIons))}
         for i in revertIndices:
             f = Fingerprint(value={s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)},
                             weights=weights)
-            atomFing.append(f)
+            atomFings.append(f)
 
-        system['radialDistribitionUtility.atomFingerprints'] = atomFing
-        system['radialDistribitionUtility.structureFingerprint'] = Fingerprint(value=fing,
-                                                                               weights=self.fingerprintWeights(structure))
+        order = np.fromiter((atomFing.order for atomFing in atomFings), dtype=float)
+        order *= np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
+        molOrder = np.fromiter((order[np.asarray(indices)].sum()/len(indices) for indices in disassembler.indices), dtype=float)
+
+        if np.any(np.isfinite(order)):
+            a_order = np.mean(order[np.isfinite(order)])
+        else:
+            a_order = np.nan
+
+        fingerprint = Fingerprint(value=fing, weights=self.fingerprintWeights(structure))
+        s_order = fingerprint.order * np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
+
+        uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
+                                                    return_inverse=True,
+                                                    return_counts=True)
+        sQE = 0.0
+        weight = numIons / np.sum(numIons)
+
+        for i in range(numIons.shape[0]):
+            if numIons[i] > 1:
+                tmp = 0
+                indices = np.flatnonzero(inverse == i)
+                comb = list(combinations(indices, 2))
+                for j1, j2 in comb:
+                    tmp_fing1 = atomFings[j1]
+                    tmp_fing2 = atomFings[j2]
+
+                    dist = Fingerprint.cosine_distance(tmp_fing1, tmp_fing2)
+
+                    '''
+                    if abs(dist - 1.0) < 0.000001:
+                        dist = 0.99999
+                    '''
+
+                    tmp += (1 - dist) * np.log(1 - dist)
+
+                sQE += weight[i] * tmp / len(comb)
+
+        system['radialDistribitionUtility.order'] = molOrder
+        system['radialDistribitionUtility.averageOrder'] = a_order
+        system['radialDistribitionUtility.structureOrder'] = s_order
+        system['radialDistribitionUtility.structureFingerprint'] = fingerprint
+        system['radialDistribitionUtility.quasientropy'] = -sQE
 
 
     def dist(self, system1, system2):
@@ -433,7 +419,7 @@ def super_matrix(xmin: int, xmax: int, ymin: int, ymax: int, zmin: int, zmax: in
     return [[i, j, k] for i in range(xmin, xmax + 1) for j in range(ymin, ymax + 1) for k in range(zmin, zmax + 1)]
 
 
-def make_matrices(coor: np.ndarray, lat: np.ndarray, numIons: np.ndarray, Rmax=10.0):
+def make_matrices(coor: np.ndarray, molIndices: list, lat: np.ndarray, numIons: np.ndarray, Rmax=10.0):
     """
     The function prepares matrices for fingerprint calculation.
 
@@ -516,6 +502,15 @@ def make_matrices(coor: np.ndarray, lat: np.ndarray, numIons: np.ndarray, Rmax=1
         # For debug:
         # for j in range(tmp_type.shape[0]):
         #    print tmp_type[j]
+
+        ignoreDist = set()
+        for inds in molIndices:
+            if i in inds:
+                ignoreDist.update(inds)
+        to_delete = np.flatnonzero(np.all(matrix_tmp == 0, axis=1)) * N_atom + np.asarray(list(ignoreDist))
+        tmp_dist = np.delete(tmp_dist, to_delete, axis=1)
+        tmp_type = np.delete(tmp_type, to_delete, axis=0)
+
 
 
         to_delete = np.where((tmp_dist > Rmax) | (tmp_dist < 0.5))
