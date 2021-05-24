@@ -98,9 +98,11 @@ def tuple_object():
 
 @generate
 def object_pair():
+    yield many(comment)
     key = yield quoted | lexeme(regex(r'[a-zA-Z][-_a-zA-Z0-9]*'))
     yield many(comment) << colon << many(comment)
     val = yield value
+    yield many(comment)
     raise StopGenerator((key, val))
 
 
@@ -112,6 +114,7 @@ def json_object():
     raise StopGenerator(dict(pairs))
 
 value = quoted | number_float() | number_int() | json_object | array | tuple_object | true | false | null
+value = many(comment) >> value << many(comment)
 
 parser = whitespace >> (json_object | array | tuple_object)
 
