@@ -9,9 +9,9 @@ from shutil import copyfile
 from copy import copy, deepcopy
 from enum import Enum
 
-from ..Calculators.LifeState import LifeState
-from ..Calculators.Common.SHELL_Calculator import SHELL_Calculator, ReferenceMismatch
-from ..IO.OutputRepresentation import OutputRepresentation
+from .Calculators.LifeState import LifeState
+from .Calculators.Common.SHELL_Calculator import SHELL_Calculator, ReferenceMismatch
+from .IO.OutputRepresentation import OutputRepresentation
 
 
 class ControllerState(Enum):

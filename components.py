@@ -28,7 +28,7 @@ from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.setFitnessType(Fitness)
 GlobalOptimizer.registerSelection(USPEXClassic)
 
-from .Controllers.GenerationController import GenerationController
+from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 
 from .Atomistic.Element import Element
