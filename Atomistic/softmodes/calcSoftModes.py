@@ -1,6 +1,5 @@
 from __future__ import division
 
-from ..AtomicStructure import AtomicStructure
 from .getMinimalGraphBonds import getMinimalGraphBonds
 
 from ..Element import Element
@@ -42,7 +41,7 @@ def AddDynMat(D, a, b, H, Cos, phase1, phase2):
 
 
 # R_val : dict, N_val : dict, val : dict,
-def calcSoftModes(system : AtomicStructure, kVector0=np.zeros(3)):
+def calcSoftModes(system, kVector0=np.zeros(3)):
     '''
     The function calculates vibrational modes based on the dynamic matrix (D) constructed from bond hardness model.
 

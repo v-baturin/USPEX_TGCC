@@ -9,8 +9,8 @@ Methods for volume calculation of a cell
 
 import math
 
-from .Element import Element
-from .CompositionSpace import Composition
+from ..Atomistic.Element import Element
+from ..Atomistic.CompositionSpace import Composition
 
 
 def VinetEOS(B0: float, B00: float, V0: float, x: float):

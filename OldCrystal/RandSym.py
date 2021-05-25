@@ -6,13 +6,12 @@ import numpy as np
 import spglib
 from itertools import combinations_with_replacement
 
-from .Random import Random, VOFailed
-from .symope.splitBigCell import splitBigCell
+from .Random import Random
 from .symope.symope_crystal import symope_crystal
 from time import time
 
-from ..Atomistic.AtomicStructure import AtomicStructure
-from ..Atomistic.calcDefaultVolume import calcVolume
+from .Crystal import Crystal
+from .calcDefaultVolume import calcVolume
 from ..SpaceGroups.SpaceGroups3D import Group
 
 
@@ -78,7 +77,7 @@ class RandSym(Random):
             if s not in self.compositionSpace.molecules:
                 radii.append(0.22 * calcVolume(externalPressure, s, **volumeType) ** (1.0 / 3.0))
             else:
-                molecule = AtomicStructure.fromDICT(self.compositionSpace.molecules[s])
+                molecule = Crystal.fromDICT(self.compositionSpace.molecules[s])
                 molecule.set_masses([1] * len(molecule))
                 molecule.translate(-molecule.get_center_of_mass())
                 values, vectors = molecule.get_moments_of_inertia(vectors=True)

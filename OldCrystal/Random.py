@@ -6,7 +6,7 @@ import itertools
 from copy import copy
 
 from .VarOperator import VarOperator, VOFailed
-from ..Atomistic.calcDefaultVolume import calcVolumeForComposition
+from .calcDefaultVolume import calcVolumeForComposition
 
 
 def randomPermutation(array, enumerate = False, maxSize = None):

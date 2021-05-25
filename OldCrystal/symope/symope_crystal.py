@@ -3,7 +3,7 @@ import subprocess as sp
 
 import numpy as np
 
-from ...Atomistic.Crystal import Crystal
+from ...Crystal import Crystal
 from ...Atomistic.optLattice import optLattice
 
 from .GetPermutation import GetPermutation

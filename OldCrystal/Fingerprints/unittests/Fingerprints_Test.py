@@ -11,9 +11,7 @@ import unittest
 import os
 from ase.io import read
 
-from ...AtomicStructure import AtomicStructure
-from ..cosine_distance import cosine_distance
-
+from projects.Common.Crystal.AtomicStructure import AtomicStructure
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 

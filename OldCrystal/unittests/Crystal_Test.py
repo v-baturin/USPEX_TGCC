@@ -9,7 +9,6 @@ Class for AtomicStricture testing
 
 import unittest
 import os
-import json
 import toml
 from ase.io import read
 import numpy as np

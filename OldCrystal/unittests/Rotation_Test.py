@@ -7,9 +7,9 @@ import unittest
 import os
 import json
 
-from ...Atomistic.mol.read_molecule import read_molecule
+from ..mol.read_molecule import read_molecule
 from ...SystemPool import SystemPool
-from ...Atomistic.Crystal import Crystal
+from ..Crystal import Crystal
 from ...Atomistic.CompositionSpace import CompositionSpace
 from ..Rotation import Rotation, VOFailed
 

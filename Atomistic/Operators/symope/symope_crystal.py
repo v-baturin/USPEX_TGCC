@@ -3,8 +3,8 @@ import subprocess as sp
 
 import numpy as np
 
-from ....Atomistic.Crystal import Crystal
-from ....Atomistic.optLattice import optLattice
+from ...CellUtility import Cell
+from ...optLattice import optLattice
 
 from .GetPermutation import GetPermutation
 from .GetPrimitiveCell import GetPrimitiveCell
@@ -134,7 +134,7 @@ def symope_crystal(CenterminDistMatrice, fixLat, fixRndSeed, nsym, numIons, lat,
                 lattice, coordinate = fix_latticeStokes_after(nsym, lattice_S, coordinate_S)
                 #lattice[3:6] *= (np.pi / 180.0)  # go back to radians
 
-                Lattice_Matrix = Crystal(cell=lattice).get_cell()
+                Lattice_Matrix = Cell.initFromCellParameters(*lattice, pbc = (1,1,1)).getCellVectors()
                 if fixLat:
                     pass
                     #Lattice_Matrix = latConverter(lattice)

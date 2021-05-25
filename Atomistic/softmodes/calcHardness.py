@@ -5,13 +5,12 @@ import numpy as np
 from scipy.stats import gmean
 from itertools import chain
 
-from ..AtomicStructure import AtomicStructure
 from ..Element import Element
 from .getMinimalGraphBonds import getMinimalGraphBonds
 
 
 
-def calcHardness(system : AtomicStructure) -> float:
+def calcHardness(system) -> float:
     '''
     Calculate hardness for a given structure from bond hardness model.
     See http://han.ess.sunysb.edu/hardness/ for details.

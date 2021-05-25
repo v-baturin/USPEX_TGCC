@@ -2,7 +2,7 @@ from __future__ import division
 
 import numpy as np
 
-from ...Atomistic.AtomicStructure import AtomicStructure
+from ...Crystal import Crystal
 from .symope_crystal import symope_crystal
 
 
@@ -122,7 +122,7 @@ def splitBigCell(config, fixRndSeed, startLat, splitInto, numIons, nsym, sym_coe
             #os.chdir(ORG_STRUC['homePath'])
             if errorS == 0:
                 # Resulted lattice from symope_crystal() is 3x3, so need to convert it to 1x6 and make 1-D:
-                tmpNA = AtomicStructure(cell = lat1)
+                tmpNA = Crystal(cell = lat1)
                 lat1 = tmpNA.get_cell_lengths_and_angles()#latConverter(lat1)[0]
                 break
 
@@ -216,7 +216,7 @@ def splitBigCell(config, fixRndSeed, startLat, splitInto, numIons, nsym, sym_coe
             coordinates[counter, 2] = (k - 1 + coord_splitter[counter1, 2]) / float(z)
             counter += 1
 
-    tmpNA = AtomicStructure(cell = startLat)
+    tmpNA = Crystal(cell = startLat)
     lat = tmpNA.get_cell()#latConverter(np.asarray([startLat]))
     if errorS == 0:
         print('split into: x = %d, y = %d, z = %d' % (x, y, z))

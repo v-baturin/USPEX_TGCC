@@ -6,7 +6,6 @@ from itertools import chain, combinations_with_replacement
 from scipy.sparse.csgraph import connected_components
 from typing import Dict, List, Union, Tuple
 
-from ..AtomicStructure import AtomicStructure
 from ..Bonds import Bond
 
 
@@ -43,7 +42,7 @@ def _connectedComponents(N, bonds):
     return len(np.unique(labels[np.asarray(indices)]))
 
 
-def getMinimalGraphBonds(SYSTEM : AtomicStructure, goodBonds = None) -> list:
+def getMinimalGraphBonds(SYSTEM, goodBonds = None) -> list:
     '''
     Calculates bond graph minimal for the structure to be 3D connected.
 

@@ -9,31 +9,25 @@ Class Atoms-type structure with properties and without periodicity (not Crystal)
 """
 
 from ase.atoms import Atoms
-from ase.neighborlist import primitive_neighbor_list
-from typing import Dict, List, Union, Tuple
 
 import copy
 import numpy as np
 from typing import Dict, List, Tuple
-from itertools import combinations_with_replacement, chain
+from itertools import combinations_with_replacement
 from collections import Counter
 
 
 
-from ..System import System
-from .optLattice import optLattice
-from .Element import Element
+from ..Atomistic.Element import Element
+from ..Atomistic.CompositionSpace import Composition
+from .System import System
 from .calcDefaultVolume import calcVolume
-from .CompositionSpace import Composition
 from .mol.coord2Zmatrix import coord2Zmatrix
-from .mol.zmatrix2coord import zmatrix2coord
+from .mol import zmatrix2coord
 from .mol.find_pair import find_pair
 from .Fingerprints.make_matrices import make_matrices
-from .Fingerprints.fingerprint import fingerprint, Fingerprint
-from .Fingerprints.fingerprint import fpWeights
+from .Fingerprints.fingerprint import fingerprint, Fingerprint, fpWeights
 from .Fingerprints.cosine_distance import cosine_distance
-# from .Fingerprints.quasientropy import quasientropy
-# from .Fingerprints.structure_order import structure_order
 
 
 RMAX_DEFAULT = 10.0
