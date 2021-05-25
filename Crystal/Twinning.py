@@ -16,7 +16,7 @@ import numpy as np
 from copy import copy
 from time import time
 
-from ..VarOperator import VarOperator, VOFailed
+from .VarOperator import VarOperator, VOFailed
 from ..Atomistic.Element import Element
 
 class TwinningException(Exception):

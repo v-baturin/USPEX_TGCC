@@ -16,7 +16,7 @@ from copy import copy
 
 from ..Atomistic.calcDefaultVolume import calcVolumeForComposition
 from ..Atomistic.CompositionSpace import Composition
-from ..VarOperator import VarOperator, VOFailed
+from .VarOperator import VarOperator, VOFailed
 
 '''
 FunctionFolder/USPEX/3**/Heredity_3**.m

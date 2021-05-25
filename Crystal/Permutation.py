@@ -7,7 +7,7 @@ from copy import copy
 from itertools import combinations
 from typing import List, Tuple
 
-from ..VarOperator import VarOperator, VOFailed
+from .VarOperator import VarOperator, VOFailed
 
 __author__='alex_a_marjewski'
 

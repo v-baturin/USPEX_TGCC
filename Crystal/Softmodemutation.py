@@ -2,10 +2,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 import numpy as np
-from collections import namedtuple
 from copy import copy
 
-from ..VarOperator import VarOperator, VOFailed
+from .VarOperator import VarOperator, VOFailed
 from ..Atomistic.softmodes.calcSoftModes import calcSoftModes
 
 

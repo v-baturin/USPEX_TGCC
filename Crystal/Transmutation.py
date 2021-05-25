@@ -2,7 +2,7 @@ import logging
 logger = logging.getLogger(__name__)
 import numpy as np
 
-from ..VarOperator import VarOperator, VOFailed
+from .VarOperator import VarOperator, VOFailed
 
 __author__='alex_a_marjewski'
 

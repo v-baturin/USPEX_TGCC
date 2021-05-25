@@ -5,7 +5,7 @@ import numpy as np
 import itertools
 from copy import copy
 
-from ..VarOperator import VarOperator, VOFailed
+from .VarOperator import VarOperator, VOFailed
 from ..Atomistic.calcDefaultVolume import calcVolumeForComposition
 
 
