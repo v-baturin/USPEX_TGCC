@@ -1,7 +1,7 @@
 from copy import copy
 from pprint import pformat
 
-from .IO.RawParser import parse
+from .RawParser import parse
 
 
 def read(filename):
