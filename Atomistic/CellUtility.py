@@ -200,6 +200,7 @@ class Cell:
 
     @staticmethod
     def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):
+        alpha, beta, gamma = np.pi / 180 * np.asarray((alpha, beta, gamma), dtype=float)
         va = np.array([a, 0, 0])
         vb = np.array([b*np.cos(gamma), b*np.sin(gamma), 0])
         cx = np.cos(beta)
