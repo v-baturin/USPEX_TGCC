@@ -26,7 +26,8 @@ def compileParams(main: dict, **definitions) -> dict:
             stages[i]['tag'] = str(i+1)
 
     if 'optimizer' in main and 'target' in main['optimizer']:
-        target = main['optimizer']['target']
+        optimizer = main['optimizer']
+        target = optimizer['target']
         assert 'compositionSpace' in target
         assert 'symbols' in target['compositionSpace']
         symbols = target['compositionSpace']['symbols']
@@ -49,6 +50,8 @@ def compileParams(main: dict, **definitions) -> dict:
                 target['conditions']['volumeType'] = 0.5
             else:
                 target['conditions']['volumeType'] = 0
+        if 'fingerprintUtility' not in optimizer:
+            optimizer['fingerprintUtility'] = 'radialDistributionUtility'
 
         if 'powderSpectrumAnalyzer' in target:
             filename = target['powderSpectrumAnalyzer']
