@@ -23,10 +23,10 @@ class Output_Test(unittest.TestCase):
                                       'cellUtility': {'pbc': (1,1,1)}
                                       },
                            'fingerprintUtility': 'radialDistributionUtility',
-                           'fitness': 'enthalpy',
+                           'optType': 'enthalpy',
                            'stopFitness': -655.062,
                            'selection': {'type': 'USPEXClassic', 'popSize': 10,
-                                         'fitness': ('getAntiseedsCorrections', 'enthalpy'),
+                                         'optType': ('aging', 'enthalpy'),
                                          'fractions': {'heredity': [0.0, 1.0, 0.5],
                                                        'twinning': [0.0, 1.0, 0.1],
                                                        'softmodemutation': [0.0, 1.0, 0.1],
@@ -79,7 +79,7 @@ class Output_Test(unittest.TestCase):
             with open(os.path.join(TESTPATH, f"output_data/population{gen}"), "r") as f:
                 populations.append([systems[ID][-1] for ID in json.load(f)])
 
-        representation = OutputRepresentation(name=folder_name, optimizer=optimizerConfig,
+        representation = OutputRepresentation(name=folder_name, optimizer=optimizer,
                                               stages=[None]*numStages, numParallelCalcs=numParallelCalcs,
                                               path=os.path.join(TESTPATH, folder_name),
                                               output=output)

@@ -3,7 +3,7 @@
         'type': 'GlobalOptimizer',
         'target': {
             'type': 'Crystal',
-            'config': {'externalPressure': 100},
+            'conditions': {'externalPressure': 100},
             'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                  'blocks': [[4, 8, 16]]}
         },
@@ -12,7 +12,7 @@
         'selection': {
             'type': 'USPEXClassic',
             'popSize': 10,
-            'fitness': ('aging', 'enthalpy'),
+            'optType': ('aging', 'enthalpy'),
             'fractions': {
                 'heredity': (0.0, 1.0, 0.5),
                 'twinning': (0.0, 1.0, 0.1),
