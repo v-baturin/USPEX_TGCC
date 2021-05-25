@@ -41,7 +41,7 @@ SPECIFIC_COPY_EXCEPTIONS = {
 import os
 
 
-class InputParser(object):
+class InputConverter(object):
 
     def __init__(self, filePath=None, wd = './'):
         assert isinstance(filePath, str) or filePath is None
