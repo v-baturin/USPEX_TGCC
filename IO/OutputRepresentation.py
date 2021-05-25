@@ -3,6 +3,7 @@ import numpy as np
 from copy import copy
 from datetime import datetime
 
+from ..Presets import presetOutput
 from .formatters import createHeader, createHeader_wrap
 
 
@@ -20,19 +21,26 @@ def newResFolderName(path: str) -> str:
 
 
 class OutputRepresentation(object):
-    def __init__(self, optimizer: dict, stages: list, numParallelCalcs: int, path: str = os.getcwd(), output = None, **kwargs):
+    def __init__(self, optimizer, stages: list, numParallelCalcs: int, path: str = os.getcwd(), output = None, **kwargs):
         self.RES_FOLDER = newResFolderName(path)
         self.OUTPUT_FILE = os.path.join(self.RES_FOLDER, 'OUTPUT.txt')
         self.numStages = len(stages)
         self.numParallelCalcs = numParallelCalcs
 
-        if optimizer['type'] == 'GlobalOptimizer':
-            if optimizer['selection']['type'] == 'USPEXClassic':
+        if type(optimizer).__name__ == 'GlobalOptimizer':
+            if type(optimizer.createPopulation).__name__ == 'USPEXClassic':
                 from .USPEXOutput import USPEXClassicRepresentation, getSelectionConfigRepresentation
                 self.presentInfo = USPEXClassicRepresentation(self.RES_FOLDER)
             else:
                 raise RuntimeError('Unknown engine type in output initialization.')
-            if optimizer['target']['type'] == 'Crystal':
+            if optimizer.target.name == 'Crystal':
+                if output is None:
+                    compositionSpace = optimizer.target.utilities.compositionSpace
+                    if compositionSpace.minAt == compositionSpace.maxAt:
+                        output = presetOutput['CrystalFixComp']
+                    else:
+                        output = presetOutput['CrystalVarComp']
+
                 self.columns = output['columns']
                 from .Crystal.CrystalSystemRepresentation import SystemsTable, CrystalSystemRepresentation
                 self.presentSystems = CrystalSystemRepresentation(self.RES_FOLDER, self.numStages, **output)

@@ -55,6 +55,7 @@ class Target(object):
         :type kwargs: dict
         :param kwargs: parameters for initializing config.
         """
+        self.name = type
         targetTypes = self.knownTargetTypes[type]
         # self.systemType = targetTypes.systemType
         # self.config = kwargs['config']

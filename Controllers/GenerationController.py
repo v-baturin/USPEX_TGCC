@@ -138,12 +138,12 @@ class GenerationController(object):
                 controller = pcl.load(f)
             logger.info('Calculation initialized from dump file.')
         else:
-            outputRepresentation = OutputRepresentation(optimizer, stages, numParallelCalcs, **kwargs)
             if optimizer['type'] in GenerationController.knownOptimizers:
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
             else:
                 RuntimeError(f"Unknown optimizer type: {optimizer['type']}.")
             stages = [SHELL_Calculator(**stage) for stage in stages]
+            outputRepresentation = OutputRepresentation(optimizer, stages, numParallelCalcs, **kwargs)
             controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
                                               outputRepresentation)
             logger.info('Calculation initialized from input parameters.')

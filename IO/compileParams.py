@@ -58,10 +58,4 @@ def compileParams(main: dict, **definitions) -> dict:
                         raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
             if molecules:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
-    if 'output' not in main:
-        if np.fromiter((minBlock == maxBlock for minBlock, maxBlock
-                        in main['optimizer']['target']['compositionSpace']['range']), dtype=bool).all():
-            main['output'] = presetOutput['CrystalFixComp']
-        else:
-            main['output'] = presetOutput['CrystalVarComp']
     return main
