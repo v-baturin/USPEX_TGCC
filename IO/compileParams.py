@@ -27,6 +27,29 @@ def compileParams(main: dict, **definitions) -> dict:
 
     if 'optimizer' in main and 'target' in main['optimizer']:
         target = main['optimizer']['target']
+        assert 'compositionSpace' in target
+        assert 'symbols' in target['compositionSpace']
+        symbols = target['compositionSpace']['symbols']
+        molecules = {}
+        for i, symbol in enumerate(symbols):
+            if symbol in definitions:
+                try:
+                    molDct = read_molecule(definitions[symbol]['filename'])
+                    molecules[symbol] = molDct
+                except Exception as ex:
+                    logger.exception(ex)
+                    exc_info = sys.exc_info()
+                    raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
+            if molecules:
+                target['simpleMoleculeUtility'] = {'molecules': molecules}
+        if 'conditions' not in target:
+            target['conditions'] = {}
+        if 'volumeType' not in target['conditions']:
+            if molecules:
+                target['conditions']['volumeType'] = 0.5
+            else:
+                target['conditions']['volumeType'] = 0
+
         if 'powderSpectrumAnalyzer' in target:
             filename = target['powderSpectrumAnalyzer']
             try:
@@ -43,19 +66,5 @@ def compileParams(main: dict, **definitions) -> dict:
                 logger.exception(ex)
                 exc_info = sys.exc_info()
                 raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
-        if 'compositionSpace' in target:
-            assert 'symbols' in target['compositionSpace']
-            symbols = target['compositionSpace']['symbols']
-            molecules = {}
-            for i, symbol in enumerate(symbols):
-                if symbol in definitions:
-                    try: 
-                        molDct = read_molecule(definitions[symbol]['filename'])
-                        molecules[symbol] = molDct
-                    except Exception as ex:
-                        logger.exception(ex)
-                        exc_info = sys.exc_info()
-                        raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
-            if molecules:
-                target['simpleMoleculeUtility'] = {'molecules': molecules}
+
     return main
