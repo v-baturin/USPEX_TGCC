@@ -1,10 +1,11 @@
 import os
-import numpy as np
+from os.path import join as pj
 from copy import copy
 from datetime import datetime
 
 from ..Presets import presetOutput
 from .formatters import createHeader, createHeader_wrap
+from .InputParser import write
 
 
 def newResFolderName(path: str) -> str:
@@ -21,11 +22,13 @@ def newResFolderName(path: str) -> str:
 
 
 class OutputRepresentation(object):
-    def __init__(self, optimizerInstance, stages: list, numParallelCalcs: int, path: str = os.getcwd(), output = None, **kwargs):
+    PARAMETERS_FILENAME = 'parameters.uspex'
+
+    def __init__(self, optimizerInstance, path: str = os.getcwd(), **params):
         self.RES_FOLDER = newResFolderName(path)
         self.OUTPUT_FILE = os.path.join(self.RES_FOLDER, 'OUTPUT.txt')
-        self.numStages = len(stages)
-        self.numParallelCalcs = numParallelCalcs
+        self.numStages = len(params['stages'])
+        self.numParallelCalcs = params['numParallelCalcs']
 
         if type(optimizerInstance).__name__ == 'GlobalOptimizer':
             if type(optimizerInstance.createPopulation).__name__ == 'USPEXClassic':
@@ -34,12 +37,15 @@ class OutputRepresentation(object):
             else:
                 raise RuntimeError('Unknown engine type in output initialization.')
             if optimizerInstance.target.name == 'Crystal':
-                if output is None:
+                if 'output' not in params:
                     compositionSpace = optimizerInstance.target.utilities.compositionSpace
                     if compositionSpace.minAt == compositionSpace.maxAt:
                         output = presetOutput['CrystalFixComp']
                     else:
                         output = presetOutput['CrystalVarComp']
+                    params['output'] = output
+                else:
+                    output = params['output']
 
                 self.columns = output['columns']
                 from .Crystal.CrystalSystemRepresentation import SystemsTable, CrystalSystemRepresentation
@@ -55,6 +61,8 @@ class OutputRepresentation(object):
                 raise RuntimeError('Unknown target type in output initialization.')
         else:
             raise RuntimeError('Unknown optimizer type in output initialization.')
+        os.makedirs(self.RES_FOLDER, exist_ok=True)
+        write(pj(self.RES_FOLDER, self.PARAMETERS_FILENAME), {'main': params})
 
     def presentOutput(self, populations, optimizer, printDate=True):
         os.makedirs(os.path.dirname(self.OUTPUT_FILE), exist_ok=True)

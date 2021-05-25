@@ -12,6 +12,8 @@ class SimpleMoleculeUtility(object):
     atomicDisassemblerType = None
 
     def __init__(self, molecules : dict = None):
+        self.isTrueMolecular = bool(molecules)
+        self.molecules = {el.short_name : self.structureType([el], [[0., 0., 0.]]) for el in self.atomType.all_elements()}
         if molecules is not None:
             for symbol, molDct in list(molecules.items()):
                 atomTypes = [self.atomType(s) for s in molDct['symbols']]
@@ -19,13 +21,7 @@ class SimpleMoleculeUtility(object):
                 molecule = self.structureType(atomTypes, coordinates)
                 offset = Transformation.fromRotVector([0.,0.,0.], -molecule.getCenterOfMassCartesianCoordinates())
                 molecule = offset.transform(molecule)
-                molecules[symbol] = molecule
-        self.molecules = {el.short_name : self.structureType([el], [[0., 0., 0.]]) for el in self.atomType.all_elements()}
-        if molecules is not None:
-            self.molecules.update(molecules)
-            self.isTrueMolecular = True
-        else:
-            self.isTrueMolecular = False
+                self.molecules[symbol] = molecule
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
 
     @classmethod

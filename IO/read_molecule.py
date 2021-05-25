@@ -70,11 +70,8 @@ def read_molecule(filename: str):
         dct = {}
         dct['symbols'] = symbol
         dct['positions'] = temper[:, 1:4].tolist()
-        dct['molecules'] = [list(range(len(symbol)))]
-        dct['molFormats'] = [temper[:, 4:7].astype(int).tolist()]
-        dct['molFlexDihedrals'] = [np.flatnonzero(temper[3:, 7]).astype(int).tolist()]
-        dct['molSymbols'] = [os.path.split(filename)[1]]
-        dct['pbc'] = [False, False, False]
+        dct['configZMatrix'] = temper[:, 4:7].astype(int).tolist()
+        dct['flexDihedrals'] = np.flatnonzero(temper[3:, 7]).astype(int).tolist()
         if 'charge' in name:  # GULP+CHARGE
             dct['charges'] = temper[:, 8].tolist()
         if 'mag' in name:
