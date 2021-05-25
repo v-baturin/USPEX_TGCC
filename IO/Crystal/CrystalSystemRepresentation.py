@@ -53,7 +53,7 @@ class CrystalSystemRepresentation(object):
         self.columns = columns
 
     def __call__(self, systems: dict, optimizer):
-        fitness = optimizer.fitnessConvergence
+        fitness = optimizer.optType
         io_gatheredPOSCARS = io.StringIO('')
         io_gatheredPOSCARS_unrelaxed = io.StringIO('')
         table_Individuals = SystemsTable(self.columns)

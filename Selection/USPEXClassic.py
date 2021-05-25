@@ -30,7 +30,7 @@ class USPEXClassic(object):
 
     '''
 
-    def __init__(self, fingerprintUtility, fitness : List[Tuple[str, str]], popSize : int, fractions : Dict[str, tuple],
+    def __init__(self, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
                  initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False, **kwargs):
         '''
         :param target: reference to configuration space object
@@ -38,7 +38,7 @@ class USPEXClassic(object):
         popSize : int - size of population
         '''
         self.fingerprintUtility = fingerprintUtility
-        self.fitness = fitness
+        self.optType = optType
         self.fractions = fractions
 
         self.popSize = popSize
@@ -73,7 +73,7 @@ class USPEXClassic(object):
         else:
             extendedPopulation = copy(population)
             extendedPopulation.extend(self._mostDiverse)
-            allFitnesses = fitness.getAllFitnesses(self.fitness)
+            allFitnesses = fitness.getAllFitnesses(self.optType)
             sortedPopulation = list(chain.from_iterable(fitness.sort(extendedPopulation, allFitnesses)))
 
             howManyProliferate = int(self.bestFrac * len(sortedPopulation))

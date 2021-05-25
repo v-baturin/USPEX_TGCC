@@ -28,7 +28,7 @@ class GlobalOptimizer(object):
     Fitness = None
     knownSelectionTypes = {}
 
-    def __init__(self, target: dict, selection: dict, fitness, fingerprintUtility, stopFitness=None, stopSystems=None, **kwargs):
+    def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None, **kwargs):
         """
         Initializes the class.
 
@@ -43,7 +43,7 @@ class GlobalOptimizer(object):
 
         assert self.Fitness is not None
         self.fitness = self.Fitness(self.target.pool, self.target.utilities, self.fingerprintUtility)
-        self.fitnessConvergence = fitness
+        self.optType = optType
         self.best = set()
         self._isStable = False
         self.stopFitness = stopFitness
@@ -69,7 +69,7 @@ class GlobalOptimizer(object):
         other.fitness = copy(self.fitness)
         other.fitness.pool = other.target.pool
         other.fitness.utilities = other.target.utilities
-        other.fitnessConvergence = self.fitnessConvergence
+        other.optType = self.optType
         other.best = copy(self.best)
         other._isStable = self._isStable
         other.stopFitness = self.stopFitness
@@ -100,7 +100,7 @@ class GlobalOptimizer(object):
         self.population = population
         self.newStructures = self.target.pool.newFoundSystems(population)
         self.target.pool.update(self.newStructures)
-        allFitnesses = self.fitness.getAllFitnesses(self.fitnessConvergence)
+        allFitnesses = self.fitness.getAllFitnesses(self.optType)
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
                 VO.tune(population, allFitnesses)
@@ -112,10 +112,10 @@ class GlobalOptimizer(object):
             self.best = best
         if self.stopFitness is not None:
             for ID in list(self.best):
-                value = self.fitness.getFitnessByID(self.fitnessConvergence, ID)
+                value = self.fitness.getFitnessByID(self.optType, ID)
                 if value is None:
                     try:
-                        value = self.target.pool.allSystems[ID][self.fitnessConvergence]
+                        value = self.target.pool.allSystems[ID][self.optType]
                     except:
                         pass
                 if round(value, ndigits=3) <= round(self.stopFitness, ndigits=3):

@@ -40,7 +40,7 @@ class CrystalPoolRepresentation(object):
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
-        fitness = optimizer.fitnessConvergence
+        fitness = optimizer.optType
 
         for generation, opt in enumerate(optimizers):
             content_BESTIndividuals += f'Generation {generation}\n'

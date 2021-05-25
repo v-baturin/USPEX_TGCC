@@ -52,6 +52,10 @@ def compileParams(main: dict, **definitions) -> dict:
                 target['conditions']['volumeType'] = 0
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
+        selection = optimizer['selection']
+        assert 'optType' in optimizer
+        if 'optType' not in selection:
+            selection['optType'] = optimizer['optType']
 
         if 'powderSpectrumAnalyzer' in target:
             filename = target['powderSpectrumAnalyzer']
