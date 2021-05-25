@@ -10,7 +10,7 @@ Basic class for variation operators
 
 from typing import Callable
 
-from projects.Common.SystemPool import SystemPool
+from ..SystemPool import SystemPool
 
 MAX_OUTPUT_SIZE = 8
 

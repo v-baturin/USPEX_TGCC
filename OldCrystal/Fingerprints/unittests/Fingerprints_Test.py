@@ -11,7 +11,7 @@ import unittest
 import os
 from ase.io import read
 
-from projects.Common.Crystal.AtomicStructure import AtomicStructure
+from ...AtomicStructure import AtomicStructure
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 

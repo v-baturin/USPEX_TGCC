@@ -1,4 +1,4 @@
-from projects.Common.Crystal.Crystal import Crystal
+from ..Crystal import Crystal
 import os
 
 PREFIX = os.path.dirname(os.path.abspath(__file__))
