@@ -156,7 +156,7 @@ class Fitness(object):
                     dist = self.fingerprintUtility.dist(ref_system, system)
                     self._antiseedsCorrections[system['ID']] += np.exp(-dist**2/(2*sigma**2))
 
-    def getAntiseedsCorrections(self, values: np.ndarray) -> np.ndarray:
+    def aging(self, values: np.ndarray) -> np.ndarray:
         corrections = []
         for system in self.pool.uniqueSystems:
             if system['ID'] in self._antiseedsCorrections:
