@@ -5,9 +5,6 @@ logging.basicConfig(filename='Client.log', format=logFormatter, level=logging.IN
 
 import asyncio
 
-from .components import read, compileParams, GenerationController
+from .components import GenerationController
 
-input = read('input.uspex')
-params = compileParams(**input)
-controller = GenerationController.createController(**params)
-asyncio.get_event_loop().run_until_complete(controller.run())
+asyncio.get_event_loop().run_until_complete(GenerationController.createController().run())

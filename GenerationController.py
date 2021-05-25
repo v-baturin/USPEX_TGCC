@@ -12,6 +12,8 @@ from enum import Enum
 from .Calculators.LifeState import LifeState
 from .Calculators.Common.SHELL_Calculator import SHELL_Calculator, ReferenceMismatch
 from .IO.OutputRepresentation import OutputRepresentation
+from .IO.InputParser import read
+from .IO.compileParams import compileParams
 
 
 class ControllerState(Enum):
@@ -23,8 +25,9 @@ class ControllerState(Enum):
 
 class GenerationController(object):
 
-    FILENAME = "controller.dump"
-    FILENAME_BACKUP = "controller.dump.back"
+    INPUT_FILENAME = 'input.uspex'
+    DUMP_FILENAME = "controller.dump"
+    DUMP_FILENAME_BACKUP = "controller.dump.back"
     knownOptimizers = {}
 
     def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages : list,
@@ -85,6 +88,9 @@ class GenerationController(object):
                     self.numberStableGenerations = 0
                 self.state = ControllerState.createPopulation
                 self.save()
+        with open('USPEX_IS_DONE', 'wt') as f:
+            f.write('')
+        logger.info('Calculation finished.')
 
     async def life(self, state, system, sem):
         await sem.acquire()
@@ -126,27 +132,37 @@ class GenerationController(object):
             self.outputRepresentation.presentSystems(self.systems, self.optimizer)
 
     def save(self):
-        if os.path.exists(GenerationController.FILENAME):
-            copyfile(GenerationController.FILENAME, GenerationController.FILENAME_BACKUP)
-        with open(GenerationController.FILENAME, 'wb') as f:
+        if os.path.exists(GenerationController.DUMP_FILENAME):
+            copyfile(GenerationController.DUMP_FILENAME, GenerationController.DUMP_FILENAME_BACKUP)
+        with open(GenerationController.DUMP_FILENAME, 'wb') as f:
             pcl.dump(self, f)
 
     @staticmethod
-    def createController(optimizer: dict, stages: list, numParallelCalcs: int, numGenerations: int, stopCrit: int, **kwargs):
-        if os.path.exists(GenerationController.FILENAME):
-            with open(GenerationController.FILENAME, 'rb') as f:
+    def createController():
+        if os.path.exists(GenerationController.DUMP_FILENAME):
+            with open(GenerationController.DUMP_FILENAME, 'rb') as f:
                 controller = pcl.load(f)
             logger.info('Calculation initialized from dump file.')
-        else:
+        elif os.path.exists(GenerationController.INPUT_FILENAME):
+            input = read(GenerationController.INPUT_FILENAME)
+            params = compileParams(**input)
+            optimizer = params['optimizer']
+            stages = params['stages']
+            numParallelCalcs = params['numParallelCalcs']
+            numGenerations = params['numGenerations']
+            stopCrit = params['stopCrit']
+
             if optimizer['type'] in GenerationController.knownOptimizers:
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
             else:
                 RuntimeError(f"Unknown optimizer type: {optimizer['type']}.")
             stages = [SHELL_Calculator(**stage) for stage in stages]
-            outputRepresentation = OutputRepresentation(optimizer, stages, numParallelCalcs, **kwargs)
+            outputRepresentation = OutputRepresentation(optimizer, **params)
             controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
                                               outputRepresentation)
             logger.info('Calculation initialized from input parameters.')
+        else:
+            raise RuntimeError('No input or dump file to start.')
         return controller
 
     @staticmethod

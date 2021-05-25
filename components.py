@@ -42,6 +42,3 @@ from .Calculators.GULP_Interface import GULP_Interface
 GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
 Seeds.registerTypes(CrystalSystemRepresentation)
-
-from .IO.InputParser import read
-from .IO.compileParams import compileParams

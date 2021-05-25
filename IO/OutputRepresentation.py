@@ -21,21 +21,21 @@ def newResFolderName(path: str) -> str:
 
 
 class OutputRepresentation(object):
-    def __init__(self, optimizer, stages: list, numParallelCalcs: int, path: str = os.getcwd(), output = None, **kwargs):
+    def __init__(self, optimizerInstance, stages: list, numParallelCalcs: int, path: str = os.getcwd(), output = None, **kwargs):
         self.RES_FOLDER = newResFolderName(path)
         self.OUTPUT_FILE = os.path.join(self.RES_FOLDER, 'OUTPUT.txt')
         self.numStages = len(stages)
         self.numParallelCalcs = numParallelCalcs
 
-        if type(optimizer).__name__ == 'GlobalOptimizer':
-            if type(optimizer.createPopulation).__name__ == 'USPEXClassic':
+        if type(optimizerInstance).__name__ == 'GlobalOptimizer':
+            if type(optimizerInstance.createPopulation).__name__ == 'USPEXClassic':
                 from .USPEXOutput import USPEXClassicRepresentation, getSelectionConfigRepresentation
                 self.presentInfo = USPEXClassicRepresentation(self.RES_FOLDER)
             else:
                 raise RuntimeError('Unknown engine type in output initialization.')
-            if optimizer.target.name == 'Crystal':
+            if optimizerInstance.target.name == 'Crystal':
                 if output is None:
-                    compositionSpace = optimizer.target.utilities.compositionSpace
+                    compositionSpace = optimizerInstance.target.utilities.compositionSpace
                     if compositionSpace.minAt == compositionSpace.maxAt:
                         output = presetOutput['CrystalFixComp']
                     else:

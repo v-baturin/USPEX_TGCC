@@ -79,7 +79,7 @@ class Output_Test(unittest.TestCase):
             with open(os.path.join(TESTPATH, f"output_data/population{gen}"), "r") as f:
                 populations.append([systems[ID][-1] for ID in json.load(f)])
 
-        representation = OutputRepresentation(name=folder_name, optimizer=optimizer,
+        representation = OutputRepresentation(optimizer, optimizer=optimizerConfig,
                                               stages=[None]*numStages, numParallelCalcs=numParallelCalcs,
                                               path=os.path.join(TESTPATH, folder_name),
                                               output=output)
