@@ -50,8 +50,9 @@ class OutputRepresentation(object):
 
         if type(optimizerInstance).__name__ == 'GlobalOptimizer':
             if type(optimizerInstance.createPopulation).__name__ == 'USPEXClassic':
-                from .USPEXOutput import USPEXClassicRepresentation, getSelectionConfigRepresentation
+                from .USPEXOutput import USPEXClassicRepresentation, getSelectionConfigRepresentation, getPopulationCreationBlock
                 self.presentInfo = USPEXClassicRepresentation(self.RES_FOLDER)
+                self.getPopulationCreationBlock = getPopulationCreationBlock
             else:
                 raise RuntimeError('Unknown engine type in output initialization.')
             if optimizerInstance.target.name == 'Crystal':
@@ -66,11 +67,12 @@ class OutputRepresentation(object):
                     output = params['output']
 
                 self.columns = output['columns']
-                from .Crystal.CrystalSystemRepresentation import SystemsTable, CrystalSystemRepresentation
+                from .Crystal.CrystalSystemRepresentation import SystemsTable, CrystalSystemRepresentation, getPopulationSummaryBlock
                 self.presentSystems = CrystalSystemRepresentation(self.RES_FOLDER, self.numStages, **output)
                 from .Crystal.CrystalConfigRepresentation import getTargetConfigRepresentation
                 from .Crystal.CrystalPoolRepresentation import CrystalPoolRepresentation
                 self.presentOptimizer = CrystalPoolRepresentation(self.RES_FOLDER, **output)
+                self.getPopulationSummaryBlock = getPopulationSummaryBlock
 
                 self.SystemsTable = SystemsTable
                 self.getTargetConfigRepresentation = getTargetConfigRepresentation
@@ -111,7 +113,7 @@ class OutputRepresentation(object):
         formatted_rows = createHeader_wrap(['Block for generations controller'], 'center')
         formatted_rows.append('')
         formatted_rows.append(f'    Number of Generations  :    {self.numGenerations}')
-        formatted_rows.append(f'    Halting criteria  :    {self.stopCrit}')
+        formatted_rows.append(f'    Halting criteria       :    {self.stopCrit}')
         formatted_rows.append('')
 
         header += formatted_rows
@@ -133,16 +135,22 @@ class OutputRepresentation(object):
         header.append(row)
 
         output = header
-        # ---------------------------------------------------------------------------
-        # Write everything to the file:
+
+        header += createHeader_wrap(['Generations block'], 'center')
 
         for generation, population in enumerate(populations):
             output.append(' Generation {0:4d}'.format(generation))
+            output += self.getPopulationCreationBlock(population)
+            output.append('    Optimization results')
             table = self.SystemsTable(self.columns)
             for system in population:
                 table.update(system['ID'], system, optimizer.fitness)
             output.append(table.table.get_string())
+            output += self.getPopulationSummaryBlock(population, optimizer)
+            header.append('')
 
+        # ---------------------------------------------------------------------------
+        # Write everything to the file:
         with open(self.OUTPUT_FILE, 'w') as f:
             for i in output:
                 f.write(i + '\n')

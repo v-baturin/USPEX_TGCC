@@ -183,7 +183,7 @@ class USPEXClassic(object):
             seeds = target.seeds()
             for seed in seeds:
                 target.pool.assignID(seed)
-                seed['howCome'] = type(target.seeds).__name__
+                seed['howCome'] = 'Seeds'
                 seed['parent'] = "None"
                 logger.info(f"Structure {seed['ID']} created from seed {seed['filename']}.")
             population.extend(seeds)

@@ -55,7 +55,7 @@ def getTargetConfigRepresentation(target) -> list:
     symbols = set()
     for symbol in target.utilities.compositionSpace.symbols:
         symbols.update(target.utilities.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
-    symbols = list(symbols)
+    symbols = sorted(symbols)
     minDistMatrix = target.utilities.ionDistances.getDistances(symbols, target.utilities.conditions)
 
     row = '    There are %1d types of atoms in the system:' % len(symbols)

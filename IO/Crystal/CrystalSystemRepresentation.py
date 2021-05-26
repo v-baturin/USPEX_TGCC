@@ -4,6 +4,7 @@ import shutil
 import matplotlib
 import numpy as np
 
+from itertools import combinations
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
 from os.path import join as pj
@@ -124,3 +125,28 @@ class CrystalSystemRepresentation(object):
         cls.atomType = atomType
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
+
+
+def getPopulationSummaryBlock(population, optimizer) -> list:
+    volumes = [optimizer.fitness.getFitnessByID('cellUtility.volume', system['ID'])for system in population]
+    approximateVolume = sum(volumes)/len(volumes)
+    fitness = [optimizer.fitness.getFitnessByID(optimizer.optType, system['ID'])for system in population]
+    order = [optimizer.target.utilities.radialDistributionUtility.averageOrder(system) for system in population]
+    correlation = np.corrcoef(order, fitness)[0, 1]
+    if np.isnan(correlation):
+        correlation = 0
+
+    qe = 0
+    comb = list(combinations(population, 2))
+    for s1, s2 in comb:
+        tmp_fing1 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s1)
+        tmp_fing2 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s2)
+        dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
+        qe += (1 - dist) * np.log(1 - dist)
+    qe /= -len(comb)/2
+
+    block = [ '    Generation Summary',
+             f'      Correlation coefficient: {correlation:.4}',
+             f'      Approximate volume(s)  : {approximateVolume:.4} A^3',
+             f'      Quasi entropy          : {qe:.4}']
+    return block

@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from collections import Counter
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -20,6 +21,20 @@ def getSelectionConfigRepresentation(selection) -> list:
     header.append('')
 
     return header
+
+def getPopulationCreationBlock(population) -> list:
+    amounts = Counter()
+    for system in population:
+        amounts[system['howCome']] += 1
+    seedsAmount = amounts['Seeds']
+    del amounts['Seeds']
+    total = sum(amounts.values())
+
+    block = [   '    Variation Operators',
+             *(f'      {howCome} amount and fraction:    {amount:4}, {amount/total:4.2}' for howCome, amount in amounts.items()),
+               f'      Seeds amount:    {seedsAmount}'
+    ]
+    return block
 
 
 class USPEXClassicRepresentation(object):
