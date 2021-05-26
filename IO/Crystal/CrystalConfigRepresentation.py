@@ -21,10 +21,10 @@ Rev. Mineral. Geochem. 71, 271-298
 '''
 
 
-def getTargetConfigRepresentation(config) -> list:
+def getTargetConfigRepresentation(target) -> list:
     header = []
-    isMolSystem = any('MOL' in symbol for symbol in ['symbols'])
-    isVarComp = len(config.blocks) > 1
+    isMolSystem = target.utilities.simpleMoleculeUtility.isTrueMolecular
+    isVarComp = not target.utilities.compositionSpace.isFixedComposition
 
     if isMolSystem:
         header += createHeader_wrap(['Molecular Crystals:'], 'center')
@@ -52,7 +52,12 @@ def getTargetConfigRepresentation(config) -> list:
     formatted_rows = createHeader_wrap(text, 'center')
     formatted_rows.append('')
 
-    symbols = config.chemicalSymbols
+    symbols = set()
+    for symbol in target.utilities.compositionSpace.symbols:
+        symbols.update(target.utilities.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
+    symbols = list(symbols)
+    minDistMatrix = target.utilities.ionDistances.getDistances(symbols, target.utilities.conditions)
+
     row = '    There are %1d types of atoms in the system:' % len(symbols)
     for symbol in symbols:
         row += '%5s' % symbol
@@ -61,20 +66,20 @@ def getTargetConfigRepresentation(config) -> list:
     for i, symbol in enumerate(symbols):
         row += '    Minimum distances:                 %5s: ' % symbol
         for j in range(len(symbols)):
-            row += '%4.2f  ' % config.minDistMatrice[i, j]
+            row += '%4.2f  ' % minDistMatrix[i, j]
         row += '\n'
     row += '\n'
 
-    for i, symbol in enumerate(symbols):
-        row += '           Good Bonds:                 %5s: ' % symbol
-        for j in range(len(symbols)):
-            row += '%4.2f  ' % config.goodBonds[i, j]
+    for symbol1 in symbols:
+        row += '           Good Bonds:                 %5s: ' % symbol1
+        for symbol2 in symbols:
+            row += '%4.2f  ' % (symbol1.good_bonds*symbol2.good_bonds) ** 0.5
         row += '\n'
     row += '\n'
 
     row += '             Valences:                        '
-    for valence in config.valences:
-        row += '%4.2f  ' % valence
+    for symbol in symbols:
+        row += '%4.2f  ' % symbol.valence
     row += '\n'
 
     formatted_rows.append(row)
@@ -101,12 +106,10 @@ def getTargetConfigRepresentation(config) -> list:
 
     # ---------------------------------------------------------------------------
 
-    text = ['Ab initio calculations']
-    formatted_rows = createHeader_wrap(text, 'center')
+    formatted_rows = createHeader_wrap(['Conditions'], 'center')
     formatted_rows.append('')
-    if config.externalPressure > 0:
-        row = '* External Pressure is: %6.4f GPa *' % config.externalPressure
-        formatted_rows.append(row)
+    if target.utilities.conditions.externalPressure > 0:
+        formatted_rows.append('* External Pressure is: %6.4f GPa *' % target.utilities.conditions.externalPressure)
 
     header += formatted_rows
 

@@ -52,6 +52,7 @@ class GenerationController(object):
         self.save()
 
     async def run(self):
+        self.outputRepresentation.presentOutput(self.populations, self.optimizer)
         while (self.generation < self.numGenerations and
                self.numberStableGenerations < self.stopCrit and
                not self.optimizer.isGoalReached):

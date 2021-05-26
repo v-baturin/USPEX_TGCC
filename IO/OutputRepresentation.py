@@ -8,6 +8,22 @@ from .formatters import createHeader, createHeader_wrap
 from .InputParser import write
 
 
+GENERAL_PAPERS = '''\
+Oganov A.R., Glass C.W. (2006)
+Crystal structure prediction using evolutionary algorithms:
+principles and applications.
+J. Chem. Phys. 124, 244704
+
+Oganov A.R., Stokes H., Valle M. (2011)
+How evolutionary crystal structure prediction works - and why.
+Acc. Chem. Res. 44, 227-237
+
+Lyakhov A.O., Oganov A.R., Stokes H., Zhu Q. (2013)
+New developments in evolutionary structure prediction algorithm USPEX.
+Comp. Phys. Comm., 184, 1172-1182\
+'''
+
+
 def newResFolderName(path: str) -> str:
     toCreate = True
     folderNum = 0
@@ -29,6 +45,8 @@ class OutputRepresentation(object):
         self.OUTPUT_FILE = os.path.join(self.RES_FOLDER, 'OUTPUT.txt')
         self.numStages = len(params['stages'])
         self.numParallelCalcs = params['numParallelCalcs']
+        self.numGenerations = params['numGenerations']
+        self.stopCrit = params['stopCrit']
 
         if type(optimizerInstance).__name__ == 'GlobalOptimizer':
             if type(optimizerInstance.createPopulation).__name__ == 'USPEXClassic':
@@ -67,16 +85,41 @@ class OutputRepresentation(object):
     def presentOutput(self, populations, optimizer, printDate=True):
         os.makedirs(os.path.dirname(self.OUTPUT_FILE), exist_ok=True)
 
-        header = []
+        # Print the header to the log so it's clear that we execute USPEX:
+        header = createHeader('Evolutionary Algorithm Code for Structure Prediction')
+
         # Date:
         if printDate:
-            formatted_rows = createHeader_wrap(['Job started at ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-                                               'center')
-            formatted_rows.append('')
-            header += formatted_rows
+            header += createHeader_wrap([f'Job started at {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'], 'center')
+            header.append('')
 
-        # header += self.getSelectionConfigRepresentation(selectionConfig)
-        # header += self.getTargetConfigRepresentation(targetConfig)
+        # Cite:
+        text = [
+            'Please cite the following suggested papers',
+            'when you publish the results obtained from USPEX:',
+        ]
+        formatted_rows = createHeader_wrap(text)
+        header += formatted_rows
+
+        text = GENERAL_PAPERS.split('\n')
+
+        for i in range(len(text)):
+            text[i] = text[i].rstrip()
+        formatted_rows = createHeader_wrap(text, 'left')
+        header += formatted_rows
+
+        formatted_rows = createHeader_wrap(['Block for generations controller'], 'center')
+        formatted_rows.append('')
+        formatted_rows.append(f'    Number of Generations  :    {self.numGenerations}')
+        formatted_rows.append(f'    Halting criteria  :    {self.stopCrit}')
+        formatted_rows.append('')
+
+        header += formatted_rows
+
+        header += self.getSelectionConfigRepresentation(optimizer.createPopulation)
+        header += self.getTargetConfigRepresentation(optimizer.target)
+
+        header += createHeader_wrap(['Ab initio calculations'], 'center')
 
         row = ''
         row += '* There are %d local relaxation steps for each individual structure: *\n' % self.numStages
