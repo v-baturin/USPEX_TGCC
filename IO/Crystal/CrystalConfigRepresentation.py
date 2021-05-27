@@ -1,3 +1,5 @@
+import numpy as np
+from collections import Counter
 from .formatters import createHeader_wrap
 
 
@@ -23,15 +25,16 @@ Rev. Mineral. Geochem. 71, 271-298
 
 def getTargetConfigRepresentation(target) -> list:
     header = []
-    isMolSystem = target.utilities.simpleMoleculeUtility.isTrueMolecular
-    isVarComp = not target.utilities.compositionSpace.isFixedComposition
+    ut = target.utilities
+    isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
+    isVarComp = not ut.compositionSpace.isFixedComposition
 
     if isMolSystem:
-        header += createHeader_wrap(['Molecular Crystals:'], 'center')
+        header += createHeader_wrap(['Molecular Crystals suggested papers:'], 'center')
         header += createHeader_wrap(MOL_CRYSTALS_PAPERS, 'left')
 
     if isVarComp:
-        header += createHeader_wrap(['Variable Composition:'], 'center')
+        header += createHeader_wrap(['Variable Composition suggested papers:'], 'center')
         header += createHeader_wrap(VARCOMP_PAPERS.split('\n'), 'left')
 
     # ---------------------------------------------------------------------------
@@ -48,15 +51,55 @@ def getTargetConfigRepresentation(target) -> list:
 
     # ---------------------------------------------------------------------------
 
+    compositionSpace = ut.compositionSpace
+    rows = ['    The investigated system is (block -- range): ']
+    symbols = compositionSpace.symbols
+    for block, rng in zip(compositionSpace.blocks, compositionSpace.range):
+        rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {rng}')
+    rows.append('')
+    header += rows
+
+
+    # ---------------------------------------------------------------------------
+
+    # TODO: write information about molecules
+
+    # ---------------------------------------------------------------------------
+
+    try:
+        cell = ut.cellUtility.getCell()
+    except:
+        cell = None
+
+    if cell is not None:
+        lattice = cell.getCellVectors()
+        rows = ['    This is a fixed lattice calculation ',
+                f'        {lattice[0, 0]:.4}   {lattice[0, 1]:.4}    {lattice[0, 2]:.4}',
+                f'        {lattice[1, 0]:.4}   {lattice[1, 1]:.4}    {lattice[1, 2]:.4}',
+                f'        {lattice[2, 0]:.4}   {lattice[2, 1]:.4}    {lattice[2, 2]:.4}']
+    else:
+        rows = ['    Volume (estimated) for blocks :']
+        for block in compositionSpace.blocks:
+            comp = Counter()
+            for s, b in zip(symbols, block):
+                comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
+            volume = ut.cellUtility.getCellVolume(comp, ut.conditions)
+            rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4}')
+
+    rows.append('')
+    header += rows
+
+    # ---------------------------------------------------------------------------
+
     text = ['Block for atomic description']
     formatted_rows = createHeader_wrap(text, 'center')
     formatted_rows.append('')
 
     symbols = set()
-    for symbol in target.utilities.compositionSpace.symbols:
-        symbols.update(target.utilities.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
+    for symbol in ut.compositionSpace.symbols:
+        symbols.update(ut.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
     symbols = sorted(symbols)
-    minDistMatrix = target.utilities.ionDistances.getDistances(symbols, target.utilities.conditions)
+    minDistMatrix = ut.ionDistances.getDistances(symbols, ut.conditions)
 
     row = '    There are %1d types of atoms in the system:' % len(symbols)
     for symbol in symbols:
@@ -87,29 +130,11 @@ def getTargetConfigRepresentation(target) -> list:
 
     # ---------------------------------------------------------------------------
 
-    # TODO: write information about molecules
-
-    # ---------------------------------------------------------------------------
-
-    row = '    The investigated system is: '
-    # TODO write information about composition space
-
-    row += '\n'
-    header += [row]
-
-    # ---------------------------------------------------------------------------
-
-    row = ''
-    # TODO write information about lattice parameters
-
-    header += [row]
-
-    # ---------------------------------------------------------------------------
-
     formatted_rows = createHeader_wrap(['Conditions'], 'center')
     formatted_rows.append('')
-    if target.utilities.conditions.externalPressure > 0:
-        formatted_rows.append('* External Pressure is: %6.4f GPa *' % target.utilities.conditions.externalPressure)
+    if ut.conditions.externalPressure > 0:
+        formatted_rows.append('* External Pressure is: %6.4f GPa *' % ut.conditions.externalPressure)
+    formatted_rows.append('')
 
     header += formatted_rows
 

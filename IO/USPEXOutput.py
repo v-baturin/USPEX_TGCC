@@ -30,9 +30,9 @@ def getPopulationCreationBlock(population) -> list:
     del amounts['Seeds']
     total = sum(amounts.values())
 
-    block = [   '    Variation Operators',
-             *(f'      {howCome} amount and fraction:    {amount:4}, {amount/total:4.2}' for howCome, amount in amounts.items()),
-               f'      Seeds amount:    {seedsAmount}'
+    block = [   '    Variation Operators (amount and fraction)',
+             *(f'      {howCome:20}:    {amount:4}, {amount/total:4.2}' for howCome, amount in amounts.items()),
+               f'      Seeds               :    {seedsAmount:4}'
     ]
     return block
 

@@ -53,6 +53,11 @@ class CellUtility:
         else:
             logger.setLevel(logging.INFO)
 
+    def getCell(self):
+        if self._cell is not None:
+            return  self._cell
+        else:
+            raise RuntimeError('Cell is not fixed.')
 
     def getCellVolume(self, composition, conditions):
         return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
