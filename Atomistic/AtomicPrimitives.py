@@ -21,6 +21,9 @@ class AtomicStructure:
     def getAtomTypes(self):
         return copy(self.atomTypes)
 
+    def getZmatrixConfig(self):
+        return self.zmatrixConfig
+
     def getComposition(self):
         return Counter(dict(zip(*np.unique(self.atomTypes, return_counts=True))))
 

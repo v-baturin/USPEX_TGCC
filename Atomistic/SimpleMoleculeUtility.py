@@ -18,7 +18,8 @@ class SimpleMoleculeUtility(object):
             for symbol, molDct in list(molecules.items()):
                 atomTypes = [self.atomType(s) for s in molDct['symbols']]
                 coordinates = molDct['positions']
-                molecule = self.structureType(atomTypes, coordinates)
+                zmatrixConfig = molDct['configZMatrix']
+                molecule = self.structureType(atomTypes, coordinates, zmatrixConfig=zmatrixConfig)
                 offset = Transformation.fromRotVector([0.,0.,0.], -molecule.getCenterOfMassCartesianCoordinates())
                 molecule = offset.transform(molecule)
                 self.molecules[symbol] = molecule

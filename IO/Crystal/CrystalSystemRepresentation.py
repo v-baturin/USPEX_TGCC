@@ -120,6 +120,18 @@ class CrystalSystemRepresentation(object):
         return disassembler.disassemble(cls.structureType(atomTypes, atoms.get_positions(), cell = cell))
 
     @classmethod
+    def getZmatrixRepresentation(cls, molecule, utility) -> str:
+        elements = molecule.getAtomTypes()
+        coordinates = molecule.getCartesianCoordinates()
+        zmatrixConfig = molecule.getZmatrixConfig()
+        zmatrix = utility.coordToZmatrix(coordinates, zmatrixConfig)
+        repr = ['Atom Bond-length Bond-angle Torsion-angle   i   j   k',
+                '      (Angstrom)  (Degree)    (Degree)',
+             *(f'{el.short_name:2}    {zrow[0]:8.4}    {zrow[1]*180/np.pi:8.4}    {zrow[2]*180/np.pi:8.4}    {fmt[0]:3} {fmt[1]:3} {fmt[2]:3}'
+               for el, zrow, fmt in zip(elements, zmatrix, zmatrixConfig))]
+        return '\n'.join(repr)
+
+    @classmethod
     def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
         cls.structureType = structureType
         cls.atomType = atomType

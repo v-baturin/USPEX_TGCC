@@ -1,13 +1,14 @@
 import numpy as np
 from collections import Counter
 from .formatters import createHeader_wrap
+from ...components import CrystalSystemRepresentation
 
 
 MOL_CRYSTALS_PAPERS = '''\
-'Zhu Q., Oganov A.R., Glass C.W., Stokes H. (2012)',
-'Constrained evolutionary algorithm for structure prediction of',
-'molecular crystals: methodology and applications.',
-'Acta Cryst. B, 68, 215-226', \
+Zhu Q., Oganov A.R., Glass C.W., Stokes H. (2012)
+Constrained evolutionary algorithm for structure prediction of
+molecular crystals: methodology and applications.
+Acta Cryst. B, 68, 215-226 \
 '''
 
 VARCOMP_PAPERS = '''\
@@ -19,7 +20,7 @@ Berlin: Wiley-VCH
 Oganov A.R., Ma Y., Lyakhov A.O., Valle M., Gatti C. (2010)
 Evolutionary crystal structure prediction as a method
 for the discovery of minerals and materials.
-Rev. Mineral. Geochem. 71, 271-298
+Rev. Mineral. Geochem. 71, 271-298\
 '''
 
 
@@ -28,14 +29,6 @@ def getTargetConfigRepresentation(target) -> list:
     ut = target.utilities
     isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
     isVarComp = not ut.compositionSpace.isFixedComposition
-
-    if isMolSystem:
-        header += createHeader_wrap(['Molecular Crystals suggested papers:'], 'center')
-        header += createHeader_wrap(MOL_CRYSTALS_PAPERS, 'left')
-
-    if isVarComp:
-        header += createHeader_wrap(['Variable Composition suggested papers:'], 'center')
-        header += createHeader_wrap(VARCOMP_PAPERS.split('\n'), 'left')
 
     # ---------------------------------------------------------------------------
 
@@ -49,8 +42,6 @@ def getTargetConfigRepresentation(target) -> list:
     formatted_rows.append(row)
     header += formatted_rows
 
-    # ---------------------------------------------------------------------------
-
     compositionSpace = ut.compositionSpace
     rows = ['    The investigated system is (block -- range): ']
     symbols = compositionSpace.symbols
@@ -58,13 +49,6 @@ def getTargetConfigRepresentation(target) -> list:
         rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {rng}')
     rows.append('')
     header += rows
-
-
-    # ---------------------------------------------------------------------------
-
-    # TODO: write information about molecules
-
-    # ---------------------------------------------------------------------------
 
     try:
         cell = ut.cellUtility.getCell()
@@ -84,10 +68,40 @@ def getTargetConfigRepresentation(target) -> list:
             for s, b in zip(symbols, block):
                 comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
             volume = ut.cellUtility.getCellVolume(comp, ut.conditions)
-            rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4}')
+            rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
 
     rows.append('')
     header += rows
+
+    # ---------------------------------------------------------------------------
+
+    if isMolSystem:
+        molecules = []
+        molSymbols = []
+        for symbol in symbols:
+            molecule = ut.simpleMoleculeUtility.molecules[symbol]
+            if len(molecule) > 1:
+                molecules.append(molecule)
+                molSymbols.append(symbol)
+        rows = [f'    There is(are) {len(molecules)} type(s) of molecules in the system: ',
+              *(f'        <{symbol}> -- {mol.getFormula()}' for symbol, mol in zip(molSymbols, molecules)),
+                 '    Please see the MOL_* files for the details.',
+                 '']
+        for symbol, molecule in zip(molSymbols, molecules):
+            rows += [f'    The calculated Zmatrix for {symbol} is:',
+                     CrystalSystemRepresentation.getZmatrixRepresentation(molecule, ut.simpleMoleculeUtility),
+                     '']
+        header += rows
+
+    # ---------------------------------------------------------------------------
+
+    if isMolSystem:
+        header += createHeader_wrap(['Molecular Crystals suggested papers:'], 'center')
+        header += createHeader_wrap([text.rstrip() for text in MOL_CRYSTALS_PAPERS.split('\n')], 'left')
+
+    if isVarComp:
+        header += createHeader_wrap(['Variable Composition suggested papers:'], 'center')
+        header += createHeader_wrap([text.rstrip() for text in VARCOMP_PAPERS.split('\n')], 'left')
 
     # ---------------------------------------------------------------------------
 
