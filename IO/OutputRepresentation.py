@@ -137,5 +137,7 @@ class OutputRepresentation(object):
             for i in output:
                 f.write(i + '\n')
 
+        if populations:
+            self.selectionRepresentation.presentFractions(populations)
         if optimizers:
             self.targetRepresentation.presentOptimizer(optimizers, optimizer)

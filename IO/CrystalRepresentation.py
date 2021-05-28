@@ -122,23 +122,25 @@ class CrystalRepresentation(object):
             f.write(content_origin)
         with open(os.path.join(self.RES_FOLDER, 'enthalpies_complete.csv'), 'w') as f:
             f.write(content_enthalpies)
+        self.drawESeries(systems, numStages)
 
     def drawESeries(self, systems, numStages):
         enths = []
         for system_stages in systems.values():
             if len(system_stages) == numStages + 1:
                 enths.append([system['enthalpy'] for system in system_stages[1:]])
-        enths = np.asarray(enths, dtype=float)
-        plt.clf()
-        Nplots = enths.shape[1] - 1
-        Nrows = np.ceil(np.sqrt(Nplots)).astype(int)
-        Ncolumns = np.ceil(Nplots/Nrows).astype(int)
-        for i in range(Nplots):
-            plt.subplot(Nrows, Ncolumns, i+1)
-            plt.plot(enths[:, i], enths[:, i+1], 'go')
-            plt.ylabel(f'E{i+2}')
-            plt.xlabel(f'E{i+1}')
-        plt.savefig(pj(self.RES_FOLDER, 'E_series.svg'))
+        if enths:
+            enths = np.asarray(enths, dtype=float)
+            plt.clf()
+            Nplots = enths.shape[1] - 1
+            Nrows = np.ceil(np.sqrt(Nplots)).astype(int)
+            Ncolumns = np.ceil(Nplots/Nrows).astype(int)
+            for i in range(Nplots):
+                plt.subplot(Nrows, Ncolumns, i+1)
+                plt.plot(enths[:, i], enths[:, i+1], 'go')
+                plt.ylabel(f'E{i+2}')
+                plt.xlabel(f'E{i+1}')
+            plt.savefig(pj(self.RES_FOLDER, 'E_series.svg'))
 
 
     @classmethod

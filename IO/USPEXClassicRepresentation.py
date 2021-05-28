@@ -12,23 +12,19 @@ class USPEXClassicRepresentation(object):
     def __init__(self, RES_FOLDER : str, **params):
         self.RES_FOLDER  = RES_FOLDER
 
-    def drawFractions(self, info):
-        operatorsFracs = {}
-        for analysis in info:
-            weightsLast, weightsBest = analysis[0]
-            weightsSum = np.sum(np.fromiter(weightsLast.values(), dtype=float))
-            operators = list(set(weightsLast.keys()) | set(operatorsFracs.keys()))
-            if operatorsFracs:
-                generation = len(list(operatorsFracs.values()))
-            else:
-                generation = 0
-            for operator in operators:
-                if operator not in operatorsFracs:
-                    operatorsFracs[operator] = [0.0] * generation
-                if operator in weightsLast:
-                    operatorsFracs[operator].append(weightsLast[operator] / weightsSum)
-                else:
-                    operatorsFracs[operator].append(0.0)
+    def presentFractions(self, populations):
+        allOperators = set()
+        allAmountsAndTotals = []
+        for population in populations:
+            amounts = Counter()
+            for system in population:
+                amounts[system['howCome']] += 1
+            total = sum(amounts.values())
+            allOperators.update(amounts.keys())
+            allAmountsAndTotals.append((amounts, total))
+
+        operatorsFracs = {operator : [amounts[operator]/total for amounts, total in allAmountsAndTotals]
+                          for operator in allOperators}
 
         plt.clf()
         for operator, fracs in operatorsFracs.items():
