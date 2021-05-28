@@ -23,7 +23,7 @@ from typing import List
 
 from .Common.KPoints import KPoints, BadKPoints
 from .Common.SHELL_Interface import SHELL_Interface
-from ..IO.Crystal.CrystalSystemRepresentation import CrystalSystemRepresentation
+from ..components import CrystalRepresentation
 
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
 
@@ -170,7 +170,7 @@ class VASP_Interface(SHELL_Interface):
         #     write_vasp(pj(calcFolder, self.poscar_file), system, sort=True, direct=True, vasp5=True, long_format=False)
 
         with open(pj(calcFolder, self.poscar_file), 'wt') as f:
-            CrystalSystemRepresentation.writeAtomicStructure(f, system)
+            CrystalRepresentation.writeAtomicStructure(f, system)
 
         ############################# KPOINTS #################################
         try:

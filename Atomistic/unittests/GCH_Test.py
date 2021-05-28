@@ -16,7 +16,7 @@ import unittest
 from os.path import join as pj
 
 from ..GCH import GeneralizedConvexHull
-from ...components import CrystalSystemRepresentation, RadialDistributionUtility, CompositionSpace
+from ...components import CrystalRepresentation, RadialDistributionUtility, CompositionSpace
 
 TESTPATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,7 +32,7 @@ def read_structures_and_energies(folder : str):
     try:
         with open(pj(folder, 'gatheredPOSCARS'), 'r') as fp:
             while True:
-                system = CrystalSystemRepresentation.readAtomicStructure(fp)
+                system = CrystalRepresentation.readAtomicStructure(fp)
                 all_systems.append(system)
     except:
         print('Reading of the pathway has finished.')

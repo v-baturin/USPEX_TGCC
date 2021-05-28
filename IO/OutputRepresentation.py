@@ -1,6 +1,5 @@
 import os
 from os.path import join as pj
-from copy import copy
 from datetime import datetime
 
 from ..Presets import presetOutput
@@ -50,9 +49,8 @@ class OutputRepresentation(object):
 
         if type(optimizerInstance).__name__ == 'GlobalOptimizer':
             if type(optimizerInstance.createPopulation).__name__ == 'USPEXClassic':
-                from .USPEXOutput import USPEXClassicRepresentation, getSelectionConfigRepresentation, getPopulationCreationBlock
-                self.presentInfo = USPEXClassicRepresentation(self.RES_FOLDER)
-                self.getPopulationCreationBlock = getPopulationCreationBlock
+                from .USPEXClassicRepresentation import USPEXClassicRepresentation
+                self.getPopulationCreationBlock = USPEXClassicRepresentation.getPopulationCreationBlock
             else:
                 raise RuntimeError('Unknown engine type in output initialization.')
             if optimizerInstance.target.name == 'Crystal':
@@ -66,23 +64,20 @@ class OutputRepresentation(object):
                 else:
                     output = params['output']
 
-                self.columns = output['columns']
-                from .Crystal.CrystalSystemRepresentation import SystemsTable, CrystalSystemRepresentation, getPopulationSummaryBlock
-                self.presentSystems = CrystalSystemRepresentation(self.RES_FOLDER, self.numStages, **output)
-                from .Crystal.CrystalConfigRepresentation import getTargetConfigRepresentation
-                from .Crystal.CrystalPoolRepresentation import CrystalPoolRepresentation
-                self.presentOptimizer = CrystalPoolRepresentation(self.RES_FOLDER, **output)
-                self.getPopulationSummaryBlock = getPopulationSummaryBlock
-
-                self.SystemsTable = SystemsTable
-                self.getTargetConfigRepresentation = getTargetConfigRepresentation
-                self.getSelectionConfigRepresentation = getSelectionConfigRepresentation
+                from .CrystalRepresentation import CrystalRepresentation
+                self.targetRepresentation = CrystalRepresentation(self.RES_FOLDER, self.numStages, **output)
+                self.getPopulationSummaryBlock = CrystalRepresentation.getPopulationSummaryBlock
+                self.getTargetParametersBlock = CrystalRepresentation.getTargetParametersBlock
+                self.getSelectionParametersBlock = USPEXClassicRepresentation.getParametersBlock
             else:
                 raise RuntimeError('Unknown target type in output initialization.')
         else:
             raise RuntimeError('Unknown optimizer type in output initialization.')
         os.makedirs(self.RES_FOLDER, exist_ok=True)
         write(pj(self.RES_FOLDER, self.PARAMETERS_FILENAME), {'main': params})
+
+    def presentSystems(self, systems: dict, optimizer):
+        return self.targetRepresentation.presentSystems(systems, optimizer)
 
     def presentOutput(self, populations, optimizers, optimizer, printDate=True):
         os.makedirs(os.path.dirname(self.OUTPUT_FILE), exist_ok=True)
@@ -118,8 +113,8 @@ class OutputRepresentation(object):
 
         header += formatted_rows
 
-        header += self.getSelectionConfigRepresentation(optimizer.createPopulation)
-        header += self.getTargetConfigRepresentation(optimizer.target)
+        header += self.getSelectionParametersBlock(optimizer.createPopulation)
+        header += self.getTargetParametersBlock(optimizer.target)
 
         header += createHeader_wrap(['Ab initio calculations'], 'center')
 
@@ -142,7 +137,7 @@ class OutputRepresentation(object):
             output.append(' Generation {0:4d}'.format(generation))
             output += self.getPopulationCreationBlock(population)
             output.append('    Optimization results')
-            table = self.SystemsTable(self.columns)
+            table = self.targetRepresentation.getNewSystemsTable()
             for system in population:
                 table.update(system['ID'], system, optimizer.fitness)
             output.append(table.table.get_string())
@@ -156,4 +151,4 @@ class OutputRepresentation(object):
                 f.write(i + '\n')
 
         if optimizers:
-            self.presentOptimizer(optimizers, optimizer)
+            self.targetRepresentation.presentOptimizer(optimizers, optimizer)

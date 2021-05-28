@@ -4,7 +4,7 @@ import json
 import filecmp
 import shutil
 
-from ...components import GlobalOptimizer, CrystalSystemRepresentation
+from ...components import GlobalOptimizer, CrystalRepresentation
 from ..OutputRepresentation import OutputRepresentation
 
 TESTPATH = os.path.dirname(os.path.abspath(__file__))
@@ -60,7 +60,7 @@ class Output_Test(unittest.TestCase):
                         with open(os.path.join(TESTPATH, f"output_data/system{gen * popSize + i}s{j}"), "r") as f:
                             structure = json.load(f)
                         with open(os.path.join(TESTPATH, f"output_data/system{gen*popSize+i}s{j}.vasp"), "r") as f:
-                            structure.update(CrystalSystemRepresentation.readAtomicStructure(f))
+                            structure.update(CrystalRepresentation.readAtomicStructure(f))
                         system.append(structure)
                     except FileNotFoundError:
                         break
