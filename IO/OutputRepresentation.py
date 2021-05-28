@@ -84,7 +84,7 @@ class OutputRepresentation(object):
         os.makedirs(self.RES_FOLDER, exist_ok=True)
         write(pj(self.RES_FOLDER, self.PARAMETERS_FILENAME), {'main': params})
 
-    def presentOutput(self, populations, optimizer, printDate=True):
+    def presentOutput(self, populations, optimizers, optimizer, printDate=True):
         os.makedirs(os.path.dirname(self.OUTPUT_FILE), exist_ok=True)
 
         # Print the header to the log so it's clear that we execute USPEX:
@@ -154,3 +154,6 @@ class OutputRepresentation(object):
         with open(self.OUTPUT_FILE, 'w') as f:
             for i in output:
                 f.write(i + '\n')
+
+        if optimizers:
+            self.presentOptimizer(optimizers, optimizer)

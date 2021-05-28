@@ -45,22 +45,20 @@ class GenerationController(object):
         self.population = None
 
         self.populations = []
-        self.infos = []
-        self.systems = {}
         self.optimizers = []
+        self.systems = {}
 
         self.save()
 
     async def run(self):
-        self.outputRepresentation.presentOutput(self.populations, self.optimizer)
+        self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
         while (self.generation < self.numGenerations and
                self.numberStableGenerations < self.stopCrit and
                not self.optimizer.isGoalReached):
 
             if self.state is ControllerState.createPopulation:
                 self.population, *info = self.optimizer.run()
-                self.infos.append(copy(info))
-                self.outputRepresentation.presentInfo(self.infos)
+                self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.processPopulation
                 self.save()
             if self.state is ControllerState.processPopulation:
@@ -72,13 +70,13 @@ class GenerationController(object):
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.populations.append(copy(self.population))
-                self.outputRepresentation.presentOutput(self.populations, self.optimizer)
+                self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.updateOptimizer
                 self.save()
             if self.state is ControllerState.updateOptimizer:
                 self.optimizer.update(self.population)
                 self.optimizers.append(copy(self.optimizer))
-                self.outputRepresentation.presentOptimizer(self.optimizers, self.optimizer)
+                self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.runControllerLogic
                 self.save()
             if self.state is ControllerState.runControllerLogic:
