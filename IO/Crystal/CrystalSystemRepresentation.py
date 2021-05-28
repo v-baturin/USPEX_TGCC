@@ -4,6 +4,7 @@ import shutil
 import matplotlib
 import numpy as np
 
+from collections import Counter
 from itertools import combinations
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
@@ -140,13 +141,18 @@ class CrystalSystemRepresentation(object):
 
 
 def getPopulationSummaryBlock(population, optimizer) -> list:
+    utlts = optimizer.target.utilities
+    numBlocks = [utlts.compositionSpace.numBlocks(utlts.simpleMoleculeUtility.composition(system)) for system in population]
+    numBlocks = np.asarray(numBlocks)
     volumes = [optimizer.fitness.getFitnessByID('cellUtility.volume', system['ID'])for system in population]
-    approximateVolume = sum(volumes)/len(volumes)
-    fitness = [optimizer.fitness.getFitnessByID(optimizer.optType, system['ID'])for system in population]
+    volumes = np.asarray(volumes)
+    approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
+    fitness = [optimizer.fitness.getFitnessByID(optimizer.optType, system['ID']) for system in population]
     order = [optimizer.target.utilities.radialDistributionUtility.averageOrder(system) for system in population]
-    correlation = np.corrcoef(order, fitness)[0, 1]
-    if np.isnan(correlation):
-        correlation = 0
+    if np.any(np.isnan(np.asarray(fitness, dtype = float))):
+        correlation = 0.0
+    else:
+        correlation = np.corrcoef(order, fitness)[0, 1]
 
     qe = 0
     comb = list(combinations(population, 2))
@@ -159,6 +165,28 @@ def getPopulationSummaryBlock(population, optimizer) -> list:
 
     block = [ '    Generation Summary',
              f'      Correlation coefficient: {correlation:.4}',
-             f'      Approximate volume(s)  : {approximateVolume:.4} A^3',
+             f'      Approximate volume(s)  : {approximateVolume}',
              f'      Quasi entropy          : {qe:.4}']
+
+    if not utlts.compositionSpace.isFixedComposition:
+        numIons = [utlts.compositionSpace.numIons(utlts.simpleMoleculeUtility.composition(system)) for system in population]
+        numIons = np.asarray(numIons)
+        comps = numIons/np.sum(numIons, axis=1).reshape((-1,1))
+        combs = list(combinations(comps, 2))
+        compositionEntropy = 0
+        for c1, c2 in combs:
+            cos_dist = (np.dot(c1, c2)) / (np.linalg.norm(c1) * np.linalg.norm(c2))
+            if abs(cos_dist) < 0.001:
+              compositionEntropy -= cos_dist
+            else:
+              compositionEntropy += cos_dist*np.log(cos_dist)
+        compositionEntropy /= -len(combs)
+        compositionCounter = Counter()
+        for c in comps:
+            cStr = ' '.join(f'{n:.3}' for n in c)
+            compositionCounter[cStr] += 1
+
+        block.append(f'      Composition entropy    : {compositionEntropy:.4}')
+        block.append(f'      Number of compositions : {len(compositionCounter)}')
+
     return block
