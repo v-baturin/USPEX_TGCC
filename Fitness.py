@@ -114,6 +114,9 @@ class Fitness(object):
         return dict(zip([s['ID'] for s in self.pool.uniqueSystems], self.calcFitness(fitness)))
 
     def getFitnessByID(self, fitness, ID):
+        system = self.pool.allSystems[ID]
+        if 'originalID' in system:
+            ID = system['originalID']
         if fitness in presetFitness:
             fitness = presetFitness[fitness]
         value = None

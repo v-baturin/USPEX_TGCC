@@ -147,8 +147,8 @@ def getPopulationSummaryBlock(population, optimizer) -> list:
     volumes = [optimizer.fitness.getFitnessByID('cellUtility.volume', system['ID'])for system in population]
     volumes = np.asarray(volumes)
     approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
-    fitness = [optimizer.fitness.getFitnessByID(optimizer.optType, system['ID']) for system in population]
-    order = [optimizer.target.utilities.radialDistributionUtility.averageOrder(system) for system in population]
+    fitness = [optimizer.fitness.getFitnessByID(optimizer.optType, system['ID']) for system in population if not system['isBad']]
+    order = [optimizer.target.utilities.radialDistributionUtility.averageOrder(system) for system in population if not system['isBad']]
     if np.any(np.isnan(np.asarray(fitness, dtype = float))):
         correlation = 0.0
     else:
