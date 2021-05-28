@@ -15,6 +15,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from .formatters import createHeader_wrap
+from ..Presets import presetOutput
 
 
 MOL_CRYSTALS_PAPERS = '''\
@@ -73,10 +74,9 @@ class CrystalRepresentation(object):
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, RES_FOLDER: str, numStages: int, columns, toDraw: list = None,
+    def __init__(self, RES_FOLDER: str, columns, toDraw: list = None,
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = RES_FOLDER
-        self.numStages = numStages
         self.columns = columns
         if toDraw is None:
             self.toDraw = [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
@@ -90,7 +90,7 @@ class CrystalRepresentation(object):
     def getNewSystemsTable(self, isRank=False):
         return SystemsTable(self.columns, isRank)
 
-    def presentSystems(self, systems: dict, optimizer):
+    def presentSystems(self, systems: dict, optimizer, numStages):
         fitness = optimizer.optType
         io_gatheredPOSCARS = io.StringIO('')
         io_gatheredPOSCARS_unrelaxed = io.StringIO('')
@@ -104,9 +104,9 @@ class CrystalRepresentation(object):
             if len(system) > 1:
                 content_enthalpies += ','.join([f"{sys['enthalpy']:6.3f}" for sys in system[1:]]) + '\n'
 
-            if len(system) == self.numStages + 1:
+            if len(system) == numStages + 1:
                 table_Individuals.update(ID, optimizer.target.pool.allSystems[ID], optimizer.fitness)
-                self.writeAtomicStructure(io_gatheredPOSCARS, system[self.numStages])
+                self.writeAtomicStructure(io_gatheredPOSCARS, system[numStages])
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
@@ -176,7 +176,7 @@ class CrystalRepresentation(object):
         cls.atomicDisassemblerType = atomicDisassemblerType
 
     @classmethod
-    def getTargetParametersBlock(cls, target) -> list:
+    def getParametersBlock(cls, target) -> list:
         header = []
         ut = target.utilities
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
@@ -539,3 +539,10 @@ class CrystalRepresentation(object):
 
     def _drawExtendedConvexHull3(self, compositionSpace, convexHull, extendedConvexHull):
         pass
+
+    @staticmethod
+    def applyPresetOutputParameters(optimizer, output):
+        if optimizer.target.utilities.compositionSpace.isFixedComposition:
+            return presetOutput['CrystalFixComp'] | output
+        else:
+            return presetOutput['CrystalVarComp'] | output

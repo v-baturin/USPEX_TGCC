@@ -9,7 +9,7 @@ from .formatters import createHeader_wrap
 
 
 class USPEXClassicRepresentation(object):
-    def __init__(self, RES_FOLDER : str):
+    def __init__(self, RES_FOLDER : str, **params):
         self.RES_FOLDER  = RES_FOLDER
 
     def drawFractions(self, info):
@@ -67,3 +67,7 @@ class USPEXClassicRepresentation(object):
                    f'      Seeds               :    {seedsAmount:4}'
         ]
         return block
+
+    @staticmethod
+    def applyPresetOutputParameters(optimizer, output):
+        return output
