@@ -42,7 +42,7 @@ class OutputRepresentation(object):
     def __init__(self, optimizerInstance, path: str = os.getcwd(), **params):
         self.RES_FOLDER = newResFolderName(path)
         self.OUTPUT_FILE = os.path.join(self.RES_FOLDER, 'OUTPUT.txt')
-        self.numStages = len(params['stages'])
+        self.stages = params['stages']
         self.numParallelCalcs = params['numParallelCalcs']
         self.numGenerations = params['numGenerations']
         self.stopCrit = params['stopCrit']
@@ -72,7 +72,7 @@ class OutputRepresentation(object):
         write(pj(self.RES_FOLDER, self.PARAMETERS_FILENAME), {'main': params})
 
     def presentSystems(self, systems: dict, optimizer):
-        return self.targetRepresentation.presentSystems(systems, optimizer, self.numStages)
+        return self.targetRepresentation.presentSystems(systems, optimizer, len(self.stages))
 
     def presentOutput(self, populations, optimizers, optimizer, printDate=True, final=False):
         os.makedirs(os.path.dirname(self.OUTPUT_FILE), exist_ok=True)
@@ -107,16 +107,18 @@ class OutputRepresentation(object):
 
         output += createHeader_wrap(['Ab initio calculations'], 'center')
 
-        row = ''
-        row += '* There are %d local relaxation steps for each individual structure: *\n' % self.numStages
-        # TODO write information about each step
-        #     row += '%4s  %-12s  %12s\n' % ('Step', 'Abinitio Code', 'K-resolution')
+        row = '\n'
+        row += f'* There are {len(self.stages)} local relaxation steps for each individual structure: *\n'
+        row += '   Step/Tag     Abinitio Code   K-resolution\n'
+        for stage in self.stages:
+            kresol = stage['kresol'] if 'kresol' in stage else None
+            row += f"{stage['tag']:12}    {stage['type']:12}    {kresol}\n"
+        row += '\n'
+        row += '%d parallel calculations are performed simultaneously.\n' % self.numParallelCalcs
+        row += 'For submission details of each stage see parameters.txt.'
+        row += '\n'
         output.append(row)
 
-        row = ''
-        # TODO write information about submission: local/remote, task manager
-        row += '%d parallel calculations are performed simultaneously.\n' % self.numParallelCalcs
-        output.append(row)
 
 
         output += createHeader_wrap(['Generations block'], 'center')
