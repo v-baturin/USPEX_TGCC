@@ -4,7 +4,7 @@ import shutil
 import matplotlib
 import numpy as np
 
-from collections import Counter
+from collections import Counter, Mapping
 from itertools import combinations
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
@@ -45,7 +45,7 @@ class SystemsTable(object):
     def __init__(self, columns, isRank=False):
         self.columns = columns
         self.isRank = isRank
-        columnNames = ['ID', 'Origin', 'Composition']
+        columnNames = ['ID', 'Origin']
         if self.isRank:
             columnNames.insert(1, 'Rank')
         for column, columnName in self.columns:
@@ -55,13 +55,15 @@ class SystemsTable(object):
 
 
     def update(self, ID: int, system, fitness, rank=None):
-        row = [ID, system['howCome'], fitness.getFitnessByID('simpleMoleculeUtility.composition', ID)]
+        row = [ID, system['howCome']]
         if self.isRank:
             row.insert(1, rank)
         for column, columnName in self.columns:
             value = fitness.getFitnessByID(column, ID)
             if isinstance(value, float):
                 value = f'{value: 6.3f}'
+            elif isinstance(value, Mapping):
+                value = '  '.join(f'{key}: {amount}' for key, amount in value.items())
             row.append(value)
 
         self.table.add_row(row)

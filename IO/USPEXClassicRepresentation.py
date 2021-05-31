@@ -50,7 +50,11 @@ class USPEXClassicRepresentation(object):
         return header
 
     @staticmethod
-    def getPopulationCreationBlock(population) -> list:
+    def getPopulationCreationBlock(population, optimizer, targetRepresentation) -> list:
+        mostDiverseTable = targetRepresentation.getNewSystemsTable()
+        for system in optimizer.createPopulation.getMostDiverse():
+            mostDiverseTable.update(system['ID'], system, optimizer.fitness)
+
         amounts = Counter()
         for system in population:
             amounts[system['howCome']] += 1
@@ -58,9 +62,11 @@ class USPEXClassicRepresentation(object):
         del amounts['Seeds']
         total = sum(amounts.values())
 
-        block = [   '    Variation Operators (amount and fraction)',
-                 *(f'      {howCome:20}:    {amount:4}, {amount/total:4.2}' for howCome, amount in amounts.items()),
-                   f'      Seeds               :    {seedsAmount:4}'
+        block = ['     Best and diverse structures form previous generation',
+                  mostDiverseTable.table.get_string(),
+                  '    Variation Operators (amount and fraction)',
+               *(f'      {howCome:20}:    {amount:4}, {amount/total:4.2}' for howCome, amount in amounts.items()),
+                 f'      Seeds               :    {seedsAmount:4}'
         ]
         return block
 

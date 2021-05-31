@@ -57,7 +57,7 @@ class GenerationController(object):
                not self.optimizer.isGoalReached):
 
             if self.state is ControllerState.createPopulation:
-                self.population, *info = self.optimizer.run()
+                self.population = self.optimizer.run()
                 self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.processPopulation
                 self.save()
@@ -87,6 +87,7 @@ class GenerationController(object):
                     self.numberStableGenerations = 0
                 self.state = ControllerState.createPopulation
                 self.save()
+        self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer, final=True)
         with open('USPEX_IS_DONE', 'wt') as f:
             f.write('')
         logger.info('Calculation finished.')

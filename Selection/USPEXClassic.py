@@ -188,7 +188,7 @@ class USPEXClassic(object):
                 logger.info(f"Structure {seed['ID']} created from seed {seed['filename']}.")
             population.extend(seeds)
 
-        return population, (autofrac.weightsLast, autofrac.weightsBest)
+        return population
 
     def determineMostDiverse(self, population : list, howManyDiverse: int, tolerance: float):
         """
@@ -226,3 +226,6 @@ class USPEXClassic(object):
                 break
             deltaTol /= 2
         return mostDiverse
+
+    def getMostDiverse(self) -> list:
+        return copy(self._mostDiverse)

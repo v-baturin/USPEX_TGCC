@@ -75,7 +75,7 @@ class GlobalOptimizer(object):
         other.stopFitness = self.stopFitness
         other._isGoalReached = self._isGoalReached
         other.selectionConfig = self.selectionConfig
-        other.createPopulation = self.createPopulation
+        other.createPopulation = copy(self.createPopulation)
         other.population = copy(self.population)
         other.newStructures = copy(self.newStructures)
         return other

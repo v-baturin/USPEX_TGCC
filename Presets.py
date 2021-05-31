@@ -18,6 +18,7 @@ if not exists(FILENAME):
         'presetOutput': {
             'CrystalFixComp': {
                 'columns': [
+                    ('simpleMoleculeUtility.composition', 'Composition'),
                     ('enthalpy', 'Enthalpy (eV)'),
                     ('cellUtility.volume', 'Volume (A^3)'),
                     ('cellUtility.symmetry', 'SYMMETRY (N)')
@@ -25,6 +26,7 @@ if not exists(FILENAME):
             },
             'CrystalVarComp': {
                 'columns': [
+                    ('simpleMoleculeUtility.composition', 'Composition'),
                     ('enthalpy', 'Enthalpy (eV)'),
                     ('cellUtility.volume', 'Volume (A^3)'),
                     ('cellUtility.symmetry', 'SYMMETRY (N)'),
