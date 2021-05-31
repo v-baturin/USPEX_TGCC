@@ -145,12 +145,13 @@ class GlobalOptimizer(object):
                 if self.fingerprintUtility.equal(system, ref_system):
                     logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
                     self.fingerprintUtility.clean(system)
-                    system['originalID'] = system['ID']
+                    system['originalID'] = ref_system['ID']
                     system = ref_system
                     break
 
             if not system['isBad']:
                 cleanedPopulation.append(system)
+        assert cleanedPopulation, 'All systems in population failed relaxation.'
         population[:] = cleanedPopulation
 
 

@@ -62,7 +62,7 @@ class USPEXClassicRepresentation(object):
         del amounts['Seeds']
         total = sum(amounts.values())
 
-        block = ['     Best and diverse structures form previous generation',
+        block = ['     Best and diverse structures from previous generation',
                   mostDiverseTable.table.get_string(),
                   '    Variation Operators (amount and fraction)',
                *(f'      {howCome:20}:    {amount:4}, {amount/total:4.2}' for howCome, amount in amounts.items()),

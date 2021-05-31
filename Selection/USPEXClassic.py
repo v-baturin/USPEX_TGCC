@@ -92,6 +92,7 @@ class USPEXClassic(object):
         for mutation in target.mutations:
             howCome = type(mutation).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = 0 if howMany < 0 else howMany
             if best:
                 self.weightsLast[howCome] = howMany
                 if hasattr(mutation, 'prepare'):
@@ -122,6 +123,7 @@ class USPEXClassic(object):
         for hybridization in target.hybridizations:
             howCome = type(hybridization).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = 0 if howMany < 0 else howMany
             if best:
                 self.weightsLast[howCome] = howMany
                 if hasattr(hybridization, 'prepare'):
@@ -155,6 +157,7 @@ class USPEXClassic(object):
         for creation in target.creations:
             howCome = type(creation).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = 0 if howMany < 0 else howMany
             self.weightsLast[howCome] = howMany
             if hasattr(creation, 'prepare'):
                 creation.prepare()

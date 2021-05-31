@@ -412,9 +412,8 @@ class CrystalRepresentation(object):
 
         else:
             for generation, opt in enumerate(optimizers):
-                convexHull = [system for system, value
-                              in zip(opt.target.pool.uniqueSystems, opt.fitness.calcFitness('enthalpyCCH'))
-                              if value == 0]
+                convexHull = [system for system in opt.target.pool.uniqueSystems
+                              if np.isclose(opt.fitness.getFitnessByID('enthalpyCCH', system['ID']), 0.0)]
                 content_convexHull += f'Generation {generation}\n'
                 table = self.getNewSystemsTable()
                 for system in convexHull:
@@ -424,11 +423,11 @@ class CrystalRepresentation(object):
             with open(pj(self.RES_FOLDER, 'convex_hull'), 'w') as fp:
                 fp.write(content_convexHull)
 
-            extendedConvexHull = [system for system, value
-                                  in zip(optimizer.target.pool.uniqueSystems, optimizer.fitness.calcFitness('enthalpyCCH'))
-                                  if value < self.rangeECH]
+            extendedConvexHull = [system for system in optimizer.target.pool.uniqueSystems
+                                  if optimizer.fitness.getFitnessByID('enthalpyCCH', system['ID']) < self.rangeECH]
 
-            allFitnesses = optimizer.fitness.getAllFitnesses(fitness)
+            allFitnesses = {system['ID'] : optimizer.fitness.getFitnessByID(fitness, system['ID'])
+                            for system in extendedConvexHull}
             fronts = optimizer.fitness.sort(extendedConvexHull, allFitnesses)
 
             for rank, front in enumerate(fronts):
