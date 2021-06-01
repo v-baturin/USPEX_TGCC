@@ -21,16 +21,22 @@ if not exists(FILENAME):
                     ('simpleMoleculeUtility.composition', 'Composition'),
                     ('enthalpy', 'Enthalpy (eV)'),
                     ('cellUtility.volume', 'Volume (A^3)'),
-                    ('cellUtility.symmetry', 'SYMMETRY (N)')
+                    ('cellUtility.symmetry', 'SYMMETRY (N)'),
+                    ('radialDistributionUtility.structureOrder', 'Structure order'),
+                    ('radialDistributionUtility.averageOrder', 'Average order'),
+                    ('radialDistributionUtility.quasientropy', 'Quasientropy')
                 ]
             },
             'CrystalVarComp': {
                 'columns': [
                     ('simpleMoleculeUtility.composition', 'Composition'),
                     ('enthalpy', 'Enthalpy (eV)'),
+                    ('enthalpyCCH', 'Enthalpy per Block above CCH (eV)'),
                     ('cellUtility.volume', 'Volume (A^3)'),
                     ('cellUtility.symmetry', 'SYMMETRY (N)'),
-                    ('enthalpyCCH', 'Enthalpy per Block above CCH (eV)')
+                    ('radialDistributionUtility.structureOrder', 'Structure order'),
+                    ('radialDistributionUtility.averageOrder', 'Average order'),
+                    ('radialDistributionUtility.quasientropy', 'Quasientropy')
                 ]
             }
         }
