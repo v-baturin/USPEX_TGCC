@@ -36,9 +36,11 @@ class Output_Test(unittest.TestCase):
                                                        }
                                          }
                            }
-        popSize = 10
         numStages = 5
+        stages = [{'tag': f'{i+1}', 'type': 'gulp'} for i in range(numStages)]
+        popSize = 10
         numGenerations = 3
+        stopCrit = 3
         numParallelCalcs = 2
         output = {
             'columns': [
@@ -74,20 +76,20 @@ class Output_Test(unittest.TestCase):
                     system = systems[ID][-1]
                     optimizer.target.pool.uniqueSystems += (system,)
                     optimizer.target.pool.allSystems[ID] = system
+                    system['isBad'] = False
                 optimizer.best = set(targetState[0])
                 optimizers.append(optimizer)
             with open(os.path.join(TESTPATH, f"output_data/population{gen}"), "r") as f:
                 populations.append([systems[ID][-1] for ID in json.load(f)])
 
         representation = OutputRepresentation(optimizer, optimizer=optimizerConfig,
-                                              stages=[None]*numStages, numParallelCalcs=numParallelCalcs,
+                                              stages=stages, numParallelCalcs=numParallelCalcs,
+                                              numGenerations=numGenerations, stopCrit=stopCrit,
                                               path=os.path.join(TESTPATH, folder_name),
                                               output=output)
 
-        representation.presentInfo(infos)
         representation.presentSystems(systems, optimizers[-1])
-        representation.presentOutput(populations, optimizers[-1], printDate=False)
-        representation.presentOptimizer(optimizers, optimizers[-1])
+        representation.presentOutput(populations, optimizers, optimizers[-1], printDate=False)
 
         dcmp = filecmp.dircmp(os.path.join(TESTPATH, folder_name_ref), os.path.join(TESTPATH, folder_name))
         self.assertEqual(len(dcmp.diff_files), 0)
