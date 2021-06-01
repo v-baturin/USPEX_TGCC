@@ -4,6 +4,7 @@ import shutil
 import matplotlib
 import numpy as np
 
+from copy import copy
 from collections import Counter, Mapping
 from itertools import combinations
 from ase.atoms import Atoms
@@ -545,7 +546,7 @@ class CrystalRepresentation(object):
 
     @staticmethod
     def applyPresetOutputParameters(optimizer, output):
-        if optimizer.target.utilities.compositionSpace.isFixedComposition:
-            return presetOutput['CrystalFixComp'] | output
-        else:
-            return presetOutput['CrystalVarComp'] | output
+        default = copy(presetOutput['CrystalFixComp']) if optimizer.target.utilities.compositionSpace.isFixedComposition\
+            else copy(presetOutput['CrystalVarComp'])
+        default.update(output)
+        return default
