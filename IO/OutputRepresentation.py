@@ -1,9 +1,26 @@
 import os
-import numpy as np
-from copy import copy
+from os.path import join as pj
 from datetime import datetime
+from itertools import zip_longest
 
 from .formatters import createHeader, createHeader_wrap
+from .InputParser import write
+
+
+GENERAL_PAPERS = '''\
+Oganov A.R., Glass C.W. (2006)
+Crystal structure prediction using evolutionary algorithms:
+principles and applications.
+J. Chem. Phys. 124, 244704
+
+Oganov A.R., Stokes H., Valle M. (2011)
+How evolutionary crystal structure prediction works - and why.
+Acc. Chem. Res. 44, 227-237
+
+Lyakhov A.O., Oganov A.R., Stokes H., Zhu Q. (2013)
+New developments in evolutionary structure prediction algorithm USPEX.
+Comp. Phys. Comm., 184, 1172-1182\
+'''
 
 
 def newResFolderName(path: str) -> str:
@@ -20,70 +37,119 @@ def newResFolderName(path: str) -> str:
 
 
 class OutputRepresentation(object):
-    def __init__(self, optimizer: dict, stages: list, numParallelCalcs: int, path: str = os.getcwd(), output = None, **kwargs):
+    PARAMETERS_FILENAME = 'parameters.uspex'
+
+    def __init__(self, optimizerInstance, path: str = os.getcwd(), **params):
         self.RES_FOLDER = newResFolderName(path)
         self.OUTPUT_FILE = os.path.join(self.RES_FOLDER, 'OUTPUT.txt')
-        self.numStages = len(stages)
-        self.numParallelCalcs = numParallelCalcs
+        self.stages = params['stages']
+        self.numParallelCalcs = params['numParallelCalcs']
+        self.numGenerations = params['numGenerations']
+        self.stopCrit = params['stopCrit']
 
-        if optimizer['type'] == 'GlobalOptimizer':
-            if optimizer['selection']['type'] == 'USPEXClassic':
-                from .USPEXOutput import USPEXClassicRepresentation, getSelectionConfigRepresentation
-                self.presentInfo = USPEXClassicRepresentation(self.RES_FOLDER)
+        if 'output' not in params:
+            output = {}
+            params['output'] = output
+        else:
+            output = params['output']
+
+        if type(optimizerInstance).__name__ == 'GlobalOptimizer':
+            if type(optimizerInstance.createPopulation).__name__ == 'USPEXClassic':
+                from .USPEXClassicRepresentation import USPEXClassicRepresentation
+                output.update(USPEXClassicRepresentation.applyPresetOutputParameters(optimizerInstance, output))
+                self.selectionRepresentation = USPEXClassicRepresentation(self.RES_FOLDER, **output)
             else:
                 raise RuntimeError('Unknown engine type in output initialization.')
-            if optimizer['target']['type'] == 'Crystal':
-                self.columns = output['columns']
-                from .Crystal.CrystalSystemRepresentation import SystemsTable, CrystalSystemRepresentation
-                self.presentSystems = CrystalSystemRepresentation(self.RES_FOLDER, self.numStages, **output)
-                from .Crystal.CrystalConfigRepresentation import getTargetConfigRepresentation
-                from .Crystal.CrystalPoolRepresentation import CrystalPoolRepresentation
-                self.presentOptimizer = CrystalPoolRepresentation(self.RES_FOLDER, **output)
-
-                self.SystemsTable = SystemsTable
-                self.getTargetConfigRepresentation = getTargetConfigRepresentation
-                self.getSelectionConfigRepresentation = getSelectionConfigRepresentation
+            if optimizerInstance.target.name == 'Crystal':
+                from .CrystalRepresentation import CrystalRepresentation
+                output.update(CrystalRepresentation.applyPresetOutputParameters(optimizerInstance, output))
+                self.targetRepresentation = CrystalRepresentation(self.RES_FOLDER, **output)
             else:
                 raise RuntimeError('Unknown target type in output initialization.')
         else:
             raise RuntimeError('Unknown optimizer type in output initialization.')
+        os.makedirs(self.RES_FOLDER, exist_ok=True)
+        write(pj(self.RES_FOLDER, self.PARAMETERS_FILENAME), {'main': params})
 
-    def presentOutput(self, populations, optimizer, printDate=True):
+    def presentSystems(self, systems: dict, optimizer):
+        return self.targetRepresentation.presentSystems(systems, optimizer, len(self.stages))
+
+    def presentOutput(self, populations, optimizers, optimizer, printDate=True, final=False):
         os.makedirs(os.path.dirname(self.OUTPUT_FILE), exist_ok=True)
 
-        header = []
+        # Print the header to the log so it's clear that we execute USPEX:
+        output = createHeader('Evolutionary Algorithm Code for Structure Prediction')
+
         # Date:
         if printDate:
-            formatted_rows = createHeader_wrap(['Job started at ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-                                               'center')
-            formatted_rows.append('')
-            header += formatted_rows
+            output += createHeader_wrap([f'Output written {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'], 'center')
+            output.append('')
 
-        # header += self.getSelectionConfigRepresentation(selectionConfig)
-        # header += self.getTargetConfigRepresentation(targetConfig)
+        # Cite:
+        text = [
+            'Please cite the following suggested papers',
+            'when you publish the results obtained from USPEX:',
+        ]
+        output += createHeader_wrap(text)
 
-        row = ''
-        row += '* There are %d local relaxation steps for each individual structure: *\n' % self.numStages
-        # TODO write information about each step
-        #     row += '%4s  %-12s  %12s\n' % ('Step', 'Abinitio Code', 'K-resolution')
-        header.append(row)
+        output += createHeader_wrap([text.rstrip() for text in GENERAL_PAPERS.split('\n')], 'left')
 
-        row = ''
-        # TODO write information about submission: local/remote, task manager
+        formatted_rows = createHeader_wrap(['Block for generations controller'], 'center')
+        formatted_rows.append('')
+        formatted_rows.append(f'    Number of Generations  :    {self.numGenerations}')
+        formatted_rows.append(f'    Halting criteria       :    {self.stopCrit}')
+        formatted_rows.append('')
+
+        output += formatted_rows
+
+        output += self.selectionRepresentation.getParametersBlock(optimizer.createPopulation)
+        output += self.targetRepresentation.getParametersBlock(optimizer.target)
+
+        output += createHeader_wrap(['Ab initio calculations'], 'center')
+
+        row = '\n'
+        row += f'* There are {len(self.stages)} local relaxation steps for each individual structure: *\n'
+        row += '   Step/Tag     Abinitio Code   K-resolution\n'
+        for stage in self.stages:
+            kresol = stage['kresol'] if 'kresol' in stage else None
+            row += f"{stage['tag']:12}    {stage['type']:12}    {kresol}\n"
+        row += '\n'
         row += '%d parallel calculations are performed simultaneously.\n' % self.numParallelCalcs
-        header.append(row)
+        row += 'For submission details of each stage see parameters.txt.'
+        row += '\n'
+        output.append(row)
 
-        output = header
-        # ---------------------------------------------------------------------------
-        # Write everything to the file:
 
-        for generation, population in enumerate(populations):
+
+        output += createHeader_wrap(['Generations block'], 'center')
+
+        for generation, (population, opt) in enumerate(zip_longest(populations, optimizers)):
+            opt = optimizer if opt is None else opt
             output.append(' Generation {0:4d}'.format(generation))
-            table = self.SystemsTable(self.columns)
+            output += self.selectionRepresentation.getPopulationCreationBlock(population, opt, self.targetRepresentation)
+            output.append('    Optimization results')
+            table = self.targetRepresentation.getNewSystemsTable()
             for system in population:
                 table.update(system['ID'], system, optimizer.fitness)
             output.append(table.table.get_string())
+            output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
+            output.append('')
 
+
+        if final:
+            table = self.targetRepresentation.getNewSystemsTable()
+            for ID in optimizer.best:
+                table.update(ID, optimizer.target.pool.allSystems[ID], optimizer.fitness)
+            output += createHeader_wrap(['Calculation results'], 'center')
+            output.append(table.table.get_string())
+
+        # ---------------------------------------------------------------------------
+        # Write everything to the file:
         with open(self.OUTPUT_FILE, 'w') as f:
             for i in output:
                 f.write(i + '\n')
+
+        if populations:
+            self.selectionRepresentation.presentFractions(populations)
+        if optimizers:
+            self.targetRepresentation.presentOptimizer(optimizers, optimizer)

@@ -23,7 +23,7 @@ class Transformation:
     def transform(self, structure):
         coord = self.getTransformedCoordinates(structure.getCartesianCoordinates())
         cell = self.transformCell(structure.getCell()) if structure.getCell() is not None else None
-        return type(structure)(structure.getAtomTypes(), coord, cell = cell)
+        return type(structure)(structure.getAtomTypes(), coord, cell = cell, zmatrixConfig = structure.getZmatrixConfig())
 
     @staticmethod
     def fromMatrix(rotMatrix, transVec):

@@ -3,6 +3,7 @@ logger = logging.getLogger(__name__)
 
 
 import numpy as np
+from copy import copy
 from collections import Counter
 from typing import Dict, Union
 
@@ -47,7 +48,7 @@ class CompositionSpace(object):
     Describes the chemical compositions configuration space.
     """
 
-    def __init__(self, symbols: list, blocks: list=None, range: list=None, minAt: int=None, maxAt: int=None):
+    def __init__(self, symbols: list, blocks: list, range: list=None, minAt: int=None, maxAt: int=None):
         """
         Initializes the class.
 
@@ -67,23 +68,28 @@ class CompositionSpace(object):
 
         """
 
-        self.symbols = []
-        for symbol in symbols:
-            self.symbols.append(symbol)
+        self.symbols = copy(symbols)
+        self.nSymbols = len(symbols)
+        self.nBlocks = len(blocks)
 
         self.blocks = np.asarray(blocks, dtype=int)
-        assert len(self.blocks.shape) == 2 and self.blocks.shape[1] == len(self.symbols)
+        assert self.blocks.shape == (self.nBlocks, self.nSymbols)
 
         if type(minAt) in [int, float] and type(maxAt) in [int, float]:
             assert maxAt >= minAt
             self.minAt = minAt
             self.maxAt = maxAt
+            if range is None:
+                range = [[0, np.ceil(maxAt / np.sum(block))] for block in self.blocks]
         else:
+            if self.nBlocks == 1 and range is None:
+                range = [[1, 1]]
+            assert range is not None
             self.minAt = int(np.sum([np.min(x) * np.sum(block) for block, x in zip(blocks, range)]))
             self.maxAt = int(np.sum([np.max(x) * np.sum(block) for block, x in zip(blocks, range)]))
 
-        self.range = np.array(range, dtype=int)
-        assert np.all([len(x) == 2 for x in range]) and len(range) == len(blocks)
+        self.range = np.asarray(range, dtype=int)
+        assert self.range.shape == (self.nBlocks, 2)
 
         self.isFixedComposition = np.all([x1 == x2 for x1, x2 in self.range])
 

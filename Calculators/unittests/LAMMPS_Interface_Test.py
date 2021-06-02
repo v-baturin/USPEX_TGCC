@@ -9,7 +9,7 @@ from os.path import join as pj
 
 from ..LAMMPS_Interface import LAMMPS_Interface
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ...components import CrystalSystemRepresentation
+from ...components import CrystalRepresentation
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
 SPECIFICPATH = pj(HOMEPATH, 'lammpsSpecific')
@@ -27,7 +27,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = CrystalSystemRepresentation.readAtomicStructure(f)
+                system = CrystalRepresentation.readAtomicStructure(f)
             system['externalPressure'] = 100
             system['ID'] = ID
             os.mkdir(WORKPATH)
@@ -44,7 +44,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
             lammps.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = CrystalSystemRepresentation.readAtomicStructure(f)
+                systemRef = CrystalRepresentation.readAtomicStructure(f)
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
 
@@ -56,7 +56,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         interface = LAMMPS_Interface(tag='0', perturbate=False,
                                   libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'))
         with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-            system = CrystalSystemRepresentation.readAtomicStructure(f)
+            system = CrystalRepresentation.readAtomicStructure(f)
         system['ID'] = 0
         s, d = type(system['molecules'][0]).assemble(**system)
         system['structure'] = s

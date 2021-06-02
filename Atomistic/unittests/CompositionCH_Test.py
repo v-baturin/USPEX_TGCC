@@ -2,18 +2,9 @@ import unittest
 import numpy as np
 import os
 
-from ...SystemPool import SystemPool
 from ..CompositionCH import CompositionCH
-from ..CompositionSpace import CompositionSpace
-from ..SimpleMoleculeUtility import SimpleMoleculeUtility
 from ..CellUtility import Cell
-
-class System(object):
-
-    def __init__(self, composition):
-        # self.ID = ID
-        self.composition = composition
-        # self.enthalpy = enthalpy
+from ...components import CompositionSpace, SimpleMoleculeUtility
 
 
 class CompostionCH_Test(unittest.TestCase):

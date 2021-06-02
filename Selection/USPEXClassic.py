@@ -30,7 +30,7 @@ class USPEXClassic(object):
 
     '''
 
-    def __init__(self, fingerprintUtility, fitness : List[Tuple[str, str]], popSize : int, fractions : Dict[str, tuple],
+    def __init__(self, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
                  initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False, **kwargs):
         '''
         :param target: reference to configuration space object
@@ -38,7 +38,7 @@ class USPEXClassic(object):
         popSize : int - size of population
         '''
         self.fingerprintUtility = fingerprintUtility
-        self.fitness = fitness
+        self.optType = optType
         self.fractions = fractions
 
         self.popSize = popSize
@@ -73,7 +73,7 @@ class USPEXClassic(object):
         else:
             extendedPopulation = copy(population)
             extendedPopulation.extend(self._mostDiverse)
-            allFitnesses = fitness.getAllFitnesses(self.fitness)
+            allFitnesses = fitness.getAllFitnesses(self.optType)
             sortedPopulation = list(chain.from_iterable(fitness.sort(extendedPopulation, allFitnesses)))
 
             howManyProliferate = int(self.bestFrac * len(sortedPopulation))
@@ -92,6 +92,7 @@ class USPEXClassic(object):
         for mutation in target.mutations:
             howCome = type(mutation).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = 0 if howMany < 0 else howMany
             if best:
                 self.weightsLast[howCome] = howMany
                 if hasattr(mutation, 'prepare'):
@@ -122,6 +123,7 @@ class USPEXClassic(object):
         for hybridization in target.hybridizations:
             howCome = type(hybridization).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = 0 if howMany < 0 else howMany
             if best:
                 self.weightsLast[howCome] = howMany
                 if hasattr(hybridization, 'prepare'):
@@ -155,6 +157,7 @@ class USPEXClassic(object):
         for creation in target.creations:
             howCome = type(creation).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = 0 if howMany < 0 else howMany
             self.weightsLast[howCome] = howMany
             if hasattr(creation, 'prepare'):
                 creation.prepare()
@@ -183,12 +186,12 @@ class USPEXClassic(object):
             seeds = target.seeds()
             for seed in seeds:
                 target.pool.assignID(seed)
-                seed['howCome'] = type(target.seeds).__name__
+                seed['howCome'] = 'Seeds'
                 seed['parent'] = "None"
                 logger.info(f"Structure {seed['ID']} created from seed {seed['filename']}.")
             population.extend(seeds)
 
-        return population, (autofrac.weightsLast, autofrac.weightsBest)
+        return population
 
     def determineMostDiverse(self, population : list, howManyDiverse: int, tolerance: float):
         """
@@ -226,3 +229,6 @@ class USPEXClassic(object):
                 break
             deltaTol /= 2
         return mostDiverse
+
+    def getMostDiverse(self) -> list:
+        return copy(self._mostDiverse)

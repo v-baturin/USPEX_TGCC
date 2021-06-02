@@ -68,8 +68,12 @@ class RandSym:
         self.nsymN = nsymN
         if nsym is None:
             self.nsym = list(range(2, 231))
-        else:
+        elif isinstance(nsym, str):
+            self.nsym = list(parseIntSet(nsym))
+        elif isinstance(nsym, list):
             self.nsym = nsym
+        else:
+            RuntimeError(f'Wrong type of nsym parameter: {type(nsym)}')
         self.sym_coef = sym_coef
         self.splitInto = splitInto
         self.attemptsRotation = attemptsRotation
@@ -170,3 +174,29 @@ class RandSym:
                 logger.debug(e, exc_info=True)
 
             failedDist += 1
+
+def parseIntSet(nputstr=""):
+  selection = set()
+  invalid = set()
+  # tokens are comma seperated values
+  tokens = [x.strip() for x in nputstr.split(',')]
+  for i in tokens:
+     try:
+        # typically tokens are plain old integers
+        selection.add(int(i))
+     except:
+        # if not, then it might be a range
+        try:
+           token = [int(k.strip()) for k in i.split('-')]
+           if len(token) > 1:
+              token.sort()
+              # we have items seperated by a dash
+              # try to build a valid range
+              first = token[0]
+              last = token[len(token)-1]
+              for x in range(first, last+1):
+                 selection.add(x)
+        except:
+           # not an int and not a range...
+           invalid.add(i)
+  return selection

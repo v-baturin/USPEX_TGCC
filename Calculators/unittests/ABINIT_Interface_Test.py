@@ -17,7 +17,7 @@ from os.path import join as pj
 
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from ..ABINIT_Interface import ABINIT_Interface
-from ...components import CrystalSystemRepresentation
+from ...components import CrystalRepresentation
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -39,7 +39,7 @@ class ABINIT_Interface_Test(unittest.TestCase):
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = CrystalSystemRepresentation.readAtomicStructure(f)
+                system = CrystalRepresentation.readAtomicStructure(f)
                 system['ID'] = ID
                 system['externalPressure'] = 130.0
             os.mkdir(WORKPATH)
@@ -56,5 +56,5 @@ class ABINIT_Interface_Test(unittest.TestCase):
             abinit.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = CrystalSystemRepresentation.readAtomicStructure(f)
+                systemRef = CrystalRepresentation.readAtomicStructure(f)
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))

@@ -217,7 +217,7 @@ def calcVolumePure(targetPress: float, atomType, systemType: str = 'atom'):  # R
 
 
 class Conditions:
-    def __init__(self, externalPressure, volumeType):
+    def __init__(self, volumeType, externalPressure = 0.0001):
         """
         :type externalPressure: float
         :param externalPressure: target pressure.

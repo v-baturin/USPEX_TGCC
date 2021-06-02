@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 import numpy as np
 import pandas as pd
 import sympy as smp
-from copy import copy
+from copy import copy, deepcopy
 from typing import List, Tuple
 from collections.abc import Mapping
 from itertools import combinations, chain
@@ -43,7 +43,7 @@ class Fitness(object):
         other._poolHash = self._poolHash
         other.utilities = self.utilities
         other._antiseedsCorrections = copy(self._antiseedsCorrections)
-        other._storedFitnesses = copy(self._storedFitnesses)
+        other._storedFitnesses = deepcopy(self._storedFitnesses)
         return other
 
     @property
@@ -114,6 +114,9 @@ class Fitness(object):
         return dict(zip([s['ID'] for s in self.pool.uniqueSystems], self.calcFitness(fitness)))
 
     def getFitnessByID(self, fitness, ID):
+        system = self.pool.allSystems[ID]
+        if 'originalID' in system:
+            ID = system['originalID']
         if fitness in presetFitness:
             fitness = presetFitness[fitness]
         value = None
@@ -156,15 +159,14 @@ class Fitness(object):
                     dist = self.fingerprintUtility.dist(ref_system, system)
                     self._antiseedsCorrections[system['ID']] += np.exp(-dist**2/(2*sigma**2))
 
-    def getAntiseedsCorrections(self, values: np.ndarray) -> np.ndarray:
+    def aging(self, values: np.ndarray) -> np.ndarray:
         corrections = []
         for system in self.pool.uniqueSystems:
             if system['ID'] in self._antiseedsCorrections:
                 corrections.append(self.ANTISEEDS_MAX * self._antiseedsCorrections[system['ID']])
             else:
                 corrections.append(0)
-        values += (values.mean() - values.min()) * np.asarray(corrections, dtype=float)
-        return values
+        return values + (values.mean() - values.min()) * np.asarray(corrections, dtype=float)
 
     @staticmethod
     def negate(values: np.ndarray) -> np.ndarray:

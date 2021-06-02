@@ -13,12 +13,10 @@ import pandas as pd
 import os
 import unittest
 
-from ase.io.vasp import read_vasp
 from os.path import join as pj
 
-from ..CompositionSpace import CompositionSpace
-from ..Crystal import Crystal
 from ..GCH import GeneralizedConvexHull
+from ...components import CrystalRepresentation, RadialDistributionUtility, CompositionSpace
 
 TESTPATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -34,15 +32,12 @@ def read_structures_and_energies(folder : str):
     try:
         with open(pj(folder, 'gatheredPOSCARS'), 'r') as fp:
             while True:
-                tmp = read_vasp(fp)
-                system = {'structure':
-                              Crystal(symbols=tmp.get_chemical_symbols(),
-                                      scaled_positions=tmp.get_scaled_positions(),
-                                      cell=tmp.get_cell_lengths_and_angles())}
+                system = CrystalRepresentation.readAtomicStructure(fp)
                 all_systems.append(system)
     except:
         print('Reading of the pathway has finished.')
     assert len(all_systems)
+    radialDistributionUtility = RadialDistributionUtility()
 
     populations = []
     for i, (_info, system) in enumerate(zip(info, all_systems)):
@@ -55,7 +50,7 @@ def read_structures_and_energies(folder : str):
         DATA.loc[i] = gen, ID, composition, enthalpy
         system['ID'] = ID
         system['enthalpy'] = enthalpy
-        system['fingerprint'] = system['structure'].fingerprint
+        system['fingerprint'] = radialDistributionUtility.structureFingerprint(system)
 
     for gen in np.unique(DATA.Generation.astype(int)):
         ids = DATA[DATA.Generation == gen]['ID'].astype(int)

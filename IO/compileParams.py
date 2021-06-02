@@ -26,7 +26,40 @@ def compileParams(main: dict, **definitions) -> dict:
             stages[i]['tag'] = str(i+1)
 
     if 'optimizer' in main and 'target' in main['optimizer']:
-        target = main['optimizer']['target']
+        optimizer = main['optimizer']
+        target = optimizer['target']
+        assert 'compositionSpace' in target
+        assert 'symbols' in target['compositionSpace']
+        symbols = target['compositionSpace']['symbols']
+        molecules = {}
+        for i, symbol in enumerate(symbols):
+            if symbol in definitions:
+                try:
+                    molDct = read_molecule(definitions[symbol]['filename'])
+                    molecules[symbol] = molDct
+                except Exception as ex:
+                    logger.exception(ex)
+                    exc_info = sys.exc_info()
+                    raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
+            if molecules:
+                target['simpleMoleculeUtility'] = {'molecules': molecules}
+        if 'conditions' not in target:
+            target['conditions'] = {}
+        if 'volumeType' not in target['conditions']:
+            if molecules:
+                target['conditions']['volumeType'] = 0.5
+            else:
+                target['conditions']['volumeType'] = 0
+        if 'cellUtility' not in target:
+            target['cellUtility'] = {}
+        if 'pbc' not in target['cellUtility']:
+            target['cellUtility']['pbc'] = (1, 1, 1)
+        if 'fingerprintUtility' not in optimizer:
+            optimizer['fingerprintUtility'] = 'radialDistributionUtility'
+        selection = optimizer['selection']
+        assert 'optType' in optimizer
+        if 'optType' not in selection:
+            selection['optType'] = optimizer['optType']
         if 'powderSpectrumAnalyzer' in target:
             filename = target['powderSpectrumAnalyzer']
             try:
@@ -43,25 +76,5 @@ def compileParams(main: dict, **definitions) -> dict:
                 logger.exception(ex)
                 exc_info = sys.exc_info()
                 raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
-        if 'compositionSpace' in target:
-            assert 'symbols' in target['compositionSpace']
-            symbols = target['compositionSpace']['symbols']
-            molecules = {}
-            for i, symbol in enumerate(symbols):
-                if symbol in definitions:
-                    try: 
-                        molDct = read_molecule(definitions[symbol]['filename'])
-                        molecules[symbol] = molDct
-                    except Exception as ex:
-                        logger.exception(ex)
-                        exc_info = sys.exc_info()
-                        raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
-            if molecules:
-                target['simpleMoleculeUtility'] = {'molecules': molecules}
-    if 'output' not in main:
-        if np.fromiter((minBlock == maxBlock for minBlock, maxBlock
-                        in main['optimizer']['target']['compositionSpace']['range']), dtype=bool).all():
-            main['output'] = presetOutput['CrystalFixComp']
-        else:
-            main['output'] = presetOutput['CrystalVarComp']
+
     return main

@@ -28,7 +28,7 @@ from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.setFitnessType(Fitness)
 GlobalOptimizer.registerSelection(USPEXClassic)
 
-from .Controllers.GenerationController import GenerationController
+from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 
 from .Atomistic.Element import Element
@@ -36,12 +36,9 @@ from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
 
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-from .IO.Crystal.CrystalSystemRepresentation import CrystalSystemRepresentation
-CrystalSystemRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+from .IO.CrystalRepresentation import CrystalRepresentation
+CrystalRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Calculators.GULP_Interface import GULP_Interface
 GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-Seeds.registerTypes(CrystalSystemRepresentation)
-
-from .InputParser import read
-from .IO.compileParams import compileParams
+Seeds.registerTypes(CrystalRepresentation)
