@@ -10,14 +10,15 @@ _SWAP_ATTEMPTS = 1000
 
 class Permutation:
 
-    def __init__(self, utilities, howManySwaps = 5, swapAttempts = _SWAP_ATTEMPTS):
+    def __init__(self, utilities, howManySwaps = 5, specificSwaps = None, swapAttempts = _SWAP_ATTEMPTS):
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
         if len(self.compositionSpace.symbols) == 1:
             raise RuntimeError("Permutation does not work when number of symbols in calculation is 1.")
-        self.specificSwaps = []
+        self.specificSwaps = [self.compositionSpace.symbols[i-1] for i in specificSwaps] if specificSwaps is not None \
+            else copy(self.compositionSpace.symbols)
         self.howManySwaps = howManySwaps
         self.swapAttempts = swapAttempts
 
@@ -26,7 +27,8 @@ class Permutation:
         cell = system['cell']
         symbols = self.simpleMoleculeUtility.moleculeTypes(system)
 
-        swaps = [{i1,i2} for i1,i2 in combinations(range(len(molecules)), 2) if symbols[i1] != symbols[i2]]
+        swaps = [{i1,i2} for i1,i2 in combinations(range(len(molecules)), 2) if symbols[i1] != symbols[i2]
+                 and symbols[i1] in self.specificSwaps and symbols[i2] in self.specificSwaps]
 
         for _ in range(self.swapAttempts):
             numberOfSwaps = np.random.randint(1, self.howManySwaps + 1)
