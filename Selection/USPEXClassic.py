@@ -44,7 +44,6 @@ class USPEXClassic(object):
         self.popSize = popSize
 
         if initialPopSize is not None:
-            assert isinstance(initialPopSize, int) and initialPopSize > 0
             self.initialPopSize = initialPopSize
         else:
             self.initialPopSize = popSize
