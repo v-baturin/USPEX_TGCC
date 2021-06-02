@@ -8,7 +8,7 @@ class IonDistances():
         for key, value in kwargs.items():
             assert isinstance(key, str)
             assert np.isfinite(value)
-            s1, s2 = key.split('_')
+            s1, s2 = key.split(' ')
             self._distances[(s1,s2)] = value
 
     def getDistances(self, symbols, volumeUtility):
