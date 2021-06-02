@@ -59,6 +59,21 @@ class CellUtility:
         else:
             raise RuntimeError('Cell is not fixed.')
 
+    def getRandomCell(self, composition, conditions):
+        try:
+            return self.getCell()
+        except RuntimeError:
+            volume = self.getCellVolume(composition, conditions)
+            a, b, c = np.random.random(3) + 0.5
+            x = 0.0
+            while x < 0.3:
+                alpha, beta, gamma = (np.random.random(3) * 4 + 1) * np.pi / 6
+                x = 1. - np.cos(alpha)**2 - np.cos(beta)**2 - np.cos(gamma)**2 + 2.*np.cos(alpha)*np.cos(beta)*np.cos(gamma)
+
+            r2d = 180/np.pi
+            cell = Cell.initFromCellParameters(a, b, c, alpha*r2d, beta*r2d, gamma*r2d, pbc=self._pbc)
+            return Cell(cellVectors=cell.getCellVectors()*((volume / cell.getVolume()) ** (1. / 3.)), pbc = self._pbc)
+
     def getCellVolume(self, composition, conditions):
         return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
 
