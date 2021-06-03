@@ -48,7 +48,7 @@ build_whl36:
     - cd build
     - flit build --format wheel
     - cd dist
-    - rename  'py3\-none\-any' 'cp36\-cp36m\-linux_x86_64' *.whl
+    - rename  's/py3\-none\-any/cp36\-cp36m\-linux_x86_64/' *.whl
   artifacts:
     paths:
       - build/dist
@@ -86,7 +86,7 @@ build_whl37:
     - cd build
     - flit build --format wheel
     - cd dist
-    - rename  'py3\-none\-any' 'cp37\-cp37m\-linux_x86_64' *.whl
+    - rename  's/py3\-none\-any/cp37\-cp37m\-linux_x86_64/' *.whl
   artifacts:
     paths:
       - build/dist
@@ -101,7 +101,7 @@ build_whl38:
     - cd build
     - flit build --format wheel
     - cd dist
-    - rename  'py3\-none\-any' 'cp38\-cp38\-linux_x86_64' *.whl
+    - rename  's/py3\-none\-any/cp38\-cp38\-linux_x86_64/' *.whl
   artifacts:
     paths:
       - build/dist
@@ -116,7 +116,7 @@ build_whl39:
     - cd build
     - flit build --format wheel
     - cd dist
-    - rename  'py3\-none\-any' 'cp39\-cp39\-linux_x86_64' *.whl
+    - rename  's/py3\-none\-any/cp39\-cp39\-linux_x86_64/' *.whl
   artifacts:
     paths:
       - build/dist
