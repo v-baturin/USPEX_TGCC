@@ -102,5 +102,5 @@ def _run():
     from .components import GenerationController
     asyncio.get_event_loop().run_until_complete(GenerationController.createController().run())
 
-if __name__ == 'main':
+if __name__ == '__main__':
     _run()
