@@ -1,45 +1,128 @@
 stages:
-  - unittesting_source
-  - build
-  - unittesting_binaries
-  - deploy
+  - test_phase1
+  - build_phase1
+  - test_phase2
+  - build_phase2
+  - test_phase3
+  - build_phase3
 
 variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_DRIVER: overlay2
 
-unittesting_source:
+test_sources:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
-  stage: unittesting_source
+  stage: test_phase1
   script:
+    - cd ./USPEX
     - nosetests -v .
 
-build:
+build_extensions:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
-  stage: build
+  stage: build_phase1
   script:
-    - mkdir onlytests
-    - find . -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./onlytests/$(dirname {}) && mv {} ./onlytests/$(dirname {})'
-    - python setup.py build_uspex -b ./Src
-    - touch Src/USPEX/__init__.py
+    - mkdir unittests
+    - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./unittests/$(dirname {}) && mv {} ./unittests/$(dirname {})'
+    - python buildExtensions.py build_uspex -b ./BuildExt
+    - touch BuildExt/USPEX/__init__.py
   artifacts:
     paths:
-      - Src
-      - onlytests
+      - BuildExt
+      - unittests
     expire_in: 1 mos 1 day
 
-unittesting_binaries:
+test_binaries:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
-  stage: unittesting_binaries
+  stage: test_phase2
   script:
-    - cp -r ./onlytests/* ./Src/USPEX/Common
-    - cd ./Src/USPEX/Common
+    - cp -r ./unittests/* ./BuildExt/USPEX
+    - cd ./BuildExt/USPEX
     - nosetests -v .
 
-trigger_build:
-  image: $CI_REGISTRY/uspex_python/thirdparty/aux:master
-  stage: deploy
+build_whl36:
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
+  stage: build_phase2
   script:
-    - "curl -X POST -F token=$USPEX_AGAIN_BUILD_TRIGGER -F ref=master -F variables[SUBPROJECT_ID]=$CI_PROJECT_ID -F variables[SUBPROJECT_REF]=$CI_COMMIT_REF_SLUG https://git.uspex-team.org/api/v4/projects/59/trigger/pipeline"
-  except:
-    - triggers
+    - mkdir build
+    - cp pyproject.toml build/
+    - cp -r ./BuildExt/* build/
+    - echo -e '"""USPEX-AGAIN"""\n__version__ = "0.0.1"' >> build/USPEX/__init__.py
+    - cd build
+    - flit build --format wheel
+    - cp dist/USPEX_AGAIN-0.0.1-py3-none-any.whl ../USPEX_AGAIN-0.0.1-cp36-cp36m-linux_x86_64.whl
+  artifacts:
+    paths:
+      - USPEX_AGAIN-0.0.1-cp36-cp36m-linux_x86_64.whl
+
+test_package:
+  image: $CI_REGISTRY/uspex_python/thirdparty:master
+  stage: test_phase3
+  script:
+    - pip install USPEX_AGAIN-0.0.1-cp36-cp36m-linux_x86_64.whl
+    - python -m USPEX.main
+  artifacts:
+    paths:
+      - Client.log
+      - controller.dump
+      - results1
+
+build_image:
+  image: docker:stable
+  services:
+    - docker:dind
+  stage: build_phase3
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+  only:
+    - master
+
+build_whl37:
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython37:master
+  stage: build_phase3
+  script:
+    - mkdir build
+    - cp pyproject.toml build/
+    - cp -r ./BuildExt/* build/
+    - cd ../build
+    - echo -e '"""USPEX-AGAIN"""\n__version__ = "0.0.1"' >> ./USPEX/__init__.py
+    - flit build --format wheel
+    - cp dist/USPEX_AGAIN-0.0.1-py3-none-any.whl ../USPEX_AGAIN-0.0.1-cp37-cp37m-linux_x86_64.whl
+  artifacts:
+    paths:
+      - USPEX_AGAIN-0.0.1-cp37-cp37m-linux_x86_64.whl
+  only:
+    - master
+
+build_whl38:
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
+  stage: build_phase3
+  script:
+    - mkdir build
+    - cp pyproject.toml build/
+    - cp -r ./BuildExt/* build/
+    - echo -e '"""USPEX-AGAIN"""\n__version__ = "0.0.1"' >> ./USPEX/__init__.py
+    - flit build --format wheel
+    - cp dist/USPEX_AGAIN-0.0.1-py3-none-any.whl ../USPEX_AGAIN-0.0.1-cp38-cp38-linux_x86_64.whl
+  artifacts:
+    paths:
+      - USPEX_AGAIN-0.0.1-cp38-cp38-linux_x86_64.whl
+  only:
+    - master
+
+build_whl39:
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython39:master
+  stage: build_phase3
+  script:
+    - mkdir build
+    - cp pyproject.toml build/
+    - cp -r ./BuildExt/* build/
+    - echo -e '"""USPEX-AGAIN"""\n__version__ = "0.0.1"' >> ./USPEX/__init__.py
+    - flit build --format wheel
+    - cp dist/USPEX_AGAIN-0.0.1-py3-none-any.whl ../USPEX_AGAIN-0.0.1-cp39-cp39-linux_x86_64.whl
+  artifacts:
+    paths:
+      - USPEX_AGAIN-0.0.1-cp39-cp39-linux_x86_64.whl
+  only:
+    - master
