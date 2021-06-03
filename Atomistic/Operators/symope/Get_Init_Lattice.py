@@ -30,14 +30,13 @@ def Get_Init_Lattice(lat, permutation):
 
         if lat.shape == (3, 3):  # INPUT is 3x3 -> convert it to 1x6
             lat1 = latConverter(lat)
+            lat1[0, 3:6] *= (180.0 / np.pi)  # fortran works with degrees, convert to degrees
         else:  # INPUT is 1*6
-            lat1 = np.copy(lat)
+            lat1 = np.copy(lat).reshape((1,6))
 
         lat_tmp = np.copy(lat1)
         for axis in range(3):
             lat1[0, axis] = lat_tmp[0, permutation[axis]]
-
-        lat1[0, 3:6] *= (180.0 / np.pi)  # fortran works with degrees, convert to degrees
 
     return lat1
 

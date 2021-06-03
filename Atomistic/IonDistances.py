@@ -4,10 +4,12 @@ from itertools import combinations_with_replacement
 
 class IonDistances():
     def __init__(self, **kwargs):
-        self._distances = kwargs
+        self._distances = {}
         for key, value in kwargs.items():
-            assert isinstance(key, tuple) and len(key) == 2 and isinstance(key[0], str) and isinstance(key[1], str)
+            assert isinstance(key, str)
             assert np.isfinite(value)
+            s1, s2 = key.split(' ')
+            self._distances[(s1,s2)] = value
 
     def getDistances(self, symbols, volumeUtility):
         symbols = [symbol.short_name for symbol in symbols]
