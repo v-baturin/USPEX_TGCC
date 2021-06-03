@@ -6,7 +6,7 @@
 |                   \__,_|___/ .__/ \___/_/\_(_) .__/ \__, |                   |
 |                            |_|               |_|    |___/                    |
 |                                                                              |
-|                           Version 0.2 (MM/DD/YYYY)                           |
+|                                   2021.0.0                                   |
 |                                                                              |
 |             Evolutionary Algorithm Code for Structure Prediction             |
 |                      more info at http://uspex-team.org                      |

@@ -6,3 +6,6 @@ home-page="https://uspex-team.org"
 dist-name="USPEX"
 requires-python=">=3.6"
 requires = ["ase", "pymatgen", "abipy", "asyncssh", "pandas", "toml", "sklearn", "prettytable", "parsec"]
+
+[tool.flit.scripts]
+uspex="USPEX.main:main"

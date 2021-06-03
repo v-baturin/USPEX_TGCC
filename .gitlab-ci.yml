@@ -59,7 +59,7 @@ test_package:
   script:
     - pip install build/dist/USPEX-*-cp36-cp36m-linux_x86_64.whl
     - cd testFolder
-    - python -m USPEX.main
+    - uspex -r
   artifacts:
     paths:
       - testFolder
@@ -73,14 +73,13 @@ build_image:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker build -t $IMAGE_TAG .
     - docker push $IMAGE_TAG
-  only:
-    - master
+#  only:
+#    - master
 
 build_whl37:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython37:master
   stage: build_phase3
   script:
-    - mkdir build
     - cp pyproject.toml build/
     - cp -r ./BuildExt/* build/
     - cd build
@@ -95,7 +94,6 @@ build_whl38:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
   stage: build_phase3
   script:
-    - mkdir build
     - cp pyproject.toml build/
     - cp -r ./BuildExt/* build/
     - cd build
@@ -110,7 +108,6 @@ build_whl39:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython39:master
   stage: build_phase3
   script:
-    - mkdir build
     - cp pyproject.toml build/
     - cp -r ./BuildExt/* build/
     - cd build
