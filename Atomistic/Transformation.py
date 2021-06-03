@@ -9,7 +9,7 @@ class Transformation:
         self.transVec = transVec
 
     def __neg__(self):
-        return Transformation(-self.rotMatrix, -self.transVec)
+        return Transformation.fromRotVector(-Rotation.from_matrix(self.rotMatrix).as_rotvec(), -self.transVec)
 
     def __mul__(self, other):
         return Transformation(np.dot(self.rotMatrix, other.rotMatrix), self.transVec + np.dot(self.rotMatrix, other.transVec))

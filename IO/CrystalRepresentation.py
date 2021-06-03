@@ -334,7 +334,7 @@ class CrystalRepresentation(object):
             tmp_fing2 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s2)
             dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
             qe += (1 - dist) * np.log(1 - dist)
-        qe /= -len(comb)
+        qe /= -len(comb) if comb else 1
 
         block = [ '    Generation Summary',
                  f'      Correlation coefficient: {correlation:.4}',
