@@ -1,5 +1,5 @@
 stages:
-  - test_phase1
+#  - test_phase1
   - build_phase1
   - test_phase2
   - build_phase2
@@ -10,12 +10,12 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_DRIVER: overlay2
 
-test_sources:
-  image: $CI_REGISTRY/uspex_python/thirdparty:master
-  stage: test_phase1
-  script:
-    - cd ./USPEX
-    - nosetests -v .
+#test_sources:
+#  image: $CI_REGISTRY/uspex_python/thirdparty:master
+#  stage: test_phase1
+#  script:
+#    - cd ./USPEX
+#    - nosetests -v .
 
 build_extensions:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
@@ -24,7 +24,6 @@ build_extensions:
     - mkdir unittests
     - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./unittests/$(dirname {}) && mv {} ./unittests/$(dirname {})'
     - python buildExtensions.py build_uspex -b ./BuildExt
-    - touch BuildExt/USPEX/__init__.py
   artifacts:
     paths:
       - BuildExt
@@ -92,8 +91,6 @@ build_whl37:
   artifacts:
     paths:
       - USPEX_AGAIN-0.0.1-cp37-cp37m-linux_x86_64.whl
-  only:
-    - master
 
 build_whl38:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
@@ -108,8 +105,6 @@ build_whl38:
   artifacts:
     paths:
       - USPEX_AGAIN-0.0.1-cp38-cp38-linux_x86_64.whl
-  only:
-    - master
 
 build_whl39:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython39:master
@@ -124,5 +119,3 @@ build_whl39:
   artifacts:
     paths:
       - USPEX_AGAIN-0.0.1-cp39-cp39-linux_x86_64.whl
-  only:
-    - master
