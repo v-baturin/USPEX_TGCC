@@ -57,7 +57,7 @@ test_package:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase3
   script:
-    - pip install dist/USPEX-*-cp36-cp36m-linux_x86_64.whl
+    - pip install build/dist/USPEX-*-cp36-cp36m-linux_x86_64.whl
     - cd testFolder
     - python -m USPEX.main
   artifacts:
