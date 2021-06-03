@@ -15,6 +15,8 @@ from .IO.OutputRepresentation import OutputRepresentation
 from .IO.InputParser import read
 from .IO.compileParams import compileParams
 
+DEFAULT_OUTPUT_REFRESH_DELAY = 120
+
 
 class ControllerState(Enum):
     createPopulation = 0
@@ -31,13 +33,14 @@ class GenerationController(object):
     knownOptimizers = {}
 
     def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages : list,
-                 optimizer, outputRepresentation):
+                 optimizer, outputRepresentation, outputRefreshDelay):
         self.numGenerations = numGenerations
         self.stopCrit = stopCrit
         self.numParallelCalcs = numParallelCalcs
         self.optimizer = optimizer
         self.stages = stages
         self.outputRepresentation = outputRepresentation
+        self.outputRefreshDelay = outputRefreshDelay
         self.doPresentSystems = True
         self.generation = 0
         self.numberStableGenerations = 0
@@ -128,7 +131,7 @@ class GenerationController(object):
 
     async def presentSystems(self):
         while self.doPresentSystems:
-            await asyncio.sleep(120)
+            await asyncio.sleep(self.outputRefreshDelay)
             self.outputRepresentation.presentSystems(self.systems, self.optimizer)
 
     def save(self):
@@ -151,6 +154,8 @@ class GenerationController(object):
             numParallelCalcs = params['numParallelCalcs']
             numGenerations = params['numGenerations']
             stopCrit = params['stopCrit']
+            outputRefreshDelay = params['outputRefreshDelay'] if 'outputRefreshDelay' in params \
+                else DEFAULT_OUTPUT_REFRESH_DELAY
 
             if optimizer['type'] in GenerationController.knownOptimizers:
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
@@ -159,7 +164,7 @@ class GenerationController(object):
             stages = [SHELL_Calculator(**stage) for stage in stages]
             outputRepresentation = OutputRepresentation(optimizer, **params)
             controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
-                                              outputRepresentation)
+                                              outputRepresentation, outputRefreshDelay)
             logger.info('Calculation initialized from input parameters.')
         else:
             raise RuntimeError('No input or dump file to start.')

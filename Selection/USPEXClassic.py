@@ -44,7 +44,6 @@ class USPEXClassic(object):
         self.popSize = popSize
 
         if initialPopSize is not None:
-            assert isinstance(initialPopSize, int) and initialPopSize > 0
             self.initialPopSize = initialPopSize
         else:
             self.initialPopSize = popSize
@@ -76,7 +75,7 @@ class USPEXClassic(object):
             allFitnesses = fitness.getAllFitnesses(self.optType)
             sortedPopulation = list(chain.from_iterable(fitness.sort(extendedPopulation, allFitnesses)))
 
-            howManyProliferate = int(self.bestFrac * len(sortedPopulation))
+            howManyProliferate = int(np.ceil(self.bestFrac * len(sortedPopulation)))
             best = sortedPopulation[:howManyProliferate]
             tournament = [(i + 1.0) ** 2 for i in reversed(range(howManyProliferate))]
             tournament /= np.sum(tournament)
