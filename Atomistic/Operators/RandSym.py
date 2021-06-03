@@ -151,7 +151,7 @@ class RandSym:
                 if sum(self.splitInto) > 3:  # split cell
                     lat = self.cellUtility.getRandomCell(composition, self.conditions).getCellParameters()
                     lat, candidate = splitBigCell(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, lat,
-                                                  np.random.choice(self.splitInto, 1), numIons, nsym, self.sym_coef)
+                                                  np.random.choice(self.splitInto), numIons, nsym, self.sym_coef)
                 else:
 
                     candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,

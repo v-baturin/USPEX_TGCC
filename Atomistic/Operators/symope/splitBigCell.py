@@ -1,4 +1,6 @@
 from __future__ import division
+import logging
+logger = logging.getLogger(__name__)
 
 import numpy as np
 
@@ -22,6 +24,7 @@ def splitBigCell(CenterminDistMatrice, constLattice, fixRndSeed, startLat, split
 
     #numIons = numIons_standardize(numIons)[0]
 
+    startLat = np.asarray(startLat)
     splitByCellNumber = True
 
     #TODO fix const lattice
@@ -211,7 +214,7 @@ def splitBigCell(CenterminDistMatrice, constLattice, fixRndSeed, startLat, split
             counter += 1
 
     lat = Cell.initFromCellParameters(*startLat, pbc = (1,1,1)).getCellVectors()
-    print('split into: x = %d, y = %d, z = %d' % (x, y, z))
+    logger.debug('split into: x = %d, y = %d, z = %d' % (x, y, z))
 
     return lat, coordinates
 
