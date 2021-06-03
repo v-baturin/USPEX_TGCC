@@ -5,7 +5,7 @@
             type: 'Crystal',
             conditions: {externalPressure: 100},
             compositionSpace: {symbols: ['Mg', 'Al', 'O'],
-                               blocks: [[4, 8, 16]]},
+                               blocks: [[4, 8, 16]]}
         },
         optType: 'enthalpy',
         selection: {
