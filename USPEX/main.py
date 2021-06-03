@@ -68,9 +68,10 @@ def main():
         cwd = getcwd()
         for file in listdir(cwd):
             if path.isfile(path.join(cwd, file)) and file in ['controller.dump',
-                                                                'controller.dump.back',
-                                                                'stages.dump',
-                                                                'stages.dump.back']:
+                                                              'controller.dump.back',
+                                                              'stages.dump',
+                                                              'stages.dump.back',
+                                                              'USPEX_IS_DONE']:
                 remove(path.join(cwd, file))
 
     # if args.generate:

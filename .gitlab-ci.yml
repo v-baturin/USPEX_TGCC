@@ -1,7 +1,7 @@
 stages:
-#  - test_phase1
+  - test_phase1
   - build_phase1
-#  - test_phase2
+  - test_phase2
   - build_phase2
   - test_phase3
   - build_phase3
@@ -10,12 +10,12 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_DRIVER: overlay2
 
-#test_sources:
-#  image: $CI_REGISTRY/uspex_python/thirdparty:master
-#  stage: test_phase1
-#  script:
-#    - cd ./USPEX
-#    - nosetests -v .
+test_sources:
+  image: $CI_REGISTRY/uspex_python/thirdparty:master
+  stage: test_phase1
+  script:
+    - cd ./USPEX
+    - nosetests -v .
 
 build_extensions:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
@@ -30,13 +30,13 @@ build_extensions:
       - unittests
     expire_in: 1 mos 1 day
 
-#test_binaries:
-#  image: $CI_REGISTRY/uspex_python/thirdparty:master
-#  stage: test_phase2
-#  script:
-#    - cp -r ./unittests/* ./BuildExt/
-#    - cd ./BuildExt/USPEX
-#    - nosetests -v .
+test_binaries:
+  image: $CI_REGISTRY/uspex_python/thirdparty:master
+  stage: test_phase2
+  script:
+    - cp -r ./unittests/* ./BuildExt/
+    - cd ./BuildExt/USPEX
+    - nosetests -v .
 
 build_whl36:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
@@ -64,15 +64,15 @@ test_package:
     paths:
       - testFolder
 
-build_image:
-  image: docker:stable
-  services:
-    - docker:dind
-  stage: build_phase3
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build -t $IMAGE_TAG .
-    - docker push $IMAGE_TAG
+#build_image:
+#  image: docker:stable
+#  services:
+#    - docker:dind
+#  stage: build_phase3
+#  script:
+#    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+#    - docker build -t $IMAGE_TAG .
+#    - docker push $IMAGE_TAG
 #  only:
 #    - master
 
@@ -80,8 +80,10 @@ build_whl37:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython37:master
   stage: build_phase3
   script:
+    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
+    - python buildExtensions.py build_uspex -b ./BuildExt37
+    - cp -r ./BuildExt37/* build/
     - cp pyproject.toml build/
-    - cp -r ./BuildExt/* build/
     - cd build
     - flit build --format wheel
     - cd dist
@@ -94,8 +96,10 @@ build_whl38:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
   stage: build_phase3
   script:
+    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
+    - python buildExtensions.py build_uspex -b ./BuildExt38
+    - cp -r ./BuildExt38/* build/
     - cp pyproject.toml build/
-    - cp -r ./BuildExt/* build/
     - cd build
     - flit build --format wheel
     - cd dist
@@ -108,8 +112,10 @@ build_whl39:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython39:master
   stage: build_phase3
   script:
+    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
+    - python buildExtensions.py build_uspex -b ./BuildExt39
+    - cp -r ./BuildExt39/* build/
     - cp pyproject.toml build/
-    - cp -r ./BuildExt/* build/
     - cd build
     - flit build --format wheel
     - cd dist
