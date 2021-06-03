@@ -1,7 +1,7 @@
 stages:
 #  - test_phase1
   - build_phase1
-  - test_phase2
+#  - test_phase2
   - build_phase2
   - test_phase3
   - build_phase3
@@ -30,13 +30,13 @@ build_extensions:
       - unittests
     expire_in: 1 mos 1 day
 
-test_binaries:
-  image: $CI_REGISTRY/uspex_python/thirdparty:master
-  stage: test_phase2
-  script:
-    - cp -r ./unittests/* ./BuildExt/
-    - cd ./BuildExt/USPEX
-    - nosetests -v .
+#test_binaries:
+#  image: $CI_REGISTRY/uspex_python/thirdparty:master
+#  stage: test_phase2
+#  script:
+#    - cp -r ./unittests/* ./BuildExt/
+#    - cd ./BuildExt/USPEX
+#    - nosetests -v .
 
 build_whl36:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
@@ -45,19 +45,19 @@ build_whl36:
     - mkdir build
     - cp pyproject.toml build/
     - cp -r ./BuildExt/* build/
-    - echo -e '"""USPEX-AGAIN"""\n__version__ = "0.0.1"' >> build/USPEX/__init__.py
     - cd build
     - flit build --format wheel
-    - cp dist/USPEX_AGAIN-0.0.1-py3-none-any.whl ../USPEX_AGAIN-0.0.1-cp36-cp36m-linux_x86_64.whl
+    - cd dist
+    - rename  py3\-none\-any cp36\-cp36m\-linux_x86_64 *.whl
   artifacts:
     paths:
-      - USPEX_AGAIN-0.0.1-cp36-cp36m-linux_x86_64.whl
+      - build/dist
 
 test_package:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase3
   script:
-    - pip install USPEX_AGAIN-0.0.1-cp36-cp36m-linux_x86_64.whl
+    - pip install dist/USPEX-*-cp36-cp36m-linux_x86_64.whl
     - cd testFolder
     - python -m USPEX.main
   artifacts:
@@ -83,13 +83,13 @@ build_whl37:
     - mkdir build
     - cp pyproject.toml build/
     - cp -r ./BuildExt/* build/
-    - cd ../build
-    - echo -e '"""USPEX-AGAIN"""\n__version__ = "0.0.1"' >> ./USPEX/__init__.py
+    - cd build
     - flit build --format wheel
-    - cp dist/USPEX_AGAIN-0.0.1-py3-none-any.whl ../USPEX_AGAIN-0.0.1-cp37-cp37m-linux_x86_64.whl
+    - cd dist
+    - rename  py3\-none\-any cp37\-cp37m\-linux_x86_64 *.whl
   artifacts:
     paths:
-      - USPEX_AGAIN-0.0.1-cp37-cp37m-linux_x86_64.whl
+      - build/dist
 
 build_whl38:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
@@ -98,12 +98,13 @@ build_whl38:
     - mkdir build
     - cp pyproject.toml build/
     - cp -r ./BuildExt/* build/
-    - echo -e '"""USPEX-AGAIN"""\n__version__ = "0.0.1"' >> ./USPEX/__init__.py
+    - cd build
     - flit build --format wheel
-    - cp dist/USPEX_AGAIN-0.0.1-py3-none-any.whl ../USPEX_AGAIN-0.0.1-cp38-cp38-linux_x86_64.whl
+    - cd dist
+    - rename  py3\-none\-any cp38\-cp38\-linux_x86_64 *.whl
   artifacts:
     paths:
-      - USPEX_AGAIN-0.0.1-cp38-cp38-linux_x86_64.whl
+      - build/dist
 
 build_whl39:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython39:master
@@ -112,9 +113,10 @@ build_whl39:
     - mkdir build
     - cp pyproject.toml build/
     - cp -r ./BuildExt/* build/
-    - echo -e '"""USPEX-AGAIN"""\n__version__ = "0.0.1"' >> ./USPEX/__init__.py
+    - cd build
     - flit build --format wheel
-    - cp dist/USPEX_AGAIN-0.0.1-py3-none-any.whl ../USPEX_AGAIN-0.0.1-cp39-cp39-linux_x86_64.whl
+    - cd dist
+    - rename  py3\-none\-any cp39\-cp39\-linux_x86_64 *.whl
   artifacts:
     paths:
-      - USPEX_AGAIN-0.0.1-cp39-cp39-linux_x86_64.whl
+      - build/dist
