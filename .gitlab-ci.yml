@@ -34,7 +34,7 @@ test_binaries:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase2
   script:
-    - cp -r ./unittests/* ./BuildExt/USPEX
+    - cp -r ./unittests/* ./BuildExt/
     - cd ./BuildExt/USPEX
     - nosetests -v .
 
@@ -58,12 +58,11 @@ test_package:
   stage: test_phase3
   script:
     - pip install USPEX_AGAIN-0.0.1-cp36-cp36m-linux_x86_64.whl
+    - cd testFolder
     - python -m USPEX.main
   artifacts:
     paths:
-      - Client.log
-      - controller.dump
-      - results1
+      - testFolder
 
 build_image:
   image: docker:stable
