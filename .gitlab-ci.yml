@@ -73,8 +73,8 @@ build_image:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker build -t $CI_REGISTRY_IMAGE .
     - docker push $CI_REGISTRY_IMAGE
-#  only:
-#    - master
+  only:
+    - master
 
 build_whl37:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython37:master
