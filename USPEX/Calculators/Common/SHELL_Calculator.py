@@ -67,6 +67,9 @@ class SHELL_Calculator(object):
         elif type == 'lammps':
             from ..LAMMPS_Interface import LAMMPS_Interface
             self._interface = LAMMPS_Interface(tag, **kwargs)
+        elif type == 'qe':
+            from ..QE_Interface import QE_Interface
+            self._interface = QE_Interface(tag, **kwargs)
         elif type == 'mlip':
             from ..MLIP_Interface import MLIP_Interface
             self._interface = MLIP_Interface(tag, **kwargs)

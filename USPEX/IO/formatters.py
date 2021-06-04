@@ -14,7 +14,7 @@ pic2 = '''
    _|_|     _|_|_|     _|         _|_|_|_|   _|      _|
 '''
 
-version = "Version 0.2 (MM/DD/YYYY)"
+from .. import __version__
 
 
 def createHeader(description, debug=False):
@@ -26,7 +26,7 @@ def createHeader(description, debug=False):
     """
 
     width = 80
-    text = [version, '', description, 'more info at http://uspex-team.org', '']
+    text = [__version__, '', description, 'more info at http://uspex-team.org', '']
     if debug:
         print('Text: %s' % text)
 
