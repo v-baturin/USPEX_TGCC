@@ -7,7 +7,6 @@ import spglib
 from scipy.spatial.transform import Rotation
 
 from .Transformation import Transformation
-from .AtomicPrimitives import AtomicStructure
 
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
@@ -253,28 +252,19 @@ class Cell:
         return Cell(np.vstack((va, vb, vc)), pbc)
 
     @staticmethod
-    def addVacuum(oldcell, struct_info, vacuumSize):
+    def addVacuum(structure, vacuumSize):
         """
-        @param struct_info: cartesian atomic coordinates
+        @param structure: cartesian atomic coordinates
         @param vacuumSize: ordered container of vacuum distances along cartesian coordinates
         @return:  new cell parameters
         structure = AtomicStructure(structure.getAtomTypes(), newCoords, cell=cell)
         """
-        if hasattr(struct_info, 'coordinates'):
-            cartCoords = struct_info.coordinates
-        else:
-            cartCoords = struct_info
-        pbc = oldcell.getPBC()  # Why not just write _pbc?
-        dims = np.sum(pbc)
-
-        if dims == 3:
-            logger.warning("Vacuum size is set for 3D calculation. Please check your input")
-            return
+        cartCoords = structure.getFractionalCoordinates()
+        oldCell = structure.getCell()
+        pbc = oldCell.getPBC()  # Why not just write _pbc?
 
         newCellVectors = np.diag(np.max(cartCoords, 0) - np.min(cartCoords, 0) + vacuumSize)
-        newCellVectors[np.nonzero(pbc)] = oldcell.getCellVectorsPBC()
+        newCellVectors[np.nonzero(pbc)] = oldCell.getCellVectorsPBC()
         newCell = Cell(newCellVectors, pbc)
         newCoords = newCell.center(cartCoords, affectedDims=1 - np.array(pbc), toPrincipalAxes=True)
-        if hasattr(struct_info, 'coordinates'):
-            return newCell, AtomicStructure(struct_info.getAtomTypes(), newCoords, cell=newCell)
-        return newCell, newCoords
+        return type(structure)(structure.getAtomTypes(), newCoords, cell=newCell)

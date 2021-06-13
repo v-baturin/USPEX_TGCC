@@ -18,8 +18,6 @@ import shutil
 from .Common.SHELL_Interface import SHELL_Interface
 from os.path import join as pj
 from typing import List
-from ..Atomistic.CellUtility import Cell
-from ..Atomistic.AtomicPrimitives import AtomicStructure
 
 
 class GULP_Interface(SHELL_Interface):
@@ -35,7 +33,7 @@ class GULP_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag : str, ginput : str = None, goptions : str = None, libs:List[str] = None,
-                 moleculeSpecifics : dict = None, perturbate : bool = True, fix_cell:bool=False, **kwargs):
+                 moleculeSpecifics : dict = None, perturbate : bool = True, fix_cell:bool=False, vacuumSize = 10, **kwargs):
         '''
 
         :param params: dictionary with parameters:
@@ -69,13 +67,9 @@ class GULP_Interface(SHELL_Interface):
         else:
             self.moleculeSpecifics = {}
 
-        if 'vacuumSize' in kwargs:
-            self.vacuumSize = kwargs['vacuumSize']
-
         self.perturbate = perturbate
         self.fix_cell = fix_cell
-        if 'vacuumsize' in kwargs:
-            self.vacuumSize = kwargs['vacuumsize']
+        self.vacuumSize = vacuumSize
         logger.debug('GULP calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -89,17 +83,11 @@ class GULP_Interface(SHELL_Interface):
 
         # system = AtomicStructure.fromDICT(system)
         # twoDimensional = -3 == system.dimension or 2 == system.dimension
-        molecules = system['molecules']
-        cell = system['cell']
-        systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
-        system['structure'] = structure
+        structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
 
-        if hasattr(self, 'vacuumSize'):
-            system['cell'], system['structure'] = Cell.addVacuum(cell, structure, self.vacuumSize)
-            structure = system['structure']
-            cell = system['cell']
+        structure = self.cellType.addVacuum(structure, self.vacuumSize)
+        cell = structure.getCell()
 
         files_to_delete = ['output', 'optimized.structure']
         for f in files_to_delete:
