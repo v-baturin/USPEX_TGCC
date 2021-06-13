@@ -127,6 +127,7 @@ class GULP_Interface(SHELL_Interface):
         content_to_write += 'fractional\n'
 
         coordinates = structure.getCartesianCoordinates()
+        coordinates = cell.center(coordinates)
         # TODO properly perturnb system
         if self.perturbate:
             coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)

@@ -8,6 +8,7 @@ from scipy.spatial.transform import Rotation
 
 from .Transformation import Transformation
 
+
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
 
@@ -135,7 +136,7 @@ class Cell:
         gamma = 180 / np.pi * np.arccos(np.dot(self._cellVectors[0, :], self._cellVectors[1, :]) / (a * b))
         return a, b, c, alpha, beta, gamma
 
-    def center(self, coordinates, affectedDims=(1, 1, 1), toPrincipalAxes=True):
+    def center(self, coordinates, affectedDims=None, toPrincipalAxes=True):
         """
         Center atoms in unit cell.
 
@@ -150,13 +151,16 @@ class Cell:
                                 around z-axis accordingly
         :return:
         """
+        if affectedDims is None:
+            affectedDims = 1 - np.asarray(self.getPBC(), dtype=int)
         affectedDims = np.array(affectedDims).reshape((1, 3))
         centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
         coordinates -= coordinates.mean(axis=0) * affectedDims
-        if toPrincipalAxes:
-            forAxes = coordinates * affectedDims
-            _, rotMatrix = np.linalg.eigh(np.eye(3) * np.sum(forAxes ** 2) - np.dot(forAxes.T, forAxes))
-            coordinates = np.dot(coordinates, rotMatrix)
+        # Probably should not be here
+        # if toPrincipalAxes:
+        #     forAxes = coordinates * affectedDims
+        #     _, rotMatrix = np.linalg.eigh(np.eye(3) * np.sum(forAxes ** 2) - np.dot(forAxes.T, forAxes))
+        #     coordinates = np.dot(coordinates, rotMatrix)
         return coordinates + centerCellVec*affectedDims
 
 
@@ -259,12 +263,9 @@ class Cell:
         @return:  new cell parameters
         structure = AtomicStructure(structure.getAtomTypes(), newCoords, cell=cell)
         """
-        cartCoords = structure.getFractionalCoordinates()
+        cartCoords = structure.getCartesianCoordinates()
         oldCell = structure.getCell()
         pbc = oldCell.getPBC()  # Why not just write _pbc?
-
         newCellVectors = np.diag(np.max(cartCoords, 0) - np.min(cartCoords, 0) + vacuumSize)
         newCellVectors[np.nonzero(pbc)] = oldCell.getCellVectorsPBC()
-        newCell = Cell(newCellVectors, pbc)
-        newCoords = newCell.center(cartCoords, affectedDims=1 - np.array(pbc), toPrincipalAxes=True)
-        return type(structure)(structure.getAtomTypes(), newCoords, cell=newCell)
+        return type(structure)(structure.getAtomTypes(), cartCoords, cell=Cell(newCellVectors, pbc))
