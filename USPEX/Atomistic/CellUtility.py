@@ -193,7 +193,7 @@ class Cell:
             rotVec = np.pi * np.random.random() * axis / np.linalg.norm(axis)
             rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
         elif pbcSum == 2:
-            axis = np.cross(pbcVectorsCart[0, :], pbcVectorsCart[1, :])
+            axis = np.cross(pbcVectorsCart[0,:], pbcVectorsCart[1,:])
             rotVec = np.pi * np.random.random() * axis / np.linalg.norm(axis)
             rotMatrix = Rotation.from_rotvec(rotVec).as_matrix()
         else:
@@ -209,8 +209,8 @@ class Cell:
                                 for coords in cell.cartesianToFractional(self.getCornersCoordinates()).T[inds]],
                                dtype = float)\
                     - cell.cartesianToFractional(initialCoordinates)[inds].reshape((-1,1))
-        minAndMax = np.asarray(np.ceil(minAndMax), dtype=int)
-        if np.all(minAndMax.T[1] > minAndMax.T[0]):
+        minAndMax = np.asarray(np.ceil(minAndMax), dtype=int).reshape((-1,1))
+        if np.all(minAndMax[:1] > minAndMax[:0]):
             closeShifts = []
             for minCoordinate, maxCoordinate in minAndMax:
                 if closeShifts:
@@ -221,7 +221,7 @@ class Cell:
                 else:
                     closeShifts = [(i,) for i in range(minCoordinate, maxCoordinate)]
             closeShifts = np.asarray(closeShifts, dtype=int)
-            closeCoordinates = initialCoordinates + np.dot(closeShifts, vectors)
+            closeCoordinates = initialCoordinates.reshape((1,3)) + np.dot(closeShifts, vectors)
         else:
             closeCoordinates = []
 
