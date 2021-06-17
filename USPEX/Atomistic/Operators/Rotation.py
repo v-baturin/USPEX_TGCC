@@ -27,7 +27,7 @@ class Rotation():
                 molecule = molecules[j]
                 offset = Transformation.fromRotVector([0.,0.,0.,], molecule.getCenterOfMassCartesianCoordinates())
                 molecule = (-offset).transform(molecule)
-                inertiaValues, inertiaVectors = molecule.getPrincipleAxes()
+                inertiaValues, inertiaVectors = molecule.getPrincipalAxes()
                 rotationClearance = self.simpleMoleculeUtility.rotationClearance(inertiaValues)
                 rotVector = (inertiaVectors*rotationClearance)[np.random.randint(3)]*(2*np.random.random_sample() - 1)
                 transformation = Transformation.fromRotVector(rotVector, offset.transVec)

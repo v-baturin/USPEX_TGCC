@@ -103,7 +103,7 @@ class RandSym:
             else:
                 molecule = Transformation.fromRotVector([0.,0.,0.],
                                                         -molecule.getCenterOfMassCartesianCoordinates()).transform(molecule)
-                values, vectors = molecule.getPrincipleAxes()
+                values, vectors = molecule.getPrincipalAxes()
                 short_direction = vectors[np.argmin(values)]
                 height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.getCartesianCoordinates()]
                 ind = np.argmin(height_map)

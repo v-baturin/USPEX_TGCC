@@ -60,23 +60,18 @@ class AtomicStructure:
     def getCenterOfMassFractionalCoordinates(self):
         return np.mean(self.getFractionalCoordinates(), axis=0)
 
-    def getPrincipleAxes(self):
+    def getPrincipalAxes(self):
         """
         :rtype: 3x3 numpy array
         :return: principle axes, main axes of inertia tensor (with all atom masses set to be equal).
         """
         coordinates = self.coordinates - self.coordinates.mean(axis=0)
-        # inertia = np.zeros((3, 3), dtype=float)  # moment of inertia tensor
-        # inertia[0, 0] = (coordinates[:, 1] ** 2 + coordinates[:, 2] ** 2).sum()
-        # inertia[1, 1] = (coordinates[:, 0] ** 2 + coordinates[:, 2] ** 2).sum()
-        # inertia[2, 2] = (coordinates[:, 0] ** 2 + coordinates[:, 1] ** 2).sum()
-        # inertia[0, 1] = -(coordinates[:, 0] * coordinates[:, 1]).sum()
-        # inertia[1, 2] = -(coordinates[:, 1] * coordinates[:, 2]).sum()
-        # inertia[2, 0] = -(coordinates[:, 2] * coordinates[:, 0]).sum()
-        # inertia[1, 0] = -(coordinates[:, 0] * coordinates[:, 1]).sum()
-        # inertia[2, 1] = -(coordinates[:, 1] * coordinates[:, 2]).sum()
-        # inertia[0, 2] = -(coordinates[:, 2] * coordinates[:, 0]).sum()
         return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
+
+    def getPrincipalTransformation(self):
+        values, vectors = self.getPrincipalAxes()
+        center = self.coordinates.mean(axis=0)
+        return Transformation.fromMatrix(vectors, center - np.dot(vectors, center))
 
     def getCell(self):
         return copy(self.cell)

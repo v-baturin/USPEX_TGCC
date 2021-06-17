@@ -18,7 +18,7 @@ class Transformation:
         return np.moveaxis(np.dot(self.rotMatrix, np.moveaxis(coordinates, -1, 0)), 0, -1) + self.transVec
 
     def transformCell(self, cell):
-        return type(cell)(self.getTransformedCoordinates(cell.getCellVectors()), cell.getPBC())
+        return type(cell)(np.dot(cell.getCellVectors(), self.rotMatrix.T), cell.getPBC())
 
     def transform(self, structure):
         coord = self.getTransformedCoordinates(structure.getCartesianCoordinates())

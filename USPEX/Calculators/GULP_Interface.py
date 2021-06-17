@@ -86,6 +86,7 @@ class GULP_Interface(SHELL_Interface):
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
 
+        structure  = structure.getPrincipalTransformation().transform(structure)
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell().addVacuum(coordinates, self.vacuumSize)
         coordinates = cell.center(coordinates)
