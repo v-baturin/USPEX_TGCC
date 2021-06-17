@@ -14,7 +14,8 @@ _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
 class CellUtility:
 
-    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None, symTolerance=None, debug = False):
+    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None, symTolerance=None, axis=None,
+                 debug = False):
         self._pbc = pbc
         if cellVectors is not None:
             self._cell = Cell(cellVectors, pbc)
@@ -30,6 +31,18 @@ class CellUtility:
         else:
             self._cell = None
             self._volume = None
+
+        self.dim = sum(self._pbc)
+        self._axis = axis
+        assert not (self._axis is not None and self._cell is not None)
+        if self._cell is not None:
+            if self.dim == 2:
+                vec1, vec2 = self._cell.getCellVectorsPBC()
+                self._axis = np.cross(vec1, vec2)
+                self._axis /= np.linalg.norm(self._axis)
+            elif self.dim == 1:
+                self._axis, = self._cell.getCellVectorsPBC()
+                self._axis /= np.linalg.norm(self._axis)
 
         if symTolerance is not None:
             if isinstance(symTolerance, str):
@@ -136,34 +149,6 @@ class Cell:
         gamma = 180 / np.pi * np.arccos(np.dot(self._cellVectors[0, :], self._cellVectors[1, :]) / (a * b))
         return a, b, c, alpha, beta, gamma
 
-    def center(self, coordinates, affectedDims=None, toPrincipalAxes=True):
-        """
-        Center atoms in unit cell.
-
-        Centers the coordinates in the unit cell, so there is the same
-        amount of vacuum on all sides specified by affectedDims.
-
-        :param coordinates: list of coordinates of N atoms (Nx3 np.array)
-        :param affectedDims: iterable of floats or ints dimensions to act on. Default - act on all dimensions (1,1,1)
-        :param toPrincipalAxes: Applies rotation to principal axes, but limited to affectedDims. E.g. for 1d structures
-                                affectedDims=(1,1,0) since we don't want to touch z-direction. That means only two
-                                principal axes will be found for (x_i, y_i) coordinates and the structure will be turned
-                                around z-axis accordingly
-        :return:
-        """
-        if affectedDims is None:
-            affectedDims = 1 - np.asarray(self.getPBC(), dtype=int)
-        affectedDims = np.array(affectedDims).reshape((1, 3))
-        centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
-        coordinates -= coordinates.mean(axis=0) * affectedDims
-        # Probably should not be here
-        # if toPrincipalAxes:
-        #     forAxes = coordinates * affectedDims
-        #     _, rotMatrix = np.linalg.eigh(np.eye(3) * np.sum(forAxes ** 2) - np.dot(forAxes.T, forAxes))
-        #     coordinates = np.dot(coordinates, rotMatrix)
-        return coordinates + centerCellVec*affectedDims
-
-
     def getVolume(self):
         return np.abs(np.linalg.det(self._cellVectors))
 
@@ -257,17 +242,46 @@ class Cell:
         vc = c * np.array([cx, cy, cz])
         return Cell(np.vstack((va, vb, vc)), pbc)
 
-    @staticmethod
-    def addVacuum(structure, vacuumSize):
+    def addVacuum(self, coordinates, vacuumSize):
         """
         @param structure: cartesian atomic coordinates
         @param vacuumSize: ordered container of vacuum distances along cartesian coordinates
         @return:  new cell parameters
         structure = AtomicStructure(structure.getAtomTypes(), newCoords, cell=cell)
         """
-        cartCoords = structure.getCartesianCoordinates()
-        oldCell = structure.getCell()
-        pbc = oldCell.getPBC()  # Why not just write _pbc?
-        newCellVectors = np.diag(np.max(cartCoords, 0) - np.min(cartCoords, 0) + vacuumSize)
-        newCellVectors[np.nonzero(pbc)] = oldCell.getCellVectorsPBC()
-        return type(structure)(structure.getAtomTypes(), cartCoords, cell=Cell(newCellVectors, pbc))
+        newCellVectors = []
+        for vector, isPeriodic in zip(self._cellVectors, self._pbc):
+            if isPeriodic:
+                newCellVectors.append(vector)
+            else:
+                vector = vector / np.linalg.norm(vector)
+                proj = np.dot(coordinates, vector)
+                newCellVectors.append((np.max(proj) - np.min(proj) + vacuumSize) * vector)
+        return Cell(np.asarray(newCellVectors, dtype=float), self._pbc)
+
+    def center(self, coordinates, affectedDims=None, toPrincipalAxes=True):
+        """
+        Center atoms in unit cell.
+
+        Centers the coordinates in the unit cell, so there is the same
+        amount of vacuum on all sides specified by affectedDims.
+
+        :param coordinates: list of coordinates of N atoms (Nx3 np.array)
+        :param affectedDims: iterable of floats or ints dimensions to act on. Default - act on all dimensions (1,1,1)
+        :param toPrincipalAxes: Applies rotation to principal axes, but limited to affectedDims. E.g. for 1d structures
+                                affectedDims=(1,1,0) since we don't want to touch z-direction. That means only two
+                                principal axes will be found for (x_i, y_i) coordinates and the structure will be turned
+                                around z-axis accordingly
+        :return:
+        """
+        if affectedDims is None:
+            affectedDims = 1 - np.asarray(self.getPBC(), dtype=int)
+        affectedDims = np.array(affectedDims).reshape((1, 3))
+        centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
+        coordinates -= coordinates.mean(axis=0) * affectedDims
+        # Probably should not be here
+        # if toPrincipalAxes:
+        #     forAxes = coordinates * affectedDims
+        #     _, rotMatrix = np.linalg.eigh(np.eye(3) * np.sum(forAxes ** 2) - np.dot(forAxes.T, forAxes))
+        #     coordinates = np.dot(coordinates, rotMatrix)
+        return coordinates + centerCellVec*affectedDims
