@@ -279,9 +279,18 @@ class Cell:
         affectedDims = np.array(affectedDims).reshape((1, 3))
         centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
         coordinates -= coordinates.mean(axis=0) * affectedDims
-        # Probably should not be here
-        # if toPrincipalAxes:
-        #     forAxes = coordinates * affectedDims
-        #     _, rotMatrix = np.linalg.eigh(np.eye(3) * np.sum(forAxes ** 2) - np.dot(forAxes.T, forAxes))
-        #     coordinates = np.dot(coordinates, rotMatrix)
         return coordinates + centerCellVec*affectedDims
+
+    def getPerfectCell(self):
+        dim = sum(self._pbc)
+        if dim == 3:
+            cell = Cell(self.getCellVectors(), self.getPBC())
+        elif dim == 2:
+            cell = None
+        elif dim == 1:
+            cell = None
+        elif dim == 0:
+            cell = Cell(np.eye(3), self.getPBC())
+        else:
+            raise ValueError(f'Incorrect dim {dim}')
+        return cell

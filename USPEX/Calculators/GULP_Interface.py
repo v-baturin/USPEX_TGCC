@@ -88,7 +88,7 @@ class GULP_Interface(SHELL_Interface):
 
         structure  = structure.getPrincipalTransformation().transform(structure)
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.getCell().addVacuum(coordinates, self.vacuumSize)
+        cell = structure.getCell().getPerfectCell().addVacuum(coordinates, self.vacuumSize)
         coordinates = cell.center(coordinates)
 
         files_to_delete = ['output', 'optimized.structure']

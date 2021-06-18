@@ -69,9 +69,24 @@ class AtomicStructure:
         return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
 
     def getPrincipalTransformation(self):
-        values, vectors = self.getPrincipalAxes()
-        center = self.coordinates.mean(axis=0)
-        return Transformation.fromMatrix(vectors, center - np.dot(vectors, center))
+        cell = self.getCell()
+        pbc = cell.getPBC() if cell is not None else (0,0,0)
+        dim = sum(pbc)
+        if (dim == 3) or (dim == 2):
+            transformation = Transformation(np.eye(3), np.zeros((3,)))
+        elif dim == 0:
+            values, vectors = self.getPrincipalAxes()
+            center = self.coordinates.mean(axis=0)
+            transformation = Transformation.fromMatrix(vectors, center - np.dot(vectors, center))
+        elif dim == 1:
+            # if toPrincipalAxes:
+            #     forAxes = coordinates * affectedDims
+            #     _, rotMatrix = np.linalg.eigh(np.eye(3) * np.sum(forAxes ** 2) - np.dot(forAxes.T, forAxes))
+            #     coordinates = np.dot(coordinates, rotMatrix)
+            transformation = None
+        else:
+            raise ValueError(f'Incorrect dim {dim}')
+        return transformation
 
     def getCell(self):
         return copy(self.cell)
