@@ -9,19 +9,20 @@ class Transformation:
         self.transVec = transVec
 
     def __neg__(self):
-        return Transformation.fromRotVector(-Rotation.from_matrix(self.rotMatrix).as_rotvec(), -self.transVec)
+        rotation = Rotation.from_matrix(self.rotMatrix)
+        return Transformation.fromRotVector(-rotation.as_rotvec(), -rotation.inv().apply(self.transVec))
 
     def __mul__(self, other):
         return Transformation(np.dot(self.rotMatrix, other.rotMatrix), self.transVec + np.dot(self.rotMatrix, other.transVec))
 
-    def getTransformedCoordinates(self, coordinates):
-        return np.moveaxis(np.dot(self.rotMatrix, np.moveaxis(coordinates, -1, 0)), 0, -1) + self.transVec
+    def transformCoordinates(self, coordinates):
+        return np.dot(coordinates, self.rotMatrix.T) + self.transVec
 
     def transformCell(self, cell):
         return type(cell)(np.dot(cell.getCellVectors(), self.rotMatrix.T), cell.getPBC())
 
     def transform(self, structure):
-        coord = self.getTransformedCoordinates(structure.getCartesianCoordinates())
+        coord = self.transformCoordinates(structure.getCartesianCoordinates())
         cell = self.transformCell(structure.getCell()) if structure.getCell() is not None else None
         return type(structure)(structure.getAtomTypes(), coord, cell = cell, zmatrixConfig = structure.getZmatrixConfig())
 

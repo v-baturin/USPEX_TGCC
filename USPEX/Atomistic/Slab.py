@@ -15,11 +15,11 @@ class Slab:
         coordinateBounds = np.cumsum(gaugesOfSlabs)/np.sum(gaugesOfSlabs)
         for i, molecule in enumerate(molecules):
             centerOfMassCoordinatesInitial = molecule.getCenterOfMassCartesianCoordinates()
-            centerOfMassCoordinates = transformation.getTransformedCoordinates(centerOfMassCoordinatesInitial)
+            centerOfMassCoordinates = transformation.transformCoordinates(centerOfMassCoordinatesInitial)
             dimensionality = np.sum(outputCell.getPBC())
             if dimensionality == 0 or dimensionality == 1:
                 for fittedTransformation in outputCell.getFittedTransformations(centerOfMassCoordinates, inputCell):
-                    coordinates = outputCell.cartesianToFractional(fittedTransformation.getTransformedCoordinates(centerOfMassCoordinates))
+                    coordinates = outputCell.cartesianToFractional(fittedTransformation.transformCoordinates(centerOfMassCoordinates))
                     assert np.all(0. <= coordinates) and np.all(coordinates < 1.)
                     coordinate = coordinates[axis]
                     for j, upperBoundCoordinate in enumerate(coordinateBounds):
