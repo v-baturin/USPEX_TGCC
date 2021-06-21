@@ -109,7 +109,7 @@ class AtomicStructure:
         else:
             raise ValueError(f'Incorrect dim {dim}')
 
-        newCell = Cell(vectors, pbc)
+        newCell = type(cell)(vectors, pbc)
         return newCell
 
     def getPrincipalTransformation(self):

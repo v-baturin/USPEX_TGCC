@@ -6,6 +6,7 @@ from scipy.spatial.distance import cosine
 import numpy as np
 
 from ..AtomicPrimitives import AtomicStructure
+from ..AtomicPrimitives import Cell
 from ...components import CrystalRepresentation
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
@@ -17,7 +18,7 @@ class GetPrincipalCell_Test(unittest.TestCase):
         self.testFile = pj(PATH_WITH_TESTS, 'POSCARS/POSCAR_B36')
         self.test_pbc = (0, 1, 0)
         self.testStruct = CrystalRepresentation.readAtomicStructure(self.testFile)
-        self.testStruct['cell'] = type()(self.testStruct['cell'].getCellVectors(), pbc=self.test_pbc)
+        self.testStruct['cell'] = Cell(self.testStruct['cell'].getCellVectors(), pbc=self.test_pbc)
         self.structure, _ = AtomicStructure.assemble(**self.testStruct)
 
     # def test_Projection_1d(self):
