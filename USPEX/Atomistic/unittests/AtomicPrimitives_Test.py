@@ -1,22 +1,24 @@
 import unittest
 
-from ase.io import read as ase_read
-from ase.io import write as ase_write
+import os
+from os.path import join as pj
 from scipy.spatial.distance import cosine
 import numpy as np
 
 from ..AtomicPrimitives import AtomicStructure
-from ..CellUtility import Cell
 from ...components import CrystalRepresentation
 
-testFile = 'USPEX/Atomistic/unittests/POSCARS/POSCAR_B36'
+PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 
-test_pbc = (0, 1, 0)
-testStruct = CrystalRepresentation.readAtomicStructure(testFile)
-testStruct['cell'] = Cell(testStruct['cell'].getCellVectors(), pbc=test_pbc)
-structure, disassembler = AtomicStructure.assemble(**testStruct)
 
-class getPrincipalCell_Test(unittest.TestCase):
+class GetPrincipalCell_Test(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.testFile = pj(PATH_WITH_TESTS, 'POSCARS/POSCAR_B36')
+        self.test_pbc = (0, 1, 0)
+        self.testStruct = CrystalRepresentation.readAtomicStructure(self.testFile)
+        self.testStruct['cell'] = type()(self.testStruct['cell'].getCellVectors(), pbc=self.test_pbc)
+        self.structure, _ = AtomicStructure.assemble(**self.testStruct)
 
     # def test_Projection_1d(self):
     #     orthog = structure.getPrincipalCell(testno=1)
@@ -35,12 +37,12 @@ class getPrincipalCell_Test(unittest.TestCase):
     #             self.assertTrue(cos_dist < 0.01 or cos_dist > 1.99)
 
     def test_PBCorder_1d(self):
-        which_pbc = np.nonzero(test_pbc)[0][0]
-        pbcvec = structure.cell.getCellVectorsPBC()[0]
-        newvectors = structure.getPrincipalCell().getCellVectors()
-        print('pbc_index is ', which_pbc)
+        which_pbc = np.nonzero(self.test_pbc)[0][0]
+        pbcvec = self.structure.cell.getCellVectorsPBC()[0]
+        newvectors = self.structure.getPrincipalCell().getCellVectors()
+        print('\npbc_index is ', which_pbc)
         for i, vec in enumerate(newvectors):
-            print(f"pbcvec * newvec[{i}] = ", cosine(newvectors[i], pbcvec))
+            print(f"cos(pbcvec, newvec[{i}]) = ", cosine(newvectors[i], pbcvec))
         self.assertAlmostEquals(cosine(newvectors[which_pbc], pbcvec), 0.)
 
         # initvectors = structure.cell.getCellVectors()
