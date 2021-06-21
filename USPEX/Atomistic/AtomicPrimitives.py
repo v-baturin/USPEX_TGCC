@@ -92,12 +92,11 @@ class AtomicStructure:
         if dim == 0:
             vectors = self.getPrincipalAxes()[1].T
         elif dim == 1:
+            periodicUnit = periodicVecs[0] / np.linalg.norm(periodicVecs[0])
             orthogPancake = self.coordinates - \
-                               np.dot(self.coordinates, periodicVecs[0]).reshape(-1, 1) * \
-                               periodicVecs[0] / np.sum(periodicVecs[0] ** 2)
-            orthogPancake -= np.mean(orthogPancake, axis=0)
+                               np.dot(self.coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
             vectors = AtomicStructure(self.atomTypes, orthogPancake).getPrincipalAxes()[1].T
-            assert np.abs(cosine(vectors[-1], periodicVecs[0]) - 1) > 0.99  # TODO: remove, everything should go fine
+            assert np.abs(cosine(vectors[-1], periodicUnit) - 1) > 0.99  # TODO: remove, everything should go fine
             vectors[-1] = periodicVecs[0]
             vectors = np.roll(vectors, whichPeriodic[0] - 2, axis=0)
         elif dim == 2:
@@ -219,9 +218,4 @@ class AtomicDisassembler:
             molecularDispacements.append((Transformation.fromRotVector(rotation, translation), atomicDisplacements))
         return molecularDispacements
 
-if __name__ == "__main__":
-    from ase.io import read
-    ase_ats = read('/home/vsbat/USPEX_PY2/material_mp-160_files/POSCAR.mp-160_B', format='vasp')
-    print(ase_ats.cell)
-    mycell = Cell(ase_ats.cell, pbc=(0,0,1))
 

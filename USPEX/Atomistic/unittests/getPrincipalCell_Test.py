@@ -5,13 +5,11 @@ from ase.io import write as ase_write
 from scipy.spatial.distance import cosine
 import numpy as np
 
-from ..Atomistic.AtomicPrimitives import AtomicStructure
-from ..Atomistic.CellUtility import Cell
-from ..components import CrystalRepresentation
+from ..AtomicPrimitives import AtomicStructure
+from ..CellUtility import Cell
+from ...components import CrystalRepresentation
 
-testFile = '/home/vsbat/USPEX_PY2/material_mp-160_files/POSCAR'
-# testFile = '/home/vsbat/USPEX_PY2/material_mp-568363_files/POSCAR_C2'
-testFile = '/home/vsbat/USPEX_PY2/material_mp-569304_files/POSCAR_C'
+testFile = 'USPEX/Atomistic/unittests/POSCARS/POSCAR_B36'
 
 test_pbc = (0, 1, 0)
 testStruct = CrystalRepresentation.readAtomicStructure(testFile)
