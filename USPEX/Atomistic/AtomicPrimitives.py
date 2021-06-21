@@ -3,6 +3,8 @@ from copy import copy
 from collections import Counter
 
 from .Transformation import Transformation
+from .CellUtility import Cell
+from scipy.spatial.distance import cosine
 
 
 class AtomicStructure:
@@ -60,13 +62,56 @@ class AtomicStructure:
     def getCenterOfMassFractionalCoordinates(self):
         return np.mean(self.getFractionalCoordinates(), axis=0)
 
-    def getPrincipalAxes(self):
+    def getPrincipalAxes(self, intactPBCVectors=False):
         """
         :rtype: 3x3 numpy array
         :return: principle axes, main axes of inertia tensor (with all atom masses set to be equal).
         """
         coordinates = self.coordinates - self.coordinates.mean(axis=0)
         return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
+
+    def getPrincipalCell(self):
+        """
+        returns Cell object for subsequent vacuum adding. The cellVectors are:
+        for 0d: unit principal eigenvectors
+        for 1d: Periodic vector remains, the other two are perpendicular to it, directed along principal directions of
+        a structure, flatten along periodic vector
+        for 2d: Periodic vectors remain. The third is a unity vector perpendicular to 2d system
+        for 3d: Returns initial Cell
+        """
+
+        cell = self.getCell()
+        cellVectors = cell.getCellVectors()
+        pbc = np.array(cell.getPBC(), dtype=bool) if cell is not None else np.array([False] * 3)
+        dim = sum(pbc)
+
+        whichPeriodic = np.where(pbc)[0]
+        periodicVecs = cellVectors[pbc]
+        nonperiodicVecs = cellVectors[~pbc]
+
+        if dim == 0:
+            vectors = self.getPrincipalAxes()[1].T
+        elif dim == 1:
+            orthogPancake = self.coordinates - \
+                               np.dot(self.coordinates, periodicVecs[0]).reshape(-1, 1) * \
+                               periodicVecs[0] / np.sum(periodicVecs[0] ** 2)
+            orthogPancake -= np.mean(orthogPancake, axis=0)
+            vectors = AtomicStructure(self.atomTypes, orthogPancake).getPrincipalAxes()[1].T
+            assert np.abs(cosine(vectors[-1], periodicVecs[0]) - 1) > 0.99  # TODO: remove, everything should go fine
+            vectors[-1] = periodicVecs[0]
+            vectors = np.roll(vectors, whichPeriodic[0] - 2, axis=0)
+        elif dim == 2:
+            normalvector = np.cross(periodicVecs[0], periodicVecs[1])
+            normalvector *= np.sign(np.dot(normalvector, nonperiodicVecs[0]))
+            vectors = cellVectors
+            vectors[~pbc] = normalvector
+        elif dim == 3:
+            vectors = cellVectors
+        else:
+            raise ValueError(f'Incorrect dim {dim}')
+
+        newCell = Cell(vectors, pbc)
+        return newCell
 
     def getPrincipalTransformation(self):
         cell = self.getCell()
@@ -173,3 +218,10 @@ class AtomicDisassembler:
                 atomicDisplacements = np.array([[0.,0.,0.]])
             molecularDispacements.append((Transformation.fromRotVector(rotation, translation), atomicDisplacements))
         return molecularDispacements
+
+if __name__ == "__main__":
+    from ase.io import read
+    ase_ats = read('/home/vsbat/USPEX_PY2/material_mp-160_files/POSCAR.mp-160_B', format='vasp')
+    print(ase_ats.cell)
+    mycell = Cell(ase_ats.cell, pbc=(0,0,1))
+
