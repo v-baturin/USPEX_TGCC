@@ -9,10 +9,10 @@ Class implementing global optimizer
 
 import logging
 from copy import copy
-from typing import List, Tuple
+from typing import List
 
 from .SystemPool import SystemPool
-from .Target import Target
+from .Target import Target, TargetType
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,39 @@ class GlobalOptimizer(object):
 
     Fitness = None
     knownSelectionTypes = {}
+    knownTargetTypes = {}
+
+    @classmethod
+    def setFitnessType(cls, FitnessType: type):
+        cls.Fitness = FitnessType
+
+    @classmethod
+    def registerSelection(cls, selectionType: type):
+        assert selectionType.__name__ not in cls.knownSelectionTypes
+        cls.knownSelectionTypes[selectionType.__name__] = selectionType
+
+    @classmethod
+    def registerTarget(cls, name: str, utilities: List[type], hybridizations: List[type], mutations: List[type],
+                       creations: List[type], seeds: type = None):
+        """
+        Register the target as known target.
+
+        :type name: str
+        :param name: target name.
+        :type utilities: list
+        :param utilities: list of types of utilities.
+        :type hybridizations: list
+        :param hybridizations: list of types of hybridization operators.
+        :type mutations: list
+        :param mutations: list of types of mutation operators.
+        :type creations: list
+        :param creations: list of types of mutation operators.
+        :type seeds: type
+        :param seeds: type of Seeds operator.
+        """
+        assert name not in cls.knownTargetTypes
+        cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
+                                                mutations=mutations, creations=creations, seeds=seeds)
 
     def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None, **kwargs):
         """
@@ -40,7 +73,7 @@ class GlobalOptimizer(object):
         """
 
         self.pool = SystemPool()
-        self.target = Target(**target)
+        self.target = Target(self.knownTargetTypes[target['type']], **target)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.fitness = self.Fitness(self.pool, self.target.utilities, self.fingerprintUtility)
         self.selectionConfig = selection
@@ -143,12 +176,3 @@ class GlobalOptimizer(object):
     @property
     def isGoalReached(self):
         return self._isGoalReached
-
-    @classmethod
-    def setFitnessType(cls, FitnessType: type):
-        cls.Fitness = FitnessType
-
-    @classmethod
-    def registerSelection(cls, selectionType: type):
-        assert selectionType.__name__ not in cls.knownSelectionTypes
-        cls.knownSelectionTypes[selectionType.__name__] = selectionType

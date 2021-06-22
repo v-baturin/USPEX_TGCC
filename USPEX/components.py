@@ -1,4 +1,11 @@
-from .Target import Target
+from .GlobalOptimizer import GlobalOptimizer
+
+from .Fitness import Fitness
+GlobalOptimizer.setFitnessType(Fitness)
+
+from .Selection.USPEXClassic import USPEXClassic
+GlobalOptimizer.registerSelection(USPEXClassic)
+
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from .Atomistic.CellUtility import CellUtility
@@ -14,7 +21,7 @@ from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .Atomistic.Operators.Permutation import Permutation
 from .Atomistic.Operators.Transmutation import Transmutation
 from .Atomistic.Operators.Seeds import Seeds
-Target.registerTarget('Crystal',
+GlobalOptimizer.registerTarget('Crystal',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
                                  Conditions, IonDistances, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
                       hybridizations=[Heredity],
@@ -22,11 +29,6 @@ Target.registerTarget('Crystal',
                       creations=[RandTop, RandSym],
                       seeds=Seeds)
 
-from .GlobalOptimizer import GlobalOptimizer
-from .Fitness import Fitness
-from .Selection.USPEXClassic import USPEXClassic
-GlobalOptimizer.setFitnessType(Fitness)
-GlobalOptimizer.registerSelection(USPEXClassic)
 
 from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
