@@ -18,14 +18,6 @@ class VariationOperators(object):
         """
         Initializes the class.
 
-        :type hybridizationTypes: list
-        :param hybridizationTypes: list of types of hybridization operators.
-        :type mutationTypes: list
-        :param mutationTypes: list of types of mutation operators.
-        :type creationTypes: list
-        :param creationTypes: list of types of mutation operators.
-        :type seedsType: type
-        :param seedsType: type of Seeds operator.
 
         """
         self.hybridizationTypes = hybridizationTypes

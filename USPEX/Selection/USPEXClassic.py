@@ -30,13 +30,14 @@ class USPEXClassic(object):
 
     '''
 
-    def __init__(self, target, fitness, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
+    def __init__(self, pool, target, fitness, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
                  initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False, **kwargs):
         '''
         :param target: reference to configuration space object
         :param params: dictionary contains following parameters:
         popSize : int - size of population
         '''
+        self.pool = pool
         self.target = target
         self.fitness = fitness
         self.fingerprintUtility = fingerprintUtility
@@ -68,9 +69,9 @@ class USPEXClassic(object):
         :return:
         '''
 
-        if self.target.pool.generations:
-            population = self.target.pool.generations[-1]['allSystems']
-            newStructures = self.target.pool.generations[-1]['newSystems']
+        if self.pool.generations:
+            population = self.pool.generations[-1]['allSystems']
+            newStructures = self.pool.generations[-1]['newSystems']
             fronts = self.fitness.sort(population + self._mostDiverse, self.fitness.getAllFitnesses(self.optType))
             sortedPopulation = list(chain.from_iterable(fronts))
 
@@ -106,7 +107,7 @@ class USPEXClassic(object):
                         logger.debug(f"Trying {parent['ID']} parent.")
                         offsprings = mutation(parent)
                         for offspring in offsprings:
-                            self.target.pool.assignID(offspring)
+                            self.pool.assignID(offspring)
                             offspring['howCome'] = howCome
                             offspring['parent'] = f"{parent['ID']}"
                             logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
@@ -140,7 +141,7 @@ class USPEXClassic(object):
                         logger.debug(f"Trying {parent1['ID']} {parent2['ID']} parents.")
                         offsprings = hybridization(parent1,parent2)
                         for offspring in offsprings:
-                            self.target.pool.assignID(offspring)
+                            self.pool.assignID(offspring)
                             offspring['howCome'] = howCome
                             offspring['parent'] = f"{parent1['ID']} {parent2['ID']}"
                             logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
@@ -168,7 +169,7 @@ class USPEXClassic(object):
                 try:
                     offsprings = creation()
                     for offspring in offsprings:
-                        self.target.pool.assignID(offspring)
+                        self.pool.assignID(offspring)
                         offspring['howCome'] = howCome
                         offspring['parent'] = "None"
                         logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator.")
@@ -181,12 +182,12 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        self.fitness.payPenalties(actualParents, self.target.pool.uniqueSystems)
+        self.fitness.payPenalties(actualParents, self.pool.uniqueSystems)
 
         if self.target.seeds is not None:
             seeds = self.target.seeds()
             for seed in seeds:
-                self.target.pool.assignID(seed)
+                self.pool.assignID(seed)
                 seed['howCome'] = 'Seeds'
                 seed['parent'] = "None"
                 logger.info(f"Structure {seed['ID']} created from seed {seed['filename']}.")

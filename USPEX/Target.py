@@ -11,14 +11,19 @@ Class describing target space
 import logging
 
 from types import SimpleNamespace
-from typing import List
+from typing import List, NamedTuple
 from copy import copy, deepcopy
-
-from .SystemPool import SystemPool
-from .VariationOperators import VariationOperators
 
 
 logger = logging.getLogger(__name__)
+
+
+class TargetType(NamedTuple):
+    utilities : List[type]
+    hybridizations : List[type]
+    mutations : List[type]
+    creations : List[type]
+    seeds : type
 
 
 class Target(object):
@@ -28,8 +33,6 @@ class Target(object):
     such space, parameters of what are we searching for, list of systems already studied in the search, current result
     of the search and tools to wisely create new systems for the search within this space.
 
-    :ivar config:
-        link to implementation of :class:`~USPEX.Common.Config.Config` interface.
     :ivar varOperators:
         list of all variation operators for this target space. Each element is an implementation of
         :class:`~USPEX.Common.VarOperator.VarOperator` interface. For default implementation this list is empty.
@@ -46,6 +49,30 @@ class Target(object):
 
     knownTargetTypes = {}
 
+    @classmethod
+    def registerTarget(cls, name: str, utilities: List[type], hybridizations: List[type], mutations: List[type],
+                       creations: List[type], seeds: type = None):
+        """
+        Register the target as known target.
+
+        :type name: str
+        :param name: target name.
+        :type utilities: list
+        :param utilities: list of types of utilities.
+        :type hybridizations: list
+        :param hybridizations: list of types of hybridization operators.
+        :type mutations: list
+        :param mutations: list of types of mutation operators.
+        :type creations: list
+        :param creations: list of types of mutation operators.
+        :type seeds: type
+        :param seeds: type of Seeds operator.
+        """
+        assert name not in cls.knownTargetTypes
+        cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
+                                                mutations=mutations, creations=creations, seeds=seeds)
+
+
     def __init__(self, type: str, **kwargs):
         """
         Initializes the class.
@@ -57,21 +84,18 @@ class Target(object):
         """
         self.name = type
         targetTypes = self.knownTargetTypes[type]
-        # self.systemType = targetTypes.systemType
-        # self.config = kwargs['config']
-        self.pool = SystemPool()
-        self.utilities = {}
-        for untilityType in targetTypes.sharedUtilities:
+        utilities = {}
+        for untilityType in targetTypes.utilities:
             name = untilityType.__name__[0].lower() + untilityType.__name__[1:]
             try:
-                self.utilities[name] = untilityType(**kwargs[name]) if name in kwargs else untilityType()
+                utilities[name] = untilityType(**kwargs[name]) if name in kwargs else untilityType()
             except TypeError as e:
                 logger.debug("Utility 'SpectrumAnalyzer' lacks required spectrum data and wont be used.")
                 logger.debug(e)
-        self.utilities = SimpleNamespace(**self.utilities)
+        self.utilities = SimpleNamespace(**utilities)
 
         self.hybridizations = []
-        for hybridizationType in targetTypes.variationOperators.hybridizationTypes:
+        for hybridizationType in targetTypes.hybridizations:
             name = hybridizationType.__name__[0].lower() + hybridizationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
             try:
@@ -82,7 +106,7 @@ class Target(object):
                 logger.error(e, exc_info=True)
 
         self.mutations = []
-        for mutationType in targetTypes.variationOperators.mutationTypes:
+        for mutationType in targetTypes.mutations:
             name = mutationType.__name__[0].lower() + mutationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
             try:
@@ -93,7 +117,7 @@ class Target(object):
                 logger.error(e, exc_info=True)
 
         self.creations = []
-        for creationType in targetTypes.variationOperators.creationTypes:
+        for creationType in targetTypes.creations:
             name = creationType.__name__[0].lower() + creationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
             try:
@@ -103,7 +127,7 @@ class Target(object):
             except Exception as e:
                 logger.error(e, exc_info=True)
 
-        seedsType = targetTypes.variationOperators.seedsType
+        seedsType = targetTypes.seeds
         if seedsType is not None:
             name = seedsType.__name__[0].lower() + seedsType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
@@ -115,30 +139,9 @@ class Target(object):
 
     def __copy__(self):
         other = Target.__new__(Target)
-        # other.systemType = self.systemType
-        # other.config = self.config
-        other.pool = copy(self.pool)
         other.utilities = self.utilities
         other.hybridizations = None
         other.mutations = None
         other.creations = None
         other.variationOperators = None
         return other
-
-    @classmethod
-    def registerTarget(cls, name: str, sharedUtilities: List[type], variationOperators: VariationOperators):
-        """
-        Register the target as known target.
-
-        :type name: str
-        :param name: target name.
-        :type systemType: type
-        :param systemType: system type.
-        :type poolType: type
-        :param poolType: pool type.
-        :type variationOperators: :class:`VariationOperators`
-        :param variationOperators: variation operators.
-        """
-        assert name not in cls.knownTargetTypes
-        cls.knownTargetTypes[name] = SimpleNamespace(**{'sharedUtilities': sharedUtilities,
-                                                        'variationOperators': variationOperators})

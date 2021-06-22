@@ -14,13 +14,13 @@ from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .Atomistic.Operators.Permutation import Permutation
 from .Atomistic.Operators.Transmutation import Transmutation
 from .Atomistic.Operators.Seeds import Seeds
-from .VariationOperators import VariationOperators
-variationOperators = VariationOperators(hybridizationTypes=[Heredity],
-                                        mutationTypes=[Softmodemutation, Permutation, Transmutation],
-                                        creationTypes=[RandTop, RandSym],
-                                        seedsType=Seeds)
-Target.registerTarget('Crystal', [CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
-                                  Conditions, IonDistances, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer], variationOperators)
+Target.registerTarget('Crystal',
+                      utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
+                                 Conditions, IonDistances, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
+                      hybridizations=[Heredity],
+                      mutations=[Softmodemutation, Permutation, Transmutation],
+                      creations=[RandTop, RandSym],
+                      seeds=Seeds)
 
 from .GlobalOptimizer import GlobalOptimizer
 from .Fitness import Fitness

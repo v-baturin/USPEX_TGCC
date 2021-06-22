@@ -11,6 +11,7 @@ import logging
 from copy import copy
 from typing import List, Tuple
 
+from .SystemPool import SystemPool
 from .Target import Target
 
 logger = logging.getLogger(__name__)
@@ -38,16 +39,16 @@ class GlobalOptimizer(object):
         :param selection: name of selection to launch and its parameters; obligatory
         """
 
+        self.pool = SystemPool()
         self.target = Target(**target)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
+        self.fitness = self.Fitness(self.pool, self.target.utilities, self.fingerprintUtility)
+        self.selectionConfig = selection
+        self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target, self.fitness,
+                                                                           self.fingerprintUtility ,**selection)
 
-        assert self.Fitness is not None
-        self.fitness = self.Fitness(self.target.pool, self.target.utilities, self.fingerprintUtility)
         self.optType = optType
-        self.best = set()
-        self._isStable = False
         self.stopFitness = stopFitness
-        self._isGoalReached = False
         if stopSystems is not None and self.target.seeds is not None:
             Seeds = type(self.target.seeds)
             seeds = Seeds(self.target.utilities, generations = [0], seedsFolders=[stopSystems])
@@ -55,23 +56,25 @@ class GlobalOptimizer(object):
         else:
             self.stopSystems = None
 
-        self.selectionConfig = selection
-        self.createPopulation = self.knownSelectionTypes[selection['type']](self.target, self.fitness,
-                                                                            self.fingerprintUtility ,**selection)
+        self.best = set()
+        self._isStable = False
+        self._isGoalReached = False
 
     def __copy__(self):
         other = GlobalOptimizer.__new__(GlobalOptimizer)
+        other.pool = copy(self.pool)
         other.target = copy(self.target)
         other.fitness = copy(self.fitness)
-        other.fitness.pool = other.target.pool
+        other.fitness.pool = other.pool
         other.fitness.utilities = other.target.utilities
-        other.optType = self.optType
-        other.best = copy(self.best)
-        other._isStable = self._isStable
-        other.stopFitness = self.stopFitness
-        other._isGoalReached = self._isGoalReached
         other.selectionConfig = self.selectionConfig
         other.createPopulation = copy(self.createPopulation)
+        other.optType = self.optType
+        other.stopFitness = self.stopFitness
+        other.stopSystems = self.stopSystems
+        other.best = self.best
+        other._isStable = self._isStable
+        other._isGoalReached = self._isGoalReached
         return other
 
     def update(self, population: list):
@@ -82,30 +85,25 @@ class GlobalOptimizer(object):
         :param population: list of systems which allows to update our knowledge about target space.
         """
         self._cleanDuplicates(population)
-        self.target.pool.update(population)
+        self.pool.update(population)
         allFitnesses = self.fitness.getAllFitnesses(self.optType)
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
                 VO.tune(population, allFitnesses)
-        best = set(system['ID'] for system in self.fitness.sort(list(self.target.pool.uniqueSystems), allFitnesses)[0])
+        best = set(system['ID'] for system in self.fitness.sort(list(self.pool.uniqueSystems), allFitnesses)[0])
         if best == self.best:
             self._isStable = True
         else:
             self._isStable = False
             self.best = best
         if self.stopFitness is not None:
-            for ID in list(self.best):
-                value = self.fitness.getFitnessByID(self.optType, ID)
-                if value is None:
-                    try:
-                        value = self.target.pool.allSystems[ID][self.optType]
-                    except:
-                        pass
-                if round(value, ndigits=3) <= round(self.stopFitness, ndigits=3):
+            for ID in self.best:
+                if round(self.fitness.getFitnessByID(self.optType, ID), ndigits=3) <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
+                    break
         if self.stopSystems is not None and not self._isGoalReached:
             stopSystems = list(self.stopSystems)
-            for system in self.target.pool.uniqueSystems:
+            for system in self.pool.uniqueSystems:
                 for i, stopSystem in enumerate(stopSystems):
                     if self.fingerprintUtility.equal(system, stopSystem):
                         del stopSystems[i]
@@ -124,7 +122,7 @@ class GlobalOptimizer(object):
         logger.info('Looking for duplicates.')
         cleanedPopulation = []
         for system in population:
-            for ref_system in list(self.target.pool.uniqueSystems) + cleanedPopulation:
+            for ref_system in list(self.pool.uniqueSystems) + cleanedPopulation:
                 if self.fingerprintUtility.equal(system, ref_system):
                     logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
                     self.fingerprintUtility.clean(system)

@@ -108,7 +108,7 @@ class CrystalRepresentation(object):
                 content_enthalpies += ','.join([f"{sys['enthalpy']:6.3f}" for sys in system[1:]]) + '\n'
 
             if len(system) == numStages + 1:
-                table_Individuals.update(ID, optimizer.target.pool.allSystems[ID], optimizer.fitness)
+                table_Individuals.update(ID, optimizer.pool.allSystems[ID], optimizer.fitness)
                 self.writeAtomicStructure(io_gatheredPOSCARS, system[numStages])
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
@@ -379,7 +379,7 @@ class CrystalRepresentation(object):
 
         for generation, opt in enumerate(optimizers):
             content_BESTIndividuals += f'Generation {generation}\n'
-            pool = opt.target.pool
+            pool = opt.pool
             table = self.getNewSystemsTable()
             for ID in opt.best:
                 table.update(ID, pool.allSystems[ID], opt.fitness)
@@ -388,7 +388,7 @@ class CrystalRepresentation(object):
             fp.write(content_BESTIndividuals)
 
         for opt in optimizers:
-            pool = opt.target.pool
+            pool = opt.pool
             for ID in opt.best:
                 CrystalRepresentation.writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
         with open(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), 'w') as fp:
@@ -397,7 +397,7 @@ class CrystalRepresentation(object):
 
         if len(optimizer.target.utilities.compositionSpace.blocks) == 1:
             allFitnesses = optimizer.fitness.getAllFitnesses(fitness)
-            fronts = optimizer.fitness.sort(list(optimizer.target.pool.uniqueSystems), allFitnesses)
+            fronts = optimizer.fitness.sort(list(optimizer.pool.uniqueSystems), allFitnesses)
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
@@ -413,7 +413,7 @@ class CrystalRepresentation(object):
 
         else:
             for generation, opt in enumerate(optimizers):
-                convexHull = [system for system in opt.target.pool.uniqueSystems
+                convexHull = [system for system in opt.pool.uniqueSystems
                               if np.isclose(opt.fitness.getFitnessByID('enthalpyCCH', system['ID']), 0.0)]
                 content_convexHull += f'Generation {generation}\n'
                 table = self.getNewSystemsTable()
@@ -424,7 +424,7 @@ class CrystalRepresentation(object):
             with open(pj(self.RES_FOLDER, 'convex_hull'), 'w') as fp:
                 fp.write(content_convexHull)
 
-            extendedConvexHull = [system for system in optimizer.target.pool.uniqueSystems
+            extendedConvexHull = [system for system in optimizer.pool.uniqueSystems
                                   if optimizer.fitness.getFitnessByID('enthalpyCCH', system['ID']) < self.rangeECH]
 
             allFitnesses = {system['ID'] : optimizer.fitness.getFitnessByID(fitness, system['ID'])
@@ -450,7 +450,7 @@ class CrystalRepresentation(object):
             elif len(compositionSpace.blocks) == 3 and convexHull:
                 self._drawExtendedConvexHull3(compositionSpace, convexHull, extendedConvexHull)
 
-        self._drawProperties(optimizer.target.pool.uniqueSystems, optimizer.fitness)
+        self._drawProperties(optimizer.pool.uniqueSystems, optimizer.fitness)
 
 
     def _drawProperties(self, uniqueSystems, fitness):
