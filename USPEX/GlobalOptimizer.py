@@ -56,12 +56,8 @@ class GlobalOptimizer(object):
             self.stopSystems = None
 
         self.selectionConfig = selection
-        self.createPopulation = self.knownSelectionTypes[selection['type']](self.fingerprintUtility ,**selection)
-
-        # List of structure recieved from update on this particular step
-        self.population = None
-        # List of new found structure on this particular step
-        self.newStructures = None
+        self.createPopulation = self.knownSelectionTypes[selection['type']](self.target, self.fitness,
+                                                                            self.fingerprintUtility ,**selection)
 
     def __copy__(self):
         other = GlobalOptimizer.__new__(GlobalOptimizer)
@@ -76,18 +72,7 @@ class GlobalOptimizer(object):
         other._isGoalReached = self._isGoalReached
         other.selectionConfig = self.selectionConfig
         other.createPopulation = copy(self.createPopulation)
-        other.population = copy(self.population)
-        other.newStructures = copy(self.newStructures)
         return other
-
-    def run(self):
-        """
-        Here we generate new set of structures.
-
-        :rtype: list
-        :return: list of structures.
-        """
-        return self.createPopulation(self.target, self.fitness, self.population, self.newStructures)
 
     def update(self, population: list):
         """
@@ -96,10 +81,8 @@ class GlobalOptimizer(object):
         :type population: list
         :param population: list of systems which allows to update our knowledge about target space.
         """
-        self.cleanDuplicates(population)
-        self.population = population
-        self.newStructures = self.target.pool.newFoundSystems(population)
-        self.target.pool.update(self.newStructures)
+        self._cleanDuplicates(population)
+        self.target.pool.update(population)
         allFitnesses = self.fitness.getAllFitnesses(self.optType)
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
@@ -131,7 +114,7 @@ class GlobalOptimizer(object):
                     break
             self._isGoalReached = not stopSystems
 
-    def cleanDuplicates(self, population: list):
+    def _cleanDuplicates(self, population: list):
         """
         Method for cleaning duplicates.
 

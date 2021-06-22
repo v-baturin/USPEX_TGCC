@@ -30,13 +30,15 @@ class USPEXClassic(object):
 
     '''
 
-    def __init__(self, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
+    def __init__(self, target, fitness, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
                  initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False, **kwargs):
         '''
         :param target: reference to configuration space object
         :param params: dictionary contains following parameters:
         popSize : int - size of population
         '''
+        self.target = target
+        self.fitness = fitness
         self.fingerprintUtility = fingerprintUtility
         self.optType = optType
         self.fractions = fractions
@@ -57,7 +59,7 @@ class USPEXClassic(object):
         else:
             logger.setLevel(logging.INFO)
 
-    def __call__(self, target, fitness, population : list, newStructures : list):
+    def __call__(self):
         '''
         :param oldPopulation: generation of new
         :param best:
@@ -66,14 +68,11 @@ class USPEXClassic(object):
         :return:
         '''
 
-        if population is None:
-            autofrac = Autofrac(self.fractions, Counter(), best=[], newFoundSystems=[], varOperators=target.variationOperators)
-            best, tournament, popSize = [], [], self.initialPopSize
-        else:
-            extendedPopulation = copy(population)
-            extendedPopulation.extend(self._mostDiverse)
-            allFitnesses = fitness.getAllFitnesses(self.optType)
-            sortedPopulation = list(chain.from_iterable(fitness.sort(extendedPopulation, allFitnesses)))
+        if self.target.pool.generations:
+            population = self.target.pool.generations[-1]['allSystems']
+            newStructures = self.target.pool.generations[-1]['newSystems']
+            fronts = self.fitness.sort(population + self._mostDiverse, self.fitness.getAllFitnesses(self.optType))
+            sortedPopulation = list(chain.from_iterable(fronts))
 
             howManyProliferate = int(np.ceil(self.bestFrac * len(sortedPopulation)))
             best = sortedPopulation[:howManyProliferate]
@@ -81,14 +80,17 @@ class USPEXClassic(object):
             tournament /= np.sum(tournament)
 
             self._mostDiverse = self.determineMostDiverse(best, self.howManyDiverse, self.diversityTolerance)
-            autofrac = Autofrac(self.fractions, self.weightsLast, best, newStructures, target.variationOperators)
 
             popSize = self.popSize
+        else:
+            newStructures, best, tournament, popSize = [], [], [], self.initialPopSize
+
+        autofrac = Autofrac(self.fractions, self.weightsLast, best, newStructures, self.target.variationOperators)
 
         population = []
         actualParents = []
 
-        for mutation in target.mutations:
+        for mutation in self.target.mutations:
             howCome = type(mutation).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
             howMany = 0 if howMany < 0 else howMany
@@ -104,7 +106,7 @@ class USPEXClassic(object):
                         logger.debug(f"Trying {parent['ID']} parent.")
                         offsprings = mutation(parent)
                         for offspring in offsprings:
-                            target.pool.assignID(offspring)
+                            self.target.pool.assignID(offspring)
                             offspring['howCome'] = howCome
                             offspring['parent'] = f"{parent['ID']}"
                             logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
@@ -119,7 +121,7 @@ class USPEXClassic(object):
                 if hasattr(mutation, 'standby'):
                     mutation.standby()
 
-        for hybridization in target.hybridizations:
+        for hybridization in self.target.hybridizations:
             howCome = type(hybridization).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
             howMany = 0 if howMany < 0 else howMany
@@ -138,7 +140,7 @@ class USPEXClassic(object):
                         logger.debug(f"Trying {parent1['ID']} {parent2['ID']} parents.")
                         offsprings = hybridization(parent1,parent2)
                         for offspring in offsprings:
-                            target.pool.assignID(offspring)
+                            self.target.pool.assignID(offspring)
                             offspring['howCome'] = howCome
                             offspring['parent'] = f"{parent1['ID']} {parent2['ID']}"
                             logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
@@ -153,7 +155,7 @@ class USPEXClassic(object):
                 if hasattr(hybridization, 'standby'):
                     hybridization.standby()
 
-        for creation in target.creations:
+        for creation in self.target.creations:
             howCome = type(creation).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
             howMany = 0 if howMany < 0 else howMany
@@ -166,7 +168,7 @@ class USPEXClassic(object):
                 try:
                     offsprings = creation()
                     for offspring in offsprings:
-                        target.pool.assignID(offspring)
+                        self.target.pool.assignID(offspring)
                         offspring['howCome'] = howCome
                         offspring['parent'] = "None"
                         logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator.")
@@ -179,12 +181,12 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        fitness.payPenalties(actualParents, target.pool.uniqueSystems)
+        self.fitness.payPenalties(actualParents, self.target.pool.uniqueSystems)
 
-        if target.seeds is not None:
-            seeds = target.seeds()
+        if self.target.seeds is not None:
+            seeds = self.target.seeds()
             for seed in seeds:
-                target.pool.assignID(seed)
+                self.target.pool.assignID(seed)
                 seed['howCome'] = 'Seeds'
                 seed['parent'] = "None"
                 logger.info(f"Structure {seed['ID']} created from seed {seed['filename']}.")
@@ -209,7 +211,6 @@ class USPEXClassic(object):
         :return:
         """
         deltaTol = tolerance / 2
-        assert deltaTol > 0.000001
         while deltaTol > 0.000001:
             mostDiverse = []
             for system in population:
@@ -225,9 +226,9 @@ class USPEXClassic(object):
             elif len(mostDiverse) > howManyDiverse:
                 tolerance += deltaTol
             else:
-                break
+                return mostDiverse
             deltaTol /= 2
-        return mostDiverse
+        raise RuntimeError(f"Can't clusterize population into {howManyDiverse} fractions.")
 
     def getMostDiverse(self) -> list:
         return copy(self._mostDiverse)
