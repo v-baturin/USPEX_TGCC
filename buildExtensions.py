@@ -21,7 +21,6 @@ extensions = [
     Extension("USPEX.SystemPool", ["USPEX/SystemPool.py"]),
     Extension("USPEX.Fitness", ["USPEX/Fitness.py"]),
     Extension("USPEX.ConvexHull", ["USPEX/ConvexHull.py"]),
-    Extension("USPEX.VariationOperators", ["USPEX/VariationOperators.py"]),
     Extension("USPEX.paretoRanking", ["USPEX/paretoRanking.py"]),
     Extension("USPEX.Presets", ["USPEX/Presets.py"]),
     Extension("USPEX.Selection.USPEXClassic", ["USPEX/Selection/USPEXClassic.py"]),
