@@ -24,7 +24,7 @@ extensions = [
     Extension("USPEX.paretoRanking", ["USPEX/paretoRanking.py"]),
     Extension("USPEX.Presets", ["USPEX/Presets.py"]),
     Extension("USPEX.Selection.USPEXClassic", ["USPEX/Selection/USPEXClassic.py"]),
-    Extension("USPEX.Selection.Autofrac", ["USPEX/Selection/Autofrac.py"]),
+    Extension("USPEX.Selection.Antiseeds", ["USPEX/Selection/Anteseeds.py"]),
     Extension("USPEX.SpaceGroups.SpaceGroups3D", ["USPEX/SpaceGroups/SpaceGroups3D.py"]),
     Extension("USPEX.SpaceGroups.TopologicalNet", ["USPEX/SpaceGroups/TopologicalNet.py"]),
     Extension("USPEX.XRay.PowderSpectrumAnalyzer", ["USPEX/XRay/PowderSpectrumAnalyzer.py"]),

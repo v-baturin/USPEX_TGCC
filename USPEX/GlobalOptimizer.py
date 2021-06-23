@@ -75,7 +75,7 @@ class GlobalOptimizer(object):
         self.pool = SystemPool()
         self.target = Target(self.knownTargetTypes[target['type']], **target)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
-        self.fitness = self.Fitness(self.pool, self.target.utilities, self.fingerprintUtility)
+        self.fitness = self.Fitness(self.pool, self.target.utilities)
         self.selectionConfig = selection
         self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target, self.fitness,
                                                                            self.fingerprintUtility ,**selection)

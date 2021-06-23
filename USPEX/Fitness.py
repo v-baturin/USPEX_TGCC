@@ -11,30 +11,24 @@ import logging
 logger = logging.getLogger(__name__)
 
 import numpy as np
-import pandas as pd
-import sympy as smp
 from copy import copy, deepcopy
-from typing import List, Tuple
 from collections.abc import Mapping
-from itertools import combinations, chain
 from sklearn.decomposition import PCA
 
 from .ConvexHull import ConvexHull
 from .paretoRanking import paretoRanking
 from .Presets import presetFitness
 
+presetFitness[('aging', 'values')] = ('plus', 'values', ('multiply', ('minus', ('mean', 'values'), ('min', 'values')),
+                                                         'antiseeds.corrections'))
+
 
 class Fitness(object):
 
-    ANTISEEDS_MAX = 0.005
-    ANTISEEDS_SIGMA = 0.001
-
-    def __init__(self, pool, utilities, fingerprintUtility):
+    def __init__(self, pool, utilities):
         self.pool = pool
         self._poolHash = hash(self.pool)
         self.utilities = utilities
-        self.fingerprintUtility = fingerprintUtility
-        self._antiseedsCorrections = {}
         self._storedFitnesses = {}
 
     def __copy__(self):
@@ -42,7 +36,6 @@ class Fitness(object):
         other.pool = self.pool
         other._poolHash = self._poolHash
         other.utilities = self.utilities
-        other._antiseedsCorrections = copy(self._antiseedsCorrections)
         other._storedFitnesses = deepcopy(self._storedFitnesses)
         return other
 
@@ -158,31 +151,6 @@ class Fitness(object):
             else:
                 raise RuntimeError(f"Too complex fitness {'.'.join(fitness)}.")
         return value
-
-    def payPenalties(self, population, pool):
-        comb = list(combinations(population, 2))
-        if comb:
-            sigma = 0
-            for s1, s2 in comb:
-                sigma += self.fingerprintUtility.dist(s1, s2)
-            sigma /= len(comb)
-        else:
-            sigma = 1
-        sigma *= self.ANTISEEDS_SIGMA
-        for system in pool:
-            if system['ID'] in self._antiseedsCorrections:
-                for ref_system in population:
-                    dist = self.fingerprintUtility.dist(ref_system, system)
-                    self._antiseedsCorrections[system['ID']] += self.ANTISEEDS_MAX * np.exp(-dist**2/(2*sigma**2))
-            else:
-                self._antiseedsCorrections[system['ID']] = 0
-                for ref_system in pool:
-                    dist = self.fingerprintUtility.dist(ref_system, system)
-                    self._antiseedsCorrections[system['ID']] += self.ANTISEEDS_MAX * np.exp(-dist**2/(2*sigma**2))
-
-    def antiseedsCorrections(self, IDs: np.ndarray) -> np.ndarray:
-        return np.fromiter((self._antiseedsCorrections[ID] if ID in self._antiseedsCorrections else 0
-                            for ID in IDs), dtype = float)
 
     @staticmethod
     def min(values: np.ndarray) -> np.ndarray:
