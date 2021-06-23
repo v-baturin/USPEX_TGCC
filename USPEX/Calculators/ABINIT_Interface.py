@@ -44,7 +44,8 @@ class ABINIT_Interface(SHELL_Interface):
 
     _DEFAULT_SLEEP_TIME = 30
 
-    def __init__(self, tag: str, kresol: float,  in_file: str = None, pp_files: List[str] = None, **kwargs):
+    def __init__(self, tag: str, kresol: float,  in_file: str = None, pp_files: List[str] = None,
+                 vacuumSize=10, **kwargs):
         """
         Initializes the class.
 
@@ -73,6 +74,7 @@ class ABINIT_Interface(SHELL_Interface):
 
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
+        self.vacuumSize = vacuumSize
 
     def readOutput(self, system, calcFolder: str):
         disassembler = system['disassembler']
@@ -107,7 +109,11 @@ class ABINIT_Interface(SHELL_Interface):
         molecules = system['molecules']
         cell = system['cell']
         systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
+        structure, disassembler = systemFactory.assemble(molecules, cell=cell)
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        coordinates = cell.center(coordinates)
+        structure = systemFactory(structure.getAtomTypes(), coordinates, cell)
         system['structure'] = structure
         system['disassembler'] = disassembler
 

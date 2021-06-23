@@ -30,7 +30,8 @@ class QE_Interface(SHELL_Interface):
 
     _DEFAULT_SLEEP_TIME = 30
 
-    def __init__(self, tag : str, kresol : float, options: str = None, libs: list = None, **kwargs):
+    def __init__(self, tag : str, kresol : float, options: str = None, libs: list = None, vacuumSize: float = 0,
+                 **kwargs):
         '''
 
         :param tag: tag of the stage
@@ -47,6 +48,7 @@ class QE_Interface(SHELL_Interface):
             self.options = pj(os.getcwd(), f'Specific/qEspresso_options_{tag}')
         self.libs = libs if libs else []
         self.kPoints = KPoints(kresol)
+        self.vacuumSize = vacuumSize
 
     def readOutput(self, system : dict, calcFolder: str):
         disassembler = system['disassembler']
@@ -69,6 +71,10 @@ class QE_Interface(SHELL_Interface):
         cell = system['cell']
         systemFactory = type(molecules[0])
         structure, disassembler = systemFactory.assemble(molecules, cell = cell)
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        coordinates = cell.center(coordinates)
+        structure = systemFactory(structure.getAtomTypes(), coordinates, cell)
         system['structure'] = structure
         system['disassembler'] = disassembler
 

@@ -86,9 +86,8 @@ class GULP_Interface(SHELL_Interface):
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
 
-        structure  = structure.getPrincipalTransformation().transform(structure)
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.getCell().getPerfectCell().addVacuum(coordinates, self.vacuumSize)
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
         coordinates = cell.center(coordinates)
 
         files_to_delete = ['output', 'optimized.structure']

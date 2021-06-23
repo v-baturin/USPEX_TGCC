@@ -41,7 +41,7 @@ class LAMMPS_Interface(SHELL_Interface):
     errorFile = 'lammps.err'
     logFile = 'log.lammps'
     
-    def __init__(self, tag: str, lammps_in: str = None, libs:List[str] = None, **kwargs):
+    def __init__(self, tag: str, lammps_in: str = None, libs:List[str] = None, vacuumSize=10, **kwargs):
         '''
 
         :param params: dictionary with parameters:
@@ -57,6 +57,7 @@ class LAMMPS_Interface(SHELL_Interface):
 
         self.lammps_in  = lammps_in
         self.libs = libs if libs else []
+        self.vacuumSize = vacuumSize
         logger.debug('LAMMPS calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -135,7 +136,7 @@ class LAMMPS_Interface(SHELL_Interface):
         with open(pj(calcFolder, self.inputFile), 'w') as f:
             f.writelines(content)
              
-        write_data(system, pj(calcFolder, 'STRUC'))
+        write_data(system, pj(calcFolder, 'STRUC'), self.vacuumSize)
         for lib in self.libs:
             if isinstance(lib,str) and os.path.exists(lib):
                 shutil.copy(lib,calcFolder)
@@ -280,11 +281,15 @@ def write_cfg(fname, item):
         f.write("END_CFG\n")
         f.write("\n")
     
-def write_data(system, filename, comment=None):
+def write_data(system, filename, vacuumSize, comment=None):
     molecules = system['molecules']
     cell = system['cell']
     systemFactory = type(molecules[0])
     structure, disassembler = systemFactory.assemble(molecules, cell=cell)
+    coordinates = structure.getCartesianCoordinates()
+    cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
+    coordinates = cell.center(coordinates)
+    structure = systemFactory(structure.getAtomTypes(), coordinates, cell)
     system['structure'] = structure
     system['disassembler'] = disassembler
 

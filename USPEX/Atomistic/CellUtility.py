@@ -242,12 +242,11 @@ class Cell:
         vc = c * np.array([cx, cy, cz])
         return Cell(np.vstack((va, vb, vc)), pbc)
 
-    def addVacuum(self, coordinates, vacuumSize):
+    def getEnvelopeCell(self, coordinates, vacuumSize=0):
         """
-        @param structure: cartesian atomic coordinates
-        @param vacuumSize: ordered container of vacuum distances along cartesian coordinates
-        @return:  new cell parameters
-        structure = AtomicStructure(structure.getAtomTypes(), newCoords, cell=cell)
+        @param coordinates: cartesian atomic coordinates
+        @param vacuumSize: vacuum distance added along cell vector
+        @return:  new cell object, corresponding to
         """
         newCellVectors = []
         for vector, isPeriodic in zip(self._cellVectors, self._pbc):
@@ -259,7 +258,7 @@ class Cell:
                 newCellVectors.append((np.max(proj) - np.min(proj) + vacuumSize) * vector)
         return Cell(np.asarray(newCellVectors, dtype=float), self._pbc)
 
-    def center(self, coordinates, affectedDims=None, toPrincipalAxes=True):
+    def center(self, coordinates, affectedDims=None):
         """
         Center atoms in unit cell.
 
@@ -268,29 +267,11 @@ class Cell:
 
         :param coordinates: list of coordinates of N atoms (Nx3 np.array)
         :param affectedDims: iterable of floats or ints dimensions to act on. Default - act on all dimensions (1,1,1)
-        :param toPrincipalAxes: Applies rotation to principal axes, but limited to affectedDims. E.g. for 1d structures
-                                affectedDims=(1,1,0) since we don't want to touch z-direction. That means only two
-                                principal axes will be found for (x_i, y_i) coordinates and the structure will be turned
-                                around z-axis accordingly
         :return:
         """
         if affectedDims is None:
             affectedDims = 1 - np.asarray(self.getPBC(), dtype=int)
         affectedDims = np.array(affectedDims).reshape((1, 3))
         centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
-        coordinates -= coordinates.mean(axis=0) * affectedDims
-        return coordinates + centerCellVec*affectedDims
-
-    def getPerfectCell(self):
-        dim = sum(self._pbc)
-        if dim == 3:
-            cell = Cell(self.getCellVectors(), self.getPBC())
-        elif dim == 2:
-            cell = None
-        elif dim == 1:
-            cell = None
-        elif dim == 0:
-            cell = Cell(np.eye(3), self.getPBC())
-        else:
-            raise ValueError(f'Incorrect dim {dim}')
-        return cell
+        coordinates += centerCellVec*affectedDims - coordinates.mean(axis=0) * affectedDims
+        return coordinates

@@ -71,7 +71,7 @@ class VASP_Interface(SHELL_Interface):
 
     _DEFAULT_SLEEP_TIME = 30
 
-    def __init__(self, tag : str, kresol : float, incar : str = None, potcarsPath : str = None, **kwargs):
+    def __init__(self, tag : str, kresol : float, incar : str = None, potcarsPath : str = None, vacuumSize=10, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -117,6 +117,10 @@ class VASP_Interface(SHELL_Interface):
         cell = system['cell']
         systemFactory = type(molecules[0])
         structure, disassembler = systemFactory.assemble(molecules, cell = cell)
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        coordinates = cell.center(coordinates)
+        structure = systemFactory(structure.getAtomTypes(), coordinates, cell)
         system['structure'] = structure
         system['disassembler'] = disassembler
 

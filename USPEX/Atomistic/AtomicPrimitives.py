@@ -3,8 +3,6 @@ from copy import copy
 from collections import Counter
 
 from .Transformation import Transformation
-from .CellUtility import Cell
-from scipy.spatial.distance import cosine
 
 
 class AtomicStructure:
@@ -70,7 +68,7 @@ class AtomicStructure:
         coordinates = self.coordinates - self.coordinates.mean(axis=0)
         return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
 
-    def getPrincipalCell(self):
+    def getRectifiedCell(self):
         """
         returns Cell object for subsequent vacuum adding. The cellVectors are:
         for 0d: unit principal eigenvectors
@@ -96,7 +94,6 @@ class AtomicStructure:
             orthogPancake = self.coordinates - \
                                np.dot(self.coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
             vectors = AtomicStructure(self.atomTypes, orthogPancake).getPrincipalAxes()[1].T
-            assert np.abs(cosine(vectors[-1], periodicUnit) - 1) > 0.99  # TODO: remove, everything should go fine
             vectors[-1] = periodicVecs[0]
             vectors = np.roll(vectors, whichPeriodic[0] - 2, axis=0)
         elif dim == 2:
@@ -105,32 +102,12 @@ class AtomicStructure:
             vectors = cellVectors
             vectors[~pbc] = normalvector
         elif dim == 3:
-            vectors = cellVectors
+            return cell
         else:
-            raise ValueError(f'Incorrect dim {dim}')
+            raise ValueError(f'Incorrect dim: {dim}')
 
         newCell = type(cell)(vectors, pbc)
         return newCell
-
-    def getPrincipalTransformation(self):
-        cell = self.getCell()
-        pbc = cell.getPBC() if cell is not None else (0,0,0)
-        dim = sum(pbc)
-        if (dim == 3) or (dim == 2):
-            transformation = Transformation(np.eye(3), np.zeros((3,)))
-        elif dim == 0:
-            values, vectors = self.getPrincipalAxes()
-            center = self.coordinates.mean(axis=0)
-            transformation = Transformation.fromMatrix(vectors, center - np.dot(vectors, center))
-        elif dim == 1:
-            # if toPrincipalAxes:
-            #     forAxes = coordinates * affectedDims
-            #     _, rotMatrix = np.linalg.eigh(np.eye(3) * np.sum(forAxes ** 2) - np.dot(forAxes.T, forAxes))
-            #     coordinates = np.dot(coordinates, rotMatrix)
-            transformation = None
-        else:
-            raise ValueError(f'Incorrect dim {dim}')
-        return transformation
 
     def getCell(self):
         return copy(self.cell)
@@ -140,7 +117,7 @@ class AtomicStructure:
         return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, **kwargs)
 
     @staticmethod
-    def assemble(molecules, cell, environment = None, **kwargs):
+    def assemble(molecules, cell, environment=None, **kwargs):
         atomTypes = []
         coordinates = []
         indices = []
