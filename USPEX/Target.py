@@ -11,18 +11,20 @@ Class describing target space
 import logging
 
 from types import SimpleNamespace
-from typing import List, NamedTuple
+from typing import List
 
 
 logger = logging.getLogger(__name__)
 
 
-class TargetType(NamedTuple):
-    utilities : List[type]
-    hybridizations : List[type]
-    mutations : List[type]
-    creations : List[type]
-    seeds : type
+class TargetType:
+    def __init__(self, utilities: List[type], hybridizations: List[type], mutations: List[type], creations: List[type],
+                 seeds: type = None):
+        self.utilities = utilities
+        self.hybridizations = hybridizations
+        self.mutations = mutations
+        self.creations = creations
+        self.seeds = seeds
 
 
 class Target(object):
