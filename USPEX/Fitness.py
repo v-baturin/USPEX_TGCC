@@ -68,9 +68,30 @@ class Fitness(object):
         uniqueValues, ranking = np.unique([allFitnesses[s['ID']] for s in population], return_inverse=True)
         return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueValues))]
 
+    @staticmethod
+    def _substituteParams(fitness, templateParam , param):
+        if fitness == templateParam:
+            fitness = param
+        elif isinstance(fitness, tuple):
+            funcName, *funcParams = fitness
+            fitness = (funcName,)
+            for funcParam in funcParams:
+                fitness += (Fitness._substituteParams(funcParam, templateParam, param),)
+        return fitness
+
     def calcFitness(self, fitness):
         if fitness in presetFitness:
             fitness = presetFitness[fitness]
+        elif isinstance(fitness, tuple):
+            funcName, *funcParams = fitness
+            for probeFitness in presetFitness.keys():
+                if isinstance(probeFitness, tuple) and probeFitness[0] == funcName and len(probeFitness) == len(fitness):
+                    funcName, *templateParams = probeFitness
+                    fitness = presetFitness[probeFitness]
+                    for param, templateParam in zip(funcParams, templateParams):
+                        fitness = self._substituteParams(fitness, templateParam, param)
+                    break
+
         if fitness not in self.storedFitnesses:
             if isinstance(fitness, tuple):
                 funcName, *funcParams = fitness
@@ -152,21 +173,44 @@ class Fitness(object):
             if system['ID'] in self._antiseedsCorrections:
                 for ref_system in population:
                     dist = self.fingerprintUtility.dist(ref_system, system)
-                    self._antiseedsCorrections[system['ID']] += np.exp(-dist**2/(2*sigma**2))
+                    self._antiseedsCorrections[system['ID']] += self.ANTISEEDS_MAX * np.exp(-dist**2/(2*sigma**2))
             else:
                 self._antiseedsCorrections[system['ID']] = 0
                 for ref_system in pool:
                     dist = self.fingerprintUtility.dist(ref_system, system)
-                    self._antiseedsCorrections[system['ID']] += np.exp(-dist**2/(2*sigma**2))
+                    self._antiseedsCorrections[system['ID']] += self.ANTISEEDS_MAX * np.exp(-dist**2/(2*sigma**2))
 
-    def aging(self, values: np.ndarray) -> np.ndarray:
-        corrections = []
-        for system in self.pool.uniqueSystems:
-            if system['ID'] in self._antiseedsCorrections:
-                corrections.append(self.ANTISEEDS_MAX * self._antiseedsCorrections[system['ID']])
-            else:
-                corrections.append(0)
-        return values + (values.mean() - values.min()) * np.asarray(corrections, dtype=float)
+    def antiseedsCorrections(self, IDs: np.ndarray) -> np.ndarray:
+        return np.fromiter((self._antiseedsCorrections[ID] if ID in self._antiseedsCorrections else 0
+                            for ID in IDs), dtype = float)
+
+    @staticmethod
+    def min(values: np.ndarray) -> np.ndarray:
+        return np.expand_dims(np.min(values, axis=0),axis = 0).repeat(len(values), axis=0)
+
+    @staticmethod
+    def max(values: np.ndarray) -> np.ndarray:
+        return np.expand_dims(np.max(values, axis=0),axis = 0).repeat(len(values), axis=0)
+
+    @staticmethod
+    def mean(values: np.ndarray) -> np.ndarray:
+        return np.expand_dims(np.mean(values, axis=0),axis = 0).repeat(len(values), axis=0)
+
+    @staticmethod
+    def plus(values1: np.ndarray, values2: np.ndarray) -> np.ndarray:
+        return values1 + values2
+
+    @staticmethod
+    def minus(values1: np.ndarray, values2: np.ndarray) -> np.ndarray:
+        return values1 - values2
+
+    @staticmethod
+    def multiply(values1: np.ndarray, values2: np.ndarray) -> np.ndarray:
+        return values1 * values2
+
+    @staticmethod
+    def divide(values1: np.ndarray, values2: np.ndarray) -> np.ndarray:
+        return values1 / values2
 
     @staticmethod
     def negate(values: np.ndarray) -> np.ndarray:
