@@ -59,8 +59,9 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
             system = CrystalRepresentation.readAtomicStructure(f)
         system['ID'] = 0
         s, d = type(system['molecules'][0]).assemble(**system)
-        system['structure'] = s
         system['disassembler'] = d
+        system['atomTypes'] = s.getAtomTypes()
+
 
         interface.readOutput(system=system, calcFolder=pj(GATHEREDPATH, f'output/CalcFold{ID}'))
         self.assertTrue(np.isclose(system['enthalpy'], -105.503))

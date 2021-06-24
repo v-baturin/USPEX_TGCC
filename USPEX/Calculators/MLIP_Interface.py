@@ -39,8 +39,12 @@ class MLIP_Interface(SHELL_Interface):
     out_sampled_file = 'sampled.cfg_0'
 
     _DEFAULT_SLEEP_TIME = 10
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
 
-    def __init__(self, tag: str, input: str = None, potential: str = None, **kwargs):
+    def __init__(self, tag: str, input: str = None, potential: str = None, vacuumSize = 10, **kwargs):
         super().__init__(**kwargs)
 
         if input is not None:
@@ -52,22 +56,24 @@ class MLIP_Interface(SHELL_Interface):
             self.potential = potential
         else:
             self.potential = pj(os.getcwd(), 'Specific/potential.mtp')
+        self.vacuumSize = vacuumSize
 
     def prepareLocalCalculation(self, system, calcFolder: str):
-        molecules = system['molecules']
-        cell = system['cell']
-        systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(molecules, cell=cell)
-        system['structure'] = structure
+        structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
+
+        atomTypes = structure.getAtomTypes()
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        coordinates = cell.center(coordinates)
 
         # create empty input file
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
         # cfg file
-        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], positions = structure.getCartesianCoordinates(),
-                      cell = structure.getCell().getCellVectors())
+        atoms = Atoms([el.short_name for el in atomTypes], positions = coordinates,
+                      cell = cell.getCellVectors())
         savecfg(pj(calcFolder, self.in_cfg_file), atoms)
 
         # input file
@@ -91,17 +97,15 @@ class MLIP_Interface(SHELL_Interface):
         return False
 
     def readOutput(self, system, calcFolder: str):
+        cell = system['cell']
         disassembler = system['disassembler']
         del system['disassembler']
-        structure = system['structure']
-        del system['structure']
 
         atoms = readcfg(pj(calcFolder, self.out_cfg_file))
         if atoms:
-            cell = structure.getCell()
-            system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), atoms.get_positions(),
-                                                                   cell=type(cell)(atoms.get_cell().array,
-                                                                                   cell.getPBC()))))
+            structure = self.structureType([self.atomType(el) for el in atoms.get_chemical_symbols()], atoms.get_positions(),
+                                           cell=self.cellType(atoms.get_cell().array,cell.getPBC()))
+            system.update(disassembler.disassemble(structure))
             system['enthalpy'] = atoms.energy + atoms.get_volume() * \
                                  system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
 
@@ -125,3 +129,10 @@ class MLIP_Interface(SHELL_Interface):
             logger.info(f'structure {ID} led to extrapolation and will be discarded.')
             # system['structure'].set_cell(np.identity(3) * system['structure'].minVectorLength * 0.9)
             system['enthalpy'] = 1000
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
