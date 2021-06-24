@@ -23,71 +23,47 @@ presetFitness[('aging', 'values')] = ('plus', 'values', ('multiply', ('minus', (
                                                          'antiseeds.corrections'))
 
 
-class Fitness(object):
+class Fitness:
 
-    def __init__(self, pool, utilities):
-        self.pool = pool
-        self._poolHash = hash(self.pool)
+    def __init__(self, uniqueSystems, utilities):
+        self.uniqueSystems = uniqueSystems
         self.utilities = utilities
         self._storedFitnesses = {}
 
-    def __copy__(self):
-        other = Fitness.__new__(Fitness)
-        other.pool = self.pool
-        other._poolHash = self._poolHash
-        other.utilities = self.utilities
-        other._storedFitnesses = deepcopy(self._storedFitnesses)
-        return other
-
-    @property
-    def storedFitnesses(self):
-        if self._poolHash != hash(self.pool):
-            self._storedFitnesses = {}
-            self._poolHash = hash(self.pool)
-        return self._storedFitnesses
-
     @staticmethod
-    def sort(population: list, allFitnesses: dict):
-        """
-        Method for sorting our population by fitness.
-
-        :type fitness: list[tuple[str]]
-        :param fitness: list of tuples ('property', 'direction'), where direction is 'min' or 'max'.
-        :type population: list
-        :param population: unsorted list of structures.
-        :rtype: list
-        :return: sorted population.
-        """
-        uniqueValues, ranking = np.unique([allFitnesses[s['ID']] for s in population], return_inverse=True)
-        return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueValues))]
-
-    @staticmethod
-    def _substituteParams(fitness, templateParam , param):
-        if fitness == templateParam:
-            fitness = param
-        elif isinstance(fitness, tuple):
-            funcName, *funcParams = fitness
-            fitness = (funcName,)
-            for funcParam in funcParams:
-                fitness += (Fitness._substituteParams(funcParam, templateParam, param),)
+    def calculate(uniqueSystems, optType, utilities):
+        fitness = Fitness(uniqueSystems, utilities)
+        fitness.calcFitness(optType)
         return fitness
 
-    def calcFitness(self, fitness):
-        if fitness in presetFitness:
-            fitness = presetFitness[fitness]
-        elif isinstance(fitness, tuple):
-            funcName, *funcParams = fitness
-            for probeFitness in presetFitness.keys():
-                if isinstance(probeFitness, tuple) and probeFitness[0] == funcName and len(probeFitness) == len(fitness):
-                    funcName, *templateParams = probeFitness
-                    fitness = presetFitness[probeFitness]
-                    for param, templateParam in zip(funcParams, templateParams):
-                        fitness = self._substituteParams(fitness, templateParam, param)
-                    break
+    def getAllFitnesses(self, optType):
+        optType = Fitness.applyPresets(optType)
+        if optType not in self._storedFitnesses:
+            self.calcFitness(optType)
+        return dict(zip([s['ID'] for s in self.uniqueSystems], self._storedFitnesses[optType]))
 
-        if fitness not in self.storedFitnesses:
-            if isinstance(fitness, tuple):
-                funcName, *funcParams = fitness
+    def getFitnessByID(self, optType, ID: int):
+        fitness = self.getAllFitnesses(optType)
+        return fitness[ID] if ID in fitness else None
+
+    def getFitnessDirect(self, optType: str, system: dict):
+        optType = optType.split('.')
+        if len(optType) == 1:
+            optType, = optType
+            value = system[optType] if optType in system else None
+        elif len(optType) == 2:
+            utility, optType = optType
+            value = getattr(getattr(self.utilities, utility), optType)(system)
+        else:
+            raise RuntimeError(f"Too complex fitness {'.'.join(optType)}.")
+        return value
+
+    def calcFitness(self, optType):
+        optType = Fitness.applyPresets(optType)
+
+        if optType not in self._storedFitnesses:
+            if isinstance(optType, tuple):
+                funcName, *funcParams = optType
                 if not isinstance(funcName, str):
                     raise RuntimeError(f'Incorrect type {type(funcName)} of function {funcName}.')
                 else:
@@ -95,22 +71,23 @@ class Fitness(object):
                     arguments = [self.calcFitness(param) for param in funcParams]
                     if len(funcName) == 1:
                         funcName, = funcName
-                        self.storedFitnesses[fitness] = getattr(self, funcName)(*arguments)
+                        self._storedFitnesses[optType] = getattr(self, funcName)(*arguments)
                     elif len(funcName) == 2:
                         utility, funcName = funcName
-                        self.storedFitnesses[fitness] = getattr(getattr(self.utilities, utility), funcName)(*arguments)
+                        self._storedFitnesses[optType] = getattr(getattr(self.utilities, utility), funcName)(*arguments)
                     else:
-                        raise RuntimeError(f"Too complex fitness {'.'.join(fitness)}.")
-            elif isinstance(fitness, str):
-                fitness = fitness.split('.')
-                if len(fitness) == 1:
-                    fitness, = fitness
-                    value = [x[fitness] for x in self.pool.uniqueSystems]
-                elif len(fitness) == 2:
-                    utility, fitness = fitness
-                    value = [getattr(getattr(self.utilities, utility), fitness)(x) for x in self.pool.uniqueSystems]
+                        raise RuntimeError(f"Too complex fitness {'.'.join(optType)}.")
+            elif isinstance(optType, str):
+                optType = optType.split('.')
+                if len(optType) == 1:
+                    optType, = optType
+                    value = [x[optType] for x in self.uniqueSystems]
+                elif len(optType) == 2:
+                    utility, optType = optType
+                    value = [getattr(getattr(self.utilities, utility), optType)(x) for x in self.uniqueSystems]
+                    optType = '.'.join((utility, optType))
                 else:
-                    raise RuntimeError(f"Too complex fitness {'.'.join(fitness)}.")
+                    raise RuntimeError(f"Too complex fitness {'.'.join(optType)}.")
                 # unfortunately simple np.asarray spoils dictionaries
                 if value and isinstance(value[0], Mapping):
                     valueArray = np.empty((len(value,)), dtype=type(value[0]))
@@ -118,39 +95,37 @@ class Fitness(object):
                         valueArray[i] = x
                 else:
                     valueArray = np.asarray(value)
-                return valueArray
+                self._storedFitnesses[optType] = valueArray
             else:
                 # just a parameter. return it without doing anything.
-                return fitness
-        return self.storedFitnesses[fitness]
+                return optType
+        return self._storedFitnesses[optType]
 
-    def getAllFitnesses(self, fitness):
-        return dict(zip([s['ID'] for s in self.pool.uniqueSystems], self.calcFitness(fitness)))
+    @staticmethod
+    def applyPresets(optType):
+        if optType in presetFitness:
+            optType = presetFitness[optType]
+        elif isinstance(optType, tuple):
+            funcName, *funcParams = optType
+            for probeFitness in presetFitness.keys():
+                if isinstance(probeFitness, tuple) and probeFitness[0] == funcName and len(probeFitness) == len(optType):
+                    funcName, *templateParams = probeFitness
+                    optType = presetFitness[probeFitness]
+                    for param, templateParam in zip(funcParams, templateParams):
+                        optType = Fitness._substituteParams(optType, templateParam, param)
+                    break
+        return optType
 
-    def getFitnessByID(self, fitness, ID):
-        system = self.pool.allSystems[ID]
-        if 'originalID' in system:
-            ID = system['originalID']
-        if fitness in presetFitness:
-            fitness = presetFitness[fitness]
-        value = None
-        if fitness in self.storedFitnesses:
-            IDs = self.pool.getUniqueIDs()
-            if ID in IDs:
-                value =  self.storedFitnesses[fitness][IDs.index(ID)]
-        elif isinstance(fitness, str):
-            system = self.pool.allSystems[ID]
-            fitness = fitness.split('.')
-            if len(fitness) == 1:
-                fitness, = fitness
-                if fitness in system:
-                    value = system[fitness]
-            elif len(fitness) == 2:
-                utility, fitness = fitness
-                value = getattr(getattr(self.utilities, utility), fitness)(system)
-            else:
-                raise RuntimeError(f"Too complex fitness {'.'.join(fitness)}.")
-        return value
+    @staticmethod
+    def _substituteParams(optType, templateParam, param):
+        if optType == templateParam:
+            optType = param
+        elif isinstance(optType, tuple):
+            funcName, *funcParams = optType
+            optType = (funcName,)
+            for funcParam in funcParams:
+                optType += (Fitness._substituteParams(funcParam, templateParam, param),)
+        return optType
 
     @staticmethod
     def min(values: np.ndarray) -> np.ndarray:
@@ -244,3 +219,18 @@ class Fitness(object):
             for ind in front:
                 values[ind] = i
         return values
+
+    @staticmethod
+    def sort(population: list, allFitnesses: dict):
+        """
+        Method for sorting our population by fitness.
+
+        :type fitness: list[tuple[str]]
+        :param fitness: list of tuples ('property', 'direction'), where direction is 'min' or 'max'.
+        :type population: list
+        :param population: unsorted list of structures.
+        :rtype: list
+        :return: sorted population.
+        """
+        uniqueValues, ranking = np.unique([allFitnesses[s['ID']] for s in population], return_inverse=True)
+        return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueValues))]

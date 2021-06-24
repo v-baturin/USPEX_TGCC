@@ -75,9 +75,9 @@ class GlobalOptimizer(object):
         self.pool = SystemPool()
         self.target = Target(self.knownTargetTypes[target['type']], **target)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
-        self.fitness = self.Fitness(self.pool, self.target.utilities)
+        self.fitness = self.Fitness(self.pool.uniqueSystems, self.target.utilities)
         self.selectionConfig = selection
-        self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target, self.fitness,
+        self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target,
                                                                            self.fingerprintUtility ,**selection)
 
         self.optType = optType
@@ -97,9 +97,8 @@ class GlobalOptimizer(object):
         other = GlobalOptimizer.__new__(GlobalOptimizer)
         other.pool = copy(self.pool)
         other.target = copy(self.target)
-        other.fitness = copy(self.fitness)
-        other.fitness.pool = other.pool
-        other.fitness.utilities = other.target.utilities
+        other.fitness = other.pool.generations[-1]['fitness']\
+            if other.pool.generations and 'fitness' in other.pool.generations[-1] else self.fitness
         other.selectionConfig = self.selectionConfig
         other.createPopulation = copy(self.createPopulation)
         other.optType = self.optType
@@ -119,6 +118,8 @@ class GlobalOptimizer(object):
         """
         self._cleanDuplicates(population)
         self.pool.update(population)
+        self.fitness = self.Fitness.calculate(self.pool.uniqueSystems, self.optType, self.target.utilities)
+        self.pool.updateFitness(self.fitness)
         allFitnesses = self.fitness.getAllFitnesses(self.optType)
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
@@ -131,7 +132,8 @@ class GlobalOptimizer(object):
             self.best = best
         if self.stopFitness is not None:
             for ID in self.best:
-                if round(self.fitness.getFitnessByID(self.optType, ID), ndigits=3) <= round(self.stopFitness, ndigits=3):
+                if round(self.fitness.getFitnessByID(self.optType, self.pool.getOriginalID(ID)), ndigits=3)\
+                        <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
                     break
         if self.stopSystems is not None and not self._isGoalReached:

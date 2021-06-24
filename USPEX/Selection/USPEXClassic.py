@@ -91,7 +91,7 @@ class USPEXClassic(object):
 
     '''
 
-    def __init__(self, pool, target, fitness, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
+    def __init__(self, pool, target, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
                  initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False, **kwargs):
         '''
         :param target: reference to configuration space object
@@ -101,7 +101,6 @@ class USPEXClassic(object):
         self.pool = pool
         self.target = target
         self.target.utilities.antiseeds = Antiseeds()
-        self.fitness = fitness
         self.fingerprintUtility = fingerprintUtility
         self.optType = optType
         self.fractions = fractions
@@ -134,7 +133,8 @@ class USPEXClassic(object):
         if self.pool.generations:
             population = self.pool.generations[-1]['allSystems']
             newStructures = self.pool.generations[-1]['newSystems']
-            fronts = self.fitness.sort(population + self._mostDiverse, self.fitness.getAllFitnesses(self.optType))
+            fitness = self.pool.generations[-1]['fitness']
+            fronts = fitness.sort(population + self._mostDiverse, fitness.getAllFitnesses(self.optType))
             sortedPopulation = list(chain.from_iterable(fronts))
 
             howManyProliferate = int(np.ceil(self.bestFrac * len(sortedPopulation)))

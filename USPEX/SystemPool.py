@@ -63,6 +63,10 @@ class SystemPool(object):
         self.generations.append(newGeneration)
         self.uniqueSystems = tuple(chain.from_iterable(generation['newSystems'] for generation in self.generations))
 
+    def updateFitness(self, fitness):
+        assert 'fitness' not in self.generations[-1]
+        self.generations[-1]['fitness'] = fitness
+
     def assignID(self, system):
         """
         Assign ID to system.
@@ -73,3 +77,7 @@ class SystemPool(object):
         system['ID'] = self._newID
         self._newID += 1
         self.allSystems[system['ID']] = system
+
+    def getOriginalID(self, ID):
+        system = self.allSystems[ID]
+        return system['originalID'] if 'originalID' in system else ID
