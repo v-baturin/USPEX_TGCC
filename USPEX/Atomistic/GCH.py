@@ -56,7 +56,7 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             pool = SystemPool()
             pool.update(self.systems)
-            super().__init__(Fitness(pool, [], None).calcFitness(('getAbsoluteCHSpace',
+            super().__init__(Fitness(pool, []).calcFitness(('getAbsoluteCHSpace',
                                                                     ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))
@@ -86,7 +86,7 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             pool = SystemPool()
             pool.update(self.systems)
-            super().__init__(Fitness(pool, [], None).calcFitness(('getAbsoluteCHSpace',
+            super().__init__(Fitness(pool, []).calcFitness(('getAbsoluteCHSpace',
                                                                     ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))

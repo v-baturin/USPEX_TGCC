@@ -62,7 +62,7 @@ class Fitness_Test(unittest.TestCase):
         self.compositionSpace = CompositionSpace(symbols=['Mg','Al','O'], blocks=[[4,8,16]], range=[[1,1]])
         utilities = SimpleNamespace(compositionSpace = self.compositionSpace,
                                     simpleMoleculeUtility = self.simpleMoleculeUtility)
-        self.fitness = Fitness(self.pool, utilities, None)
+        self.fitness = Fitness(self.pool, utilities)
 
     def test_enthalpy(self):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
@@ -222,7 +222,7 @@ class FitnessXray_Test(unittest.TestCase):
                                     powderSpectrumAnalyzer = self.powderSpectrumAnalyzer,
                                     simpleMoleculeUtility = simpleMoleculeUtility)
 
-        self.fitness = Fitness(self.pool, utilities, None)
+        self.fitness = Fitness(self.pool, utilities)
 
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]
