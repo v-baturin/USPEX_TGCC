@@ -46,7 +46,7 @@ class Fitness:
         fitness = self.getAllFitnesses(optType)
         return fitness[ID] if ID in fitness else None
 
-    def getFitnessDirect(self, optType: str, system: dict):
+    def getFitnessDirect(self, optType, system: dict):
         optType = optType.split('.')
         if len(optType) == 1:
             optType, = optType
