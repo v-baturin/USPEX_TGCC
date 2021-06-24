@@ -98,6 +98,8 @@ class VASP_Interface(SHELL_Interface):
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
 
+        self.vacuumSize = vacuumSize
+
     def readOutput(self, system, calcFolder : str):
         self.readStructure(system, calcFolder)
 

@@ -6,7 +6,7 @@ from scipy.spatial.distance import cosine
 import numpy as np
 
 from ..AtomicPrimitives import AtomicStructure
-from ..AtomicPrimitives import Cell
+from ..CellUtility import Cell
 from ...components import CrystalRepresentation
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))

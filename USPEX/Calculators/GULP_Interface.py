@@ -384,7 +384,7 @@ class GULP_Interface(SHELL_Interface):
                     atomTypes.append(self.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
                 positions = cell.fractionalToCartesian(fractional_coordinates)
-        cell = cell.addVacuum(positions, 0)
+        cell = cell.getEnvelopeCell(positions, 0)
         positions = cell.center(positions)
         structure = self.structureType(atomTypes, positions, cell = cell)
         system.update(disassembler.disassemble(structure))
