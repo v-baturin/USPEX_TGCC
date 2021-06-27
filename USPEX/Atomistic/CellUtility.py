@@ -263,11 +263,11 @@ class Cell:
         Center atoms in unit cell.
 
         Centers the coordinates in the unit cell, so there is the same
-        amount of vacuum on all sides specified by affectedDims.
+        amount of vacuum along all cellvectors, specified in affectedDims.
 
         :param coordinates: list of coordinates of N atoms (Nx3 np.array)
-        :param affectedDims: iterable of int/bool/float, specifying the dimensions to act on. Default is acting
-         on all dimensions affectedDims = (1,1,1)
+        :param affectedDims: iterable of int/bool/float, specifying the dimensions to act on.
+         Default behavior is to center along all vectors, for which pbc is 0
         :return:
         """
         if affectedDims is None:
