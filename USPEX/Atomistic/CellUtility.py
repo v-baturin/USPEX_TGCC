@@ -266,12 +266,14 @@ class Cell:
         amount of vacuum on all sides specified by affectedDims.
 
         :param coordinates: list of coordinates of N atoms (Nx3 np.array)
-        :param affectedDims: iterable of floats or ints dimensions to act on. Default - act on all dimensions (1,1,1)
+        :param affectedDims: iterable of int/bool/float, specifying the dimensions to act on. Default is acting
+         on all dimensions affectedDims = (1,1,1)
         :return:
         """
         if affectedDims is None:
-            affectedDims = 1 - np.asarray(self.getPBC(), dtype=int)
+            affectedDims = 1 - np.asarray(self._pbc, dtype=int)
         affectedDims = np.array(affectedDims).reshape((1, 3))
-        centerCellVec = self.fractionalToCartesian(np.array([0.5, 0.5, 0.5]))
-        coordinates += centerCellVec*affectedDims - coordinates.mean(axis=0) * affectedDims
-        return coordinates
+        fracCoords = self.cartesianToFractional(coordinates)
+        shift = np.array([0.5, 0.5, 0.5]) - 0.5 * (np.min(fracCoords, axis=0) + np.max(fracCoords, axis=0))
+        newFrac = fracCoords + shift * affectedDims
+        return self.fractionalToCartesian(newFrac)
