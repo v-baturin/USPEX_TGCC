@@ -5,7 +5,11 @@ from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
 from .IO.CrystalRepresentation import CrystalRepresentation
 CrystalRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-from .Target import Target
+from .GlobalOptimizer import GlobalOptimizer
+from .Fitness import Fitness
+GlobalOptimizer.setFitnessType(Fitness)
+from .Selection.USPEXClassic import USPEXClassic
+GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from .Atomistic.CellUtility import CellUtility
@@ -23,19 +27,14 @@ from .Atomistic.Operators.Permutation import Permutation
 from .Atomistic.Operators.Transmutation import Transmutation
 from .Atomistic.Operators.Seeds import Seeds
 Seeds.registerTypes(CrystalRepresentation)
-from .VariationOperators import VariationOperators
-variationOperators = VariationOperators(hybridizationTypes=[Heredity],
-                                        mutationTypes=[Softmodemutation, Permutation, Transmutation],
-                                        creationTypes=[RandTop, RandSym],
-                                        seedsType=Seeds)
-Target.registerTarget('Crystal', [CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
-                                  Conditions, IonDistances, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer], variationOperators)
+GlobalOptimizer.registerTarget('Crystal',
+                      utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, SimpleMoleculeUtility,
+                                 Conditions, IonDistances, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
+                      hybridizations=[Heredity],
+                      mutations=[Softmodemutation, Permutation, Transmutation],
+                      creations=[RandTop, RandSym],
+                      seeds=Seeds)
 
-from .GlobalOptimizer import GlobalOptimizer
-from .Fitness import Fitness
-from .Selection.USPEXClassic import USPEXClassic
-GlobalOptimizer.setFitnessType(Fitness)
-GlobalOptimizer.registerSelection(USPEXClassic)
 
 from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)

@@ -74,10 +74,12 @@ class Output_Test(unittest.TestCase):
                 optimizer = GlobalOptimizer(**optimizerConfig)
                 for ID in targetState[1]:
                     system = systems[ID][-1]
-                    optimizer.target.pool.uniqueSystems += (system,)
-                    optimizer.target.pool.allSystems[ID] = system
+                    optimizer.pool.uniqueSystems += (system,)
+                    optimizer.pool.allSystems[ID] = system
                     system['isBad'] = False
                 optimizer.best = set(targetState[0])
+                optimizer.fitness = optimizer.Fitness.calculate(optimizer.pool.uniqueSystems, optimizer.optType,
+                                                                optimizer.target.utilities)
                 optimizers.append(optimizer)
             with open(os.path.join(TESTPATH, f"output_data/population{gen}"), "r") as f:
                 populations.append([systems[ID][-1] for ID in json.load(f)])
