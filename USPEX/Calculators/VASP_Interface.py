@@ -416,9 +416,9 @@ class VASP_Interface(SHELL_Interface):
                 positions[i] = position
                 atomTypes[i] = self.atomType(symbol)
 
-            system.update(disassembler.disassemble(self.structureType(atomTypes, positions,
-                                                                   cell = self.cellType(tmp.get_cell().array, cell.getPBC()))))
-
+            cell = self.cellType(tmp.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
+            positions = cell.center(positions)
+            system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
             system['enthalpy'] = float(tmp.get_calculator().results['energy']) + \
                               tmp.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
             # system.forces = np.copy(tmp.get_calculator().results['forces'])

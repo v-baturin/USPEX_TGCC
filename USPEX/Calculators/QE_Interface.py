@@ -62,8 +62,12 @@ class QE_Interface(SHELL_Interface):
         with open(pj(calcFolder, self.outputFile), 'rt') as f:
             tmp = next(read_espresso_out(f, index=slice(None, -2, -1)))
         if tmp:
-            structure = self.structureType([self.atomType(el) for el in tmp.get_chemical_symbols()], tmp.get_positions(),
-                                           cell = self.cellType(tmp.get_cell().array, cell.getPBC()))
+            cell = self.cellType(tmp.get_cell().array, cell.getPBC())
+            positions = tmp.get_positions()
+            cell = cell.getEnvelopeCell(positions, 0)
+            positions = cell.center(positions)
+            structure = self.structureType([self.atomType(el) for el in tmp.get_chemical_symbols()], positions,
+                                           cell=cell)
             system.update(disassembler.disassemble(structure))
 
             system['enthalpy'] = tmp.get_calculator().results['energy']

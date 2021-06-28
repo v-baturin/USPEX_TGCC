@@ -92,13 +92,14 @@ class ABINIT_Interface(SHELL_Interface):
 
         gsr = abilab.abiopen(pj(calcFolder, self.gsr_file_name))
 
-        cell = self.cellType(gsr.structure.lattice.matrix, cell.getPBC())
         tmp_positions = gsr.structure.cart_coords
         atomTypes = [self.atomType(el.symbol) for el in gsr.structure.species]
         positions = np.empty(tmp_positions.shape, dtype=float)
         atomSymbols = [el.short_name for el in atomTypes]
         for i, position in zip(np.argsort(atomSymbols), tmp_positions):
             positions[i] = position
+        cell = self.cellType(gsr.structure.lattice.matrix, cell.getPBC()).getEnvelopeCell(positions, 0)
+        positions = cell.center(positions)
         system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
         system['enthalpy'] = float(gsr.energy) + \
                             cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA

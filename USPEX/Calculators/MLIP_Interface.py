@@ -103,8 +103,12 @@ class MLIP_Interface(SHELL_Interface):
 
         atoms = readcfg(pj(calcFolder, self.out_cfg_file))
         if atoms:
-            structure = self.structureType([self.atomType(el) for el in atoms.get_chemical_symbols()], atoms.get_positions(),
-                                           cell=self.cellType(atoms.get_cell().array,cell.getPBC()))
+
+            positions = atoms.get_positions()
+            cell = self.cellType(atoms.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)  # Trimming vacuum
+            positions = cell.center(positions)
+            structure = self.structureType([self.atomType(el) for el in atoms.get_chemical_symbols()], positions,
+                                           cell=cell)
             system.update(disassembler.disassemble(structure))
             system['enthalpy'] = atoms.energy + atoms.get_volume() * \
                                  system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA

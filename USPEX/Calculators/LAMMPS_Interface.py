@@ -211,8 +211,10 @@ class LAMMPS_Interface(SHELL_Interface):
         #     cdisp.append(-float(line.split()[0]))
         # atoms.translate(cdisp)
 
-        structure = self.structureType(atomTypes, atoms.get_positions(),
-                                       cell=self.cellType(atoms.get_cell().array, cell.getPBC()))
+        positions = atoms.get_positions()
+        cell = self.cellType(atoms.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
+        positions = cell.center(positions)
+        structure = self.structureType(atomTypes, positions, cell=cell)
         system.update(disassembler.disassemble(structure))
 
         properties = self.readProperties(calcFolder)

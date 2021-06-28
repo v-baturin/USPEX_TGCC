@@ -239,8 +239,10 @@ class PWmat_Interface(SHELL_Interface):
                     atomTypes.append(self.atomType(int(temp[0])))
                     coor += [[float(temp[1]), float(temp[2]), float(temp[3])]]
 
+        cell = self.cellType(lat, cell.getPBC()).getEnvelopeCell(coor, 0)
+        coor = cell.center(coor)
         system.update(disassembler.disassemble(self.structureType(atomTypes, coor,
-                                                               cell=self.cellType(lat, cell.getPBC()))))
+                                                               cell=cell)))
 
         try:  # read energy
             #with open(os.path.join(calcFolder , self.REPORT),'r') as fp:
