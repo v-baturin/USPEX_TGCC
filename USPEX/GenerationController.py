@@ -60,7 +60,7 @@ class GenerationController(object):
                not self.optimizer.isGoalReached):
 
             if self.state is ControllerState.createPopulation:
-                self.population = self.optimizer.run()
+                self.population = self.optimizer.createPopulation()
                 self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.processPopulation
                 self.save()

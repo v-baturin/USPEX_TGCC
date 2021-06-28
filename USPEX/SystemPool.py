@@ -12,90 +12,72 @@ import logging
 logger = logging.getLogger(__name__)
 
 from copy import copy
+from itertools import chain
+
 
 class SystemPool(object):
     """
-    This class contains configuration of such space, parameters of what are we searching for,
-    list of systems already studied in the search, current result of the search.
-
-    This class is universal for all kind of targets and should be inherited for particular targets
-    and its methods overridden.
-
-    :cvar DEFAULT_FITNESS:
-        list of tuples describing default optimization type for this pool of systems.
-        Each tuple consist of name of attribute and 'min' or 'max' modifier. Class variable.
-        For default implementation this list is empty.
-    :ivar config:
-        link to implementation of :class:`~USPEX.Common.Config.Config` interface.
-    :ivar uniqueSystems:
-        list of all currently studied systems.
+    This class serves as database of all systems encountered in calculation.
+    The only thing it expects from systems is IDs. It has a method to assign IDs to systems.
+    Except for that systems are arbitrary dictionaries.
+    It subdivide systems into generations. Each call to *update* method creates new generation record.
     """
 
     def __init__(self):
-        """
-        Initializes the class.
-
-        :type config: :class:`~USPEX.Common.Config.Config` or descendant
-        :param config: describes the chemical compositions configuration space.
-        """
         self.uniqueSystems = ()
         self.allSystems = {}
+        self.generations = []
         self._newID = 0
 
     def __copy__(self):
         other = SystemPool.__new__(SystemPool)
         other.uniqueSystems = self.uniqueSystems
         other.allSystems = copy(self.allSystems)
+        other.generations = copy(self.generations)
         other._newID = self._newID
         return other
 
+    def getUniqueIDs(self):
+        return [system['ID'] for system in self.uniqueSystems]
+
     def __hash__(self):
-        return hash(tuple(system['ID'] for system in self.uniqueSystems))
+        return hash(tuple(self.getUniqueIDs()))
 
     def update(self, population: list):
         """
         Update information about target space in current search.
 
-        :type population: list of :class:`~USPEX.Common.System.System` descendants
-        :param population: list of systems which allows to update our knowledge about target space.
+        :type population:
+        :param population:
         """
 
         logger.debug('Updating target: list of unique systems.')
-        uniqueIDs = [system['ID'] for system in self.uniqueSystems]
-        uniqueSystems = list(self.uniqueSystems)
+        uniqueIDs = self.getUniqueIDs()
+        newGeneration = {'allSystems': [], 'newSystems': []}
         for system in population:
+            newGeneration['allSystems'].append(system)
             if system['ID'] not in uniqueIDs:
                 logger.debug('add new system %d to list of unique systems' % system['ID'])
                 uniqueIDs.append(system['ID'])
-                uniqueSystems.append(system)
-        self.uniqueSystems = tuple(uniqueSystems)
+                newGeneration['newSystems'].append(system)
+        self.generations.append(newGeneration)
+        self.uniqueSystems = tuple(chain.from_iterable(generation['newSystems'] for generation in self.generations))
 
-    def newFoundSystems(self, population: list):
-        """
-        Determines new found systems in population.
-
-        :type population: list of :class:`~USPEX.Common.System.System` descendants
-        :param population: list of systems which allows to update our knowledge about target space.
-        :rtype: list
-        :return: new found systems.
-        """
-        logger.debug('Determine new systems.')
-        uniqueIDs = [system['ID'] for system in self.uniqueSystems]
-        newFoundSystems = []
-        for system in population:
-            if system['ID'] not in uniqueIDs:
-                logger.debug('found new system %d' % system['ID'])
-                newFoundSystems.append(system)
-                uniqueIDs.append(system['ID'])
-        return newFoundSystems
+    def updateFitness(self, fitness):
+        assert 'fitness' not in self.generations[-1]
+        self.generations[-1]['fitness'] = fitness
 
     def assignID(self, system):
         """
         Assign ID to system.
 
-        :type system: :class:`~USPEX.Common.Atomistic.AtomicStructure.AtomicStructure` descendant
+        :type system:
         :param system: system to be labeled with ID.
         """
         system['ID'] = self._newID
         self._newID += 1
         self.allSystems[system['ID']] = system
+
+    def getOriginalID(self, ID):
+        system = self.allSystems[ID]
+        return system['originalID'] if 'originalID' in system else ID

@@ -9,9 +9,10 @@ Class implementing global optimizer
 
 import logging
 from copy import copy
-from typing import List, Tuple
+from typing import List
 
-from .Target import Target
+from .SystemPool import SystemPool
+from .Target import Target, TargetType
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,39 @@ class GlobalOptimizer(object):
 
     Fitness = None
     knownSelectionTypes = {}
+    knownTargetTypes = {}
+
+    @classmethod
+    def setFitnessType(cls, FitnessType: type):
+        cls.Fitness = FitnessType
+
+    @classmethod
+    def registerSelection(cls, selectionType: type):
+        assert selectionType.__name__ not in cls.knownSelectionTypes
+        cls.knownSelectionTypes[selectionType.__name__] = selectionType
+
+    @classmethod
+    def registerTarget(cls, name: str, utilities: List[type], hybridizations: List[type], mutations: List[type],
+                       creations: List[type], seeds: type = None):
+        """
+        Register the target as known target.
+
+        :type name: str
+        :param name: target name.
+        :type utilities: list
+        :param utilities: list of types of utilities.
+        :type hybridizations: list
+        :param hybridizations: list of types of hybridization operators.
+        :type mutations: list
+        :param mutations: list of types of mutation operators.
+        :type creations: list
+        :param creations: list of types of mutation operators.
+        :type seeds: type
+        :param seeds: type of Seeds operator.
+        """
+        assert name not in cls.knownTargetTypes
+        cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
+                                                mutations=mutations, creations=creations, seeds=seeds)
 
     def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None, **kwargs):
         """
@@ -38,16 +72,16 @@ class GlobalOptimizer(object):
         :param selection: name of selection to launch and its parameters; obligatory
         """
 
-        self.target = Target(**target)
+        self.pool = SystemPool()
+        self.target = Target(self.knownTargetTypes[target['type']], **target)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
+        self.fitness = self.Fitness(self.pool.uniqueSystems, self.target.utilities)
+        self.selectionConfig = selection
+        self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target,
+                                                                           self.fingerprintUtility ,**selection)
 
-        assert self.Fitness is not None
-        self.fitness = self.Fitness(self.target.pool, self.target.utilities, self.fingerprintUtility)
         self.optType = optType
-        self.best = set()
-        self._isStable = False
         self.stopFitness = stopFitness
-        self._isGoalReached = False
         if stopSystems is not None and self.target.seeds is not None:
             Seeds = type(self.target.seeds)
             seeds = Seeds(self.target.utilities, generations = [0], seedsFolders=[stopSystems])
@@ -55,39 +89,25 @@ class GlobalOptimizer(object):
         else:
             self.stopSystems = None
 
-        self.selectionConfig = selection
-        self.createPopulation = self.knownSelectionTypes[selection['type']](self.fingerprintUtility ,**selection)
-
-        # List of structure recieved from update on this particular step
-        self.population = None
-        # List of new found structure on this particular step
-        self.newStructures = None
+        self.best = set()
+        self._isStable = False
+        self._isGoalReached = False
 
     def __copy__(self):
         other = GlobalOptimizer.__new__(GlobalOptimizer)
+        other.pool = copy(self.pool)
         other.target = copy(self.target)
-        other.fitness = copy(self.fitness)
-        other.fitness.pool = other.target.pool
-        other.fitness.utilities = other.target.utilities
-        other.optType = self.optType
-        other.best = copy(self.best)
-        other._isStable = self._isStable
-        other.stopFitness = self.stopFitness
-        other._isGoalReached = self._isGoalReached
+        other.fitness = other.pool.generations[-1]['fitness']\
+            if other.pool.generations and 'fitness' in other.pool.generations[-1] else self.fitness
         other.selectionConfig = self.selectionConfig
         other.createPopulation = copy(self.createPopulation)
-        other.population = copy(self.population)
-        other.newStructures = copy(self.newStructures)
+        other.optType = self.optType
+        other.stopFitness = self.stopFitness
+        other.stopSystems = self.stopSystems
+        other.best = self.best
+        other._isStable = self._isStable
+        other._isGoalReached = self._isGoalReached
         return other
-
-    def run(self):
-        """
-        Here we generate new set of structures.
-
-        :rtype: list
-        :return: list of structures.
-        """
-        return self.createPopulation(self.target, self.fitness, self.population, self.newStructures)
 
     def update(self, population: list):
         """
@@ -96,33 +116,29 @@ class GlobalOptimizer(object):
         :type population: list
         :param population: list of systems which allows to update our knowledge about target space.
         """
-        self.cleanDuplicates(population)
-        self.population = population
-        self.newStructures = self.target.pool.newFoundSystems(population)
-        self.target.pool.update(self.newStructures)
+        self._cleanDuplicates(population)
+        self.pool.update(population)
+        self.fitness = self.Fitness.calculate(self.pool.uniqueSystems, self.optType, self.target.utilities)
+        self.pool.updateFitness(self.fitness)
         allFitnesses = self.fitness.getAllFitnesses(self.optType)
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
                 VO.tune(population, allFitnesses)
-        best = set(system['ID'] for system in self.fitness.sort(list(self.target.pool.uniqueSystems), allFitnesses)[0])
+        best = set(system['ID'] for system in self.fitness.sort(list(self.pool.uniqueSystems), allFitnesses)[0])
         if best == self.best:
             self._isStable = True
         else:
             self._isStable = False
             self.best = best
         if self.stopFitness is not None:
-            for ID in list(self.best):
-                value = self.fitness.getFitnessByID(self.optType, ID)
-                if value is None:
-                    try:
-                        value = self.target.pool.allSystems[ID][self.optType]
-                    except:
-                        pass
-                if round(value, ndigits=3) <= round(self.stopFitness, ndigits=3):
+            for ID in self.best:
+                if round(self.fitness.getFitnessByID(self.optType, self.pool.getOriginalID(ID)), ndigits=3)\
+                        <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
+                    break
         if self.stopSystems is not None and not self._isGoalReached:
             stopSystems = list(self.stopSystems)
-            for system in self.target.pool.uniqueSystems:
+            for system in self.pool.uniqueSystems:
                 for i, stopSystem in enumerate(stopSystems):
                     if self.fingerprintUtility.equal(system, stopSystem):
                         del stopSystems[i]
@@ -131,7 +147,7 @@ class GlobalOptimizer(object):
                     break
             self._isGoalReached = not stopSystems
 
-    def cleanDuplicates(self, population: list):
+    def _cleanDuplicates(self, population: list):
         """
         Method for cleaning duplicates.
 
@@ -141,7 +157,7 @@ class GlobalOptimizer(object):
         logger.info('Looking for duplicates.')
         cleanedPopulation = []
         for system in population:
-            for ref_system in list(self.target.pool.uniqueSystems) + cleanedPopulation:
+            for ref_system in list(self.pool.uniqueSystems) + cleanedPopulation:
                 if self.fingerprintUtility.equal(system, ref_system):
                     logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
                     self.fingerprintUtility.clean(system)
@@ -162,12 +178,3 @@ class GlobalOptimizer(object):
     @property
     def isGoalReached(self):
         return self._isGoalReached
-
-    @classmethod
-    def setFitnessType(cls, FitnessType: type):
-        cls.Fitness = FitnessType
-
-    @classmethod
-    def registerSelection(cls, selectionType: type):
-        assert selectionType.__name__ not in cls.knownSelectionTypes
-        cls.knownSelectionTypes[selectionType.__name__] = selectionType

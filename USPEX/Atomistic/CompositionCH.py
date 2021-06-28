@@ -15,7 +15,7 @@ class CompositionCH(ConvexHull):
         self.compositionSpace = compositionSpace
         self.simpleMoleculeUtility = simpleMoleculeUtility
         utilities = SimpleNamespace(compositionSpace = compositionSpace, simpleMoleculeUtility = simpleMoleculeUtility)
-        super().__init__(Fitness(pool, utilities, None).calcFitness(('getRelativeCHSpace',
+        super().__init__(Fitness(pool.uniqueSystems, utilities).calcFitness(('getRelativeCHSpace',
                                                                ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition'), 'enthalpy')))
 
@@ -40,6 +40,6 @@ class CompositionCH(ConvexHull):
         pool = SystemPool()
         pool.update(self.systems)
         utilities = SimpleNamespace(compositionSpace = self.compositionSpace, simpleMoleculeUtility = self.simpleMoleculeUtility)
-        super().__init__(Fitness(pool, utilities, None).calcFitness(('getRelativeCHSpace',
+        super().__init__(Fitness(pool.uniqueSystems, utilities).calcFitness(('getRelativeCHSpace',
                                                                ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition'), 'enthalpy')))
