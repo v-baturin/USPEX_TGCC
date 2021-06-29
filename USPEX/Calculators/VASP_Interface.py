@@ -17,13 +17,13 @@ import numpy as np
 import os
 import shutil
 
-from ase.io.vasp import read_vasp_out
+from ase.io.vasp import read_vasp_out, write_vasp
+from ase.atoms import Atoms
 from os.path import join as pj
 from typing import List
 
 from .Common.KPoints import KPoints, BadKPoints
 from .Common.SHELL_Interface import SHELL_Interface
-from ..components import CrystalRepresentation
 
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
 
@@ -70,8 +70,12 @@ class VASP_Interface(SHELL_Interface):
 
 
     _DEFAULT_SLEEP_TIME = 30
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
 
-    def __init__(self, tag : str, kresol : float, incar : str = None, potcarsPath : str = None, **kwargs):
+    def __init__(self, tag : str, kresol : float, incar : str = None, potcarsPath : str = None, vacuumSize=10, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -98,6 +102,8 @@ class VASP_Interface(SHELL_Interface):
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
 
+        self.vacuumSize = vacuumSize
+
     def readOutput(self, system, calcFolder : str):
         self.readStructure(system, calcFolder)
 
@@ -113,13 +119,14 @@ class VASP_Interface(SHELL_Interface):
         :return:
         '''
 
-        molecules = system['molecules']
-        cell = system['cell']
-        systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
-        system['structure'] = structure
+        structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
+        atomTypes = structure.getAtomTypes()
+        system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])
 
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        coordinates = cell.center(coordinates)
 
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
@@ -148,7 +155,7 @@ class VASP_Interface(SHELL_Interface):
         if os.path.exists(pj(calcFolder, 'POTCAR')):
             os.remove(pj(calcFolder, 'POTCAR'))
 
-        for atomType in np.unique([el.short_name for el in structure.getAtomTypes()]):
+        for atomType in np.unique([el.short_name for el in atomTypes]):
             potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType}')
             os.system(f'cat {potcarPath} >>  {calcFolder}/POTCAR ')
 
@@ -170,11 +177,12 @@ class VASP_Interface(SHELL_Interface):
         #     write_vasp(pj(calcFolder, self.poscar_file), system, sort=True, direct=True, vasp5=True, long_format=False)
 
         with open(pj(calcFolder, self.poscar_file), 'wt') as f:
-            CrystalRepresentation.writeAtomicStructure(f, system)
+            write_vasp(f, Atoms([el.short_name for el in atomTypes], coordinates, cell = cell.getCellVectors()),
+                       label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
 
         ############################# KPOINTS #################################
         try:
-            kPoints = self.kPoints.build(structure)
+            kPoints = self.kPoints.build(cell)
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
@@ -391,25 +399,26 @@ class VASP_Interface(SHELL_Interface):
 
     def readStructure(self, system, calcFolder : str):
 
+        cell = system['cell']
         disassembler = system['disassembler']
         del system['disassembler']
-        structure = system['structure']
-        del system['structure']
+        symbolsOrder = system['symbolsOrder']
+        del system['symbolsOrder']
 
         with open(pj(calcFolder, self.outcar_file)) as fp:
             tmp = read_vasp_out(fp)
         if tmp:
             tmp_positions = tmp.get_positions()
             positions = np.empty(tmp_positions.shape,dtype = float)
-            atomTypes = structure.getAtomTypes()
-            atomSymbols = [el.short_name for el in atomTypes]
-            for i, position in zip(np.argsort(atomSymbols), tmp_positions):
+            tmp_symbols = tmp.get_chemical_symbols()
+            atomTypes = np.empty(len(tmp_symbols),dtype = self.atomType)
+            for i, symbol, position in zip(symbolsOrder, tmp_symbols, tmp_positions):
                 positions[i] = position
+                atomTypes[i] = self.atomType(symbol)
 
-            cell = structure.getCell()
-            system.update(disassembler.disassemble(type(structure)(atomTypes, positions,
-                                                                   cell = type(cell)(tmp.get_cell().array, cell.getPBC()))))
-
+            cell = self.cellType(tmp.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
+            positions = cell.center(positions)
+            system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
             system['enthalpy'] = float(tmp.get_calculator().results['energy']) + \
                               tmp.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
             # system.forces = np.copy(tmp.get_calculator().results['forces'])
@@ -476,3 +485,10 @@ class VASP_Interface(SHELL_Interface):
             if line.rfind('E-fermi') > -1:
                 energyFermi = float(line.split()[2])
         return energyFermi
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType

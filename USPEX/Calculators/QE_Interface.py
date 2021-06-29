@@ -29,8 +29,13 @@ class QE_Interface(SHELL_Interface):
     SPECIFIC_FOLDER = os.getcwd() + '/Specific'
 
     _DEFAULT_SLEEP_TIME = 30
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
 
-    def __init__(self, tag : str, kresol : float, options: str = None, libs: list = None, **kwargs):
+    def __init__(self, tag : str, kresol : float, options: str = None, libs: list = None, vacuumSize: float = 10,
+                 **kwargs):
         '''
 
         :param tag: tag of the stage
@@ -47,30 +52,34 @@ class QE_Interface(SHELL_Interface):
             self.options = pj(os.getcwd(), f'Specific/qEspresso_options_{tag}')
         self.libs = libs if libs else []
         self.kPoints = KPoints(kresol)
+        self.vacuumSize = vacuumSize
 
     def readOutput(self, system : dict, calcFolder: str):
+        cell = system['cell']
         disassembler = system['disassembler']
         del system['disassembler']
-        structure = system['structure']
-        del system['structure']
 
         with open(pj(calcFolder, self.outputFile), 'rt') as f:
             tmp = next(read_espresso_out(f, index=slice(None, -2, -1)))
         if tmp:
-            cell = structure.getCell()
-            system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), tmp.get_positions(),
-                                                                   cell = type(cell)(tmp.get_cell().array, cell.getPBC()))))
+            cell = self.cellType(tmp.get_cell().array, cell.getPBC())
+            positions = tmp.get_positions()
+            cell = cell.getEnvelopeCell(positions, 0)
+            positions = cell.center(positions)
+            structure = self.structureType([self.atomType(el) for el in tmp.get_chemical_symbols()], positions,
+                                           cell=cell)
+            system.update(disassembler.disassemble(structure))
 
             system['enthalpy'] = tmp.get_calculator().results['energy']
             # system.forces = np.copy(tmp.get_calculator().results['forces'])
 
     def prepareLocalCalculation(self, system: dict, calcFolder: str):
-        molecules = system['molecules']
-        cell = system['cell']
-        systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
-        system['structure'] = structure
+        structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
+
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        coordinates = cell.center(coordinates)
 
 
         atomTypes = structure.getAtomTypes()
@@ -80,7 +89,7 @@ class QE_Interface(SHELL_Interface):
             data = source.readlines()
         for i, line in enumerate(data):
             if 'AAAA' in line:
-                data[i] = line.replace('AAAA', '{}'.format(len(structure)))
+                data[i] = line.replace('AAAA', '{}'.format(len(atomTypes)))
             elif 'BBBB' in line:
                 data[i] = line.replace('BBBB', '{}'.format(numIons_size))
 
@@ -89,7 +98,7 @@ class QE_Interface(SHELL_Interface):
 
         BOHR = 0.52917721067  # Angstrom
         #lat = latConverter(latConverter(LATTICE)) / BOHR
-        lat = structure.getCell().getCellVectors() / BOHR#_lengths_and_angles()
+        lat = cell.getCellVectors() / BOHR#_lengths_and_angles()
 
         data.append('{:8.4f} {:8.4f} {:8.4f}\n'.format(*lat[0, :]))
         data.append('{:8.4f} {:8.4f} {:8.4f}\n'.format(*lat[1, :]))
@@ -97,13 +106,13 @@ class QE_Interface(SHELL_Interface):
 
         data.append('ATOMIC_POSITIONS {crystal} \n')
 
-        for symbol, coord in zip(atomTypes, structure.getFractionalCoordinates()):
+        for symbol, coord in zip(atomTypes, cell.cartesianToFractional(coordinates)):
             data.append('{:4s} {:12.6f} {:12.6f} {:12.6f}\n'.format(symbol.short_name, *coord))
 
 
         ############################# KPOINTS #################################
         try:
-            kPoints = self.kPoints.build(structure)
+            kPoints = self.kPoints.build(cell)
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
@@ -130,3 +139,10 @@ class QE_Interface(SHELL_Interface):
         if not res:
             logger.error('Quantum Espresso is not completely Done')
         return res
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType

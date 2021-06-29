@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 @date        30 August 2016
 @brief       Class for remote QM/MM calculations with GULP
 '''
-
+# TODO: Vacuumsize before each stage
 import numpy as np
 import os
 import re
@@ -21,10 +21,10 @@ from typing import List
 
 
 class GULP_Interface(SHELL_Interface):
-    '''
+    """
     Calculator for Gulp.
     Local running
-    '''
+    """
 
     _DEFAULT_SLEEP_TIME = 10
     structureType = None
@@ -33,7 +33,7 @@ class GULP_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag : str, ginput : str = None, goptions : str = None, libs:List[str] = None,
-                 moleculeSpecifics : dict = None, perturbate : bool = True, fix_cell:bool=False, **kwargs):
+                 moleculeSpecifics : dict = None, perturbate : bool = True, fix_cell:bool=False, vacuumSize = 10, **kwargs):
         '''
 
         :param params: dictionary with parameters:
@@ -69,6 +69,7 @@ class GULP_Interface(SHELL_Interface):
 
         self.perturbate = perturbate
         self.fix_cell = fix_cell
+        self.vacuumSize = vacuumSize
         logger.debug('GULP calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -82,12 +83,12 @@ class GULP_Interface(SHELL_Interface):
 
         # system = AtomicStructure.fromDICT(system)
         # twoDimensional = -3 == system.dimension or 2 == system.dimension
-        molecules = system['molecules']
-        cell = system['cell']
-        systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
-        system['structure'] = structure
+        structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
+
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        coordinates = cell.center(coordinates)
 
         files_to_delete = ['output', 'optimized.structure']
         for f in files_to_delete:
@@ -126,7 +127,6 @@ class GULP_Interface(SHELL_Interface):
 
         content_to_write += 'fractional\n'
 
-        coordinates = structure.getCartesianCoordinates()
         # TODO properly perturnb system
         if self.perturbate:
             coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
@@ -357,6 +357,17 @@ class GULP_Interface(SHELL_Interface):
                 if fractional_coordinates is not None:
                     positions = cell.fractionalToCartesian(fractional_coordinates)
 
+            elif line.find('Cartesian lattice vectors') != -1:
+                lattice_vectors = np.zeros((3, 3))
+                s = i + 2
+                for j in range(s, s + 3):
+                    temp = content[j].split()
+                    for k in range(3):
+                        lattice_vectors[j - s][k] = float(temp[k])
+                cell = self.cellType(lattice_vectors, pbc = cell.getPBC())
+                if fractional_coordinates is not None:
+                    positions = cell.fractionalToCartesian(fractional_coordinates)
+
             elif line.find('Final fractional coordinates of atoms') != -1:
                 s = i + 5
                 scaled_positions = []
@@ -373,7 +384,10 @@ class GULP_Interface(SHELL_Interface):
                     atomTypes.append(self.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
                 positions = cell.fractionalToCartesian(fractional_coordinates)
-        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell = cell)))
+        cell = cell.getEnvelopeCell(positions, 0)
+        positions = cell.center(positions)
+        structure = self.structureType(atomTypes, positions, cell = cell)
+        system.update(disassembler.disassemble(structure))
 
     def readForces(self, content, numAtoms : int):
         assert numAtoms > 0

@@ -60,23 +60,54 @@ class AtomicStructure:
     def getCenterOfMassFractionalCoordinates(self):
         return np.mean(self.getFractionalCoordinates(), axis=0)
 
-    def getPrincipleAxes(self):
+    def getPrincipalAxes(self, intactPBCVectors=False):
         """
         :rtype: 3x3 numpy array
         :return: principle axes, main axes of inertia tensor (with all atom masses set to be equal).
         """
         coordinates = self.coordinates - self.coordinates.mean(axis=0)
-        inertia = np.zeros((3, 3), dtype=float)  # moment of inertia tensor
-        inertia[0, 0] = (coordinates[:, 1] ** 2 + coordinates[:, 2] ** 2).sum()
-        inertia[1, 1] = (coordinates[:, 0] ** 2 + coordinates[:, 2] ** 2).sum()
-        inertia[2, 2] = (coordinates[:, 0] ** 2 + coordinates[:, 1] ** 2).sum()
-        inertia[0, 1] = -(coordinates[:, 0] * coordinates[:, 1]).sum()
-        inertia[1, 2] = -(coordinates[:, 1] * coordinates[:, 2]).sum()
-        inertia[2, 0] = -(coordinates[:, 2] * coordinates[:, 0]).sum()
-        inertia[1, 0] = -(coordinates[:, 0] * coordinates[:, 1]).sum()
-        inertia[2, 1] = -(coordinates[:, 1] * coordinates[:, 2]).sum()
-        inertia[0, 2] = -(coordinates[:, 2] * coordinates[:, 0]).sum()
-        return np.linalg.eigh(inertia)
+        return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
+
+    def getRectifiedCell(self):
+        """
+        returns Cell object for subsequent vacuum adding. The cellVectors are:
+        for 0d: unit principal eigenvectors
+        for 1d: Periodic vector remains, the other two are perpendicular to it, directed along principal directions of
+        a structure, flatten along periodic vector
+        for 2d: Periodic vectors remain. The third is a unity vector perpendicular to 2d system
+        for 3d: Returns initial Cell
+        """
+
+        cell = self.getCell()
+        cellVectors = cell.getCellVectors()
+        pbc = np.array(cell.getPBC(), dtype=bool) if cell is not None else np.array([False] * 3)
+        dim = sum(pbc)
+
+        whichPeriodic = np.where(pbc)[0]
+        periodicVecs = cellVectors[pbc]
+        nonperiodicVecs = cellVectors[~pbc]
+
+        if dim == 0:
+            vectors = self.getPrincipalAxes()[1].T
+        elif dim == 1:
+            periodicUnit = periodicVecs[0] / np.linalg.norm(periodicVecs[0])
+            orthogPancake = self.coordinates - \
+                               np.dot(self.coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
+            vectors = AtomicStructure(self.atomTypes, orthogPancake).getPrincipalAxes()[1].T
+            vectors[-1] = periodicVecs[0]
+            vectors = np.roll(vectors, whichPeriodic[0] - 2, axis=0)
+        elif dim == 2:
+            normalvector = np.cross(periodicVecs[0], periodicVecs[1])
+            normalvector *= np.sign(np.dot(normalvector, nonperiodicVecs[0]))
+            vectors = cellVectors
+            vectors[~pbc] = normalvector
+        elif dim == 3:
+            return cell
+        else:
+            raise ValueError(f'Incorrect dim: {dim}')
+
+        newCell = type(cell)(vectors, pbc)
+        return newCell
 
     def getCell(self):
         return copy(self.cell)
@@ -86,7 +117,7 @@ class AtomicStructure:
         return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, **kwargs)
 
     @staticmethod
-    def assemble(molecules, cell, environment = None, **kwargs):
+    def assemble(molecules, cell, environment=None, **kwargs):
         atomTypes = []
         coordinates = []
         indices = []
@@ -163,3 +194,5 @@ class AtomicDisassembler:
                 atomicDisplacements = np.array([[0.,0.,0.]])
             molecularDispacements.append((Transformation.fromRotVector(rotation, translation), atomicDisplacements))
         return molecularDispacements
+
+

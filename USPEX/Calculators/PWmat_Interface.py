@@ -39,7 +39,12 @@ class PWmat_Interface(SHELL_Interface):
     RELAXSTEPS = 'RELAXSTEPS'
     FINAL_CONFIG = 'final.config'
 
-    def __init__(self, tag, etot_input, potcars, kresol, **kwargs):
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
+
+    def __init__(self, tag, etot_input, potcars, kresol, vacuumSize = 10, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -58,6 +63,7 @@ class PWmat_Interface(SHELL_Interface):
         self.potcars = potcars
 
         self.kPoints = KPoints(kresol)
+        self.vacuumSize = vacuumSize
         self.failedSystems = []
 
 
@@ -80,15 +86,16 @@ class PWmat_Interface(SHELL_Interface):
         :param system: our system
         :return:
         '''
-        molecules = system['molecules']
-        cell = system['cell']
-        systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
-        system['structure'] = structure
+        structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
 
         atomTypes = structure.getAtomTypes()
         atomSymbols = [el.short_name for el in atomTypes]
+
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        coordinates = cell.center(coordinates)
+
 
         ############################# POTCAR ##################################
         try:
@@ -109,7 +116,7 @@ class PWmat_Interface(SHELL_Interface):
 
         # set mp_n123
         try:
-            kPoints = self.kPoints.build(structure)
+            kPoints = self.kPoints.build(cell)
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logging.info('K poins cannot be built, so it\'s set as   [1, 1, 1]')
@@ -150,7 +157,7 @@ class PWmat_Interface(SHELL_Interface):
             fp.write(' LATTICE\n')
 
             latt_form = ' %15.8f %14.8f %14.8f\n'
-            cell_ = structure.getCell().getCellVectors()
+            cell_ = cell.getCellVectors()
             for i in range(3):
                 latt = tuple(cell_[i])
                 fp.write(latt_form % latt)
@@ -158,7 +165,7 @@ class PWmat_Interface(SHELL_Interface):
             fp.write(' POSITION\n')
 
             coord_form = '  %d %14.8f %14.8f %14.8f 1 1 1\n'
-            coords = structure.getFractionalCoordinates()
+            coords = cell.cartesianToFractional(coordinates)
             for i in range(totalatom):
                 coord = (atomTypes[i].z,) + tuple(coords[i])
                 fp.write(coord_form % coord)
@@ -204,10 +211,9 @@ class PWmat_Interface(SHELL_Interface):
 
     def readStructure(self, system, calcFolder : str):
 
+        cell = system['cell']
         disassembler = system['disassembler']
         del system['disassembler']
-        structure = system['structure']
-        del system['structure']
 
 
         files_in_calcFolder = os.listdir(calcFolder)
@@ -221,6 +227,7 @@ class PWmat_Interface(SHELL_Interface):
 
         lat = []
         coor = []
+        atomTypes = []
         for n, line in enumerate(content):
             if 'lattice' in line.lower():
                 for i in range(3):
@@ -229,11 +236,13 @@ class PWmat_Interface(SHELL_Interface):
             if 'position' in line.lower():
                 for i in range(atoms):
                     temp = content[n + 1 + i].split()
+                    atomTypes.append(self.atomType(int(temp[0])))
                     coor += [[float(temp[1]), float(temp[2]), float(temp[3])]]
 
-        cell = structure.getCell()
-        system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), coor,
-                                                               cell=type(cell)(lat, cell.getPBC()))))
+        cell = self.cellType(lat, cell.getPBC()).getEnvelopeCell(coor, 0)
+        coor = cell.center(coor)
+        system.update(disassembler.disassemble(self.structureType(atomTypes, coor,
+                                                               cell=cell)))
 
         try:  # read energy
             #with open(os.path.join(calcFolder , self.REPORT),'r') as fp:
@@ -342,3 +351,10 @@ class PWmat_Interface(SHELL_Interface):
                 if 'E_Fermi' in line:
                     energyFermi = float(line.split()[1])
             return energyFermi
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType

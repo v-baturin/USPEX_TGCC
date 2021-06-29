@@ -40,8 +40,13 @@ class LAMMPS_Interface(SHELL_Interface):
     outputFile = 'lammps.out'
     errorFile = 'lammps.err'
     logFile = 'log.lammps'
-    
-    def __init__(self, tag: str, lammps_in: str = None, libs:List[str] = None, **kwargs):
+
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
+
+    def __init__(self, tag: str, lammps_in: str = None, libs:List[str] = None, vacuumSize=10, **kwargs):
         '''
 
         :param params: dictionary with parameters:
@@ -57,6 +62,7 @@ class LAMMPS_Interface(SHELL_Interface):
 
         self.lammps_in  = lammps_in
         self.libs = libs if libs else []
+        self.vacuumSize = vacuumSize
         logger.debug('LAMMPS calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -64,6 +70,15 @@ class LAMMPS_Interface(SHELL_Interface):
         :param system:
         :param calcFolder:
         '''
+        structure, disassembler = self.structureType.assemble(**system)
+        system['disassembler'] = disassembler
+        system['atomTypes'] = structure.getAtomTypes()
+
+        # coordinates = structure.getCartesianCoordinates()
+        # cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        # coordinates = cell.center(coordinates)
+        # structure = self.structureType(structure.getAtomTypes(), coordinates, cell)
+
         if not os.path.exists(calcFolder):
             os.makedirs(calcFolder)
         # shutil.copy2(self.lammps_in, pj(calcFolder, self.inputFile))
@@ -135,7 +150,7 @@ class LAMMPS_Interface(SHELL_Interface):
         with open(pj(calcFolder, self.inputFile), 'w') as f:
             f.writelines(content)
              
-        write_data(system, pj(calcFolder, 'STRUC'))
+        write_data(structure, pj(calcFolder, 'STRUC'))
         for lib in self.libs:
             if isinstance(lib,str) and os.path.exists(lib):
                 shutil.copy(lib,calcFolder)
@@ -180,10 +195,11 @@ class LAMMPS_Interface(SHELL_Interface):
         return lammps_completed and tolerance_achieved
 
     def readOutput(self, system, calcFolder : str):
+        cell = system['cell']
         disassembler = system['disassembler']
         del system['disassembler']
-        structure = system['structure']
-        del system['structure']
+        atomTypes = system['atomTypes']
+        del system['atomTypes']
 
         from ase.io.lammpsrun import read_lammps_dump
         atoms = read_lammps_dump(pj(calcFolder, 'lammps.dump'))
@@ -195,9 +211,11 @@ class LAMMPS_Interface(SHELL_Interface):
         #     cdisp.append(-float(line.split()[0]))
         # atoms.translate(cdisp)
 
-        cell = structure.getCell()
-        system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), atoms.get_positions(),
-                                                               cell=type(cell)(atoms.get_cell().array, cell.getPBC()))))
+        positions = atoms.get_positions()
+        cell = self.cellType(atoms.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
+        positions = cell.center(positions)
+        structure = self.structureType(atomTypes, positions, cell=cell)
+        system.update(disassembler.disassemble(structure))
 
         properties = self.readProperties(calcFolder)
         system['enthalpy'] = properties['TotEng']
@@ -230,6 +248,13 @@ class LAMMPS_Interface(SHELL_Interface):
         # pressureTensor[2][1] = properties['Pyz']
         # properties['pressureTensor'] = pressureTensor
         return properties
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
 
 def write_cfg(fname, item):
     from ase.calculators.calculator import Calculator
@@ -280,16 +305,10 @@ def write_cfg(fname, item):
         f.write("END_CFG\n")
         f.write("\n")
     
-def write_data(system, filename, comment=None):
-    molecules = system['molecules']
-    cell = system['cell']
-    systemFactory = type(molecules[0])
-    structure, disassembler = systemFactory.assemble(molecules, cell=cell)
-    system['structure'] = structure
-    system['disassembler'] = disassembler
+def write_data(structure, filename, comment=None):
 
     from ase.data import atomic_masses, atomic_numbers
-    a = cell.getCellVectors()[0]
+    a = structure.getCell().getCellVectors()[0]
     rotation, _ = Rotation.align_vectors(a.reshape(1,3), np.array([[1.0, 0.0, 0.0]]))
     transformation = Transformation.fromRotVector(rotation.as_rotvec(), [0.,0.,0.])
     structure = transformation.transform(structure)

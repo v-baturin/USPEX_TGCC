@@ -43,8 +43,13 @@ class ABINIT_Interface(SHELL_Interface):
 
 
     _DEFAULT_SLEEP_TIME = 30
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
 
-    def __init__(self, tag: str, kresol: float,  in_file: str = None, pp_files: List[str] = None, **kwargs):
+    def __init__(self, tag: str, kresol: float,  in_file: str = None, pp_files: List[str] = None,
+                 vacuumSize=10, **kwargs):
         """
         Initializes the class.
 
@@ -73,12 +78,12 @@ class ABINIT_Interface(SHELL_Interface):
 
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
+        self.vacuumSize = vacuumSize
 
     def readOutput(self, system, calcFolder: str):
+        cell = system['cell']
         disassembler = system['disassembler']
         del system['disassembler']
-        structure = system['structure']
-        del system['structure']
 
         if not os.path.isfile(pj(calcFolder, self.gsr_file_name)):
             msg = (f'file {self.gsr_file_name:s} not found in {os.path.basename(calcFolder):s}.'
@@ -87,13 +92,15 @@ class ABINIT_Interface(SHELL_Interface):
 
         gsr = abilab.abiopen(pj(calcFolder, self.gsr_file_name))
 
-        cell = type(structure.getCell())(gsr.structure.lattice.matrix, structure.getCell().getPBC())
         tmp_positions = gsr.structure.cart_coords
+        atomTypes = [self.atomType(el.symbol) for el in gsr.structure.species]
         positions = np.empty(tmp_positions.shape, dtype=float)
-        atomSymbols = [el.short_name for el in structure.getAtomTypes()]
+        atomSymbols = [el.short_name for el in atomTypes]
         for i, position in zip(np.argsort(atomSymbols), tmp_positions):
             positions[i] = position
-        system.update(disassembler.disassemble(type(structure)(structure.getAtomTypes(), positions, cell=cell)))
+        cell = self.cellType(gsr.structure.lattice.matrix, cell.getPBC()).getEnvelopeCell(positions, 0)
+        positions = cell.center(positions)
+        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
         system['enthalpy'] = float(gsr.energy) + \
                             cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
         # system.forces = np.copy(gsr.cart_forces)
@@ -104,15 +111,15 @@ class ABINIT_Interface(SHELL_Interface):
         :param system: our system
         :return:
         """
-        molecules = system['molecules']
-        cell = system['cell']
-        systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(molecules, cell = cell)
-        system['structure'] = structure
+        structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
 
-
         atomTypes = structure.getAtomTypes()
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        coordinates = cell.center(coordinates)
+
+
         ############################# FILES FILE ################################
         for pp_file_path in self.pp_files:
             shutil.copy2(pp_file_path, calcFolder)
@@ -166,7 +173,7 @@ class ABINIT_Interface(SHELL_Interface):
 
         # K-GRID
         try:
-            kPoints = self.kPoints.build(structure)
+            kPoints = self.kPoints.build(cell)
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
@@ -185,14 +192,14 @@ class ABINIT_Interface(SHELL_Interface):
             f.write('\n# Definition of the unit cell\n')
             f.write('acell 1 1 1 angstrom\n')
             f.write('rprim\n')
-            for v in structure.getCell().getCellVectors():
+            for v in cell.getCellVectors():
                 f.write('%18.14f %18.14f %18.14f\n' % tuple(v))
 
             if 'chkprim' not in user_params:
                 f.write('chkprim 0  # allow non-primitive cells\n')
 
             f.write('\n# Definition of the atom types\n')
-            f.write('natom  %d\n' % (len(structure)))
+            f.write('natom  %d\n' % (len(atomTypes)))
             f.write('ntypat %d\n' % (len(species)))
             f.write('znucl ')
             for Z in species:
@@ -215,7 +222,7 @@ class ABINIT_Interface(SHELL_Interface):
 
             f.write('\n# Definition of the atoms\n')
             f.write('xred\n')
-            for pos in structure.getFractionalCoordinates():
+            for pos in cell.cartesianToFractional(coordinates):
                 f.write('%18.14f %18.14f %18.14f\n' % tuple(pos))
 
 
@@ -297,3 +304,10 @@ class ABINIT_Interface(SHELL_Interface):
                     return False
 
         return True
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType

@@ -14,7 +14,8 @@ _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
 class CellUtility:
 
-    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None, symTolerance=None, debug = False):
+    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None, symTolerance=None, axis=None,
+                 debug = False):
         self._pbc = pbc
         if cellVectors is not None:
             self._cell = Cell(cellVectors, pbc)
@@ -30,6 +31,18 @@ class CellUtility:
         else:
             self._cell = None
             self._volume = None
+
+        self.dim = sum(self._pbc)
+        self._axis = axis
+        assert not (self._axis is not None and self._cell is not None)
+        if self._cell is not None:
+            if self.dim == 2:
+                vec1, vec2 = self._cell.getCellVectorsPBC()
+                self._axis = np.cross(vec1, vec2)
+                self._axis /= np.linalg.norm(self._axis)
+            elif self.dim == 1:
+                self._axis, = self._cell.getCellVectorsPBC()
+                self._axis /= np.linalg.norm(self._axis)
 
         if symTolerance is not None:
             if isinstance(symTolerance, str):
@@ -136,7 +149,7 @@ class Cell:
         gamma = 180 / np.pi * np.arccos(np.dot(self._cellVectors[0, :], self._cellVectors[1, :]) / (a * b))
         return a, b, c, alpha, beta, gamma
 
-    def getVolume(self): 
+    def getVolume(self):
         return np.abs(np.linalg.det(self._cellVectors))
 
     def getAltitudes(self):
@@ -196,8 +209,8 @@ class Cell:
                                 for coords in cell.cartesianToFractional(self.getCornersCoordinates()).T[inds]],
                                dtype = float)\
                     - cell.cartesianToFractional(initialCoordinates)[inds].reshape((-1,1))
-        minAndMax = np.asarray(np.ceil(minAndMax), dtype=int)
-        if np.all(minAndMax.T[1] > minAndMax.T[0]):
+        minAndMax = np.asarray(np.ceil(minAndMax), dtype=int).reshape((-1,1))
+        if np.all(minAndMax[:1] > minAndMax[:0]):
             closeShifts = []
             for minCoordinate, maxCoordinate in minAndMax:
                 if closeShifts:
@@ -208,7 +221,7 @@ class Cell:
                 else:
                     closeShifts = [(i,) for i in range(minCoordinate, maxCoordinate)]
             closeShifts = np.asarray(closeShifts, dtype=int)
-            closeCoordinates = initialCoordinates + np.dot(closeShifts, vectors)
+            closeCoordinates = initialCoordinates.reshape((1,3)) + np.dot(closeShifts, vectors)
         else:
             closeCoordinates = []
 
@@ -228,3 +241,39 @@ class Cell:
         cz = (1. - cx ** 2 - cy ** 2) ** 0.5
         vc = c * np.array([cx, cy, cz])
         return Cell(np.vstack((va, vb, vc)), pbc)
+
+    def getEnvelopeCell(self, coordinates, vacuumSize=0):
+        """
+        @param coordinates: cartesian atomic coordinates
+        @param vacuumSize: vacuum distance added along cell vector
+        @return:  new cell object, corresponding to
+        """
+        newCellVectors = []
+        for vector, isPeriodic in zip(self._cellVectors, self._pbc):
+            if isPeriodic:
+                newCellVectors.append(vector)
+            else:
+                vector = vector / np.linalg.norm(vector)
+                proj = np.dot(coordinates, vector)
+                newCellVectors.append((np.max(proj) - np.min(proj) + vacuumSize) * vector)
+        return Cell(np.asarray(newCellVectors, dtype=float), self._pbc)
+
+    def center(self, coordinates, affectedDims=None):
+        """
+        Center atoms in unit cell.
+
+        Centers the coordinates in the unit cell, so there is the same
+        amount of vacuum along all cellvectors, specified in affectedDims.
+
+        :param coordinates: list of coordinates of N atoms (Nx3 np.array)
+        :param affectedDims: iterable of int/bool/float, specifying the dimensions to act on.
+         Default behavior is to center along all vectors, for which pbc is 0
+        :return:
+        """
+        if affectedDims is None:
+            affectedDims = 1 - np.asarray(self._pbc, dtype=int)
+        affectedDims = np.array(affectedDims).reshape((1, 3))
+        fracCoords = self.cartesianToFractional(coordinates)
+        shift = np.array([0.5, 0.5, 0.5]) - 0.5 * (np.min(fracCoords, axis=0) + np.max(fracCoords, axis=0))
+        newFrac = fracCoords + shift * affectedDims
+        return self.fractionalToCartesian(newFrac)
