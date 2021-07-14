@@ -8,6 +8,7 @@ class Transmutation:
     def __init__(self, utilities, howManyTrans = 5, transAttempts = _TRANS_ATTEMPTS):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
+        self.world = utilities.world
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
         if self.simpleMoleculeUtility.isTrueMolecular:
@@ -45,6 +46,7 @@ class Transmutation:
             minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
             composition = self.simpleMoleculeUtility.composition(offspring)
             if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
+                self.world.putEnvironment(offspring)
                 self.conditions.putConditions(offspring)
                 return (offspring,)
 

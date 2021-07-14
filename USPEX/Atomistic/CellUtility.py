@@ -4,6 +4,8 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 import spglib
+from typing import Union, List, Tuple
+from copy import copy
 from scipy.spatial.transform import Rotation
 
 from .Transformation import Transformation
@@ -14,8 +16,8 @@ _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
 class CellUtility:
 
-    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None, symTolerance=None, axis=None,
-                 debug = False):
+    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None,
+                 reconstructionDegree = None, symTolerance=None, axis=None, debug = False):
         self._pbc = pbc
         if cellVectors is not None:
             self._cell = Cell(cellVectors, pbc)
@@ -32,6 +34,10 @@ class CellUtility:
             self._cell = None
             self._volume = None
 
+        if reconstructionDegree is not None:
+            self._listOfReconstructions = self.getListOfReconstructions(reconstructionDegree)
+        else:
+            self._listOfReconstructions = []
         self.dim = sum(self._pbc)
         self._axis = axis
         assert not (self._axis is not None and self._cell is not None)
@@ -90,9 +96,49 @@ class CellUtility:
     def getCellVolume(self, composition, conditions):
         return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
 
+    def getListOfReconstructions(self, reconstructionDegree: Union[int, List, Tuple]):
+        assert sum(self._pbc) == 2 # For surfaces only 
+        if isinstance(reconstructionDegree, int):
+            minReconstruction = reconstructionDegree
+            maxReconstruction = reconstructionDegree+1
+        elif isinstance(reconstructionDegree, (list, tuple)):
+            assert len(reconstructionDegree) == 2
+            minReconstruction = reconstructionDegree[0]
+            maxReconstruction = reconstructionDegree[1]
+        listOfReconstructions = []
+        nonzeroPBC = np.nonzero(self._pbc)[0]
+        for i in range(1, maxReconstruction + 1):
+            for j in range(maxReconstruction + 1):
+                for k in range(maxReconstruction + 1):
+                    for l in range(1, maxReconstruction + 1):
+                        M = np.eye(3)
+                        rows = np.array([nonzeroPBC, nonzeroPBC])
+                        cols = rows.T
+                        M[rows, cols] = np.array([[i, -j], [k, l]])
+                        if minReconstruction <= np.round(np.linalg.det(M)) < maxReconstruction and M[nonzeroPBC[0]].dot(M[nonzeroPBC[1]]) == 0:
+                            listOfReconstructions.append(M)
+        return listOfReconstructions
+    
+    def getRandomReconstruction(self, factor=None):
+        if self._listOfReconstructions:
+            if factor:
+                mask = np.linalg.det(self._listOfReconstructions) > factor
+            else:
+                mask = np.ones(len(self._listOfReconstructions), dtype=bool)
+            assert sum(mask) # check if any suitable reconstruction found for this composition
+            idx = np.random.choice(np.arange(len(self._listOfReconstructions))[mask])
+            return self._listOfReconstructions[idx]
+        else:
+            return np.eye(3)
+
     def adjustCell(self, cell, composition, conditions):
         if self._cell is not None:
-            cell = self._cell
+            if self._listOfReconstructions:
+                factor = self.getCellVolume(composition, conditions) / self._cell.getVolume()
+                reconstruction = self.getRandomReconstruction(factor)
+                cell = Cell(cellVectors=reconstruction.dot(self._cell.getCellVectors()), pbc=self._pbc)
+            else:
+                cell = self._cell
         else:
             cell = Cell(cellVectors = cell, pbc = self._pbc)
             factor = np.power(self.getCellVolume(composition, conditions) / cell.getVolume(), 1.0 / 3.0)
@@ -101,15 +147,26 @@ class CellUtility:
 
     def getHybridCell(self, cell1, cell2, fraction):
         assert 0 <= fraction <= 1
-        vectors = fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors()
-        vectors /= np.power(np.linalg.det(vectors), 1./3.)
-        volume = fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()
-        return Cell(vectors * np.power(volume, 1./3.), self._pbc)
+        if self._listOfReconstructions:
+            matrix1 = np.round(self._cell.decomposeCell(cell1))
+            matrix2 = np.round(self._cell.decomposeCell(cell2))
+            idx = np.linalg.det([matrix1, matrix2]).argmax()
+            cellVectors = [cell1, cell2][idx].getCellVectors()
+        else:
+            vectors = fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors()
+            vectors /= np.power(np.linalg.det(vectors), 1./3.)
+            volume = fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()
+            cellVectors = vectors * np.power(volume, 1./3.)
+        return Cell(cellVectors, self._pbc)
 
     @staticmethod
     def volume(system: dict):
         return system['cell'].getVolume()
 
+    @staticmethod
+    def area(system: dict):
+        return system['cell'].getArea()
+    
     def symmetry(self, system: dict):
         cell = system['cell']
         molecules = system['molecules']
@@ -128,14 +185,14 @@ class CellUtility:
 class Cell:
 
     def __init__(self, cellVectors, pbc):
-        self._cellVectors = cellVectors
+        self._cellVectors = np.asarray(cellVectors)
         self._pbc = pbc
 
     def getCellVectors(self):
-        return self._cellVectors
+        return copy(self._cellVectors)
 
     def getCellVectorsPBC(self):
-        return self._cellVectors[np.nonzero(self._pbc)]
+        return copy(self._cellVectors)[np.nonzero(self._pbc)]
 
     def getPBC(self):
         return self._pbc
@@ -151,6 +208,12 @@ class Cell:
 
     def getVolume(self):
         return np.abs(np.linalg.det(self._cellVectors))
+
+    def getArea(self):
+        assert sum(self._pbc) >= 2
+        nonzeroPBC = np.nonzero(self._pbc)[0]
+        nonzeroCellVectors = self._cellVectors[nonzeroPBC][:, nonzeroPBC]
+        return np.abs(np.cross(nonzeroCellVectors[0], nonzeroCellVectors[1]))
 
     def getAltitudes(self):
         volime = self.getVolume()
@@ -174,7 +237,7 @@ class Cell:
         return np.dot(self._cellVectors.T, coordinates.T).T
 
     def fractionalToCartesianOperator(self, operator):
-        return np.linalg.solve(self._cellVectors.T, np.dot(self._cellVectors.T, operator.T).T).T
+        return operator 
 
     def getWrapedCartesianCoordinates(self, coordinates):
         return self.fractionalToCartesian(self.getWrapedFractionalCoordinates(self.cartesianToFractional(coordinates)))
@@ -277,3 +340,10 @@ class Cell:
         shift = np.array([0.5, 0.5, 0.5]) - 0.5 * (np.min(fracCoords, axis=0) + np.max(fracCoords, axis=0))
         newFrac = fracCoords + shift * affectedDims
         return self.fractionalToCartesian(newFrac)
+
+    def decomposeCell(self, other):
+        assert self._pbc == other.getPBC()
+        matrix = np.eye(3)
+        inds = np.nonzero(self._pbc)
+        matrix[inds] = np.linalg.solve(self.getCellVectors().T,other.getCellVectors().T).T[inds]
+        return matrix

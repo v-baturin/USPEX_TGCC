@@ -61,7 +61,9 @@ class Fitness:
     def calcFitness(self, optType):
         optType = Fitness.applyPresets(optType)
 
-        if optType not in self._storedFitnesses:
+        if len(self.uniqueSystems) == 0:
+            self._storedFitnesses[optType] = np.empty(0)
+        elif optType not in self._storedFitnesses:
             if isinstance(optType, tuple):
                 funcName, *funcParams = optType
                 if not isinstance(funcName, str):

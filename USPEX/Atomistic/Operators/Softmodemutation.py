@@ -14,6 +14,7 @@ class Softmodemutation:
     def __init__(self, utilities, degree: float = None):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.world = utilities.world
         self.conditions = utilities.conditions
         self.degree= degree
         self.knownSystems = {}
@@ -55,12 +56,14 @@ class Softmodemutation:
             minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
             if np.all(atomDistances >= minDistMatrix):
                 system = {'molecules': molecules1, 'cell': cell}
+                self.world.putEnvironment(system)
                 self.conditions.putConditions(system)
                 offsprings += (system,)
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules2, cell)
             minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
             if np.all(atomDistances >= minDistMatrix):
                 system = {'molecules': molecules2, 'cell': cell}
+                self.world.putEnvironment(system)
                 self.conditions.putConditions(system)
                 offsprings += (system,)
             if offsprings:

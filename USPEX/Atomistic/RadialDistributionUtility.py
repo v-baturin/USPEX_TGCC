@@ -166,7 +166,9 @@ class RadialDistributionUtility(object):
         revertIndices = np.argsort(indices)
         coordinates = structure.getFractionalCoordinates()[indices]
         molIndices = [revertIndices[inds] for inds in disassembler.indices]
-        dist_matrix = make_matrices(coordinates, molIndices, structure.getCell().getCellVectors(), numIons, Rmax=self.Rmax)
+        envIndices = revertIndices[disassembler.envIndices]
+        dist_matrix = make_matrices(coordinates, molIndices, envIndices, structure.getCell().getCellVectors(), numIons,
+                                    Rmax=self.Rmax)
 
         V = structure.getCell().getVolume()
         N_type = numIons.shape[0]
@@ -419,7 +421,7 @@ def super_matrix(xmin: int, xmax: int, ymin: int, ymax: int, zmin: int, zmax: in
     return [[i, j, k] for i in range(xmin, xmax + 1) for j in range(ymin, ymax + 1) for k in range(zmin, zmax + 1)]
 
 
-def make_matrices(coor: np.ndarray, molIndices: list, lat: np.ndarray, numIons: np.ndarray, Rmax=10.0):
+def make_matrices(coor: np.ndarray, molIndices: list, envIndices, lat: np.ndarray, numIons: np.ndarray, Rmax=10.0):
     """
     The function prepares matrices for fingerprint calculation.
 
@@ -507,6 +509,10 @@ def make_matrices(coor: np.ndarray, molIndices: list, lat: np.ndarray, numIons: 
         for inds in molIndices:
             if i in inds:
                 ignoreDist.update(inds)
+        if i in envIndices:
+            for j in range(N_matrix):
+                ignoreDist.update(set(envIndices + j))
+
         to_delete = np.flatnonzero(np.all(matrix_tmp == 0, axis=1)) * N_atom + np.asarray(list(ignoreDist))
         tmp_dist = np.delete(tmp_dist, to_delete, axis=1)
         tmp_type = np.delete(tmp_type, to_delete, axis=0)
