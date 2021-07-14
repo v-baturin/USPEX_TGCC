@@ -17,7 +17,7 @@ import numpy as np
 import os
 import shutil
 
-from ase.io.vasp import read_vasp_out, write_vasp
+from ase.io.vasp import read_vasp_xml, write_vasp
 from ase.atoms import Atoms
 from os.path import join as pj
 from typing import List
@@ -61,6 +61,7 @@ class VASP_Interface(SHELL_Interface):
     outcar_file = 'OUTCAR'
     oszicar_file = 'OSZICAR'
     contcar_file = 'CONTCAR'
+    xml_file = 'vasprun.xml'
 
     # working output files
     incar_file = 'INCAR'
@@ -75,7 +76,8 @@ class VASP_Interface(SHELL_Interface):
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, tag : str, kresol : float, incar : str = None, potcarsPath : str = None, vacuumSize=10, **kwargs):
+    def __init__(self, tag : str, kresol : float, incar : str = None, potcarsPath : str = None, vacuumSize=10,
+                 targetObject: str = 'default', **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -103,22 +105,26 @@ class VASP_Interface(SHELL_Interface):
         self.failedSystems = []
 
         self.vacuumSize = vacuumSize
+        self.targetObject = targetObject
+
 
     def readOutput(self, system, calcFolder : str):
         self.readStructure(system, calcFolder)
 
-        try:
-            with open(pj(calcFolder, self.outcar_file)) as fp:
-                system['stressTensor'] = self.readPressureTensor(fp)
-        except:
-            logger.debug('Pressure tensor can\'t be find in output')
+        if self.targetObject == 'default':
+            try:
+                with open(pj(calcFolder, self.outcar_file)) as fp:
+                    system['stressTensor'] = self.readPressureTensor(fp)
+            except:
+                logger.debug('Pressure tensor can\'t be find in output')
+        elif self.targetObject == 'environment':
+            pass
 
     def prepareLocalCalculation(self, system, calcFolder: str):
         '''
         :param system: our system
         :return:
         '''
-
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
         atomTypes = structure.getAtomTypes()
@@ -177,8 +183,14 @@ class VASP_Interface(SHELL_Interface):
         #     write_vasp(pj(calcFolder, self.poscar_file), system, sort=True, direct=True, vasp5=True, long_format=False)
 
         with open(pj(calcFolder, self.poscar_file), 'wt') as f:
-            write_vasp(f, Atoms([el.short_name for el in atomTypes], coordinates, cell = cell.getCellVectors()),
-                       label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+            if self.targetObject == 'default':
+                write_vasp(f, Atoms([el.short_name for el in atomTypes], coordinates, cell = cell.getCellVectors()),
+                           label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+            elif self.targetObject == 'environment':
+                environment = system['environment'].getStructure()
+                write_vasp(f, Atoms([el.short_name for el in environment.getAtomTypes()],
+                                    environment.getCartesianCoordinates(), cell = cell.getCellVectors()),
+                           label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
 
         ############################# KPOINTS #################################
         try:
@@ -398,30 +410,34 @@ class VASP_Interface(SHELL_Interface):
         return d_s
 
     def readStructure(self, system, calcFolder : str):
-
         cell = system['cell']
         disassembler = system['disassembler']
         del system['disassembler']
         symbolsOrder = system['symbolsOrder']
         del system['symbolsOrder']
 
-        with open(pj(calcFolder, self.outcar_file)) as fp:
-            tmp = read_vasp_out(fp)
+        tmp = next(read_vasp_xml(pj(calcFolder, self.xml_file)))
         if tmp:
-            tmp_positions = tmp.get_positions()
-            positions = np.empty(tmp_positions.shape,dtype = float)
-            tmp_symbols = tmp.get_chemical_symbols()
-            atomTypes = np.empty(len(tmp_symbols),dtype = self.atomType)
-            for i, symbol, position in zip(symbolsOrder, tmp_symbols, tmp_positions):
-                positions[i] = position
-                atomTypes[i] = self.atomType(symbol)
+            if self.targetObject == 'default':
+                tmp_positions = tmp.get_positions()
+                positions = np.empty(tmp_positions.shape, dtype=float)
+                tmp_symbols = tmp.get_chemical_symbols()
+                atomTypes = np.empty(len(tmp_symbols), dtype=self.atomType)
+                for i, symbol, position in zip(symbolsOrder, tmp_symbols, tmp_positions):
+                    positions[i] = position
+                    atomTypes[i] = self.atomType(symbol)
 
-            cell = self.cellType(tmp.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
-            positions = cell.center(positions)
-            system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
-            system['enthalpy'] = float(tmp.get_calculator().results['energy']) + \
-                              tmp.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-            # system.forces = np.copy(tmp.get_calculator().results['forces'])
+                cell = self.cellType(tmp.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
+                positions = cell.center(positions)
+                system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
+                system['enthalpy'] = float(tmp.get_calculator().results['energy']) + \
+                                     tmp.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+                # system.forces = np.copy(tmp.get_calculator().results['forces'])
+            elif self.targetObject == 'environment':
+                system['environmentEnthalpy'] = float(tmp.get_calculator().results['energy']) + \
+                                  tmp.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+                
+
 
     # TODO check this out
     def readEnergy(self):

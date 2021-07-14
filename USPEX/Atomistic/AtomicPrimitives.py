@@ -18,6 +18,27 @@ class AtomicStructure:
     def __len__(self):
         return len(self.atomTypes)
 
+    def makeSupercell(self, matrix):
+        assert not (self.bonds and self.zmatrixConfig) # still not configured for these attributes
+        atomTypes = copy(self.atomTypes)
+        coordinates = copy(self.coordinates)
+        cell = copy(self.cell)
+        matrix = np.asarray(matrix, dtype=np.int16)
+        if matrix.ndim == 1:
+            matrix = np.array(matrix*np.eye(3), dtype=np.int16)
+        
+        newCell = type(cell)(matrix.dot(cell.getCellVectors()), cell._pbc)
+        latticePoints = lattice_points_in_supercell(matrix).dot(newCell.getCellVectors())
+        newCoordinates = []
+        newAtomTypes = []
+        for coord, atomType in zip(coordinates, atomTypes):
+            newCoordinates.extend(latticePoints + coord)
+            newAtomTypes.extend(np.repeat(atomType, len(latticePoints)))
+        
+        newCoordinates = newCell.getWrapedCartesianCoordinates(np.array(newCoordinates))
+        newStructure = AtomicStructure(newAtomTypes, newCoordinates, newCell)
+        return newStructure
+
     def getAtomTypes(self):
         return copy(self.atomTypes)
 
@@ -123,17 +144,15 @@ class AtomicStructure:
         indices = []
         lowerBound = 0
         for molecule in molecules:
-            atomTypes.extend(molecule.atomTypes)
-            coordinates.extend(molecule.coordinates)
+            atomTypes.extend(molecule.getAtomTypes())
+            coordinates.extend(molecule.getCartesianCoordinates())
             size = len(molecule)
             indices.append(list(range(lowerBound, lowerBound + size)))
             lowerBound += size
-        # offsetVector = environment.calculateOffset(molecules, cell)
-        structure = AtomicStructure(atomTypes, coordinates, cell, **kwargs)
-        # structure.translate(offsetVector)
-        coordinates = structure.getCartesianCoordinates()
-        # atomTypes.extend(environment.getStructure().getAtomTypes())
-        # coordinates.extend(environment.getStructure().getCortesianCoordinates())
+        if environment is not None:
+            coordinates = list(np.asarray(coordinates, dtype = float) + environment.calculateOffset(molecules, cell))
+            atomTypes.extend(environment.getStructure().getAtomTypes())
+            coordinates.extend(environment.getStructure().getCartesianCoordinates())
         return (AtomicStructure(atomTypes, coordinates, cell, **kwargs),
                 AtomicDisassembler(indices, environment))
 
@@ -141,22 +160,34 @@ class AtomicStructure:
 class AtomicDisassembler:
 
     def __init__(self, indices, environment):
-        self.indices = indices
-        self.environment = copy(environment)
+        self.indices = [np.asarray(inds, dtype = int) for inds in indices]
+        self.environment = environment
+
+    @property
+    def envIndices(self):
+        if self.environment is not None:
+            molIndices = set(np.concatenate(self.indices))
+            allIndices = list(range(len(molIndices) + len(self.environment.getStructure())))
+            return np.asarray(list(set(allIndices).difference(molIndices)), dtype = int)
+        else:
+            return np.empty(0, dtype=int)
 
     @staticmethod
     def createFlatDisassembler(N):
         return AtomicDisassembler([[i] for i in range(N)], None)
 
     def disassemble(self, atomicStructure):
-        atomTypes = list(atomicStructure.getAtomTypes())
-        coordinates = list(atomicStructure.getCartesianCoordinates())
+        atomTypes = atomicStructure.getAtomTypes()
+        coordinates = atomicStructure.getCartesianCoordinates()
+        cell = atomicStructure.getCell()
         molecules = []
         for indices in self.indices:
-            molecules.append(AtomicStructure([atomTypes[i] for i in indices], [coordinates[i] for i in indices]))
-        # assert len(atomTypesNotYet) == len(coordinatesNotYet)
-        # assert len(coordinatesNotYet) == 0 # len(self.environment.getStructure())
-        return {'molecules': molecules, 'cell': atomicStructure.getCell(), 'environment': copy(self.environment)}
+            molecules.append(AtomicStructure(atomTypes[indices], coordinates[indices]))
+        system = {'molecules': molecules, 'cell': cell}
+        if self.environment is not None:
+            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], cell)
+            system['environment'] = type(self.environment)(envStructure, offsetVector = np.zeros(3, dtype=float))
+        return system
 
     def decomposeDisplacements(self, displacements, structure):
         """
@@ -195,4 +226,36 @@ class AtomicDisassembler:
             molecularDispacements.append((Transformation.fromRotVector(rotation, translation), atomicDisplacements))
         return molecularDispacements
 
+def lattice_points_in_supercell(supercell_matrix):
+    """
+    Returns the list of points on the original lattice contained in the
+    supercell in fractional coordinates (with the supercell basis).
+    e.g. [[2,0,0],[0,1,0],[0,0,1]] returns [[0,0,0],[0.5,0,0]]
 
+    Args:
+        supercell_matrix: 3x3 matrix describing the supercell
+
+    Returns:
+        numpy array of the fractional coordinates
+    """
+    diagonals = np.array(
+        [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1],
+         [1, 1, 0], [1, 1, 1]])
+    d_points = np.dot(diagonals, supercell_matrix)
+
+    mins = np.min(d_points, axis=0)
+    maxes = np.max(d_points, axis=0) + 1
+
+    ar = np.arange(mins[0], maxes[0])[:, None] * np.array([1, 0, 0])[None, :]
+    br = np.arange(mins[1], maxes[1])[:, None] * np.array([0, 1, 0])[None, :]
+    cr = np.arange(mins[2], maxes[2])[:, None] * np.array([0, 0, 1])[None, :]
+
+    all_points = ar[:, None, None] + br[None, :, None] + cr[None, None, :]
+    all_points = all_points.reshape((-1, 3))
+
+    frac_points = np.dot(all_points, np.linalg.inv(supercell_matrix))
+
+    tvects = frac_points[np.all(frac_points < 1 - 1e-10, axis=1)
+                         & np.all(frac_points >= -1e-10, axis=1)]
+    assert len(tvects) == round(abs(np.linalg.det(supercell_matrix)))
+    return tvects

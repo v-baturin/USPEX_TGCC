@@ -12,7 +12,11 @@ if not exists(FILENAME):
     definitions = {
         'presetFitness': {
             'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
-                                                                        'simpleMoleculeUtility.composition'), 'enthalpy'))
+                                                                        'simpleMoleculeUtility.composition'), 'enthalpy')),
+            'refinedEnthalpy': ('minus', 'enthalpy', 'environmentEnthalpy'),
+            'normRefinedAbsCompCH': ('convexHullHeight', ('getAbsoluteCHSpace', ('compositionSpace.numBlocksFromCompositions', 
+                                                                        'simpleMoleculeUtility.composition'), ('divide', 'refinedEnthalpy', 'cellUtility.area'))),
+            'normRefinedEnthalpy': ('divide', 'refinedEnthalpy', 'cellUtility.area'),
         },
 
         'presetOutput': {
@@ -34,6 +38,8 @@ if not exists(FILENAME):
                     ('enthalpyCCH', 'Enthalpy per Block above CCH (eV)'),
                     ('cellUtility.volume', 'Volume (A^3)'),
                     ('cellUtility.symmetry', 'SYMMETRY (N)'),
+                    ('normRefinedEnthalpy', 'Formation energy per unit area (eV / A^2)'),
+                    ('normRefinedAbsCompCH', 'Formation energy per unit area above CCH (eV / A^2)'),
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')

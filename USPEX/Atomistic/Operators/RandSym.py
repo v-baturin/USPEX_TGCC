@@ -59,6 +59,7 @@ class RandSym:
     def __init__(self, utilities, nsymN=False, nsym=None, sym_coef=0.4, splitInto=[1],
                  attemptsRotation: int = ATTEMPTS_ROTATION, debug = False):
         self.cellUtility = utilities.cellUtility
+        self.world = utilities.world
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
@@ -168,6 +169,7 @@ class RandSym:
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
                     if np.all(atomDistances >= distCoeff * minDistMatrix):
                         system = {'molecules': molecules, 'cell': cell}
+                        self.world.putEnvironment(system)
                         self.conditions.putConditions(system)
                         return (system,)
             except Exception as e:

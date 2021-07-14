@@ -28,6 +28,7 @@ class RandTop:
     def __init__(self, utilities, supercells: list = None, maxSupersize: int = MAX_SUPERSIZE,
                  attemptsRotation: int = ATTEMPTS_ROTATION, attemptsPointGroup: int = ATTEMPTS_POINT_GROUP):
         self.cellUtility = utilities.cellUtility
+        self.world = utilities.world
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
@@ -48,7 +49,7 @@ class RandTop:
         # generateStructureWithRandomTopology properly works if all elements in numIons are nonzero.
         # inds are indices of nonzero elements of numIons.
         numberOfAtoms = [numIons[i] for i in inds]
-        totalAtomNubmber = np.sum(numberOfAtoms)
+        totalAtomNubmber = int(np.sum(numberOfAtoms))
         appropriateNets = TOPOLOGICAL_NETS[totalAtomNubmber % TOPOLOGICAL_NETS['totalAtomNumber'] == 0]
         compstart = time.perf_counter()
         for name, params in appropriateNets.sample(min(appropriateNets.shape[0], 100)).iterrows():
@@ -116,6 +117,7 @@ class RandTop:
                                             else:
                                                 self.arxiv[name].append(all_coordinates)
                                                 system = {'molecules' : molecules, 'cell': cell}
+                                                self.world.putEnvironment(system)
                                                 self.conditions.putConditions(system)
                                                 return (system,)
         raise RuntimeError("RandTop failed.")

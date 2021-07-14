@@ -152,8 +152,10 @@ class CrystalRepresentation(object):
     @classmethod
     def writeAtomicStructure(cls, fileDescriptor, system: dict):
         structure, disassembler = cls.structureType.assemble(**system)
-        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(),
-                      cell = structure.getCell().getCellVectors())
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getCell().getEnvelopeCell(coordinates, 1)
+        coordinates = cell.center(coordinates)
+        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
         write_vasp(fileDescriptor, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
 
     @classmethod
