@@ -34,7 +34,7 @@ class test_BondHardness(unittest.TestCase):
         # system = Crystal(symbols=tmp.get_chemical_symbols(),
         #                          scaled_positions=tmp.get_scaled_positions(),
         #                          cell=tmp.get_cell(), goodBonds = {('C', 'C'): 0.5})
-        bond_in = getMinimalGraphBonds(system, goodBonds = {frozenset(('C', 'C')): 0.5})
+        bond_in = getMinimalGraphBonds(system, goodBonds={frozenset(('C', 'C')): 0.5})
 
 
     def test_1(self):
@@ -772,3 +772,31 @@ class test_BondHardness(unittest.TestCase):
                     count += 1
 
         self.assertTrue(count == len_bonds == len(bonds_ref))
+
+    def test_MoCluster(self):
+        tmp = read_vasp(pj(CURRENT_DIR, 'Mo36_vacuum_POSCAR'))
+        cell = Cell(tmp.get_cell().array, (0, 0, 0))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()), cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell=cell)
+        bond_in = getMinimalGraphBonds(system, goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+
+    def test_Periodic1d(self):
+        # tmp = read_vasp(pj(CURRENT_DIR, 'Mo3_periodic_POSCARy'))
+        tmp = read_vasp(pj(CURRENT_DIR, 'Mo3_periodic_POSCARz'))
+        cell = Cell(tmp.get_cell().array, (0, 0, 1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()), cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell=cell)
+        bond_in = getMinimalGraphBonds(system, goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+
+    def test_Conflict_dimensions(self):
+        tmp = read_vasp(pj(CURRENT_DIR, 'Mo3_periodic_POSCARy'))
+        cell = Cell(tmp.get_cell().array, (0, 0, 1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell=cell)
+        with self.assertRaises(IndexError) as context:
+            bond_in = getMinimalGraphBonds(system, goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+
+        self.assertTrue('pop from empty' in str(context.exception))
+
+
