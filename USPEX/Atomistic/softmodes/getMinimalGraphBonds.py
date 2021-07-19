@@ -8,41 +8,40 @@ from typing import Dict, List, Union, Tuple
 
 from ..Bonds import Bond
 
+_BONDS_CUTOFF = 5.0  # Angstroms
 
-_BONDS_CUTOFF = 5.0     # Angstroms
 
-def _connectedComponents(N, bonds):
+def _connectedComponents(N, bonds, pbc):
     """
     Calculate number of connected components.
-    :param N: number of atoms.
-    :param bonds: bond graph.
-    :return:
+    :param N: number of atoms
+    :param bonds: bond graph
+    :param pbc: pbc
+    :return: Number of connected components
     """
-    if N < 100:
-        supper_size = 4
-        center_cell = [1,2]
-    else:
-        supper_size = 3
-        center_cell = [1]
-    graph = np.zeros((supper_size**3*N,supper_size**3*N))
-    indices = []
+
+    supercell_size = 2
+
+    supercell_dims = pbc * (supercell_size - 1) + 1
+    supercell_ranges = np.array([[0, 1]] * 3) * supercell_dims.reshape(3, -1)
+    all_cells_in_super = np.array(np.meshgrid(*[range(*x) for x in supercell_ranges])).T.reshape(-1, 3)
+    total_cells = len(all_cells_in_super)
+
+    graph = np.zeros((total_cells * N, total_cells * N))
+
+    pwrs = np.zeros(3, dtype=int)
+    pwrs[pbc] = np.array([2, 1, 0])[np.sort(pbc)]
     for bond in chain(*bonds):
-        i,j = bond.indicies
-        k0,l0,m0 = bond.direction
-        for k in range(supper_size):
-            for l in range(supper_size):
-                for m in range(supper_size):
-                    i_super = i + (supper_size**2*k+supper_size*l+m)*N
-                    j_super = j + (supper_size**2*(k+k0)+supper_size*(l+l0)+(m+m0))*N
-                    if 0 <= j_super < supper_size**3*N:
-                        graph[i_super, j_super] = 1
-                    if (k in center_cell) and (l in center_cell) and (m in center_cell):
-                        indices.extend(range(supper_size**2*k+supper_size*l+m,supper_size**2*k+supper_size*l+m+N))
+        i, j = bond.indicies
+        for klm in all_cells_in_super:
+            i_super = i + np.sum(supercell_dims ** pwrs * klm * N)
+            j_super = j + np.sum(supercell_dims ** pwrs * ((klm + bond.direction) % supercell_dims) * N)
+            graph[i_super, j_super] = 1
+
     N_components, labels = connected_components(graph)
-    return len(np.unique(labels[np.asarray(indices)]))
+    return N_components
 
-
-def getMinimalGraphBonds(SYSTEM, goodBonds = None) -> list:
+def getMinimalGraphBonds(SYSTEM, goodBonds=None) -> list:
     '''
     Calculates bond graph minimal for the structure to be 3D connected.
 
@@ -51,13 +50,13 @@ def getMinimalGraphBonds(SYSTEM, goodBonds = None) -> list:
     '''
 
     N_atom = len(SYSTEM)
-    goodBonds = {frozenset((s1.short_name, s2.short_name)):np.power(s1.good_bonds*s2.good_bonds, 0.5)
-                 for s1,s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} if goodBonds is None else goodBonds
+    goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
+                 for s1, s2 in
+                 combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} if goodBonds is None else goodBonds
     structure = Atoms(symbols=[s.short_name for s in SYSTEM.getAtomTypes()],
-                      positions = SYSTEM.getCartesianCoordinates(),
-                      cell = SYSTEM.getCell().getCellVectors(),
-                      pbc = SYSTEM.getCell().getPBC())
-
+                      positions=SYSTEM.getCartesianCoordinates(),
+                      cell=SYSTEM.getCell().getCellVectors(),
+                      pbc=SYSTEM.getCell().getPBC())
 
     # 1) Calculate bonds within upper bound to max_bond.
     # 2) Group bonds by using same_bond criterion.
@@ -91,17 +90,16 @@ def getMinimalGraphBonds(SYSTEM, goodBonds = None) -> list:
         tmp_bonds = bonds_remain
         bond_total.append(bonds_one_type)
 
-
     # 3) Add bonds by group.
     bond_in = []
     bond_left = []
 
     # delete short bonds
     for bond_group in bond_total:
-        a,b = bond_group[0].symbols
-        small_bond = -0.37 * np.log(goodBonds[frozenset((a,b))])
+        a, b = bond_group[0].symbols
+        small_bond = -0.37 * np.log(goodBonds[frozenset((a, b))])
         if min([bond.delta for bond in bond_group]) < small_bond:
-            bond_in.append(bond_group)    # Add by group
+            bond_in.append(bond_group)  # Add by group
         else:
             bond_left.append(bond_group)
     # del bond_group[0]
@@ -111,14 +109,14 @@ def getMinimalGraphBonds(SYSTEM, goodBonds = None) -> list:
     # ---Looks like we have to include all bonds before the connectivity changes
     #   otherwise, we won't add them
 
-    N_components = _connectedComponents(N_atom, bond_in)
+    N_components = _connectedComponents(N_atom, bond_in, pbc=structure.pbc)
     # List = connectList(chain(*bond_in))
 
     while N_components > 1:
         # disp('The stuture is not fully connected, adding more bonds');
         bond_tmp = bond_in + [bond_left.pop(0)]
         # List_new = connectList(chain(*bond_tmp))
-        N_components_new = _connectedComponents(N_atom, bond_tmp)
+        N_components_new = _connectedComponents(N_atom, bond_tmp, pbc=structure.pbc)
         # if len(List_new) > len(List) or len(List) == 1: # increase connectivity accept
         if N_components_new < N_components:
             # disp('The connectivity is increased, accept adding more bonds');
@@ -132,11 +130,10 @@ def getMinimalGraphBonds(SYSTEM, goodBonds = None) -> list:
     for i, bonds_tmp in enumerate(bond_in):
         indicies = []
         for j, bond in enumerate(bonds_tmp):
-            a,b = bond.indicies
+            a, b = bond.indicies
             if a == b:
                 indicies.append(j)
         for j in sorted(indicies[::2], reverse=True):
             del bond_in[i][j]
 
     return bond_in
-
