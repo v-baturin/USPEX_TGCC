@@ -19,6 +19,7 @@ import shutil
 
 from ase.io.vasp import read_vasp_xml, write_vasp
 from ase.atoms import Atoms
+from ase.constraints import FixAtoms
 from os.path import join as pj
 from typing import List
 
@@ -77,7 +78,7 @@ class VASP_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag : str, kresol : float, incar : str = None, potcarsPath : str = None, vacuumSize=10,
-                 targetObject: str = 'default', **kwargs):
+                 targetObject: str = 'default', constraints: dict = None, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -106,6 +107,7 @@ class VASP_Interface(SHELL_Interface):
 
         self.vacuumSize = vacuumSize
         self.targetObject = targetObject
+        self.constraints = constraints
 
 
     def readOutput(self, system, calcFolder : str):
@@ -184,13 +186,22 @@ class VASP_Interface(SHELL_Interface):
 
         with open(pj(calcFolder, self.poscar_file), 'wt') as f:
             if self.targetObject == 'default':
-                write_vasp(f, Atoms([el.short_name for el in atomTypes], coordinates, cell = cell.getCellVectors()),
-                           label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+                atoms = Atoms([el.short_name for el in atomTypes], coordinates, cell = cell.getCellVectors())
+                if self.constraints is not None:
+                    if 'fixEnvironment' in self.constraints:
+                        assert 'environment' in system:
+                        pbc = system['environment'].getStructure().getCell().getPBC()
+                        zeroPBC = np.where(np.array(pbc)==0)[0][0]
+                        thickness = self.constraints['fixEnvironment']
+                        coordinates = atoms.get_positions()[system['disassembler'].envIndices]
+                        indices = system['disassembler'].envIndices[(coordinates[:, zeroPBC] < coordinates[:, zeroPBC].max() - thickness)]
+                        fixEnvironment = FixAtoms(indices=indices)
+                        atoms.set_constraint(fixEnvironment)
+                write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
             elif self.targetObject == 'environment':
                 environment = system['environment'].getStructure()
-                write_vasp(f, Atoms([el.short_name for el in environment.getAtomTypes()],
-                                    environment.getCartesianCoordinates(), cell = cell.getCellVectors()),
-                           label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+                atoms = Atoms([el.short_name for el in environment.getAtomTypes()], environment.getCartesianCoordinates(), cell = cell.getCellVectors())
+                write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
 
         ############################# KPOINTS #################################
         try:
