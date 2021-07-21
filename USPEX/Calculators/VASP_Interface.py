@@ -189,7 +189,7 @@ class VASP_Interface(SHELL_Interface):
                 atoms = Atoms([el.short_name for el in atomTypes], coordinates, cell = cell.getCellVectors())
                 if self.constraints is not None:
                     if 'fixEnvironment' in self.constraints:
-                        assert 'environment' in system:
+                        assert 'environment' in system
                         pbc = system['environment'].getStructure().getCell().getPBC()
                         zeroPBC = np.where(np.array(pbc)==0)[0][0]
                         thickness = self.constraints['fixEnvironment']
