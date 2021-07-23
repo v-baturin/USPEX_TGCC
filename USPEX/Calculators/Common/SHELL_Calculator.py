@@ -73,6 +73,9 @@ class SHELL_Calculator(object):
         elif type == 'mlip':
             from ..MLIP_Interface import MLIP_Interface
             self._interface = MLIP_Interface(tag, **kwargs)
+        elif type == 'mopac':
+            from ..MOPAC_Interface import MOPAC_Interface
+            self._interface = MOPAC_Interface(tag, **kwargs)
         elif type == 'none':
             from .SHELL_Interface import SHELL_Interface
             self._interface = SHELL_Interface()
