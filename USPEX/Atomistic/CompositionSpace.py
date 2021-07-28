@@ -270,7 +270,7 @@ class CompositionSpace(object):
                     bestGreed = np.sum(abs(numIons_start - np.dot(blockN, blocks)))
                     numBlocks = blockN
 
-        return Counter(dict(zip(self.symbols, np.dot(numBlocks, blocks)))) + Counter() # We add the empty counter to clear all non-positive values in composition
+        return +Counter(dict(zip(self.symbols, np.dot(numBlocks, blocks)))) # We left only positive values in composition
 
     @staticmethod
     def choose(moleculeTypes, desiredComposition):
