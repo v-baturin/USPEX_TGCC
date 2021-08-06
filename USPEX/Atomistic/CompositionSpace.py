@@ -5,43 +5,7 @@ logger = logging.getLogger(__name__)
 import numpy as np
 from copy import copy
 from collections import Counter
-from typing import Dict, Union
 
-
-class Composition(dict):
-    """
-    Class describing composition of an atomic structure.
-    """
-
-    def __init__(self, composition: Dict[str, int], molecules: Dict[str, Dict[str, int]]):
-        """
-        Initializes the class.
-
-        :type composition: Dict[str, int]
-        :param composition: dictionary describing composition in terms of molecules.
-        :type molecules: Dict[str, Dict[str, int]]
-        :param molecules: mapping form molecule names to their formulas.
-        """
-        super().__init__(composition)
-        self.molecules = molecules
-        self._elementalComposition = {}
-
-    @property
-    def elementalComposition(self):
-        """
-        :rtype: Dict[str, int]
-        :return: dictionary describing composition in terms of chemcal elements.
-        """
-        if not self._elementalComposition:
-            comp = Counter()
-            for symbol, amount in self.items():
-                if symbol in self.molecules:
-                    for symbol, value in self.molecules[symbol].items():
-                        comp[symbol] += value*amount
-                else:
-                    comp[symbol] += amount
-            self._elementalComposition = dict(comp)
-        return self._elementalComposition
 
 class CompositionSpace(object):
     """
@@ -50,21 +14,18 @@ class CompositionSpace(object):
 
     def __init__(self, symbols: list, blocks: list, range: list=None, minAt: int=None, maxAt: int=None):
         """
-        Initializes the class.
-
+        :type symbols: [...]
+        :param symbols: list of symbols representing elemnts of composition space. Obligatory
         :type blocks: [[...],[...],...]
-        :param blocks:
-            each system of the configuration space must have composition
-            which is span of rows of this parameter; obligatory
-        :type range: [[...],[...],...]
-        :param range:
-            range for each block.
+        :param blocks: list of blocks of elements playing role of basis of composition space. Obligatory
+        :type range: [(<min>, <max>),(<min>, <max>),...]
+        :param range: list of ranges for each block in composition space. Boundaries are inclusive
         :type minAt: int
         :param minAt:
-            minimum number of atoms or molecules in the unit cell for the first generation.
+            minimum number of atoms or molecules in the unit cell.
         :type maxAt: int
         :param maxAt:
-            maximum number of atoms or molecules in the unit cell for the first generation.
+            maximum number of atoms or molecules in the unit cell.
 
         """
 
@@ -128,7 +89,7 @@ class CompositionSpace(object):
         Creates numIons array from given composition.
 
         :type composition: dict
-        :param composition: ('element' : 'amount')
+        :param composition: (<element> : <amount>)
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
@@ -145,19 +106,29 @@ class CompositionSpace(object):
         Creates numBlocks array from given composition.
 
         :type composition: dict
-        :param composition: ('element' : 'amount')
+        :param composition: (<element> : <amount>)
         :rtype: list
         :return: list of blocks amounts corresponding *blocks* variable of this instance.
         """
         return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(*args, **kwargs), rcond=None)[0]).astype(int)
 
     def numBlocksFromCompositions(self, compositions: np.ndarray):
+        """
+        For using in **Fitness** infrastructure
+        :param compositions: N array of dictionary like compositions.
+        :return: N*M array of block numbers, where M number of different blocks defined in this space.
+        """
         numBlocks = []
         for composition in compositions:
             numBlocks.append(self.numBlocks(composition))
         return np.asarray(numBlocks)
 
     def numMolsFromCompositions(self, compositions: np.ndarray):
+        """
+        For using in **Fitness** infrastructure
+        :param compositions: N array of dictionary like compositions.
+        :return: N*M array of elements numbers, where M number of different symbols defined in this space.
+        """
         numMols = []
         for composition in compositions:
             numMols.append(self.numIons(composition))
@@ -183,16 +154,14 @@ class CompositionSpace(object):
         """
         Find a composition that requires the least addition/deleting of atoms from child.
 
-        :type composition1: dict
-        :param composition1: first parent composition.
-        :type composition2: dict
-        :param composition2: second parent composition.
-        :type numIons_start: numpy.ndarray
-        :param numIons_start: starting point for approximation.
+        :type compositionMax: dict
+        :param compositionMax: composition with maximum possible amounts.
+        :type composition: dict
+        :param composition: composition with starting point for approximation.
         :type debug: bool
         :param debug: False by default. If set to True, use static values instead of random to reproduce results.
-        :rtype: tuple of lists
-        :return: (numIons, numBlocks) to determine which atoms could be used to make a child.
+        :rtype: Counter
+        :return: found composition.
         """
 
         maxBlocks = self.numBlocks(composition = compositionMax)
@@ -274,6 +243,13 @@ class CompositionSpace(object):
 
     @staticmethod
     def choose(moleculeTypes, desiredComposition):
+        """
+        From list of symbols representing molecule types choose only those required by given composition
+        and return their indices.
+        :param moleculeTypes: list of molecule types to choose from.
+        :param desiredComposition: composition with required symbols and amounts.
+        :return: indices of symbols in input array which are chosen.
+        """
         indices = []
         composition = Counter()
         for i, moleculeType in enumerate(moleculeTypes):

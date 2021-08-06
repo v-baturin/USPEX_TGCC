@@ -29,23 +29,20 @@ class TargetType:
 
 class Target(object):
     """
-    Target space is one of the most important concepts of global search algorithms. This space is formed by all the
-    systems among which we perform our search and closely tied to our search. This class contains configuration of
-    such space, parameters of what are we searching for, list of systems already studied in the search, current result
-    of the search and tools to wisely create new systems for the search within this space.
+    Class containing Utilities and variation operators for work with specific target space such as atomic structures,
+    phase transition pathways, other USPEX calculations.
 
     :ivar varOperators:
         list of all variation operators for this target space. Each element is an implementation of
         :class:`~USPEX.Common.VarOperator.VarOperator` interface. For default implementation this list is empty.
     :ivar hybridizations:
         list of variation operators with two parents for this target space.
-        For default implementation this list is empty.
     :ivar mutations:
         list of variation operators with one parent for this target space.
-        For default implementation this list is empty.
     :ivar creations:
         list of variation operators with no parents for this target space.
-        For default implementation this list is empty.
+    :ivar utilities:
+        list of utilities.
     """
 
     def __init__(self, targetTypes : TargetType, **kwargs):

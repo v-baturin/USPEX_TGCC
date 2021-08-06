@@ -3,7 +3,13 @@ from itertools import combinations_with_replacement
 
 
 class IonDistances():
+    """
+    Class providing tunable way to calculate minimal allowed distances between atoms.
+    """
     def __init__(self, **kwargs):
+        """
+        :param kwargs: {'<symbol> <symbol>' : <amount>} map from pair of symbols to minimal distance between them.
+        """
         self._distances = {}
         for key, value in kwargs.items():
             assert isinstance(key, str)
@@ -12,6 +18,13 @@ class IonDistances():
             self._distances[(s1,s2)] = value
 
     def getDistances(self, symbols, volumeUtility):
+        """
+        For given array of symbols generates matrix of minimal distances.
+        If minimal distance for pair of symbols is not predefined calculates it using volumeUtility.
+        :param symbols: N array of symbols
+        :param volumeUtility: utility for estimation of atom volume.
+        :return: N*N array of minimal distances.
+        """
         symbols = [symbol.short_name for symbol in symbols]
         uniqueSimbols = np.unique(symbols)
         minDistMatrix = {}

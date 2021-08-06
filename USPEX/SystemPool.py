@@ -38,6 +38,9 @@ class SystemPool(object):
         return other
 
     def getUniqueIDs(self):
+        """
+        :return: list of IDs of unique structures.
+        """
         return [system['ID'] for system in self.uniqueSystems]
 
     def __hash__(self):
@@ -47,8 +50,7 @@ class SystemPool(object):
         """
         Update information about target space in current search.
 
-        :type population:
-        :param population:
+        :param population: list of structures.
         """
 
         logger.debug('Updating target: list of unique systems.')
@@ -64,6 +66,10 @@ class SystemPool(object):
         self.uniqueSystems = tuple(chain.from_iterable(generation['newSystems'] for generation in self.generations))
 
     def updateFitness(self, fitness):
+        """
+        Insets fitness object into last generation record.
+        :param fitness: fitness object.
+        """
         assert 'fitness' not in self.generations[-1]
         self.generations[-1]['fitness'] = fitness
 
@@ -79,5 +85,10 @@ class SystemPool(object):
         self.allSystems[system['ID']] = system
 
     def getOriginalID(self, ID):
+        """
+        If system is duplicate return ID of original system otherwise return input ID.
+        :param ID: ID of some system from this pool.
+        :return: ID of original system.
+        """
         system = self.allSystems[ID]
         return system['originalID'] if 'originalID' in system else ID
