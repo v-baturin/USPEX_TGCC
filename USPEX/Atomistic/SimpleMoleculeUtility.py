@@ -5,13 +5,33 @@ from .Transformation import Transformation
 
 
 class SimpleMoleculeUtility(object):
+    """
+    Utility providing methods for work with simple molecules.
+    """
 
     structureType = None
     atomType = None
     cellType = None
     atomicDisassemblerType = None
 
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        """
+        Register types used by this utility.
+        :param structureType: type representing atomic structure.
+        :param atomType: type representing chemical element.
+        :param cellType: type representing unit cell.
+        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
+        """
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
+
     def __init__(self, molecules : dict = None):
+        """
+        :param molecules: {<name>: <definition>} dictionary of molecule definitions.
+        """
         self.isTrueMolecular = bool(molecules)
         self.molecules = {el.short_name : self.structureType([el], [[0., 0., 0.]]) for el in self.atomType.all_elements()}
         if molecules is not None:
@@ -25,14 +45,15 @@ class SimpleMoleculeUtility(object):
                 self.molecules[symbol] = molecule
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
 
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
-
     def populateStructure(self, cell, coordinates, operations):
+        """
+        Creates list list of molecules by placing corresponding molecule in place specified by map *coordinates*
+        in orientation specified by map operations.
+        :param cell: unit cell.
+        :param coordinates: map {<molecule_symbols> : <center_coordinates>}
+        :param operations: map {<molecule_symbols> : <orientation>}
+        :return: list of molecules.
+        """
         molecules = []
         for symbol, atomCoordinates in coordinates.items():
             molecule = self.molecules[symbol]
@@ -52,21 +73,42 @@ class SimpleMoleculeUtility(object):
         return molecules
 
     def determineMoleculeType(self, molecule):
+        """
+        Assuming every type of molecules defined in calculation has unique formula,
+        determines molecule symbol of given molecule.
+        :param molecule: atomic structure representing molecule.
+        :return: molecule symbol.
+        """
         return self.formulaToTypeMap[molecule.getFormula()]
 
     def moleculeTypes(self, system : dict):
+        """
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated or retrieve list of types of molecules of a system.
+        """
         if 'simpleMoleculeUtility.moleculeTypes' not in system:
             moleculeTypes = [self.determineMoleculeType(molecule) for molecule in system['molecules']]
             system['simpleMoleculeUtility.moleculeTypes'] = moleculeTypes
         return system['simpleMoleculeUtility.moleculeTypes']
 
     def composition(self, system : dict):
+        """
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated or retrieve molecular composition of a system.
+        """
         if 'simpleMoleculeUtility.composition' not in system:
             composition = Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
             system['simpleMoleculeUtility.composition'] = composition
         return system['simpleMoleculeUtility.composition']
 
     def getElementalComposition(self, composition):
+        """
+        For given molecular composition {<molecule_symbol> : <amount>} calculates elemental composition {<element> : <amount>}.
+        :param composition: molecular composition.
+        :return: elemental composition.
+        """
         comp = Counter()
         for symbol, amount in composition.items():
             molecule = self.molecules[symbol]
@@ -79,10 +121,10 @@ class SimpleMoleculeUtility(object):
 
     def getMinDistances(self, molecules, cell):
         """
-        Check if the structure meets the minimal distance constraints provided with Minimal Distances Matrix.
-
-        :rtype: bool
-        :return: True if the structure meet the constraint, False otherwise.
+        Calculates minimal distances between atoms excluding intramolecular distances.
+        :param molecules: list of molecules.
+        :param cell: unit cell.
+        :return: matrix of distances between atoms.
         """
 
         # positions = self.atoms.get_positions()
@@ -118,6 +160,11 @@ class SimpleMoleculeUtility(object):
 
     @staticmethod
     def rotationClearance(inertiaValues):
+        """
+        Calculates relative mobility of structure around axes with given inertia values.
+        :param inertiaValues: inertia values of axes.
+        :return: relative clearances around axes.
+        """
         minValue = np.min(inertiaValues)
         if np.isclose(minValue, 0):
             clearance = np.zeros(inertiaValues.shape)
@@ -126,24 +173,22 @@ class SimpleMoleculeUtility(object):
             clearance = np.pi*minValue/inertiaValues
         return clearance
 
-    def rotateFlexDiherdal(self, molecule, j: int, angle: float):
+    @classmethod
+    def rotateFlexDiherdal(cls, molecule, j: int, angle: float):
         """
-        Rotate the *j* th flexible dihedral angle of *i* th molecule by the angle *angle* .
+        Rotate the *j* th flexible dihedral angle of molecule by the angle *angle* .
 
-        :type i: int
-        :param i: index of molecule to rotate.
-        :type j: int
+        :param i: atomic structure representing molecule.
         :param j: index of flexible dihedral angle to rotate.
-        :type angle: float
         :param angle: angle by which the dihedral should be rotated.
         """
         assert j < len(molecule.zmatrixConfig.flex_dihedral)
-        zmatrix = self.coordToZmatrix(molecule.getCartesianCoordinates, np.asarray(molecule.zmatrixConfig.format, dtype=int))
+        zmatrix = cls.coordToZmatrix(molecule.getCartesianCoordinates, np.asarray(molecule.zmatrixConfig.format, dtype=int))
         zmatrix[molecule.zmatrixConfig.flex_dihedral[j], 2] += angle
         molecule_mod = type(molecule)(molecule.getAtomTypes(),
-                                      self.zmatrixToCoord(zmatrix, np.asarray(molecule.zmatrixConfig.format, dtype=int)),
-                                      cell = molecule.cell)
-        if np.array_equal(self.molecule_CN(molecule_mod), self.molecule_CN(molecule)):
+                                      cls.zmatrixToCoord(zmatrix, np.asarray(molecule.zmatrixConfig.format, dtype=int)),
+                                      cell = molecule.getCell())
+        if np.array_equal(cls.molecule_CN(molecule_mod), cls.molecule_CN(molecule)):
             return molecule_mod
         else:
             return molecule
@@ -153,13 +198,11 @@ class SimpleMoleculeUtility(object):
         """
         Method which roughly (very roughly!!!) estimates the coordination numbers of a molecule.
 
-        :type i: int
-        :param i: Molecule index.
-        :rtype: numpy array
-        :return: Array of coordination numbers.
+        :param molecule: atomic structure representing molecule.
+        :return: array of coordination numbers.
         """
         radiu = np.array([cls.atomType(atom).covalent_radius for atom in molecule.getAtomTypes()])
-        CN = np.fromiter((len(neighbours) for neighbours in find_pair(molecule.coordinates, radiu)), dtype=int)
+        CN = np.fromiter((len(neighbours) for neighbours in find_pair(molecule.getCartesianCoordinates(), radiu)), dtype=int)
         return CN
 
     @staticmethod

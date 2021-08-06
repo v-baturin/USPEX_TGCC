@@ -53,8 +53,14 @@ class Simplex:
 
 
 class ConvexHull(object):
+    """
+    Class for calculating of convex hull of some data points and retrieving height and depth information.
+    """
 
     def __init__(self, systems: np.ndarray):
+        """
+        :param systems: array of data points.
+        """
         logger.debug(f'ConvexHull arguments: {systems[:,:-1]}, properties: {systems[:,-1]}')
         if not len(systems):
             return
@@ -143,10 +149,16 @@ class ConvexHull(object):
 
     @property
     def depth(self) -> np.ndarray:
+        """
+        :return: array of depth of all point below upper bound.
+        """
         return self._df.depth.to_numpy()
 
     @property
     def height(self) -> np.ndarray:
+        """
+        :return: arrau of heights abve lower bound.
+        """
         return self._df.height.to_numpy()
 
 

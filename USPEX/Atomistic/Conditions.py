@@ -257,4 +257,8 @@ class Conditions:
         return sum(self.calcAtomVolume(symbol) * amount for symbol, amount in composition.items())
 
     def putConditions(self, system):
+        """
+        Put parameters into system dictionary.
+        :param system: dictionary to put parameters into.
+        """
         system['externalPressure'] = self.externalPressure
