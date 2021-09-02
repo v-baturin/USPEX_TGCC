@@ -6,12 +6,27 @@ ANTISEEDS_SIGMA = 0.001
 
 
 class Antiseeds:
+    """
+    Utility which calculates and store penalties for systems.
+    Such penalties applied not only to some system itself but to all its neighbours with gaussian distribution.
+    """
 
     def __init__(self, max = ANTISEEDS_MAX, sigma = ANTISEEDS_SIGMA):
+        """
+        :param max: height of gaussian distribution.
+        :param sigma: width of gaussian distribution.
+        """
         self.max = max
         self.sigma = sigma
 
     def payPenalties(self, population, pool, fingerprintUtility):
+        """
+        Calculates and stores penalties.
+        :param population: list of systems to be penalized. This systems will be in centers of gaussian distributions.
+        :param pool: list of all systems.
+        All this systems will get penalties depending on their distance from systems in *popuation* list.
+        :param fingerprintUtility: utility providing **dist** method which calculates distance between systems.
+        """
         comb = list(combinations(population, 2))
         if comb:
             sigma = 0
@@ -33,4 +48,9 @@ class Antiseeds:
                     system['antiseeds.corrections'] += self.max * np.exp(-dist**2/(2*sigma**2))
 
     def corrections(self, system : dict):
+        """
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: retrieve antiseeds penalty of a system.
+        """
         return system['antiseeds.corrections'] if 'antiseeds.corrections' in system else 0

@@ -39,7 +39,7 @@ class GetPrincipalCell_Test(unittest.TestCase):
 
     def test_PBCorder_1d(self):
         which_pbc = np.nonzero(self.test_pbc)[0][0]
-        pbcvec = self.structure.cell.getCellVectorsPBC()[0]
+        pbcvec = self.structure.getCell().getCellVectorsPBC()[0]
         newvectors = self.structure.getRectifiedCell().getCellVectors()
         print('\npbc_index is ', which_pbc)
         for i, vec in enumerate(newvectors):

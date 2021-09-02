@@ -19,6 +19,9 @@ TOLERANCE_DEFAULT = 0.008
 
 
 class Fingerprint(Mapping):
+    """
+    Class representing radial distribution fingerprint.
+    """
     def __init__(self, value : dict, weights):
         sizes = [len(v) for v in value.values()]
         assert len(sizes) > 0
@@ -86,6 +89,9 @@ class Fingerprint(Mapping):
 
 
 class RadialDistributionUtility(object):
+    """
+    Utility for working with radial distribution related properties of systems.
+    """
 
     def __init__(self, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT):
         """
@@ -96,7 +102,7 @@ class RadialDistributionUtility(object):
         :type delta: float
         :param delta: bin width.
         :type tolerance: float
-        :param tolerance:
+        :param tolerance: tolerance within which systems considered the same.
         """
         self.Rmax = Rmax
         self.sigma = sigma
@@ -104,28 +110,43 @@ class RadialDistributionUtility(object):
         self.tolerance = tolerance
 
     def structureFingerprint(self, system):
+        """
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated or retrieve structure fingerprint of a system.
+        """
         if not 'radialDistribitionUtility.structureFingerprint' in system:
             self._calcFingerprint(system)
         return system['radialDistribitionUtility.structureFingerprint']
 
     def order(self, system):
+        """
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated or retrieve list of atomic *local orders* of a system.
+        *Local order* is a measure of atom surrounding being regular.
+        """
         if not 'radialDistribitionUtility.order' in system:
             self._calcFingerprint(system)
         return system['radialDistribitionUtility.order']
 
     def averageOrder(self, system):
-        '''
-        :rtype: float
-        :return: average local order for the structure.
-        '''
+        """
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated or retrieve average atomic *local order* of a system.
+        *Local order* is a measure of atom surrounding being regular.
+        """
         if not 'radialDistribitionUtility.averageOrder' in system:
             self._calcFingerprint(system)
         return system['radialDistribitionUtility.averageOrder']
 
     def structureOrder(self, system):
         """
-        Calculate structure order.
-
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated or retrieve *structure order* of a system.
+        *Structure order* is a measure of structure being regular.
         """
         if not 'radialDistribitionUtility.structureOrder' in system:
             self._calcFingerprint(system)
@@ -133,9 +154,9 @@ class RadialDistributionUtility(object):
 
     def quasientropy(self, system):
         """
-        Calculate structure quasientropy.
-        :rtype: numpy array
-        :return: structure quasientropy.
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated quasientropy of structure.
         """
 
         if not 'radialDistribitionUtility.quasientropy' in system:
@@ -143,6 +164,10 @@ class RadialDistributionUtility(object):
         return system['radialDistribitionUtility.quasientropy']
 
     def clean(self, system):
+        """
+        Removes all stored **RadialDistributionUtility** related propertiies from *system* dictionary.
+        :param system: dictionary describing system.
+        """
         if 'radialDistribitionUtility.structureFingerprint' in system:
             del system['radialDistribitionUtility.structureFingerprint']
         if 'radialDistribitionUtility.structureOrder' in system:
@@ -330,7 +355,7 @@ class RadialDistributionUtility(object):
         else:
             a_order = np.nan
 
-        fingerprint = Fingerprint(value=fing, weights=self.fingerprintWeights(structure))
+        fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure))
         s_order = fingerprint.order * np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
 
         uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
@@ -367,13 +392,27 @@ class RadialDistributionUtility(object):
 
 
     def dist(self, system1, system2):
+        """
+        Calculated distance between two systems. First it retrieves structure fingerprints of systems.
+        Then claculates cosine distance between them.
+        :param system1: dictionary describing first system.
+        :param system2: dictionary describing second system.
+        :return: distance between systems.
+        """
         return Fingerprint.cosine_distance(self.structureFingerprint(system1), self.structureFingerprint(system2))
 
     def equal(self, system1, system2):
+        """
+        Checks if systems coincide. It calculates distance between systems using ** dist** method.
+        If such distance is less then set up tolerance, then systems coincide.
+        :param system1: dictionary describing first system.
+        :param system2: dictionary describing second system.
+        :return: if systems coincide or not.
+        """
         return self.dist(system1, system2) < self.tolerance
 
     @staticmethod
-    def fingerprintWeights(structure):
+    def _fingerprintWeights(structure):
         '''
         :rtype: Dict[Tuple[str,str], float]
         :return: weights of fingerprints of each atom type pair to be used in cosine distance calculation.

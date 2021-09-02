@@ -15,9 +15,26 @@ _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
 
 class CellUtility:
+    """
+    Utility for working with unit cells of atomic structures.
+    """
 
     def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None,
                  reconstructionDegree = None, symTolerance=None, axis=None, debug = False):
+        """
+
+        :param pbc: periodic boundary conditions in each direction.
+        :param cellVectors: for fixed cell calculation 3*3 array of cell vectors.
+        :param cellParameters: for fixed cell calculation dictionary
+        {'a': <float>, 'b': <float>, 'c': <float>, 'alpha': <float>, 'beta': <float>, 'gamma': <float>}
+        with cell parameters.
+        :param cellVolume: for fixed volume calculation cell volume.
+        :param reconstructionDegree: int or list of int with allowed supercell sizes.
+        :param symTolerance: allowed misplacements of atoms when determining symmetry of structure.
+        :param axis: for 1D periodic calculations vector along periodic axis,
+        for 2D periodic calculations vector orthogonal to two periodic axes.
+        :param debug: switch between two levels of logging. True for debug level, false for INFO level.
+        """
         self._pbc = pbc
         if cellVectors is not None:
             self._cell = Cell(cellVectors, pbc)
@@ -35,7 +52,7 @@ class CellUtility:
             self._volume = None
 
         if reconstructionDegree is not None:
-            self._listOfReconstructions = self.getListOfReconstructions(reconstructionDegree)
+            self._listOfReconstructions = self._getListOfReconstructions(reconstructionDegree)
         else:
             self._listOfReconstructions = []
         self.dim = sum(self._pbc)
@@ -73,12 +90,23 @@ class CellUtility:
             logger.setLevel(logging.INFO)
 
     def getCell(self):
+        """
+
+        :return: for fixed cell calculations reference to the unit cell object.
+        If cell in calculation is not fixed raises RuntimeError.
+        """
         if self._cell is not None:
             return  self._cell
         else:
             raise RuntimeError('Cell is not fixed.')
 
     def getRandomCell(self, composition, conditions):
+        """
+        For given composition and conditions creates random unit cell with appropriate size and periodic boundary conditions.
+        :param composition: dictionary like object defining composition.
+        :param conditions: external conditions.
+        :return: **Cell** object with appropriate parameters.
+        """
         try:
             return self.getCell()
         except RuntimeError:
@@ -94,9 +122,15 @@ class CellUtility:
             return Cell(cellVectors=cell.getCellVectors()*((volume / cell.getVolume()) ** (1. / 3.)), pbc = self._pbc)
 
     def getCellVolume(self, composition, conditions):
+        """
+        Either return predefined volume for fixed volume calculation or calculates it using provided conditions utility.
+        :param composition: dictionary like object defining composition.
+        :param conditions: external conditions.
+        :return: volume of unit cell.
+        """
         return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
 
-    def getListOfReconstructions(self, reconstructionDegree: Union[int, List, Tuple]):
+    def _getListOfReconstructions(self, reconstructionDegree: Union[int, List, Tuple]):
         assert sum(self._pbc) == 2 # For surfaces only 
         if isinstance(reconstructionDegree, int):
             minReconstruction = reconstructionDegree
@@ -119,7 +153,7 @@ class CellUtility:
                             listOfReconstructions.append(M)
         return listOfReconstructions
     
-    def getRandomReconstruction(self, factor=None):
+    def _getRandomReconstruction(self, factor=None):
         if self._listOfReconstructions:
             if factor:
                 mask = np.linalg.det(self._listOfReconstructions) > factor
@@ -132,10 +166,21 @@ class CellUtility:
             return np.eye(3)
 
     def adjustCell(self, cell, composition, conditions):
+        """
+        Adjust given unit cell according calculation parameters, provided composition and conditions.
+        If cell in calculation is fixed returns the fixed cell. Otherwise scale input unit cell to have specific volume.
+        If calculation is done with fixed volume then unit cell is scaled to it.
+        Otherwise to estimated volume calculated using provided conditions utility.
+        Periodic boundary conditions of output unit cell set up same as in utility.
+        :param cell: input unit cell to be adjusted.
+        :param composition: dictionary like object defining composition.
+        :param conditions: external conditions.
+        :return: **Cell** object with adjusted parameters.
+        """
         if self._cell is not None:
             if self._listOfReconstructions:
                 factor = self.getCellVolume(composition, conditions) / self._cell.getVolume()
-                reconstruction = self.getRandomReconstruction(factor)
+                reconstruction = self._getRandomReconstruction(factor)
                 cell = Cell(cellVectors=reconstruction.dot(self._cell.getCellVectors()), pbc=self._pbc)
             else:
                 cell = self._cell
@@ -146,6 +191,14 @@ class CellUtility:
         return cell
 
     def getHybridCell(self, cell1, cell2, fraction):
+        """
+        Creates hybrid of two unit cells.
+        TODO better to average parameters rather then vectors.
+        :param cell1:
+        :param cell2:
+        :param fraction:
+        :return:
+        """
         assert 0 <= fraction <= 1
         if self._listOfReconstructions:
             matrix1 = np.round(self._cell.decomposeCell(cell1))
@@ -161,13 +214,28 @@ class CellUtility:
 
     @staticmethod
     def volume(system: dict):
+        """
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated volume of system.
+        """
         return system['cell'].getVolume()
 
     @staticmethod
     def area(system: dict):
+        """
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated area of system.
+        """
         return system['cell'].getArea()
     
     def symmetry(self, system: dict):
+        """
+        For using in **Fitness** infrastructure
+        :param system: dictionary describing system.
+        :return: calculated symmetry of system.
+        """
         cell = system['cell']
         molecules = system['molecules']
         structure, disassembler = type(molecules[0]).assemble(molecules, cell)
@@ -183,21 +251,63 @@ class CellUtility:
 
 
 class Cell:
+    """
+    Class representing unit cell of atomic structure.
+    """
 
     def __init__(self, cellVectors, pbc):
+        """
+        :param cellVectors: 3*3 array of cell vectors.
+        :param pbc: periodic boundary conditions in each direction.
+        """
         self._cellVectors = np.asarray(cellVectors)
         self._pbc = pbc
 
+    @staticmethod
+    def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):
+        """
+        Alternative constructor using cell parameters.
+        :param a:
+        :param b:
+        :param c:
+        :param alpha:
+        :param beta:
+        :param gamma:
+        :param pbc:
+        :return:
+        """
+
+        alpha, beta, gamma = np.pi / 180 * np.asarray((alpha, beta, gamma), dtype=float)
+        va = np.array([a, 0, 0])
+        vb = np.array([b * np.cos(gamma), b * np.sin(gamma), 0])
+        cx = np.cos(beta)
+        cy = (np.cos(alpha) - np.cos(gamma) * np.cos(beta)) / np.sin(gamma)
+        cz = (1. - cx ** 2 - cy ** 2) ** 0.5
+        vc = c * np.array([cx, cy, cz])
+        return Cell(np.vstack((va, vb, vc)), pbc)
+
     def getCellVectors(self):
+        """
+        :return: 3*3 array of cell vectors.
+        """
         return copy(self._cellVectors)
 
     def getCellVectorsPBC(self):
+        """
+        :return: x*3 array of periodic cell vectors, where 0 <= x <= 3.
+        """
         return copy(self._cellVectors)[np.nonzero(self._pbc)]
 
     def getPBC(self):
+        """
+        :return: periodic boundary conditions in each direction.
+        """
         return self._pbc
 
     def getCellParameters(self):
+        """
+        :return:  tuple of cell parameters: a, b, c, alpha, beta, gamma
+        """
         a = np.linalg.norm(self._cellVectors[0, :])
         b = np.linalg.norm(self._cellVectors[1, :])
         c = np.linalg.norm(self._cellVectors[2, :])
@@ -207,15 +317,24 @@ class Cell:
         return a, b, c, alpha, beta, gamma
 
     def getVolume(self):
+        """
+        :return: unit cell volume
+        """
         return np.abs(np.linalg.det(self._cellVectors))
 
     def getArea(self):
+        """
+        :return: uinit cell area if cell is 2D periodic.
+        """
         assert sum(self._pbc) >= 2
         nonzeroPBC = np.nonzero(self._pbc)[0]
         nonzeroCellVectors = self._cellVectors[nonzeroPBC][:, nonzeroPBC]
         return np.abs(np.cross(nonzeroCellVectors[0], nonzeroCellVectors[1]))
 
     def getAltitudes(self):
+        """
+        :return: altitudes calculates as volume divided by face area for each face.
+        """
         volime = self.getVolume()
         l0 = volime / np.linalg.norm(np.cross(self._cellVectors[1, :], self._cellVectors[2, :]))
         l1 = volime / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[2, :]))
@@ -223,6 +342,9 @@ class Cell:
         return np.array([l0, l1, l2])
 
     def getCornersCoordinates(self):
+        """
+        :return: 8*3 array of absolute coordinates of each corner of unit cell.
+        """
         coordinates = []
         for i in range(2):
             for j in range(2):
@@ -231,21 +353,52 @@ class Cell:
         return np.asarray(coordinates, dtype = float)
 
     def cartesianToFractional(self, coordinates):
+        """
+        Converts cartesian coordinates to fractional.
+        :param coordinates: N*3 array of cartesian coordinates
+        :return: N*3 array of fractional coordinates.
+        """
         return np.linalg.solve(self._cellVectors.T, coordinates.T).T
 
     def fractionalToCartesian(self, coordinates):
+        """
+        Converts fractional coordinates to cartesian.
+        :param coordinates: N*3 array of fractional coordinates.
+        :return: N*3 array of cartesian coordinates
+        """
         return np.dot(self._cellVectors.T, coordinates.T).T
 
     def fractionalToCartesianOperator(self, operator):
+        """
+        TODO convert some operator matrix defined in fractional space to transformation object in cartesian space.
+        :param operator:
+        :return:
+        """
         return operator 
 
     def getWrapedCartesianCoordinates(self, coordinates):
+        """
+        Translates all coordinates to their image within unit cell via cell vectors in cartesian space.
+        :param coordinates: cartesian coordinates
+        :return: cartesian coordinates wrapped to unit cell.
+        """
         return self.fractionalToCartesian(self.getWrapedFractionalCoordinates(self.cartesianToFractional(coordinates)))
 
     def getWrapedFractionalCoordinates(self, coordinates):
+        """
+        Translates all coordinates to their image within unit cell via cell vectors in fractional space.
+        :param coordinates: fractional coordinates
+        :return: fractional coordinates wrapped to unit cell.
+        """
         return np.divmod(coordinates, 1/np.asarray(self._pbc, dtype=float))[1]
 
     def randomTransformation(self):
+        """
+        Creates transformation object which respects unit cell. I.e. origin is moved only in periodic directions.
+        And structure axis if exists is not moved.
+        Structure axis is periodic axis in 1D case and axis orthogonal to two periodic axes in 2D case,
+        :return: transformation object.
+        """
         pbcVectorsCart = self.getCellVectorsPBC()
         pbcSum = len(pbcVectorsCart)
         transVec = np.dot(np.random.rand(pbcSum), pbcVectorsCart)
@@ -266,6 +419,13 @@ class Cell:
         return Transformation.fromMatrix(rotMatrix, np.dot(rotMatrix, transVec))
 
     def getFittedTransformations(self, initialCoordinates, cell):
+        """
+        For given set of coordinates and cell object, calculates transformations
+        which translate each position into its image within this unit cell along periodic cell vectors of given unit cell.
+        :param initialCoordinates: N*3 array of coordinates which need to be translated.
+        :param cell: cell object containing periodic vectors along which translation should be done.
+        :return: list of **Transformation** objects.
+        """
         inds = np.nonzero(cell.getPBC())
         vectors = cell.getCellVectors()[inds]
         minAndMax = np.asarray([(np.min(coords), np.max(coords))
@@ -293,17 +453,6 @@ class Cell:
 
         return [Transformation.fromRotVector([0.,0.,0.], finalCoordinates - initialCoordinates)
                 for finalCoordinates in fittedCoordinates]
-
-    @staticmethod
-    def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):
-        alpha, beta, gamma = np.pi / 180 * np.asarray((alpha, beta, gamma), dtype=float)
-        va = np.array([a, 0, 0])
-        vb = np.array([b*np.cos(gamma), b*np.sin(gamma), 0])
-        cx = np.cos(beta)
-        cy = (np.cos(alpha) - np.cos(gamma) * np.cos(beta)) / np.sin(gamma)
-        cz = (1. - cx ** 2 - cy ** 2) ** 0.5
-        vc = c * np.array([cx, cy, cz])
-        return Cell(np.vstack((va, vb, vc)), pbc)
 
     def getEnvelopeCell(self, coordinates, vacuumSize=0):
         """
@@ -342,6 +491,11 @@ class Cell:
         return self.fractionalToCartesian(newFrac)
 
     def decomposeCell(self, other):
+        """
+        Decompose cell vectors of given unit cell as linear composition of cell vectors of this unit cell.
+        :param other: unit cell to decompose.
+        :return: 3*3 matrix of decomposition coefficients.
+        """
         assert self._pbc == other.getPBC()
         matrix = np.eye(3)
         inds = np.nonzero(self._pbc)
