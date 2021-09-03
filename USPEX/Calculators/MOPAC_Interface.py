@@ -70,7 +70,7 @@ class MOPAC_Interface(SHELL_Interface):
         system['disassembler'] = disassembler
 
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.cell
+        cell = structure.getCell()
 
         # files_to_delete = ['output', 'optimized.structure']
         # for f in files_to_delete:
