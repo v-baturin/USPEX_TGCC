@@ -7,9 +7,13 @@ import filecmp
 
 from os.path import join as pj
 
-from ..MOPAC_Interface import MOPAC_Interface
+
+from ase import Atoms
+from ase.io import write
+
+# from ..MOPAC_Interface import MOPAC_Interface
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ...components import CrystalRepresentation
+from ...components import CrystalRepresentation, MOPAC_Interface, CellUtility, Cell
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
 SPECIFICPATH = pj(HOMEPATH, 'mopacSpecific')
@@ -27,9 +31,9 @@ class MOPAC_CalculatorTest(unittest.TestCase):
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
                 system = CrystalRepresentation.readAtomicStructure(f)
-            system['externalPressure'] = 0
-            system['ID'] = ID
-            system['cell'] = type(system['cell'])(system['cell'].getCellVectors(), (False, False, False))
+                system['externalPressure'] = 0
+                system['ID'] = ID
+                system['cell'] = type(system['cell'])(system['cell'].getCellVectors(), (False, False, False))
             os.mkdir(WORKPATH)
             mopac.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -45,24 +49,6 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
                 systemRef = CrystalRepresentation.readAtomicStructure(f)
+                systemRef['cell'] = type(systemRef['cell'])(systemRef['cell'].getCellVectors(), (False, False, False))
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
-
-
-# class LAMMPS_InterfaceTest(unittest.TestCase):
-#     def test_read_output(self):
-#         ID = 0
-#         # HERE what is written in ginput and goption no make sense.
-#         # Only output will be parsed and properties checked
-#         interface = LAMMPS_Interface(tag='0', perturbate=False,
-#                                   libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'))
-#         with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-#             system = CrystalRepresentation.readAtomicStructure(f)
-#         system['ID'] = 0
-#         s, d = type(system['molecules'][0]).assemble(**system)
-#         system['disassembler'] = d
-#         system['atomTypes'] = s.getAtomTypes()
-#
-#
-#         interface.readOutput(system=system, calcFolder=pj(GATHEREDPATH, f'output/CalcFold{ID}'))
-#         self.assertTrue(np.isclose(system['enthalpy'], -105.503))
 
