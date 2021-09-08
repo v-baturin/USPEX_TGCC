@@ -98,6 +98,7 @@ setup(
             "Calculators/PWmat_Interface.py",
             "Calculators/QE_Interface.py",
             "Calculators/VASP_Interface.py",
+            "Calculators/MOPAC_Interface.py",
             "Calculators/Common/__init__.py",
             "Calculators/Common/Connector.py",
             "Calculators/Common/KPoints.py",

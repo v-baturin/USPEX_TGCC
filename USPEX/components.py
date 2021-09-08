@@ -60,3 +60,6 @@ QE_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
 from .Calculators.VASP_Interface import VASP_Interface
 VASP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+
+from .Calculators.MOPAC_Interface import MOPAC_Interface
+MOPAC_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)

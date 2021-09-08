@@ -1,0 +1,516 @@
+ *******************************************************************************
+ ** Site#: 21272        For non-commercial use only    Version 19.317L 64BITS **
+ *******************************************************************************
+ ** Cite this program as: MOPAC2016, Version: 19.317L, James J. P. Stewart,   **
+ ** Stewart Computational Chemistry, web-site: HTTP://OpenMOPAC.net.          **
+ *******************************************************************************
+ **                                                                           **
+ **                                MOPAC2016                                  **
+ **                                                                           **
+ *******************************************************************************
+
+                              PM7 CALCULATION RESULTS
+
+ *******************************************************************************
+ *  CALCULATION DONE:                                Fri Sep  3 20:20:30 2021  *
+ *  PM7        - The PM7 Hamiltonian to be used
+ *  T=         - A TIME OF 172800.0 SECONDS REQUESTED
+ *  DUMP=N     - RESTART FILE WRITTEN EVERY  7200.000 SECONDS
+ *******************************************************************************
+PM7
+ Formaldehyde
+ This is optimization with MOPAC
+   ATOM   CHEMICAL          X               Y               Z
+  NUMBER   SYMBOL      (ANGSTROMS)     (ANGSTROMS)     (ANGSTROMS)
+ 
+     1      Si          2.19454600  *   6.82644600  *   4.03472300  *
+     2      Si          3.08525900  *   6.82644600  *   0.54647100  *
+     3      Si          3.08525900  *   0.94869100  *   0.54647100  *
+     4      Si          2.19454600  *   0.94869100  *   4.03472300  *
+     5      Si          0.21540100  *   0.00000000  *   0.19568300  *
+     6      Si          5.06440400  *   0.00000000  *   4.38551000  *
+     7      Si          2.63990200  *   3.88756900  *   2.29059700  *
+     8       O          0.88456400  *   5.85384800  *   0.25212900  *
+     9       O          4.39524000  *   5.85384800  *   4.32906400  *
+    10       O          4.39524000  *   1.92128900  *   4.32906400  *
+    11       O          0.88456400  *   1.92128900  *   0.25212900  *
+    12       O          2.70527300  *   0.76928500  *   3.19889100  *
+    13       O          2.57453100  *   0.76928500  *   1.38230200  *
+    14       O          2.57453100  *   7.00585300  *   1.38230200  *
+    15       O          2.70527300  *   7.00585300  *   3.19889100  *
+    16       O          1.37056300  *   0.47016900  *   1.93984600  *
+    17       O          3.90924200  *   0.47016900  *   2.64134800  *
+    18       O          3.90924200  *   7.30496900  *   2.64134800  *
+    19       O          1.37056300  *   7.30496900  *   1.93984600  *
+    20       O          3.22589700  *   0.00000000  *   3.82558200  *
+    21       O          2.05390700  *   0.00000000  *   0.75561200  *
+ 
+
+
+          CARTESIAN COORDINATES 
+
+    NO.       ATOM           X           Y           Z
+
+     1        Si          2.1945      6.8264      4.0347
+     2        Si          3.0853      6.8264      0.5465
+     3        Si          3.0853      0.9487      0.5465
+     4        Si          2.1945      0.9487      4.0347
+     5        Si          0.2154      0.0000      0.1957
+     6        Si          5.0644      0.0000      4.3855
+     7        Si          2.6399      3.8876      2.2906
+     8         O          0.8846      5.8538      0.2521
+     9         O          4.3952      5.8538      4.3291
+    10         O          4.3952      1.9213      4.3291
+    11         O          0.8846      1.9213      0.2521
+    12         O          2.7053      0.7693      3.1989
+    13         O          2.5745      0.7693      1.3823
+    14         O          2.5745      7.0059      1.3823
+    15         O          2.7053      7.0059      3.1989
+    16         O          1.3706      0.4702      1.9398
+    17         O          3.9092      0.4702      2.6413
+    18         O          3.9092      7.3050      2.6413
+    19         O          1.3706      7.3050      1.9398
+    20         O          3.2259      0.0000      3.8256
+    21         O          2.0539      0.0000      0.7556
+
+ General Reference for PM7:
+ "Optimization of Parameters for Semiempirical Methods VI: More Modifications to the 
+ NDDO Approximations and Re-optimization of Parameters", J. J. P. Stewart, J. Mol. Mod., 1:32, 19 (2013)
+ http://www.springerlink.com/openurl.asp?genre=article&id=doi:10.1007/s00894-012-1667-x
+
+           Empirical Formula: O14 Si7  =    21 atoms
+
+
+
+      MOLECULAR POINT GROUP   :   C2  
+
+
+      RHF CALCULATION, NO. OF DOUBLY OCCUPIED LEVELS = 56
+
+
+          Geometry optimization using EF
+
+          DIAGONAL MATRIX USED AS START HESSIAN
+
+ CYCLE:     1 TIME:   5.273 TIME LEFT:  2.00D  GRAD.:  3995.306 HEAT:  2502.420
+ CYCLE:     2 TIME:   0.500 TIME LEFT:  2.00D  GRAD.:  2377.184 HEAT:  1883.580
+ CYCLE:     3 TIME:   0.461 TIME LEFT:  2.00D  GRAD.:  1440.423 HEAT:  1410.052
+ CYCLE:     4 TIME:   1.039 TIME LEFT:  2.00D  GRAD.:   699.065 HEAT:  966.6797
+ CYCLE:     5 TIME:   0.586 TIME LEFT:  2.00D  GRAD.:   430.830 HEAT:  773.5380
+ CYCLE:     6 TIME:   0.648 TIME LEFT:  2.00D  GRAD.:   374.129 HEAT:  657.6558
+ CYCLE:     7 TIME:   1.109 TIME LEFT:  2.00D  GRAD.:   278.858 HEAT:  523.9145
+ CYCLE:     8 TIME:   0.547 TIME LEFT:  2.00D  GRAD.:   650.175 HEAT:  517.5532
+ CYCLE:     9 TIME:   0.586 TIME LEFT:  2.00D  GRAD.:   260.788 HEAT:  435.8926
+ CYCLE:    10 TIME:   1.023 TIME LEFT:  2.00D  GRAD.:   258.619 HEAT:  376.3353
+ CYCLE:    11 TIME:   0.570 TIME LEFT:  2.00D  GRAD.:   396.952 HEAT:  282.0360
+ CYCLE:    12 TIME:   0.578 TIME LEFT:  2.00D  GRAD.:   464.595 HEAT:  202.4669
+ CYCLE:    13 TIME:   0.844 TIME LEFT:  2.00D  GRAD.:   506.564 HEAT:  137.2840
+ CYCLE:    14 TIME:   0.773 TIME LEFT:  2.00D  GRAD.:   294.549 HEAT:  105.4199
+ CYCLE:    15 TIME:   0.500 TIME LEFT:  2.00D  GRAD.:   181.141 HEAT:  75.68500
+ CYCLE:    16 TIME:   1.109 TIME LEFT:  2.00D  GRAD.:   260.846 HEAT:  47.09844
+ CYCLE:    17 TIME:   0.414 TIME LEFT:  2.00D  GRAD.:   532.259 HEAT:  12.41649
+ CYCLE:    18 TIME:   0.414 TIME LEFT:  2.00D  GRAD.:   345.306 HEAT: -36.63171
+ CYCLE:    19 TIME:   0.383 TIME LEFT:  2.00D  GRAD.:   302.806 HEAT: -78.57690
+ CYCLE:    20 TIME:   1.508 TIME LEFT:  2.00D  GRAD.:   243.148 HEAT: -99.31534
+ CYCLE:    21 TIME:   1.664 TIME LEFT:  2.00D  GRAD.:   227.838 HEAT: -115.5825
+ CYCLE:    22 TIME:   0.492 TIME LEFT:  2.00D  GRAD.:   198.997 HEAT: -143.3366
+ CYCLE:    23 TIME:   0.477 TIME LEFT:  2.00D  GRAD.:   305.332 HEAT: -177.2580
+ CYCLE:    24 TIME:   1.125 TIME LEFT:  2.00D  GRAD.:   218.652 HEAT: -197.0779
+ CYCLE:    25 TIME:   0.422 TIME LEFT:  2.00D  GRAD.:   289.932 HEAT: -201.4790
+ CYCLE:    26 TIME:   0.469 TIME LEFT:  2.00D  GRAD.:   205.754 HEAT: -245.1122
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    27 TIME:  86.258 TIME LEFT:  2.00D  GRAD.:   272.085 HEAT: -295.5745
+ CYCLE:    28 TIME:   1.773 TIME LEFT:  2.00D  GRAD.:   358.857 HEAT: -309.0735
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    29 TIME:  71.102 TIME LEFT:  2.00D  GRAD.:   304.969 HEAT: -325.9934
+ CYCLE:    30 TIME:   0.781 TIME LEFT:  2.00D  GRAD.:   186.388 HEAT: -348.5552
+ CYCLE:    31 TIME:   2.719 TIME LEFT:  2.00D  GRAD.:   132.255 HEAT: -360.2489
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    32 TIME:  23.781 TIME LEFT:  2.00D  GRAD.:    82.774 HEAT: -368.8550
+ CYCLE:    33 TIME:   0.883 TIME LEFT:  2.00D  GRAD.:   117.225 HEAT: -375.7898
+ CYCLE:    34 TIME:   0.414 TIME LEFT:  2.00D  GRAD.:   152.938 HEAT: -382.0137
+ CYCLE:    35 TIME:   0.508 TIME LEFT:  2.00D  GRAD.:   122.092 HEAT: -389.6840
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    36 TIME:   7.898 TIME LEFT:  2.00D  GRAD.:   145.382 HEAT: -395.6158
+ CYCLE:    37 TIME:   1.023 TIME LEFT:  2.00D  GRAD.:   124.642 HEAT: -402.3917
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    38 TIME:   7.594 TIME LEFT:  2.00D  GRAD.:    85.455 HEAT: -406.4593
+ CYCLE:    39 TIME:   1.266 TIME LEFT:  2.00D  GRAD.:    47.816 HEAT: -410.8033
+ CYCLE:    40 TIME:   1.383 TIME LEFT:  2.00D  GRAD.:    82.887 HEAT: -413.1611
+ CYCLE:    41 TIME:   0.141 TIME LEFT:  2.00D  GRAD.:    71.896 HEAT: -416.7715
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    42 TIME:   2.961 TIME LEFT:  2.00D  GRAD.:    87.178 HEAT: -421.9060
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    43 TIME:   2.789 TIME LEFT:  2.00D  GRAD.:    94.620 HEAT: -424.3881
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    44 TIME:   2.633 TIME LEFT:  2.00D  GRAD.:    71.757 HEAT: -425.1226
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    45 TIME:   2.859 TIME LEFT:  2.00D  GRAD.:    41.082 HEAT: -428.7108
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    46 TIME:   3.117 TIME LEFT:  2.00D  GRAD.:    47.966 HEAT: -430.2640
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    47 TIME:   2.617 TIME LEFT:  2.00D  GRAD.:    57.862 HEAT: -431.6627
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    48 TIME:   2.656 TIME LEFT:  2.00D  GRAD.:    47.075 HEAT: -433.6020
+ CYCLE:    49 TIME:   1.031 TIME LEFT:  2.00D  GRAD.:    84.686 HEAT: -435.1816
+ CYCLE:    50 TIME:   0.578 TIME LEFT:  2.00D  GRAD.:    36.356 HEAT: -438.0155
+ CYCLE:    51 TIME:   0.445 TIME LEFT:  2.00D  GRAD.:    66.127 HEAT: -440.1168
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    52 TIME:   6.828 TIME LEFT:  2.00D  GRAD.:    44.148 HEAT: -441.5732
+ CYCLE:    53 TIME:   0.430 TIME LEFT:  2.00D  GRAD.:    52.187 HEAT: -442.1471
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+ CYCLE:    54 TIME:   3.016 TIME LEFT:  2.00D  GRAD.:    39.365 HEAT: -442.6216
+
+
+ ALL CONVERGERS ARE NOW FORCED ON
+ SHIFT=10, PULAY ON, CAMP-KING ON
+ AND ITERATION COUNTER RESET
+
+
+
+     TRUST RADIUS NOW LESS THAN  0.00010 OPTIMIZATION TERMINATING
+      THE GEOMETRY MAY NOT BE COMPLETELY OPTIMIZED
+      (TO CONTINUE, ADD 'LET DDMIN=0.0' TO THE KEYWORD LINE)
+
+ -------------------------------------------------------------------------------
+ PM7
+ Formaldehyde
+ This is optimization with MOPAC
+
+
+     GEOMETRY OPTIMISED USING EIGENVECTOR FOLLOWING (EF).     
+     SCF FIELD WAS ACHIEVED                                   
+
+
+                              PM7 CALCULATION
+                                                       MOPAC2016 (Version: 19.317L)
+                                                       Fri Sep  3 20:25:01 2021
+
+
+
+
+          FINAL HEAT OF FORMATION =       -441.99156 KCAL/MOL =   -1849.29269 KJ/MOL
+
+
+          TOTAL ENERGY            =      -4840.10840 EV
+          ELECTRONIC ENERGY       =     -23355.01951 EV  POINT GROUP:     C2  
+          CORE-CORE REPULSION     =      18514.91111 EV
+          COSMO AREA              =        379.36 SQUARE ANGSTROMS
+          COSMO VOLUME            =        493.48 CUBIC ANGSTROMS
+
+          GRADIENT NORM           =         39.36505 = 8.59016 PER ATOM
+          IONIZATION POTENTIAL    =          6.330998 EV
+          HOMO LUMO ENERGIES (EV) =         -6.331 -4.036
+          NO. OF FILLED LEVELS    =         56
+          MOLECULAR WEIGHT        =        420.5901
+
+          MOLECULAR DIMENSIONS (Angstroms)
+
+            Atom       Atom       Distance
+            O    18    O    16     9.43564
+            O    17    O    19     9.39111
+            O    20    O    21     6.80741
+
+
+          SCF CALCULATIONS        =         73
+ 
+          WALL-CLOCK TIME         =  4 MINUTES AND 31.570 SECONDS
+          COMPUTATION TIME        = 46 MINUTES AND  6.861 SECONDS
+
+
+
+       FINAL  POINT  AND  DERIVATIVES
+
+   PARAMETER     ATOM    TYPE            VALUE        GRADIENT
+      1          1 Si    CARTESIAN X     1.291137     -5.968165  KCAL/ANGSTROM
+      2          1 Si    CARTESIAN Y     6.687567     -8.054505  KCAL/ANGSTROM
+      3          1 Si    CARTESIAN Z     4.517379      3.515454  KCAL/ANGSTROM
+      4          2 Si    CARTESIAN X     3.977872      1.761101  KCAL/ANGSTROM
+      5          2 Si    CARTESIAN Y     6.667187     -1.368969  KCAL/ANGSTROM
+      6          2 Si    CARTESIAN Z     0.005831     -1.935329  KCAL/ANGSTROM
+      7          3 Si    CARTESIAN X     2.548660     -5.584190  KCAL/ANGSTROM
+      8          3 Si    CARTESIAN Y     1.034076     -1.452086  KCAL/ANGSTROM
+      9          3 Si    CARTESIAN Z     0.046601      0.800173  KCAL/ANGSTROM
+     10          4 Si    CARTESIAN X     2.738293      2.984373  KCAL/ANGSTROM
+     11          4 Si    CARTESIAN Y     1.040491      6.935797  KCAL/ANGSTROM
+     12          4 Si    CARTESIAN Z     4.581020    -11.913665  KCAL/ANGSTROM
+     13          5 Si    CARTESIAN X    -0.329636    -16.291458  KCAL/ANGSTROM
+     14          5 Si    CARTESIAN Y     0.333739     -4.553474  KCAL/ANGSTROM
+     15          5 Si    CARTESIAN Z     0.911876      3.699306  KCAL/ANGSTROM
+     16          6 Si    CARTESIAN X     5.588100     11.390335  KCAL/ANGSTROM
+     17          6 Si    CARTESIAN Y     0.335020      0.763806  KCAL/ANGSTROM
+     18          6 Si    CARTESIAN Z     3.641122     -0.368786  KCAL/ANGSTROM
+     19          7 Si    CARTESIAN X     2.604208     -1.307730  KCAL/ANGSTROM
+     20          7 Si    CARTESIAN Y     3.143998     -1.926779  KCAL/ANGSTROM
+     21          7 Si    CARTESIAN Z     2.308984      0.973662  KCAL/ANGSTROM
+     22          8  O    CARTESIAN X     0.565549      1.024621  KCAL/ANGSTROM
+     23          8  O    CARTESIAN Y     5.537330     -2.294903  KCAL/ANGSTROM
+     24          8  O    CARTESIAN Z     0.916322     -0.704059  KCAL/ANGSTROM
+     25          9  O    CARTESIAN X     4.685238     -1.195277  KCAL/ANGSTROM
+     26          9  O    CARTESIAN Y     5.547577     -2.105943  KCAL/ANGSTROM
+     27          9  O    CARTESIAN Z     3.526899      0.110673  KCAL/ANGSTROM
+     28         10  O    CARTESIAN X     4.194153     -6.212159  KCAL/ANGSTROM
+     29         10  O    CARTESIAN Y     0.555956      2.214470  KCAL/ANGSTROM
+     30         10  O    CARTESIAN Z     4.114262     -0.559395  KCAL/ANGSTROM
+     31         11  O    CARTESIAN X     1.071097      0.743873  KCAL/ANGSTROM
+     32         11  O    CARTESIAN Y     0.596553      4.292301  KCAL/ANGSTROM
+     33         11  O    CARTESIAN Z     0.450405      0.500384  KCAL/ANGSTROM
+     34         12  O    CARTESIAN X     2.425065      3.809549  KCAL/ANGSTROM
+     35         12  O    CARTESIAN Y     2.158103     -5.983336  KCAL/ANGSTROM
+     36         12  O    CARTESIAN Z     3.556742      1.726330  KCAL/ANGSTROM
+     37         13  O    CARTESIAN X     2.880715      3.754999  KCAL/ANGSTROM
+     38         13  O    CARTESIAN Y     2.168590     -0.946607  KCAL/ANGSTROM
+     39         13  O    CARTESIAN Z     1.080904      1.289296  KCAL/ANGSTROM
+     40         14  O    CARTESIAN X     3.276365     -0.762126  KCAL/ANGSTROM
+     41         14  O    CARTESIAN Y     7.799753      1.679130  KCAL/ANGSTROM
+     42         14  O    CARTESIAN Z     0.481464      3.114548  KCAL/ANGSTROM
+     43         15  O    CARTESIAN X     2.005666      4.960390  KCAL/ANGSTROM
+     44         15  O    CARTESIAN Y     7.878381      7.990512  KCAL/ANGSTROM
+     45         15  O    CARTESIAN Z     4.214203     -4.820941  KCAL/ANGSTROM
+     46         16  O    CARTESIAN X    -1.665621     14.955162  KCAL/ANGSTROM
+     47         16  O    CARTESIAN Y     0.271885      3.941681  KCAL/ANGSTROM
+     48         16  O    CARTESIAN Z     1.291389     -4.499222  KCAL/ANGSTROM
+     49         17  O    CARTESIAN X     6.889753     -9.703721  KCAL/ANGSTROM
+     50         17  O    CARTESIAN Y     0.145211      2.048598  KCAL/ANGSTROM
+     51         17  O    CARTESIAN Z     3.189910      2.758910  KCAL/ANGSTROM
+     52         18  O    CARTESIAN X     5.030533      0.411235  KCAL/ANGSTROM
+     53         18  O    CARTESIAN Y     6.606687      1.540162  KCAL/ANGSTROM
+     54         18  O    CARTESIAN Z     3.307085     -1.354785  KCAL/ANGSTROM
+     55         19  O    CARTESIAN X     0.281607     -0.314555  KCAL/ANGSTROM
+     56         19  O    CARTESIAN Y     6.581016      1.879999  KCAL/ANGSTROM
+     57         19  O    CARTESIAN Z     1.262476      1.933161  KCAL/ANGSTROM
+     58         20  O    CARTESIAN X     2.063729     -1.032195  KCAL/ANGSTROM
+     59         20  O    CARTESIAN Y     0.533520     -4.198899  KCAL/ANGSTROM
+     60         20  O    CARTESIAN Z     5.713995      8.738077  KCAL/ANGSTROM
+     61         21  O    CARTESIAN X     3.335183      2.575935  KCAL/ANGSTROM
+     62         21  O    CARTESIAN Y     0.529636     -0.400954  KCAL/ANGSTROM
+     63         21  O    CARTESIAN Z    -1.009397     -3.003785  KCAL/ANGSTROM
+
+
+
+
+   ATOM   CHEMICAL          X               Y               Z
+  NUMBER   SYMBOL      (ANGSTROMS)     (ANGSTROMS)     (ANGSTROMS)
+ 
+     1      Si          1.29113655  *   6.68756738  *   4.51737921  *
+     2      Si          3.97787171  *   6.66718703  *   0.00583137  *
+     3      Si          2.54865961  *   1.03407627  *   0.04660100  *
+     4      Si          2.73829309  *   1.04049060  *   4.58101955  *
+     5      Si         -0.32963586  *   0.33373890  *   0.91187607  *
+     6      Si          5.58810047  *   0.33501951  *   3.64112192  *
+     7      Si          2.60420825  *   3.14399785  *   2.30898361  *
+     8       O          0.56554854  *   5.53732993  *   0.91632188  *
+     9       O          4.68523756  *   5.54757720  *   3.52689896  *
+    10       O          4.19415312  *   0.55595642  *   4.11426241  *
+    11       O          1.07109674  *   0.59655324  *   0.45040534  *
+    12       O          2.42506475  *   2.15810296  *   3.55674161  *
+    13       O          2.88071478  *   2.16859032  *   1.08090415  *
+    14       O          3.27636518  *   7.79975346  *   0.48146446  *
+    15       O          2.00566576  *   7.87838068  *   4.21420312  *
+    16       O         -1.66562073  *   0.27188469  *   1.29138923  *
+    17       O          6.88975343  *   0.14521122  *   3.18991035  *
+    18       O          5.03053262  *   6.60668669  *   3.30708473  *
+    19       O          0.28160699  *   6.58101574  *   1.26247644  *
+    20       O          2.06372880  *   0.53352040  *   5.71399515  *
+    21       O          3.33518275  *   0.52963636  *  -1.00939660  *
+
+                             CARTESIAN COORDINATES
+
+   1   Si        1.291136551     6.687567375     4.517379213
+   2   Si        3.977871710     6.667187033     0.005831369
+   3   Si        2.548659607     1.034076270     0.046601003
+   4   Si        2.738293087     1.040490597     4.581019553
+   5   Si       -0.329635863     0.333738901     0.911876069
+   6   Si        5.588100470     0.335019513     3.641121917
+   7   Si        2.604208253     3.143997855     2.308983610
+   8    O        0.565548544     5.537329933     0.916321880
+   9    O        4.685237565     5.547577200     3.526898963
+  10    O        4.194153123     0.555956419     4.114262407
+  11    O        1.071096740     0.596553245     0.450405336
+  12    O        2.425064753     2.158102955     3.556741613
+  13    O        2.880714778     2.168590321     1.080904146
+  14    O        3.276365183     7.799753459     0.481464464
+  15    O        2.005665757     7.878380684     4.214203124
+  16    O       -1.665620735     0.271884691     1.291389227
+  17    O        6.889753428     0.145211225     3.189910353
+  18    O        5.030532619     6.606686691     3.307084728
+  19    O        0.281606991     6.581015736     1.262476443
+  20    O        2.063728797     0.533520399     5.713995153
+  21    O        3.335182745     0.529636356    -1.009396598
+
+
+           Empirical Formula: O14 Si7  =    21 atoms
+
+
+
+      MOLECULAR POINT GROUP   :   C2  
+
+
+                  EIGENVALUES  
+ -33.56837 -33.26123 -32.73901 -32.70418 -32.29425 -31.39869 -31.26493 -30.82695
+ -30.81740 -30.62489 -28.89351 -28.73846 -28.38392 -28.35385 -19.34063 -19.10939
+ -18.85667 -18.37526 -17.23977 -17.16736 -17.13522 -17.03171 -16.81766 -16.68675
+ -16.64922 -16.61886 -15.98993 -15.95985 -15.68374 -15.23776 -14.81815 -14.66413
+ -14.32504 -14.29951 -14.22530 -14.10932 -14.00454 -13.93706 -13.84984 -13.56771
+ -13.55000 -13.46925 -13.34244 -13.14438 -12.85719 -12.81408 -12.79947 -12.68936
+ -12.66892 -12.63485 -11.61524 -11.44261 -11.21454  -9.15900  -9.12254  -6.33100
+  -4.03587  -1.86230  -1.82531  -1.67783  -1.52474  -0.89487  -0.86329  -0.75313
+  -0.27806  -0.06691   0.26422   0.29289   0.30459   0.31854   0.33645   0.48693
+   2.18562   2.26235   2.57455   2.87946   3.20012   3.25640   3.26714   3.63528
+   3.65048   3.70488   5.14907   5.48719  18.92193  18.93757  19.16572  19.18013
+  20.75759  20.85554  21.05324  21.12744  22.18453  22.34605  22.41594  22.57223
+  22.75488  22.97179  23.60627  23.85508  24.47359  24.71774  25.10171  25.22279
+  26.54283  26.62845  26.88510  26.92375  27.18792  27.19067  27.23066  28.23935
+  28.55353  28.60949  28.68867  28.73170  29.35954  30.15433  30.20917
+
+
+              NET ATOMIC CHARGES AND DIPOLE CONTRIBUTIONS
+
+  ATOM NO.   TYPE          CHARGE      No. of ELECS.   s-Pop       p-Pop       d-Pop       
+    1         Si           0.711891        3.2881     1.73494     1.43321     0.11996
+    2         Si           0.711267        3.2887     1.73666     1.43121     0.12086
+    3         Si           0.572579        3.4274     0.55441     2.41776     0.45525
+    4         Si           0.587403        3.4126     0.55859     2.39827     0.45573
+    5         Si           0.314501        3.6855     0.46378     2.84712     0.37459
+    6         Si           0.354093        3.6459     0.47218     2.79536     0.37837
+    7         Si           0.774557        3.2254     1.52311     1.51021     0.19212
+    8          O          -0.031203        6.0312     1.94997     4.08123
+    9          O          -0.037724        6.0377     1.94964     4.08808
+   10          O          -0.322183        6.3222     1.54697     4.77521
+   11          O          -0.323947        6.3239     1.54358     4.78037
+   12          O          -0.591518        6.5915     1.60602     4.98550
+   13          O          -0.607660        6.6077     1.61337     4.99429
+   14          O          -0.714018        6.7140     1.79285     4.92116
+   15          O          -0.715159        6.7152     1.79636     4.91880
+   16          O          -0.165722        6.1657     1.76589     4.39983
+   17          O          -0.133997        6.1340     1.76828     4.36572
+   18          O           0.040775        5.9592     1.95227     4.00696
+   19          O           0.034918        5.9651     1.95204     4.01304
+   20          O          -0.222995        6.2230     1.78693     4.43607
+   21          O          -0.235859        6.2359     1.78467     4.45118
+ DIPOLE           X         Y         Z       TOTAL
+ POINT-CHG.     0.855    -4.786     0.250     4.868
+ HYBRID         0.010     0.709    -0.014     0.709
+ SUM            0.865    -4.077     0.236     4.174
+
+
+          ATOMIC ORBITAL ELECTRON POPULATIONS
+
+     Atom    s        px        py        pz      x^2-y^2     xz        z^2       yz        xy
+    1 Si   1.73494   0.43420   0.66857   0.33044   0.03208   0.01014   0.01517   0.02482   0.03774
+    2 Si   1.73666   0.42958   0.63621   0.36543   0.02974   0.01285   0.01616   0.02708   0.03503
+    3 Si   0.55441   0.77047   0.83248   0.81481   0.09137   0.09850   0.09839   0.08733   0.07965
+    4 Si   0.55859   0.77540   0.82235   0.80052   0.08502   0.09897   0.10358   0.09355   0.07461
+    5 Si   0.46378   0.77340   1.08474   0.98898   0.09575   0.11306   0.04642   0.01126   0.10811
+    6 Si   0.47218   0.78351   1.04522   0.96664   0.09553   0.11246   0.04964   0.01463   0.10611
+    7 Si   1.52311   0.18811   0.93375   0.38835   0.01768   0.03490   0.05397   0.06561   0.01997
+    8  O   1.94997   1.03983   1.13062   1.91078
+    9  O   1.94964   1.03086   1.09334   1.96388
+   10  O   1.54697   1.46695   1.65391   1.65435
+   11  O   1.54358   1.46482   1.65785   1.65770
+   12  O   1.60602   1.76289   1.61466   1.60795
+   13  O   1.61337   1.76070   1.61951   1.61408
+   14  O   1.79285   1.64752   1.61815   1.65549
+   15  O   1.79636   1.64639   1.61071   1.66170
+   16  O   1.76589   1.46848   1.47749   1.45386
+   17  O   1.76828   1.46936   1.45905   1.43732
+   18  O   1.95227   0.98224   1.06332   1.96139
+   19  O   1.95204   0.99970   1.10676   1.90658
+   20  O   1.78693   1.52700   1.49027   1.41880
+   21  O   1.78467   1.51466   1.50077   1.43576
+
+ **********************
+ *                    *
+ * JOB ENDED NORMALLY *
+ *                    *
+ **********************
+
+
+
+ TOTAL JOB TIME:           271.57 SECONDS
+
+ == MOPAC DONE ==
