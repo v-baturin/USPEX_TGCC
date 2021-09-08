@@ -62,11 +62,14 @@ class PowderSpectrumAnalyzer(object):
 
         # create a pymatgen Structure object
         structure = Structure(lattice=structure.getCell().getCellVectors(),
-                        species=[el.short_name for el in structure.getAtomTypes()],
-                        coords=structure.getFractionalCoordinates())
-        # symmetrize the candidate structure
-        cif_string = structure.to(fmt='cif', symprec=0.2)
-        structure = Structure.from_str(cif_string, fmt='cif')
+                              species=[el.short_name for el in structure.getAtomTypes()],
+                              coords=structure.getFractionalCoordinates())
+        # if possible symmetrize the candidate structure
+        try:
+            cif_string = structure.to(fmt='cif', symprec=0.2)
+            structure = Structure.from_str(cif_string, fmt='cif')
+        except TypeError:
+            pass
 
         # initialize the lattice factor k
         params = np.array([1.0])

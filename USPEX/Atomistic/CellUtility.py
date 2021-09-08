@@ -242,9 +242,9 @@ class CellUtility:
         lattice = cell.getCellVectors()
         coordinates = structure.getFractionalCoordinates()
         numbers = [el.z for el in structure.getAtomTypes()]
-        if cell.getPBC() == (1,1,1):
-            symmetry = '{:7s} {:4s}'.format(*[str(x) for x in spglib.get_spacegroup((lattice, coordinates, numbers),
-                                                                                    symprec=self.symTolerance).split()])
+        spacegroup = spglib.get_spacegroup((lattice, coordinates, numbers), symprec=self.symTolerance)
+        if cell.getPBC() == (1, 1, 1) and spacegroup is not None:
+            symmetry = '{:7s} {:4s}'.format(*[str(x) for x in spacegroup.split()])
         else:
             symmetry = None
         return symmetry
