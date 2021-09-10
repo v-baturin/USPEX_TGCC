@@ -17,7 +17,7 @@ import numpy as np
 import os
 import shutil
 
-from ase.io.vasp import read_vasp_xml, write_vasp
+from ase.io.vasp import read_vasp_out, write_vasp
 from ase.atoms import Atoms
 from os.path import join as pj
 from typing import List
@@ -416,7 +416,7 @@ class VASP_Interface(SHELL_Interface):
         symbolsOrder = system['symbolsOrder']
         del system['symbolsOrder']
 
-        tmp = next(read_vasp_xml(pj(calcFolder, self.xml_file)))
+        tmp = read_vasp_out(pj(calcFolder, self.outcar_file))
         if tmp:
             if self.targetObject == 'default':
                 tmp_positions = tmp.get_positions()
