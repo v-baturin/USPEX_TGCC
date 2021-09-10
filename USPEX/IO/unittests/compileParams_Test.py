@@ -123,6 +123,7 @@ class CompileParams_Test(unittest.TestCase):
                     'type': 'Crystal',
                     'conditions': {'externalPressure': 100, 'volumeType': 0.5},
                     'simpleMoleculeUtility': {'molecules': {'mol_h2o': {'symbols': ['H', 'O', 'H'],
+                                                                        'labels': ['', '', ''],
                                                                         'positions': [[0.0, -0.1988, -0.7632],
                                                                                       [0.0, 0.3975, 0.0],
                                                                                       [0.0, -0.1988, 0.7632]],
