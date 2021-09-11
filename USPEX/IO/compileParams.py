@@ -68,13 +68,5 @@ def compileParams(main: dict, **definitions) -> dict:
                 logger.exception(ex)
                 exc_info = sys.exc_info()
                 raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
-        if 'singleCrystalSpectrumAnalyzer' in target:
-            filename = target['singleCrystalSpectrumAnalyzer']
-            try:
-                target['singleCrystalSpectrumAnalyzer'] = SingleCrystalSpectrumAnalyzer.parse(filename)
-            except Exception as ex:
-                logger.exception(ex)
-                exc_info = sys.exc_info()
-                raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
 
     return main

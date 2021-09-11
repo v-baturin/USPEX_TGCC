@@ -37,8 +37,9 @@ class SpectrumAnalyzer_Test(unittest.TestCase):
         }
 
     def test(self):
-        xraydata = SingleCrystalSpectrumAnalyzer.parse('{}/test_P1.hkl'.format(PATH_WITH_TESTS))
-        analyzer = SingleCrystalSpectrumAnalyzer(**xraydata)
+        hklFile = '{}/test_P1.hkl'.format(PATH_WITH_TESTS)
+        cellParameters = (4.7877, 4.9480, 6.9151, 90, 90, 90)
+        analyzer = SingleCrystalSpectrumAnalyzer(hklFile, cellParameters)
         analyzer.analyze(self.system)
         fitness = self.system['singleCrystalSpectrumAnalyzer.xraydistance']
         self.assertAlmostEqual(fitness, 0.3633, places=4)
