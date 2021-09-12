@@ -56,11 +56,11 @@ class SingleCrystalSpectrumAnalyzer(object):
 
         # cannot compute xraydistance if cell parameters differ from reference
         if not np.allclose(self.cellParameters, structure.getCell().getCellParameters()):
-            system['singleCrystalSpectrumAnalyzer.xraydistance'] = None
+            system['singleCrystalSpectrumAnalyzer.xraydistance'] = np.inf
 
         # pure hydrogen gets low agreement
         elif len(elementList) == 1 and elementList[0].short_name == 'H':
-            system['singleCrystalSpectrumAnalyzer.xraydistance'] = 100.0
+            system['singleCrystalSpectrumAnalyzer.xraydistance'] = np.inf
 
         # compute xraydistance
         else:
