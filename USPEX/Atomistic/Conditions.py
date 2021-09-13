@@ -1,9 +1,14 @@
+"""
+USPEX.Atomistic.Conditions
+==========================
+"""
+
 import math
 
 from .Element import Element
 
 
-def VinetEOS(B0: float, B00: float, V0: float, x: float):
+def _VinetEOS(B0: float, B00: float, V0: float, x: float):
     """
     The function fits the Volume with the Vinet-EOS (equation of state).
     :Link: https://en.wikipedia.org/wiki/Rose%E2%80%93Vinet_equation_of_state
@@ -27,7 +32,7 @@ def VinetEOS(B0: float, B00: float, V0: float, x: float):
     return P
 
 
-def arange(start, end, step):
+def _arange(start, end, step):
     """
     Create arange like in numpy (np.arange).
 
@@ -54,7 +59,7 @@ def arange(start, end, step):
     return values_list
 
 
-def calcVolumePure(targetPress: float, atomType, systemType: str = 'atom'):  # Returns targetVolume
+def _calcVolumePure(targetPress: float, atomType, systemType: str = 'atom'):  # Returns targetVolume
     """
     The function calculates a volume of a single element/molecule at the target pressure.
 
@@ -198,15 +203,15 @@ def calcVolumePure(targetPress: float, atomType, systemType: str = 'atom'):  # R
             break
 
     if targetPress > 500:
-        volumeRange = arange(fitParameter[i][4] / 2, fitParameter[i][4] + 0.01, 0.02)
+        volumeRange = _arange(fitParameter[i][4] / 2, fitParameter[i][4] + 0.01, 0.02)
     else:
-        volumeRange = arange(fitParameter[i][4], fitParameter[i][3], 0.05)
+        volumeRange = _arange(fitParameter[i][4], fitParameter[i][3], 0.05)
 
     tryVolume = []
     tryPressure = []
     for tryVolume0 in volumeRange:
         tryVolume.append(tryVolume0)
-        tmp = VinetEOS(fitParameter[i][2 - 1], fitParameter[i][3 - 1], fitParameter[i][4 - 1], tryVolume0)
+        tmp = _VinetEOS(fitParameter[i][2 - 1], fitParameter[i][3 - 1], fitParameter[i][4 - 1], tryVolume0)
         tryPressure.append(tmp)
 
     tmp_list = [abs(x - targetPress) for x in tryPressure]
@@ -217,8 +222,14 @@ def calcVolumePure(targetPress: float, atomType, systemType: str = 'atom'):  # R
 
 
 class Conditions:
+    """
+    Class describing conditions such as external pressure.
+    It provides methods to estimate some system properties under provided conditions.
+    """
+
     def __init__(self, volumeType, externalPressure = 0.0001):
         """
+
         :type externalPressure: float
         :param externalPressure: target pressure.
         :type volumeType: float
@@ -228,6 +239,7 @@ class Conditions:
             Molecular environment is less dense.
             Intermediate value is a coefficient for molecular environment
             in linear combination of the two.
+
         """
 
         self.externalPressure = externalPressure
@@ -235,22 +247,26 @@ class Conditions:
 
     def calcAtomVolume(self, elementSymbol):
         """
-        The function calculates a volume of a single element/molecule at the target pressure.
+        The function calculates a volume of a single element at the target pressure.
+
         :type elementSymbol: str
         :param elementSymbol: types of atoms;
+
         :rtype: float
         :return: volume of the element.
         """
 
-        volumeAtomic = calcVolumePure(self.externalPressure, elementSymbol, 'atom') if self.volumeType < 1 else 0
-        volumeMolecular = calcVolumePure(self.externalPressure, elementSymbol, 'mol') if self.volumeType > 0 else 0
+        volumeAtomic = _calcVolumePure(self.externalPressure, elementSymbol, 'atom') if self.volumeType < 1 else 0
+        volumeMolecular = _calcVolumePure(self.externalPressure, elementSymbol, 'mol') if self.volumeType > 0 else 0
         return (self.volumeType * volumeMolecular + (1 - self.volumeType) * volumeAtomic)
 
     def calcCompositionVolume(self, composition):
         """
         The function calculates a volume of the given composition at the target pressure.
-        :type composition: Composition
+
+        :type composition: Mapping
         :param composition: Composition for which the volume is to be estimated.
+
         :rtype: float
         :return: volume
         """
@@ -259,6 +275,8 @@ class Conditions:
     def putConditions(self, system):
         """
         Put parameters into system dictionary.
+
         :param system: dictionary to put parameters into.
+
         """
         system['externalPressure'] = self.externalPressure

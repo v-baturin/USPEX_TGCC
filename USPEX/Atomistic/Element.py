@@ -1,5 +1,5 @@
 """
-USPEX.Common.Atomistic.Element
+USPEX.Atomistic.Element
 ==============================
 
 Class for Element
@@ -173,6 +173,7 @@ class Element(object):
 
         :type input: str or int
         :param input: can be shortname, fullname of atomic number.
+
         """
         if isinstance(input, int):
             if max(self.all_z()) < input <= 0:

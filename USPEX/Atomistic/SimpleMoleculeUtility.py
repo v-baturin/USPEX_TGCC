@@ -1,3 +1,8 @@
+"""
+USPEX.Atomistic.SimpleMoleculeUtility
+=====================================
+"""
+
 import numpy as np
 from collections import Counter
 
@@ -18,6 +23,7 @@ class SimpleMoleculeUtility(object):
     def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
         """
         Register types used by this utility.
+
         :param structureType: type representing atomic structure.
         :param atomType: type representing chemical element.
         :param cellType: type representing unit cell.
@@ -31,6 +37,7 @@ class SimpleMoleculeUtility(object):
     def __init__(self, molecules : dict = None):
         """
         :param molecules: {<name>: <definition>} dictionary of molecule definitions.
+
         """
         self.isTrueMolecular = bool(molecules)
         self.molecules = {el.short_name : self.structureType([el], [[0., 0., 0.]]) for el in self.atomType.all_elements()}
@@ -49,9 +56,11 @@ class SimpleMoleculeUtility(object):
         """
         Creates list list of molecules by placing corresponding molecule in place specified by map *coordinates*
         in orientation specified by map operations.
+
         :param cell: unit cell.
         :param coordinates: map {<molecule_symbols> : <center_coordinates>}
         :param operations: map {<molecule_symbols> : <orientation>}
+
         :return: list of molecules.
         """
         molecules = []
@@ -76,7 +85,9 @@ class SimpleMoleculeUtility(object):
         """
         Assuming every type of molecules defined in calculation has unique formula,
         determines molecule symbol of given molecule.
+
         :param molecule: atomic structure representing molecule.
+
         :return: molecule symbol.
         """
         return self.formulaToTypeMap[molecule.getFormula()]
@@ -84,7 +95,9 @@ class SimpleMoleculeUtility(object):
     def moleculeTypes(self, system : dict):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
+
         :return: calculated or retrieve list of types of molecules of a system.
         """
         if 'simpleMoleculeUtility.moleculeTypes' not in system:
@@ -95,7 +108,9 @@ class SimpleMoleculeUtility(object):
     def composition(self, system : dict):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
+
         :return: calculated or retrieve molecular composition of a system.
         """
         if 'simpleMoleculeUtility.composition' not in system:
@@ -106,7 +121,9 @@ class SimpleMoleculeUtility(object):
     def getElementalComposition(self, composition):
         """
         For given molecular composition {<molecule_symbol> : <amount>} calculates elemental composition {<element> : <amount>}.
+
         :param composition: molecular composition.
+
         :return: elemental composition.
         """
         comp = Counter()
@@ -122,8 +139,10 @@ class SimpleMoleculeUtility(object):
     def getMinDistances(self, molecules, cell):
         """
         Calculates minimal distances between atoms excluding intramolecular distances.
+
         :param molecules: list of molecules.
         :param cell: unit cell.
+
         :return: matrix of distances between atoms.
         """
 
@@ -162,7 +181,9 @@ class SimpleMoleculeUtility(object):
     def rotationClearance(inertiaValues):
         """
         Calculates relative mobility of structure around axes with given inertia values.
+
         :param inertiaValues: inertia values of axes.
+
         :return: relative clearances around axes.
         """
         minValue = np.min(inertiaValues)
@@ -174,17 +195,16 @@ class SimpleMoleculeUtility(object):
         return clearance
 
     @classmethod
-    def rotateFlexDiherdal(cls, molecule, j: int, angle: float):
+    def rotateFlexDiherdal(cls, molecule, i: int, angle: float):
         """
-        Rotate the *j* th flexible dihedral angle of molecule by the angle *angle* .
+        Rotate the *i* th flexible dihedral angle of molecule by the angle *angle* .
 
-        :param i: atomic structure representing molecule.
-        :param j: index of flexible dihedral angle to rotate.
+        :param i: index of flexible dihedral angle to rotate.
         :param angle: angle by which the dihedral should be rotated.
         """
-        assert j < len(molecule.zmatrixConfig.flex_dihedral)
+        assert i < len(molecule.zmatrixConfig.flex_dihedral)
         zmatrix = cls.coordToZmatrix(molecule.getCartesianCoordinates, np.asarray(molecule.zmatrixConfig.format, dtype=int))
-        zmatrix[molecule.zmatrixConfig.flex_dihedral[j], 2] += angle
+        zmatrix[molecule.zmatrixConfig.flex_dihedral[i], 2] += angle
         molecule_mod = type(molecule)(molecule.getAtomTypes(),
                                       cls.zmatrixToCoord(zmatrix, np.asarray(molecule.zmatrixConfig.format, dtype=int)),
                                       cell = molecule.getCell())
@@ -199,10 +219,11 @@ class SimpleMoleculeUtility(object):
         Method which roughly (very roughly!!!) estimates the coordination numbers of a molecule.
 
         :param molecule: atomic structure representing molecule.
+
         :return: array of coordination numbers.
         """
         radiu = np.array([cls.atomType(atom).covalent_radius for atom in molecule.getAtomTypes()])
-        CN = np.fromiter((len(neighbours) for neighbours in find_pair(molecule.getCartesianCoordinates(), radiu)), dtype=int)
+        CN = np.fromiter((len(neighbours) for neighbours in _find_pair(molecule.getCartesianCoordinates(), radiu)), dtype=int)
         return CN
 
     @staticmethod
@@ -218,6 +239,7 @@ class SimpleMoleculeUtility(object):
         :param fmt:
             for each atom in the molecule are listed the indices of three other atoms,
             with respect to which the parameters of the Z-matrix are calculated.
+
         :rtype: numpy array
         :return:
             XYZ coordinates of atoms in the molecule.
@@ -235,7 +257,7 @@ class SimpleMoleculeUtility(object):
                         ref = coords[fmt[2, :2] - 1, :]
                     else:
                         ref = coords[fmt[i, :] - 1, :]
-                    coords[i, :] = GetXYZ(ref, zmatrix[i, :])
+                    coords[i, :] = _GetXYZ(ref, zmatrix[i, :])
         coords += origin
         return coords
 
@@ -252,6 +274,7 @@ class SimpleMoleculeUtility(object):
         :param fmt:
             for each atom in the molecule are listed the indices of three other atoms,
             with respect to which the parameters of the Z-matrix are calculated.
+
         :rtype: numpy array
         :return:
             Z-matrix of the molecule.
@@ -282,7 +305,7 @@ class SimpleMoleculeUtility(object):
                 a2 = coords[fmt[ind, 0] - 1, :]  # there and below: python indexing from 0
                 a3 = coords[fmt[ind, 1] - 1, :]
                 Zmatrix[ind, 0] = np.real(np.linalg.norm(a2 - a1))
-                Zmatrix[ind, 1] = GetAngle(a1, a2, a3)
+                Zmatrix[ind, 1] = _GetAngle(a1, a2, a3)
                 if ind == 2:  # the dihedral angle between 1-2-3 and XY plane
                     a4 = a3 + np.array([1.0, 0.0, 0.0])
                     # Zmatrix(ind, 3) = -1*GetDihedral(a1, a2, a3, a4);
@@ -290,12 +313,12 @@ class SimpleMoleculeUtility(object):
                     a4 = coords[fmt[ind, 2] - 1, :]
                     # Zmatrix(ind, 3) = -1*GetDihedral(a1, a2, a3, a4);
 
-                Zmatrix[ind, 2] = GetDihedral(a1, a2, a3, a4)
+                Zmatrix[ind, 2] = _GetDihedral(a1, a2, a3, a4)
 
         Zmatrix = np.real(Zmatrix)
         return Zmatrix
 
-def find_pair(coor, radii):
+def _find_pair(coor, radii):
     """
     This function checks all the atom pairs and constructs the neighbor list.
     The bond length is estimated by the covalent radii of the atoms.
@@ -304,6 +327,7 @@ def find_pair(coor, radii):
     :param coor: Nx3 array of atomic coordinates.
     :type radii: numpy array
     :param radii: Nx1 array of atomic radii.
+
     :rtype: list of list of int
     :return: list with the indices of neighboring atoms for each atom.
     """
@@ -327,7 +351,7 @@ def find_pair(coor, radii):
 
     return pair
 
-def GetAngle(a1, a2, a3):
+def _GetAngle(a1, a2, a3):
     """
     Returns the angle between three atoms from their respective coordinates.
 
@@ -337,6 +361,7 @@ def GetAngle(a1, a2, a3):
     :param a2: 1x3 array with the coordinates of the second atom.
     :type a3: numpy array
     :param a3: 1x3 array with the coordinates of the third atom.
+
     :rtype: float
     :return: angle in radians between the three atoms.
     """
@@ -345,7 +370,7 @@ def GetAngle(a1, a2, a3):
     angle = np.arccos(np.dot(v1, v2)/np.linalg.norm(v1)/np.linalg.norm(v2))
     return angle
 
-def GetDihedral(a1, a2, a3, a4):
+def _GetDihedral(a1, a2, a3, a4):
     """
     Returns the dihedral angle between four atoms from their respective coordinates.
 
@@ -357,6 +382,7 @@ def GetDihedral(a1, a2, a3, a4):
     :param a3: 1x3 array with the coordinates of the third atom.
     :type a4: numpy array
     :param a4: 1x3 array with the coordinates of the fourth atom.
+
     :rtype: float
     :return: dihedral angle in radians between the four atoms.
     """
@@ -372,7 +398,7 @@ def GetDihedral(a1, a2, a3, a4):
 
     return torsion
 
-def GetXYZ(ref, zmatrix):
+def _GetXYZ(ref, zmatrix):
     """
     Get the XYZ coordinates of the current atom from its Z-matrix coordinates
     and the XYZ coordinates of the reference atoms.
@@ -381,6 +407,7 @@ def GetXYZ(ref, zmatrix):
     :param ref: XYZ coordinates of the reference atoms.
     :type zmatrix: numpy array
     :param zmatrix: Z-matrix coordinates of the current atom.
+
     :rtype: numpy array
     :return: XYZ coordinates of the current atom.
     """
