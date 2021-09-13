@@ -6,6 +6,7 @@ _TRANS_ATTEMPTS = 1000
 class Transmutation:
 
     def __init__(self, utilities, howManyTrans = 5, transAttempts = _TRANS_ATTEMPTS):
+        self.cellUtility = utilities.cellUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.world = utilities.world
@@ -40,6 +41,12 @@ class Transmutation:
 
             offspringMolecules = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
             offspringMolecules.extend(self.simpleMoleculeUtility.populateStructure(cell, transCoordinates, None))
+
+            # change the cell parameters to the user-given ones in case of fixed cell calculations
+            try:
+                cell = self.cellUtility.getCell()
+            except RuntimeError:
+                pass
 
             offspring = {'molecules': offspringMolecules, 'cell': cell}
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)

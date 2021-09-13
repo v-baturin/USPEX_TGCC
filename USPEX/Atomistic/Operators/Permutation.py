@@ -11,6 +11,7 @@ _SWAP_ATTEMPTS = 1000
 class Permutation:
 
     def __init__(self, utilities, howManySwaps = 5, specificSwaps = None, swapAttempts = _SWAP_ATTEMPTS):
+        self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.world = utilities.world
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
@@ -43,6 +44,12 @@ class Permutation:
                     transformation = Transformation.fromRotVector([0.,0.,0.], transVec)
                     offspringMolecules[i1] = transformation.transform(molecules[i1])
                     offspringMolecules[i2] = (-transformation).transform(molecules[i2])
+
+                # change the cell parameters to the user-given ones in case of fixed cell calculations
+                try:
+                    cell = self.cellUtility.getCell()
+                except RuntimeError:
+                    pass
 
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)

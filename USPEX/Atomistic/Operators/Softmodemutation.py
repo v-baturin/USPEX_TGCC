@@ -12,6 +12,7 @@ _MIN_VALID_FREQUENCY = 5.0e-4
 
 class Softmodemutation:
     def __init__(self, utilities, degree: float = None):
+        self.cellUtility = utilities.cellUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
         self.world = utilities.world
@@ -50,6 +51,12 @@ class Softmodemutation:
                 molecule2 = offset.transform(molecule2)
                 molecules1.append(molecule1)
                 molecules2.append(molecule2)
+
+            # change the cell parameters to the user-given ones in case of fixed cell calculations
+            try:
+                cell = self.cellUtility.getCell()
+            except RuntimeError:
+                pass
 
             offsprings = ()
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules1, cell)
