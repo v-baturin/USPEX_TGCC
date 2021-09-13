@@ -96,7 +96,7 @@ class CellUtility:
         If cell in calculation is not fixed raises RuntimeError.
         """
         if self._cell is not None:
-            return  self._cell
+            return self._cell
         else:
             raise RuntimeError('Cell is not fixed.')
 
@@ -193,24 +193,27 @@ class CellUtility:
     def getHybridCell(self, cell1, cell2, fraction):
         """
         Creates hybrid of two unit cells.
-        TODO better to average parameters rather then vectors.
+        TODO better to average parameters rather than vectors.
         :param cell1:
         :param cell2:
         :param fraction:
         :return:
         """
-        assert 0 <= fraction <= 1
-        if self._listOfReconstructions:
-            matrix1 = np.round(self._cell.decomposeCell(cell1))
-            matrix2 = np.round(self._cell.decomposeCell(cell2))
-            idx = np.linalg.det([matrix1, matrix2]).argmax()
-            cellVectors = [cell1, cell2][idx].getCellVectors()
-        else:
-            vectors = fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors()
-            vectors /= np.power(np.linalg.det(vectors), 1./3.)
-            volume = fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()
-            cellVectors = vectors * np.power(volume, 1./3.)
-        return Cell(cellVectors, self._pbc)
+        try:
+            return self.getCell()
+        except RuntimeError:
+            assert 0 <= fraction <= 1
+            if self._listOfReconstructions:
+                matrix1 = np.round(self._cell.decomposeCell(cell1))
+                matrix2 = np.round(self._cell.decomposeCell(cell2))
+                idx = np.linalg.det([matrix1, matrix2]).argmax()
+                cellVectors = [cell1, cell2][idx].getCellVectors()
+            else:
+                vectors = fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors()
+                vectors /= np.power(np.linalg.det(vectors), 1./3.)
+                volume = fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()
+                cellVectors = vectors * np.power(volume, 1./3.)
+            return Cell(cellVectors, self._pbc)
 
     @staticmethod
     def volume(system: dict):
