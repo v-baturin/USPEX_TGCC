@@ -1,3 +1,8 @@
+"""
+USPEX.Atomistic.World
+=====================
+"""
+
 from ase.io import read
 import numpy as np
 
@@ -13,7 +18,7 @@ class Environment:
         """
         :param structure: atomic structure associated with this environment.
         :param offsetVector: vector to be added to molecules centers when assemble whole structure.
-        If not provided such vector will be calculated on demand.
+            If not provided such vector will be calculated on demand.
         """
         self._structure = structure
         self._offsetVector = offsetVector
@@ -23,9 +28,11 @@ class Environment:
         Calculate or retrieve vector to be added to each molecule when assemble whole structure.
         If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
         in nonperiodic direction.
-        TODO working onli for 2D now.
+        TODO working only for 2D now.
+
         :param molecules: list of molecules for which the offset is being calculated.
         :param cell: TODO
+
         :return: offset vector.
         """
         if self._offsetVector is not None:
@@ -46,6 +53,7 @@ class Environment:
     def getStructure(self):
         """
         Retrieve atomic structure associated with environment.
+
         :return: atomic structure.
         """
         return self._structure
@@ -64,9 +72,11 @@ class World:
     def registerTypes(cls, structureType, atomType, cellType):
         """
         Register types used by this utility.
+
         :param structureType: type representing atomic structure.
         :param atomType: type representing chemical element.
         :param cellType: type representing unit cell.
+
         """
         cls.structureType = structureType
         cls.atomType = atomType
@@ -74,8 +84,10 @@ class World:
 
     def __init__(self, files = None, pbc = (1,1,1)):
         """
+
         :param files: files with structures for possile environments.
         :param pbc: periodic boundary conditions of environment structures.
+
         """
         self._structures = []
         self._pbc = pbc
@@ -91,7 +103,9 @@ class World:
     def putEnvironment(self, system):
         """
         Put environment in dictionary representing system.
+
         :param system: system dictionary.
+
         """
         if self._structures:
             structure = np.random.choice(self._structures)

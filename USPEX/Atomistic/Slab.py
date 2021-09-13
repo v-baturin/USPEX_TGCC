@@ -1,3 +1,8 @@
+"""
+USPEX.Atomistic.Slab
+====================
+"""
+
 import numpy as np
 
 class Slab:

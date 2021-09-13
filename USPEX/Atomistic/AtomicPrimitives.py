@@ -1,3 +1,8 @@
+"""
+USPEX.Atomistic.AtomicPrimitives
+================================
+"""
+
 import numpy as np
 from copy import copy
 from collections import Counter
@@ -16,18 +21,32 @@ class AtomicStructure:
         """
 
         :param atomTypes: list of types of atoms in structure. There are no no specific requirements to the data type of
-        each atom type. It could even be None.
-        Exception are **getComposition** and **getFormula** methods which require operator < to be defined.
+            each atom type. It could even be None.
+            Exception are **getComposition** and **getFormula** methods which require operator < to be defined.
         :param coordinates: array of coordinates of atoms. Its first dimension must coincide with size of atomTypes.
         :param cell: optional **Cell** object for periodic structures.
-        Is expected to provide **getCellVectors** and **getPBC** methods.
+            Is expected to provide **getCellVectors** and **getPBC** methods.
         :param zmatrixConfig: TODO remove
+
         """
         assert len(atomTypes) == len(coordinates)
         self._atomTypes = np.asarray(atomTypes)
         self._coordinates = np.asarray(coordinates)
         self._cell = copy(cell)
         self.zmatrixConfig = copy(zmatrixConfig)
+
+    @staticmethod
+    def initFromFractionalCoordinates(atomTypes, coordinates, cell, zmatrixConfig = None):
+        """
+        Alternative constructor. Calculates cartesian coordinates from fractional coordinate and given **Cell** object.
+
+        :param atomTypes: list of types of atoms in structure.
+        :param coordinates: array of fractional coordinates of atoms. Its first dimension must coincide with size of atomTypes.
+        :param cell: **Cell** object for periodic structures.
+        :param zmatrixConfig: TODO remove
+
+        """
+        return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, zmatrixConfig)
 
     def __len__(self):
         return len(self._atomTypes)
@@ -47,7 +66,6 @@ class AtomicStructure:
     def getZmatrixConfig(self):
         """
         TODO remove
-        :return:
         """
         return self.zmatrixConfig
 
@@ -114,20 +132,24 @@ class AtomicStructure:
 
     def getPrincipalAxes(self):
         """
-        :rtype: 3x3 numpy array
-        :return: principle axes, main axes of inertia tensor (with all atom masses set to be equal).
+        :return: 3x3 matrix of principal axes, main axes of inertia tensor (with all atom masses set to be equal).
         """
         coordinates = self._coordinates - self._coordinates.mean(axis=0)
         return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
 
     def getRectifiedCell(self):
         """
-        returns Cell object for subsequent vacuum adding. The cellVectors are:
-        for 0d: unit principal eigenvectors
-        for 1d: Periodic vector remains, the other two are perpendicular to it, directed along principal directions of
-        a structure, flatten along periodic vector
-        for 2d: Periodic vectors remain. The third is a unity vector perpendicular to 2d system
-        for 3d: Returns initial Cell
+        :return: **Cell** object depending on dimensionality.
+
+            0d: Cell made of unit principal eigenvectors
+
+            1d: Keep periodic vector from original cell, The other two are perpendicular to it,
+            directed along principal directions of
+            a structure, flatten along periodic vector
+
+            2d: Keep periodic vectors from original cell. The third is a unity vector perpendicular to those two.
+
+            3d: Returns original Cell
         """
 
         cell = self.getCell()
@@ -164,11 +186,14 @@ class AtomicStructure:
     def makeSupercell(self, matrix):
         """
         For periodic structures constructs supercell representation of the same structure.
-        I.e. it has associated Cell object multiple of initial Cell object
+        I.e. it has associated **Cell** object multiple of initial **Cell** object
         and concatenated arrays of coordinates and atom types from blocks constituting the supercell.
         New cell vectros are given by formula
+
         >>> newCellVectors = matrix.dot(self.getCell().getCellVectors())
+
         :param matrix: 3*3 array of integers defining the supercell.
+
         :return: new **AtomicStructure** object.
         """
         assert not self.zmatrixConfig  # still not configured for these attributes
@@ -180,7 +205,7 @@ class AtomicStructure:
             matrix = np.array(matrix * np.eye(3), dtype=np.int16)
 
         newCell = type(cell)(matrix.dot(cell.getCellVectors()), cell.getPBC())
-        latticePoints = lattice_points_in_supercell(matrix).dot(newCell.getCellVectors())
+        latticePoints = _lattice_points_in_supercell(matrix).dot(newCell.getCellVectors())
         newCoordinates = []
         newAtomTypes = []
         for coord, atomType in zip(coordinates, atomTypes):
@@ -192,25 +217,15 @@ class AtomicStructure:
         return newStructure
 
     @staticmethod
-    def initFromFractionalCoordinates(atomTypes, coordinates, cell, zmatrixConfig = None):
-        """
-        Alternative constructor. Calculates cartesian coordinates from fractional coordinate and given **Cell* object.
-        :param atomTypes: list of types of atoms in structure.
-        :param coordinates: array of fractional coordinates of atoms. Its first dimension must coincide with size of atomTypes.
-        :param cell: **Cell** object for periodic structures.
-        :param zmatrixConfig: TODO remove
-        """
-        return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, zmatrixConfig)
-
-    @staticmethod
     def assemble(molecules, cell, environment=None, **kwargs):
         """
         TODO move to AtomicDisassembler class.
+
         :param molecules:
         :param cell:
         :param environment:
         :param kwargs:
-        :return:
+
         """
         atomTypes = []
         coordinates = []
@@ -239,11 +254,23 @@ class AtomicDisassembler:
 
     def __init__(self, indices, environment):
         """
+
         :param indices:
         :param environment:
+
         """
         self.indices = [np.asarray(inds, dtype = int) for inds in indices]
         self.environment = environment
+
+    @staticmethod
+    def createFlatDisassembler(N):
+        """
+        Helper constructor. Creates disassembler for structure of given size, which decomposes it into individual atoms.
+
+        :param N: size of structure for which disaasembler is required.
+
+        """
+        return AtomicDisassembler([[i] for i in range(N)], None)
 
     @property
     def envIndices(self):
@@ -254,18 +281,12 @@ class AtomicDisassembler:
         else:
             return np.empty(0, dtype=int)
 
-    @staticmethod
-    def createFlatDisassembler(N):
-        """
-        Helper constructor. Creates disassembler for structure of given size, which decomposes it into individual atoms.
-        :param N: size of structure for which disaasembler is required.
-        """
-        return AtomicDisassembler([[i] for i in range(N)], None)
-
     def disassemble(self, atomicStructure):
         """
         Decomposes given structure into molecules and environment.
+
         :param atomicStructure: structure to decompose.
+
         :return: {'molecules': <list of molecules>, 'cell': <Cell object>, 'environment': <optional environment object>}
         """
         atomTypes = atomicStructure.getAtomTypes()
@@ -283,12 +304,14 @@ class AtomicDisassembler:
     def decomposeDisplacements(self, displacements, structure):
         """
         Decompose atomic displacements into molecular translations and rotations and intramolecular atomic displacements.
+
         :type displacements: numpy array N*3
         :param displacements: array of atomic displacements, where N is number of atoms in structure.
         :param structure:
+
         :rtype: List[Tuple[vector, vector, array of vectors]]
         :return: List of tuples for each molecule with translation vector, rotation vector and array of intramolecular
-        atomic displacements.
+            atomic displacements.
         """
         assert len(displacements) == len(structure)
         molecularDispacements = []
@@ -318,7 +341,7 @@ class AtomicDisassembler:
             molecularDispacements.append((Transformation.fromRotVector(rotation, translation), atomicDisplacements))
         return molecularDispacements
 
-def lattice_points_in_supercell(supercell_matrix):
+def _lattice_points_in_supercell(supercell_matrix):
     """
     Returns the list of points on the original lattice contained in the
     supercell in fractional coordinates (with the supercell basis).

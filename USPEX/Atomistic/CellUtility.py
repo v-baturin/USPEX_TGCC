@@ -1,3 +1,8 @@
+"""
+USPEX.Atomistic.CellUtility
+===========================
+"""
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -26,14 +31,15 @@ class CellUtility:
         :param pbc: periodic boundary conditions in each direction.
         :param cellVectors: for fixed cell calculation 3*3 array of cell vectors.
         :param cellParameters: for fixed cell calculation dictionary
-        {'a': <float>, 'b': <float>, 'c': <float>, 'alpha': <float>, 'beta': <float>, 'gamma': <float>}
-        with cell parameters.
+            {'a': <float>, 'b': <float>, 'c': <float>, 'alpha': <float>, 'beta': <float>, 'gamma': <float>}
+            with cell parameters.
         :param cellVolume: for fixed volume calculation cell volume.
         :param reconstructionDegree: int or list of int with allowed supercell sizes.
         :param symTolerance: allowed misplacements of atoms when determining symmetry of structure.
         :param axis: for 1D periodic calculations vector along periodic axis,
-        for 2D periodic calculations vector orthogonal to two periodic axes.
+            for 2D periodic calculations vector orthogonal to two periodic axes.
         :param debug: switch between two levels of logging. True for debug level, false for INFO level.
+
         """
         self._pbc = pbc
         if cellVectors is not None:
@@ -91,9 +97,8 @@ class CellUtility:
 
     def getCell(self):
         """
-
         :return: for fixed cell calculations reference to the unit cell object.
-        If cell in calculation is not fixed raises RuntimeError.
+            If cell in calculation is not fixed raises RuntimeError.
         """
         if self._cell is not None:
             return  self._cell
@@ -103,8 +108,10 @@ class CellUtility:
     def getRandomCell(self, composition, conditions):
         """
         For given composition and conditions creates random unit cell with appropriate size and periodic boundary conditions.
+
         :param composition: dictionary like object defining composition.
         :param conditions: external conditions.
+
         :return: **Cell** object with appropriate parameters.
         """
         try:
@@ -124,8 +131,10 @@ class CellUtility:
     def getCellVolume(self, composition, conditions):
         """
         Either return predefined volume for fixed volume calculation or calculates it using provided conditions utility.
+
         :param composition: dictionary like object defining composition.
         :param conditions: external conditions.
+
         :return: volume of unit cell.
         """
         return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
@@ -172,9 +181,11 @@ class CellUtility:
         If calculation is done with fixed volume then unit cell is scaled to it.
         Otherwise to estimated volume calculated using provided conditions utility.
         Periodic boundary conditions of output unit cell set up same as in utility.
+
         :param cell: input unit cell to be adjusted.
         :param composition: dictionary like object defining composition.
         :param conditions: external conditions.
+
         :return: **Cell** object with adjusted parameters.
         """
         if self._cell is not None:
@@ -194,9 +205,11 @@ class CellUtility:
         """
         Creates hybrid of two unit cells.
         TODO better to average parameters rather then vectors.
+
         :param cell1:
         :param cell2:
         :param fraction:
+
         :return:
         """
         assert 0 <= fraction <= 1
@@ -216,7 +229,9 @@ class CellUtility:
     def volume(system: dict):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
+
         :return: calculated volume of system.
         """
         return system['cell'].getVolume()
@@ -225,7 +240,9 @@ class CellUtility:
     def area(system: dict):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
+
         :return: calculated area of system.
         """
         return system['cell'].getArea()
@@ -233,7 +250,9 @@ class CellUtility:
     def symmetry(self, system: dict):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
+
         :return: calculated symmetry of system.
         """
         cell = system['cell']
@@ -257,8 +276,10 @@ class Cell:
 
     def __init__(self, cellVectors, pbc):
         """
+
         :param cellVectors: 3*3 array of cell vectors.
         :param pbc: periodic boundary conditions in each direction.
+
         """
         self._cellVectors = np.asarray(cellVectors)
         self._pbc = pbc
@@ -267,6 +288,7 @@ class Cell:
     def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):
         """
         Alternative constructor using cell parameters.
+
         :param a:
         :param b:
         :param c:
@@ -274,6 +296,7 @@ class Cell:
         :param beta:
         :param gamma:
         :param pbc:
+
         :return:
         """
 
@@ -355,7 +378,9 @@ class Cell:
     def cartesianToFractional(self, coordinates):
         """
         Converts cartesian coordinates to fractional.
+
         :param coordinates: N*3 array of cartesian coordinates
+
         :return: N*3 array of fractional coordinates.
         """
         return np.linalg.solve(self._cellVectors.T, coordinates.T).T
@@ -363,7 +388,9 @@ class Cell:
     def fractionalToCartesian(self, coordinates):
         """
         Converts fractional coordinates to cartesian.
+
         :param coordinates: N*3 array of fractional coordinates.
+
         :return: N*3 array of cartesian coordinates
         """
         return np.dot(self._cellVectors.T, coordinates.T).T
@@ -371,15 +398,19 @@ class Cell:
     def fractionalToCartesianOperator(self, operator):
         """
         TODO convert some operator matrix defined in fractional space to transformation object in cartesian space.
+
         :param operator:
+
         :return:
         """
-        return operator 
+        return operator
 
     def getWrapedCartesianCoordinates(self, coordinates):
         """
         Translates all coordinates to their image within unit cell via cell vectors in cartesian space.
+
         :param coordinates: cartesian coordinates
+
         :return: cartesian coordinates wrapped to unit cell.
         """
         return self.fractionalToCartesian(self.getWrapedFractionalCoordinates(self.cartesianToFractional(coordinates)))
@@ -387,7 +418,9 @@ class Cell:
     def getWrapedFractionalCoordinates(self, coordinates):
         """
         Translates all coordinates to their image within unit cell via cell vectors in fractional space.
+
         :param coordinates: fractional coordinates
+
         :return: fractional coordinates wrapped to unit cell.
         """
         return np.divmod(coordinates, 1/np.asarray(self._pbc, dtype=float))[1]
@@ -397,6 +430,7 @@ class Cell:
         Creates transformation object which respects unit cell. I.e. origin is moved only in periodic directions.
         And structure axis if exists is not moved.
         Structure axis is periodic axis in 1D case and axis orthogonal to two periodic axes in 2D case,
+
         :return: transformation object.
         """
         pbcVectorsCart = self.getCellVectorsPBC()
@@ -422,8 +456,10 @@ class Cell:
         """
         For given set of coordinates and cell object, calculates transformations
         which translate each position into its image within this unit cell along periodic cell vectors of given unit cell.
+
         :param initialCoordinates: N*3 array of coordinates which need to be translated.
         :param cell: cell object containing periodic vectors along which translation should be done.
+
         :return: list of **Transformation** objects.
         """
         inds = np.nonzero(cell.getPBC())
@@ -456,9 +492,10 @@ class Cell:
 
     def getEnvelopeCell(self, coordinates, vacuumSize=0):
         """
-        @param coordinates: cartesian atomic coordinates
-        @param vacuumSize: vacuum distance added along cell vector
-        @return:  new cell object, corresponding to
+        :param coordinates: cartesian atomic coordinates
+        :param vacuumSize: vacuum distance added along cell vector
+
+        :return:  new cell object, corresponding to
         """
         newCellVectors = []
         for vector, isPeriodic in zip(self._cellVectors, self._pbc):
@@ -479,7 +516,8 @@ class Cell:
 
         :param coordinates: list of coordinates of N atoms (Nx3 np.array)
         :param affectedDims: iterable of int/bool/float, specifying the dimensions to act on.
-         Default behavior is to center along all vectors, for which pbc is 0
+            Default behavior is to center along all vectors, for which pbc is 0
+
         :return:
         """
         if affectedDims is None:
@@ -493,7 +531,9 @@ class Cell:
     def decomposeCell(self, other):
         """
         Decompose cell vectors of given unit cell as linear composition of cell vectors of this unit cell.
+
         :param other: unit cell to decompose.
+
         :return: 3*3 matrix of decomposition coefficients.
         """
         assert self._pbc == other.getPBC()
