@@ -167,8 +167,15 @@ class AtomicStructure:
             periodicUnit = periodicVecs[0] / np.linalg.norm(periodicVecs[0])
             orthogPancake = self._coordinates - \
                                np.dot(self._coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
-            vectors = AtomicStructure(self._atomTypes, orthogPancake).getPrincipalAxes()[1].T
-            vectors[-1] = periodicVecs[0]
+            val, vectors = AtomicStructure(self._atomTypes, orthogPancake).getPrincipalAxes()
+            vectors = vectors.T
+            if val[0] == 0:  # Check if inertia tensor has a singular matrix
+                if np.dot(vectors[0], periodicUnit) == 1:
+                    vectors[0] = vectors[1]
+                vectors[0] -= np.dot(vectors[0], periodicUnit) * periodicUnit
+                vectors[0] /= np.linalg.norm(vectors[0])
+                vectors[1] = np.cross(periodicUnit, vectors[0])
+            vectors[-1] = periodicVecs[0] # any 2D shape has a maximum inertia moment corresponding to orth direction
             vectors = np.roll(vectors, whichPeriodic[0] - 2, axis=0)
         elif dim == 2:
             normalvector = np.cross(periodicVecs[0], periodicVecs[1])

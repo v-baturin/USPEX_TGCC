@@ -54,6 +54,19 @@ class GetPrincipalCell_Test(unittest.TestCase):
         # print(cosines)
         # print('hello')
 
+class bad_principal_test(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.testFile = pj(PATH_WITH_TESTS, 'POSCARS/bad_cart2frac_POSCAR')
+        self.test_pbc = (0, 1, 0)
+        self.testStruct = CrystalRepresentation.readAtomicStructure(self.testFile)
+        self.testStruct['cell'] = Cell(self.testStruct['cell'].getCellVectors(), pbc=self.test_pbc)
+        self.structure, _ = AtomicStructure.assemble(**self.testStruct)
+
+    def test_bad_principal(self):
+        newCell = self.structure.getRectifiedCell()
+        assert np.linalg.det(newCell.getCellVectors()) > 0
+
 
 if __name__ == '__main__':
     unittest.main()
