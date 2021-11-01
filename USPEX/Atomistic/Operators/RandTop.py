@@ -95,7 +95,7 @@ class RandTop:
                                         operations.insert(ind, [])
 
                                     elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-                                    cell = self.cellUtility.adjustCell(cell, elementalComposition, self.conditions)
+                                    cell = self.cellUtility.adjustCell(cell, elementalComposition, self.conditions.externalPressure)
                                     operations = dict(zip(symbols, operations))
                                     all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                     coordinates = dict(zip(symbols, coordinates))
@@ -106,7 +106,7 @@ class RandTop:
                                         if len(molecules) != totalAtomNubmber:
                                             continue
                                         atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
-                                        minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                                        minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                                         if np.all(atomDistances >= minDistMatrix):
                                             if name not in self.arxiv:
                                                 self.arxiv[name] = []

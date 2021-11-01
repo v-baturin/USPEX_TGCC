@@ -134,7 +134,7 @@ def symope_crystal(CenterminDistMatrice, fixLat, fixRndSeed, nsym, numIons, lat,
                 lattice, coordinate = fix_latticeStokes_after(nsym, lattice_S, coordinate_S)
                 #lattice[3:6] *= (np.pi / 180.0)  # go back to radians
 
-                Lattice_Matrix = Cell.initFromCellParameters(*lattice, pbc = (1,1,1)).getCellVectors()
+                Lattice_Matrix = Cell.initFromCellParameters((1,1,1), *lattice).getCellVectors()
                 if fixLat:
                     pass
                     #Lattice_Matrix = latConverter(lattice)

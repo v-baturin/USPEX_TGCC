@@ -212,10 +212,7 @@ class CrystalRepresentation(object):
         rows.append('')
         header += rows
 
-        try:
-            cell = ut.cellUtility.getCell()
-        except:
-            cell = None
+        cell = ut.cellUtility.getCell()
 
         if cell is not None:
             lattice = cell.getCellVectors()
@@ -229,7 +226,7 @@ class CrystalRepresentation(object):
                 comp = Counter()
                 for s, b in zip(symbols, block):
                     comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
-                volume = ut.cellUtility.getCellVolume(comp, ut.conditions)
+                volume = ut.cellUtility.getCellVolume(comp, ut.conditions.externalPressure)
                 rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
 
         rows.append('')
@@ -275,7 +272,7 @@ class CrystalRepresentation(object):
         for symbol in ut.compositionSpace.symbols:
             symbols.update(ut.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
         symbols = sorted(symbols)
-        minDistMatrix = ut.ionDistances.getDistances(symbols, ut.conditions)
+        minDistMatrix = ut.ionDistances.getDistances(symbols, ut.conditions.externalPressure)
 
         row = '    There are %1d types of atoms in the system:' % len(symbols)
         for symbol in symbols:
