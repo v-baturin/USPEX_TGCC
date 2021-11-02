@@ -45,7 +45,7 @@ class Permutation:
                     offspringMolecules[i2] = (-transformation).transform(molecules[i2])
 
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if np.all(atomDistances >= minDistMatrix):
                     offspring = {'molecules': offspringMolecules, 'cell': cell}
                     self.world.putEnvironment(offspring)

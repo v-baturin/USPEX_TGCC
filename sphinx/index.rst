@@ -23,6 +23,8 @@ Welcome to USPEX-AGAIN's documentation!
    Atomistic/SimpleMoleculeUtility
    Atomistic/Slab
    Atomistic/Transformation
+   Atomistic/VolumeEstimator
+
    Atomistic/World
 
 

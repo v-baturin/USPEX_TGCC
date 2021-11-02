@@ -36,7 +36,7 @@ class Rotation():
                 # molecules[j] = self.simpleMoleculeUtility.rotateFlexDiherdal(molecule, dihedral, dihedralAngle)
 
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
-            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
             if atomDistances >= minDistMatrix:
                 return ({'molecules' : molecules, 'cell': cell},)
 

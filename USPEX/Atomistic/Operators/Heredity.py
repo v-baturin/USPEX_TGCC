@@ -114,7 +114,7 @@ class Heredity:
             composition = Counter(dict(zip(*np.unique(moleculeTypes, return_counts=True))))
             if composition == desiredComposition:
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, outputCell)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if np.all(atomDistances >= minDistMatrix):
                     system = {'molecules': molecules, 'cell': outputCell}
                     self.world.putEnvironment(system)

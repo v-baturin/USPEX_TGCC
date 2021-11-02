@@ -14,7 +14,7 @@ from copy import copy
 from scipy.spatial.transform import Rotation
 
 from .Transformation import Transformation
-
+from .VolumeEstimator import VolumeEstimator
 
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
@@ -24,10 +24,12 @@ class CellUtility:
     Utility for working with unit cells of atomic structures.
     """
 
-    def __init__(self, pbc, cellVectors = None, cellParameters = None, cellVolume = None,
-                 reconstructionDegree = None, symTolerance=None, axis=None, debug = False):
+    def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None,
+                 reconstructionDegree = None, symTolerance=None, axis=None, radius=None, thickness=None, volumeType=0,
+                 debug = False):
         """
 
+        :param dim: dimensionality, i.e. number of periodic directions.
         :param pbc: periodic boundary conditions in each direction.
         :param cellVectors: for fixed cell calculation 3*3 array of cell vectors.
         :param cellParameters: for fixed cell calculation dictionary
@@ -38,40 +40,85 @@ class CellUtility:
         :param symTolerance: allowed misplacements of atoms when determining symmetry of structure.
         :param axis: for 1D periodic calculations vector along periodic axis,
             for 2D periodic calculations vector orthogonal to two periodic axes.
+        :param radius: for 1D and 0D structures constraint on size of containment space.
+        :param thickness: for 2D structures constraint on size of containment space.
+        :param volumeType:
+            range 0 to 1, 0 corresponds to pure atomic environment for
+            volume estimation, 1 to pure molecular one.
+            Molecular environment is less dense.
+            Intermediate value is a coefficient for molecular environment
+            in linear combination of the two.
         :param debug: switch between two levels of logging. True for debug level, false for INFO level.
 
         """
-        self._pbc = pbc
+
+        assert not (pbc is not None and dim is not None)
+        if pbc is not None:
+            self._pbc = pbc
+        elif dim is None or dim == 3:
+            self._pbc = (1, 1, 1)
+        elif dim == 2:
+            self._pbc = (1, 1, 0)
+        elif dim == 1:
+            self._pbc = (1, 0, 0)
+        elif dim == 0:
+            self._pbc = (0, 0, 0)
+        else:
+            raise ValueError(f"Incorrect dimensionality {dim}.")
+
+        self.dim = sum(self._pbc)
+
+        if self.dim == 3:
+            assert radius is None and thickness is None and axis is None
+            if cellVectors is not None:
+                assert cellParameters is None and cellVolume is None
+            elif cellParameters is not None:
+                assert cellVolume is None
+        elif self.dim == 2:
+            assert radius is None and thickness is not None
+            if cellVectors is not None:
+                assert cellParameters is None and axis is None and cellVolume is None
+            elif cellParameters is not None:
+                assert cellVolume is None
+            else:
+                assert axis is not None
+        elif self.dim == 1:
+            assert thickness is None and radius is not None
+            if cellVectors is not None:
+                assert cellParameters is None and axis is None and cellVolume is None
+            elif cellParameters is not None:
+                assert cellVolume is None
+            else:
+                assert axis is not None
+        elif self.dim == 0:
+            assert cellVectors is None and cellParameters is None and cellVolume is None and\
+                   thickness is None and axis is None
+        else:
+            raise RuntimeError(f"Wrong pbc {pbc}.")
+
+        self._axis = axis
+        self._thickness = thickness
+        self._radius = radius
+
         if cellVectors is not None:
-            self._cell = Cell(cellVectors, pbc)
-            self._volume = self._cell.getVolume()
-            assert cellParameters is None and cellVolume is None
+            self._cell = Cell(cellVectors, self._pbc)
         elif cellParameters is not None:
-            self._cell = Cell.initFromCellParameters(**cellParameters, pbc = pbc)
-            self._volume = self._cell.getVolume()
-            assert cellVolume is None
-        elif cellVolume is not None:
-            self._cell = None
-            self._volume = cellVolume
+            self._cell = Cell.initFromCellParameters(self._pbc, **cellParameters, axis = self._axis)
         else:
             self._cell = None
+
+        assert cellVolume is None or self._cell is None
+        if cellVolume is not None:
+            self._volume = cellVolume
+        elif self._cell is not None:
+            self._volume = self._cell.getVolume() if self.dim == 3 else None
+        else:
             self._volume = None
 
         if reconstructionDegree is not None:
             self._listOfReconstructions = self._getListOfReconstructions(reconstructionDegree)
         else:
             self._listOfReconstructions = []
-        self.dim = sum(self._pbc)
-        self._axis = axis
-        assert not (self._axis is not None and self._cell is not None)
-        if self._cell is not None:
-            if self.dim == 2:
-                vec1, vec2 = self._cell.getCellVectorsPBC()
-                self._axis = np.cross(vec1, vec2)
-                self._axis /= np.linalg.norm(self._axis)
-            elif self.dim == 1:
-                self._axis, = self._cell.getCellVectorsPBC()
-                self._axis /= np.linalg.norm(self._axis)
 
         if symTolerance is not None:
             if isinstance(symTolerance, str):
@@ -90,6 +137,8 @@ class CellUtility:
         else:
             self.symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
 
+        self.volumeEstimator = VolumeEstimator(volumeType)
+
         if debug:
             logger.setLevel(logging.DEBUG)
         else:
@@ -97,47 +146,148 @@ class CellUtility:
 
     def getCell(self):
         """
-        :return: for fixed cell calculations reference to the unit cell object.
-            If cell in calculation is not fixed raises RuntimeError.
+        :return: for fixed cell calculations copy of the unit cell object otherwise None.
         """
-        if self._cell is not None:
-            return  self._cell
-        else:
-            raise RuntimeError('Cell is not fixed.')
+        return None if self._cell is None else copy(self._cell)
 
-    def getRandomCell(self, composition, conditions):
+    def getRandomCell(self, composition, pressure):
         """
         For given composition and conditions creates random unit cell with appropriate size and periodic boundary conditions.
 
         :param composition: dictionary like object defining composition.
-        :param conditions: external conditions.
+        :param pressure: external pressure.
 
         :return: **Cell** object with appropriate parameters.
         """
-        try:
-            return self.getCell()
-        except RuntimeError:
-            volume = self.getCellVolume(composition, conditions)
-            a, b, c = np.random.random(3) + 0.5
-            x = 0.0
-            while x < 0.3:
-                alpha, beta, gamma = (np.random.random(3) * 4 + 1) * np.pi / 6
-                x = 1. - np.cos(alpha)**2 - np.cos(beta)**2 - np.cos(gamma)**2 + 2.*np.cos(alpha)*np.cos(beta)*np.cos(gamma)
+        if self._cell is None:
+            r2d = 180 / np.pi
+            if self.dim == 3:
+                a, b, c = np.random.random(3) + 0.5
+                def _randomAngles():
+                    while True:
+                        alpha, beta, gamma = (np.random.random(3) * 4 + 1) * np.pi / 6
+                        if 1. - np.cos(alpha)**2 - np.cos(beta)**2 - np.cos(gamma)**2 + 2.*np.cos(alpha)*np.cos(beta)*np.cos(gamma) >= 0.3:
+                            return r2d * alpha, r2d * beta, r2d * gamma
+                cell = Cell.initFromCellParameters(self._pbc, a, b, c, *_randomAngles())
+            elif self.dim == 2:
+                a, b = np.random.random(2) + 0.5
+                alpha = (np.random.random() * 4 + 1) * 30
+                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis).getEnvelopeCell(vacuumSize=self._thickness)
+            elif self.dim == 1:
+                a = np.random.random() + 0.5
+                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis).getEnvelopeCell(vacuumSize=self._radius)
+            elif self.dim == 0:
+                cell = Cell([], self._pbc)
+            else:
+                raise RuntimeError(f"Wrong pbc {self._pbc}.")
+            cell = self.adjustCell(cell.getCellVectors(), composition, pressure)
+        else:
+            cell = self.getCell()
 
-            r2d = 180/np.pi
-            cell = Cell.initFromCellParameters(a, b, c, alpha*r2d, beta*r2d, gamma*r2d, pbc=self._pbc)
-            return Cell(cellVectors=cell.getCellVectors()*((volume / cell.getVolume()) ** (1. / 3.)), pbc = self._pbc)
+        return cell
 
-    def getCellVolume(self, composition, conditions):
+
+    def adjustCell(self, cellVectors, composition, pressure):
         """
-        Either return predefined volume for fixed volume calculation or calculates it using provided conditions utility.
+        Adjust given unit cell according calculation parameters, provided composition and pressure.
+        If cell in calculation is fixed returns the fixed cell. Otherwise scale input unit cell to have specific volume.
+        If calculation is done with fixed volume then unit cell is scaled to it.
+        Otherwise to estimated volume calculated using provided conditions utility.
+        Periodic boundary conditions of output unit cell set up same as in utility.
+
+        :param cellVectors: input unit cell vectors to be adjusted.
+        :param composition: dictionary like object defining composition.
+        :param conditions: external pressure.
+
+        :return: **Cell** object with adjusted parameters.
+        """
+
+        cell = self.getCell()
+        if cell is None:
+            cell = Cell(cellVectors, self._pbc)
+            estimatedVolume = self.getCellVolume(composition, pressure)
+            d = np.power(estimatedVolume / sum(composition.values()), 1.0 / 3.0)
+            if cell.dim == 3:
+                factorMin = factorMax = np.power(estimatedVolume / cell.getVolume(), 1.0 / 3.0)
+            elif cell.dim == 2:
+                estimatedAreaMin = estimatedVolume / self._thickness
+                estimatedAreaMax = estimatedVolume / d - self._thickness * d
+                area = cell.getArea()
+                factorMin = np.sqrt(estimatedAreaMin / area)
+                factorMax = np.sqrt(estimatedAreaMax / area)
+            elif cell.dim == 1:
+                estimatedLengthMin = estimatedVolume / (2 * self._radius) ** 2
+                estimatedLengthMax = estimatedVolume / d ** 2 - (2 * self._radius)
+                length = cell.getLength()
+                factorMin = estimatedLengthMin / length
+                factorMax = estimatedLengthMax / length
+            elif cell.dim == 0:
+                factorMin = factorMax = 1
+            else:
+                raise RuntimeError(f"Wrong dim {cell.dim}.")
+            if factorMin > 1 or factorMax < 1:
+                factor = (factorMax - factorMin)*np.random.random() + factorMin
+            else:
+                factor = 1
+            cellVectors = np.asarray(cellVectors)
+            cellVectors[np.nonzero(self._pbc)] *= factor
+            cell = Cell(cellVectors, self._pbc)
+        elif self._listOfReconstructions:
+            factor = self.calcCompositionVolume(composition, pressure) / cell.getVolume()
+            reconstruction = self._getRandomReconstruction(factor)
+            cell = Cell(reconstruction.dot(cell.getCellVectors()), cell.getPBC())
+        return cell
+
+    def getCellVolume(self, composition, pressure):
+        """
+        Either return predefined volume for fixed volume calculation or calculates it under specific pressure.
 
         :param composition: dictionary like object defining composition.
-        :param conditions: external conditions.
+        :param pressure: external pressure.
 
         :return: volume of unit cell.
         """
-        return self._volume if self._volume is not None else conditions.calcCompositionVolume(composition)
+        return self._volume if self._volume is not None else self.calcCompositionVolume(composition, pressure)
+
+    def calcCompositionVolume(self, composition, pressure):
+        """
+        The function calculates a volume of the given composition at the target pressure.
+
+        :type composition: Mapping
+        :param composition: Composition for which the volume is to be estimated.
+        :param pressure: external pressure.
+
+        :rtype: float
+        :return: volume
+        """
+        return sum(self.volumeEstimator.calcAtomVolume(sym, pressure) * amount for sym, amount in composition.items())
+
+
+    def getHybridCell(self, cell1, cell2, fraction):
+        """
+        Creates hybrid of two unit cells.
+        TODO better to average parameters rather then vectors.
+
+        :param cell1:
+        :param cell2:
+        :param fraction:
+
+        :return:
+        """
+        assert 0 <= fraction <= 1
+        if self._listOfReconstructions:
+            matrix1 = np.round(self._cell.decomposeCell(cell1))
+            matrix2 = np.round(self._cell.decomposeCell(cell2))
+            idx = np.linalg.det([matrix1, matrix2]).argmax()
+            cellVectors = [cell1, cell2][idx].getCellVectors()
+        else:
+            vectors = fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors()
+            if self.dim == 3:
+                factor = np.power((fraction*cell1.getVolume() + (1 - fraction)*cell2.getVolume()) / np.linalg.det(vectors), 1./3.)
+            else:
+                factor = 1
+            cellVectors = vectors * factor
+        return Cell(cellVectors, self._pbc)
 
     def _getListOfReconstructions(self, reconstructionDegree: Union[int, List, Tuple]):
         assert sum(self._pbc) == 2 # For surfaces only 
@@ -174,57 +324,6 @@ class CellUtility:
         else:
             return np.eye(3)
 
-    def adjustCell(self, cell, composition, conditions):
-        """
-        Adjust given unit cell according calculation parameters, provided composition and conditions.
-        If cell in calculation is fixed returns the fixed cell. Otherwise scale input unit cell to have specific volume.
-        If calculation is done with fixed volume then unit cell is scaled to it.
-        Otherwise to estimated volume calculated using provided conditions utility.
-        Periodic boundary conditions of output unit cell set up same as in utility.
-
-        :param cell: input unit cell to be adjusted.
-        :param composition: dictionary like object defining composition.
-        :param conditions: external conditions.
-
-        :return: **Cell** object with adjusted parameters.
-        """
-        if self._cell is not None:
-            if self._listOfReconstructions:
-                factor = self.getCellVolume(composition, conditions) / self._cell.getVolume()
-                reconstruction = self._getRandomReconstruction(factor)
-                cell = Cell(cellVectors=reconstruction.dot(self._cell.getCellVectors()), pbc=self._pbc)
-            else:
-                cell = self._cell
-        else:
-            cell = Cell(cellVectors = cell, pbc = self._pbc)
-            factor = np.power(self.getCellVolume(composition, conditions) / cell.getVolume(), 1.0 / 3.0)
-            cell = Cell(cellVectors = cell.getCellVectors() * factor, pbc = self._pbc)
-        return cell
-
-    def getHybridCell(self, cell1, cell2, fraction):
-        """
-        Creates hybrid of two unit cells.
-        TODO better to average parameters rather then vectors.
-
-        :param cell1:
-        :param cell2:
-        :param fraction:
-
-        :return:
-        """
-        assert 0 <= fraction <= 1
-        if self._listOfReconstructions:
-            matrix1 = np.round(self._cell.decomposeCell(cell1))
-            matrix2 = np.round(self._cell.decomposeCell(cell2))
-            idx = np.linalg.det([matrix1, matrix2]).argmax()
-            cellVectors = [cell1, cell2][idx].getCellVectors()
-        else:
-            vectors = fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors()
-            vectors /= np.power(np.linalg.det(vectors), 1./3.)
-            volume = fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()
-            cellVectors = vectors * np.power(volume, 1./3.)
-        return Cell(cellVectors, self._pbc)
-
     @staticmethod
     def volume(system: dict):
         """
@@ -247,6 +346,18 @@ class CellUtility:
         """
         return system['cell'].getArea()
     
+    @staticmethod
+    def length(system: dict):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculated length of system.
+        """
+        return system['cell'].getLength()
+
+
     def symmetry(self, system: dict):
         """
         For using in **Fitness** infrastructure
@@ -281,33 +392,75 @@ class Cell:
         :param pbc: periodic boundary conditions in each direction.
 
         """
-        self._cellVectors = np.asarray(cellVectors)
         self._pbc = pbc
+        self._antipbc = tuple((~np.asarray(pbc, dtype=bool)).tolist())
+        self.dim = sum(pbc)
+        if len(cellVectors) == 3:
+            self._cellVectors = np.asarray(cellVectors, dtype=float)
+        elif len(cellVectors) == self.dim:
+            self._cellVectors = np.eye(3)
+            self._cellVectors[np.nonzero(self._pbc)] = np.asarray(cellVectors, dtype=float)
+            if self.dim == 2:
+                vec1, vec2 = cellVectors
+                axis = np.cross(vec1, vec2)
+                axis /= np.linalg.norm(axis)
+                self._cellVectors[np.nonzero(self._antipbc)] = np.asarray([axis], dtype=float)
+            elif self.dim == 1:
+                axis, = cellVectors
+                axis /= np.linalg.norm(axis)
+                vec1 = np.random.random(3)
+                vec1 -= axis*np.dot(axis, vec1)
+                vec1 /= np.linalg.norm(vec1)
+                vec2 = np.cross(vec1, axis)
+                self._cellVectors[np.nonzero(self._antipbc)] = np.asarray([vec1, vec2], dtype=float)
+        else:
+            raise ValueError(f"Provided {len(cellVectors)} cell vectors when dim is {self.dim}.")
 
     @staticmethod
-    def initFromCellParameters(a, b, c, alpha, beta, gamma, pbc):
+    def initFromCellParameters(pbc, a, b=None, c=None, alpha=None, beta=None, gamma=None, axis=None):
         """
         Alternative constructor using cell parameters.
 
+        :param pbc:
         :param a:
         :param b:
         :param c:
         :param alpha:
         :param beta:
         :param gamma:
-        :param pbc:
+        :param axis:
 
         :return:
         """
+        dim = sum(pbc)
+        if dim == 3:
+            assert axis is None and b is not None and c is not None and alpha is not None and beta is not None and gamma is not None
+            alpha, beta, gamma = np.pi / 180 * np.asarray((alpha, beta, gamma), dtype=float)
+            va = np.array([a, 0, 0])
+            vb = np.array([b * np.cos(gamma), b * np.sin(gamma), 0])
+            cx = np.cos(beta)
+            cy = (np.cos(alpha) - np.cos(gamma) * np.cos(beta)) / np.sin(gamma)
+            cz = (1. - cx ** 2 - cy ** 2) ** 0.5
+            vc = c * np.array([cx, cy, cz])
+            return Cell(np.vstack((va, vb, vc)), pbc)
+        elif dim == 2:
+            assert axis is not None and b is not None and c is None and alpha is not None and beta is None and gamma is None
+            alpha= np.pi / 180 * alpha
+            axis = copy(axis)
+            axis /= np.linalg.norm(axis)
+            va = np.random.random(3)
+            va -= axis*np.dot(axis, va)
+            va *= a/np.linalg.norm(va)
+            vb = np.dot(Rotation.from_rotvec(alpha*axis).as_matrix(), va)
+            vb *= b/np.linalg.norm(vb)
+            return Cell(np.vstack((va, vb)), pbc)
+        elif dim == 1:
+            assert axis is not None and b is None and c is None and alpha is None and beta is None and gamma is None
+            va = a*axis/np.linalg.norm(axis)
+            return Cell([va], pbc)
+        else:
+            raise RuntimeError(f"Wrong pbc {pbc}.")
 
-        alpha, beta, gamma = np.pi / 180 * np.asarray((alpha, beta, gamma), dtype=float)
-        va = np.array([a, 0, 0])
-        vb = np.array([b * np.cos(gamma), b * np.sin(gamma), 0])
-        cx = np.cos(beta)
-        cy = (np.cos(alpha) - np.cos(gamma) * np.cos(beta)) / np.sin(gamma)
-        cz = (1. - cx ** 2 - cy ** 2) ** 0.5
-        vc = c * np.array([cx, cy, cz])
-        return Cell(np.vstack((va, vb, vc)), pbc)
 
     def getCellVectors(self):
         """
@@ -341,18 +494,28 @@ class Cell:
 
     def getVolume(self):
         """
-        :return: unit cell volume
+        :return: unit cell volume if cell is 3D periodic.
         """
+        assert sum(self._pbc) == 3
         return np.abs(np.linalg.det(self._cellVectors))
 
     def getArea(self):
         """
-        :return: uinit cell area if cell is 2D periodic.
+        :return: unit cell area if cell is 2D periodic.
         """
-        assert sum(self._pbc) >= 2
+        assert sum(self._pbc) == 2
         nonzeroPBC = np.nonzero(self._pbc)[0]
         nonzeroCellVectors = self._cellVectors[nonzeroPBC][:, nonzeroPBC]
         return np.abs(np.cross(nonzeroCellVectors[0], nonzeroCellVectors[1]))
+
+    def getLength(self):
+        """
+        :return: unit cell length if cell is 1D periodic.
+        """
+        assert sum(self._pbc) == 1
+        nonzeroPBC = np.nonzero(self._pbc)[0]
+        nonzeroCellVectors = self._cellVectors[nonzeroPBC][:, nonzeroPBC]
+        return np.linalg.norm(nonzeroCellVectors[0])
 
     def getAltitudes(self):
         """
@@ -490,7 +653,7 @@ class Cell:
         return [Transformation.fromRotVector([0.,0.,0.], finalCoordinates - initialCoordinates)
                 for finalCoordinates in fittedCoordinates]
 
-    def getEnvelopeCell(self, coordinates, vacuumSize=0):
+    def getEnvelopeCell(self, coordinates=None, vacuumSize=0):
         """
         :param coordinates: cartesian atomic coordinates
         :param vacuumSize: vacuum distance added along cell vector
@@ -503,8 +666,11 @@ class Cell:
                 newCellVectors.append(vector)
             else:
                 vector = vector / np.linalg.norm(vector)
-                proj = np.dot(coordinates, vector)
-                newCellVectors.append((np.max(proj) - np.min(proj) + vacuumSize) * vector)
+                if coordinates is not None:
+                    proj = np.dot(coordinates, vector)
+                    newCellVectors.append((np.max(proj) - np.min(proj) + vacuumSize) * vector)
+                else:
+                    newCellVectors.append(vacuumSize * vector)
         return Cell(np.asarray(newCellVectors, dtype=float), self._pbc)
 
     def center(self, coordinates, affectedDims=None):
