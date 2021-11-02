@@ -216,10 +216,8 @@ class CellUtility:
                 factorMin = factorMax = 1
             else:
                 raise RuntimeError(f"Wrong dim {cell.dim}.")
-            if factorMin > 1:
-                factor = factorMin
-            elif factorMax < 1:
-                factor = factorMax
+            if factorMin > 1 or factorMax < 1:
+                factor = (factorMax - factorMin)*np.random.random() + factorMin
             else:
                 factor = 1
             cellVectors = np.asarray(cellVectors)
