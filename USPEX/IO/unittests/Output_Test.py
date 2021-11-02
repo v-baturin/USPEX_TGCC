@@ -17,7 +17,7 @@ class Output_Test(unittest.TestCase):
 
         optimizerConfig = {'type': 'GlobalOptimizer',
                            'target': {'type': 'Crystal',
-                                      'conditions': {'externalPressure': 100, 'volumeType': 0},
+                                      'conditions': {'externalPressure': 100},
                                       'compositionSpace': {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]],
                                                            'range': [[1, 1]]},
                                       'cellUtility': {'pbc': (1,1,1)}
