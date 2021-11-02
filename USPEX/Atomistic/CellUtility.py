@@ -84,7 +84,6 @@ class CellUtility:
         elif self.dim == 0:
             assert cellVectors is None and cellParameters is None and cellVolume is None and\
                    thickness is None and axis is None
-            cellVectors = []
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
 
@@ -103,7 +102,7 @@ class CellUtility:
         if cellVolume is not None:
             self._volume = cellVolume
         elif self._cell is not None:
-            self._volume = self._cell.getVolume()
+            self._volume = self._cell.getVolume() if self.dim == 3 else None
         else:
             self._volume = None
 
@@ -164,16 +163,20 @@ class CellUtility:
             elif self.dim == 2:
                 a, b = np.random.random(2) + 0.5
                 alpha = (np.random.random() * 4 + 1) * 30
-                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
+                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis).getEnvelopeCell(vacuumSize=self._thickness)
             elif self.dim == 1:
                 a = np.random.random() + 0.5
-                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
+                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis).getEnvelopeCell(vacuumSize=self._radius)
+            elif self.dim == 0:
+                cell = Cell([], self._pbc)
             else:
-                cell = None
+                raise RuntimeError(f"Wrong pbc {self._pbc}.")
+            cell = self.adjustCell(cell.getCellVectors(), composition, pressure)
         else:
-            cell = None
+            cell = self.getCell()
 
-        return self.adjustCell(cell.getCellVectors(), composition, pressure)
+        return cell
+
 
     def adjustCell(self, cellVectors, composition, pressure):
         """
@@ -209,6 +212,8 @@ class CellUtility:
                 length = cell.getLength()
                 factorMin = estimatedLengthMin / length
                 factorMax = estimatedLengthMax / length
+            elif cell.dim == 0:
+                factorMin = factorMax = 1
             else:
                 raise RuntimeError(f"Wrong dim {cell.dim}.")
             if factorMin > 1:
@@ -217,15 +222,13 @@ class CellUtility:
                 factor = factorMax
             else:
                 factor = 1
-            cell = Cell(cellVectors * factor, self._pbc)
+            cellVectors = np.asarray(cellVectors)
+            cellVectors[np.nonzero(self._pbc)] *= factor
+            cell = Cell(cellVectors, self._pbc)
         elif self._listOfReconstructions:
             factor = self.calcCompositionVolume(composition, pressure) / cell.getVolume()
             reconstruction = self._getRandomReconstruction(factor)
             cell = Cell(reconstruction.dot(cell.getCellVectors()), cell.getPBC())
-        if cell.dim == 2:
-            cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
-        elif cell.dim == 1:
-            cell = cell.getEnvelopeCell(vacuumSize=self._radius)
         return cell
 
     def getCellVolume(self, composition, pressure):
@@ -271,9 +274,11 @@ class CellUtility:
             cellVectors = [cell1, cell2][idx].getCellVectors()
         else:
             vectors = fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors()
-            vectors /= np.power(np.linalg.det(vectors), 1./3.)
-            volume = fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()
-            cellVectors = vectors * np.power(volume, 1./3.)
+            if self.dim == 3:
+                factor = np.power((fraction*cell1.getVolume() + (1 - fraction)*cell2.getVolume()) / np.linalg.det(vectors), 1./3.)
+            else:
+                factor = 1
+            cellVectors = vectors * factor
         return Cell(cellVectors, self._pbc)
 
     def _getListOfReconstructions(self, reconstructionDegree: Union[int, List, Tuple]):

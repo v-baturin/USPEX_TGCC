@@ -49,14 +49,14 @@ class RandTop:
         # generateStructureWithRandomTopology properly works if all elements in numIons are nonzero.
         # inds are indices of nonzero elements of numIons.
         numberOfAtoms = [numIons[i] for i in inds]
-        totalAtomNubmber = int(np.sum(numberOfAtoms))
-        appropriateNets = TOPOLOGICAL_NETS[totalAtomNubmber % TOPOLOGICAL_NETS['totalAtomNumber'] == 0]
+        totalAtomNumber = int(np.sum(numberOfAtoms))
+        appropriateNets = TOPOLOGICAL_NETS[totalAtomNumber % TOPOLOGICAL_NETS['totalAtomNumber'] == 0]
         compstart = time.perf_counter()
         for name, params in appropriateNets.sample(min(appropriateNets.shape[0], 100)).iterrows():
             compend = time.perf_counter()
             if compend - compstart > 60:
                 break
-            supersize = totalAtomNubmber // params['totalAtomNumber']
+            supersize = totalAtomNumber // params['totalAtomNumber']
             if supersize > self.maxSupersize:
                 continue
             net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
@@ -99,11 +99,11 @@ class RandTop:
                                     operations = dict(zip(symbols, operations))
                                     all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                     coordinates = dict(zip(symbols, coordinates))
-                                    attemptsRotation = 1 if composition == elementalComposition else self.attemptsRotation
+                                    attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
 
                                     for i in range(attemptsRotation):
                                         molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
-                                        if len(molecules) != totalAtomNubmber:
+                                        if len(molecules) != totalAtomNumber:
                                             continue
                                         atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
                                         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)

@@ -47,8 +47,8 @@ def compileParams(main: dict, **definitions) -> dict:
         #     target['conditions'] = {}
         if 'cellUtility' not in target:
             target['cellUtility'] = {}
-        if 'pbc' not in target['cellUtility']:
-            target['cellUtility']['pbc'] = (1, 1, 1)
+        # if 'pbc' not in target['cellUtility']:
+        #     target['cellUtility']['pbc'] = (1, 1, 1)
         if 'volumeType' not in target['cellUtility']:
             if molecules:
                 target['cellUtility']['volumeType'] = 0.5

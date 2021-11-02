@@ -317,11 +317,14 @@ class CrystalRepresentation(object):
     @staticmethod
     def getPopulationSummaryBlock(population, optimizer) -> list:
         utlts = optimizer.target.utilities
-        numBlocks = [utlts.compositionSpace.numBlocks(utlts.simpleMoleculeUtility.composition(system)) for system in population]
-        numBlocks = np.asarray(numBlocks)
-        volumes = [optimizer.fitness.getFitnessDirect('cellUtility.volume', system) for system in population]
-        volumes = np.asarray(volumes)
-        approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
+        if utlts.cellUtility.dim == 3:
+            numBlocks = [utlts.compositionSpace.numBlocks(utlts.simpleMoleculeUtility.composition(system)) for system in population]
+            numBlocks = np.asarray(numBlocks)
+            volumes = [optimizer.fitness.getFitnessDirect('cellUtility.volume', system) for system in population]
+            volumes = np.asarray(volumes)
+            approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
+        else:
+            approximateVolume = 'NA'
         originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         fitness = [optimizer.fitness.getFitnessByID(optimizer.optType, originalID(system)) for system in population if not system['isBad']]
         order = [optimizer.target.utilities.radialDistributionUtility.averageOrder(system) for system in population if not system['isBad']]

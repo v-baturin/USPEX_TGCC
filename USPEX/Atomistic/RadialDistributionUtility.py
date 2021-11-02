@@ -216,7 +216,9 @@ class RadialDistributionUtility(object):
         dist_matrix = _make_matrices(coordinates, molIndices, envIndices, structure.getCell().getCellVectors(), numIons,
                                      pbc=fp_pbc, Rmax=self.Rmax)
 
-        V = structure.getCell().getVolume()
+        # TODO think about volume in lesser dimensions
+        cell = structure.getCell()
+        V = type(cell)(cell.getCellVectors(), (1,1,1)).getVolume()
         N_type = numIons.shape[0]
         N_atom = np.sum(numIons)
         N_pair = dist_matrix.shape[0]  # the number of atomic pairs being considered
@@ -368,7 +370,7 @@ class RadialDistributionUtility(object):
             atomFings.append(f)
 
         order = np.fromiter((atomFing.order for atomFing in atomFings), dtype=float)
-        order *= np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
+        order *= np.sqrt(self.delta / (V / len(structure)) ** (1.0 / 3.0))
         molOrder = np.fromiter((order[np.asarray(indices)].sum()/len(indices) for indices in disassembler.indices), dtype=float)
 
         if np.any(np.isfinite(order)):
@@ -377,7 +379,7 @@ class RadialDistributionUtility(object):
             a_order = np.nan
 
         fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure))
-        s_order = fingerprint.order * np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
+        s_order = fingerprint.order * np.sqrt(self.delta / (V / len(structure)) ** (1.0 / 3.0))
 
         uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
                                                     return_inverse=True,
