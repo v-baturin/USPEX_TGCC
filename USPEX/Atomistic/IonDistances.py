@@ -16,6 +16,12 @@ class IonDistances():
     def __init__(self, volumeType=0, **kwargs):
         """
 
+        :param volumeType:
+            range 0 to 1, 0 corresponds to pure atomic environment for
+            volume estimation, 1 to pure molecular one.
+            Molecular environment is less dense.
+            Intermediate value is a coefficient for molecular environment
+            in linear combination of the two.
         :param kwargs: {'<symbol> <symbol>' : <amount>} map from pair of symbols to minimal distance between them.
 
         """
@@ -34,7 +40,7 @@ class IonDistances():
         If minimal distance for pair of symbols is not predefined calculates it using volumeUtility.
 
         :param symbols: N array of symbols
-        :param conditions: utility for estimation of atom volume.
+        :param pressure: external pressure.
 
         :return: N*N array of minimal distances.
         """

@@ -1,3 +1,8 @@
+"""
+USPEX.Atomistic.VolumeEstimator
+===============================
+"""
+
 import math
 
 from .Element import Element
@@ -218,6 +223,10 @@ def _calcVolumePure(targetPress: float, atomType, systemType: str = 'atom'):  # 
 
 
 class VolumeEstimator:
+    """
+    Class for volume estimation under different pressures.
+    """
+
 
     def __init__(self, volumeType):
         """

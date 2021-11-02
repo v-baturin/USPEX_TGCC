@@ -7,7 +7,6 @@ USPEX.Atomistic.Conditions
 class Conditions:
     """
     Class describing conditions such as external pressure.
-    It provides methods to estimate some system properties under provided conditions.
     """
 
     def __init__(self, externalPressure = 0.0001):

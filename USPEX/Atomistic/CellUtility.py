@@ -29,6 +29,7 @@ class CellUtility:
                  debug = False):
         """
 
+        :param dim: dimensionality, i.e. number of periodic directions.
         :param pbc: periodic boundary conditions in each direction.
         :param cellVectors: for fixed cell calculation 3*3 array of cell vectors.
         :param cellParameters: for fixed cell calculation dictionary
@@ -39,6 +40,14 @@ class CellUtility:
         :param symTolerance: allowed misplacements of atoms when determining symmetry of structure.
         :param axis: for 1D periodic calculations vector along periodic axis,
             for 2D periodic calculations vector orthogonal to two periodic axes.
+        :param radius: for 1D and 0D structures constraint on size of containment space.
+        :param thickness: for 2D structures constraint on size of containment space.
+        :param volumeType:
+            range 0 to 1, 0 corresponds to pure atomic environment for
+            volume estimation, 1 to pure molecular one.
+            Molecular environment is less dense.
+            Intermediate value is a coefficient for molecular environment
+            in linear combination of the two.
         :param debug: switch between two levels of logging. True for debug level, false for INFO level.
 
         """
@@ -137,7 +146,7 @@ class CellUtility:
 
     def getCell(self):
         """
-        :return: for fixed cell calculations copy of the unit cell object.
+        :return: for fixed cell calculations copy of the unit cell object otherwise None.
         """
         return None if self._cell is None else copy(self._cell)
 
@@ -146,7 +155,7 @@ class CellUtility:
         For given composition and conditions creates random unit cell with appropriate size and periodic boundary conditions.
 
         :param composition: dictionary like object defining composition.
-        :param conditions: external conditions.
+        :param pressure: external pressure.
 
         :return: **Cell** object with appropriate parameters.
         """
@@ -180,15 +189,15 @@ class CellUtility:
 
     def adjustCell(self, cellVectors, composition, pressure):
         """
-        Adjust given unit cell according calculation parameters, provided composition and conditions.
+        Adjust given unit cell according calculation parameters, provided composition and pressure.
         If cell in calculation is fixed returns the fixed cell. Otherwise scale input unit cell to have specific volume.
         If calculation is done with fixed volume then unit cell is scaled to it.
         Otherwise to estimated volume calculated using provided conditions utility.
         Periodic boundary conditions of output unit cell set up same as in utility.
 
-        :param cell: input unit cell to be adjusted.
+        :param cellVectors: input unit cell vectors to be adjusted.
         :param composition: dictionary like object defining composition.
-        :param conditions: external conditions.
+        :param conditions: external pressure.
 
         :return: **Cell** object with adjusted parameters.
         """
@@ -231,10 +240,10 @@ class CellUtility:
 
     def getCellVolume(self, composition, pressure):
         """
-        Either return predefined volume for fixed volume calculation or calculates it using provided conditions utility.
+        Either return predefined volume for fixed volume calculation or calculates it under specific pressure.
 
         :param composition: dictionary like object defining composition.
-        :param conditions: external conditions.
+        :param pressure: external pressure.
 
         :return: volume of unit cell.
         """
@@ -246,6 +255,7 @@ class CellUtility:
 
         :type composition: Mapping
         :param composition: Composition for which the volume is to be estimated.
+        :param pressure: external pressure.
 
         :rtype: float
         :return: volume
@@ -411,13 +421,14 @@ class Cell:
         """
         Alternative constructor using cell parameters.
 
+        :param pbc:
         :param a:
         :param b:
         :param c:
         :param alpha:
         :param beta:
         :param gamma:
-        :param pbc:
+        :param axis:
 
         :return:
         """
