@@ -280,14 +280,30 @@ class CellUtility:
             matrix2 = np.round(self._cell.decomposeCell(cell2))
             idx = np.linalg.det([matrix1, matrix2]).argmax()
             cellVectors = [cell1, cell2][idx].getCellVectors()
+            cell = Cell(cellVectors, self._pbc)
         else:
-            vectors = fraction * cell1.getCellVectors() + (1 - fraction) * cell2.getCellVectors()
+            cellParameters = fraction * np.asarray(cell1.getCellParameters()) + \
+                         (1 - fraction) * np.asarray(cell2.getCellParameters())
             if self.dim == 3:
-                factor = np.power((fraction*cell1.getVolume() + (1 - fraction)*cell2.getVolume()) / np.linalg.det(vectors), 1./3.)
+                cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis)
+                factor = np.power((fraction*cell1.getVolume() + (1 - fraction)*cell2.getVolume()) / cell.getVolume(), 1./3.)
+                cellParameters[0:3] *= factor
+            elif self.dim == 2:
+                a, b, alpha = cellParameters
+                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
+                factor = np.sqrt((fraction*cell1.getArea() + (1 - fraction)*cell2.getArea()) / cell.getArea())
+                cellParameters = np.asarray((a*factor, b*factor, None, alpha, None, None))
+            elif self.dim == 1:
+                a, = cellParameters
+                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
+                factor = (fraction*cell1.getLength() + (1 - fraction)*cell2.getLength()) / cell.getLength()
+                cellParameters = np.asarray((a*factor, None, None, None, None, None))
+            elif self.dim == 0:
+                pass
             else:
-                factor = 1
-            cellVectors = vectors * factor
-        return Cell(cellVectors, self._pbc)
+                raise RuntimeError(f"Wrong dim {self.dim}.")
+            cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis)
+        return cell
 
     def _getListOfReconstructions(self, reconstructionDegree: Union[int, List, Tuple]):
         assert sum(self._pbc) == 2 # For surfaces only 
@@ -484,13 +500,23 @@ class Cell:
         """
         :return:  tuple of cell parameters: a, b, c, alpha, beta, gamma
         """
-        a = np.linalg.norm(self._cellVectors[0, :])
-        b = np.linalg.norm(self._cellVectors[1, :])
-        c = np.linalg.norm(self._cellVectors[2, :])
-        alpha = 180 / np.pi * np.arccos(np.dot(self._cellVectors[1, :], self._cellVectors[2, :]) / (b * c))
-        beta = 180 / np.pi * np.arccos(np.dot(self._cellVectors[0, :], self._cellVectors[2, :]) / (a * c))
-        gamma = 180 / np.pi * np.arccos(np.dot(self._cellVectors[0, :], self._cellVectors[1, :]) / (a * b))
-        return a, b, c, alpha, beta, gamma
+        if self.dim == 3:
+            a = np.linalg.norm(self._cellVectors[0, :])
+            b = np.linalg.norm(self._cellVectors[1, :])
+            c = np.linalg.norm(self._cellVectors[2, :])
+            alpha = 180 / np.pi * np.arccos(np.dot(self._cellVectors[1, :], self._cellVectors[2, :]) / (b * c))
+            beta = 180 / np.pi * np.arccos(np.dot(self._cellVectors[0, :], self._cellVectors[2, :]) / (a * c))
+            gamma = 180 / np.pi * np.arccos(np.dot(self._cellVectors[0, :], self._cellVectors[1, :]) / (a * b))
+            return a, b, c, alpha, beta, gamma
+        elif self.dim == 2:
+            cellVectors = self.getCellVectorsPBC()
+            a = np.linalg.norm(cellVectors[0, :])
+            b = np.linalg.norm(cellVectors[1, :])
+            alpha = 180 / np.pi * np.arccos(np.dot(cellVectors[0, :], cellVectors[1, :]) / (a * b))
+            return a, b, alpha
+        elif self.dim == 1:
+            a = np.linalg.norm(self.getCellVectorsPBC()[0])
+            return a,
 
     def getVolume(self):
         """
