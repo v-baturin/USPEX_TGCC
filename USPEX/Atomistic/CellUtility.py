@@ -558,15 +558,57 @@ class Cell:
             nonzeroCellVectors = self._cellVectors[nonzeroPBC]
         return np.linalg.norm(nonzeroCellVectors[0])
 
-    def getAltitudes(self):
+    def getMaxNumSlabs(self, axis, N):
         """
-        :return: altitudes calculates as volume divided by face area for each face.
+        Calculates maximal number of choices of slabs origins in give direction.
+        :param axis: direction axis.
+        :param N: number of atoms/molecules in cell.
+        :return: maximal number of choices of slabs origins.
         """
-        volume = self.getVolume()
-        l0 = volume / np.linalg.norm(np.cross(self._cellVectors[1, :], self._cellVectors[2, :]))
-        l1 = volume / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[2, :]))
-        l2 = volume / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[1, :]))
-        return np.array([l0, l1, l2])
+        if self.dim == 3:
+            volume = self.getVolume()
+            if axis == 0:
+                L = volume / np.linalg.norm(np.cross(self._cellVectors[1, :], self._cellVectors[2, :]))
+            elif axis == 1:
+                L = volume / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[2, :]))
+            elif axis == 2:
+                L = volume / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[1, :]))
+            else:
+                raise ValueError(f"Wrong axis {axis}.")
+            Lchar = 0.5 * np.power((volume / N), (1 / 3)) # average 'radius' of a molecule in the cell
+            Nmax =  L / Lchar
+        elif self.dim == 2:
+            if self._pbc[axis] == 0:
+                L = self.getLength()
+                Lchar = 0.5 * np.power((L * self.getArea() / N), (1 / 3))
+                Nmax = L / Lchar
+            else:
+                volume = self.getArea() * self.getLength()
+                if axis == 0:
+                    L = volume / np.linalg.norm(np.cross(self._cellVectors[1, :], self._cellVectors[2, :]))
+                elif axis == 1:
+                    L = volume / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[2, :]))
+                elif axis == 2:
+                    L = volume / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[1, :]))
+                else:
+                    raise ValueError(f"Wrong axis {axis}.")
+                Lchar = 0.5 * np.power((volume / N), (1 / 3))
+                Nmax = L / Lchar
+        elif self.dim == 1:
+            if self._pbc[axis] == 1:
+                L = self.getLength()
+                Lchar = 0.5 * np.power((L * self.getArea() / N), (1 / 3))
+                Nmax = L / Lchar
+            else:
+                area = self.getArea()
+                L = 2 * np.sqrt(area / np.pi)
+                Lchar = 0.5 * np.power((area * self.getLength() / N), (1 / 3))
+                Nmax = L / Lchar
+        elif self.dim == 0:
+            Nmax =  0.5 * np.power((6 * np.pi ** 2 * N), (1 / 3))
+        else:
+            raise RuntimeError(f"Wrong dim {self.dim}.")
+        return Nmax
 
     def getCornersCoordinates(self):
         """
