@@ -177,7 +177,7 @@ class CellUtility:
                 a = np.random.random() + 0.5
                 cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis).getEnvelopeCell(vacuumSize=self._radius)
             elif self.dim == 0:
-                cell = Cell([], self._pbc)
+                cell = Cell([], self._pbc).getEnvelopeCell(vacuumSize=self._radius)
             else:
                 raise RuntimeError(f"Wrong pbc {self._pbc}.")
             cell = self.adjustCell(cell.getCellVectors(), composition, pressure)
@@ -266,7 +266,6 @@ class CellUtility:
     def getHybridCell(self, cell1, cell2, fraction):
         """
         Creates hybrid of two unit cells.
-        TODO better to average parameters rather then vectors.
 
         :param cell1:
         :param cell2:
@@ -281,28 +280,32 @@ class CellUtility:
             idx = np.linalg.det([matrix1, matrix2]).argmax()
             cellVectors = [cell1, cell2][idx].getCellVectors()
             cell = Cell(cellVectors, self._pbc)
+        elif self.dim == 0:
+            vacuum = np.power(fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume(), 1.0/3.0)
+            cell = Cell([], self._pbc).getEnvelopeCell(vacuumSize=vacuum)
         else:
             cellParameters = fraction * np.asarray(cell1.getCellParameters()) + \
                          (1 - fraction) * np.asarray(cell2.getCellParameters())
             if self.dim == 3:
                 cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis)
                 factor = np.power((fraction*cell1.getVolume() + (1 - fraction)*cell2.getVolume()) / cell.getVolume(), 1./3.)
+                vacuum = 0
                 cellParameters[0:3] *= factor
             elif self.dim == 2:
                 a, b, alpha = cellParameters
                 cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
                 factor = np.sqrt((fraction*cell1.getArea() + (1 - fraction)*cell2.getArea()) / cell.getArea())
+                vacuum = fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()
                 cellParameters = np.asarray((a*factor, b*factor, None, alpha, None, None))
             elif self.dim == 1:
                 a, = cellParameters
                 cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
                 factor = (fraction*cell1.getLength() + (1 - fraction)*cell2.getLength()) / cell.getLength()
+                vacuum = np.sqrt(fraction * cell1.getArea() + (1 - fraction) * cell2.getArea())
                 cellParameters = np.asarray((a*factor, None, None, None, None, None))
-            elif self.dim == 0:
-                pass
             else:
                 raise RuntimeError(f"Wrong dim {self.dim}.")
-            cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis)
+            cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis).getEnvelopeCell(vacuumSize=vacuum)
         return cell
 
     def _getListOfReconstructions(self, reconstructionDegree: Union[int, List, Tuple]):
@@ -411,11 +414,12 @@ class Cell:
         self._pbc = pbc
         self._antipbc = tuple((~np.asarray(pbc, dtype=bool)).tolist())
         self.dim = sum(pbc)
+        cellVectors = np.asarray(cellVectors, dtype=float).reshape((-1,3))
         if len(cellVectors) == 3:
-            self._cellVectors = np.asarray(cellVectors, dtype=float)
+            self._cellVectors = cellVectors
         elif len(cellVectors) == self.dim:
             self._cellVectors = np.eye(3)
-            self._cellVectors[np.nonzero(self._pbc)] = np.asarray(cellVectors, dtype=float)
+            self._cellVectors[np.nonzero(self._pbc)] = cellVectors
             if self.dim == 2:
                 vec1, vec2 = cellVectors
                 axis = np.cross(vec1, vec2)
@@ -462,7 +466,7 @@ class Cell:
         elif dim == 2:
             assert axis is not None and b is not None and c is None and alpha is not None and beta is None and gamma is None
             alpha= np.pi / 180 * alpha
-            axis = copy(axis)
+            axis = np.asarray(axis, dtype=float)
             axis /= np.linalg.norm(axis)
             va = np.random.random(3)
             va -= axis*np.dot(axis, va)
@@ -472,6 +476,7 @@ class Cell:
             return Cell(np.vstack((va, vb)), pbc)
         elif dim == 1:
             assert axis is not None and b is None and c is None and alpha is None and beta is None and gamma is None
+            axis = np.asarray(axis)
             va = a*axis/np.linalg.norm(axis)
             return Cell([va], pbc)
         else:
@@ -517,40 +522,50 @@ class Cell:
         elif self.dim == 1:
             a = np.linalg.norm(self.getCellVectorsPBC()[0])
             return a,
+        else:
+            raise RuntimeError(f"Wrong dim {self.dim}.")
 
     def getVolume(self):
         """
         :return: unit cell volume if cell is 3D periodic.
         """
-        assert sum(self._pbc) == 3
+        assert self.dim == 3 or self.dim == 0
         return np.abs(np.linalg.det(self._cellVectors))
 
     def getArea(self):
         """
         :return: unit cell area if cell is 2D periodic.
         """
-        assert sum(self._pbc) == 2
-        nonzeroPBC = np.nonzero(self._pbc)[0]
-        nonzeroCellVectors = self._cellVectors[nonzeroPBC][:, nonzeroPBC]
+        assert self.dim == 2 or self.dim == 1
+        if self.dim == 2:
+            nonzeroPBC = np.nonzero(self._pbc)[0]
+            nonzeroCellVectors = self._cellVectors[nonzeroPBC][:, nonzeroPBC]
+        else:
+            nonzeroPBC = np.nonzero(self._antipbc)[0]
+            nonzeroCellVectors = self._cellVectors[nonzeroPBC][:, nonzeroPBC]
         return np.abs(np.cross(nonzeroCellVectors[0], nonzeroCellVectors[1]))
 
     def getLength(self):
         """
         :return: unit cell length if cell is 1D periodic.
         """
-        assert sum(self._pbc) == 1
-        nonzeroPBC = np.nonzero(self._pbc)[0]
-        nonzeroCellVectors = self._cellVectors[nonzeroPBC][:, nonzeroPBC]
+        assert self.dim == 2 or self.dim == 1
+        if self.dim == 1:
+            nonzeroPBC = np.nonzero(self._pbc)[0]
+            nonzeroCellVectors = self._cellVectors[nonzeroPBC]
+        else:
+            nonzeroPBC = np.nonzero(self._antipbc)[0]
+            nonzeroCellVectors = self._cellVectors[nonzeroPBC]
         return np.linalg.norm(nonzeroCellVectors[0])
 
     def getAltitudes(self):
         """
         :return: altitudes calculates as volume divided by face area for each face.
         """
-        volime = self.getVolume()
-        l0 = volime / np.linalg.norm(np.cross(self._cellVectors[1, :], self._cellVectors[2, :]))
-        l1 = volime / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[2, :]))
-        l2 = volime / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[1, :]))
+        volume = self.getVolume()
+        l0 = volume / np.linalg.norm(np.cross(self._cellVectors[1, :], self._cellVectors[2, :]))
+        l1 = volume / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[2, :]))
+        l2 = volume / np.linalg.norm(np.cross(self._cellVectors[0, :], self._cellVectors[1, :]))
         return np.array([l0, l1, l2])
 
     def getCornersCoordinates(self):
@@ -646,7 +661,7 @@ class Cell:
         For given set of coordinates and cell object, calculates transformations
         which translate each position into its image within this unit cell along periodic cell vectors of given unit cell.
 
-        :param initialCoordinates: N*3 array of coordinates which need to be translated.
+        :param initialCoordinates: 3 vector of coordinates which need to be translated.
         :param cell: cell object containing periodic vectors along which translation should be done.
 
         :return: list of **Transformation** objects.
@@ -656,9 +671,9 @@ class Cell:
         minAndMax = np.asarray([(np.min(coords), np.max(coords))
                                 for coords in cell.cartesianToFractional(self.getCornersCoordinates()).T[inds]],
                                dtype = float)\
-                    - cell.cartesianToFractional(initialCoordinates)[inds].reshape((-1,1))
-        minAndMax = np.asarray(np.ceil(minAndMax), dtype=int).reshape((-1,1))
-        if np.all(minAndMax[:1] > minAndMax[:0]):
+                    - cell.cartesianToFractional(initialCoordinates)[inds]
+        minAndMax = np.asarray(np.ceil(minAndMax), dtype=int).reshape((-1,2))
+        if np.all(minAndMax[:,1] > minAndMax[:,0]):
             closeShifts = []
             for minCoordinate, maxCoordinate in minAndMax:
                 if closeShifts:
