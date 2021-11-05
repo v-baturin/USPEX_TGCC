@@ -1,4 +1,6 @@
 """
+USPEX.Atomistic.RadialDistributionUtility
+=========================================
     Fingerprint calculation function.
     Reference: A.R. Oganov, M. Valle. How to quantify energy landscapes. J. Chem. Phys, 104504, 2009.
 """
@@ -112,8 +114,10 @@ class RadialDistributionUtility(object):
     def structureFingerprint(self, system):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
-        :return: calculated or retrieve structure fingerprint of a system.
+
+        :return: calculate or retrieve structure fingerprint of a system.
         """
         if not 'radialDistribitionUtility.structureFingerprint' in system:
             self._calcFingerprint(system)
@@ -122,9 +126,11 @@ class RadialDistributionUtility(object):
     def order(self, system):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
-        :return: calculated or retrieve list of atomic *local orders* of a system.
-        *Local order* is a measure of atom surrounding being regular.
+
+        :return: calculate or retrieve list of atomic *local orders* of a system.
+            *Local order* is a measure of atom surrounding being regular.
         """
         if not 'radialDistribitionUtility.order' in system:
             self._calcFingerprint(system)
@@ -133,9 +139,11 @@ class RadialDistributionUtility(object):
     def averageOrder(self, system):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
-        :return: calculated or retrieve average atomic *local order* of a system.
-        *Local order* is a measure of atom surrounding being regular.
+
+        :return: calculate or retrieve average atomic *local order* of a system.
+            *Local order* is a measure of atom surrounding being regular.
         """
         if not 'radialDistribitionUtility.averageOrder' in system:
             self._calcFingerprint(system)
@@ -144,9 +152,11 @@ class RadialDistributionUtility(object):
     def structureOrder(self, system):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
-        :return: calculated or retrieve *structure order* of a system.
-        *Structure order* is a measure of structure being regular.
+
+        :return: calculate or retrieve *structure order* of a system.
+            *Structure order* is a measure of structure being regular.
         """
         if not 'radialDistribitionUtility.structureOrder' in system:
             self._calcFingerprint(system)
@@ -155,8 +165,10 @@ class RadialDistributionUtility(object):
     def quasientropy(self, system):
         """
         For using in **Fitness** infrastructure
+
         :param system: dictionary describing system.
-        :return: calculated quasientropy of structure.
+
+        :return: calculate quasientropy of structure.
         """
 
         if not 'radialDistribitionUtility.quasientropy' in system:
@@ -166,7 +178,9 @@ class RadialDistributionUtility(object):
     def clean(self, system):
         """
         Removes all stored **RadialDistributionUtility** related propertiies from *system* dictionary.
+
         :param system: dictionary describing system.
+
         """
         if 'radialDistribitionUtility.structureFingerprint' in system:
             del system['radialDistribitionUtility.structureFingerprint']
@@ -189,13 +203,22 @@ class RadialDistributionUtility(object):
         uniqueSimbols, inverse, numIons = np.unique(structure.getAtomTypes(), return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
         revertIndices = np.argsort(indices)
-        coordinates = structure.getFractionalCoordinates()[indices]
+        cartesian = structure.getCartesianCoordinates()
+        cell = structure.getCell().getEnvelopeCell(cartesian, 1)
+        cartesian = cell.center(cartesian)
+        coordinates = cell.cartesianToFractional(cartesian)[indices]
         molIndices = [revertIndices[inds] for inds in disassembler.indices]
         envIndices = revertIndices[disassembler.envIndices]
-        dist_matrix = make_matrices(coordinates, molIndices, envIndices, structure.getCell().getCellVectors(), numIons,
-                                    Rmax=self.Rmax)
+        if 'environment' in system:
+            fp_pbc = disassembler.environment.getStructure().getCell().getPBC()
+        else:
+            fp_pbc = structure.getCell().getPBC()
+        dist_matrix = _make_matrices(coordinates, molIndices, envIndices, structure.getCell().getCellVectors(), numIons,
+                                     pbc=fp_pbc, Rmax=self.Rmax)
 
-        V = structure.getCell().getVolume()
+        # TODO think about volume in lesser dimensions
+        cell = structure.getCell()
+        V = type(cell)(cell.getCellVectors(), (1,1,1)).getVolume()
         N_type = numIons.shape[0]
         N_atom = np.sum(numIons)
         N_pair = dist_matrix.shape[0]  # the number of atomic pairs being considered
@@ -347,7 +370,7 @@ class RadialDistributionUtility(object):
             atomFings.append(f)
 
         order = np.fromiter((atomFing.order for atomFing in atomFings), dtype=float)
-        order *= np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
+        order *= np.sqrt(self.delta / (V / len(structure)) ** (1.0 / 3.0))
         molOrder = np.fromiter((order[np.asarray(indices)].sum()/len(indices) for indices in disassembler.indices), dtype=float)
 
         if np.any(np.isfinite(order)):
@@ -356,7 +379,7 @@ class RadialDistributionUtility(object):
             a_order = np.nan
 
         fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure))
-        s_order = fingerprint.order * np.sqrt(self.delta / (structure.getCell().getVolume() / len(structure)) ** (1.0 / 3.0))
+        s_order = fingerprint.order * np.sqrt(self.delta / (V / len(structure)) ** (1.0 / 3.0))
 
         uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
                                                     return_inverse=True,
@@ -395,18 +418,22 @@ class RadialDistributionUtility(object):
         """
         Calculated distance between two systems. First it retrieves structure fingerprints of systems.
         Then claculates cosine distance between them.
+
         :param system1: dictionary describing first system.
         :param system2: dictionary describing second system.
+
         :return: distance between systems.
         """
         return Fingerprint.cosine_distance(self.structureFingerprint(system1), self.structureFingerprint(system2))
 
     def equal(self, system1, system2):
         """
-        Checks if systems coincide. It calculates distance between systems using ** dist** method.
+        Checks if systems coincide. It calculates distance between systems using **dist** method.
         If such distance is less then set up tolerance, then systems coincide.
+
         :param system1: dictionary describing first system.
         :param system2: dictionary describing second system.
+
         :return: if systems coincide or not.
         """
         return self.dist(system1, system2) < self.tolerance
@@ -426,12 +453,13 @@ class RadialDistributionUtility(object):
         return weights
 
 
-def super_matrix(xmin: int, xmax: int, ymin: int, ymax: int, zmin: int, zmax: int):
+def _super_matrix(xmin: int, xmax: int, ymin: int, ymax: int, zmin: int, zmax: int):
     """
     This is a small utility to quickly generate a 3d matrix series of the type [x1 y1 z1; x2 y2 z2; ......]
     with x, y and z in the input ranges [x_min, x_max], [y_min, y_max] and [z_min, z_max].
     The functional is usually used to create supercells.
     Example:
+
         INPUT:  [0 1 0 1 0 1]
         OUTPUT: [0 0 0; 0 0 1; 0 1 0; 0 1 1; 1 0 0; 1 0 1; 1 1 0; 1 1 1]
 
@@ -447,6 +475,7 @@ def super_matrix(xmin: int, xmax: int, ymin: int, ymax: int, zmin: int, zmax: in
     :param zmin: min z value.
     :type zmax: int
     :param zmax: max z value.
+
     :rtype: list
     :return matrix: resulted matrix.
     """
@@ -460,21 +489,28 @@ def super_matrix(xmin: int, xmax: int, ymin: int, ymax: int, zmin: int, zmax: in
     return [[i, j, k] for i in range(xmin, xmax + 1) for j in range(ymin, ymax + 1) for k in range(zmin, zmax + 1)]
 
 
-def make_matrices(coor: np.ndarray, molIndices: list, envIndices, lat: np.ndarray, numIons: np.ndarray, Rmax=10.0):
+def _make_matrices(coor: np.ndarray, molIndices: list, envIndices,
+                   lat: np.ndarray, numIons: np.ndarray, pbc=(1, 1, 1), Rmax=10.0):
     """
     The function prepares matrices for fingerprint calculation.
 
     :type coor: numpy array
-    :param coor: coordinates of atoms of system for which we want to calculate the distance matrix,
-     groupped according atom types.
+    :param coor: fractional coordinates of atoms of system for which we want to calculate the distance matrix,
+        groupped according atom types.
+    :type molIndices: list of numpy arrays
+    :param molIndices: specification of the molecules. A list of numpy arrays, i-th array contains indices of
+        atoms that make up i-th molecule.
+    :type envIndices: numpy array
+    :param envIndices: specification of the environment, array of atom indices
     :type lat: numpy array
     :param lat: cell of system for which we want to calculate the distance matrix.
     :type numIons: numpy array
     :param numIons: number atoms of each type in system for which we want to calculate the distance matrix.
     :type Rmax: float
     :param Rmax: distance cutoff.
+
     :rtype: numpy array
-    :return: distance matrix of the form [atom_i, atom_j, atomi_type, atomj_type, dist].
+    :return: distance matrix of the form [atom_i, atomi_type, atomj_type, dist]
     """
 
     assert isinstance(Rmax, float) and Rmax >= 0
@@ -489,89 +525,52 @@ def make_matrices(coor: np.ndarray, molIndices: list, envIndices, lat: np.ndarra
 
     dist_matrix = np.zeros((0, 4), dtype=float)
 
-    '''
-    Search for all atomic pairs:
-    Here we count the coordination of each atom one by one.
-    Firstly we construct the possible direction matrix such as [1 0 0; 0 1 0; 0 0 1; ...
-    Ideally, the best way to deal with the irregular shape is to do lattice optimization.
-    But we don't consider it for now.
-    '''
-
-    # This is a direction matrix, maximally consider the direction of [1 2 0]:
-    matrix = np.asarray(super_matrix(-2, 2, -2, 2, -2, 2))
-
-    # The idea is to find all zero values [0, 0, 0] and to remove them to avoid division by zero later.
-    to_delete = np.all(matrix == 0, axis=1)
-    matrix = np.delete(matrix, np.where(to_delete), axis=0)
+    # Leftmost, rightmost, uppermost, lowermost, "frontmost" and "backmost" points of
+    # the origin-centered Rmax-sphere IN THE FRACTIONAL COORDINATES, (where this sphere is actually an ellipsoid),
+    sphere_fract_margins = np.zeros((6, 3))
+    inv_lat = np.linalg.inv(lat)
+    for i in range(3):
+        sphere_fract_margins[i] = np.cross(lat[i-2], lat[i-1])
+        sphere_fract_margins[i] *= Rmax / np.linalg.norm(sphere_fract_margins[i])
+    sphere_fract_margins = sphere_fract_margins @ inv_lat
+    sphere_fract_margins[3:, :] = -sphere_fract_margins[:3, :]
 
     for i in range(N_atom):
-        target = np.zeros(matrix.shape)
+        # target = np.zeros(matrix.shape)
+        # Build the super cell containing Rmax sphere around i-th atom:
+        shifted_sphere_margins = coor[i, :] + sphere_fract_margins
+        mins = np.floor(np.min(shifted_sphere_margins, axis=0)) * pbc
+        maxs = np.floor(np.max(shifted_sphere_margins, axis=0)) * pbc
+        matrix_tmp = np.asarray(_super_matrix(*[int(x) for x in np.dstack((mins, maxs)).flatten()]))
 
-        # Build the super cell matrix:
-        for j in range(matrix.shape[0]):
-            target[j] = Rmax / np.linalg.norm(np.dot(matrix[j, :], lat)) * matrix[j, :] + coor[i, :]
-
-        lenX1 = int(np.floor(min(target[:, 0])))
-        lenY1 = int(np.floor(min(target[:, 1])))
-        lenZ1 = int(np.floor(min(target[:, 2])))
-        lenX2 = int(np.floor(max(target[:, 0])))
-        lenY2 = int(np.floor(max(target[:, 1])))
-        lenZ2 = int(np.floor(max(target[:, 2])))
-
-        matrix_tmp = np.asarray(super_matrix(lenX1, lenX2, lenY1, lenY2, lenZ1, lenZ2))
-
-        # Obtain the distances by vectorization, pdist is used here:
-        N_matrix = matrix_tmp.shape[0]
-        S_coor = np.tile(coor, (N_matrix, 1))
-
-        # S_Matrix  = reshape(repmat(Matrix_tmp, 1, N_atom)', 3, N_atom*N_Matrix)';
-
-        S_matrix = np.tile(matrix_tmp, (1, N_atom))
-        S_matrix = np.transpose(S_matrix)
-        S_matrix = np.reshape(S_matrix, (3, N_atom * N_matrix), 'F')
-        S_matrix = np.transpose(S_matrix)
-        # For debug:
-        # for j in range(S_matrix.shape[0]):
-        #    print '%i ' * 3 % tuple(S_matrix[j])
-
+        # Obtain the distances by vectorization, cdist is used here:
+        N_sublattices = matrix_tmp.shape[0]
+        S_coor = np.tile(coor, (N_sublattices, 1))
+        S_matrix = np.zeros((N_atom * N_sublattices, 3))
+        for i_sublat in range(N_sublattices):
+            S_matrix[(i_sublat * N_atom):((i_sublat + 1) * N_atom), :] = matrix_tmp[i_sublat]
         tmp_dist = cdist(np.reshape(np.dot(coor[i], lat), (1, 3)), np.dot(S_coor + S_matrix, lat))
-        # For debug:
-        # for j in range(tmp_dist.shape[1]):
-        #    print '%.12f' % (float(tmp_dist[0][j]))
+        tmp_type = np.tile(types, N_sublattices)
 
-        tmp_type = np.tile(types, N_matrix)
-        # For debug:
-        # for j in range(tmp_type.shape[0]):
-        #    print tmp_type[j]
-
-        ignoreDist = set()
-        for inds in molIndices:
-            if i in inds:
-                ignoreDist.update(inds)
+        # Remove distances within a molecule containing i-th atom and
+        # distances between the atoms of environment
         if i in envIndices:
-            for j in range(N_matrix):
-                ignoreDist.update(set(envIndices + j))
+            to_delete = (envIndices.reshape((-1, 1)) + N_atom * np.arange(N_sublattices)).flatten()
+        else:
+            ignoreDist = set()
+            central_cell_shift = np.flatnonzero(np.all(matrix_tmp == 0, axis=1)) * N_atom
+            for inds in molIndices:
+                if i in inds:
+                    ignoreDist.update(inds + central_cell_shift)
+            to_delete = np.asarray(list(ignoreDist))
 
-        to_delete = np.flatnonzero(np.all(matrix_tmp == 0, axis=1)) * N_atom + np.asarray(list(ignoreDist))
         tmp_dist = np.delete(tmp_dist, to_delete, axis=1)
         tmp_type = np.delete(tmp_type, to_delete, axis=0)
 
-
-
+        # Remove distances exceeding Rmax and those smaller than 0.5 \AA
         to_delete = np.where((tmp_dist > Rmax) | (tmp_dist < 0.5))
-        # For debug:
-        # for j in range(to_delete[1].shape[0]):
-        #    print to_delete[1][j]
-
-        tmp_dist = np.delete(tmp_dist, to_delete[1], axis=1)  # reset all the distances
-        # For debug:
-        # for j in range(tmp_dist.shape[1]):
-        #    print '%.12f' % (float(tmp_dist[0][j]))
-
+        tmp_dist = np.delete(tmp_dist, to_delete[1], axis=1)
         tmp_type = np.delete(tmp_type, to_delete[1], axis=0)
-        # For debug:
-        # for j in range(tmp_type.shape[0]):
-        #    print tmp_type[j]
 
         if tmp_dist.shape[1] > 0:  # sometimes you can meet an isolated atom
             tmp2 = np.zeros((tmp_dist.shape[1], 4))

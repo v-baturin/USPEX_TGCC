@@ -1,9 +1,6 @@
 """
-USPEX.Common.SystemPool
+USPEX.SystemPool
 =======================
-
-Contains configuration of such space, parameters of what we are searching for
-
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
 
@@ -51,6 +48,7 @@ class SystemPool(object):
         Update information about target space in current search.
 
         :param population: list of structures.
+
         """
 
         logger.debug('Updating target: list of unique systems.')
@@ -67,8 +65,10 @@ class SystemPool(object):
 
     def updateFitness(self, fitness):
         """
-        Insets fitness object into last generation record.
+        Inserts fitness object into last generation record.
+
         :param fitness: fitness object.
+
         """
         assert 'fitness' not in self.generations[-1]
         self.generations[-1]['fitness'] = fitness
@@ -79,6 +79,7 @@ class SystemPool(object):
 
         :type system:
         :param system: system to be labeled with ID.
+
         """
         system['ID'] = self._newID
         self._newID += 1
@@ -87,7 +88,9 @@ class SystemPool(object):
     def getOriginalID(self, ID):
         """
         If system is duplicate return ID of original system otherwise return input ID.
+
         :param ID: ID of some system from this pool.
+
         :return: ID of original system.
         """
         system = self.allSystems[ID]

@@ -60,14 +60,14 @@ class Softmodemutation:
 
             offsprings = ()
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules1, cell)
-            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
             if np.all(atomDistances >= minDistMatrix):
                 system = {'molecules': molecules1, 'cell': cell}
                 self.world.putEnvironment(system)
                 self.conditions.putConditions(system)
                 offsprings += (system,)
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules2, cell)
-            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
             if np.all(atomDistances >= minDistMatrix):
                 system = {'molecules': molecules2, 'cell': cell}
                 self.world.putEnvironment(system)

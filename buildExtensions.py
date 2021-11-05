@@ -44,6 +44,7 @@ extensions = [
     Extension("USPEX.Atomistic.SimpleMoleculeUtility", ["USPEX/Atomistic/SimpleMoleculeUtility.py"]),
     Extension("USPEX.Atomistic.Slab", ["USPEX/Atomistic/Slab.py"]),
     Extension("USPEX.Atomistic.Transformation", ["USPEX/Atomistic/Transformation.py"]),
+    Extension("USPEX.Atomistic.VolumeEstimator", ["USPEX/Atomistic/VolumeEstimator.py"]),
     Extension("USPEX.Atomistic.optLattice", ["USPEX/Atomistic/optLattice.py"]),
     Extension("USPEX.Atomistic.softmodes.calcHardness", ["USPEX/Atomistic/softmodes/calcHardness.py"]),
     Extension("USPEX.Atomistic.softmodes.calcSoftModes", ["USPEX/Atomistic/softmodes/calcSoftModes.py"]),

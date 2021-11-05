@@ -213,7 +213,7 @@ def splitBigCell(CenterminDistMatrice, constLattice, fixRndSeed, startLat, split
             coordinates[counter, 2] = (k - 1 + coord_splitter[counter1, 2]) / float(z)
             counter += 1
 
-    lat = Cell.initFromCellParameters(*startLat, pbc = (1,1,1)).getCellVectors()
+    lat = Cell.initFromCellParameters((1,1,1), *startLat).getCellVectors()
     logger.debug('split into: x = %d, y = %d, z = %d' % (x, y, z))
 
     return lat, coordinates

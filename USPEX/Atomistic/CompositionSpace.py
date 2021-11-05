@@ -1,3 +1,8 @@
+"""
+USPEX.Atomistic.CompositionSpace
+================================
+"""
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -14,6 +19,7 @@ class CompositionSpace(object):
 
     def __init__(self, symbols: list, blocks: list, range: list=None, minAt: int=None, maxAt: int=None):
         """
+
         :type symbols: [...]
         :param symbols: list of symbols representing elemnts of composition space. Obligatory
         :type blocks: [[...],[...],...]
@@ -70,6 +76,7 @@ class CompositionSpace(object):
 
         :type composition: dict
         :param composition: composition to be checked.
+
         :rtype: bool
         :return: True if system meets the constraints, False otherwise.
         """
@@ -90,6 +97,7 @@ class CompositionSpace(object):
 
         :type composition: dict
         :param composition: (<element> : <amount>)
+
         :rtype: list
         :return: list of elements amounts corresponding *symbols* variable of this instance.
         """
@@ -107,6 +115,7 @@ class CompositionSpace(object):
 
         :type composition: dict
         :param composition: (<element> : <amount>)
+
         :rtype: list
         :return: list of blocks amounts corresponding *blocks* variable of this instance.
         """
@@ -115,7 +124,9 @@ class CompositionSpace(object):
     def numBlocksFromCompositions(self, compositions: np.ndarray):
         """
         For using in **Fitness** infrastructure
+
         :param compositions: N array of dictionary like compositions.
+
         :return: N*M array of block numbers, where M number of different blocks defined in this space.
         """
         numBlocks = []
@@ -126,7 +137,9 @@ class CompositionSpace(object):
     def numMolsFromCompositions(self, compositions: np.ndarray):
         """
         For using in **Fitness** infrastructure
+
         :param compositions: N array of dictionary like compositions.
+
         :return: N*M array of elements numbers, where M number of different symbols defined in this space.
         """
         numMols = []
@@ -160,6 +173,7 @@ class CompositionSpace(object):
         :param composition: composition with starting point for approximation.
         :type debug: bool
         :param debug: False by default. If set to True, use static values instead of random to reproduce results.
+
         :rtype: Counter
         :return: found composition.
         """
@@ -246,8 +260,10 @@ class CompositionSpace(object):
         """
         From list of symbols representing molecule types choose only those required by given composition
         and return their indices.
+
         :param moleculeTypes: list of molecule types to choose from.
         :param desiredComposition: composition with required symbols and amounts.
+
         :return: indices of symbols in input array which are chosen.
         """
         indices = []

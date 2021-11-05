@@ -1,3 +1,8 @@
+"""
+USPEX.Atomistic.Transformation
+==============================
+"""
+
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -19,8 +24,10 @@ class Transformation:
     def fromMatrix(rotMatrix, transVec):
         """
         Explicit constructor from matrix and shift.
+
         :param rotMatrix: rotation matrix.
         :param transVec: translation vector.
+
         :return: **Transformation** object.
         """
         return Transformation(rotMatrix, transVec)
@@ -29,8 +36,10 @@ class Transformation:
     def fromRotVector(rotVec, transVec):
         """
         Alternative constructor from rotation vector and shift.
+
         :param rotVec: rotation vector.
         :param transVec: translation vector.
+
         :return: **Transformation** object.
         """
         rotation_sc = Rotation.from_rotvec(rotVec)
@@ -47,7 +56,9 @@ class Transformation:
     def transformCoordinates(self, coordinates):
         """
         Applies transformation to array of coordinates.
+
         :param coordinates: N*3 array of coordinates.
+
         :return: N*3 array of transformed coordinates.
         """
         return np.dot(coordinates, self.rotMatrix.T) + self.transVec
@@ -55,7 +66,9 @@ class Transformation:
     def transformCell(self, cell):
         """
         Applies transformation to **Cell** object.
+
         :param cell: **Cell** object to be transformed.
+
         :return: transformed **Cell** object.
         """
         return type(cell)(np.dot(cell.getCellVectors(), self.rotMatrix.T), cell.getPBC())
@@ -63,7 +76,9 @@ class Transformation:
     def transform(self, structure):
         """
         Applies transformation to atomic structure.
+
         :param structure: atomic structure object to be transformed.
+
         :return: transformed atomic structure.
         """
         coord = self.transformCoordinates(structure.getCartesianCoordinates())
@@ -74,6 +89,7 @@ class Transformation:
     def randomRotVector():
         """
         Generates random rotation vector.
+
         :return: rotation vector.
         """
         return Rotation.random().as_rotvec()

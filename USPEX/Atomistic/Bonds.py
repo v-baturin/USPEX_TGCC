@@ -1,5 +1,5 @@
 """
-USPEX.Common.Atomistic.Bonds
+USPEX.Atomistic.Bonds
 ============================
 
 Objects and methods for handling chemical bonds

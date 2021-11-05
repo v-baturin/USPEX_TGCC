@@ -50,7 +50,7 @@ class Transmutation:
 
             offspring = {'molecules': offspringMolecules, 'cell': cell}
             atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
-            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
             composition = self.simpleMoleculeUtility.composition(offspring)
             if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
                 self.world.putEnvironment(offspring)

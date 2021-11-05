@@ -68,7 +68,10 @@ class Heredity:
 
             gaugesOfSlabs = tuple(np.random.randint(3, 9, size=nslubs).tolist())
 
-            logger.debug(f"trying {outputCell.getCellParameters()} cell and {gaugesOfSlabs}-size slabs.")
+            if outputCell.dim == 0:
+                logger.debug(f"trying  {gaugesOfSlabs}-size slabs.")
+            else:
+                logger.debug(f"trying {outputCell.getCellParameters()} cell and {gaugesOfSlabs}-size slabs.")
 
             slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
                                          axis=axis, gaugesOfSlabs=gaugesOfSlabs,
@@ -114,7 +117,7 @@ class Heredity:
             composition = Counter(dict(zip(*np.unique(moleculeTypes, return_counts=True))))
             if composition == desiredComposition:
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, outputCell)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if np.all(atomDistances >= minDistMatrix):
                     system = {'molecules': molecules, 'cell': outputCell}
                     self.world.putEnvironment(system)
