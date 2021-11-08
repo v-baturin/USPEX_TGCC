@@ -107,11 +107,17 @@ class CellUtility:
         else:
             self._cell = None
 
+        if self._cell is not None:
+            if self._thickness is not None:
+                self._cell = self._cell.getEnvelopeCell(vacuumSize=self._thickness)
+            elif self._radius is not None:
+                self._cell = self._cell.getEnvelopeCell(vacuumSize=self._radius)
+
         assert cellVolume is None or self._cell is None
         if cellVolume is not None:
             self._volume = cellVolume
         elif self._cell is not None:
-            self._volume = self._cell.getVolume() if self.dim == 3 else None
+            self._volume = self._cell.getVolume() if self.dim == 3 else self._cell.getArea() * self._cell.getLength()
         else:
             self._volume = None
 
@@ -159,7 +165,7 @@ class CellUtility:
 
         :return: **Cell** object with appropriate parameters.
         """
-        if self._cell is None:
+        if self._cell is None or self._listOfReconstructions:
             r2d = 180 / np.pi
             if self.dim == 3:
                 a, b, c = np.random.random(3) + 0.5
@@ -202,8 +208,7 @@ class CellUtility:
         :return: **Cell** object with adjusted parameters.
         """
 
-        cell = self.getCell()
-        if cell is None:
+        if self._cell is None:
             cell = Cell(cellVectors, self._pbc)
             estimatedVolume = self.getCellVolume(composition, pressure)
             d = np.power(estimatedVolume / sum(composition.values()), 1.0 / 3.0)
@@ -233,9 +238,12 @@ class CellUtility:
             cellVectors[np.nonzero(self._pbc)] *= factor
             cell = Cell(cellVectors, self._pbc)
         elif self._listOfReconstructions:
-            factor = self.calcCompositionVolume(composition, pressure) / cell.getVolume()
+            volume = np.linalg.det(cellVectors)
+            factor = volume / self._volume
             reconstruction = self._getRandomReconstruction(factor)
-            cell = Cell(reconstruction.dot(cell.getCellVectors()), cell.getPBC())
+            cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
+        else:
+            cell = self.getCell()
         return cell
 
     def getCellVolume(self, composition, pressure):
@@ -274,12 +282,15 @@ class CellUtility:
         :return:
         """
         assert 0 <= fraction <= 1
-        if self._listOfReconstructions:
-            matrix1 = np.round(self._cell.decomposeCell(cell1))
-            matrix2 = np.round(self._cell.decomposeCell(cell2))
-            idx = np.linalg.det([matrix1, matrix2]).argmax()
-            cellVectors = [cell1, cell2][idx].getCellVectors()
-            cell = Cell(cellVectors, self._pbc)
+        if self._cell is not None:
+            if self._listOfReconstructions:
+                matrix1 = np.round(self._cell.decomposeCell(cell1))
+                matrix2 = np.round(self._cell.decomposeCell(cell2))
+                idx = np.linalg.det([matrix1, matrix2]).argmax()
+                matrix = [matrix1, matrix2][idx]
+                cell = Cell(matrix.dot(self._cell.getCellVectors), self._pbc)
+            else:
+                cell = self.getCell()
         elif self.dim == 0:
             vacuum = np.power(fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume(), 1.0/3.0)
             cell = Cell([], self._pbc).getEnvelopeCell(vacuumSize=vacuum)
@@ -383,6 +394,21 @@ class CellUtility:
             return self._listOfReconstructions[idx]
         else:
             return np.eye(3)
+
+    def isGoodCell(self, cell):
+        """
+        Checks if provided cell satisfies constraints.
+        :param cell: cell to be checked.
+        :return:
+        """
+        isGood = True
+        if self._cell is not None:
+            isGood  = isGood and (cell == self._cell)
+        if self.dim == 2:
+            isGood = isGood and (cell.getLength() <= self._thickness)
+        elif self.dim == 1:
+            isGood = isGood and (cell.getRadius() <= self._radius * 1,5)
+        return isGood
 
     @staticmethod
     def volume(system: dict):
@@ -598,6 +624,14 @@ class Cell:
             nonzeroPBC = np.nonzero(self._antipbc)[0]
             nonzeroCellVectors = self._cellVectors[nonzeroPBC]
         return np.linalg.norm(nonzeroCellVectors[0])
+
+    def getRadius(self):
+        """
+        :return: unit cell envelope radius if cell is 1D periodic.
+        """
+        assert self.dim == 1
+        return np.linalg.norm(self._cellVectors[np.nonzero(self._antipbc)]) / 2.0
+
 
     def getMaxNumSlabs(self, axis, N):
         """
@@ -831,3 +865,6 @@ class Cell:
         inds = np.nonzero(self._pbc)
         matrix[inds] = np.linalg.solve(self.getCellVectors().T,other.getCellVectors().T).T[inds]
         return matrix
+
+    def __eq__(self, other):
+        return np.allclose(self.getCellParameters(), other.getCellParameters())
