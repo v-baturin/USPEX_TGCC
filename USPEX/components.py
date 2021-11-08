@@ -24,6 +24,7 @@ from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
+from .Atomistic.Operators.RandSymPyXtal import RandSymPyXtal
 from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .Atomistic.Operators.Permutation import Permutation
 from .Atomistic.Operators.Transmutation import Transmutation
@@ -34,7 +35,7 @@ GlobalOptimizer.registerTarget('Crystal',
                                  Conditions, IonDistances, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation],
-                      creations=[RandTop, RandSym],
+                      creations=[RandTop, RandSym, RandSymPyXtal],
                       seeds=Seeds)
 
 from .GenerationController import GenerationController

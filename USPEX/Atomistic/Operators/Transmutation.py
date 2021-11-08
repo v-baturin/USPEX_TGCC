@@ -12,6 +12,7 @@ class Transmutation:
         self.world = utilities.world
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
+        self.cellUtility = utilities.cellUtility
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("Transmutation does not currently work in molecular regime.")
         self.specificTrans = []
@@ -21,40 +22,35 @@ class Transmutation:
     def __call__(self, system, *args, **kwargs):
         molecules = system['molecules']
         cell = system['cell']
-        symbolsIn = self.simpleMoleculeUtility.moleculeTypes(system)
-        symbolsOut = self.compositionSpace.symbols
+        if self.cellUtility.isGoodCell(cell):
+            symbolsIn = self.simpleMoleculeUtility.moleculeTypes(system)
+            symbolsOut = self.compositionSpace.symbols
 
-        trans = np.array([(i,sOut) for i, sIn in enumerate(symbolsIn) for sOut in symbolsOut if sIn != sOut],
-                         dtype = [('index', int),('symbol', 'U10')])
+            trans = np.array([(i,sOut) for i, sIn in enumerate(symbolsIn) for sOut in symbolsOut if sIn != sOut],
+                             dtype = [('index', int),('symbol', 'U10')])
 
-        for _ in range(self.transAttempts):
-            numberOfTrans = np.random.randint(1, self.howManyTrans + 1)
-            permutation = np.random.choice(trans, numberOfTrans)
-            transCoordinates = {}
-            excluded = []
-            for i, s in permutation:
-                excluded.append(i)
-                if s in transCoordinates:
-                    transCoordinates[s].append([molecules[i].getCenterOfMassCartesianCoordinates()])
-                else:
-                    transCoordinates[s] = [[molecules[i].getCenterOfMassCartesianCoordinates()]]
+            for _ in range(self.transAttempts):
+                numberOfTrans = np.random.randint(1, self.howManyTrans + 1)
+                permutation = np.random.choice(trans, numberOfTrans)
+                transCoordinates = {}
+                excluded = []
+                for i, s in permutation:
+                    excluded.append(i)
+                    if s in transCoordinates:
+                        transCoordinates[s].append([molecules[i].getCenterOfMassCartesianCoordinates()])
+                    else:
+                        transCoordinates[s] = [[molecules[i].getCenterOfMassCartesianCoordinates()]]
 
-            offspringMolecules = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
-            offspringMolecules.extend(self.simpleMoleculeUtility.populateStructure(cell, transCoordinates, None))
+                offspringMolecules = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
+                offspringMolecules.extend(self.simpleMoleculeUtility.populateStructure(cell, transCoordinates, None))
 
-            # change the cell parameters to the user-given ones in case of fixed cell calculations
-            try:
-                cell = self.cellUtility.getCell()
-            except RuntimeError:
-                pass
-
-            offspring = {'molecules': offspringMolecules, 'cell': cell}
-            atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
-            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
-            composition = self.simpleMoleculeUtility.composition(offspring)
-            if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-                self.world.putEnvironment(offspring)
-                self.conditions.putConditions(offspring)
-                return (offspring,)
+                offspring = {'molecules': offspringMolecules, 'cell': cell}
+                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
+                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                composition = self.simpleMoleculeUtility.composition(offspring)
+                if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
+                    self.world.putEnvironment(offspring)
+                    self.conditions.putConditions(offspring)
+                    return (offspring,)
 
         raise RuntimeError("Transmutation failed.")
