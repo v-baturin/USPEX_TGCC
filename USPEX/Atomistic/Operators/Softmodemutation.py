@@ -12,7 +12,6 @@ _MIN_VALID_FREQUENCY = 5.0e-4
 
 class Softmodemutation:
     def __init__(self, utilities, degree: float = None):
-        self.cellUtility = utilities.cellUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
         self.world = utilities.world

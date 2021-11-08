@@ -11,7 +11,6 @@ _SWAP_ATTEMPTS = 1000
 class Permutation:
 
     def __init__(self, utilities, howManySwaps = 5, specificSwaps = None, swapAttempts = _SWAP_ATTEMPTS):
-        self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.world = utilities.world
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
