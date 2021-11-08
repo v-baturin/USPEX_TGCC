@@ -52,6 +52,7 @@ extensions = [
     Extension("USPEX.Atomistic.Operators.Heredity", ["USPEX/Atomistic/Operators/Heredity.py"]),
     Extension("USPEX.Atomistic.Operators.Permutation", ["USPEX/Atomistic/Operators/Permutation.py"]),
     Extension("USPEX.Atomistic.Operators.RandSym", ["USPEX/Atomistic/Operators/RandSym.py"]),
+    Extension("USPEX.Atomistic.Operators.RandSymPyXtal", ["USPEX/Atomistic/Operators/RandSymPyXtal.py"]),
     Extension("USPEX.Atomistic.Operators.RandTop", ["USPEX/Atomistic/Operators/RandTop.py"]),
     Extension("USPEX.Atomistic.Operators.Rotation", ["USPEX/Atomistic/Operators/Rotation.py"]),
     Extension("USPEX.Atomistic.Operators.Seeds", ["USPEX/Atomistic/Operators/Seeds.py"]),
