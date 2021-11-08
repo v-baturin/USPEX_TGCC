@@ -111,7 +111,7 @@ class CellUtility:
             if self._thickness is not None:
                 self._cell = self._cell.getEnvelopeCell(vacuumSize=self._thickness)
             elif self._radius is not None:
-                self._cell = self._cell.getEnvelopeCell(vacuumSize=self._radius)
+                self._cell = self._cell.getEnvelopeCell(vacuumSize=2 * self._radius)
 
         assert cellVolume is None or self._cell is None
         if cellVolume is not None:
@@ -181,7 +181,7 @@ class CellUtility:
                 cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis).getEnvelopeCell(vacuumSize=self._thickness)
             elif self.dim == 1:
                 a = np.random.random() + 0.5
-                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis).getEnvelopeCell(vacuumSize=self._radius)
+                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis).getEnvelopeCell(vacuumSize=2 * self._radius)
             elif self.dim == 0:
                 cell = Cell([], self._pbc)
             else:
@@ -216,7 +216,7 @@ class CellUtility:
                 factorMin = factorMax = np.power(estimatedVolume / cell.getVolume(), 1.0 / 3.0)
             elif cell.dim == 2:
                 estimatedAreaMin = estimatedVolume / self._thickness
-                estimatedAreaMax = estimatedVolume / d - self._thickness * d
+                estimatedAreaMax = estimatedVolume / d
                 area = cell.getArea()
                 factorMin = np.sqrt(estimatedAreaMin / area)
                 factorMax = np.sqrt(estimatedAreaMax / area)
