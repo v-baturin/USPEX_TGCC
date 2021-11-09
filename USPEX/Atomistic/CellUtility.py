@@ -208,6 +208,7 @@ class CellUtility:
         :return: **Cell** object with adjusted parameters.
         """
 
+        cellVectors = np.asarray(cellVectors)
         if self._cell is None:
             cell = Cell(cellVectors, self._pbc)
             estimatedVolume = self.getCellVolume(composition, pressure)
@@ -243,7 +244,9 @@ class CellUtility:
             reconstruction = self._getRandomReconstruction(factor)
             cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
-            cell = self.getCell()
+            cellVectors = self.alignCell(Cell(cellVectors, self._pbc)).getCellVectors()
+            cellVectors[np.nonzero(self._pbc)] = self._cell.getCellVectorsPBC()
+            cell = Cell(cellVectors, self._pbc)
         return cell
 
     def getCellVolume(self, composition, pressure):
@@ -407,7 +410,7 @@ class CellUtility:
         if self.dim == 2:
             isGood = isGood and (cell.getLength() <= self._thickness)
         elif self.dim == 1:
-            isGood = isGood and (cell.getRadius() <= self._radius * 1,5)
+            isGood = isGood and (cell.getRadius() <= self._radius * 1.5)
         return isGood
 
     @staticmethod
