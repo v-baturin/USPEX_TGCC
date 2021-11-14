@@ -76,9 +76,13 @@ def compileParams(main: dict, **definitions) -> dict:
                 exc_info = sys.exc_info()
                 raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
         if 'singleCrystalSpectrumAnalyzer' in target:
-            filename = target['singleCrystalSpectrumAnalyzer']
+            dct = {}
+            if 'cellParameters' in target['singleCrystalSpectrumAnalyzer']:
+                dct['cellParameters'] = target['singleCrystalSpectrumAnalyzer']['cellParameters']
             try:
-                target['singleCrystalSpectrumAnalyzer'] = SingleCrystalSpectrumAnalyzer.parse(filename)
+                hklFile = target['singleCrystalSpectrumAnalyzer']['hklFile']
+                dct['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(hklFile)
+                target['singleCrystalSpectrumAnalyzer'] = dct
             except Exception as ex:
                 logger.exception(ex)
                 exc_info = sys.exc_info()
