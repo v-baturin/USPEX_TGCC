@@ -15,31 +15,16 @@ from .get_reflections import get_reflections
 
 
 class SingleCrystalSpectrumAnalyzer(object):
-    def __init__(self, hklFile: str, cellParameters: tuple):
+    def __init__(self, expReflections: list, cellParameters: tuple):
         """
         Initializes the class.
 
-        :type hklFile: str
-        :param hklFile: SHELXL hkl file containing the user-given reflections.
+        :type expReflections: list
+        :param expReflections: single crystal experimental reflections.
         :type cellParameters: tuple
         :param cellParameters: Cell parameters linked to the reflections.
         """
-        with open(hklFile, 'r') as f:
-            exp_reflections = []
-            for line in f:
-                values = line.split()
-
-                # the hkl file terminates with all zeros
-                if values == ['0', '0', '0', '0.00', '0.00']:
-                    break
-
-                i_hkl = float(values[3])
-                if i_hkl > 0:
-                    hkl = (int(values[0]), int(values[1]), int(values[2]))
-                    sigma_hkl = float(values[4])
-                    exp_reflections.append([i_hkl, hkl, sigma_hkl])
-
-        self.exp_reflections = np.array(exp_reflections, dtype=object)
+        self.exp_reflections = np.array(expReflections, dtype=object)
         self.cellParameters = cellParameters
 
     def analyze(self, system):
@@ -108,3 +93,30 @@ class SingleCrystalSpectrumAnalyzer(object):
             self.analyze(system)
         assert 'singleCrystalSpectrumAnalyzer.xraydistance' in system
         return system['singleCrystalSpectrumAnalyzer.xraydistance']
+
+    @staticmethod
+    def parse(hklFile: str):
+        """
+        It parses a file containing information about the experimental spectrum and
+        it returns a dictionary containing the parameters for class initialization.
+
+        :type filename: str
+        :param filename: SHELXL hkl file containing the user-given reflections.
+        :rtype: list
+        :return: single crystal reflections parsed from the file.
+        """
+        expReflections = []
+        with open(hklFile, 'r') as f:
+            for line in f:
+                values = line.split()
+
+                # the hkl file terminates with all zeros
+                if values == ['0', '0', '0', '0.00', '0.00']:
+                    break
+
+                i_hkl = float(values[3])
+                if i_hkl > 0:
+                    hkl = (int(values[0]), int(values[1]), int(values[2]))
+                    sigma_hkl = float(values[4])
+                    expReflections.append([i_hkl, hkl, sigma_hkl])
+        return expReflections
