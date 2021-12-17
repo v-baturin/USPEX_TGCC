@@ -721,13 +721,20 @@ class Cell:
 
     def fractionalToCartesianOperator(self, operator):
         """
-        TODO convert some operator matrix defined in fractional space to transformation object in cartesian space.
+        Сonvert some operator matrix defined in fractional space to transformation object in cartesian space.
 
-        :param operator:
+        :param operator: 4*4 matrix defining operator in fractional space.
 
         :return:
+        **Transformation** object defining transformation in cartesian space.
         """
-        return operator
+        rotMatrixFrac = np.asarray(operator)[:3, :3]
+        rotMatrixCart = np.dot(self._cellVectors.T, np.dot(rotMatrixFrac, np.linalg.inv(self._cellVectors.T)))
+        if np.allclose(np.dot(rotMatrixCart, rotMatrixCart.T), np.eye(3, dtype=float), atol=1e-03):
+            transVecFrac = np.asarray(operator)[:3, 3]
+            return Transformation(rotMatrixCart, self.fractionalToCartesian(transVecFrac))
+        else:
+            raise ValueError('rotation matrix is not unitary')
 
     def getWrapedCartesianCoordinates(self, coordinates):
         """
