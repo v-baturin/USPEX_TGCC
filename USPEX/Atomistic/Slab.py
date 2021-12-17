@@ -21,11 +21,11 @@ class Slab:
         for i, molecule in enumerate(molecules):
             centerOfMassCoordinatesInitial = molecule.getCenterOfMassCartesianCoordinates()
             centerOfMassCoordinates = transformation.transformCoordinates(centerOfMassCoordinatesInitial)
-            dimensionality = np.sum(outputCell.getPBC())
-            if dimensionality == 0 or dimensionality == 1:
+            pbc = outputCell.getPBC()
+            dimensionality = np.sum(pbc)
+            if dimensionality == 0 or (dimensionality == 1 and pbc[axis]):
                 for fittedTransformation in outputCell.getFittedTransformations(centerOfMassCoordinates, inputCell):
                     coordinates = outputCell.cartesianToFractional(fittedTransformation.transformCoordinates(centerOfMassCoordinates))
-                    assert np.all(0. <= coordinates) and np.all(coordinates < 1.)
                     coordinate = coordinates[axis]
                     for j, upperBoundCoordinate in enumerate(coordinateBounds):
                         if coordinate <= upperBoundCoordinate:
@@ -35,7 +35,7 @@ class Slab:
                             depths.append(np.min((upperBoundCoordinate - coordinate, coordinate - lowerBoundCoordinate)))
                             mols.append((fittedTransformation * transformation).transform(molecule))
                             break
-            elif dimensionality == 2 or dimensionality == 3:
+            else:
                 coordinates = inputCell.cartesianToFractional(centerOfMassCoordinates)
                 coordinates = inputCell.getWrapedFractionalCoordinates(coordinates)
                 coordinate = coordinates[axis]
@@ -50,8 +50,6 @@ class Slab:
                         finalTransformation = type(transformation).fromMatrix(transformation.rotMatrix, transVector)
                         mols.append(finalTransformation.transform(molecule))
                         break
-            else:
-                assert False
         return (Slab(indices, depths, molecules) for indices, depths, molecules in slabs)
 
     @staticmethod
