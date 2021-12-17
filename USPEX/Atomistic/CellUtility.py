@@ -815,8 +815,9 @@ class Cell:
         else:
             closeCoordinates = []
 
-        fittedCoordinates = [coord for coord in closeCoordinates if (np.all(0. <= self.cartesianToFractional(coord)) and
-                                                                     np.all(self.cartesianToFractional(coord) < 1.))]
+        fittedCoordinates = [coord for coord in closeCoordinates
+                             if (np.all(0. <= self.cartesianToFractional(coord)[inds]) and
+                                 np.all(self.cartesianToFractional(coord)[inds] < 1.))]
 
         return [Transformation.fromRotVector([0.,0.,0.], finalCoordinates - initialCoordinates)
                 for finalCoordinates in fittedCoordinates]
