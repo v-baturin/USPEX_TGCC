@@ -5,7 +5,8 @@ import matplotlib
 import numpy as np
 
 from copy import copy
-from collections import Counter, Mapping
+from collections import Counter
+from collections.abc import Mapping
 from itertools import combinations
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
