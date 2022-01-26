@@ -183,7 +183,7 @@ class CellUtility:
                 a = np.random.random() + 0.5
                 cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis).getEnvelopeCell(vacuumSize=2 * self._radius)
             elif self.dim == 0:
-                cell = Cell([], self._pbc)
+                cell = Cell.initFromCellParameters(self._pbc)
             else:
                 raise RuntimeError(f"Wrong pbc {self._pbc}.")
             cell = self.adjustCell(cell.getCellVectors(), composition, pressure)
@@ -296,7 +296,7 @@ class CellUtility:
                 cell = self.getCell()
         elif self.dim == 0:
             vacuum = np.power(fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume(), 1.0/3.0)
-            cell = Cell([], self._pbc).getEnvelopeCell(vacuumSize=vacuum)
+            cell = Cell.initFromCellParameters(self._pbc).getEnvelopeCell(vacuumSize=vacuum)
         else:
             cellParameters = fraction * np.asarray(cell1.getCellParameters()) + \
                          (1 - fraction) * np.asarray(cell2.getCellParameters())
@@ -349,15 +349,15 @@ class CellUtility:
             b /= np.linalg.norm(b)
             c = np.dot(a, b)
             v = np.cross(a, b)
-            s = np.linalg.norm(a)
+            s = np.linalg.norm(v)
             eps = 1e-7
             if s < eps:
                 v = np.cross((0, 0, 1), b)
                 if np.linalg.norm(v) < eps:
                     v = np.cross((1, 0, 0), b)
                     assert np.linalg.norm(v) >= eps
-                elif s > 0:
-                    v /= s
+            elif s > 0:
+                v /= s
             cellVectors[:] = (c * cellVectors -
                         np.cross(cellVectors, s * v) +
                         np.outer(np.dot(cellVectors, v), (1.0 - c) * v))
@@ -484,30 +484,47 @@ class Cell:
         self._pbc = pbc
         self._antipbc = tuple((~np.asarray(pbc, dtype=bool)).tolist())
         self.dim = sum(pbc)
-        cellVectors = np.asarray(cellVectors, dtype=float).reshape((-1,3))
-        if len(cellVectors) == 3:
-            self._cellVectors = cellVectors
-        elif len(cellVectors) == self.dim:
-            self._cellVectors = np.eye(3)
-            self._cellVectors[np.nonzero(self._pbc)] = cellVectors
-            if self.dim == 2:
-                vec1, vec2 = cellVectors
-                axis = np.cross(vec1, vec2)
-                axis /= np.linalg.norm(axis)
-                self._cellVectors[np.nonzero(self._antipbc)] = np.asarray([axis], dtype=float)
-            elif self.dim == 1:
-                axis, = cellVectors
-                axis /= np.linalg.norm(axis)
-                vec1 = np.random.random(3)
-                vec1 -= axis*np.dot(axis, vec1)
-                vec1 /= np.linalg.norm(vec1)
-                vec2 = np.cross(vec1, axis)
-                self._cellVectors[np.nonzero(self._antipbc)] = np.asarray([vec1, vec2], dtype=float)
-        else:
-            raise ValueError(f"Provided {len(cellVectors)} cell vectors when dim is {self.dim}.")
+        assert len(cellVectors) == 3
+        if self.dim == 0 or self.dim == 1:
+            a, b, c = cellVectors
+            assert np.isclose(np.dot(a, b), 0) and np.isclose(np.dot(b, c), 0) and np.isclose(np.dot(c, a), 0)
+        elif self.dim == 2:
+            a, b = cellVectors[np.nonzero(self._pbc)]
+            c, = cellVectors[np.nonzero(self._antipbc)]
+            assert np.isclose(np.dot(b, c), 0) and np.isclose(np.dot(c, a), 0)
+        self._cellVectors = np.asarray(cellVectors, dtype=float).reshape((-1,3))
 
     @staticmethod
-    def initFromCellParameters(pbc, a, b=None, c=None, alpha=None, beta=None, gamma=None, axis=None):
+    def initFromCellVectors(pbc, cellVectors=()):
+        dim = sum(pbc)
+        assert len(cellVectors) == dim, f"Provided {len(cellVectors)} cell vectors when dim is {dim}."
+        if dim == 3:
+            return Cell(cellVectors, pbc)
+        elif dim == 2:
+            vec1, vec2 = cellVectors
+            axis = np.cross(vec1, vec2)
+            axis /= np.linalg.norm(axis)
+            if pbc == (1, 1, 0):
+                cellVectors = np.asarray([vec1, vec2, axis], dtype=float)
+            elif pbc == (1, 0, 1):
+                cellVectors = np.asarray([vec1, -axis, vec2], dtype=float)
+            elif pbc == (0, 1, 1):
+                cellVectors = np.asarray([axis, vec1, vec2], dtype=float)
+            else:
+                raise RuntimeError("Impossible!")
+            return Cell(cellVectors, pbc)
+        elif dim == 1:
+            axis, = cellVectors
+            a = np.linalg.norm(axis)
+            axis /= a
+            return Cell.initFromCellParameters(pbc, a, axis = axis)
+        elif dim == 0:
+            return Cell(np.eye(3), pbc)
+        else:
+            raise RuntimeError(f"Wrong pbc {pbc}.")
+
+    @staticmethod
+    def initFromCellParameters(pbc, a=None, b=None, c=None, alpha=None, beta=None, gamma=None, axis=None):
         """
         Alternative constructor using cell parameters.
 
@@ -524,7 +541,7 @@ class Cell:
         """
         dim = sum(pbc)
         if dim == 3:
-            assert axis is None and b is not None and c is not None and alpha is not None and beta is not None and gamma is not None
+            assert axis is None and a is not None and b is not None and c is not None and alpha is not None and beta is not None and gamma is not None
             alpha, beta, gamma = np.pi / 180 * np.asarray((alpha, beta, gamma), dtype=float)
             va = np.array([a, 0, 0])
             vb = np.array([b * np.cos(gamma), b * np.sin(gamma), 0])
@@ -534,42 +551,100 @@ class Cell:
             vc = c * np.array([cx, cy, cz])
             return Cell(np.vstack((va, vb, vc)), pbc)
         elif dim == 2:
-            assert axis is not None and b is not None and c is None and alpha is not None and beta is None and gamma is None
+            assert axis is not None and a is not None and b is not None and c is None and alpha is not None and beta is None and gamma is None
             alpha= np.pi / 180 * alpha
             axis = np.asarray(axis, dtype=float)
             axis /= np.linalg.norm(axis)
-            va = np.random.random(3)
-            va -= axis*np.dot(axis, va)
-            va *= a/np.linalg.norm(va)
-            vb = np.dot(Rotation.from_rotvec(alpha*axis).as_matrix(), va)
-            vb *= b/np.linalg.norm(vb)
-            return Cell(np.vstack((va, vb)), pbc)
+            va = np.array([a, 0, 0])
+            vb = np.array([b * np.cos(alpha), b * np.sin(alpha), 0])
+            return Cell.initFromCellVectors(pbc, np.vstack((va, vb))).getAlignedCell(axis)
         elif dim == 1:
-            assert axis is not None and b is None and c is None and alpha is None and beta is None and gamma is None
-            axis = np.asarray(axis)
-            va = a*axis/np.linalg.norm(axis)
-            return Cell([va], pbc)
+            assert axis is not None and a is not None and b is None and c is None and alpha is None and beta is None and gamma is None
+            cellVectors = np.eye(3)
+            cellVectors[np.nonzero(pbc)] *= a
+            return Cell(cellVectors, pbc).getAlignedCell(axis)
+        elif dim == 0:
+            assert axis is None and a is None and b is None and c is None and alpha is None and beta is None and gamma is None
+            return Cell(np.eye(3), pbc)
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
 
+    def getAlignedCell(self, axis):
+        """
+        :return: Cell with lattice vectors with nonperiodic (for 2D) or periodic (1D) aligned along axis.
+        """
+        if (self.dim == 2) or (self.dim == 1):
+            assert np.linalg.norm(axis) >= 1e-7
+            a = self.getCellVectorsAntiPBC()[0] if self.dim == 2 else self.getCellVectorsPBC()[0]
+            b = np.asarray(axis, dtype=float)
+            a /= np.linalg.norm(a)
+            b /= np.linalg.norm(b)
+            c = np.dot(a, b)
+            v = np.cross(a, b)
+            s = np.linalg.norm(v)
+            eps = 1e-7
+            if s < eps:
+                v = np.cross((0, 0, 1), b)
+                if np.linalg.norm(v) < eps:
+                    v = np.cross((1, 0, 0), b)
+                    assert np.linalg.norm(v) >= eps
+            elif s > 0:
+                v /= s
+            cellVectors = self.getCellVectors()
+            return Cell((c * cellVectors - np.cross(cellVectors, s * v) + np.outer(np.dot(cellVectors, v), v - c * v)),
+                        self._pbc)
+        else:
+            raise RuntimeError(f"Wrong dim {self.dim}.")
 
-    def getCellVectors(self):
+    def getEnvelopeCell(self, coordinates=None, vacuumSize=0):
         """
-        :return: 3*3 array of cell vectors.
-        """
-        return copy(self._cellVectors)
+        :param coordinates: cartesian atomic coordinates
+        :param vacuumSize: vacuum distance added along cell vector
 
-    def getCellVectorsPBC(self):
+        :return:  new cell object, corresponding to
         """
-        :return: x*3 array of periodic cell vectors, where 0 <= x <= 3.
-        """
-        return copy(self._cellVectors)[np.nonzero(self._pbc)]
+        newCellVectors = []
+        for vector, isPeriodic in zip(self._cellVectors, self._pbc):
+            if isPeriodic:
+                newCellVectors.append(vector)
+            else:
+                vector = vector / np.linalg.norm(vector)
+                if coordinates is not None:
+                    proj = np.dot(coordinates, vector)
+                    newCellVectors.append((np.max(proj) - np.min(proj) + vacuumSize) * vector)
+                else:
+                    newCellVectors.append(vacuumSize * vector)
+        return Cell(np.asarray(newCellVectors, dtype=float), self._pbc)
 
     def getPBC(self):
         """
         :return: periodic boundary conditions in each direction.
         """
         return self._pbc
+
+    def getAntiPBC(self):
+        """
+        :return: periodic boundary conditions in each direction.
+        """
+        return self._antipbc
+
+    def getCellVectors(self):
+        """
+        :return: 3*3 array of cell vectors.
+        """
+        return np.copy(self._cellVectors)
+
+    def getCellVectorsPBC(self):
+        """
+        :return: x*3 array of periodic cell vectors, where 0 <= x <= 3.
+        """
+        return np.copy(self._cellVectors)[np.nonzero(self._pbc)]
+
+    def getCellVectorsAntiPBC(self):
+        """
+        :return: x*3 array of non-periodic cell vectors, where 0 <= x <= 3.
+        """
+        return np.copy(self._cellVectors)[np.nonzero(self._antipbc)]
 
     def getCellParameters(self):
         """
@@ -594,6 +669,9 @@ class Cell:
             return a,
         else:
             raise RuntimeError(f"Wrong dim {self.dim}.")
+
+    def __eq__(self, other):
+        return np.allclose(self.getCellParameters(), other.getCellParameters())
 
     def getVolume(self):
         """
@@ -635,10 +713,20 @@ class Cell:
         assert self.dim == 1
         return np.linalg.norm(self._cellVectors[np.nonzero(self._antipbc)]) / 2.0
 
+    def getCornersCoordinates(self):
+        """
+        :return: 8*3 array of absolute coordinates of each corner of unit cell.
+        """
+        coordinates = []
+        for i in range(2):
+            for j in range(2):
+                for k in range(2):
+                    coordinates.append(i*self._cellVectors[0] + j*self._cellVectors[1] + k*self._cellVectors[2])
+        return np.asarray(coordinates, dtype = float)
 
     def getMaxNumSlabs(self, axis, N):
         """
-        Calculates maximal number of choices of slabs origins in give direction.
+        Calculates maximal number of choices of slabs origins in given direction.
         :param axis: direction axis.
         :param N: number of atoms/molecules in cell.
         :return: maximal number of choices of slabs origins.
@@ -687,17 +775,6 @@ class Cell:
         else:
             raise RuntimeError(f"Wrong dim {self.dim}.")
         return Nmax
-
-    def getCornersCoordinates(self):
-        """
-        :return: 8*3 array of absolute coordinates of each corner of unit cell.
-        """
-        coordinates = []
-        for i in range(2):
-            for j in range(2):
-                for k in range(2):
-                    coordinates.append(i*self._cellVectors[0] + j*self._cellVectors[1] + k*self._cellVectors[2])
-        return np.asarray(coordinates, dtype = float)
 
     def cartesianToFractional(self, coordinates):
         """
@@ -755,6 +832,41 @@ class Cell:
         :return: fractional coordinates wrapped to unit cell.
         """
         return np.divmod(coordinates, 1/np.asarray(self._pbc, dtype=float))[1]
+
+    def center(self, coordinates, affectedDims=None):
+        """
+        Center atoms in unit cell.
+
+        Centers the coordinates in the unit cell, so there is the same
+        amount of vacuum along all cellvectors, specified in affectedDims.
+
+        :param coordinates: list of coordinates of N atoms (Nx3 np.array)
+        :param affectedDims: iterable of int/bool/float, specifying the dimensions to act on.
+            Default behavior is to center along all vectors, for which pbc is 0
+
+        :return:
+        """
+        if affectedDims is None:
+            affectedDims = 1 - np.asarray(self._pbc, dtype=int)
+        affectedDims = np.array(affectedDims).reshape((1, 3))
+        fracCoords = self.cartesianToFractional(coordinates)
+        shift = np.array([0.5, 0.5, 0.5]) - 0.5 * (np.min(fracCoords, axis=0) + np.max(fracCoords, axis=0))
+        newFrac = fracCoords + shift * affectedDims
+        return self.fractionalToCartesian(newFrac)
+
+    def decomposeCell(self, other):
+        """
+        Decompose cell vectors of given unit cell as linear composition of cell vectors of this unit cell.
+
+        :param other: unit cell to decompose.
+
+        :return: 3*3 matrix of decomposition coefficients.
+        """
+        assert self._pbc == other.getPBC()
+        matrix = np.eye(3)
+        inds = np.nonzero(self._pbc)
+        matrix[inds] = np.linalg.solve(self.getCellVectors().T,other.getCellVectors().T).T[inds]
+        return matrix
 
     def randomTransformation(self):
         """
@@ -821,61 +933,3 @@ class Cell:
 
         return [Transformation.fromRotVector([0.,0.,0.], finalCoordinates - initialCoordinates)
                 for finalCoordinates in fittedCoordinates]
-
-    def getEnvelopeCell(self, coordinates=None, vacuumSize=0):
-        """
-        :param coordinates: cartesian atomic coordinates
-        :param vacuumSize: vacuum distance added along cell vector
-
-        :return:  new cell object, corresponding to
-        """
-        newCellVectors = []
-        for vector, isPeriodic in zip(self._cellVectors, self._pbc):
-            if isPeriodic:
-                newCellVectors.append(vector)
-            else:
-                vector = vector / np.linalg.norm(vector)
-                if coordinates is not None:
-                    proj = np.dot(coordinates, vector)
-                    newCellVectors.append((np.max(proj) - np.min(proj) + vacuumSize) * vector)
-                else:
-                    newCellVectors.append(vacuumSize * vector)
-        return Cell(np.asarray(newCellVectors, dtype=float), self._pbc)
-
-    def center(self, coordinates, affectedDims=None):
-        """
-        Center atoms in unit cell.
-
-        Centers the coordinates in the unit cell, so there is the same
-        amount of vacuum along all cellvectors, specified in affectedDims.
-
-        :param coordinates: list of coordinates of N atoms (Nx3 np.array)
-        :param affectedDims: iterable of int/bool/float, specifying the dimensions to act on.
-            Default behavior is to center along all vectors, for which pbc is 0
-
-        :return:
-        """
-        if affectedDims is None:
-            affectedDims = 1 - np.asarray(self._pbc, dtype=int)
-        affectedDims = np.array(affectedDims).reshape((1, 3))
-        fracCoords = self.cartesianToFractional(coordinates)
-        shift = np.array([0.5, 0.5, 0.5]) - 0.5 * (np.min(fracCoords, axis=0) + np.max(fracCoords, axis=0))
-        newFrac = fracCoords + shift * affectedDims
-        return self.fractionalToCartesian(newFrac)
-
-    def decomposeCell(self, other):
-        """
-        Decompose cell vectors of given unit cell as linear composition of cell vectors of this unit cell.
-
-        :param other: unit cell to decompose.
-
-        :return: 3*3 matrix of decomposition coefficients.
-        """
-        assert self._pbc == other.getPBC()
-        matrix = np.eye(3)
-        inds = np.nonzero(self._pbc)
-        matrix[inds] = np.linalg.solve(self.getCellVectors().T,other.getCellVectors().T).T[inds]
-        return matrix
-
-    def __eq__(self, other):
-        return np.allclose(self.getCellParameters(), other.getCellParameters())
