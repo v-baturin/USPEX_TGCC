@@ -318,7 +318,7 @@ class CrystalRepresentation(object):
     @staticmethod
     def getPopulationSummaryBlock(population, optimizer) -> list:
         utlts = optimizer.target.utilities
-        if utlts.cellUtility.dim == 3:
+        if utlts.cellUtility.getDim() == 3:
             numBlocks = [utlts.compositionSpace.numBlocks(utlts.simpleMoleculeUtility.composition(system)) for system in population]
             numBlocks = np.asarray(numBlocks)
             volumes = [optimizer.fitness.getFitnessDirect('cellUtility.volume', system) for system in population]

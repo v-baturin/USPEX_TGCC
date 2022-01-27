@@ -58,7 +58,7 @@ class RandSymPyXtal:
             elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
             randcell = self.cellUtility.getRandomCell(elementalComposition, self.conditions.externalPressure)
 
-            if self.cellUtility.dim == 3:
+            if self.cellUtility.getDim() == 3:
 
                 if self.nsym is None:
                     self.nsym = list(range(1, 231))
@@ -73,7 +73,7 @@ class RandSymPyXtal:
                     logger.debug(e, exc_info=True)
                 signal.alarm(0)
 
-            elif self.cellUtility.dim == 2:
+            elif self.cellUtility.getDim() == 2:
 
                 if self.nsym is None:
                     self.nsym = list(range(1, 81))
@@ -92,7 +92,7 @@ class RandSymPyXtal:
                     logger.debug(e, exc_info=True)
                 signal.alarm(0)
 
-            elif self.cellUtility.dim == 1:
+            elif self.cellUtility.getDim() == 1:
 
                 if self.nsym is None:
                     self.nsym = list(range(1, 76))
@@ -111,7 +111,7 @@ class RandSymPyXtal:
                     logger.debug(e, exc_info=True)
                 signal.alarm(0)
 
-            elif self.cellUtility.dim == 0:
+            elif self.cellUtility.getDim() == 0:
 
                 if self.nsym is None:
                     self.nsym = list(range(1, 57))
@@ -130,8 +130,6 @@ class RandSymPyXtal:
                 tmp_cell, coordinates, operations = convertStruc(structurePyxtal, randcell.getPBC(),
                                                                  symbols, LOCAL_VACUUM)
                 cell = self.cellUtility.adjustCell(tmp_cell, elementalComposition, self.conditions.externalPressure)
-                if (self.cellUtility.dim == 2) or (self.cellUtility.dim == 1):
-                    cell = self.cellUtility.alignCell(cell)
                 coordinates = dict(zip(symbols, coordinates))
                 operations = dict(zip(symbols, operations))
                 molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
