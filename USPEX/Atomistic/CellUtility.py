@@ -14,7 +14,6 @@ from copy import copy
 from scipy.spatial.transform import Rotation
 
 from .Transformation import Transformation
-from .VolumeEstimator import VolumeEstimator
 
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
@@ -72,7 +71,7 @@ class CellUtility:
             if cellVectors is not None:
                 assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
-                assert cellVolume is None
+                assert axis is not None and cellVolume is None
             else:
                 assert axis is not None
         elif self._dim == 1:
@@ -80,7 +79,7 @@ class CellUtility:
             if cellVectors is not None:
                 assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
-                assert cellVolume is None
+                assert axis is not None and cellVolume is None
             else:
                 assert axis is not None
         elif self._dim == 0:
@@ -89,7 +88,6 @@ class CellUtility:
             raise RuntimeError(f"Wrong pbc {pbc}.")
 
         self._axis = np.asarray(axis, dtype=float) if axis is not None else None
-        self._thickness = thickness
 
         if cellVectors is not None:
             self._cell = Cell.initFromCellVectors(self._pbc, cellVectors)
@@ -97,6 +95,10 @@ class CellUtility:
             self._cell = Cell.initFromCellParameters(self._pbc, **cellParameters, axis = self._axis)
         else:
             self._cell = None
+
+        self._thickness = thickness
+        if self._thickness is not None and self._cell is not None:
+            self._cell = self._cell.getEnvelopeCell(vacuumSize=self._thickness)
 
         assert cellVolume is None or self._cell is None
         if cellVolume is not None:
@@ -108,8 +110,6 @@ class CellUtility:
                 self._volume = self._cell.getArea() * self._thickness
             elif self._dim == 1:
                 self._volume = self._cell.getLength() * self._thickness ** 2
-            elif self._dim == 0:
-                self._volume = self._thickness ** 3
             else:
                 raise ValueError(f"Incorrect dimensionality {dim}.")
         else:
@@ -224,7 +224,7 @@ class CellUtility:
             cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
             cell = self.getCell()
-        return cell.getEnvelopeCell(self._thickness)
+        return cell
 
     def getRandomCell(self, estimatedVolume, numAtoms):
         """
@@ -257,11 +257,14 @@ class CellUtility:
             else:
                 raise RuntimeError(f"Wrong pbc {self._pbc}.")
             cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms)
+            if self._thickness is not None:
+                cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
         elif self._listOfReconstructions:
-            raise RuntimeError('Unhandled!')
+            reconstruction = self._getRandomReconstruction()
+            cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
             cell = self.getCell()
-        return cell.getEnvelopeCell(self._thickness)
+        return cell
 
     def getHybridCell(self, cell1, cell2, fraction):
         """
@@ -274,41 +277,42 @@ class CellUtility:
         :return:
         """
         assert 0 <= fraction <= 1
-        if self._cell is not None:
-            if self._listOfReconstructions:
-                matrix1 = np.round(self._cell.decomposeCell(cell1))
-                matrix2 = np.round(self._cell.decomposeCell(cell2))
-                idx = np.linalg.det([matrix1, matrix2]).argmax()
-                matrix = [matrix1, matrix2][idx]
-                cell = Cell(matrix.dot(self._cell.getCellVectors), self._pbc)
-            else:
-                cell = self.getCell()
-        elif self._dim == 0:
-            vacuum = np.power(fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume(), 1.0/3.0)
-            cell = Cell.initFromCellParameters(self._pbc).getEnvelopeCell(vacuumSize=vacuum)
-        else:
+        if self._cell is None:
             cellParameters = fraction * np.asarray(cell1.getCellParameters()) + \
-                         (1 - fraction) * np.asarray(cell2.getCellParameters())
+                             (1 - fraction) * np.asarray(cell2.getCellParameters())
             if self._dim == 3:
                 cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis)
-                factor = np.power((fraction*cell1.getVolume() + (1 - fraction)*cell2.getVolume()) / cell.getVolume(), 1./3.)
-                vacuum = 0
+                factor = np.power((fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()) / cell.getVolume(), 1. / 3.)
+                thickness = 0
                 cellParameters[0:3] *= factor
             elif self._dim == 2:
                 a, b, alpha = cellParameters
                 cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
-                factor = np.sqrt((fraction*cell1.getArea() + (1 - fraction)*cell2.getArea()) / cell.getArea())
-                vacuum = fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()
-                cellParameters = np.asarray((a*factor, b*factor, None, alpha, None, None))
+                factor = np.sqrt((fraction * cell1.getArea() + (1 - fraction) * cell2.getArea()) / cell.getArea())
+                thickness = fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()
+                cellParameters = (a * factor, b * factor, None, alpha, None, None)
             elif self._dim == 1:
                 a, = cellParameters
                 cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
-                factor = (fraction*cell1.getLength() + (1 - fraction)*cell2.getLength()) / cell.getLength()
-                vacuum = np.sqrt(fraction * cell1.getArea() + (1 - fraction) * cell2.getArea())
-                cellParameters = np.asarray((a*factor, None, None, None, None, None))
+                factor = (fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()) / cell.getLength()
+                thickness = np.sqrt(fraction * cell1.getArea() + (1 - fraction) * cell2.getArea())
+                cellParameters = (a * factor, None, None, None, None, None)
+            elif self._dim == 0:
+                thickness = np.power(fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume(), 1.0 / 3.0)
+                cellParameters = (None, None, None, None, None, None)
             else:
                 raise RuntimeError(f"Wrong dim {self._dim}.")
-            cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis).getEnvelopeCell(vacuumSize=vacuum)
+            if self._thickness is not None and thickness > self._thickness:
+                thickness = self._thickness
+            cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis).getEnvelopeCell(vacuumSize=thickness)
+        elif self._listOfReconstructions:
+            matrix1 = np.round(self._cell.decomposeCell(cell1))
+            matrix2 = np.round(self._cell.decomposeCell(cell2))
+            idx = np.linalg.det([matrix1, matrix2]).argmax()
+            matrix = [matrix1, matrix2][idx]
+            cell = Cell(matrix.dot(self._cell.getCellVectors), self._pbc)
+        else:
+            cell = self.getCell()
         return cell
 
     def _getListOfReconstructions(self, reconstructionDegree: Union[int, List, Tuple]):
@@ -358,7 +362,9 @@ class CellUtility:
         if self._dim == 2:
             isGood = isGood and (cell.getLength() <= self._thickness)
         elif self._dim == 1:
-            isGood = isGood and (cell.getRadius() <= self._thickness * 0.75)
+            isGood = isGood and (cell.getRadius() <= self._thickness * 0,7072)
+        elif self._thickness is not None:
+            isGood = isGood and (cell.getRadius() <= self._thickness * 0,8661)
         return isGood
 
     @staticmethod
@@ -615,6 +621,8 @@ class Cell:
         elif self.dim == 1:
             a = np.linalg.norm(self.getCellVectorsPBC()[0])
             return a,
+        elif self.dim == 0:
+            return ()
         else:
             raise RuntimeError(f"Wrong dim {self.dim}.")
 
@@ -658,7 +666,7 @@ class Cell:
         """
         :return: unit cell envelope radius if cell is 1D periodic.
         """
-        assert self.dim == 1
+        assert self.dim <= 1
         return np.linalg.norm(self._cellVectors[np.nonzero(self._antipbc)]) / 2.0
 
     def getCornersCoordinates(self):
