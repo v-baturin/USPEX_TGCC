@@ -94,8 +94,12 @@ class RandTop:
                                         coordinates.insert(ind, [])
                                         operations.insert(ind, [])
 
-                                    elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-                                    cell = self.cellUtility.adjustCell(cell, elementalComposition, self.conditions.externalPressure)
+                                    estimatedVolume = self.cellUtility.getCellVolume()
+                                    if estimatedVolume is None:
+                                        elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
+                                        estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
+                                                                                                                  self.conditions.externalPressure)
+                                    cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber)
                                     operations = dict(zip(symbols, operations))
                                     all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                     coordinates = dict(zip(symbols, coordinates))

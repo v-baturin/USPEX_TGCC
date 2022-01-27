@@ -227,7 +227,7 @@ class CrystalRepresentation(object):
                 comp = Counter()
                 for s, b in zip(symbols, block):
                     comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
-                volume = ut.cellUtility.getCellVolume(comp, ut.conditions.externalPressure)
+                volume = ut.ionDistances.volumeEstimator.calcCompositionVolume(comp, ut.conditions.externalPressure)
                 rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
 
         rows.append('')

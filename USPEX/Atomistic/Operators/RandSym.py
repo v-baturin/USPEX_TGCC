@@ -149,20 +149,23 @@ class RandSym:
 
 
             try:
+                estimatedVolume = self.cellUtility.getCellVolume()
+                if estimatedVolume is None:
+                    elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
+                    estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
+                                                                                              self.conditions.externalPressure)
                 if sum(self.splitInto) > 3:  # split cell
-                    lat = self.cellUtility.getRandomCell(composition, self.conditions.externalPressure).getCellParameters()
+                    lat = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons)).getCellParameters()
                     lat, candidate = splitBigCell(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, lat,
                                                   np.random.choice(self.splitInto), numIons, nsym, self.sym_coef)
                 else:
 
                     candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,
-                                                    self.cellUtility.getCellVolume(composition, self.conditions.externalPressure),
-                                                    self.sym_coef)
+                                                    estimatedVolume, self.sym_coef)
                 name, cell, coordinates, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
                 coordinates = dict(zip(symbols, coordinates))
-                elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-                cell = self.cellUtility.adjustCell(cell, elementalComposition, self.conditions.externalPressure)
+                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons))
                 for i in range(self.attemptsRotation):
                     molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
                     atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)

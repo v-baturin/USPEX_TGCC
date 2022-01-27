@@ -35,6 +35,11 @@ class RandSymPyXtal:
 
         symbols = list(composition.keys())
         numIons = list(composition.values())
+        estimatedVolume = self.cellUtility.getCellVolume()
+        if estimatedVolume is None:
+            elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
+            estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
+                                                                                      self.conditions.externalPressure)
 
         if np.sum(numIons) == 0:
             raise RuntimeError("Structure with no atoms requested. Skip.")
@@ -56,7 +61,7 @@ class RandSymPyXtal:
 
             #randcell is an auxiliary cell object to get required info from
             elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-            randcell = self.cellUtility.getRandomCell(elementalComposition, self.conditions.externalPressure)
+            randcell = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons))
 
             if self.cellUtility.getDim() == 3:
 
@@ -99,7 +104,7 @@ class RandSymPyXtal:
                 nsym, = np.random.choice(self.nsym, 1)
                 logger.debug(f"Trying {nsym} symmetry")
 
-                CylinderRadius = self.cellUtility.getRadius()
+                CylinderRadius = self.cellUtility.getThickness() / 2.0
                 CylinderLength = randcell.getLength()
 
                 structurePyxtal = pyxtal()
@@ -129,7 +134,7 @@ class RandSymPyXtal:
             if structurePyxtal.valid:
                 tmp_cell, coordinates, operations = convertStruc(structurePyxtal, randcell.getPBC(),
                                                                  symbols, LOCAL_VACUUM)
-                cell = self.cellUtility.adjustCell(tmp_cell, elementalComposition, self.conditions.externalPressure)
+                cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons))
                 coordinates = dict(zip(symbols, coordinates))
                 operations = dict(zip(symbols, operations))
                 molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)

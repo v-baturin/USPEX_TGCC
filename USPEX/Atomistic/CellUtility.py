@@ -25,7 +25,7 @@ class CellUtility:
     """
 
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None,
-                 reconstructionDegree = None, symTolerance=None, axis=None, radius=None, thickness=None, volumeType=0,
+                 reconstructionDegree = None, symTolerance=None, axis=None, thickness=None,
                  debug = False):
         """
 
@@ -40,14 +40,7 @@ class CellUtility:
         :param symTolerance: allowed misplacements of atoms when determining symmetry of structure.
         :param axis: for 1D periodic calculations vector along periodic axis,
             for 2D periodic calculations vector orthogonal to two periodic axes.
-        :param radius: for 1D and 0D structures constraint on size of containment space.
-        :param thickness: for 2D structures constraint on size of containment space.
-        :param volumeType:
-            range 0 to 1, 0 corresponds to pure atomic environment for
-            volume estimation, 1 to pure molecular one.
-            Molecular environment is less dense.
-            Intermediate value is a coefficient for molecular environment
-            in linear combination of the two.
+        :param thickness: for 2D, 1D and 0D structures constraint on size of containment space.
         :param debug: switch between two levels of logging. True for debug level, false for INFO level.
 
         """
@@ -69,13 +62,13 @@ class CellUtility:
         self._dim = sum(self._pbc)
 
         if self._dim == 3:
-            assert radius is None and thickness is None and axis is None
+            assert thickness is None and axis is None
             if cellVectors is not None:
                 assert cellParameters is None and cellVolume is None
             elif cellParameters is not None:
                 assert cellVolume is None
         elif self._dim == 2:
-            assert radius is None and thickness is not None
+            assert thickness is not None
             if cellVectors is not None:
                 assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
@@ -83,7 +76,7 @@ class CellUtility:
             else:
                 assert axis is not None
         elif self._dim == 1:
-            assert thickness is None and radius is not None
+            assert thickness is not None
             if cellVectors is not None:
                 assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
@@ -91,14 +84,12 @@ class CellUtility:
             else:
                 assert axis is not None
         elif self._dim == 0:
-            assert cellVectors is None and cellParameters is None and cellVolume is None and\
-                   thickness is None and axis is None
+            assert cellVectors is None and cellParameters is None and cellVolume is None and axis is None
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
 
         self._axis = np.asarray(axis, dtype=float) if axis is not None else None
         self._thickness = thickness
-        self._radius = radius
 
         if cellVectors is not None:
             self._cell = Cell.initFromCellVectors(self._pbc, cellVectors)
@@ -107,17 +98,20 @@ class CellUtility:
         else:
             self._cell = None
 
-        if self._cell is not None:
-            if self._thickness is not None:
-                self._cell = self._cell.getEnvelopeCell(vacuumSize=self._thickness)
-            elif self._radius is not None:
-                self._cell = self._cell.getEnvelopeCell(vacuumSize=2 * self._radius)
-
         assert cellVolume is None or self._cell is None
         if cellVolume is not None:
             self._volume = cellVolume
-        elif self._cell is not None:
-            self._volume = self._cell.getVolume() if self._dim == 3 else self._cell.getArea() * self._cell.getLength()
+        elif self._cell is not None and reconstructionDegree is None:
+            if self._dim == 3:
+                self._volume = self._cell.getVolume()
+            elif self._dim == 2:
+                self._volume = self._cell.getArea() * self._thickness
+            elif self._dim == 1:
+                self._volume = self._cell.getLength() * self._thickness ** 2
+            elif self._dim == 0:
+                self._volume = self._thickness ** 3
+            else:
+                raise ValueError(f"Incorrect dimensionality {dim}.")
         else:
             self._volume = None
 
@@ -142,8 +136,6 @@ class CellUtility:
                 self._symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
         else:
             self._symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
-
-        self._volumeEstimator = VolumeEstimator(volumeType)
 
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -171,13 +163,7 @@ class CellUtility:
         """
         return self._thickness
 
-    def getRadius(self):
-        """
-        :return: Radius of the 1D or 0D system.
-        """
-        return self._radius
-
-    def getCellVolume(self, composition, pressure):
+    def getCellVolume(self):
         """
         Either return predefined volume for fixed volume calculation or calculates it under specific pressure.
 
@@ -186,22 +172,9 @@ class CellUtility:
 
         :return: volume of unit cell.
         """
-        return self._volume if self._volume is not None else self.calcCompositionVolume(composition, pressure)
+        return self._volume
 
-    def calcCompositionVolume(self, composition, pressure):
-        """
-        The function calculates a volume of the given composition at the target pressure.
-
-        :type composition: Mapping
-        :param composition: Composition for which the volume is to be estimated.
-        :param pressure: external pressure.
-
-        :rtype: float
-        :return: volume
-        """
-        return sum(self._volumeEstimator.calcAtomVolume(sym, pressure) * amount for sym, amount in composition.items())
-
-    def adjustCell(self, cellVectors, composition, pressure):
+    def adjustCell(self, cellVectors, estimatedVolume, numAtoms):
         """
         Adjust given unit cell according calculation parameters, provided composition and pressure.
         If cell in calculation is fixed returns the fixed cell. Otherwise scale input unit cell to have specific volume.
@@ -216,28 +189,26 @@ class CellUtility:
         :return: **Cell** object with adjusted parameters.
         """
 
-        cell = Cell(cellVectors, self._pbc)
-        if cell.dim == 1 or cell.dim == 2:
-            cellVectors = cell.getAlignedCell(self._axis).getCellVectors()
+        if self._dim == 1 or self._dim == 2:
+            cellVectors = Cell(cellVectors, self._pbc).getAlignedCell(self._axis).getCellVectors()
         if self._cell is None:
             cell = Cell(cellVectors, self._pbc)
-            estimatedVolume = self.getCellVolume(composition, pressure)
-            d = np.power(estimatedVolume / sum(composition.values()), 1.0 / 3.0)
-            if cell.dim == 3:
+            d = np.power(estimatedVolume / numAtoms, 1.0 / 3.0)
+            if self._dim == 3:
                 factorMin = factorMax = np.power(estimatedVolume / cell.getVolume(), 1.0 / 3.0)
-            elif cell.dim == 2:
+            elif self._dim == 2:
                 estimatedAreaMin = estimatedVolume / self._thickness
                 estimatedAreaMax = estimatedVolume / d
                 area = cell.getArea()
                 factorMin = np.sqrt(estimatedAreaMin / area)
                 factorMax = np.sqrt(estimatedAreaMax / area)
-            elif cell.dim == 1:
-                estimatedLengthMin = estimatedVolume / (2 * self._radius) ** 2
+            elif self._dim == 1:
+                estimatedLengthMin = estimatedVolume / (self._thickness) ** 2
                 estimatedLengthMax = estimatedVolume / d ** 2
                 length = cell.getLength()
                 factorMin = estimatedLengthMin / length
                 factorMax = estimatedLengthMax / length
-            elif cell.dim == 0:
+            elif self._dim == 0:
                 factorMin = factorMax = 1
             else:
                 raise RuntimeError(f"Wrong dim {cell.dim}.")
@@ -248,16 +219,14 @@ class CellUtility:
             cellVectors[np.nonzero(self._pbc)] *= factor
             cell = Cell(cellVectors, self._pbc)
         elif self._listOfReconstructions:
-            volume = np.linalg.det(cellVectors)
-            factor = volume / self._volume
+            factor = np.linalg.det(cellVectors) / self._cell.getVolume()
             reconstruction = self._getRandomReconstruction(factor)
             cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
-            cellVectors[np.nonzero(self._pbc)] = self._cell.getCellVectorsPBC()
-            cell = Cell(cellVectors, self._pbc)
-        return cell
+            cell = self.getCell()
+        return cell.getEnvelopeCell(self._thickness)
 
-    def getRandomCell(self, composition, pressure):
+    def getRandomCell(self, estimatedVolume, numAtoms):
         """
         For given composition and conditions creates random unit cell with appropriate size and periodic boundary conditions.
 
@@ -266,7 +235,7 @@ class CellUtility:
 
         :return: **Cell** object with appropriate parameters.
         """
-        if self._cell is None or self._listOfReconstructions:
+        if self._cell is None:
             r2d = 180 / np.pi
             if self._dim == 3:
                 a, b, c = np.random.random(3) + 0.5
@@ -279,19 +248,20 @@ class CellUtility:
             elif self._dim == 2:
                 a, b = np.random.random(2) + 0.5
                 alpha = (np.random.random() * 4 + 1) * 30
-                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis).getEnvelopeCell(vacuumSize=self._thickness)
+                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
             elif self._dim == 1:
                 a = np.random.random() + 0.5
-                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis).getEnvelopeCell(vacuumSize=2 * self._radius)
+                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
             elif self._dim == 0:
                 cell = Cell.initFromCellParameters(self._pbc)
             else:
                 raise RuntimeError(f"Wrong pbc {self._pbc}.")
-            cell = self.adjustCell(cell.getCellVectors(), composition, pressure)
+            cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms)
+        elif self._listOfReconstructions:
+            raise RuntimeError('Unhandled!')
         else:
             cell = self.getCell()
-
-        return cell
+        return cell.getEnvelopeCell(self._thickness)
 
     def getHybridCell(self, cell1, cell2, fraction):
         """
@@ -388,7 +358,7 @@ class CellUtility:
         if self._dim == 2:
             isGood = isGood and (cell.getLength() <= self._thickness)
         elif self._dim == 1:
-            isGood = isGood and (cell.getRadius() <= self._radius * 1.5)
+            isGood = isGood and (cell.getRadius() <= self._thickness * 0.75)
         return isGood
 
     @staticmethod
