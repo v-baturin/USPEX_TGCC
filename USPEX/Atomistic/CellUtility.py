@@ -24,7 +24,7 @@ class CellUtility:
     """
 
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None,
-                 reconstructionDegree = None, symTolerance=None, axis=None, thickness=None,
+                 supercellDegree = None, symTolerance=None, axis=None, thickness=None,
                  debug = False):
         """
 
@@ -35,7 +35,7 @@ class CellUtility:
             {'a': <float>, 'b': <float>, 'c': <float>, 'alpha': <float>, 'beta': <float>, 'gamma': <float>}
             with cell parameters.
         :param cellVolume: for fixed volume calculation cell volume.
-        :param reconstructionDegree: int or list of int with allowed supercell sizes.
+        :param supercellDegree: int or list of int with allowed supercell sizes.
         :param symTolerance: allowed misplacements of atoms when determining symmetry of structure.
         :param axis: for 1D periodic calculations vector along periodic axis,
             for 2D periodic calculations vector orthogonal to two periodic axes.
@@ -103,7 +103,7 @@ class CellUtility:
         assert cellVolume is None or self._cell is None
         if cellVolume is not None:
             self._volume = cellVolume
-        elif self._cell is not None and reconstructionDegree is None:
+        elif self._cell is not None and supercellDegree is None:
             if self._dim == 3:
                 self._volume = self._cell.getVolume()
             elif self._dim == 2:
@@ -115,10 +115,21 @@ class CellUtility:
         else:
             self._volume = None
 
-        if reconstructionDegree is not None:
-            self._listOfReconstructions = self._getListOfReconstructions(reconstructionDegree)
-        else:
-            self._listOfReconstructions = []
+        self._supercellDegree = (supercellDegree, supercellDegree + 1) if isinstance(supercellDegree, int) else supercellDegree
+        self._listOfSupercells = []
+        if self._dim == 2 and isinstance(self._supercellDegree, (list, tuple)):
+            minSupercellDegree, maxSupercellDegree = self._supercellDegree
+            nonzeroPBC = np.nonzero(self._pbc)[0]
+            for i in range(1, maxSupercellDegree + 1):
+                for j in range(maxSupercellDegree + 1):
+                    for k in range(maxSupercellDegree + 1):
+                        for l in range(1, maxSupercellDegree + 1):
+                            M = np.eye(3)
+                            rows = np.array([nonzeroPBC, nonzeroPBC])
+                            cols = rows.T
+                            M[rows, cols] = np.array([[i, -j], [k, l]])
+                            if minSupercellDegree <= np.round(np.linalg.det(M)) < maxSupercellDegree and M[nonzeroPBC[0]].dot(M[nonzeroPBC[1]]) == 0:
+                                self._listOfSupercells.append(M)
 
         if symTolerance is not None:
             if isinstance(symTolerance, str):
@@ -218,9 +229,9 @@ class CellUtility:
                 factor = 1
             cellVectors[np.nonzero(self._pbc)] *= factor
             cell = Cell(cellVectors, self._pbc)
-        elif self._listOfReconstructions:
+        elif self._listOfSupercells:
             factor = np.linalg.det(cellVectors) / self._cell.getVolume()
-            reconstruction = self._getRandomReconstruction(factor)
+            reconstruction = self.getRandomSupercell(factor)
             cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
             cell = self.getCell()
@@ -259,8 +270,8 @@ class CellUtility:
             cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms)
             if self._thickness is not None:
                 cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
-        elif self._listOfReconstructions:
-            reconstruction = self._getRandomReconstruction()
+        elif self._listOfSupercells:
+            reconstruction = self.getRandomSupercell()
             cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
             cell = self.getCell()
@@ -305,7 +316,7 @@ class CellUtility:
             if self._thickness is not None and thickness > self._thickness:
                 thickness = self._thickness
             cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis).getEnvelopeCell(vacuumSize=thickness)
-        elif self._listOfReconstructions:
+        elif self._listOfSupercells:
             matrix1 = np.round(self._cell.decomposeCell(cell1))
             matrix2 = np.round(self._cell.decomposeCell(cell2))
             idx = np.linalg.det([matrix1, matrix2]).argmax()
@@ -315,38 +326,15 @@ class CellUtility:
             cell = self.getCell()
         return cell
 
-    def _getListOfReconstructions(self, reconstructionDegree: Union[int, List, Tuple]):
-        assert sum(self._pbc) == 2 # For surfaces only 
-        if isinstance(reconstructionDegree, int):
-            minReconstruction = reconstructionDegree
-            maxReconstruction = reconstructionDegree+1
-        elif isinstance(reconstructionDegree, (list, tuple)):
-            assert len(reconstructionDegree) == 2
-            minReconstruction = reconstructionDegree[0]
-            maxReconstruction = reconstructionDegree[1]
-        listOfReconstructions = []
-        nonzeroPBC = np.nonzero(self._pbc)[0]
-        for i in range(1, maxReconstruction + 1):
-            for j in range(maxReconstruction + 1):
-                for k in range(maxReconstruction + 1):
-                    for l in range(1, maxReconstruction + 1):
-                        M = np.eye(3)
-                        rows = np.array([nonzeroPBC, nonzeroPBC])
-                        cols = rows.T
-                        M[rows, cols] = np.array([[i, -j], [k, l]])
-                        if minReconstruction <= np.round(np.linalg.det(M)) < maxReconstruction and M[nonzeroPBC[0]].dot(M[nonzeroPBC[1]]) == 0:
-                            listOfReconstructions.append(M)
-        return listOfReconstructions
-    
-    def _getRandomReconstruction(self, factor=None):
-        if self._listOfReconstructions:
+    def getRandomSupercell(self, factor=None):
+        if self._listOfSupercells:
             if factor:
-                mask = np.linalg.det(self._listOfReconstructions) > factor
+                mask = np.linalg.det(self._listOfSupercells) > factor
             else:
-                mask = np.ones(len(self._listOfReconstructions), dtype=bool)
-            assert sum(mask) # check if any suitable reconstruction found for this composition
-            idx = np.random.choice(np.arange(len(self._listOfReconstructions))[mask])
-            return self._listOfReconstructions[idx]
+                mask = np.ones(len(self._listOfSupercells), dtype=bool)
+            assert sum(mask), f'No supercells with factor {factor} are allowed.'
+            idx = np.random.choice(np.arange(len(self._listOfSupercells))[mask])
+            return self._listOfSupercells[idx]
         else:
             return np.eye(3)
 
