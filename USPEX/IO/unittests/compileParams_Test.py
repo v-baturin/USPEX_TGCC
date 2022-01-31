@@ -60,7 +60,7 @@ class CompileParams_Test(unittest.TestCase):
                     'conditions': {'externalPressure': 100},
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
-                    'cellUtility': {'volumeType': 0},
+                    'cellUtility': {},
                     'ionDistances': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
@@ -133,7 +133,7 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['mol_h2o'],
                                          'blocks': [[4]],
                                          'range': [[1,1]]},
-                    'cellUtility': {'volumeType': 0.5},
+                    'cellUtility': {},
                     'ionDistances': {'volumeType': 0.5}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
@@ -180,7 +180,7 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['Na', 'Cl'],
                                          'blocks': [[8,24]],
                                          'range': [[1,1]]},
-                    'cellUtility': {'volumeType': 0},
+                    'cellUtility': {},
                     'ionDistances': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',

@@ -5,7 +5,8 @@ import matplotlib
 import numpy as np
 
 from copy import copy
-from collections import Counter, Mapping
+from collections import Counter
+from collections.abc import Mapping
 from itertools import combinations
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
@@ -226,7 +227,7 @@ class CrystalRepresentation(object):
                 comp = Counter()
                 for s, b in zip(symbols, block):
                     comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
-                volume = ut.cellUtility.getCellVolume(comp, ut.conditions.externalPressure)
+                volume = ut.ionDistances.volumeEstimator.calcCompositionVolume(comp, ut.conditions.externalPressure)
                 rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
 
         rows.append('')
@@ -317,7 +318,7 @@ class CrystalRepresentation(object):
     @staticmethod
     def getPopulationSummaryBlock(population, optimizer) -> list:
         utlts = optimizer.target.utilities
-        if utlts.cellUtility.dim == 3:
+        if utlts.cellUtility.getDim() == 3:
             numBlocks = [utlts.compositionSpace.numBlocks(utlts.simpleMoleculeUtility.composition(system)) for system in population]
             numBlocks = np.asarray(numBlocks)
             volumes = [optimizer.fitness.getFitnessDirect('cellUtility.volume', system) for system in population]

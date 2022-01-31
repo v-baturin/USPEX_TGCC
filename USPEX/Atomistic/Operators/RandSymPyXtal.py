@@ -11,7 +11,7 @@ from pyxtal import pyxtal
 MAX_PYXTAL_TIME = 30
 MAX_RANDOM_TIME = 300
 MAX_PYXTAL_ATTEMPTS = 20
-LOCAL_VACUUM = 10.0
+LOCAL_VACUUM = 0.2
 
 class RandSymPyXtal:
     def __init__(self, utilities, nsym=None):
@@ -35,6 +35,11 @@ class RandSymPyXtal:
 
         symbols = list(composition.keys())
         numIons = list(composition.values())
+        estimatedVolume = self.cellUtility.getCellVolume()
+        if estimatedVolume is None:
+            elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
+            estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
+                                                                                      self.conditions.externalPressure)
 
         if np.sum(numIons) == 0:
             raise RuntimeError("Structure with no atoms requested. Skip.")
@@ -56,9 +61,9 @@ class RandSymPyXtal:
 
             #randcell is an auxiliary cell object to get required info from
             elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-            randcell = self.cellUtility.getRandomCell(elementalComposition, self.conditions.externalPressure)
+            randcell = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons))
 
-            if self.cellUtility.dim == 3:
+            if self.cellUtility.getDim() == 3:
 
                 if self.nsym is None:
                     self.nsym = list(range(1, 231))
@@ -73,7 +78,7 @@ class RandSymPyXtal:
                     logger.debug(e, exc_info=True)
                 signal.alarm(0)
 
-            elif self.cellUtility.dim == 2:
+            elif self.cellUtility.getDim() == 2:
 
                 if self.nsym is None:
                     self.nsym = list(range(1, 81))
@@ -92,14 +97,14 @@ class RandSymPyXtal:
                     logger.debug(e, exc_info=True)
                 signal.alarm(0)
 
-            elif self.cellUtility.dim == 1:
+            elif self.cellUtility.getDim() == 1:
 
                 if self.nsym is None:
                     self.nsym = list(range(1, 76))
                 nsym, = np.random.choice(self.nsym, 1)
                 logger.debug(f"Trying {nsym} symmetry")
 
-                CylinderRadius = self.cellUtility.getRadius()
+                CylinderRadius = self.cellUtility.getThickness() / 2.0
                 CylinderLength = randcell.getLength()
 
                 structurePyxtal = pyxtal()
@@ -111,7 +116,7 @@ class RandSymPyXtal:
                     logger.debug(e, exc_info=True)
                 signal.alarm(0)
 
-            elif self.cellUtility.dim == 0:
+            elif self.cellUtility.getDim() == 0:
 
                 if self.nsym is None:
                     self.nsym = list(range(1, 57))
@@ -129,9 +134,7 @@ class RandSymPyXtal:
             if structurePyxtal.valid:
                 tmp_cell, coordinates, operations = convertStruc(structurePyxtal, randcell.getPBC(),
                                                                  symbols, LOCAL_VACUUM)
-                cell = self.cellUtility.adjustCell(tmp_cell, elementalComposition, self.conditions.externalPressure)
-                if (self.cellUtility.dim == 2) or (self.cellUtility.dim == 1):
-                    cell = self.cellUtility.alignCell(cell)
+                cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons))
                 coordinates = dict(zip(symbols, coordinates))
                 operations = dict(zip(symbols, operations))
                 molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)

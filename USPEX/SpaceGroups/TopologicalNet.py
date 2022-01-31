@@ -8,7 +8,7 @@ Collection of objects for working with topologies
 """
 
 import numpy as np
-from collections import Sequence
+from collections.abc import Sequence
 
 from .SpaceGroups3D import in_array_list
 
