@@ -89,6 +89,12 @@ class CellUtility:
 
         if cellVectors is not None:
             self._cell = Cell.initFromCellVectors(self._pbc, cellVectors)
+            if self._dim == 1:
+                self._axis = self._cell.getCellVectorsPBC()[0]
+                self._axis /= np.linalg.norm(self._axis)
+            elif self._dim == 2:
+                self._axis = self._cell.getCellVectorsAntiPBC()[0]
+                self._axis /= np.linalg.norm(self._axis)
         elif cellParameters is not None:
             self._cell = Cell.initFromCellParameters(self._pbc, **cellParameters, axis = self._axis)
         else:
