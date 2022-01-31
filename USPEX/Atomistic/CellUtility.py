@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 import spglib
-from typing import Union, List, Tuple
 from copy import copy
 from scipy.spatial.transform import Rotation
 
@@ -23,9 +22,8 @@ class CellUtility:
     Utility for working with unit cells of atomic structures.
     """
 
-    def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None,
-                 supercellDegree = None, symTolerance=None, axis=None, thickness=None,
-                 debug = False):
+    def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
+                 thickness=None, supercellDegree = None, symTolerance=None, debug = False):
         """
 
         :param dim: dimensionality, i.e. number of periodic directions.
@@ -35,11 +33,11 @@ class CellUtility:
             {'a': <float>, 'b': <float>, 'c': <float>, 'alpha': <float>, 'beta': <float>, 'gamma': <float>}
             with cell parameters.
         :param cellVolume: for fixed volume calculation cell volume.
-        :param supercellDegree: int or list of int with allowed supercell sizes.
-        :param symTolerance: allowed misplacements of atoms when determining symmetry of structure.
         :param axis: for 1D periodic calculations vector along periodic axis,
             for 2D periodic calculations vector orthogonal to two periodic axes.
         :param thickness: for 2D, 1D and 0D structures constraint on size of containment space.
+        :param supercellDegree: int or list of int with allowed supercell sizes.
+        :param symTolerance: allowed imperfection of atomic positions when determining symmetry of structure.
         :param debug: switch between two levels of logging. True for debug level, false for INFO level.
 
         """
@@ -154,9 +152,15 @@ class CellUtility:
             logger.setLevel(logging.INFO)
 
     def getDim(self):
+        """
+        :return: dimensionality set for the **CellUtility** instance.
+        """
         return self._dim
 
     def getPBC(self):
+        """
+        :return: periodic boundary conditions set for the **CellUtility** instance.
+        """
         return self._pbc
 
     def getCell(self):
@@ -166,36 +170,34 @@ class CellUtility:
         return None if self._cell is None else copy(self._cell)
 
     def getAxis(self):
+        """
+        :return: axis set for the **CellUtility** instance.
+        In 1D it is the periodic axis, in 2D it is normal to the periodic plane.
+        """
         return np.copy(self._axis) if self._axis is not None else None
 
     def getThickness(self):
         """
-        :return: Thickness of the 2D system.
+        :return: Thickness of the system.
         """
         return self._thickness
 
     def getCellVolume(self):
         """
-        Either return predefined volume for fixed volume calculation or calculates it under specific pressure.
-
-        :param composition: dictionary like object defining composition.
-        :param pressure: external pressure.
-
-        :return: volume of unit cell.
+        :return: volume of unit cell if it is set or the cell is fixed, otherwise *None*.
         """
         return self._volume
 
     def adjustCell(self, cellVectors, estimatedVolume, numAtoms):
         """
-        Adjust given unit cell according calculation parameters, provided composition and pressure.
-        If cell in calculation is fixed returns the fixed cell. Otherwise scale input unit cell to have specific volume.
-        If calculation is done with fixed volume then unit cell is scaled to it.
-        Otherwise to estimated volume calculated using provided conditions utility.
-        Periodic boundary conditions of output unit cell set up same as in utility.
+        Adjust given unit cell according calculation parameters, provided volume and number of atoms.
+        If cell in calculation is fixed returns the fixed cell.
+        Otherwise, scale input unit cell to have specific volume (3D), area (2D) or length (1D).
+        TODO here we should describe how we get this parameters.
 
         :param cellVectors: input unit cell vectors to be adjusted.
-        :param composition: dictionary like object defining composition.
-        :param conditions: external pressure.
+        :param estimatedVolume: estimated volume of bulk unit cell.
+        :param numAtoms: number of atoms in structure.
 
         :return: **Cell** object with adjusted parameters.
         """
@@ -239,10 +241,10 @@ class CellUtility:
 
     def getRandomCell(self, estimatedVolume, numAtoms):
         """
-        For given composition and conditions creates random unit cell with appropriate size and periodic boundary conditions.
+        For given volume and number of atoms creates random unit cell with appropriate size and periodic boundary conditions.
 
-        :param composition: dictionary like object defining composition.
-        :param pressure: external pressure.
+        :param estimatedVolume: estimated volume of bulk unit cell.
+        :param numAtoms: number of atoms in structure.
 
         :return: **Cell** object with appropriate parameters.
         """
@@ -280,12 +282,16 @@ class CellUtility:
     def getHybridCell(self, cell1, cell2, fraction):
         """
         Creates hybrid of two unit cells.
+        If cell in calculation is fixed returns the fixed cell.
+        Otherwise, takes average cell parameters from two input cells with ratio fraction/(1-fraction).
+        Then scale its volume (3D), area (2D) or length (1D) to average one with same ratio.
+        And finally takes average of non-periodic direction(s) of two cells with same ratio.
 
-        :param cell1:
-        :param cell2:
-        :param fraction:
+        :param cell1: first input cell.
+        :param cell2: second input cell.
+        :param fraction: fraction of first cell in resulting cell.
 
-        :return:
+        :return: **Cell** object with appropriate parameters.
         """
         assert 0 <= fraction <= 1
         if self._cell is None:
@@ -321,12 +327,17 @@ class CellUtility:
             matrix2 = np.round(self._cell.decomposeCell(cell2))
             idx = np.linalg.det([matrix1, matrix2]).argmax()
             matrix = [matrix1, matrix2][idx]
-            cell = Cell(matrix.dot(self._cell.getCellVectors), self._pbc)
+            cell = Cell(matrix.dot(self._cell.getCellVectors()), self._pbc)
         else:
             cell = self.getCell()
         return cell
 
     def getRandomSupercell(self, factor=None):
+        """
+        Picks on of possible supercells consisting of specified number of cells.
+        :param factor: number of cells which requested supercell should contain.
+        :return: supercell matrix (m, n, l).
+        """
         if self._listOfSupercells:
             if factor:
                 mask = np.linalg.det(self._listOfSupercells) > factor
@@ -438,6 +449,13 @@ class Cell:
 
     @staticmethod
     def initFromCellVectors(pbc, cellVectors=()):
+        """
+        Alternative constructor using cell vectors only for periodic directions.
+
+        :param pbc: periodic boundary conditions in each direction.
+        :param cellVectors: cell vectors only for periodic directions.
+        :return: **Cell** object with appropriate parameters.
+        """
         dim = sum(pbc)
         assert len(cellVectors) == dim, f"Provided {len(cellVectors)} cell vectors when dim is {dim}."
         if dim == 3:
@@ -470,16 +488,16 @@ class Cell:
         """
         Alternative constructor using cell parameters.
 
-        :param pbc:
-        :param a:
-        :param b:
-        :param c:
-        :param alpha:
-        :param beta:
-        :param gamma:
-        :param axis:
+        :param pbc: periodic boundary conditions in each direction.
+        :param a: parameter a of the cell.
+        :param b: parameter b of the cell.
+        :param c: parameter c of the cell.
+        :param alpha: parameter alpha of the cell.
+        :param beta: parameter beta of the cell.
+        :param gamma: parameter gamma of the cell.
+        :param axis: periodic axis in 1D, non-periodic axis in 2D, *None* otherwise.
 
-        :return:
+        :return: **Cell** object with appropriate parameters.
         """
         dim = sum(pbc)
         if dim == 3:
@@ -513,7 +531,10 @@ class Cell:
 
     def getAlignedCell(self, axis):
         """
-        :return: Cell with lattice vectors with nonperiodic (for 2D) or periodic (1D) aligned along axis.
+        Creates cell with same parameters with given one but aligned along given axis.
+        :param axis: peropdic axis (1D) or non-periodic axis (2D).
+        :raises RuntimeError: if used on 0D or 3D structure.
+        :return: Cell with lattice vectors with non-periodic (for 2D) or periodic (1D) aligned along axis.
         """
         if (self.dim == 2) or (self.dim == 1):
             assert np.linalg.norm(axis) >= 1e-7
@@ -566,7 +587,7 @@ class Cell:
 
     def getAntiPBC(self):
         """
-        :return: periodic boundary conditions in each direction.
+        :return: logic not of periodic boundary conditions in each direction.
         """
         return self._antipbc
 
@@ -626,7 +647,7 @@ class Cell:
 
     def getArea(self):
         """
-        :return: unit cell area if cell is 2D periodic.
+        :return: unit cell area if cell is 2D periodic or area of enveloping volume on 1D.
         """
         assert self.dim == 2 or self.dim == 1
         if self.dim == 2:
@@ -639,7 +660,7 @@ class Cell:
 
     def getLength(self):
         """
-        :return: unit cell length if cell is 1D periodic.
+        :return: unit cell length if cell is 1D periodic or height of enveloping volume in 2D.
         """
         assert self.dim == 2 or self.dim == 1
         if self.dim == 1:
@@ -652,7 +673,7 @@ class Cell:
 
     def getRadius(self):
         """
-        :return: unit cell envelope radius if cell is 1D periodic.
+        :return: unit cell envelope radius if cell is 1D periodic or non-periodic (0D).
         """
         assert self.dim <= 1
         return np.linalg.norm(self._cellVectors[np.nonzero(self._antipbc)]) / 2.0
