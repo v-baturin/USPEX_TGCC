@@ -11,7 +11,7 @@ import os
 import json
 import numpy as np
 
-from collections import Sequence
+from collections.abc import Sequence
 from copy import copy, deepcopy
 from itertools import combinations
 from pymatgen.symmetry.groups import in_array_list

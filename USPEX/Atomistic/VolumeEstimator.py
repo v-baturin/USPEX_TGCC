@@ -258,3 +258,15 @@ class VolumeEstimator:
         volumeMolecular = _calcVolumePure(externalPressure, elementSymbol, 'mol') if self.volumeType > 0 else 0
         return (self.volumeType * volumeMolecular + (1 - self.volumeType) * volumeAtomic)
 
+    def calcCompositionVolume(self, composition, pressure):
+        """
+        The function calculates a volume of the given composition at the target pressure.
+
+        :type composition: Mapping
+        :param composition: Composition for which the volume is to be estimated.
+        :param pressure: external pressure.
+
+        :rtype: float
+        :return: volume
+        """
+        return sum(self.calcAtomVolume(sym, pressure) * amount for sym, amount in composition.items())
