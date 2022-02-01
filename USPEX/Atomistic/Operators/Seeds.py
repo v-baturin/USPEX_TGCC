@@ -62,7 +62,7 @@ class Seeds(object):
             filename = os.path.join(seedsFolder, filename)
             if os.path.isfile(filename):
                 with open(filename, "rt") as f:
-                    system = self.systemRepresentationClass.readAtomicStructure(f)
+                    system = self.systemRepresentationClass.readAtomicStructure(f, pbc=self.cellUtility.getPBC())
                 molecules = system['molecules']
                 cell = system['cell']
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
