@@ -117,13 +117,12 @@ class GenerationController(object):
                     logger.exception(ex)
                     system['isBad'] = True
                     break
+                if not self.optimizer.constraints.systemCheckAndFix(system):
+                    logger.info(f'system {ID} violates constraints')
+                    system['isBad'] = True
+                    break
                 processedSystems.append(copy(system))
             self.systems[ID].append(deepcopy(system))
-            # TODO this is ugly workaround
-            # if not system['structure'].isGoodSystem():
-            #     logger.info(f'system {ID} violates constraints')
-            #     system['isBad'] = True
-            #     break
 
             state.save()
 
