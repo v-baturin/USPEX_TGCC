@@ -117,7 +117,7 @@ class GenerationController(object):
                     logger.exception(ex)
                     system['isBad'] = True
                     break
-                if not self.optimizer.constraints.systemCheckAndFix(system):
+                if not self.optimizer.target.constraints.systemCheckAndFix(system):
                     logger.info(f'system {ID} violates constraints')
                     system['isBad'] = True
                     break
