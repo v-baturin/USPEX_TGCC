@@ -14,8 +14,20 @@ class Slab:
 
     @staticmethod
     def getSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs, transformation):
-        cellTransformation = type(transformation).fromMatrix(transformation.rotMatrix, [0.,0.,0.])
-        inputCell = cellTransformation.transformCell(inputCell)
+        assert inputCell.getPBC() == outputCell.getPBC()
+        if inputCell.dim == 1:
+            inputAxis = inputCell.getCellVectorsPBC()
+            inputAxis /= np.linalg.norm(inputAxis)
+            outputAxis = outputCell.getCellVectorsPBC()
+            outputAxis /= np.linalg.norm(outputAxis)
+            assert np.allclose(inputAxis, outputAxis)
+        elif inputCell.dim == 2:
+            inputAxis = inputCell.getCellVectorsAntiPBC()
+            inputAxis /= np.linalg.norm(inputAxis)
+            outputAxis = outputCell.getCellVectorsAntiPBC()
+            outputAxis /= np.linalg.norm(outputAxis)
+            assert np.allclose(inputAxis, outputAxis)
+        inputCell = transformation.transformCell(inputCell)
         slabs = tuple(([],[],[]) for i in gaugesOfSlabs)
         coordinateBounds = np.cumsum(gaugesOfSlabs)/np.sum(gaugesOfSlabs)
         for i, molecule in enumerate(molecules):
@@ -23,7 +35,7 @@ class Slab:
             centerOfMassCoordinates = transformation.transformCoordinates(centerOfMassCoordinatesInitial)
             pbc = outputCell.getPBC()
             dimensionality = np.sum(pbc)
-            if dimensionality == 0 or (dimensionality == 1 and pbc[axis]):
+            if dimensionality == 1 and pbc[axis]:
                 for fittedTransformation in outputCell.getFittedTransformations(centerOfMassCoordinates, inputCell):
                     coordinates = outputCell.cartesianToFractional(fittedTransformation.transformCoordinates(centerOfMassCoordinates))
                     coordinate = coordinates[axis]
@@ -38,6 +50,8 @@ class Slab:
             else:
                 coordinates = inputCell.cartesianToFractional(centerOfMassCoordinates)
                 coordinates = inputCell.getWrapedFractionalCoordinates(coordinates)
+                inds = np.nonzero(outputCell.getAntiPBC())
+                coordinates[inds] = outputCell.cartesianToFractional(centerOfMassCoordinates)[inds]
                 coordinate = coordinates[axis]
                 for j, upperBoundCoordinate in enumerate(coordinateBounds):
                     if coordinate <= upperBoundCoordinate:
