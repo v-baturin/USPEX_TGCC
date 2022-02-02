@@ -48,6 +48,10 @@ class AtomicStructure:
         """
         return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, zmatrixConfig)
 
+    def getAligned(self, axis):
+        return AtomicStructure.initFromFractionalCoordinates(self.getAtomTypes(), self.getFractionalCoordinates(),
+                                                             self.getCell().getAlignedCell(axis))
+
     def __len__(self):
         return len(self._atomTypes)
 
