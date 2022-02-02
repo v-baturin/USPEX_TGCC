@@ -213,12 +213,11 @@ class RadialDistributionUtility(object):
             fp_pbc = disassembler.environment.getStructure().getCell().getPBC()
         else:
             fp_pbc = structure.getCell().getPBC()
-        dist_matrix = _make_matrices(coordinates, molIndices, envIndices, structure.getCell().getCellVectors(), numIons,
-                                     pbc=fp_pbc, Rmax=self.Rmax)
+        lat = cell.getCellVectors()
+        dist_matrix = _make_matrices(coordinates, molIndices, envIndices, lat, numIons, pbc=fp_pbc, Rmax=self.Rmax)
 
         # TODO think about volume in lesser dimensions
-        cell = structure.getCell()
-        V = type(cell)(cell.getCellVectors(), (1,1,1)).getVolume()
+        V = np.linalg.det(lat)
         N_type = numIons.shape[0]
         N_atom = np.sum(numIons)
         N_pair = dist_matrix.shape[0]  # the number of atomic pairs being considered
