@@ -802,7 +802,10 @@ class Cell:
 
         :return: fractional coordinates wrapped to unit cell.
         """
-        return np.divmod(coordinates, 1/np.asarray(self._pbc, dtype=float))[1]
+        wrapedCoordinates = np.copy(coordinates)
+        inds = np.nonzero(self._pbc)
+        wrapedCoordinates[:, inds] = np.divmod(coordinates[:, inds], 1)[1]
+        return wrapedCoordinates
 
     def center(self, coordinates, affectedDims=None):
         """
