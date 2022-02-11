@@ -16,8 +16,7 @@ class Constraints:
         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
         composition = self.simpleMoleculeUtility.composition(system)
         goodStructure = np.all(atomDistances >= minDistMatrix) \
-                        and self.compositionSpace.isGoodComposition(composition)\
-                        and self.cellUtility.isGoodCell(cell)
+                        and self.compositionSpace.isGoodComposition(composition) # and self.cellUtility.isGoodCell(cell)
         if goodStructure and (self.cellUtility.getDim() == 1 or self.cellUtility.getDim() == 2):
             structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
             system.update(disassembler.disassemble(structure.getAligned(self.cellUtility.getAxis())))
