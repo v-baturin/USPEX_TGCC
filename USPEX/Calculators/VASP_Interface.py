@@ -427,7 +427,6 @@ class VASP_Interface(SHELL_Interface):
                     positions[i] = position
                     atomTypes[i] = self.atomType(symbol)
 
-                # TODO probably we should not round
                 cell = self.cellType(tmp.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
                 positions = cell.center(positions)
                 system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))

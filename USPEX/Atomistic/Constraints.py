@@ -19,5 +19,9 @@ class Constraints:
                         and self.compositionSpace.isGoodComposition(composition) # and self.cellUtility.isGoodCell(cell)
         if goodStructure and (self.cellUtility.getDim() == 1 or self.cellUtility.getDim() == 2):
             structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
-            system.update(disassembler.disassemble(structure.getAligned(self.cellUtility.getAxis())))
+            cell = structure.getRectifiedCell()
+            coordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())
+            cell = cell.getAlignedCell(self.cellUtility.getAxis())
+            structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell)
+            system.update(disassembler.disassemble(structure))
         return goodStructure
