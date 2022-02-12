@@ -440,24 +440,11 @@ class Cell:
         :param pbc: periodic boundary conditions in each direction.
 
         """
-        self._pbc = pbc
+        self._pbc = tuple(pbc)
         self._antipbc = tuple((~np.asarray(pbc, dtype=bool)).tolist())
         self.dim = sum(pbc)
-        assert len(cellVectors) == 3
-        if self.dim == 0 or self.dim == 1:
-            a, b, c = cellVectors
-            absA = np.linalg.norm(a)
-            absB = np.linalg.norm(b)
-            absC = np.linalg.norm(c)
-            assert np.isclose(np.dot(a, b)/absA/absB, 0, atol=1e-2) and np.isclose(np.dot(b, c)/absB/absC, 0, atol=1e-2) and np.isclose(np.dot(c, a)/absC/absA, 0, atol=1e-2)
-        elif self.dim == 2:
-            a, b = cellVectors[np.nonzero(self._pbc)]
-            c, = cellVectors[np.nonzero(self._antipbc)]
-            absA = np.linalg.norm(a)
-            absB = np.linalg.norm(b)
-            absC = np.linalg.norm(c)
-            assert np.isclose(np.dot(b, c)/absB/absC, 0, atol=1e-2) and np.isclose(np.dot(c, a)/absC/absA, 0, atol=1e-2)
-        self._cellVectors = np.asarray(cellVectors, dtype=float).reshape((-1,3))
+        assert cellVectors.shape == (3, 3)
+        self._cellVectors = np.asarray(cellVectors, dtype=float)
 
     @staticmethod
     def initFromCellVectors(pbc, cellVectors=()):
