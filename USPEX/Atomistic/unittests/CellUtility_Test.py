@@ -54,7 +54,7 @@ class CellUtility3D_Test(unittest.TestCase):
 class Cell_Test(unittest.TestCase):
 
     def test_init3D(self):
-        cellVectors = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]
+        cellVectors = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], dtype=float)
         cellParameters = (2, 3, 4, 80, 120, 80)
         cell1 = Cell.initFromCellVectors((1, 1, 1), cellVectors)
         cell2 = Cell.initFromCellParameters((1, 1, 1), *cellParameters)

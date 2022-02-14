@@ -238,7 +238,15 @@ class CellUtility:
             cellVectors[np.nonzero(self._pbc)] *= factor
             cell = Cell(cellVectors, self._pbc)
         elif self._listOfSupercells:
-            factor = np.linalg.det(cellVectors) / self._cell.getVolume()
+            cell = Cell(cellVectors, self._pbc)
+            if self._dim == 3:
+                factor = cell.getVolume() / self._cell.getVolume()
+            elif self._dim == 2:
+                factor = cell.getArea() / self._cell.getArea()
+            elif self._dim == 1:
+                factor = cell.getLength() / self._cell.getLength()
+            else:
+                raise RuntimeError(f"Wrong dim {self._dim}.")
             reconstruction = self.getRandomSupercell(factor)
             cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
@@ -346,7 +354,7 @@ class CellUtility:
         """
         if self._listOfSupercells:
             if factor:
-                mask = np.linalg.det(self._listOfSupercells) > factor
+                mask = np.linalg.det(self._listOfSupercells) >= np.round(factor)
             else:
                 mask = np.ones(len(self._listOfSupercells), dtype=bool)
             assert sum(mask), f'No supercells with factor {factor} are allowed.'
@@ -362,7 +370,7 @@ class CellUtility:
         :return:
         """
         isGood = True
-        if self._cell is not None:
+        if self._cell is not None and self._listOfSupercells is None:
             isGood  = isGood and (cell == self._cell)
         if self._dim == 2:
             isGood = isGood and (cell.getLength() <= self._thickness)
