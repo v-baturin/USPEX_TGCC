@@ -12,7 +12,7 @@ class Permutation:
 
     def __init__(self, utilities, howManySwaps = 5, specificSwaps = None, swapAttempts = _SWAP_ATTEMPTS):
         self.compositionSpace = utilities.compositionSpace
-        self.world = utilities.world
+        self.environmentUtility = utilities.environmentUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
@@ -50,7 +50,7 @@ class Permutation:
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                     if np.all(atomDistances >= minDistMatrix):
                         offspring = {'molecules': offspringMolecules, 'cell': cell}
-                        self.world.putEnvironment(offspring)
+                        self.environmentUtility.putEnvironment(offspring)
                         self.conditions.putConditions(offspring)
                         return (offspring,)
 
