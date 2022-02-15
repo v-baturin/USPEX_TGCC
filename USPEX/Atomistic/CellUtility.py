@@ -238,7 +238,15 @@ class CellUtility:
             cellVectors[np.nonzero(self._pbc)] *= factor
             cell = Cell(cellVectors, self._pbc)
         elif self._listOfSupercells:
-            factor = np.linalg.det(cellVectors) / self._cell.getVolume()
+            cell = Cell(cellVectors, self._pbc)
+            if self._dim == 3:
+                factor = cell.getVolume() / self._cell.getVolume()
+            elif self._dim == 2:
+                factor = cell.getArea() / self._cell.getArea()
+            elif self._dim == 1:
+                factor = cell.getLength() / self._cell.getLength()
+            else:
+                raise RuntimeError(f"Wrong dim {self._dim}.")
             reconstruction = self.getRandomSupercell(factor)
             cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
@@ -346,7 +354,7 @@ class CellUtility:
         """
         if self._listOfSupercells:
             if factor:
-                mask = np.linalg.det(self._listOfSupercells) > factor
+                mask = np.linalg.det(self._listOfSupercells) >= np.round(factor)
             else:
                 mask = np.ones(len(self._listOfSupercells), dtype=bool)
             assert sum(mask), f'No supercells with factor {factor} are allowed.'
@@ -362,7 +370,7 @@ class CellUtility:
         :return:
         """
         isGood = True
-        if self._cell is not None:
+        if self._cell is not None and self._listOfSupercells is None:
             isGood  = isGood and (cell == self._cell)
         if self._dim == 2:
             isGood = isGood and (cell.getLength() <= self._thickness)
@@ -440,18 +448,11 @@ class Cell:
         :param pbc: periodic boundary conditions in each direction.
 
         """
-        self._pbc = pbc
+        self._pbc = tuple(pbc)
         self._antipbc = tuple((~np.asarray(pbc, dtype=bool)).tolist())
         self.dim = sum(pbc)
-        assert len(cellVectors) == 3
-        if self.dim == 0 or self.dim == 1:
-            a, b, c = cellVectors
-            assert np.isclose(np.dot(a, b), 0) and np.isclose(np.dot(b, c), 0) and np.isclose(np.dot(c, a), 0)
-        elif self.dim == 2:
-            a, b = cellVectors[np.nonzero(self._pbc)]
-            c, = cellVectors[np.nonzero(self._antipbc)]
-            assert np.isclose(np.dot(b, c), 0) and np.isclose(np.dot(c, a), 0)
-        self._cellVectors = np.asarray(cellVectors, dtype=float).reshape((-1,3))
+        self._cellVectors = np.asarray(cellVectors, dtype=float)
+        assert self._cellVectors.shape == (3, 3)
 
     @staticmethod
     def initFromCellVectors(pbc, cellVectors=()):
@@ -802,7 +803,10 @@ class Cell:
 
         :return: fractional coordinates wrapped to unit cell.
         """
-        return np.divmod(coordinates, 1/np.asarray(self._pbc, dtype=float))[1]
+        wrapedCoordinates = np.copy(coordinates).reshape((-1,3))
+        inds = np.nonzero(self._pbc)
+        wrapedCoordinates[:, inds] = np.divmod(wrapedCoordinates[:, inds], 1)[1]
+        return wrapedCoordinates.reshape(coordinates.shape)
 
     def center(self, coordinates, affectedDims=None):
         """
