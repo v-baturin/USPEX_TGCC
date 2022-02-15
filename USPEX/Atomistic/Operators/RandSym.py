@@ -99,7 +99,7 @@ class RandSym:
         for s in symbols:
             molecule = self.simpleMoleculeUtility.molecules[s]
             if len(molecule) == 1:
-                atomRaduis = self.conditions.calcAtomVolume(s) ** (1.0 / 3.0)
+                atomRaduis = self.ionDistances.volumeEstimator.calcAtomVolume(s, self.conditions.externalPressure) ** (1.0 / 3.0)
                 radii.append(0.22 * atomRaduis)
             else:
                 molecule = Transformation.fromRotVector([0.,0.,0.],
@@ -108,7 +108,7 @@ class RandSym:
                 short_direction = vectors[np.argmin(values)]
                 height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.getCartesianCoordinates()]
                 ind = np.argmin(height_map)
-                atomRaduis = self.conditions.calcAtomVolume(molecule.getAtomTypes())[ind] ** (1.0 / 3.0)
+                atomRaduis = self.ionDistances.volumeEstimator.calcAtomVolume(molecule.getAtomTypes(), self.conditions.externalPressure)[ind] ** (1.0 / 3.0)
                 radii.append(0.45 * atomRaduis + height_map[ind])
         for i, j in combinations_with_replacement(range(len(radii)), 2):
             centerMinDistMatrix[i, j] = centerMinDistMatrix[j, i] = (radii[i] + radii[j])
@@ -149,24 +149,27 @@ class RandSym:
 
 
             try:
+                estimatedVolume = self.cellUtility.getCellVolume()
+                if estimatedVolume is None:
+                    elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
+                    estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
+                                                                                              self.conditions.externalPressure)
                 if sum(self.splitInto) > 3:  # split cell
-                    lat = self.cellUtility.getRandomCell(composition, self.conditions).getCellParameters()
+                    lat = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons)).getCellParameters()
                     lat, candidate = splitBigCell(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, lat,
                                                   np.random.choice(self.splitInto), numIons, nsym, self.sym_coef)
                 else:
 
                     candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,
-                                                    self.cellUtility.getCellVolume(composition, self.conditions),
-                                                    self.sym_coef)
+                                                    estimatedVolume, self.sym_coef)
                 name, cell, coordinates, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
                 coordinates = dict(zip(symbols, coordinates))
-                elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-                cell = self.cellUtility.adjustCell(cell, elementalComposition, self.conditions)
+                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons))
                 for i in range(self.attemptsRotation):
                     molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
                     atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
-                    minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                    minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                     if np.all(atomDistances >= distCoeff * minDistMatrix):
                         system = {'molecules': molecules, 'cell': cell}
                         self.world.putEnvironment(system)

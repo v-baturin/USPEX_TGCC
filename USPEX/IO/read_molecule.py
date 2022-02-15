@@ -55,20 +55,21 @@ def read_molecule(filename: str):
         symbol = []
         for i in range(num):
             a = handle.readline()[:-1]              
-            tmp = a.split()
-            if '_' in a:  # For GULP and DMACRYS
-                mark = a.find('_')  # how many chars for the element
-                label.append(tmp[0][mark + 1])
-                symbol.append(tmp[0][:mark])
+            symbol_label, *tmp = a.split()
+            symbol_label = symbol_label.split('_', maxsplit=1)
+            if len(symbol_label) == 2:  # For GULP and DMACRYS
+                symbol.append(symbol_label[0])
+                label.append(symbol_label[1])
             else:
+                symbol.append(symbol_label[0])
                 label.append('')
-                symbol.append(tmp[0])
 
             # temper[i, 0] = Element(tmp[0].split('_')[0]).z  # to find the index for the element
-            temper[i, 1:] = tmp[1:]
+            temper[i, 1:] = tmp
 
         dct = {}
         dct['symbols'] = symbol
+        dct['labels'] = label
         dct['positions'] = temper[:, 1:4].tolist()
         dct['configZMatrix'] = temper[:, 4:7].astype(int).tolist()
         dct['flexDihedrals'] = np.flatnonzero(temper[3:, 7]).astype(int).tolist()

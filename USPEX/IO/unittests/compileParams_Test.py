@@ -57,10 +57,11 @@ class CompileParams_Test(unittest.TestCase):
                 'type': 'GlobalOptimizer',
                 'target': {
                     'type': 'Crystal',
-                    'conditions': {'externalPressure': 100, 'volumeType': 0},
+                    'conditions': {'externalPressure': 100},
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
-                    'cellUtility': {'pbc': (1, 1, 1)}
+                    'cellUtility': {},
+                    'ionDistances': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
@@ -121,8 +122,9 @@ class CompileParams_Test(unittest.TestCase):
                 'type': 'GlobalOptimizer',
                 'target': {
                     'type': 'Crystal',
-                    'conditions': {'externalPressure': 100, 'volumeType': 0.5},
+                    'conditions': {'externalPressure': 100},
                     'simpleMoleculeUtility': {'molecules': {'mol_h2o': {'symbols': ['H', 'O', 'H'],
+                                                                        'labels': ['', '', ''],
                                                                         'positions': [[0.0, -0.1988, -0.7632],
                                                                                       [0.0, 0.3975, 0.0],
                                                                                       [0.0, -0.1988, 0.7632]],
@@ -131,7 +133,8 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['mol_h2o'],
                                          'blocks': [[4]],
                                          'range': [[1,1]]},
-                    'cellUtility': {'pbc': (1, 1, 1)}
+                    'cellUtility': {},
+                    'ionDistances': {'volumeType': 0.5}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
@@ -172,12 +175,13 @@ class CompileParams_Test(unittest.TestCase):
                 'type': 'GlobalOptimizer',
                 'target': {
                     'type': 'Crystal',
-                    'conditions': {'externalPressure': 100, 'volumeType': 0},
+                    'conditions': {'externalPressure': 100},
                     'powderSpectrumAnalyzer': PowderSpectrumAnalyzer.parse('spectrum.txt'),
                     'compositionSpace': {'symbols': ['Na', 'Cl'],
                                          'blocks': [[8,24]],
                                          'range': [[1,1]]},
-                    'cellUtility': {'pbc': (1, 1, 1)}
+                    'cellUtility': {},
+                    'ionDistances': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',

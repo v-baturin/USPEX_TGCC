@@ -155,7 +155,7 @@ For submission details of each stage see parameters.txt.
 | 19 | TopRandom |    -647.766   |    206.538   | P1      (1)  |
 +----+-----------+---------------+--------------+--------------+
     Generation Summary
-      Correlation coefficient: -0.05423
+      Correlation coefficient: -0.05424
       Approximate volume(s)  : 205.0 A^3
       Quasi entropy          : 0.1868
 

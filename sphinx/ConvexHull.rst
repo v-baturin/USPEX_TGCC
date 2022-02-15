@@ -1,0 +1,2 @@
+.. automodule:: USPEX.ConvexHull
+   :members:

@@ -62,11 +62,11 @@ class Seeds(object):
             filename = os.path.join(seedsFolder, filename)
             if os.path.isfile(filename):
                 with open(filename, "rt") as f:
-                    system = self.systemRepresentationClass.readAtomicStructure(f)
+                    system = self.systemRepresentationClass.readAtomicStructure(f, pbc=self.cellUtility.getPBC())
                 molecules = system['molecules']
                 cell = system['cell']
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions)
+                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 composition = self.simpleMoleculeUtility.composition(system)
                 if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
                     self.conditions.putConditions(system)

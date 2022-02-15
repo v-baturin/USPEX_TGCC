@@ -18,7 +18,7 @@ class GetPrincipalCell_Test(unittest.TestCase):
         self.testFile = pj(PATH_WITH_TESTS, 'POSCARS/POSCAR_B36')
         self.test_pbc = (0, 1, 0)
         self.testStruct = CrystalRepresentation.readAtomicStructure(self.testFile)
-        self.testStruct['cell'] = Cell(self.testStruct['cell'].getCellVectors(), pbc=self.test_pbc)
+        self.testStruct['cell'] = Cell.initFromCellVectors(self.test_pbc, [self.testStruct['cell'].getCellVectors()[1]])
         self.structure, _ = AtomicStructure.assemble(**self.testStruct)
 
     # def test_Projection_1d(self):
@@ -39,7 +39,7 @@ class GetPrincipalCell_Test(unittest.TestCase):
 
     def test_PBCorder_1d(self):
         which_pbc = np.nonzero(self.test_pbc)[0][0]
-        pbcvec = self.structure.cell.getCellVectorsPBC()[0]
+        pbcvec = self.structure.getCell().getCellVectorsPBC()[0]
         newvectors = self.structure.getRectifiedCell().getCellVectors()
         print('\npbc_index is ', which_pbc)
         for i, vec in enumerate(newvectors):
@@ -53,6 +53,19 @@ class GetPrincipalCell_Test(unittest.TestCase):
         #         cosines[i,j] = cosine(vectors[i], initvectors[j])
         # print(cosines)
         # print('hello')
+
+class bad_principal_test(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.testFile = pj(PATH_WITH_TESTS, 'POSCARS/bad_cart2frac_POSCAR')
+        self.test_pbc = (0, 1, 0)
+        self.testStruct = CrystalRepresentation.readAtomicStructure(self.testFile)
+        self.testStruct['cell'] = Cell(self.testStruct['cell'].getCellVectors(), pbc=self.test_pbc)
+        self.structure, _ = AtomicStructure.assemble(**self.testStruct)
+
+    def test_bad_principal(self):
+        newCell = self.structure.getRectifiedCell()
+        assert np.linalg.det(newCell.getCellVectors()) > 0
 
 
 if __name__ == '__main__':

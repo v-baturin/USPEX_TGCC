@@ -43,17 +43,19 @@ def compileParams(main: dict, **definitions) -> dict:
                     raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
             if molecules:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
-        if 'conditions' not in target:
-            target['conditions'] = {}
-        if 'volumeType' not in target['conditions']:
-            if molecules:
-                target['conditions']['volumeType'] = 0.5
-            else:
-                target['conditions']['volumeType'] = 0
+        # if 'conditions' not in target:
+        #     target['conditions'] = {}
         if 'cellUtility' not in target:
             target['cellUtility'] = {}
-        if 'pbc' not in target['cellUtility']:
-            target['cellUtility']['pbc'] = (1, 1, 1)
+        # if 'pbc' not in target['cellUtility']:
+        #     target['cellUtility']['pbc'] = (1, 1, 1)
+        if 'ionDistances' not in target:
+            target['ionDistances'] = {}
+        if 'volumeType' not in target['ionDistances']:
+            if molecules:
+                target['ionDistances']['volumeType'] = 0.5
+            else:
+                target['ionDistances']['volumeType'] = 0
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
         selection = optimizer['selection']
@@ -69,9 +71,13 @@ def compileParams(main: dict, **definitions) -> dict:
                 exc_info = sys.exc_info()
                 raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
         if 'singleCrystalSpectrumAnalyzer' in target:
-            filename = target['singleCrystalSpectrumAnalyzer']
+            dct = {}
+            if 'cellParameters' in target['singleCrystalSpectrumAnalyzer']:
+                dct['cellParameters'] = target['singleCrystalSpectrumAnalyzer']['cellParameters']
             try:
-                target['singleCrystalSpectrumAnalyzer'] = SingleCrystalSpectrumAnalyzer.parse(filename)
+                hklFile = target['singleCrystalSpectrumAnalyzer']['hklFile']
+                dct['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(hklFile)
+                target['singleCrystalSpectrumAnalyzer'] = dct
             except Exception as ex:
                 logger.exception(ex)
                 exc_info = sys.exc_info()

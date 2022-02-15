@@ -18,25 +18,29 @@ from parsec import (
     endBy
 )
 
-whitespace = regex(r'\s*', re.MULTILINE)
+whitespace = regex(r'[^\S\r\n]*', re.MULTILINE)
+vertwhitespace = regex(r'\s*', re.MULTILINE)
 
 lexeme = lambda p: p << whitespace
+openlexeme = lambda p: p << vertwhitespace
+closelexeme = lambda p: vertwhitespace >> p << whitespace
 
 comment = string('/*') >> regex(r'(?:[^*]|\*(?!\/))+', re.MULTILINE) << string('*/')
-comment = lexeme(comment)
+comment = openlexeme(comment)
 
-lbrace = lexeme(string('{'))
-rbrace = lexeme(string('}'))
-lbrack = lexeme(string('['))
-rbrack = lexeme(string(']'))
-lbround = lexeme(string('('))
-rbround = lexeme(string(')'))
+lbrace = openlexeme(string('{'))
+rbrace = closelexeme(string('}'))
+lbrack = openlexeme(string('['))
+rbrack = closelexeme(string(']'))
+lbround = openlexeme(string('('))
+rbround = closelexeme(string(')'))
 colon = lexeme(string(':'))
-comma = lexeme(string(','))
+separator = openlexeme(string(',')) | vertwhitespace
 true = lexeme(string('True')).result(True)
 false = lexeme(string('False')).result(False)
 null = lexeme(string('None')).result(None)
 quote = string('"') | string("'")
+literal = lexeme(regex(r'[a-zA-Z][-_a-zA-Z0-9.]*'))
 
 def number_float():
     return lexeme(
@@ -84,14 +88,14 @@ def quoted():
 @generate
 def array():
     yield lbrack << many(comment)
-    elements = yield sepBy(value, comma)
+    elements = yield sepBy(value, separator)
     yield rbrack << many(comment)
     raise StopGenerator(elements)
 
 @generate
 def tuple_object():
     yield lbround << many(comment)
-    elements = yield sepBy(value, comma)
+    elements = yield sepBy(value, separator)
     yield rbround << many(comment)
     raise StopGenerator(tuple(elements))
 
@@ -99,7 +103,7 @@ def tuple_object():
 @generate
 def object_pair():
     yield many(comment)
-    key = yield quoted | lexeme(regex(r'[a-zA-Z][-_a-zA-Z0-9]*'))
+    key = yield quoted | literal
     yield many(comment) << colon << many(comment)
     val = yield value
     yield many(comment)
@@ -109,14 +113,14 @@ def object_pair():
 @generate
 def json_object():
     yield lbrace << many(comment)
-    pairs = yield sepBy(object_pair, comma)
+    pairs = yield sepBy(object_pair, separator)
     yield many(comment) << rbrace
     raise StopGenerator(dict(pairs))
 
-value = quoted | number_float() | number_int() | json_object | array | tuple_object | true | false | null
+value = literal | quoted | number_float() | number_int() | json_object | array | tuple_object | true | false | null
 value = many(comment) >> value << many(comment)
 
-parser = whitespace >> (json_object | array | tuple_object)
+parser = vertwhitespace >> (json_object | array | tuple_object) << vertwhitespace
 
 def parse(text):
     """

@@ -19,11 +19,13 @@ from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.Conditions import Conditions
 from .Atomistic.IonDistances import IonDistances
+from .Atomistic.Constraints import Constraints
 from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
+from .Atomistic.Operators.RandSymPyXtal import RandSymPyXtal
 from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .Atomistic.Operators.Permutation import Permutation
 from .Atomistic.Operators.Transmutation import Transmutation
@@ -31,10 +33,11 @@ from .Atomistic.Operators.Seeds import Seeds
 Seeds.registerTypes(CrystalRepresentation)
 GlobalOptimizer.registerTarget('Crystal',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, World, SimpleMoleculeUtility,
-                                 Conditions, IonDistances, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
+                                 Conditions, IonDistances, Constraints,
+                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation],
-                      creations=[RandTop, RandSym],
+                      creations=[RandTop, RandSym, RandSymPyXtal],
                       seeds=Seeds)
 
 from .GenerationController import GenerationController
@@ -60,3 +63,6 @@ QE_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
 from .Calculators.VASP_Interface import VASP_Interface
 VASP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+
+from .Calculators.MOPAC_Interface import MOPAC_Interface
+MOPAC_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)

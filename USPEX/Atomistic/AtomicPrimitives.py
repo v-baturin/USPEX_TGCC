@@ -1,3 +1,8 @@
+"""
+USPEX.Atomistic.AtomicPrimitives
+================================
+"""
+
 import numpy as np
 from copy import copy
 from collections import Counter
@@ -6,97 +11,149 @@ from .Transformation import Transformation
 
 
 class AtomicStructure:
+    """
+    This class describe pure geometry of any atomic structure including crystals, molecules, nanoparticles etc.
+    Such pure geometry consists of coordinates of atoms and their types. In case of periodic structures it naturally
+    includes cell object which describes periodicity.
+    """
 
-    def __init__(self, atomTypes, coordinates, cell = None, bonds = None, zmatrixConfig = None, **kwargs):
+    def __init__(self, atomTypes, coordinates, cell = None, zmatrixConfig = None):
+        """
+
+        :param atomTypes: list of types of atoms in structure. There are no no specific requirements to the data type of
+            each atom type. It could even be None.
+            Exception are **getComposition** and **getFormula** methods which require operator < to be defined.
+        :param coordinates: array of coordinates of atoms. Its first dimension must coincide with size of atomTypes.
+        :param cell: optional **Cell** object for periodic structures.
+            Is expected to provide **getCellVectors** and **getPBC** methods.
+        :param zmatrixConfig: TODO remove
+
+        """
         assert len(atomTypes) == len(coordinates)
-        self.atomTypes = np.asarray(atomTypes)
-        self.coordinates = np.asarray(coordinates)
-        self.cell = copy(cell)
-        self.bonds = copy(bonds)
+        self._atomTypes = np.asarray(atomTypes)
+        self._coordinates = np.asarray(coordinates)
+        self._cell = copy(cell)
         self.zmatrixConfig = copy(zmatrixConfig)
 
-    def __len__(self):
-        return len(self.atomTypes)
+    @staticmethod
+    def initFromFractionalCoordinates(atomTypes, coordinates, cell, zmatrixConfig = None):
+        """
+        Alternative constructor. Calculates cartesian coordinates from fractional coordinate and given **Cell** object.
 
-    def makeSupercell(self, matrix):
-        assert not (self.bonds and self.zmatrixConfig) # still not configured for these attributes
-        atomTypes = copy(self.atomTypes)
-        coordinates = copy(self.coordinates)
-        cell = copy(self.cell)
-        matrix = np.asarray(matrix, dtype=np.int16)
-        if matrix.ndim == 1:
-            matrix = np.array(matrix*np.eye(3), dtype=np.int16)
-        
-        newCell = type(cell)(matrix.dot(cell.getCellVectors()), cell._pbc)
-        latticePoints = lattice_points_in_supercell(matrix).dot(newCell.getCellVectors())
-        newCoordinates = []
-        newAtomTypes = []
-        for coord, atomType in zip(coordinates, atomTypes):
-            newCoordinates.extend(latticePoints + coord)
-            newAtomTypes.extend(np.repeat(atomType, len(latticePoints)))
-        
-        newCoordinates = newCell.getWrapedCartesianCoordinates(np.array(newCoordinates))
-        newStructure = AtomicStructure(newAtomTypes, newCoordinates, newCell)
-        return newStructure
+        :param atomTypes: list of types of atoms in structure.
+        :param coordinates: array of fractional coordinates of atoms. Its first dimension must coincide with size of atomTypes.
+        :param cell: **Cell** object for periodic structures.
+        :param zmatrixConfig: TODO remove
+
+        """
+        return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, zmatrixConfig)
+
+    def getAligned(self, axis):
+        return AtomicStructure.initFromFractionalCoordinates(self.getAtomTypes(), self.getFractionalCoordinates(),
+                                                             self.getCell().getAlignedCell(axis))
+
+    def __len__(self):
+        return len(self._atomTypes)
 
     def getAtomTypes(self):
-        return copy(self.atomTypes)
+        """
+        :return: copy of atom types sequence.
+        """
+        return copy(self._atomTypes)
+
+    def getCell(self):
+        """
+        :return: copy of associated **Cell** object.
+        """
+        return copy(self._cell)
 
     def getZmatrixConfig(self):
+        """
+        TODO remove
+        """
         return self.zmatrixConfig
 
-    def getComposition(self):
-        return Counter(dict(zip(*np.unique(self.atomTypes, return_counts=True))))
-
-    def getFormula(self):
-        return ''.join(f'{element.short_name}{amount}' for element, amount in self.getComposition().items())
-
     def getCartesianCoordinates(self):
-        return copy(self.coordinates)
+        """
+        :return: copy of cartesian coordinates of atoms in structure.
+        """
+        return copy(self._coordinates)
 
     def getFractionalCoordinates(self):
-        if self.cell is not None:
-            return self.cell.cartesianToFractional(self.coordinates)
+        """
+        :return: calculates and returns fractional coordinates of atoms if structure has assosiated **Cell**  object.
+        :raises: RuntimeError if structure does not have associated **Cell** object.
+        """
+        if self._cell is not None:
+            return self._cell.cartesianToFractional(self._coordinates)
         else:
             raise RuntimeError("Call for fractional coordinates when cell is not set up.")
 
+    def getComposition(self):
+        """
+        :return: calculates and returns composition of the structure as **Counter** object.
+        """
+        return Counter(dict(zip(*np.unique(self._atomTypes, return_counts=True))))
+
+    def getFormula(self):
+        """
+        :return: calculates and returns formula of the structure.
+        """
+        return ''.join(f'{element}{amount}' for element, amount in self.getComposition().items())
+
     def getAllDistances(self):
-        N = len(self.atomTypes)
+        """
+        :return: N*N matrix of pairwise distances between atoms, where N number of atoms in structure unit.
+        """
+        N = len(self._atomTypes)
         if N < 2:
             return np.zeros((N, N), dtype=float)
         from ase.geometry import get_distances
-        cell = self.cell.getCellVectors() if self.cell is not None else None
-        pbc = self.cell.getPBC() if self.cell is not None else None
-        return get_distances(self.coordinates, cell = cell, pbc = pbc)[1]
+        cell = self._cell.getCellVectors() if self._cell is not None else None
+        pbc = self._cell.getPBC() if self._cell is not None else None
+        return get_distances(self._coordinates, cell = cell, pbc = pbc)[1]
 
     def getAllPairVectors(self):
+        """
+        :return: N*N matrix of pairwise vectors between atoms, where N number of atoms in structure unit.
+        """
         from ase.geometry import get_distances
-        cell = self.cell.getCellVectors() if self.cell is not None else None
-        pbc = self.cell.getPBC() if self.cell is not None else None
-        return get_distances(self.coordinates, cell = cell, pbc = pbc)[0]
+        cell = self._cell.getCellVectors() if self._cell is not None else None
+        pbc = self._cell.getPBC() if self._cell is not None else None
+        return get_distances(self._coordinates, cell = cell, pbc = pbc)[0]
 
     def getCenterOfMassCartesianCoordinates(self):
+        """
+        :return: calculates cartesian coordinates of geometrical center of atoms of structure unit.
+        """
         return np.mean(self.getCartesianCoordinates(), axis=0)
 
     def getCenterOfMassFractionalCoordinates(self):
+        """
+        :return: calculates fractional coordinates of geometrical center of atoms of structure unit.
+        """
         return np.mean(self.getFractionalCoordinates(), axis=0)
 
-    def getPrincipalAxes(self, intactPBCVectors=False):
+    def getPrincipalAxes(self):
         """
-        :rtype: 3x3 numpy array
-        :return: principle axes, main axes of inertia tensor (with all atom masses set to be equal).
+        :return: 3x3 matrix of principal axes, main axes of inertia tensor (with all atom masses set to be equal).
         """
-        coordinates = self.coordinates - self.coordinates.mean(axis=0)
+        coordinates = self._coordinates - self._coordinates.mean(axis=0)
         return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
 
     def getRectifiedCell(self):
         """
-        returns Cell object for subsequent vacuum adding. The cellVectors are:
-        for 0d: unit principal eigenvectors
-        for 1d: Periodic vector remains, the other two are perpendicular to it, directed along principal directions of
-        a structure, flatten along periodic vector
-        for 2d: Periodic vectors remain. The third is a unity vector perpendicular to 2d system
-        for 3d: Returns initial Cell
+        :return: **Cell** object depending on dimensionality.
+
+            0d: Cell made of unit principal eigenvectors
+
+            1d: Keep periodic vector from original cell, The other two are perpendicular to it,
+            directed along principal directions of
+            a structure, flatten along periodic vector
+
+            2d: Keep periodic vectors from original cell. The third is a unity vector perpendicular to those two.
+
+            3d: Returns original Cell
         """
 
         cell = self.getCell()
@@ -112,10 +169,17 @@ class AtomicStructure:
             vectors = self.getPrincipalAxes()[1].T
         elif dim == 1:
             periodicUnit = periodicVecs[0] / np.linalg.norm(periodicVecs[0])
-            orthogPancake = self.coordinates - \
-                               np.dot(self.coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
-            vectors = AtomicStructure(self.atomTypes, orthogPancake).getPrincipalAxes()[1].T
-            vectors[-1] = periodicVecs[0]
+            orthogPancake = self._coordinates - \
+                               np.dot(self._coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
+            val, vectors = AtomicStructure(self._atomTypes, orthogPancake).getPrincipalAxes()
+            vectors = vectors.T
+            if val[0] == 0:  # Check if inertia tensor has a singular matrix
+                if np.dot(vectors[0], periodicUnit) == 1:
+                    vectors[0] = vectors[1]
+                vectors[0] -= np.dot(vectors[0], periodicUnit) * periodicUnit
+                vectors[0] /= np.linalg.norm(vectors[0])
+                vectors[1] = np.cross(periodicUnit, vectors[0])
+            vectors[-1] = periodicVecs[0] # any 2D shape has a maximum inertia moment corresponding to orth direction
             vectors = np.roll(vectors, whichPeriodic[0] - 2, axis=0)
         elif dim == 2:
             normalvector = np.cross(periodicVecs[0], periodicVecs[1])
@@ -130,15 +194,50 @@ class AtomicStructure:
         newCell = type(cell)(vectors, pbc)
         return newCell
 
-    def getCell(self):
-        return copy(self.cell)
+    def makeSupercell(self, matrix):
+        """
+        For periodic structures constructs supercell representation of the same structure.
+        I.e. it has associated **Cell** object multiple of initial **Cell** object
+        and concatenated arrays of coordinates and atom types from blocks constituting the supercell.
+        New cell vectros are given by formula
 
-    @staticmethod
-    def initFromFractionalCoordinates(atomTypes, coordinates, cell, **kwargs):
-        return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, **kwargs)
+        >>> newCellVectors = matrix.dot(self.getCell().getCellVectors())
+
+        :param matrix: 3*3 array of integers defining the supercell.
+
+        :return: new **AtomicStructure** object.
+        """
+        assert not self.zmatrixConfig  # still not configured for these attributes
+        atomTypes = copy(self._atomTypes)
+        coordinates = copy(self._coordinates)
+        cell = copy(self._cell)
+        matrix = np.asarray(matrix, dtype=np.int16)
+        if matrix.ndim == 1:
+            matrix = np.array(matrix * np.eye(3), dtype=np.int16)
+
+        newCell = type(cell)(matrix.dot(cell.getCellVectors()), cell.getPBC())
+        latticePoints = _lattice_points_in_supercell(matrix).dot(newCell.getCellVectors())
+        newCoordinates = []
+        newAtomTypes = []
+        for coord, atomType in zip(coordinates, atomTypes):
+            newCoordinates.extend(latticePoints + coord)
+            newAtomTypes.extend(np.repeat(atomType, len(latticePoints)))
+
+        newCoordinates = newCell.getWrapedCartesianCoordinates(np.array(newCoordinates))
+        newStructure = AtomicStructure(newAtomTypes, newCoordinates, newCell)
+        return newStructure
 
     @staticmethod
     def assemble(molecules, cell, environment=None, **kwargs):
+        """
+        TODO move to AtomicDisassembler class.
+
+        :param molecules:
+        :param cell:
+        :param environment:
+        :param kwargs:
+
+        """
         atomTypes = []
         coordinates = []
         indices = []
@@ -153,15 +252,36 @@ class AtomicStructure:
             coordinates = list(np.asarray(coordinates, dtype = float) + environment.calculateOffset(molecules, cell))
             atomTypes.extend(environment.getStructure().getAtomTypes())
             coordinates.extend(environment.getStructure().getCartesianCoordinates())
-        return (AtomicStructure(atomTypes, coordinates, cell, **kwargs),
+        return (AtomicStructure(atomTypes, coordinates, cell),
                 AtomicDisassembler(indices, environment))
 
 
 class AtomicDisassembler:
+    """
+    This class describes how to assemble AtomicStructure from molecules and environment
+    and then disassemble it back into molecules and environment. 
+    """
+
 
     def __init__(self, indices, environment):
+        """
+
+        :param indices:
+        :param environment:
+
+        """
         self.indices = [np.asarray(inds, dtype = int) for inds in indices]
         self.environment = environment
+
+    @staticmethod
+    def createFlatDisassembler(N):
+        """
+        Helper constructor. Creates disassembler for structure of given size, which decomposes it into individual atoms.
+
+        :param N: size of structure for which disaasembler is required.
+
+        """
+        return AtomicDisassembler([[i] for i in range(N)], None)
 
     @property
     def envIndices(self):
@@ -172,11 +292,14 @@ class AtomicDisassembler:
         else:
             return np.empty(0, dtype=int)
 
-    @staticmethod
-    def createFlatDisassembler(N):
-        return AtomicDisassembler([[i] for i in range(N)], None)
-
     def disassemble(self, atomicStructure):
+        """
+        Decomposes given structure into molecules and environment.
+
+        :param atomicStructure: structure to decompose.
+
+        :return: {'molecules': <list of molecules>, 'cell': <Cell object>, 'environment': <optional environment object>}
+        """
         atomTypes = atomicStructure.getAtomTypes()
         coordinates = atomicStructure.getCartesianCoordinates()
         cell = atomicStructure.getCell()
@@ -192,11 +315,14 @@ class AtomicDisassembler:
     def decomposeDisplacements(self, displacements, structure):
         """
         Decompose atomic displacements into molecular translations and rotations and intramolecular atomic displacements.
+
         :type displacements: numpy array N*3
         :param displacements: array of atomic displacements, where N is number of atoms in structure.
+        :param structure:
+
         :rtype: List[Tuple[vector, vector, array of vectors]]
         :return: List of tuples for each molecule with translation vector, rotation vector and array of intramolecular
-        atomic displacements.
+            atomic displacements.
         """
         assert len(displacements) == len(structure)
         molecularDispacements = []
@@ -204,8 +330,8 @@ class AtomicDisassembler:
         for molecule, inds in zip(molecules, self.indices):
             if len(molecule) > 1:
                 atomicDisplacements = displacements[inds]
-                centerCoordinates = molecule.coordinates.mean(axis=0)
-                atomicCoordinates = molecule.coordinates - centerCoordinates
+                centerCoordinates = molecule.getCenterOfMassCartesianCoordinates()
+                atomicCoordinates = molecule.getCartesianCoordinates() - centerCoordinates
                 inertia = np.linalg.norm(atomicCoordinates) ** 2
                 atomicDistances = np.linalg.norm(atomicCoordinates, axis=1)
                 nonCentralAtoms = np.nonzero(atomicDistances > 0.001)
@@ -226,7 +352,7 @@ class AtomicDisassembler:
             molecularDispacements.append((Transformation.fromRotVector(rotation, translation), atomicDisplacements))
         return molecularDispacements
 
-def lattice_points_in_supercell(supercell_matrix):
+def _lattice_points_in_supercell(supercell_matrix):
     """
     Returns the list of points on the original lattice contained in the
     supercell in fractional coordinates (with the supercell basis).

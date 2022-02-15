@@ -161,7 +161,7 @@ class USPEXClassic(object):
                 self.weightsLast[howCome] = howMany
                 if hasattr(mutation, 'prepare'):
                     mutation.prepare()
-                possibleParents = np.random.choice(best, size=2*howMany, replace=True, p=tournament)
+                possibleParents = np.random.choice(best, size=10*howMany, replace=True, p=tournament)
                 for parent in possibleParents:
                     if howMany <= 0:
                         break
@@ -192,8 +192,8 @@ class USPEXClassic(object):
                 self.weightsLast[howCome] = howMany
                 if hasattr(hybridization, 'prepare'):
                     hybridization.prepare()
-                pairs = zip(np.random.choice(best, size=2 * howMany, replace=True, p=tournament),
-                            np.random.choice(best, size=2 * howMany, replace=True, p=tournament))
+                pairs = zip(np.random.choice(best, size=10 * howMany, replace=True, p=tournament),
+                            np.random.choice(best, size=10 * howMany, replace=True, p=tournament))
                 for parent1, parent2 in pairs:
                     if parent1['ID'] == parent2['ID']:
                         continue

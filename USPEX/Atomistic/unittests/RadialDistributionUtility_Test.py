@@ -50,7 +50,6 @@ class RadialDistributionUtility_Test(unittest.TestCase):
         self.systemRDU3['molecules'] = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
         self.systemRDU3['cell'] = cell
 
-
     def test_structureOrder(self):
         self.assertAlmostEqual(self.utility.structureOrder(self.systemRDU1), 2.531, places=3)
         self.assertAlmostEqual(self.utility.structureOrder(self.systemRDU2), 2.531, places=3)

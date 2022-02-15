@@ -23,6 +23,7 @@ class KPoints(object):
     def build(self, cell):
 
         #angLattice = latConverter(system.lattice)
+        cell = type(cell)(cell.getCellVectors(), (1,1,1))
         angLattice = cell.getCellParameters()
 
         dist = np.zeros(3)

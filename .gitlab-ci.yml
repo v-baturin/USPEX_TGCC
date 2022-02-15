@@ -76,6 +76,17 @@ build_image:
   only:
     - master
 
+build_documentation:
+  image: $CI_REGISTRY/uspex_python/thirdparty:master
+  stage: build_phase3
+  script:
+    - pip install build/dist/USPEX-*-cp36-cp36m-linux_x86_64.whl
+    - sphinx-build -b html sphinx build_docs
+  artifacts:
+    paths:
+      - build_docs
+    expire_in: 1 mos 1 day
+
 build_whl37:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython37:master
   stage: build_phase3

@@ -1,5 +1,5 @@
 """
-USPEX.Common.Atomistic.Element
+USPEX.Atomistic.Element
 ==============================
 
 Class for Element
@@ -146,15 +146,14 @@ class Element(object):
     """
     Class for returning information about elements in one place.
 
-    :return elements_list: all elements represented as list of tuples.
-    :return z: atom number Z, e.g. 1, 5, 26, etc.
-    :return short_name: short name of atom, e.g. H, He, etc.
-    :return long_name: full name of the element, e.g. Iron, Oxygen, etc.
-    :return valence: valence of the element.
-    :return valence_electrons: valence electrons number.
-    :return covalent_radius: covalent radius of the element.
-    :return good_bonds: good bonds.
-    :return mass: element mass.
+    :ivar z: atom number Z, e.g. 1, 5, 26, etc.
+    :ivar short_name: short name of atom, e.g. H, He, etc.
+    :ivar long_name: full name of the element, e.g. Iron, Oxygen, etc.
+    :ivar valence: valence of the element.
+    :ivar valence_electrons: valence electrons number.
+    :ivar covalent_radius: covalent radius of the element.
+    :ivar good_bonds: good bonds.
+    :ivar mass: element mass.
     """
 
     # List with atomic number z, short name, full name, valence, valence electrons, covalent radius, good bonds:
@@ -174,6 +173,7 @@ class Element(object):
 
         :type input: str or int
         :param input: can be shortname, fullname of atomic number.
+
         """
         if isinstance(input, int):
             if max(self.all_z()) < input <= 0:

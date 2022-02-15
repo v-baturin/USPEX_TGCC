@@ -110,7 +110,7 @@ class GULP_Interface(SHELL_Interface):
         # else:
 
         # lattice = latConverter(system.lattice)
-        lattice = cell.getCellParameters()
+        lattice = type(cell)(cell.getCellVectors(), (1,1,1)).getCellParameters()
         # lattice[3:] = lattice[3:] * 180.0 / np.pi  # convert angles to degrees
 
         content_to_write = ''
