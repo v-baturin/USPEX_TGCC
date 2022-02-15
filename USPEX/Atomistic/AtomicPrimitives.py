@@ -309,7 +309,8 @@ class AtomicDisassembler:
         system = {'molecules': molecules, 'cell': cell}
         if self.environment is not None:
             envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], cell)
-            system['environment'] = type(self.environment)(envStructure, offsetVector = np.zeros(3, dtype=float))
+            system['environment'] = type(self.environment)(envStructure, variableThickness=self.environment.getThickness,
+                                                           offsetVector=np.zeros(3, dtype=float))
         return system
 
     def decomposeDisplacements(self, displacements, structure):
