@@ -451,8 +451,8 @@ class Cell:
         self._pbc = tuple(pbc)
         self._antipbc = tuple((~np.asarray(pbc, dtype=bool)).tolist())
         self.dim = sum(pbc)
-        assert cellVectors.shape == (3, 3)
         self._cellVectors = np.asarray(cellVectors, dtype=float)
+        assert self._cellVectors.shape == (3, 3)
 
     @staticmethod
     def initFromCellVectors(pbc, cellVectors=()):
