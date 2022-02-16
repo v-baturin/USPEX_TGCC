@@ -45,7 +45,7 @@ class Substrate:
         :return: offset vector.
         """
         if self._offsetVector is not None:
-            offsetVector = self._offsetVector
+            offsetVector = np.asarray(self._offsetVector, dtype=float)
         else:
             cell = self._structure.getCell()
             axis = cell.getCellVectors()[self._ind]
