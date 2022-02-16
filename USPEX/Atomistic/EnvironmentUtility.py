@@ -27,7 +27,7 @@ class Substrate:
         assert sum(antiPBC) == 1
         self._ind = np.flatnonzero(antiPBC)[0]
         coordinates = self._structure.getCartesianCoordinates()[:, self._ind]
-        upperBound = coordinates.max() - self._thickness if variableThickness is not None else coordinates.min()
+        upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
         self._indices = np.flatnonzero(coordinates < upperBound)
 
     def getThickness(self):
