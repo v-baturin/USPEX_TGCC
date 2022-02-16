@@ -77,8 +77,8 @@ class VASP_Interface(SHELL_Interface):
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, tag : str, kresol : float, incar : str = None, potcarsPath : str = None, vacuumSize=10,
-                 targetObject: str = 'default', **kwargs):
+    def __init__(self, tag: str, kresol: float, incar: str = None, potcarsPath: str = None, perturbate: bool = True,
+                 vacuumSize = 10, targetObject: str = 'default', **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -107,6 +107,7 @@ class VASP_Interface(SHELL_Interface):
 
         self.vacuumSize = vacuumSize
         self.targetObject = targetObject
+        self.perturbate = perturbate
 
 
     def readOutput(self, system, calcFolder : str):
@@ -148,17 +149,7 @@ class VASP_Interface(SHELL_Interface):
             with open(pj(calcFolder, self.incar_file), 'a') as myfile:
                 myfile.write('ISYM=0\n')
 
-        # TODO
-        # # Sometimes VASP would refuse calculation when symmetry determination
-        # if system.error > 1:
-        #    os.system('echo ISYM=0 >> INCAR')
-        #    # coor = perturbCoords(coor, lattice, 1); % Experimental
-
-
         ############################# POTCAR ##################################
-        # TODO varcomp ??? DO we need it here?
-        # if self.state.varcomp or not os.path.exists('POTCAR_' + str(self.step)):  # we prefer this way
-
         if os.path.exists(pj(calcFolder, 'POTCAR')):
             os.remove(pj(calcFolder, 'POTCAR'))
 
@@ -166,28 +157,15 @@ class VASP_Interface(SHELL_Interface):
             potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType}')
             os.system(f'cat {potcarPath} >>  {calcFolder}/POTCAR ')
 
-
         ############################# POSCAR ##################################
-        #######################################################################
-
-        # if system.dimension == 2:
-        #     # TODO
-        #     # self.writeOUT_POSCAR_surface(Ind_No)
-        #     pass
-        # elif system.dimension == -3:
-        #     # TODO
-        #     # self.writeOUT_POSCAR_GB(Ind_No)
-        #     pass
-        # else:
-        #     # from lib.newModuleArch.io.vasp import write_vasp
-        #     from ase.io.vasp import write_vasp
-        #     write_vasp(pj(calcFolder, self.poscar_file), system, sort=True, direct=True, vasp5=True, long_format=False)
+        if self.perturbate:
+            coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
 
         with open(pj(calcFolder, self.poscar_file), 'wt') as f:
             if self.targetObject == 'default':
                 atoms = Atoms([el.short_name for el in atomTypes], coordinates, cell = cell.getCellVectors())
                 if 'environment' in system:
-                    indices = system['disassembler'].envIndices[system['environment'].getFixedIndices()]
+                    indices = disassembler.envIndices[system['environment'].getFixedIndices()]
                     atoms.set_constraint(FixAtoms(indices=indices))
                 write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
             elif self.targetObject == 'environment':
