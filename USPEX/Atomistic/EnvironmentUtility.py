@@ -14,24 +14,6 @@ class Substrate:
     
     _DEFAULT_SUBSTRATE_SHIFT = 2.0
 
-    structureType = None
-    atomType = None
-    cellType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        """
-        Register types used by this utility.
-
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-
-        """
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-
     def __init__(self, structure, variableThickness = None, offsetVector = None):
         """
         :param structure: atomic structure associated with this environment.
@@ -48,17 +30,6 @@ class Substrate:
         upperBound = coordinates.max() - self._thickness if variableThickness is not None else coordinates.min()
         self._indices = np.flatnonzero(coordinates < upperBound)
 
-    @classmethod
-    def initFromRawStructure(cls, rawStructure, pbc, systemCell = None, **kwargs):
-        atomTypes = [cls.atomType(item) for item in rawStructure.symbols]
-        coordinates = rawStructure.get_positions()
-        cell = cls.cellType(rawStructure.get_cell().array, pbc).getEnvelopeCell(coordinates)
-        coordinates = cell.center(coordinates)
-        structure = cls.structureType(atomTypes, coordinates, cell)
-        if systemCell is not None:
-            structure = structure.makeSupercell(np.round(structure.getCell().decomposeCell(systemCell)))
-        return Substrate(structure, **kwargs)
-
     def getThickness(self):
         return self._thickness
 
@@ -67,7 +38,6 @@ class Substrate:
         Calculate or retrieve vector to be added to each molecule when assemble whole structure.
         If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
         in nonperiodic direction.
-        TODO working only for 2D now.
 
         :param molecules: list of molecules for which the offset is being calculated.
         :param cell: TODO
@@ -101,6 +71,11 @@ class EnvironmentUtility:
     """
     Class reprenting utility which generates possible environmemnts for calculation.
     """
+    structureRepresentation = None
+
+    @classmethod
+    def setRepresentation(cls, representation):
+        cls.structureRepresentation = representation
 
     def __init__(self, type = None, files = None, pbcs = None, **kwargs):
         """
@@ -112,12 +87,12 @@ class EnvironmentUtility:
         assert type is None or type == 'Substrate'
         assert (files is None) == (pbcs is None)
         self._kwargs = kwargs
-        self.files = files if files is not None else []
+        self._files = files if files is not None else []
         self._pbcs = pbcs if pbcs is not None else []
-        self._rawStructures = []
-        for file, pbc in zip(self.files, self._pbcs):
-            atoms = read(file)
-            self._rawStructures.append((atoms. pbc))
+        self._structures = []
+        for file, pbc in zip(self._files, self._pbcs):
+            structure = self.structureRepresentation.readAtomicStructureRaw(file, pbc)
+            self._structures.append(structure)
 
     def putEnvironment(self, system):
         """
@@ -126,7 +101,7 @@ class EnvironmentUtility:
         :param system: system dictionary.
 
         """
-        if self._rawStructures:
-            rawStructure = np.random.choice(self._rawStructures)
-            system['environment'] = Substrate.initFromRawStructure(rawStructure[0], rawStructure[1],
-                                                                   systemCell=system['cell'], **self._kwargs)
+        if self._structures:
+            structure = np.random.choice(self._structures)
+            structure = structure.makeSupercell(np.round(structure.getCell().decomposeCell(system['cell'])))
+            system['environment'] = Substrate(structure, **self._kwargs)

@@ -11,8 +11,8 @@ GlobalOptimizer.setFitnessType(Fitness)
 from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
-from .Atomistic.EnvironmentUtility import EnvironmentUtility, Substrate
-Substrate.registerTypes(AtomicStructure, Element, Cell)
+from .Atomistic.EnvironmentUtility import EnvironmentUtility
+EnvironmentUtility.setRepresentation(CrystalRepresentation)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from .Atomistic.CellUtility import CellUtility
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility

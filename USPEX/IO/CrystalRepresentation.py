@@ -160,6 +160,16 @@ class CrystalRepresentation(object):
         write_vasp(fileDescriptor, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
 
     @classmethod
+    def readAtomicStructureRaw(cls, fileDescriptor, pbc=(1,1,1)) -> dict:
+        atoms = read_vasp(fileDescriptor)
+        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
+        cell = cls.cellType(atoms.get_cell().array, pbc)
+        coordinates = atoms.get_positions()
+        # cell = cls.cellType(atoms.get_cell().array, pbc).getEnvelopeCell(coordinates)
+        # coordinates = cell.center(coordinates)
+        return cls.structureType(atomTypes, coordinates, cell = cell)
+
+    @classmethod
     def readAtomicStructure(cls, fileDescriptor, disassembler = None, pbc=(1,1,1)) -> dict:
         atoms = read_vasp(fileDescriptor)
         disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(atoms)) if disassembler is None else disassembler
