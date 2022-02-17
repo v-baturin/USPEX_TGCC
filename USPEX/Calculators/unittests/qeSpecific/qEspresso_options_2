@@ -9,10 +9,10 @@
   disk_io = 'none'
 /
 &SYSTEM
-  ibrav     = 0 
+  ibrav     = 0
   nat       = 8
   ntyp      = 1
-  ecutwfc   = 40.D0 
+  ecutwfc   = 40.D0
   nosym     = .true.
  occupations='smearing'
  degauss=0.02
