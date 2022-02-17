@@ -28,7 +28,7 @@ class RandTop:
     def __init__(self, utilities, supercells: list = None, maxSupersize: int = MAX_SUPERSIZE,
                  attemptsRotation: int = ATTEMPTS_ROTATION, attemptsPointGroup: int = ATTEMPTS_POINT_GROUP):
         self.cellUtility = utilities.cellUtility
-        self.world = utilities.world
+        self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
@@ -121,7 +121,7 @@ class RandTop:
                                             else:
                                                 self.arxiv[name].append(all_coordinates)
                                                 system = {'molecules' : molecules, 'cell': cell}
-                                                self.world.putEnvironment(system)
+                                                self.environmentUtility.putEnvironment(system)
                                                 self.conditions.putConditions(system)
                                                 return (system,)
         raise RuntimeError("RandTop failed.")

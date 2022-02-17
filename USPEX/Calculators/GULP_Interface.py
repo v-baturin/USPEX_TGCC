@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 @date        30 August 2016
 @brief       Class for remote QM/MM calculations with GULP
 '''
-# TODO: Vacuumsize before each stage
 import numpy as np
 import os
 import re
@@ -32,8 +31,8 @@ class GULP_Interface(SHELL_Interface):
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, tag : str, ginput : str = None, goptions : str = None, libs:List[str] = None,
-                 moleculeSpecifics : dict = None, perturbate : bool = True, fix_cell:bool=False, vacuumSize = 10, **kwargs):
+    def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: List[str] = None,
+                 moleculeSpecifics: dict = None, perturbate: bool = True, fixCell: bool = False, vacuumSize = 10, **kwargs):
         '''
 
         :param params: dictionary with parameters:
@@ -62,27 +61,21 @@ class GULP_Interface(SHELL_Interface):
             self.goptions = f.read()
 
         self.libs = libs if libs else []
-        if moleculeSpecifics != None:
+        if moleculeSpecifics is not None:
             self.moleculeSpecifics = moleculeSpecifics
         else:
             self.moleculeSpecifics = {}
 
         self.perturbate = perturbate
-        self.fix_cell = fix_cell
+        self.fixCell = fixCell
         self.vacuumSize = vacuumSize
         logger.debug('GULP calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder : str):
-        '''
+        """
 
-        :param system:
-        :param isFullRelaxation:
-        '''
+        """
 
-        # assert isinstance(system, AtomicStructure)
-
-        # system = AtomicStructure.fromDICT(system)
-        # twoDimensional = -3 == system.dimension or 2 == system.dimension
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
 
@@ -95,8 +88,8 @@ class GULP_Interface(SHELL_Interface):
             if os.path.isfile(f):
                 os.remove(f)
 
+        # TODO connectivities in molecular mode.
         # if system.isMolecule:
-        #     # TODO Will rewrite it later:
         #     # with open('ginput_{}'.format(step)) as f:
         #     #     content = f.read()
         #     # if not 'connect' in content:
@@ -109,28 +102,22 @@ class GULP_Interface(SHELL_Interface):
         #     pass
         # else:
 
-        # lattice = latConverter(system.lattice)
         lattice = type(cell)(cell.getCellVectors(), (1,1,1)).getCellParameters()
-        # lattice[3:] = lattice[3:] * 180.0 / np.pi  # convert angles to degrees
 
         content_to_write = ''
         content_to_write += 'cell\n'
 
-        # if system.dimension == -3 or system.dimension == 2:
-        #     content_to_write += '%7.3f %7.3f %7.3f %7.3f %7.3f %7.3f 0 0 0 0 0 0\n' % tuple(lattice)
-        # else:
-        #     content_to_write += '%7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n' % tuple(lattice)
-        if self.fix_cell:
+        if self.fixCell:
             content_to_write += '%7.3f %7.3f %7.3f %7.3f %7.3f %7.3f 0 0 0 0 0 0 \n' % tuple(lattice)
         else:
             content_to_write += '%7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n' % tuple(lattice)
 
         content_to_write += 'fractional\n'
 
-        # TODO properly perturnb system
         if self.perturbate:
             coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
 
+        # TODO gulp specifics for atoms
         # symbols = []
         # for molSymbol, molecule in zip(system.molSymbol,system.molecules):
         #     if molSymbol in self.moleculeSpecifics:
@@ -138,11 +125,11 @@ class GULP_Interface(SHELL_Interface):
         #     else:
         #         symbols.extend(molecule.get_chemical_symbols())
 
+        # TODO charges
         # if system.has('initial_charges') or system.has('charges'):
         #     for symbol, coord, charge in zip(symbols, system.get_scaled_positions(wrap = False), system.get_initial_charges()):
         #         tuple_to_format = tuple([symbol] + coord.tolist() + [charge])
         #         # if twoDimensional:
-        #         #     # TODO implement this.
         #         #     # if POP_STRUC['POPULATION'][Ind_No]['chanAList'][coordLoop] == 1:
         #         #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 1 1 1\n' % tuple_to_format
         #         #     # else:
@@ -152,18 +139,17 @@ class GULP_Interface(SHELL_Interface):
         #         #     content_to_write += '%4s %12.6f %12.6f %12.6f   core %12.6f\n' % tuple_to_format
         #         content_to_write += '%4s %12.6f %12.6f %12.6f   core %12.6f\n' % tuple_to_format
         # else:
-        for symbol, coord in zip(structure.getAtomTypes(), cell.cartesianToFractional(coordinates)):
+
+        fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
+        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), cell.cartesianToFractional(coordinates))):
             tuple_to_format = tuple([symbol.short_name] + coord.tolist())
-            # if twoDimensional:
-            #     # TODO implement this.
-            #     # if POP_STRUC['POPULATION'][Ind_No]['chanAList'][coordLoop] == 1:
-            #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 1 1 1\n' % tuple_to_format
-            #     # else:
-            #     #     content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 0 0 0\n' % tuple_to_format
-            #     pass
-            # else:
-            #     content_to_write += '%4s %12.6f %12.6f %12.6f\n' % tuple_to_format
-            content_to_write += '%4s %12.6f %12.6f %12.6f\n' % tuple_to_format
+            if cell.dim == 2:
+                if i in fixedIndices:
+                    content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 1 1 1\n' % tuple_to_format
+                else:
+                    content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 0 0 0\n' % tuple_to_format
+            else:
+                content_to_write += '%4s %12.6f %12.6f %12.6f\n' % tuple_to_format
 
         # Write part:
         total_content = self.goptions + '\n' + content_to_write + self.ginput + '\n'

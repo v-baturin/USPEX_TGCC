@@ -15,7 +15,7 @@ class Heredity:
 
     def __init__(self, utilities, nslubs = None, attempts = ATTEMPTS, debug = False):
         self.cellUtility = utilities.cellUtility
-        self.world = utilities.world
+        self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
         self.radialDistributionUtility = utilities.radialDistributionUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
@@ -121,7 +121,7 @@ class Heredity:
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                     if np.all(atomDistances >= minDistMatrix):
                         system = {'molecules': molecules, 'cell': outputCell}
-                        self.world.putEnvironment(system)
+                        self.environmentUtility.putEnvironment(system)
                         self.conditions.putConditions(system)
                         return (system,)
 

@@ -33,7 +33,7 @@ extensions = [
     Extension("USPEX.Atomistic.AtomicPrimitives", ["USPEX/Atomistic/AtomicPrimitives.py"]),
     Extension("USPEX.Atomistic.Bonds", ["USPEX/Atomistic/Bonds.py"]),
     Extension("USPEX.Atomistic.CellUtility", ["USPEX/Atomistic/CellUtility.py"]),
-    Extension("USPEX.Atomistic.World", ["USPEX/Atomistic/World.py"]),
+    Extension("USPEX.Atomistic.EnvironmentUtility", ["USPEX/Atomistic/EnvironmentUtility.py"]),
     Extension("USPEX.Atomistic.CompositionCH", ["USPEX/Atomistic/CompositionCH.py"]),
     Extension("USPEX.Atomistic.CompositionSpace", ["USPEX/Atomistic/CompositionSpace.py"]),
     Extension("USPEX.Atomistic.Conditions", ["USPEX/Atomistic/Conditions.py"]),

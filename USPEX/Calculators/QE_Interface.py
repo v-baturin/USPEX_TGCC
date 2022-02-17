@@ -94,20 +94,26 @@ class QE_Interface(SHELL_Interface):
                 data[i] = line.replace('BBBB', '{}'.format(numIons_size))
 
 
-        data.append('CELL_PARAMETERS cubic\n')
+        data.append('CELL_PARAMETERS bohr\n')
 
         BOHR = 0.52917721067  # Angstrom
-        #lat = latConverter(latConverter(LATTICE)) / BOHR
-        lat = cell.getCellVectors() / BOHR#_lengths_and_angles()
+        lat = cell.getCellVectors() / BOHR
 
         data.append('{:8.4f} {:8.4f} {:8.4f}\n'.format(*lat[0, :]))
         data.append('{:8.4f} {:8.4f} {:8.4f}\n'.format(*lat[1, :]))
         data.append('{:8.4f} {:8.4f} {:8.4f}\n'.format(*lat[2, :]))
 
-        data.append('ATOMIC_POSITIONS {crystal} \n')
+        data.append('ATOMIC_POSITIONS {crystal}\n')
 
-        for symbol, coord in zip(atomTypes, cell.cartesianToFractional(coordinates)):
-            data.append('{:4s} {:12.6f} {:12.6f} {:12.6f}\n'.format(symbol.short_name, *coord))
+        fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
+        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), cell.cartesianToFractional(coordinates))):
+            if cell.dim == 2:
+                if i in fixedIndices:
+                    data.append('{:4s} {:12.6f} {:12.6f} {:12.6f}  1  1  1\n'.format(symbol.short_name, *coord))
+                else:
+                    data.append('{:4s} {:12.6f} {:12.6f} {:12.6f}  0  0  0\n'.format(symbol.short_name, *coord))
+            else:
+                data.append('{:4s} {:12.6f} {:12.6f} {:12.6f}\n'.format(symbol.short_name, *coord))
 
 
         ############################# KPOINTS #################################
@@ -116,14 +122,14 @@ class QE_Interface(SHELL_Interface):
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
-            kPoints = [1,1,1]
+            kPoints = [1, 1, 1]
 
-        data.append('K_POINTS {automatic} \n')
+        data.append('K_POINTS {automatic}\n')
         data.append('{:4d} {:4d} {:4d}  0 0 0\n'.format(*kPoints))
 
 
         with open(pj(calcFolder, self.inputFile), 'wt') as dest:
-            dest.write('\n'.join(data))
+            dest.write(''.join(data))
 
         for lib in self.libs:
             if isinstance(lib,str) and os.path.exists(lib):

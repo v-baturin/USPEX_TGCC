@@ -16,7 +16,7 @@ LOCAL_VACUUM = 0.2
 class RandSymPyXtal:
     def __init__(self, utilities, nsym=None):
         self.cellUtility = utilities.cellUtility
-        self.world = utilities.world
+        self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
@@ -142,7 +142,7 @@ class RandSymPyXtal:
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if np.all(atomDistances >= minDistMatrix):
                     system = {'molecules': molecules, 'cell': cell}
-                    self.world.putEnvironment(system)
+                    self.environmentUtility.putEnvironment(system)
                     self.conditions.putConditions(system)
                     return (system,)
 

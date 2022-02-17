@@ -1,12 +1,12 @@
 """
-USPEX.Atomistic.World
+USPEX.Atomistic.EnvironmentUtility
 =====================
 """
 
 from ase.io import read
 import numpy as np
 
-class Environment:
+class Substrate:
     """
     Class representing part of structure which is not being altered via variation operators.
     I.e. it acts as environment for individual.
@@ -14,21 +14,30 @@ class Environment:
     
     _DEFAULT_SUBSTRATE_SHIFT = 2.0
 
-    def __init__(self, structure, offsetVector = None):
+    def __init__(self, structure, variableThickness = None, offsetVector = None):
         """
         :param structure: atomic structure associated with this environment.
         :param offsetVector: vector to be added to molecules centers when assemble whole structure.
             If not provided such vector will be calculated on demand.
         """
         self._structure = structure
+        self._thickness = variableThickness
         self._offsetVector = offsetVector
+        antiPBC = self._structure.getCell().getAntiPBC()
+        assert sum(antiPBC) == 1
+        self._ind = np.flatnonzero(antiPBC)[0]
+        coordinates = self._structure.getCartesianCoordinates()[:, self._ind]
+        upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
+        self._indices = np.flatnonzero(coordinates < upperBound)
+
+    def getThickness(self):
+        return self._thickness
 
     def calculateOffset(self, molecules, cell):
         """
         Calculate or retrieve vector to be added to each molecule when assemble whole structure.
         If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
         in nonperiodic direction.
-        TODO working only for 2D now.
 
         :param molecules: list of molecules for which the offset is being calculated.
         :param cell: TODO
@@ -36,16 +45,13 @@ class Environment:
         :return: offset vector.
         """
         if self._offsetVector is not None:
-            offsetVector = self._offsetVector
+            offsetVector = np.asarray(self._offsetVector, dtype=float)
         else:
             cell = self._structure.getCell()
-            pbc = cell.getPBC()
-            assert sum(pbc) == 2 # For substrates only
-            zeroPBC = np.where(np.array(pbc)==0)[0]
-            axis = cell.getCellVectors()[zeroPBC]
-            envCoordinates = cell.cartesianToFractional(self._structure.getCartesianCoordinates())[:,zeroPBC]
+            axis = cell.getCellVectors()[self._ind]
+            envCoordinates = cell.cartesianToFractional(self._structure.getCartesianCoordinates())[:, self._ind]
             coordinates = np.vstack([cell.cartesianToFractional(molecule.getCartesianCoordinates())
-                                     for molecule in molecules])[:,zeroPBC]
+                                     for molecule in molecules])[:, self._ind]
             offsetVector = axis * (self._DEFAULT_SUBSTRATE_SHIFT / np.linalg.norm(axis)
                                    + envCoordinates.max() - coordinates.min())
         return offsetVector
@@ -58,47 +64,35 @@ class Environment:
         """
         return self._structure
 
+    def getFixedIndices(self):
+        return self._indices
 
-class World:
+class EnvironmentUtility:
     """
     Class reprenting utility which generates possible environmemnts for calculation.
     """
-
-    structureType = None
-    atomType = None
-    cellType = None
+    structureRepresentation = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        """
-        Register types used by this utility.
+    def setRepresentation(cls, representation):
+        cls.structureRepresentation = representation
 
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-
-        """
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-
-    def __init__(self, files = None, pbc = (1,1,1)):
+    def __init__(self, type = None, files = None, pbcs = None, **kwargs):
         """
 
         :param files: files with structures for possile environments.
         :param pbc: periodic boundary conditions of environment structures.
 
         """
+        assert type is None or type == 'Substrate'
+        assert (files is None) == (pbcs is None)
+        self._kwargs = kwargs
+        self._files = files if files is not None else []
+        self._pbcs = pbcs if pbcs is not None else []
         self._structures = []
-        self._pbc = pbc
-        self.files = files if files is not None else []
-        for file in self.files:
-            atoms = read(file)
-            atomTypes = [self.atomType(item) for item in atoms.symbols]
-            coordinates = atoms.get_positions()
-            cell = self.cellType(atoms.get_cell().array, self._pbc).getEnvelopeCell(coordinates)
-            coordinates = cell.center(coordinates)
-            self._structures.append(self.structureType(atomTypes, coordinates, cell))
+        for file, pbc in zip(self._files, self._pbcs):
+            structure = self.structureRepresentation.readAtomicStructureRaw(file, pbc)
+            self._structures.append(structure)
 
     def putEnvironment(self, system):
         """
@@ -110,4 +104,4 @@ class World:
         if self._structures:
             structure = np.random.choice(self._structures)
             structure = structure.makeSupercell(np.round(structure.getCell().decomposeCell(system['cell'])))
-            system['environment'] = Environment(structure)
+            system['environment'] = Substrate(structure, **self._kwargs)
