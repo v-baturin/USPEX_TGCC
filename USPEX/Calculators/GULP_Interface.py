@@ -140,10 +140,7 @@ class GULP_Interface(SHELL_Interface):
         #         content_to_write += '%4s %12.6f %12.6f %12.6f   core %12.6f\n' % tuple_to_format
         # else:
 
-        if 'environment' in system:
-            fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()]
-        else:
-            fixedIndices = list(range(len(structure)))
+        fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
         for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), cell.cartesianToFractional(coordinates))):
             tuple_to_format = tuple([symbol.short_name] + coord.tolist())
             if cell.dim == 2:

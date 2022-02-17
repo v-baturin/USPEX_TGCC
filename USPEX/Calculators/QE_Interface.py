@@ -105,10 +105,7 @@ class QE_Interface(SHELL_Interface):
 
         data.append('ATOMIC_POSITIONS {crystal}\n')
 
-        if 'environment' in system:
-            fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()]
-        else:
-            fixedIndices = list(range(len(structure)))
+        fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
         for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), cell.cartesianToFractional(coordinates))):
             if cell.dim == 2:
                 if i in fixedIndices:

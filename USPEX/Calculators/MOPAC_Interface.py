@@ -79,9 +79,14 @@ class MOPAC_Interface(SHELL_Interface):
 
         content_to_write = ''
 
-        for symbol, coord in zip(structure.getAtomTypes(), coordinates):
+        fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
+        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), coordinates)):
             tuple_to_format = tuple([symbol.short_name] + coord.tolist())
-            content_to_write += '%4s %12.6f 1 %12.6f 1 %12.6f 1\n' % tuple_to_format
+            if i in fixedIndices:
+                content_to_write += '%4s %12.6f 0 %12.6f 0 %12.6f 0\n' % tuple_to_format
+            else:
+                content_to_write += '%4s %12.6f 1 %12.6f 1 %12.6f 1\n' % tuple_to_format
+
         for i, dim in enumerate(cell.getPBC()):
             if dim:
                 content_to_write += 'Tv %12.6f 1 %12.6f 1 %12.6f 1\n' % tuple(cell.getCellVectors()[i])
