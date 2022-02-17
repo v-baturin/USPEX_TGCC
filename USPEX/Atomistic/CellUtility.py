@@ -120,20 +120,6 @@ class CellUtility:
             self._volume = None
 
         self._supercellDegree = (supercellDegree, supercellDegree + 1) if isinstance(supercellDegree, int) else supercellDegree
-        self._listOfSupercells = []
-        if self._dim == 2 and isinstance(self._supercellDegree, (list, tuple)):
-            minSupercellDegree, maxSupercellDegree = self._supercellDegree
-            nonzeroPBC = np.nonzero(self._pbc)[0]
-            for i in range(1, maxSupercellDegree + 1):
-                for j in range(maxSupercellDegree + 1):
-                    for k in range(maxSupercellDegree + 1):
-                        for l in range(1, maxSupercellDegree + 1):
-                            M = np.eye(3)
-                            rows = np.array([nonzeroPBC, nonzeroPBC])
-                            cols = rows.T
-                            M[rows, cols] = np.array([[i, -j], [k, l]])
-                            if minSupercellDegree <= np.round(np.linalg.det(M)) < maxSupercellDegree and M[nonzeroPBC[0]].dot(M[nonzeroPBC[1]]) == 0:
-                                self._listOfSupercells.append(M)
 
         if symTolerance is not None:
             if isinstance(symTolerance, str):
@@ -237,7 +223,7 @@ class CellUtility:
                 factor = 1
             cellVectors[np.nonzero(self._pbc)] *= factor
             cell = Cell(cellVectors, self._pbc)
-        elif self._listOfSupercells:
+        elif self._supercellDegree is not None:
             cell = Cell(cellVectors, self._pbc)
             if self._dim == 3:
                 factor = cell.getVolume() / self._cell.getVolume()
@@ -247,7 +233,7 @@ class CellUtility:
                 factor = cell.getLength() / self._cell.getLength()
             else:
                 raise RuntimeError(f"Wrong dim {self._dim}.")
-            reconstruction = self.getRandomSupercell(factor)
+            reconstruction = self.getRandomSupercell(int(np.round(factor)))
             cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
             cell = self.getCell()
@@ -286,7 +272,7 @@ class CellUtility:
             cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms)
             if self._thickness is not None:
                 cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
-        elif self._listOfSupercells:
+        elif self._supercellDegree is not None:
             reconstruction = self.getRandomSupercell()
             cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
@@ -336,7 +322,7 @@ class CellUtility:
             if self._thickness is not None and thickness > self._thickness:
                 thickness = self._thickness
             cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis).getEnvelopeCell(vacuumSize=thickness)
-        elif self._listOfSupercells:
+        elif self._supercellDegree is not None:
             matrix1 = np.round(self._cell.decomposeCell(cell1))
             matrix2 = np.round(self._cell.decomposeCell(cell2))
             idx = np.linalg.det([matrix1, matrix2]).argmax()
@@ -346,22 +332,34 @@ class CellUtility:
             cell = self.getCell()
         return cell
 
-    def getRandomSupercell(self, factor=None):
+    def getRandomSupercell(self, factor: int = None):
         """
         Picks on of possible supercells consisting of specified number of cells.
         :param factor: number of cells which requested supercell should contain.
         :return: supercell matrix (m, n, l).
         """
-        if self._listOfSupercells:
-            if factor:
-                mask = np.linalg.det(self._listOfSupercells) >= np.round(factor)
+        matrix = np.eye(3)
+        if self._supercellDegree is None:
+            return matrix
+        minDegree = self._supercellDegree[0]
+        maxDegree = self._supercellDegree[1]
+        if factor is None:
+            factor = np.random.randint(minDegree, maxDegree)
+        assert minDegree <= factor < maxDegree, f'No supercells with factor {factor} are allowed.'
+
+        while True:
+            if self._dim == 3:
+                matrix = np.random.randint(-factor, factor + 1, size=(3, 3))
+            elif self._dim == 2:
+                inds = np.flatnonzero(self._pbc)
+                matrix[tuple(np.meshgrid(inds, inds))] = np.random.randint(-factor, factor + 1, size=(2, 2))
+            elif self._dim == 1:
+                ind = np.flatnonzero(self._pbc)[0]
+                matrix[ind, ind] = factor
             else:
-                mask = np.ones(len(self._listOfSupercells), dtype=bool)
-            assert sum(mask), f'No supercells with factor {factor} are allowed.'
-            idx = np.random.choice(np.arange(len(self._listOfSupercells))[mask])
-            return self._listOfSupercells[idx]
-        else:
-            return np.eye(3)
+                raise RuntimeError(f"Wrong dim {self._dim}.")
+            if np.linalg.det(matrix) == factor:
+                return matrix
 
     def isGoodCell(self, cell):
         """
@@ -370,7 +368,7 @@ class CellUtility:
         :return:
         """
         isGood = True
-        if self._cell is not None and self._listOfSupercells is None:
+        if self._cell is not None and self._supercellDegree is None:
             isGood  = isGood and (cell == self._cell)
         if self._dim == 2:
             isGood = isGood and (cell.getLength() <= self._thickness)
