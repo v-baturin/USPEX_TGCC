@@ -373,9 +373,9 @@ class CellUtility:
         if self._dim == 2:
             isGood = isGood and (cell.getLength() <= self._thickness)
         elif self._dim == 1:
-            isGood = isGood and (cell.getRadius() <= self._thickness * 0,7072)
+            isGood = isGood and (cell.getRadius() <= self._thickness * 0.7072)
         elif self._thickness is not None:
-            isGood = isGood and (cell.getRadius() <= self._thickness * 0,8661)
+            isGood = isGood and (cell.getRadius() <= self._thickness * 0.8661)
         return isGood
 
     @staticmethod
