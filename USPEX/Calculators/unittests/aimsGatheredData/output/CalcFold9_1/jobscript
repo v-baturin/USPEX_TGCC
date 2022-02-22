@@ -1,0 +1,13 @@
+#!/bin/sh
+#SBATCH -p debug
+#SBATCH -t 06:00:00
+#SBATCH -N 1
+#SBATCH -n 8
+
+
+#SBATCH -J  USPEX-9S1
+#SBATCH -i  input
+#SBATCH -o  output
+#SBATCH -e  error
+
+mpirun aims.210226.scalapack.mpi.x
