@@ -66,3 +66,7 @@ VASP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
 from .Calculators.MOPAC_Interface import MOPAC_Interface
 MOPAC_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+
+from .Calculators.FHIaims_Interface import FHIaims_Interface
+FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+

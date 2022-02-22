@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class FHIaims_interface(SHELL_Interface):
+class FHIaims_Interface(SHELL_Interface):
 
     _DEFAULT_SLEEP_TIME = 30
     structureType = None
@@ -21,7 +21,6 @@ class FHIaims_interface(SHELL_Interface):
     control_file = 'control.in'
     geometry_file = 'geometry.in'
 
-    output_file = 'FHI_output'
     out_geometry_file = 'geometry.in.next_step'
 
     def __init__(self, tag: str, kresol: float, control: str = None, perturbate: bool = True, fixCell: bool = False,
@@ -66,7 +65,7 @@ class FHIaims_interface(SHELL_Interface):
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
             kPoints = [1, 1, 1]
 
-        with open(pj(calcFolder, self.control_file), 'w+') as f:
+        with open(pj(calcFolder, self.control_file), 'a') as f:
             f.write('k_grid {} {} {}'.format(*kPoints))
 
         with open(pj(calcFolder, self.geometry_file), 'wt') as fp:
@@ -88,9 +87,9 @@ class FHIaims_interface(SHELL_Interface):
                     fp.write('constrain_relaxation .true.\n')
 
     def isConverged(self, calcFolder : str):
-        if not os.path.exists(pj(calcFolder, self.output_file)):
+        if not os.path.exists(pj(calcFolder, self.outputFile)):
             return False
-        with open(pj(calcFolder, self.output_file), 'r') as f:
+        with open(pj(calcFolder, self.outputFile), 'r') as f:
             content = f.read()
         if 'Have a nice day' not in content:
             logger.error('FHI-aims is not completely Done')
@@ -102,7 +101,7 @@ class FHIaims_interface(SHELL_Interface):
         return True
 
     def readOutput(self, system, calcFolder : str):
-        with open(pj(calcFolder, self.output_file), 'r') as f:
+        with open(pj(calcFolder, self.outputFile), 'r') as f:
             content = f.read()
 
         content = content.split('\n')
@@ -119,8 +118,8 @@ class FHIaims_interface(SHELL_Interface):
         # and FHI finishes without changing the relaxed structure, thus
         # geometry.in.next_step won't be created.
 
-        geometry_file = self.out_geometry_file
-        if not os.path.exists(pj(calcFolder, geometry_file)):
+        geometry_file = pj(calcFolder, self.out_geometry_file)
+        if not os.path.exists(geometry_file):
             shutil.copy(pj(calcFolder, self.geometry_file), geometry_file)
 
 
@@ -140,14 +139,12 @@ class FHIaims_interface(SHELL_Interface):
             if 'atom' in line:
                 line = line.split()
                 coordinates.append([float(x) for x in line[1:4]])
-                atomTypes.append(self.atomType(line[5]))
+                atomTypes.append(self.atomType(line[4]))
 
         coor = np.array(coordinates)
         if 'lattice_vector' in content:
             lat = np.array(lattice)
-
-
-        if not lat:
+        else:
             '''
             coor = bsxfun(@minus, coor, mean(coor)); %Vectorized
             lat_len1 = max(coor(:,1)) - min(coor(:,1)) + 10;
@@ -160,9 +157,6 @@ class FHIaims_interface(SHELL_Interface):
             coor -= coor.mean(axis=0)
             lat = np.diag(coor.max(axis=0) - coor.min(axis=0) + 10)
             coor += np.diag(lat * 0.5)
-
-        coor = np.dot(coor,np.linalg.inv(lat))
-        coor = coor - np.floor(coor)
 
         cell = system['cell']
         disassembler = system['disassembler']

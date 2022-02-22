@@ -76,6 +76,9 @@ class SHELL_Calculator(object):
         elif type == 'mopac':
             from ..MOPAC_Interface import MOPAC_Interface
             self._interface = MOPAC_Interface(tag, **kwargs)
+        elif type == 'aims':
+            from ..FHIaims_Interface import FHIaims_Interface
+            self._interface = FHIaims_Interface(tag, **kwargs)
         elif type == 'none':
             from .SHELL_Interface import SHELL_Interface
             self._interface = SHELL_Interface()
@@ -202,9 +205,24 @@ class SHELL_Calculator(object):
         if not (ioType == 'input' or ioType == 'output'):
             return
         folder = pj(self.gatheredDataPath, ioType)
-        shutil.copytree(calcFolder, pj(folder, os.path.basename(calcFolder)), dirs_exist_ok=True)
+        copytree(calcFolder, pj(folder, os.path.basename(calcFolder)))
+        from ...components import CrystalRepresentation
         with open(pj(folder, f"system{system['ID']}_{tag}"), 'wt') as f:
-            f.write(system['structure'].toJSON())
+            CrystalRepresentation.writeAtomicStructure(f, system)
 
 class ReferenceMismatch(Exception):
     pass
+
+import os, shutil
+def copytree(src, dst, symlinks=False, ignore=None):
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+    for item in os.listdir(src):
+        s = os.path.join(src, item)
+        d = os.path.join(dst, item)
+        if os.path.isdir(s):
+            shutil.copytree(s, d, symlinks, ignore)
+        else:
+            if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
+                shutil.copy2(s, d)
+
