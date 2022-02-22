@@ -18,7 +18,7 @@ from os.path import join as pj
 
 
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ..FHIaims_Interface import FHIais_Interface
+from ..FHIaims_Interface import FHIaims_Interface
 from ...components import CrystalRepresentation
 
 
