@@ -21,7 +21,8 @@ class Transmutation:
     def __call__(self, system, *args, **kwargs):
         molecules = system['molecules']
         cell = system['cell']
-        if self.cellUtility.isGoodCell(cell):
+        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
+        if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbolsIn = self.simpleMoleculeUtility.moleculeTypes(system)
             symbolsOut = self.compositionSpace.symbols
 
