@@ -371,7 +371,7 @@ class CellUtility:
         if self._cell is not None and self._supercellDegree is None:
             isGood  = isGood and (cell == self._cell)
         if self._dim == 2:
-            isGood = isGood and (cell.getLength() <= self._thickness)
+            isGood = isGood and (cell.getLength() <= self._thickness * 1.0001)
         elif self._dim == 1:
             isGood = isGood and (cell.getRadius() <= self._thickness * 0.7072)
         elif self._thickness is not None:

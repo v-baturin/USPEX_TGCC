@@ -27,7 +27,8 @@ class Permutation:
     def __call__(self, system, *args, **kwargs):
         molecules = system['molecules']
         cell = system['cell']
-        if self.cellUtility.isGoodCell(cell):
+        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
+        if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbols = self.simpleMoleculeUtility.moleculeTypes(system)
 
             swaps = [{i1,i2} for i1,i2 in combinations(range(len(molecules)), 2) if symbols[i1] != symbols[i2]
