@@ -103,7 +103,7 @@ class EnvironmentUtility:
         """
         if environment is not None:
             system['environment'] = environment
-        if self._structures:
+        elif self._structures:
             structure = np.random.choice(self._structures)
             structure = structure.makeSupercell(np.round(structure.getCell().decomposeCell(system['cell'])))
             system['environment'] = Substrate(structure, **self._kwargs)
