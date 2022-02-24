@@ -94,14 +94,16 @@ class EnvironmentUtility:
             structure = self.structureRepresentation.readAtomicStructureRaw(file, pbc)
             self._structures.append(structure)
 
-    def putEnvironment(self, system):
+    def putEnvironment(self, system, environment=None):
         """
         Put environment in dictionary representing system.
 
         :param system: system dictionary.
 
         """
-        if self._structures:
+        if environment is not None:
+            system['environment'] = environment
+        elif self._structures:
             structure = np.random.choice(self._structures)
             structure = structure.makeSupercell(np.round(structure.getCell().decomposeCell(system['cell'])))
             system['environment'] = Substrate(structure, **self._kwargs)

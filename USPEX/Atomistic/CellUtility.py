@@ -323,11 +323,20 @@ class CellUtility:
                 thickness = self._thickness
             cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis).getEnvelopeCell(vacuumSize=thickness)
         elif self._supercellDegree is not None:
-            matrix1 = np.round(self._cell.decomposeCell(cell1))
-            matrix2 = np.round(self._cell.decomposeCell(cell2))
-            idx = np.linalg.det([matrix1, matrix2]).argmax()
-            matrix = [matrix1, matrix2][idx]
-            cell = Cell(matrix.dot(self._cell.getCellVectors()), self._pbc)
+            if self._dim == 3:
+                factor1 = cell1.getVolume() / self._cell.getVolume()
+                factor2 = cell2.getVolume() / self._cell.getVolume()
+            elif self._dim == 2:
+                factor1 = cell1.getArea() / self._cell.getArea()
+                factor2 = cell2.getArea() / self._cell.getArea()
+            elif self._dim == 1:
+                factor1 = cell1.getLength() / self._cell.getLength()
+                factor2 = cell2.getLength() / self._cell.getLength()
+            else:
+                raise RuntimeError(f"Wrong dim {self._dim}.")
+            factor = (fraction * factor1 + (1 - fraction) * factor2)
+            reconstruction = self.getRandomSupercell(int(np.round(factor)))
+            cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
         else:
             cell = self.getCell()
         return cell
