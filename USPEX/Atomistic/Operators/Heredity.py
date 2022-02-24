@@ -47,7 +47,7 @@ class Heredity:
         order2 = self.radialDistributionUtility.order(system2)
 
         for i in range(self.attempts):
-            outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand())
+            outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell()
             if self.cellUtility.isGoodCell(outputCell):
                 axis = np.random.randint(3)
                 if self.nslubs is None:

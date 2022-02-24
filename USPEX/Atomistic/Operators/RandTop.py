@@ -106,7 +106,9 @@ class RandTop:
                                     attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
 
                                     for i in range(attemptsRotation):
-                                        molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                                        system = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                                        molecules = system['molecules']
+                                        cell = system['cell']
                                         if len(molecules) != totalAtomNumber:
                                             continue
                                         atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
@@ -120,7 +122,6 @@ class RandTop:
                                                     break
                                             else:
                                                 self.arxiv[name].append(all_coordinates)
-                                                system = {'molecules' : molecules, 'cell': cell}
                                                 self.environmentUtility.putEnvironment(system)
                                                 self.conditions.putConditions(system)
                                                 return (system,)
