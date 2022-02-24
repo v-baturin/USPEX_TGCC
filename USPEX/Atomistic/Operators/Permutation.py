@@ -27,6 +27,7 @@ class Permutation:
     def __call__(self, system, *args, **kwargs):
         molecules = system['molecules']
         cell = system['cell']
+        environment = system['environment'] if 'environment' in system else None
         structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbols = self.simpleMoleculeUtility.moleculeTypes(system)
@@ -51,7 +52,7 @@ class Permutation:
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                     if np.all(atomDistances >= minDistMatrix):
                         offspring = {'molecules': offspringMolecules, 'cell': cell}
-                        self.environmentUtility.putEnvironment(offspring)
+                        self.environmentUtility.putEnvironment(offspring, environment)
                         self.conditions.putConditions(offspring)
                         return (offspring,)
 

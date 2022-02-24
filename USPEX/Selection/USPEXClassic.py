@@ -274,8 +274,8 @@ class USPEXClassic(object):
         :return:
         """
         deltaTol = tolerance / 2
+        mostDiverse = []
         while deltaTol > 0.000001:
-            mostDiverse = []
             for system in population:
                 goodSystem = True
                 for ref_system in mostDiverse:
@@ -291,7 +291,9 @@ class USPEXClassic(object):
             else:
                 return mostDiverse
             deltaTol /= 2
-        raise RuntimeError(f"Can't clusterize population into {howManyDiverse} fractions.")
+            mostDiverse = []
+        logger.debug(f"Can't clusterize population into {howManyDiverse} fractions.")
+        return mostDiverse
 
     def getMostDiverse(self) -> list:
         return copy(self._mostDiverse)

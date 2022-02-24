@@ -24,6 +24,7 @@ class Softmodemutation:
         ID = system['ID']
         molecules = system['molecules']
         cell = system['cell']
+        environment = system['environment'] if 'environment' in system else None
         structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             degree = self.degree if self.degree else np.mean([el.covalent_radius for el in structure.getAtomTypes()]) * 3
@@ -58,14 +59,14 @@ class Softmodemutation:
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if np.all(atomDistances >= minDistMatrix):
                     system = {'molecules': molecules1, 'cell': cell}
-                    self.environmentUtility.putEnvironment(system)
+                    self.environmentUtility.putEnvironment(system, environment)
                     self.conditions.putConditions(system)
                     offsprings += (system,)
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules2, cell)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if np.all(atomDistances >= minDistMatrix):
                     system = {'molecules': molecules2, 'cell': cell}
-                    self.environmentUtility.putEnvironment(system)
+                    self.environmentUtility.putEnvironment(system, environment)
                     self.conditions.putConditions(system)
                     offsprings += (system,)
                 if offsprings:

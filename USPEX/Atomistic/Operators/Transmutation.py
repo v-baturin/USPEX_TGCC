@@ -21,6 +21,7 @@ class Transmutation:
     def __call__(self, system, *args, **kwargs):
         molecules = system['molecules']
         cell = system['cell']
+        environment = system['environment'] if 'environment' in system else None
         structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbolsIn = self.simpleMoleculeUtility.moleculeTypes(system)
@@ -49,7 +50,7 @@ class Transmutation:
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 composition = self.simpleMoleculeUtility.composition(offspring)
                 if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-                    self.environmentUtility.putEnvironment(offspring)
+                    self.environmentUtility.putEnvironment(offspring, environment)
                     self.conditions.putConditions(offspring)
                     return (offspring,)
 
