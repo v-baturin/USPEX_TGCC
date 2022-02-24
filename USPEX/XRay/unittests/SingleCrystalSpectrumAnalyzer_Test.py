@@ -30,11 +30,8 @@ class SpectrumAnalyzer_Test(unittest.TestCase):
         coordinates = {s: [] for s in symbols}
         for index, coord in zip(indices, tmp.get_scaled_positions()):
             coordinates[symbols[index]].append([coord])
-        self.system = {
-            'ID': 1,
-            'molecules': simpleMoleculeUtility.populateStructure(cell, coordinates, None),
-            'cell': cell
-        }
+        self.system = simpleMoleculeUtility.populateStructure(cell, coordinates, None)
+        self.system['ID'] = 1
 
     def test(self):
         hklFile = '{}/test_P1.hkl'.format(PATH_WITH_TESTS)

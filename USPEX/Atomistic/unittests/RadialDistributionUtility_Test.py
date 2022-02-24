@@ -27,8 +27,7 @@ class RadialDistributionUtility_Test(unittest.TestCase):
         coordinates = {s: [] for s in symbols}
         for index, coord in zip(indices, all_coordinates):
             coordinates[symbols[index]].append([coord])
-        self.systemRDU1['molecules'] = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
-        self.systemRDU1['cell'] = cell
+        self.systemRDU1 = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
 
         tmp2 = read_vasp(pj(PATH_WITH_TESTS, "systemRDU2.POSCAR"))
         cell = Cell(tmp2.get_cell().array, (1,1,1))
@@ -37,8 +36,7 @@ class RadialDistributionUtility_Test(unittest.TestCase):
         coordinates = {s: [] for s in symbols}
         for index, coord in zip(indices, all_coordinates):
             coordinates[symbols[index]].append([coord])
-        self.systemRDU2['molecules'] = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
-        self.systemRDU2['cell'] = cell
+        self.systemRDU2 = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
 
         tmp3 = read_vasp(pj(PATH_WITH_TESTS, "systemRDU3.POSCAR"))
         cell = Cell(tmp3.get_cell().array, (1,1,1))
@@ -47,8 +45,7 @@ class RadialDistributionUtility_Test(unittest.TestCase):
         coordinates = {s: [] for s in symbols}
         for index, coord in zip(indices, all_coordinates):
             coordinates[symbols[index]].append([coord])
-        self.systemRDU3['molecules'] = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
-        self.systemRDU3['cell'] = cell
+        self.systemRDU3 = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
 
     def test_structureOrder(self):
         self.assertAlmostEqual(self.utility.structureOrder(self.systemRDU1), 2.531, places=3)

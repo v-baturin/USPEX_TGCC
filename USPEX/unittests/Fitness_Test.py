@@ -37,8 +37,9 @@ class Fitness_Test(unittest.TestCase):
         coordinates = {'Mg':[[np.asarray([0.,0.,0.,])]*4],
                        'Al':[[np.asarray([0.,0.,0.,])]*8],
                        'O':[[np.asarray([0.,0.,0.,])]*16]}
-        molecules = self.simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
+        system = self.simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
                                                                  coordinates, None)
+        molecules = system['molecules']
         self.systems = [{'ID': 0, 'molecules': molecules, 'enthalpy': -646.695,
                          'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
                         {'ID': 1, 'molecules': molecules, 'enthalpy': -644.480,
@@ -205,12 +206,9 @@ class FitnessXray_Test(unittest.TestCase):
             coordinates = {s: [] for s in symbols}
             for index, coord in zip(indices, atoms.get_scaled_positions()):
                 coordinates[symbols[index]].append([coord])
-            system = {
-                'ID' : ID,
-                'enthalpy' : enthalpy,
-                'molecules' : simpleMoleculeUtility.populateStructure(cell, coordinates, None),
-                'cell' : cell
-            }
+            system = simpleMoleculeUtility.populateStructure(cell, coordinates, None)
+            system['ID'] = ID
+            system['enthalpy'] = enthalpy
             self.systems.append(system)
         self.pool = SystemPool()
         self.pool.update(self.systems)

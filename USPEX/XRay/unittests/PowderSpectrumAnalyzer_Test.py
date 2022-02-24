@@ -29,11 +29,8 @@ class SpectrumAnalyzer_Test(unittest.TestCase):
         coordinates = {s: [] for s in symbols}
         for index, coord in zip(indices, tmp.get_scaled_positions()):
             coordinates[symbols[index]].append([coord])
-        self.system = {
-            'ID': 0,
-            'molecules': simpleMoleculeUtility.populateStructure(cell, coordinates, None),
-            'cell': cell
-        }
+        self.system = simpleMoleculeUtility.populateStructure(cell, coordinates, None)
+        self.system['ID'] = 0
 
     def test(self):
         xraydata = PowderSpectrumAnalyzer.parse('{}/spectrum.txt'.format(PATH_WITH_TESTS))
