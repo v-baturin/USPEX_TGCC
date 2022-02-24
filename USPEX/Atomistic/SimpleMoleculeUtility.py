@@ -64,6 +64,7 @@ class SimpleMoleculeUtility(object):
         :return: list of molecules.
         """
         molecules = []
+        optimizedCell = cell.getOptimizedCell()
         for symbol, atomCoordinates in coordinates.items():
             molecule = self.molecules[symbol]
             if len(molecule) > 1:
@@ -71,15 +72,19 @@ class SimpleMoleculeUtility(object):
                     molecule = Transformation.fromRotVector(Transformation.randomRotVector(),
                                                             [0., 0., 0.]).transform(molecule)
                     for position, operation in zip(nodeCoordinates, np.random.choice(groups, 1)[0].operators):
+                        cartesianPosition = optimizedCell.getWrapedCartesianCoordinates(
+                            cell.fractionalToCartesian(position))
                         transformation = Transformation.fromMatrix(cell.fractionalToCartesianOperator(operation[0:3, 0:3]),
-                                                                   cell.fractionalToCartesian(position))
+                                                                   cartesianPosition)
                         molecules.append(transformation.transform(molecule))
             else:
                 for nodeCoordinates in atomCoordinates:
                     for position in nodeCoordinates:
-                        transformation = Transformation.fromRotVector([0.,0.,0.], cell.fractionalToCartesian(position))
+                        cartesianPosition = optimizedCell.getWrapedCartesianCoordinates(
+                            cell.fractionalToCartesian(position))
+                        transformation = Transformation.fromRotVector([0.,0.,0.], cartesianPosition)
                         molecules.append(transformation.transform(molecule))
-        return molecules
+        return {'molecules': molecules, 'cell': optimizedCell}
 
     def determineMoleculeType(self, molecule):
         """

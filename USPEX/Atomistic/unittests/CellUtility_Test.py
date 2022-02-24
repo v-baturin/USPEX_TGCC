@@ -120,6 +120,12 @@ class Cell_Test(unittest.TestCase):
         self.assertTrue(np.allclose(cell1.getCellVectors(), cellVectorsRef))
         self.assertTrue(np.allclose(cell2.getCellVectors(), cellVectorsRef))
 
+    def test_getOptimizedCell(self):
+        cellVectors = np.array([[2.0, 0.0, 0.0], [-3.0, 1.0, 0.0], [0.0, 0.0, 2.0]], dtype=float)
+        cellVectorsRef = np.array([[-1.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [0.0, 0.0, 2.0]], dtype=float)
+        cell = Cell.initFromCellVectors((1, 1, 1), cellVectors)
+        optCell = cell.getOptimizedCell()
+        self.assertTrue(np.allclose(optCell.getCellVectors(), cellVectorsRef))
 
 if __name__ == '__main__':
     unittest.main()

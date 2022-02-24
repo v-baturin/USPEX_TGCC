@@ -137,11 +137,12 @@ class RandSymPyXtal:
                 cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons))
                 coordinates = dict(zip(symbols, coordinates))
                 operations = dict(zip(symbols, operations))
-                molecules = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                system = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                molecules = system['molecules']
+                cell = system['cell']
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if np.all(atomDistances >= minDistMatrix):
-                    system = {'molecules': molecules, 'cell': cell}
                     self.environmentUtility.putEnvironment(system)
                     self.conditions.putConditions(system)
                     return (system,)

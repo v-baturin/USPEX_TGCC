@@ -573,7 +573,7 @@ class Cell:
         else:
             raise RuntimeError(f"Wrong dim {self.dim}.")
 
-    def getEnvelopeCell(self, coordinates=None, vacuumSize=0):
+    def getEnvelopeCell(self, coordinates=None, vacuumSize: float=0.0):
         """
         :param coordinates: cartesian atomic coordinates
         :param vacuumSize: vacuum distance added along cell vector
@@ -592,6 +592,71 @@ class Cell:
                 else:
                     newCellVectors.append(vacuumSize * vector)
         return Cell(np.asarray(newCellVectors, dtype=float), self._pbc)
+
+    def getOptimizedCell(self):
+        """
+        Idea is as follows - if any lattice vector has projection onto any other lattice vector
+        that is greater than half of length of this vector, we can reoptimize the shape
+        i. e. if |a*b|/|b| > |b|/2 then a_new = a - ceil(|a*b|/|b|^2)*sign(a*b)*b
+
+        :return: **Cell** object with optimized lattice vectors.
+        """
+
+        def reoptimizeVector(v1: np.ndarray, v2: np.ndarray, flag: int):
+            """
+            The function reoptimizes a vector against another vector. Needs better description.
+
+            :param v1: vector to reoptimize.
+            :param v2: vector against which we reoptimize v1.
+            :param flag: flag that is raised if a new v1 has been found with norm less than the original v1.
+            :return: (v1, flag)
+            """
+
+            v = np.copy(v1)
+
+            dot_v1_v2 = np.dot(v1, v2)
+            norm_v1 = np.linalg.norm(v1)
+            norm_v2 = np.linalg.norm(v2)
+
+            if abs(dot_v1_v2) > norm_v2 ** 2 / 2:  # corrected norm_v2 / 2 -> norm_v2 ** 2 / 2 by V. Baturin 09.11.18
+                v1_trial = v1 - np.ceil(abs(dot_v1_v2) / (norm_v2 ** 2)) * np.sign(dot_v1_v2) * v2
+
+                if np.linalg.norm(v1_trial) < norm_v1:
+                    v = v1_trial
+                    flag = 1
+
+            return v, flag
+
+        if self.dim == 3:
+            v1, v2, v3 = self._cellVectors
+            flag = 1
+            step = 0
+            while flag and step < 100:
+                flag = 0
+                v1, flag = reoptimizeVector(v1, v2, flag)
+                v1, flag = reoptimizeVector(v1, v3, flag)
+                v2, flag = reoptimizeVector(v2, v1, flag)
+                v2, flag = reoptimizeVector(v2, v3, flag)
+                v3, flag = reoptimizeVector(v3, v1, flag)
+                v3, flag = reoptimizeVector(v3, v2, flag)
+                v1, flag = reoptimizeVector(v1, v2 + v3, flag)
+                v2, flag = reoptimizeVector(v2, v1 + v3, flag)
+                v3, flag = reoptimizeVector(v3, v1 + v2, flag)
+                step += 1
+            return Cell(np.array((v1, v2, v3), dtype=float), self._pbc)
+        elif self.dim == 2:
+            v1, v2 = self.getCellVectorsPBC()
+            thickness = self.getLength()
+            flag = 1
+            step = 0
+            while flag and step < 100:
+                flag = 0
+                v1, flag = reoptimizeVector(v1, v2, flag)
+                v2, flag = reoptimizeVector(v2, v1, flag)
+                step += 1
+            return Cell.initFromCellVectors(self._pbc, np.array((v1, v2), dtype=float)).getEnvelopeCell(vacuumSize=thickness)
+        else:
+            return Cell(self.getCellVectors(), self._pbc)
 
     def getPBC(self):
         """
