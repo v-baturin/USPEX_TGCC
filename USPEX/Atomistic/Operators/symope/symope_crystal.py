@@ -4,7 +4,6 @@ import subprocess as sp
 import numpy as np
 
 from ...CellUtility import Cell
-from ...optLattice import optLattice
 
 from .GetPermutation import GetPermutation
 from .GetPrimitiveCell import GetPrimitiveCell
@@ -143,7 +142,6 @@ def symope_crystal(CenterminDistMatrice, fixLat, fixRndSeed, nsym, numIons, lat,
                     abs_cand = np.dot(coordinate, Lattice_Matrix)
 
                     # 8.1) Optimize lattice:
-                    abs_cand, Lattice_Matrix = optLattice(abs_cand, Lattice_Matrix)
                     coordinate = np.dot(abs_cand, np.linalg.inv(Lattice_Matrix))
 
                 limit = 0.000001
