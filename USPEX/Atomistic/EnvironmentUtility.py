@@ -4,6 +4,7 @@ USPEX.Atomistic.EnvironmentUtility
 """
 
 import numpy as np
+from copy import copy
 
 
 class Substrate:
@@ -14,14 +15,14 @@ class Substrate:
     
     _DEFAULT_SUBSTRATE_SHIFT = 2.0
 
-    def __init__(self, structure, variableThickness = None, offsetVector = None):
+    def __init__(self, structure, bufferThickness = None, offsetVector = None):
         """
         :param structure: atomic structure associated with this environment.
         :param offsetVector: vector to be added to molecules centers when assemble whole structure.
             If not provided such vector will be calculated on demand.
         """
         self._structure = structure
-        self._thickness = variableThickness
+        self._thickness = bufferThickness
         self._offsetVector = offsetVector
         antiPBC = self._structure.getCell().getAntiPBC()
         assert sum(antiPBC) == 1
@@ -83,22 +84,20 @@ class EnvironmentUtility:
     def setRepresentation(cls, representation):
         cls.structureRepresentation = representation
 
-    def __init__(self, type = None, files = None, pbcs = None, **kwargs):
+    def __init__(self, environments: list = None):
         """
 
         :param files: files with structures for possile environments.
         :param pbc: periodic boundary conditions of environment structures.
 
         """
-        assert type is None or type == 'Substrate'
-        assert (files is None) == (pbcs is None)
-        self._kwargs = kwargs
-        self._files = files if files is not None else []
-        self._pbcs = pbcs if pbcs is not None else []
-        self._structures = []
-        for file, pbc in zip(self._files, self._pbcs):
-            structure = self.structureRepresentation.readAtomicStructureRaw(file, pbc)
-            self._structures.append(structure)
+        self._environments = []
+        if environments is not None:
+            for environment in environments:
+                file = environment.pop('file')
+                pbc = environment.pop('pbc')
+                environment['structure'] = self.structureRepresentation.readAtomicStructureRaw(file, pbc)
+                self._environments.append(environment)
 
     def putEnvironment(self, system, environment=None):
         """
@@ -109,7 +108,9 @@ class EnvironmentUtility:
         """
         if environment is not None:
             system['environment'] = environment
-        elif self._structures:
-            structure = np.random.choice(self._structures)
-            structure = structure.makeSupercell(np.round(structure.getCell().decomposeCell(system['cell'])))
-            system['environment'] = Substrate(structure, **self._kwargs)
+        elif self._environments:
+            environment = copy(np.random.choice(self._environments))
+            assert environment.pop('type') == 'substrate'
+            structure = environment.pop('structure')
+            environment['structure'] = structure.makeSupercell(np.round(structure.getCell().decomposeCell(system['cell'])))
+            system['environment'] = Substrate(**environment)

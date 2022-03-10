@@ -41,12 +41,6 @@ def compileParams(main: dict, **definitions) -> dict:
                     raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
             if molecules:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
-        # if 'conditions' not in target:
-        #     target['conditions'] = {}
-        if 'cellUtility' not in target:
-            target['cellUtility'] = {}
-        # if 'pbc' not in target['cellUtility']:
-        #     target['cellUtility']['pbc'] = (1, 1, 1)
         if 'ionDistances' not in target:
             target['ionDistances'] = {}
         if 'volumeType' not in target['ionDistances']:
@@ -54,6 +48,11 @@ def compileParams(main: dict, **definitions) -> dict:
                 target['ionDistances']['volumeType'] = 0.5
             else:
                 target['ionDistances']['volumeType'] = 0
+        if 'environmentUtility' in target:
+            assert 'environments' in target['environmentUtility']
+            for i, environment in enumerate(target['environmentUtility']['environments']):
+                assert environment in definitions
+                target['environmentUtility']['environments'][i] = definitions[environment]
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
         selection = optimizer['selection']
