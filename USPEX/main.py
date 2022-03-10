@@ -1,5 +1,7 @@
 import logging
+
 logging.basicConfig(filename='log', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
 
 def main():
     import sys

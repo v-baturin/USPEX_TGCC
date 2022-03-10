@@ -3,7 +3,6 @@ import io
 import shutil
 import matplotlib
 import numpy as np
-
 from copy import copy
 from collections import Counter
 from collections.abc import Mapping
@@ -12,13 +11,12 @@ from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
 from os.path import join as pj
 from prettytable import PrettyTable
-
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from .formatters import createHeader_wrap
 from ..Presets import presetOutput
 
+matplotlib.use('Agg')
 
 MOL_CRYSTALS_PAPERS = '''\
 Zhu Q., Oganov A.R., Glass C.W., Stokes H. (2012)

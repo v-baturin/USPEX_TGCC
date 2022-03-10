@@ -9,10 +9,8 @@ Class describing target space
 """
 
 import logging
-
 from types import SimpleNamespace
 from typing import List
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,47 +1,40 @@
+"""
+USPEX.Calculators.TaskManagers.BSUB
+===================================
+
+"""
+
+
 import logging
-logger = logging.getLogger(__name__)
-
-'''
-@file        BSUB.py
-@author:     Artem Samtsevich
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        5 September 2016
-@brief       Class for BSUB task manager.
-'''
-
-
-from .TaskManager import TaskManager
 from os.path import join as pj
 
+logger = logging.getLogger(__name__)
 
-class BSUB(TaskManager):
-    '''
 
-    '''
+class BSUB:
 
     shortname = 'BSUB'
     _RUNSCRIPT = 'jobscript'
 
     def __init__(self, header : str, connector):
-        '''
+        """
 
         :param header: description of params of TaskManager
         :param connector: for remote submission
         :return:
-        '''
+        """
 
         self.connector = connector
         self.header = header
 
     def _prepareSubmission(self, COMMAND_EXEC : str, JOB_NAME : str,
                                  inputFile : str, outputFile : str, errorFile : str) -> str:
-        '''
+        """
         Preparing jobscript for submission
         :param commandExec:
         :param jobName:
         :return: jobscript as string
-        '''
+        """
 
         content = ''
         for line in self.header.split('\n'):
@@ -80,12 +73,12 @@ class BSUB(TaskManager):
         return jobID
 
     def _parseJobID(self, output : str, error : str) -> int:
-        '''
+        """
 
         :param output:
         :param error:
         :return: jobID
-        '''
+        """
 
         if 'Job <' in output:
             tmpA = output.index('Job <') + 5

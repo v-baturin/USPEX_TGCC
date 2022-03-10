@@ -1,22 +1,13 @@
+"""
+USPEX.Calculators.VASP_Interface
+================================
+
+"""
+
 import logging
-logger = logging.getLogger(__name__)
-
-'''
-@file        VCNEB_Calculator.py
-@author:     Artem Samtsevich
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        29 July 2016
-@brief       Class for calculator of VASP
-'''
-
-
-__author__ = 'asamtsevich'
-
 import numpy as np
 import os
 import shutil
-
 from ase.io.vasp import read_vasp_out, write_vasp
 from ase.atoms import Atoms
 from ase.constraints import FixAtoms
@@ -26,6 +17,7 @@ from typing import List
 from .Common.KPoints import KPoints, BadKPoints
 from .Common.SHELL_Interface import SHELL_Interface
 
+logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
 
 

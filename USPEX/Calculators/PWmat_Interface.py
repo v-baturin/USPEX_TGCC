@@ -1,25 +1,21 @@
+"""
+USPEX.Calculators.PWmat_Interface
+=================================
+
+.. codeauthor:: Hao Li
+
+"""
 import logging
-logger = logging.getLogger(__name__)
-
-'''
-@file        PWmat_Calculator.py
-@author:     Hao Li
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        21 March 2019
-@brief       Class for calculator with PWmat
-'''
-
 import sys
 import os
 import shutil
 import re
-
 import numpy as np
 
 from .Common.KPoints import KPoints, BadKPoints
 from .Common.SHELL_Interface import SHELL_Interface
 
+logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
 
 class PWmat_Interface(SHELL_Interface):

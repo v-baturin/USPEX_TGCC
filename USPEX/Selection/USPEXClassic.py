@@ -1,39 +1,33 @@
-'''
-@file        USPEXClassic.py
-@author:     Pavel Bushlanov
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    paulbush@mail.ru
-@date        January 2017
-@brief       Class that describes configuration space of systems under consideration.
-'''
+"""
+USPEX.Selection.USPEXClassic
+============================
+
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
 
 import logging
-logger = logging.getLogger(__name__)
-
-
-import random
-from itertools import combinations, chain
-from copy import copy
-from typing import List, Tuple, Dict
-from collections import Counter
-
 import numpy as np
+from itertools import chain
+from copy import copy
+from typing import Dict
+from collections import Counter
 
 from .Antiseeds import Antiseeds
 
-class Autofrac(object):
-    '''
+logger = logging.getLogger(__name__)
 
-    '''
+
+class Autofrac(object):
 
     def __init__(self, fractions : Dict[str, tuple], weightsLast, best : list, newFoundSystems : list, varOperators : list):
-        '''
+        """
 
         :param population:
         :param best:
         :param newFoundSystems:
         :param varOperators:
-        '''
+        """
 
         self.weightsLast = copy(weightsLast)
         self.weightsBest = Counter()
@@ -50,12 +44,12 @@ class Autofrac(object):
             self.minFracs[name], self.maxFracs[name], self.initWeights[name] = fractions[nl] if nl in fractions else (0.0, 0.0, 0.0)
 
     def howMany(self, howCome, leftPopSize : int, totalPopSize : int):
-        '''
+        """
 
         :param howCome:
         :param leftPopSize:
         :return:
-        '''
+        """
 
         if self.weightsLast[howCome] == 0:
             initialNorm = sum(self.initWeights.values())
@@ -87,17 +81,14 @@ FunctionFolder/USPEX/3**/EA_3**.m
 '''
 
 class USPEXClassic(object):
-    '''
-
-    '''
 
     def __init__(self, pool, target, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
                  initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False, **kwargs):
-        '''
+        """
         :param target: reference to configuration space object
         :param params: dictionary contains following parameters:
         popSize : int - size of population
-        '''
+        """
         self.pool = pool
         self.target = target
         self.target.utilities.antiseeds = Antiseeds()
@@ -122,13 +113,13 @@ class USPEXClassic(object):
             logger.setLevel(logging.INFO)
 
     def __call__(self):
-        '''
+        """
         :param oldPopulation: generation of new
         :param best:
         :param tournament:
         :param popSize:
         :return:
-        '''
+        """
 
         if self.pool.generations:
             population = self.pool.generations[-1]['allSystems']

@@ -1,18 +1,14 @@
-'''
-@file        LAMMPS_Calculator.py
-@author:     Arslan Mazitov
-@copyright:  2019 Oganov's Lab. All rights reserved.
-@contact:    arslan.mazitov@phystech.edu
-@date        10 Jan 2019
-@brief       Class for calculator of LAMMPS
-'''
+"""
+USPEX.Calculators.LAMMPS_Interface
+==================================
 
-__author__ = 'a.mazitov'
+.. codeauthor:: Arslan Mazitov <arslan.mazitov@phystech.edu>
+
+"""
 
 import logging
 import os
 import shutil
-
 import numpy as np
 from ase.io import read
 from typing import List
@@ -21,15 +17,15 @@ from scipy.spatial.transform.rotation import Rotation
 
 from ..Atomistic.Transformation import Transformation
 from .Common.SHELL_Interface import SHELL_Interface
+
 logger = logging.getLogger(__name__)
 
 
-
 class LAMMPS_Interface(SHELL_Interface):
-    '''
+    """
     Calculator for LAMMPS.
     Local running
-    '''
+    """
 
     sleepTime = 10
     _required_thermo_style_properties = ['ke', 'pe', 'etotal', 'enthalpy', 'pxx', 'pyy','pzz', 'pxy', 'pyz', 'pxz']
@@ -47,12 +43,12 @@ class LAMMPS_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag: str, lammps_in: str = None, libs:List[str] = None, vacuumSize=10, **kwargs):
-        '''
+        """
 
         :param params: dictionary with parameters:
                 * lammps_in: (str) path to lammps.in-file.
                 * libs: (list) list of paths to interatomic potentials.
-        '''
+        """
 
         super().__init__(**kwargs)
         if lammps_in is None:
@@ -66,10 +62,10 @@ class LAMMPS_Interface(SHELL_Interface):
         logger.debug('LAMMPS calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder : str):
-        '''
+        """
         :param system:
         :param calcFolder:
-        '''
+        """
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
         system['atomTypes'] = structure.getAtomTypes()

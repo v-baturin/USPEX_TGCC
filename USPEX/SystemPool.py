@@ -6,10 +6,10 @@ USPEX.SystemPool
 
 
 import logging
-logger = logging.getLogger(__name__)
-
 from copy import copy
 from itertools import chain
+
+logger = logging.getLogger(__name__)
 
 
 class SystemPool(object):

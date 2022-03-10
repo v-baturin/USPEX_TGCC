@@ -1,10 +1,10 @@
 """
 USPEX.Atomistic.EnvironmentUtility
-=====================
+==================================
 """
 
-from ase.io import read
 import numpy as np
+
 
 class Substrate:
     """
@@ -31,6 +31,9 @@ class Substrate:
         self._indices = np.flatnonzero(coordinates < upperBound)
 
     def getThickness(self):
+        """
+        Get thickness of the substrate.
+        """
         return self._thickness
 
     def calculateOffset(self, molecules, cell):
@@ -65,11 +68,14 @@ class Substrate:
         return self._structure
 
     def getFixedIndices(self):
+        """
+        Get indices of atoms in substrate positions of which are fixed.
+        """
         return self._indices
 
 class EnvironmentUtility:
     """
-    Class reprenting utility which generates possible environmemnts for calculation.
+    Class representing utility which generates possible environmemnts for calculation.
     """
     structureRepresentation = None
 

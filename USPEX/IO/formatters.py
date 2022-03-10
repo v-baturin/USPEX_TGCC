@@ -1,3 +1,4 @@
+from .. import __version__
 
 pic = '''
  _   _ ___ _ __   _____  __  _ __  _   _
@@ -13,8 +14,6 @@ pic2 = '''
  _|    _|         _|   _|         _|           _|  _|
    _|_|     _|_|_|     _|         _|_|_|_|   _|      _|
 '''
-
-from .. import __version__
 
 
 def createHeader(description, debug=False):

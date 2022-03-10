@@ -1,14 +1,12 @@
 import logging
-logger = logging.getLogger(__name__)
-
 import sys
-import numpy as np
 from copy import copy
 
 from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
-from ..Presets import presetOutput
 from .read_molecule import read_molecule
+
+logger = logging.getLogger(__name__)
 
 
 def compileParams(main: dict, **definitions) -> dict:

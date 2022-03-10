@@ -1,11 +1,16 @@
+"""
+USPEX.Calculators.Common.Screen
+===============================
+
+.. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
+
+"""
+
 import logging
-logger = logging.getLogger(__name__)
-
 import asyncio
+from os.path import getsize
 
-from os.path import getsize, exists
-# from subprocess import getoutput, check_output
-
+logger = logging.getLogger(__name__)
 
 
 class ScreenNotFoundError(Exception):

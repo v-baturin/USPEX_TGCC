@@ -1,22 +1,17 @@
 import logging
-logger = logging.getLogger(__name__)
-
-
 import numpy as np
 import pandas as pd
-
-from itertools import chain, combinations_with_replacement
 
 from ..ConvexHull import ConvexHull
 from ..Fitness import Fitness
 from ..SystemPool import SystemPool
 
-
+logger = logging.getLogger(__name__)
 # To which dimensionality we project our FP and consider
 MAX_DIMENSIONALITY = 7
 
 class GeneralizedConvexHull(ConvexHull):
-    '''
+    """
     Class for the building generalized convex hull.
     It shows which structures are stable and which are not.
 
@@ -28,12 +23,12 @@ class GeneralizedConvexHull(ConvexHull):
 
     Convex hull is rebuild on every call to extend due to the projection mechanism
      which is based on previously found stuctures.
-    '''
+    """
     def __init__(self, systems: list, config, dimensionality : int=None):
-        '''
+        """
         :param dimensionality: dimension of the FP projection
         :param saved_data: path to file, where will be stored temporary data
-        '''
+        """
         self.config = config
 
         # Set of unique chemical symbols

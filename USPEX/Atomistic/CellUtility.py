@@ -4,9 +4,6 @@ USPEX.Atomistic.CellUtility
 """
 
 import logging
-logger = logging.getLogger(__name__)
-
-
 import numpy as np
 import spglib
 from copy import copy
@@ -14,6 +11,7 @@ from scipy.spatial.transform import Rotation
 
 from .Transformation import Transformation
 
+logger = logging.getLogger(__name__)
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
 

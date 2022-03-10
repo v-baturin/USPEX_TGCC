@@ -1,20 +1,17 @@
+"""
+USPEX.Calculators.Common.Connector
+==================================
+
+.. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
+
+"""
+
 import logging
-logger = logging.getLogger(__name__)
 import asyncio, asyncssh
-asyncssh.set_log_level(logging.WARNING)
-
-
-'''
-@file        Connector.py
-@author:     Artem Samtsevich
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        5 September 2016
-@brief       Class that is a bridge between computer with USPEX and supercomputer for a ab-initio calculations.
-'''
-
 import os
-import shutil
+
+logger = logging.getLogger(__name__)
+asyncssh.set_log_level(logging.WARNING)
 
 
 class SSHConnection(asyncssh.SSHClient):
