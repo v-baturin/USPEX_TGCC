@@ -18,7 +18,7 @@ import filecmp
 from os.path import join as pj
 
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ...components import CrystalRepresentation, GULP_Interface
+from ...components import AtomisticRepresentation, GULP_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -38,7 +38,7 @@ class GULP_CalculatorTest(unittest.TestCase):
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = CrystalRepresentation.readAtomicStructure(f)
+                system = AtomisticRepresentation.readAtomicStructure(f)
             system['externalPressure'] = 100
             system['ID'] = ID
             os.mkdir(WORKPATH)
@@ -55,7 +55,7 @@ class GULP_CalculatorTest(unittest.TestCase):
             gulp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = CrystalRepresentation.readAtomicStructure(f)
+                systemRef = AtomisticRepresentation.readAtomicStructure(f)
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
 
@@ -69,9 +69,9 @@ class GULP_InterfaceTest(unittest.TestCase):
         # with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
         with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-            system = CrystalRepresentation.readAtomicStructure(f)
+            system = AtomisticRepresentation.readAtomicStructure(f)
         system['ID'] = 0
-        system['disassembler'] = CrystalRepresentation.atomicDisassemblerType.createFlatDisassembler(len(system['molecules']))
+        system['disassembler'] = AtomisticRepresentation.atomicDisassemblerType.createFlatDisassembler(len(system['molecules']))
 
         interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'gulp_test'))
         self.assertTrue(np.isclose(system['enthalpy'], -645.80329121))

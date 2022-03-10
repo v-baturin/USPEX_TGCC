@@ -192,9 +192,9 @@ class SHELL_Calculator(object):
             return
         folder = pj(self.gatheredDataPath, ioType)
         copytree(calcFolder, pj(folder, os.path.basename(calcFolder)))
-        from ...components import CrystalRepresentation
+        from ...components import AtomisticRepresentation
         with open(pj(folder, f"system{system['ID']}_{tag}"), 'wt') as f:
-            CrystalRepresentation.writeAtomicStructure(f, system)
+            AtomisticRepresentation.writeAtomicStructure(f, system)
 
 
 class ReferenceMismatch(Exception):

@@ -72,7 +72,7 @@ class SystemsTable(object):
         self.table.add_row(row)
 
 
-class CrystalRepresentation(object):
+class AtomisticRepresentation(object):
 
     structureType = None
     atomType = None
@@ -406,7 +406,7 @@ class CrystalRepresentation(object):
         for opt in optimizers:
             pool = opt.pool
             for ID in opt.best:
-                CrystalRepresentation.writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
+                AtomisticRepresentation.writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
         with open(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), 'w') as fp:
             io_BESTgatheredPOSCARS.seek(0)
             shutil.copyfileobj(io_BESTgatheredPOSCARS, fp)
@@ -417,7 +417,7 @@ class CrystalRepresentation(object):
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
-                    CrystalRepresentation.writeAtomicStructure(io_goodStructuresPOSCARS, system)
+                    AtomisticRepresentation.writeAtomicStructure(io_goodStructuresPOSCARS, system)
 
             with open(pj(self.RES_FOLDER, 'goodStructures'), 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
@@ -455,7 +455,7 @@ class CrystalRepresentation(object):
 
             for front in fronts:
                 for system in front:
-                    CrystalRepresentation.writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
+                    AtomisticRepresentation.writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
             with open(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'), 'w') as fp:
                 io_extendedConvexHullPOSCARS.seek(0)
                 shutil.copyfileobj(io_extendedConvexHullPOSCARS, fp)

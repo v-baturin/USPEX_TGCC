@@ -119,7 +119,7 @@ setup(
             "Controllers/__init__.py",
             "IO/__init__.py",
             "IO/compileParams.py",
-            "IO/CrystalRepresentation.py",
+            "IO/AtomisticRepresentation.py",
             "IO/formatters.py",
             "IO/InputParser.py",
             "IO/InputConverter.py",
