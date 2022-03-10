@@ -16,7 +16,7 @@ class Output_Test(unittest.TestCase):
         folder_name_ref = 'output_reference'
 
         optimizerConfig = {'type': 'GlobalOptimizer',
-                           'target': {'type': 'Crystal',
+                           'target': {'type': 'Atomistic',
                                       'conditions': {'externalPressure': 100},
                                       'compositionSpace': {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]],
                                                            'range': [[1, 1]]},

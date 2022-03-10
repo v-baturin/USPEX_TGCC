@@ -200,15 +200,21 @@ class AtomisticRepresentation(object):
         ut = target.utilities
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
         isVarComp = not ut.compositionSpace.isFixedComposition
+        dim = ut.cellUtility.getDim()
+        hasEnv = ut.environmentUtility.hasEnvironment()
+
 
         # ---------------------------------------------------------------------------
 
         formatted_rows = createHeader_wrap(['Block for system description'], 'center')
         formatted_rows.append('')
 
-        row = '    System type          :  Crystal\n'
+        row = '    System type          :  Atomistic\n'
+        row += f'    Dimension            :  {dim}\n'
         row += f'    Molecular            :  {"Yes" if isMolSystem else "No"}\n'
-        row += f'    Variable composition :  { "Yes" if isVarComp else "No"}\n'
+        row += f'    Variable composition :  {"Yes" if isVarComp else "No"}\n'
+        row += f'    Has environment      :  {"Yes" if hasEnv else "No"}\n'
+
 
         formatted_rows.append(row)
         header += formatted_rows
@@ -563,7 +569,21 @@ class AtomisticRepresentation(object):
 
     @staticmethod
     def applyPresetOutputParameters(optimizer, output):
-        default = copy(presetOutput['CrystalFixComp']) if optimizer.target.utilities.compositionSpace.isFixedComposition\
-            else copy(presetOutput['CrystalVarComp'])
+        dim = optimizer.target.utilities.cellUtility.getDim()
+        if dim == 3:
+            prefix = 'Crystal'
+        elif dim == 2:
+            prefix = 'Nano2D'
+        elif dim == 1:
+            prefix = 'Nano1D'
+        elif dim == 0:
+            prefix = 'Nano0D'
+        else:
+            raise RuntimeError(f'Wrong dim {dim}.')
+        if optimizer.target.utilities.compositionSpace.isFixedComposition:
+            suffix = 'FixComp'
+        else:
+            suffix = 'VarComp'
+        default = copy(presetOutput[prefix + suffix])
         default.update(output)
         return default

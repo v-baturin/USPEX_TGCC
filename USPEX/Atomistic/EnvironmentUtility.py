@@ -99,6 +99,9 @@ class EnvironmentUtility:
                 environment['structure'] = self.structureRepresentation.readAtomicStructureRaw(file, pbc)
                 self._environments.append(environment)
 
+    def hasEnvironment(self):
+        return len(self._environments) > 0
+
     def putEnvironment(self, system, environment=None):
         """
         Put environment in dictionary representing system.
