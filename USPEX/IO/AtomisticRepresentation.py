@@ -146,7 +146,7 @@ class AtomisticRepresentation(object):
     def writeAtomicStructure(cls, fileDescriptor, system: dict):
         structure, disassembler = cls.structureType.assemble(**system)
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.getCell().getEnvelopeCell(coordinates, 1)
+        cell = structure.getCell().getEnvelopeCell(coordinates, 10)
         coordinates = cell.center(coordinates)
         atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
         write_vasp(fileDescriptor, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
