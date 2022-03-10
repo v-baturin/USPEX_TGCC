@@ -79,17 +79,11 @@ class AtomisticRepresentation(object):
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, RES_FOLDER: str, columns, toDraw: list = None,
+    def __init__(self, RES_FOLDER: str, columns, toDraw,
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = RES_FOLDER
         self.columns = columns
-        if toDraw is None:
-            self.toDraw = [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
-                           ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
-        else:
-            self.toDraw = toDraw
+        self.toDraw = toDraw
         self.rangeECH = rangeECH
 
     def getNewSystemsTable(self, isRank=False):

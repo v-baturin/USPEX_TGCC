@@ -29,7 +29,11 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
-                ]
+                ],
+                'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
+                           ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                           ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
+                           ('stat', 'enthalpy', 'per_atom', '', '')]
             },
             'CrystalVarComp': {
                 'columns': [
@@ -41,7 +45,10 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
-                ]
+                ],
+                'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                           ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
+                           ('stat', 'enthalpy', 'per_atom', '', '')]
             },
             'Nano2DFixComp': {
                 'columns': [
@@ -51,7 +58,10 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
-                ]
+                ],
+                'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
+                           ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                           ('stat', 'enthalpy', 'per_atom', '', '')]
             },
             'Nano2DVarComp': {
                 'columns': [
@@ -64,7 +74,9 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
-                ]
+                ],
+                'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                           ('stat', 'enthalpy', 'per_atom', '', '')]
             },
             'Nano1DFixComp': {
                 'columns': [
@@ -74,7 +86,10 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
-                ]
+                ],
+                'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
+                           ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                           ('stat', 'enthalpy', 'per_atom', '', '')]
             },
             'Nano1DVarComp': {
                 'columns': [
@@ -85,7 +100,9 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
-                ]
+                ],
+                'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                           ('stat', 'enthalpy', 'per_atom', '', '')]
             },
             'Nano0DFixComp': {
                 'columns': [
@@ -94,7 +111,10 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
-                ]
+                ],
+                'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
+                           ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                           ('stat', 'enthalpy', 'per_atom', '', '')]
             },
             'Nano0DVarComp': {
                 'columns': [
@@ -104,7 +124,9 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
-                ]
+                ],
+                'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                           ('stat', 'enthalpy', 'per_atom', '', '')]
             }
 
         }
