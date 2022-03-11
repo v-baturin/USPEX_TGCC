@@ -69,8 +69,8 @@ if not exists(FILENAME):
                     ('enthalpy', 'Enthalpy (eV)'),
                     ('enthalpyCCH', 'Enthalpy per Block above CCH (eV)'),
                     ('cellUtility.area', 'Volume (A^2)'),
-                    ('normRefinedEnthalpy', 'Formation energy per unit area (eV / A^2)'),
-                    ('normRefinedAbsCompCH', 'Formation energy per unit area above CCH (eV / A^2)'),
+                    # ('normRefinedEnthalpy', 'Formation energy per unit area (eV / A^2)'),
+                    # ('normRefinedAbsCompCH', 'Formation energy per unit area above CCH (eV / A^2)'),
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
