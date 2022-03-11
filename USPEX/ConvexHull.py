@@ -1,12 +1,20 @@
 """
 USPEX.ConvexHull
-=================================
+================
 
 Class for ConvexHull
 
 .. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
+
+import logging
+import numpy as np
+import pandas as pd
+from scipy.spatial import ConvexHull as QHull
+from typing import List
+
+logger = logging.getLogger(__name__)
 
 
 '''
@@ -15,25 +23,11 @@ FunctionFolder/USPEX/301/extendedConvexHull_301.m
 FunctionFolder/USPEX/src/CheckDecomposition.m
 '''
 
-import logging
-logger = logging.getLogger(__name__)
-
-
-import numpy as np
-import os
-import pandas as pd
-
-from copy import copy
-from itertools import chain, combinations
-from scipy.spatial import ConvexHull as QHull
-from typing import List, Tuple
-
-
 
 class Simplex:
-    '''
+    """
     Description of n-dimensional simplex on a given set of points
-    '''
+    """
 
     def __init__(self, coords):
         self._coords = np.array(coords)

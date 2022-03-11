@@ -1,6 +1,4 @@
 import logging
-logger = logging.getLogger(__name__)
-
 import os
 import sys
 import asyncio
@@ -15,6 +13,8 @@ from .IO.OutputRepresentation import OutputRepresentation
 from .IO.InputParser import read
 from .IO.compileParams import compileParams
 
+
+logger = logging.getLogger(__name__)
 DEFAULT_OUTPUT_REFRESH_DELAY = 120
 
 

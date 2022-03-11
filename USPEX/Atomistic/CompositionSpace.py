@@ -4,12 +4,11 @@ USPEX.Atomistic.CompositionSpace
 """
 
 import logging
-logger = logging.getLogger(__name__)
-
-
 import numpy as np
 from copy import copy
 from collections import Counter
+
+logger = logging.getLogger(__name__)
 
 
 class CompositionSpace(object):

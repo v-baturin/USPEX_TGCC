@@ -19,7 +19,7 @@ from os.path import join as pj
 
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from ..VASP_Interface import VASP_Interface
-from ...components import CrystalRepresentation
+from ...components import AtomisticRepresentation
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -40,7 +40,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = CrystalRepresentation.readAtomicStructure(f)
+                system = AtomisticRepresentation.readAtomicStructure(f)
                 system['ID'] = ID
                 system['externalPressure'] = 0.0001
             os.mkdir(WORKPATH)
@@ -57,7 +57,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
             vasp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = CrystalRepresentation.readAtomicStructure(f)
+                systemRef = AtomisticRepresentation.readAtomicStructure(f)
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
 

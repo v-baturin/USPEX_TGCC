@@ -1,6 +1,6 @@
 """
 USPEX.Common.Fitness
-==================================
+====================
 
 Data type representing rules of how we determine which systems are better.
 
@@ -8,10 +8,8 @@ Data type representing rules of how we determine which systems are better.
 """
 
 import logging
-logger = logging.getLogger(__name__)
-
 import numpy as np
-from copy import copy, deepcopy
+from copy import copy
 from collections.abc import Mapping
 from sklearn.decomposition import PCA
 
@@ -19,6 +17,8 @@ from .ConvexHull import ConvexHull
 from .paretoRanking import paretoRanking
 from .Presets import presetFitness
 
+
+logger = logging.getLogger(__name__)
 presetFitness[('aging', 'values')] = ('plus', 'values', ('multiply', ('minus', ('mean', 'values'), ('min', 'values')),
                                                          'antiseeds.corrections'))
 

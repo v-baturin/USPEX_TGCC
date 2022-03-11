@@ -9,12 +9,11 @@ Objects and methods for handling chemical bonds
 """
 
 import numpy as np
-
 from ase.atom import Atom
-from ase.neighborlist import primitive_neighbor_list
+# from ase.neighborlist import primitive_neighbor_list
 from dataclasses import dataclass
 from itertools import combinations_with_replacement
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Tuple
 
 from ..Atomistic.Element import Element
 

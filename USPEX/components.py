@@ -2,8 +2,8 @@ from .Atomistic.Element import Element
 from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
 
-from .IO.CrystalRepresentation import CrystalRepresentation
-CrystalRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+from .IO.AtomisticRepresentation import AtomisticRepresentation
+AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
 from .GlobalOptimizer import GlobalOptimizer
 from .Fitness import Fitness
@@ -12,7 +12,7 @@ from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.EnvironmentUtility import EnvironmentUtility
-EnvironmentUtility.setRepresentation(CrystalRepresentation)
+EnvironmentUtility.setRepresentation(AtomisticRepresentation)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from .Atomistic.CellUtility import CellUtility
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
@@ -30,8 +30,8 @@ from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .Atomistic.Operators.Permutation import Permutation
 from .Atomistic.Operators.Transmutation import Transmutation
 from .Atomistic.Operators.Seeds import Seeds
-Seeds.registerTypes(CrystalRepresentation)
-GlobalOptimizer.registerTarget('Crystal',
+Seeds.registerTypes(AtomisticRepresentation)
+GlobalOptimizer.registerTarget('Atomistic',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility, SimpleMoleculeUtility,
                                  Conditions, IonDistances, Constraints,
                                  PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],

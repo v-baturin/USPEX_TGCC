@@ -1,27 +1,21 @@
+"""
+USPEX.Calculators.MLIP_Interface
+================================
+
+.. codeauthor:: Michele Galasso <m.galasso@yandex.com>
+
+"""
 import logging
-
-logger = logging.getLogger(__name__)
-
-'''
-@file        MLIP_Interface.py
-@author:     Michele Galasso
-@copyright:  2020 Oganov's Lab. All rights reserved.
-@contact:    m.galasso@yandex.com
-@date        27 December 2020
-@brief       Class for calculator of MLIP
-'''
-
 import os
 import shutil
 import numpy as np
-
 from os.path import join as pj
 from ase.atoms import Atoms
 
 from .Common.MLIPCfgParser import readcfg, savecfg
 from .Common.SHELL_Interface import SHELL_Interface
 
-
+logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1 / 160.21766208
 
 

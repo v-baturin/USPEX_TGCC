@@ -1,30 +1,19 @@
+"""
+USPEX.Calculators.TaskManagers.Screen_TM
+========================================
+
+.. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
+
+"""
 import logging
+
+from ..Common.Screen import Screen, list_screens_id, kill_screen_by_id
+
 logger = logging.getLogger(__name__)
 
 
-'''
-@file        SBATCH.py
-@author:     Artem Samtsevich
-@copyright:  2019 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        5 September 2016
-@brief       Class for Screen task manager.
-'''
-
-import os
-import subprocess as sp
-
-from .TaskManager import TaskManager
-from ..Common.Screen import Screen, list_screens, list_screens_id, kill_screen_by_id
-
-
-class Screen_TM(TaskManager):
-    '''
-
-    '''
-
+class Screen_TM:
     type = 'Screen'
-
 
     def __init__(self, connector=None):
         self.connector = connector
@@ -71,12 +60,12 @@ class Screen_TM(TaskManager):
         return ID
 
     def _parseJobID(self, output : str, error : str) -> int:
-        '''
+        """
 
         :param output:
         :param error:
         :return: jobID
-        '''
+        """
         return int(output.split()[-1])
 
     async def isReady(self, jobID : int):

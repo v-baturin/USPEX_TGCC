@@ -8,7 +8,7 @@
 '''
 
 import unittest
-from ..Screen_TM import Screen_TM, list_screens
+from ..Screen_TM import Screen_TM
 from ...Common.Connector import Connector
 
 import os

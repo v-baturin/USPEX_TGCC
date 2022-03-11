@@ -1,7 +1,16 @@
+"""
+USPEX.Atomistic.Constraints
+===========================
+"""
+
 import numpy as np
 
 
 class Constraints:
+    """
+    Class for placing constraints for structures.
+    """
+
     def __init__(self, utilities):
         self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
@@ -10,6 +19,11 @@ class Constraints:
         self.conditions = utilities.conditions
 
     def systemCheckAndFix(self, system):
+        """
+        Checks if given system complies set up constraints.
+        If it does, make surtain adjustments, like align the system along required axis.
+        :param system: system to be checked and fixed
+        """
         cell = system['cell']
         molecules = system['molecules']
         atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)

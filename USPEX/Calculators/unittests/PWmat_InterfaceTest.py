@@ -15,7 +15,7 @@ import unittest
 import numpy as np
 
 
-from ...components import CrystalRepresentation
+from ...components import AtomisticRepresentation
 from ..PWmat_Interface import  PWmat_Interface
 
 
@@ -38,7 +38,7 @@ class PWmat_InterfaceTest(unittest.TestCase):
 
         cls.vcEmpty = PWmat_Interface(**params)
         with open(os.path.join(HOMEPATH, 'Si4System.vasp'), 'rt') as f:
-            cls.testSystem = CrystalRepresentation.readAtomicStructure(f)
+            cls.testSystem = AtomisticRepresentation.readAtomicStructure(f)
         cls.testSystem['ID'] = 0
         cls.testSystem['externalPressure'] = 0.00001
 

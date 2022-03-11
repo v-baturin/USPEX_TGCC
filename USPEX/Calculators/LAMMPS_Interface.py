@@ -7,30 +7,31 @@
 @brief       Class for calculator of LAMMPS
 '''
 
-__author__ = 'a.mazitov'
+.. codeauthor:: Arslan Mazitov <arslan.mazitov@phystech.edu>
+
+"""
 
 import logging
 import os
 import shutil
-
 import numpy as np
 from ase.io import read
 from ase import Atoms
 from typing import List
 from os.path import join as pj
 from .Common.SHELL_Interface import SHELL_Interface
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 AVAILABLE_TARGET_OBEJECTS = ['default', 'environment']
 REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp', 
                                     'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
 
 class LAMMPS_Interface(SHELL_Interface):
-    '''
+    """
     Calculator for LAMMPS.
     Local running
-    '''
+    """
 
     # working output files
     inputFile = 'lammps.in'
@@ -74,10 +75,10 @@ class LAMMPS_Interface(SHELL_Interface):
         assert self.targetObject in AVAILABLE_TARGET_OBEJECTS
 
     def prepareLocalCalculation(self, system, calcFolder : str):
-        '''
+        """
         :param system:
         :param calcFolder:
-        '''
+        """
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
 

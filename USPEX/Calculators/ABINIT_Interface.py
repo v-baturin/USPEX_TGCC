@@ -1,28 +1,23 @@
 """
-@file        ABINIT_Interface.py
-@author:     Michele Galasso
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    m.galasso@yandex.com
-@date        8 July 2020
-@brief       Class for testing ABINIT_Calculator class.
+USPEX.Calculators.ABINIT_Interface
+==================================
+
+.. codeauthor:: Michele Galasso <m.galasso@yandex.com>
+
 """
 
+import logging
 import os
 import shutil
 import numpy as np
-
 from abipy import abilab
 from os.path import join as pj
 from typing import List
 
-import logging
-logger = logging.getLogger(__name__)
-
-
-from ..Atomistic.Element import Element
 from .Common.KPoints import KPoints, BadKPoints
 from .Common.SHELL_Interface import SHELL_Interface
 
+logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
 GPA_TO_HARTREE_PER_CUBIC_BOHR = 1/29421.033
 
@@ -133,7 +128,7 @@ class ABINIT_Interface(SHELL_Interface):
 
             # pp files need to be ordered by increasing atomic number
             pp_files_names = [os.path.split(pp_file_path)[1] for pp_file_path in self.pp_files]
-            for pp_file_name in sorted(pp_files_names, key=lambda e: Element(e.split('.')[0]).z):
+            for pp_file_name in sorted(pp_files_names, key=lambda e: self.atomType(e.split('.')[0]).z):
                 f.write(f'{pp_file_name}\n')
 
         ############################## IN FILE ##################################

@@ -1,22 +1,16 @@
+"""
+USPEX.Calculators.TaskManagers.SBATCH
+=====================================
+
+"""
+
 import logging
+from os.path import join as pj
+
 logger = logging.getLogger(__name__)
 
-'''
-@file        SBATCH.py
-@author:     Artem Samtsevich
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        5 September 2016
-@brief       Class for SBATCH task manager.
-'''
 
-import subprocess as sp
-
-from os.path import join as pj
-from .TaskManager import TaskManager
-
-
-class SBATCH(TaskManager):
+class SBATCH:
     '''
 
     '''

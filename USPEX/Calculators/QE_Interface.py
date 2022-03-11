@@ -1,14 +1,10 @@
-'''
-@file        QE_Calculator.py
-@author:     Artem Samtsevich
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        30 August 2016
-@brief       Class for calculator of Quantum Espresso
-'''
-import logging
-logger = logging.getLogger(__name__)
+"""
+USPEX.Calculators.QE_Interface
+==============================
 
+"""
+
+import logging
 import os
 import shutil
 import numpy as np
@@ -18,6 +14,7 @@ from ase.io.espresso import read_espresso_out
 from .Common.KPoints import KPoints, BadKPoints
 from .Common.SHELL_Interface import SHELL_Interface
 
+logger = logging.getLogger(__name__)
 
 class QE_Interface(SHELL_Interface):
     '''

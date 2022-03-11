@@ -4,7 +4,7 @@ import json
 import filecmp
 import shutil
 
-from ...components import GlobalOptimizer, CrystalRepresentation
+from ...components import GlobalOptimizer, AtomisticRepresentation
 from ..OutputRepresentation import OutputRepresentation
 
 TESTPATH = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +16,7 @@ class Output_Test(unittest.TestCase):
         folder_name_ref = 'output_reference'
 
         optimizerConfig = {'type': 'GlobalOptimizer',
-                           'target': {'type': 'Crystal',
+                           'target': {'type': 'Atomistic',
                                       'conditions': {'externalPressure': 100},
                                       'compositionSpace': {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]],
                                                            'range': [[1, 1]]},
@@ -62,7 +62,7 @@ class Output_Test(unittest.TestCase):
                         with open(os.path.join(TESTPATH, f"output_data/system{gen * popSize + i}s{j}"), "r") as f:
                             structure = json.load(f)
                         with open(os.path.join(TESTPATH, f"output_data/system{gen*popSize+i}s{j}.vasp"), "r") as f:
-                            structure.update(CrystalRepresentation.readAtomicStructure(f))
+                            structure.update(AtomisticRepresentation.readAtomicStructure(f))
                         system.append(structure)
                     except FileNotFoundError:
                         break

@@ -8,13 +8,10 @@ Function for reading molecule from a MOL file
 """
 
 import logging
-logger = logging.getLogger(__name__)
-
 import os
 import numpy as np
 
-# from ..AtomicStructure import AtomicStructure
-# from ..Element import Element
+logger = logging.getLogger(__name__)
 
 
 def read_molecule(filename: str):

@@ -1,40 +1,29 @@
+"""
+USPEX.Calculators.Common.SHELL_Calculator
+=========================================
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+
+"""
+
 import logging
-logger = logging.getLogger(__name__)
-
-'''
-@file        SHELL_Calculator.py
-@author:     Pavel Bushlanov
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        15 July 2016
-@brief       Class for calculations that will can be executed in terminal.
-'''
-
-
-__author__ = 'p.bushlanov'
-
-
+import os, shutil
 import asyncio
-import os
-import shutil
 import filecmp
-
 from os.path import join as pj
 
 from .Connector import Connector
 
+logger = logging.getLogger(__name__)
+
 
 class SHELL_Calculator(object):
-    '''
-
-    '''
-
     CALC_FOLDER_TEMPLATE = 'CalcFold{}_{}'   # Path to folder to made QM/MM calculation
 
     def __init__(self, type : str, commandExecutable : str, tag : str, workingDirectory : str = '.',
                  remote=None, taskManager=None, gather : bool = False, referenceFolder : str = None,
                  keepFolders : bool = False, **kwargs):
-        '''
+        """
 
         :param commandExecutable:
         :param workingDirectory:
@@ -47,7 +36,7 @@ class SHELL_Calculator(object):
         :param referenceFolder: If specified we will emulate run of actual third party program by copying data from
         reference folder and compare resulting systems with stored in reference folder. If not specified do normal run.
         :param kwargs:
-        '''
+        """
         logger.debug('Created calculator.')
 
         self.commandExecutable = commandExecutable
@@ -119,7 +108,6 @@ class SHELL_Calculator(object):
             self.referenceFolder = None
 
         self.keepFolders = keepFolders
-
 
     async def run(self, system):
         ID = system['ID']
@@ -193,27 +181,26 @@ class SHELL_Calculator(object):
                 raise ReferenceMismatch(f"output mismatch in {system['ID']}, with tag {tag}. "
                                         f"Ref system is {systemRef.toJSON()}, actual system is {system['structure'].toJSON()}")
 
-
     def _pickUpFromReference(self, ID : int, tag : str, calcFolder : str):
         folder = pj(self.referenceFolder, 'output')
         calcFolderRef = pj(folder, self.CALC_FOLDER_TEMPLATE.format(ID, tag))
         shutil.rmtree(calcFolder, ignore_errors=True)
         shutil.copytree(calcFolderRef, calcFolder)
 
-
     def _gatherData(self, system, tag : str, calcFolder : str, ioType : str):
         if not (ioType == 'input' or ioType == 'output'):
             return
         folder = pj(self.gatheredDataPath, ioType)
         copytree(calcFolder, pj(folder, os.path.basename(calcFolder)))
-        from ...components import CrystalRepresentation
+        from ...components import AtomisticRepresentation
         with open(pj(folder, f"system{system['ID']}_{tag}"), 'wt') as f:
-            CrystalRepresentation.writeAtomicStructure(f, system)
+            AtomisticRepresentation.writeAtomicStructure(f, system)
+
 
 class ReferenceMismatch(Exception):
     pass
 
-import os, shutil
+
 def copytree(src, dst, symlinks=False, ignore=None):
     if not os.path.exists(dst):
         os.makedirs(dst)

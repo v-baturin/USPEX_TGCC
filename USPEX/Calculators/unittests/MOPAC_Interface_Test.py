@@ -13,7 +13,7 @@ from ase.io import write
 
 # from ..MOPAC_Interface import MOPAC_Interface
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ...components import CrystalRepresentation, MOPAC_Interface, CellUtility, Cell
+from ...components import AtomisticRepresentation, MOPAC_Interface, CellUtility, Cell
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
 SPECIFICPATH = pj(HOMEPATH, 'mopacSpecific')
@@ -30,7 +30,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = CrystalRepresentation.readAtomicStructure(f)
+                system = AtomisticRepresentation.readAtomicStructure(f)
                 system['externalPressure'] = 0
                 system['ID'] = ID
                 system['cell'] = type(system['cell'])(system['cell'].getCellVectors(), (False, False, False))
@@ -48,7 +48,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             mopac.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = CrystalRepresentation.readAtomicStructure(f)
+                systemRef = AtomisticRepresentation.readAtomicStructure(f)
                 systemRef['cell'] = type(systemRef['cell'])(systemRef['cell'].getCellVectors(), (False, False, False))
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 

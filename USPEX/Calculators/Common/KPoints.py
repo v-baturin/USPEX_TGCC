@@ -1,12 +1,10 @@
-'''
-@file        KPoints.py
-@author:     Pavel Bushlanov
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    paulbush@mail.ru
-@date        October 2016
-@brief       Abstract class for all engines in USPEX code
-'''
+"""
+USPEX.Calculators.Common.KPoints
+================================
 
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+
+"""
 
 import numpy as np
 
