@@ -16,7 +16,7 @@ from os.path import join as pj
 
 
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ...components import CrystalRepresentation
+from ...components import AtomisticRepresentation
 from ..MLIP_Interface import MLIP_Interface
 
 
@@ -37,7 +37,7 @@ class MLIP_CalculatorTest2(unittest.TestCase):
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = CrystalRepresentation.readAtomicStructure(f)
+                system = AtomisticRepresentation.readAtomicStructure(f)
             system['externalPressure'] = 100
             system['ID'] = ID
             os.mkdir(WORKPATH)
@@ -54,5 +54,5 @@ class MLIP_CalculatorTest2(unittest.TestCase):
             mlip.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = CrystalRepresentation.readAtomicStructure(f)
+                systemRef = AtomisticRepresentation.readAtomicStructure(f)
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))

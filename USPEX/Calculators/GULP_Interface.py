@@ -1,22 +1,20 @@
-import logging
-logger = logging.getLogger(__name__)
+"""
+USPEX.Calculators.GULP_Interface
+================================
 
-'''
-@file        GULP_Calculator.py
-@author:     Artem Samtsevich
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        30 August 2016
-@brief       Class for remote QM/MM calculations with GULP
-'''
+"""
+
+import logging
 import numpy as np
 import os
 import re
 import shutil
-
-from .Common.SHELL_Interface import SHELL_Interface
 from os.path import join as pj
 from typing import List
+
+from .Common.SHELL_Interface import SHELL_Interface
+
+logger = logging.getLogger(__name__)
 
 
 class GULP_Interface(SHELL_Interface):
@@ -33,7 +31,7 @@ class GULP_Interface(SHELL_Interface):
 
     def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: List[str] = None,
                  moleculeSpecifics: dict = None, perturbate: bool = True, fixCell: bool = False, vacuumSize = 10, **kwargs):
-        '''
+        """
 
         :param params: dictionary with parameters:
                 * ginput: (str) path to ginput-file.
@@ -41,7 +39,7 @@ class GULP_Interface(SHELL_Interface):
                 * commandExecutable: (str) executable command
                 * remote: (dict) remote server params    # optional
                 * taskManager: (dict) task managers params     # optional
-        '''
+        """
 
         super().__init__(**kwargs)
         if ginput is None:
@@ -166,10 +164,10 @@ class GULP_Interface(SHELL_Interface):
         logger.debug('GULP calculator prepared calculation.')
 
     def isConverged(self, calcFolder : str):
-        '''
+        """
         :param SYSTEM:
         :return: whether optimization converged
-        '''
+        """
         with open(pj(calcFolder, self.errorFile), 'rt') as fp:
             content = fp.readlines()
             if 'STOP GULP terminated with an error\n' in content:
@@ -256,11 +254,11 @@ class GULP_Interface(SHELL_Interface):
         return energy_entalpy
 
     def readStressTensor(self, content):
-        '''
+        """
         NOTE 1: this value already with eternal pressure
         NOTE 2: value already taken to be a force on a cell
         :return stress tensor in GPa.
-        '''
+        """
         """
           Final stress tensor components (GPa):
 

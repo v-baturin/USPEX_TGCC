@@ -1,23 +1,17 @@
-'''
-@file        MOPAC_Interface.py
-@author:     Vladimir Baturin
-@copyright:  2021 Oganov's Lab. All rights reserved.
-@contact:    vsbat@yandex.ru
-@date        21 Jul 2021
-@brief       Class for calculator of LAMMPS
-'''
+"""
+USPEX.Calculators.MOPAC_Interface
+=================================
 
-__author__ = 'v.baturin'
+.. codeauthor:: Vladimir Baturin <vsbat@yandex.ru>
+
+"""
 
 import logging
 import os
 import re
-import shutil
-
 import numpy as np
 from os.path import join as pj
 
-# from ..Atomistic.Transformation import Transformation
 from .Common.SHELL_Interface import SHELL_Interface
 
 logger = logging.getLogger(__name__)
@@ -37,12 +31,12 @@ class MOPAC_Interface(SHELL_Interface):
 
     def __init__(self, tag: str, mop_input: str = None,
                  **kwargs):
-        '''
+        """
 
         :param params: dictionary with parameters:
                 * mop_input: (str) path to ginput-file.
                 * vacuumSize=10
-        '''
+        """
 
         super().__init__(**kwargs)
         if mop_input is None:
@@ -60,11 +54,11 @@ class MOPAC_Interface(SHELL_Interface):
         logger.debug('MOPAC calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder: str):
-        '''
+        """
 
         :param system:
         :param isFullRelaxation:
-        '''
+        """
 
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
@@ -102,10 +96,10 @@ class MOPAC_Interface(SHELL_Interface):
         logger.debug('MOPAC calculator prepared calculation.')
 
     def isConverged(self, calcFolder: str):
-        '''
+        """
         :param SYSTEM:
         :return: whether optimization converged
-        '''
+        """
 
         if not (os.path.exists(pj(calcFolder, self.mopacOut))
                 and os.path.exists(pj(calcFolder, self.arcFile))):

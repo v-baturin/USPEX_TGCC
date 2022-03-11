@@ -6,7 +6,7 @@ USPEX.Atomistic.RadialDistributionUtility
 """
 
 import numpy as np
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 from collections.abc import Mapping
 from scipy.special import erf
 from scipy.spatial.distance import cdist
@@ -439,10 +439,10 @@ class RadialDistributionUtility(object):
 
     @staticmethod
     def _fingerprintWeights(structure):
-        '''
+        """
         :rtype: Dict[Tuple[str,str], float]
         :return: weights of fingerprints of each atom type pair to be used in cosine distance calculation.
-        '''
+        """
         comp = structure.getComposition()
         # TODO Whether we really need to duplicate weights Like Fe-C and C-Fe
         weights = {(s1.short_name, s2.short_name): am1*am2 for s1, am1 in comp.items() for s2, am2 in comp.items()}

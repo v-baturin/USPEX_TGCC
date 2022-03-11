@@ -1,3 +1,10 @@
+"""
+USPEX.Calculators.FHIaims_Interface
+===================================
+
+"""
+
+import logging
 import os
 import shutil
 import numpy as np
@@ -6,7 +13,6 @@ from os.path import join as pj
 from .Common.SHELL_Interface import SHELL_Interface
 from .Common.KPoints import KPoints, BadKPoints
 
-import logging
 logger = logging.getLogger(__name__)
 
 

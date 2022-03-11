@@ -1,11 +1,11 @@
 import os
-import numpy as np
-from collections import Counter
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from collections import Counter
 
 from .formatters import createHeader_wrap
+
+matplotlib.use('Agg')
 
 
 class USPEXClassicRepresentation(object):

@@ -1,32 +1,26 @@
+"""
+USPEX.Calculators.TaskManagers.SHELL
+====================================
+
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+
+"""
 import logging
-logger = logging.getLogger(__name__)
-
-'''
-@file        SHELL.py
-@author:     Pavel Bushlanov
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    paulbush@mail.ru
-@date        25 October 2017
-@brief       Class for SHEL task manager.
-'''
-
 import os
 
-from .TaskManager import TaskManager
+logger = logging.getLogger(__name__)
 
 
-class SHELL(TaskManager):
-    '''
+class SHELL:
 
-    '''
 
     shortname = 'SHELL'
 
     def __init__(self, connector):
-        '''
+        """
         :param connector: for remote submission
         :return:
-        '''
+        """
 
         self.connector = connector
 

@@ -49,6 +49,14 @@ class AtomicStructure:
         return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, zmatrixConfig)
 
     def getAligned(self, axis):
+        """
+        Creates another **AtomicStructures** instance with the same cell parameters and atomic coordinates
+         but aligned along given axis.
+
+        :param axis: 3-vector along which the new structre will be aligned.
+        :raises RuntimeError: if used on 0D or 3D structure.
+        :return: new **AtomicStructures** instance.
+        """
         return AtomicStructure.initFromFractionalCoordinates(self.getAtomTypes(), self.getFractionalCoordinates(),
                                                              self.getCell().getAlignedCell(axis))
 

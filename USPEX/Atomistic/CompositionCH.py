@@ -1,4 +1,3 @@
-from typing import List
 from types import SimpleNamespace
 
 from ..ConvexHull import ConvexHull

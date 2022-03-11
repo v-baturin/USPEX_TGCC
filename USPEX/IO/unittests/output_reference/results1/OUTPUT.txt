@@ -6,7 +6,7 @@
 |                   \__,_|___/ .__/ \___/_/\_(_) .__/ \__, |                   |
 |                            |_|               |_|    |___/                    |
 |                                                                              |
-|                                   2021.1.0                                   |
+|                                   2022.0.0                                   |
 |                                                                              |
 |             Evolutionary Algorithm Code for Structure Prediction             |
 |                      more info at http://uspex-team.org                      |
@@ -48,9 +48,11 @@
 |                         Block for system description                         |
 *------------------------------------------------------------------------------*
 
-    System type          :  Crystal
+    System type          :  Atomistic
+    Dimension            :  3
     Molecular            :  No
     Variable composition :  No
+    Has environment      :  No
 
     The investigated system is (block -- range): 
         <Mg>4<Al>8<O>16  --  [1 1]

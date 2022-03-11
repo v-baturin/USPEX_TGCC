@@ -5,6 +5,7 @@ USPEX.Atomistic.Slab
 
 import numpy as np
 
+
 class Slab:
 
     def __init__(self, indices, depths, molecules):

@@ -3,7 +3,6 @@ import io
 import shutil
 import matplotlib
 import numpy as np
-
 from copy import copy
 from collections import Counter
 from collections.abc import Mapping
@@ -12,13 +11,12 @@ from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
 from os.path import join as pj
 from prettytable import PrettyTable
-
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from .formatters import createHeader_wrap
 from ..Presets import presetOutput
 
+matplotlib.use('Agg')
 
 MOL_CRYSTALS_PAPERS = '''\
 Zhu Q., Oganov A.R., Glass C.W., Stokes H. (2012)
@@ -74,24 +72,18 @@ class SystemsTable(object):
         self.table.add_row(row)
 
 
-class CrystalRepresentation(object):
+class AtomisticRepresentation(object):
 
     structureType = None
     atomType = None
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, RES_FOLDER: str, columns, toDraw: list = None,
+    def __init__(self, RES_FOLDER: str, columns, toDraw,
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = RES_FOLDER
         self.columns = columns
-        if toDraw is None:
-            self.toDraw = [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
-                           ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
-        else:
-            self.toDraw = toDraw
+        self.toDraw = toDraw
         self.rangeECH = rangeECH
 
     def getNewSystemsTable(self, isRank=False):
@@ -154,7 +146,7 @@ class CrystalRepresentation(object):
     def writeAtomicStructure(cls, fileDescriptor, system: dict):
         structure, disassembler = cls.structureType.assemble(**system)
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.getCell().getEnvelopeCell(coordinates, 1)
+        cell = structure.getCell().getEnvelopeCell(coordinates, 10)
         coordinates = cell.center(coordinates)
         atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
         write_vasp(fileDescriptor, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
@@ -202,15 +194,21 @@ class CrystalRepresentation(object):
         ut = target.utilities
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
         isVarComp = not ut.compositionSpace.isFixedComposition
+        dim = ut.cellUtility.getDim()
+        hasEnv = ut.environmentUtility.hasEnvironment()
+
 
         # ---------------------------------------------------------------------------
 
         formatted_rows = createHeader_wrap(['Block for system description'], 'center')
         formatted_rows.append('')
 
-        row = '    System type          :  Crystal\n'
+        row = '    System type          :  Atomistic\n'
+        row += f'    Dimension            :  {dim}\n'
         row += f'    Molecular            :  {"Yes" if isMolSystem else "No"}\n'
-        row += f'    Variable composition :  { "Yes" if isVarComp else "No"}\n'
+        row += f'    Variable composition :  {"Yes" if isVarComp else "No"}\n'
+        row += f'    Has environment      :  {"Yes" if hasEnv else "No"}\n'
+
 
         formatted_rows.append(row)
         header += formatted_rows
@@ -408,7 +406,7 @@ class CrystalRepresentation(object):
         for opt in optimizers:
             pool = opt.pool
             for ID in opt.best:
-                CrystalRepresentation.writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
+                AtomisticRepresentation.writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
         with open(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), 'w') as fp:
             io_BESTgatheredPOSCARS.seek(0)
             shutil.copyfileobj(io_BESTgatheredPOSCARS, fp)
@@ -419,7 +417,7 @@ class CrystalRepresentation(object):
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
-                    CrystalRepresentation.writeAtomicStructure(io_goodStructuresPOSCARS, system)
+                    AtomisticRepresentation.writeAtomicStructure(io_goodStructuresPOSCARS, system)
 
             with open(pj(self.RES_FOLDER, 'goodStructures'), 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
@@ -457,7 +455,7 @@ class CrystalRepresentation(object):
 
             for front in fronts:
                 for system in front:
-                    CrystalRepresentation.writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
+                    AtomisticRepresentation.writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
             with open(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'), 'w') as fp:
                 io_extendedConvexHullPOSCARS.seek(0)
                 shutil.copyfileobj(io_extendedConvexHullPOSCARS, fp)
@@ -565,7 +563,21 @@ class CrystalRepresentation(object):
 
     @staticmethod
     def applyPresetOutputParameters(optimizer, output):
-        default = copy(presetOutput['CrystalFixComp']) if optimizer.target.utilities.compositionSpace.isFixedComposition\
-            else copy(presetOutput['CrystalVarComp'])
+        dim = optimizer.target.utilities.cellUtility.getDim()
+        if dim == 3:
+            prefix = 'Crystal'
+        elif dim == 2:
+            prefix = 'Nano2D'
+        elif dim == 1:
+            prefix = 'Nano1D'
+        elif dim == 0:
+            prefix = 'Nano0D'
+        else:
+            raise RuntimeError(f'Wrong dim {dim}.')
+        if optimizer.target.utilities.compositionSpace.isFixedComposition:
+            suffix = 'FixComp'
+        else:
+            suffix = 'VarComp'
+        default = copy(presetOutput[prefix + suffix])
         default.update(output)
         return default
