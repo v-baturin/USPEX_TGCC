@@ -22,7 +22,8 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
 
     def test_life(self):
         lammps = LAMMPS_Interface(tag='0', perturbate=False,
-                                  libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'))
+                                  libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'),
+                                  specorder=['C'])
         radialDistributionUtility = RadialDistributionUtility()
 
         for ID in range(10):

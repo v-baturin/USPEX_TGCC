@@ -1,14 +1,10 @@
-'''
-@file        LAMMPS_Calculator.py
-@author:     Arslan Mazitov
-@copyright:  2019 Oganov's Lab. All rights reserved.
-@contact:    arslan.mazitov@phystech.edu
-@date        11 March 2022
-@brief       Class for calculator of LAMMPS
-'''
+"""
+USPEX.Calculators.LAMMPS_Interface
+==================================
 
-__author__ = 'a.mazitov'
+.. codeauthor:: Arslan Mazitov <arslan.mazitov@phystech.edu>
 
+"""
 import logging
 import os
 import shutil
