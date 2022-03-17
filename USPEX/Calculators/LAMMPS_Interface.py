@@ -196,6 +196,8 @@ class LAMMPS_Interface(SHELL_Interface):
             output = pj(calcFolder, self.outputFile)
         elif os.path.exists(pj(calcFolder, self.log_file)):
             output = pj(calcFolder, self.log_file)
+        else:
+            raise FileNotFoundError('Cannot find either {self.outputFile} or {self.log_file}.')
         with open(output, 'r') as f:
             content = f.readlines()
         
