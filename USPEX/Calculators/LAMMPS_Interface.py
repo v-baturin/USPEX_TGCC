@@ -126,11 +126,11 @@ class LAMMPS_Interface(SHELL_Interface):
         
         if self.targetObject == 'default':
             atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell = cell.getCellVectors())
-            atoms.write(pj(calcFolder, self.data_file), format='lammps-data', specorder=self.specorder)
         elif self.targetObject == 'environment':
             environment = system['environment'].getStructure()
             atoms = Atoms([el.short_name for el in environment.getAtomTypes()], environment.getCartesianCoordinates(), cell = cell.getCellVectors())
-            atoms.write(pj(calcFolder, self.data_file), format='lammps-data',  specorder=self.specorder)
+        
+        write_lammps_data_with_label(pj(calcFolder, self.data_file), atoms, specorder=self.specorder, label=f"EA{system['ID']}")
         
         for lib in self.libs:
             shutil.copy2(lib, calcFolder)
@@ -230,3 +230,13 @@ class LAMMPS_Interface(SHELL_Interface):
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
+
+
+def write_lammps_data_with_label(filepath, atoms, specorder, label=None):
+    atoms.write(filepath, format='lammps-data', specorder=specorder)
+    if label:
+        with open(filepath, 'rt') as f:
+            content = f.readlines()
+        content[0] = label + "\n"
+        with open(filepath, 'wt') as f:
+            f.writelines(content)

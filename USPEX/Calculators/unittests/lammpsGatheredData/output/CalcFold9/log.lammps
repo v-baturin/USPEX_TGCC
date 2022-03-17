@@ -18,7 +18,7 @@ Reading data file ...
   4 by 2 by 1 MPI processor grid
   reading atoms ...
   16 atoms
-  read_data CPU = 0.004 seconds
+  read_data CPU = 0.003 seconds
 
 pair_style tersoff                 # Potential type http://lammps.sandia.gov/doc/pair_style.html
 thermo_style custom step enthalpy etotal ke pe temp pxx pyy pzz pxy pxz pyz
@@ -58,20 +58,20 @@ Per MPI rank memory allocation (min/avg/max) = 4.099 | 4.100 | 4.100 Mbytes
 Step Enthalpy TotEng KinEng PotEng Temp Pxx Pyy Pzz Pxy Pxz Pyz 
        0   -209.21825   -11.220561            0   -11.220561            0   -1507742.7   -1507742.7   -2627788.6 -4.9785399e-10 -6.4130345e-10 -8.9023044e-10 
     1000    -75.85265   -73.884793   0.21568046   -74.100474    111.23844    95680.755    95680.761   -270794.04 2.1716267e-08 0.00017014758 -0.0001458465 
-Loop time of 0.278753 on 8 procs for 1000 steps with 16 atoms
+Loop time of 0.273999 on 8 procs for 1000 steps with 16 atoms
 
-Performance: 309.952 ns/day, 0.077 hours/ns, 3587.403 timesteps/s
-26.7% CPU use with 8 MPI tasks x 1 OpenMP threads
+Performance: 315.330 ns/day, 0.076 hours/ns, 3649.650 timesteps/s
+27.3% CPU use with 8 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 0.0067625  | 0.028382   | 0.078479   |  16.1 | 10.18
-Neigh   | 3.849e-05  | 5.4436e-05 | 7.695e-05  |   0.0 |  0.02
-Comm    | 0.18108    | 0.23043    | 0.252      |   5.7 | 82.67
-Output  | 0.0015586  | 0.0022737  | 0.0058368  |   2.8 |  0.82
-Modify  | 0.010845   | 0.015033   | 0.017124   |   1.4 |  5.39
-Other   |            | 0.002576   |            |       |  0.92
+Pair    | 0.0066916  | 0.04367    | 0.10328    |  19.3 | 15.94
+Neigh   | 3.773e-05  | 5.403e-05  | 7.6443e-05 |   0.0 |  0.02
+Comm    | 0.10048    | 0.15916    | 0.19596    |  10.1 | 58.09
+Output  | 0.053158   | 0.053859   | 0.057301   |   0.6 | 19.66
+Modify  | 0.010458   | 0.014646   | 0.016741   |   1.5 |  5.35
+Other   |            | 0.00261    |            |       |  0.95
 
 Nlocal:        2.00000 ave           3 max           1 min
 Histogram: 4 0 0 0 0 0 0 0 0 4
@@ -147,9 +147,9 @@ WARNING: Proc sub-domain size < neighbor skin, could lead to lost atoms (../doma
 Per MPI rank memory allocation (min/avg/max) = 4.367 | 5.116 | 5.366 Mbytes
 Step Enthalpy TotEng KinEng PotEng Temp Pxx Pyy Pzz Pxy Pxz Pyz 
     1000    -75.85265   -73.884793   0.21568046   -74.100474    111.23844    95680.755    95680.761   -270794.04 2.0859229e-08 0.00017015012 -0.00014584555 
-Loop time of 2.87406e-06 on 8 procs for 0 steps with 16 atoms
+Loop time of 3.05846e-06 on 8 procs for 0 steps with 16 atoms
 
-117.4% CPU use with 8 MPI tasks x 1 OpenMP threads
+89.9% CPU use with 8 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -159,7 +159,7 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 2.874e-06  |            |       |100.00
+Other   |            | 3.058e-06  |            |       |100.00
 
 Nlocal:        2.00000 ave           4 max           0 min
 Histogram: 2 0 0 0 0 4 0 0 0 2

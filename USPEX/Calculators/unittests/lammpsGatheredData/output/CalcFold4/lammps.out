@@ -14,7 +14,7 @@ Reading data file ...
   2 by 2 by 2 MPI processor grid
   reading atoms ...
   16 atoms
-  read_data CPU = 0.003 seconds
+  read_data CPU = 0.004 seconds
 Neighbor list info ...
   update every 1 steps, delay 0 steps, check yes
   max neighbors/atom: 2000, page size: 100000
@@ -35,20 +35,20 @@ Per MPI rank memory allocation (min/avg/max) = 4.090 | 4.090 | 4.090 Mbytes
 Step Enthalpy TotEng KinEng PotEng Temp Pxx Pyy Pzz Pxy Pxz Pyz 
        0            0            0            0            0            0            0            0            0            0            0            0 
     1000   -74.407345    -86.43165    1.4712336   -87.902884    758.79724    55885.454    155975.91    27838.327   -2407.5757   -6087.9804   -2609.3433 
-Loop time of 0.20477 on 8 procs for 1000 steps with 16 atoms
+Loop time of 0.126177 on 8 procs for 1000 steps with 16 atoms
 
-Performance: 421.937 ns/day, 0.057 hours/ns, 4883.527 timesteps/s
-28.3% CPU use with 8 MPI tasks x 1 OpenMP threads
+Performance: 684.753 ns/day, 0.035 hours/ns, 7925.385 timesteps/s
+40.7% CPU use with 8 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 0.0041799  | 0.014961   | 0.083789   |  21.3 |  7.31
-Neigh   | 3.7625e-05 | 4.768e-05  | 5.7489e-05 |   0.0 |  0.02
-Comm    | 0.10114    | 0.16999    | 0.18087    |   6.3 | 83.02
-Output  | 0.0014609  | 0.0021763  | 0.00572    |   2.9 |  1.06
-Modify  | 0.011233   | 0.014935   | 0.015866   |   1.2 |  7.29
-Other   |            | 0.002657   |            |       |  1.30
+Pair    | 0.0041498  | 0.02363    | 0.079826   |  21.1 | 18.73
+Neigh   | 3.7819e-05 | 4.8e-05    | 5.8338e-05 |   0.0 |  0.04
+Comm    | 0.02755    | 0.083712   | 0.10312    |  11.2 | 66.35
+Output  | 0.0013932  | 0.0021337  | 0.0057167  |   2.9 |  1.69
+Modify  | 0.01076    | 0.014258   | 0.015057   |   1.1 | 11.30
+Other   |            | 0.002395   |            |       |  1.90
 
 Nlocal:        2.00000 ave           2 max           2 min
 Histogram: 8 0 0 0 0 0 0 0 0 0
@@ -78,9 +78,9 @@ Setting up Verlet run ...
 Per MPI rank memory allocation (min/avg/max) = 5.341 | 5.341 | 5.341 Mbytes
 Step Enthalpy TotEng KinEng PotEng Temp Pxx Pyy Pzz Pxy Pxz Pyz 
     1000   -74.407345    -86.43165    1.4712336   -87.902884    758.79724    55885.454    155975.91    27838.327   -2407.5757   -6087.9804   -2609.3433 
-Loop time of 2.76044e-06 on 8 procs for 0 steps with 16 atoms
+Loop time of 2.80142e-06 on 8 procs for 0 steps with 16 atoms
 
-67.9% CPU use with 8 MPI tasks x 1 OpenMP threads
+66.9% CPU use with 8 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -90,7 +90,7 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 2.76e-06   |            |       |100.00
+Other   |            | 2.801e-06  |            |       |100.00
 
 Nlocal:        2.00000 ave           2 max           2 min
 Histogram: 8 0 0 0 0 0 0 0 0 0
