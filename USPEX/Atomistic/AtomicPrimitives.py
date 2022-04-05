@@ -236,7 +236,7 @@ class AtomicStructure:
         return newStructure
 
     @staticmethod
-    def assemble(molecules, cell, environment=None, **kwargs):
+    def assemble(molecules, cell, environment=None, vacuum_sizes=None, **kwargs): # lots of work with calcs
         """
         TODO move to AtomicDisassembler class.
 
@@ -258,10 +258,13 @@ class AtomicStructure:
             lowerBound += size
         if environment is not None:
             coordinates = list(np.asarray(coordinates, dtype = float) + environment.calculateOffset(molecules, cell))
+            assembledCell = environment.getStructure().getCell()
             atomTypes.extend(environment.getStructure().getAtomTypes())
             coordinates.extend(environment.getStructure().getCartesianCoordinates())
-        return (AtomicStructure(atomTypes, coordinates, cell),
-                AtomicDisassembler(indices, environment))
+        else:
+            assembledCell = cell
+        return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
+                AtomicDisassembler(indices, environment, cell))  # cell of molecules
 
 
 class AtomicDisassembler:
@@ -271,7 +274,7 @@ class AtomicDisassembler:
     """
 
 
-    def __init__(self, indices, environment):
+    def __init__(self, indices, environment, cell):
         """
 
         :param indices:
@@ -280,16 +283,17 @@ class AtomicDisassembler:
         """
         self.indices = [np.asarray(inds, dtype = int) for inds in indices]
         self.environment = environment
+        self.cell = cell
 
     @staticmethod
-    def createFlatDisassembler(N):
+    def createFlatDisassembler(N, cell):
         """
         Helper constructor. Creates disassembler for structure of given size, which decomposes it into individual atoms.
 
         :param N: size of structure for which disaasembler is required.
 
         """
-        return AtomicDisassembler([[i] for i in range(N)], None)
+        return AtomicDisassembler([[i] for i in range(N)], environment=None, cell=cell)
 
     @property
     def envIndices(self):
@@ -310,14 +314,22 @@ class AtomicDisassembler:
         """
         atomTypes = atomicStructure.getAtomTypes()
         coordinates = atomicStructure.getCartesianCoordinates()
-        cell = atomicStructure.getCell()
+        sys_allcoords = []
+        for indices in self.indices:
+            sys_allcoords.extend(coordinates[indices])
+        sys_allcoords = np.array(sys_allcoords)
+        offset = np.min(sys_allcoords, axis=0)
         molecules = []
         for indices in self.indices:
-            molecules.append(AtomicStructure(atomTypes[indices], coordinates[indices]))
+            molecules.append(AtomicStructure(atomTypes[indices], coordinates[indices] - offset))
+
+        assembledCell = atomicStructure.getCell()
+        cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.cell.getPBC()).getEnvelopeCell(sys_allcoords,
+                                                                                                           vacuumSize=1.0)
         system = {'molecules': molecules, 'cell': cell}
         if self.environment is not None:
-            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], cell)
-            system['environment'] = type(self.environment)(envStructure, self.environment.getThickness(), np.zeros(3))
+            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
+            system['environment'] = type(self.environment)(envStructure, self.environment.getThickness(), offset)
         return system
 
     def decomposeDisplacements(self, displacements, structure):
