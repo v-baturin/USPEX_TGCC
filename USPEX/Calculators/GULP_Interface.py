@@ -79,6 +79,7 @@ class GULP_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        system['assembled_cell'] = cell
         coordinates = cell.center(coordinates)
 
         files_to_delete = ['output', 'optimized.structure']
@@ -306,9 +307,8 @@ class GULP_Interface(SHELL_Interface):
         # fractional for bulk
         # cartesian for surface
 
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
+        cell = system.pop('assembled_cell')
+        disassembler = system.pop('disassembler')
 
         # GULP prints the fractional coordinates before the Final lattice vectors
         # so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
