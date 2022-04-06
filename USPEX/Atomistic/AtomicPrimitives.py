@@ -331,7 +331,7 @@ class AtomicDisassembler:
         molecules = []
         for indices in self.indices:
             molecules.append(AtomicStructure(atomTypes[indices], coordinates[indices] - offsetVector))
-        system = {'molecules': molecules, 'cell': cell}
+        system.update({'molecules': molecules, 'cell': cell})
         return system
 
     def decomposeDisplacements(self, displacements, structure):
