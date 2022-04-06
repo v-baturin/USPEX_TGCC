@@ -15,14 +15,14 @@ class Substrate:
     
     _DEFAULT_SUBSTRATE_SHIFT = 2.0
 
-    def __init__(self, structure, bufferThickness = None, offsetVector = None):
+    def __init__(self, structure, bufferThickness = None, offsetVector = None): # TODO: add tiling (maybe)
         """
         :param structure: atomic structure associated with this environment.
         :param offsetVector: vector to be added to molecules centers when assemble whole structure.
             If not provided such vector will be calculated on demand.
         """
         self._structure = structure
-        self._thickness = bufferThickness
+        self._thickness = bufferThickness  # comes from input
         self._offsetVector = offsetVector
         antiPBC = self._structure.getCell().getAntiPBC()
         assert sum(antiPBC) == 1
@@ -37,7 +37,7 @@ class Substrate:
         """
         return self._thickness
 
-    def calculateOffset(self, molecules, cell):
+    def calculateOffset(self, molecules, syscell=None):
         """
         Calculate or retrieve vector to be added to each molecule when assemble whole structure.
         If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
@@ -52,12 +52,17 @@ class Substrate:
             offsetVector = np.asarray(self._offsetVector, dtype=float)
         else:
             cell = self._structure.getCell()
-            axis = cell.getCellVectors()[self._ind]
-            envCoordinates = cell.cartesianToFractional(self._structure.getCartesianCoordinates())[:, self._ind]
-            coordinates = np.vstack([cell.cartesianToFractional(molecule.getCartesianCoordinates())
-                                     for molecule in molecules])[:, self._ind]
-            offsetVector = axis * (self._DEFAULT_SUBSTRATE_SHIFT / np.linalg.norm(axis)
-                                   + envCoordinates.max() - coordinates.min())
+            frac_coords = type(self._structure).assemble(molecules, cell)[0].getFractionalCoordinates()
+            sysPBC = syscell.getPBC()
+            offsetVector = np.zeros(3)
+            for idx in range(3):
+                curr_axis = cell.getCellVectors()[idx]
+                if idx == self._ind:
+                    fracEnvCoordinates = cell.cartesianToFractional(self._structure.getCartesianCoordinates())
+                    offsetVector += curr_axis * (self._DEFAULT_SUBSTRATE_SHIFT / np.linalg.norm(curr_axis)
+                                   + fracEnvCoordinates[:, idx].max() - frac_coords[:, idx].min())
+                elif not sysPBC[idx]:
+                    offsetVector += curr_axis * (0.5 - 0.5 * (frac_coords[:, idx].min() + frac_coords[:, idx].max()))
         return offsetVector
         
     def getStructure(self):
