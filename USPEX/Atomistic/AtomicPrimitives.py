@@ -318,18 +318,20 @@ class AtomicDisassembler:
         for indices in self.indices:
             sys_allcoords.extend(coordinates[indices])
         sys_allcoords = np.array(sys_allcoords)
-        offset = np.min(sys_allcoords, axis=0)
-        molecules = []
-        for indices in self.indices:
-            molecules.append(AtomicStructure(atomTypes[indices], coordinates[indices] - offset))
-
         assembledCell = atomicStructure.getCell()
         cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.cell.getPBC()).getEnvelopeCell(sys_allcoords,
                                                                                                            vacuumSize=1.0)
-        system = {'molecules': molecules, 'cell': cell}
+        system=dict()
         if self.environment is not None:
+            offsetVector = np.min(sys_allcoords, axis=0)
             envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
-            system['environment'] = type(self.environment)(envStructure, self.environment.getThickness(), offset)
+            system['environment'] = type(self.environment)(envStructure, self.environment.getThickness(), offsetVector)
+        else:
+            offsetVector = 0
+        molecules = []
+        for indices in self.indices:
+            molecules.append(AtomicStructure(atomTypes[indices], coordinates[indices] - offsetVector))
+        system = {'molecules': molecules, 'cell': cell}
         return system
 
     def decomposeDisplacements(self, displacements, structure):
