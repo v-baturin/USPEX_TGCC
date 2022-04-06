@@ -56,6 +56,7 @@ class FHIaims_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        system['assembled_cell'] = cell
         coordinates = cell.center(coordinates)
 
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
@@ -164,11 +165,9 @@ class FHIaims_Interface(SHELL_Interface):
             lat = np.diag(coor.max(axis=0) - coor.min(axis=0) + 10)
             coor += np.diag(lat * 0.5)
 
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
-
-        cell = self.cellType(lat, cell.getPBC()).getEnvelopeCell(coor, 0)
+        assembled_cell = system.pop('assembled_cell')
+        disassembler = system.pop('disassembler')
+        cell = self.cellType(lat, assembled_cell.getPBC()).getEnvelopeCell(coor, 0)
         positions = cell.center(coor)
         system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
 

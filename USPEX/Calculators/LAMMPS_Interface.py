@@ -69,6 +69,8 @@ class LAMMPS_Interface(SHELL_Interface):
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
         system['atomTypes'] = structure.getAtomTypes()
+        system['assembled_cell'] = structure.getRectifiedCell().getEnvelopeCell(structure.getCartesianCoordinates(),
+                                                                                self.vacuumSize)
 
         # coordinates = structure.getCartesianCoordinates()
         # cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
@@ -191,11 +193,10 @@ class LAMMPS_Interface(SHELL_Interface):
         return lammps_completed and tolerance_achieved
 
     def readOutput(self, system, calcFolder : str):
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
-        atomTypes = system['atomTypes']
-        del system['atomTypes']
+        # cell = system['cell']
+        disassembler = system.pop('disassembler')
+        atomTypes = system.pop('atomTypes')
+        assembled_cell = system.pop('assembled_cell')
 
         from ase.io.lammpsrun import read_lammps_dump
         atoms = read_lammps_dump(pj(calcFolder, 'lammps.dump'))
@@ -208,7 +209,7 @@ class LAMMPS_Interface(SHELL_Interface):
         # atoms.translate(cdisp)
 
         positions = atoms.get_positions()
-        cell = self.cellType(atoms.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
+        cell = self.cellType(atoms.get_cell().array, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)
         positions = cell.center(positions)
         structure = self.structureType(atomTypes, positions, cell=cell)
         system.update(disassembler.disassemble(structure))

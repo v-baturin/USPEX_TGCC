@@ -70,7 +70,7 @@ class GULP_InterfaceTest(unittest.TestCase):
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
         with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
             system = AtomisticRepresentation.readAtomicStructure(f)
-        system['effective_cell'] = system['cell']
+        system['assembled_cell'] = system['cell']
         system['ID'] = 0
         system['disassembler'] = AtomisticRepresentation.atomicDisassemblerType.createFlatDisassembler(len(system['molecules']), cell=system['cell'])
 

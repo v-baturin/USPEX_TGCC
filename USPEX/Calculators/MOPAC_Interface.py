@@ -65,6 +65,7 @@ class MOPAC_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell()
+        system['assembled_cell'] = cell
 
         # files_to_delete = ['output', 'optimized.structure']
         # for f in files_to_delete:
@@ -116,9 +117,8 @@ class MOPAC_Interface(SHELL_Interface):
 
         with open(pj(calcFolder, self.arcFile), 'rt') as arc_fid:
 
-            cell = system['cell']
-            disassembler = system['disassembler']
-            del system['disassembler']
+            assembled_cell = system.pop('assembled_cell')
+            disassembler = system.pop('disassembler')
 
 
             #  Parsing energy
@@ -148,11 +148,11 @@ class MOPAC_Interface(SHELL_Interface):
                         atomTypes.append(self.atomType(sym))
 
             positions = np.asarray(positions)
-            lattice_vectors = cell.getCellVectors()
-            for i, dim in enumerate(cell.getPBC()):
+            lattice_vectors = assembled_cell.getCellVectors()
+            for i, dim in enumerate(assembled_cell.getPBC()):
                 if dim:
                     lattice_vectors[i] = np.asarray(new_lattice.pop(0))
-            cell = self.cellType(lattice_vectors, pbc=cell.getPBC())
+            cell = self.cellType(lattice_vectors, pbc=assembled_cell.getPBC())
             cell = cell.getEnvelopeCell(positions, 0)
             positions = cell.center(positions)
             structure = self.structureType(atomTypes, positions, cell=cell)

@@ -40,6 +40,7 @@ class ABINIT_Interface_Test(unittest.TestCase):
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
                 system = AtomisticRepresentation.readAtomicStructure(f)
+                system['assembled_cell'] = system['cell']
                 system['ID'] = ID
                 system['externalPressure'] = 130.0
             os.mkdir(WORKPATH)
