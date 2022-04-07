@@ -181,7 +181,7 @@ class LAMMPS_Interface(SHELL_Interface):
             numbers = atoms.get_atomic_numbers()
             symbols = [self.specorder[i-1] for i in numbers]
             atomTypes = np.array([self.atomType(symbol) for symbol in symbols], dtype=self.atomType)
-            cell = self.cellType(atoms.get_cell().array, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)            positions = cell.center(positions)
+            cell = self.cellType(atoms.get_cell().array, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)
             positions = cell.center(positions)
             structure = self.structureType(atomTypes, positions, cell=cell)
             system.update(disassembler.disassemble(structure))
