@@ -107,7 +107,7 @@ class LAMMPS_Interface(SHELL_Interface):
         thermo_style_occurence = ['thermo_style' in line for line in content]
         thermo_style_content = 'thermo_style custom step ' + ' '.join(REQUIRED_THERMO_STYLE_PROPERTIES) + '\n'
         if any(thermo_style_occurence):
-            index = np.where(read_data_occurence)[0][0]
+            index = np.where(thermo_style_content)[0][0]
             content[index] = thermo_style_content
         else:
             index = np.where(pair_style_occurence)[0][0]
@@ -190,6 +190,8 @@ class LAMMPS_Interface(SHELL_Interface):
             system['stressTensor'] = properties['StressTensor']
         elif self.targetObject == 'environment':
             system['environmentEnthalpy'] = properties['Enthalpy']
+            system['environmentEnergy'] = properties['TotEng']
+            system['environmentStressTensor'] = properties['StressTensor']
 
     def readProperties(self, calcFolder: str):
         if os.path.exists(pj(calcFolder, self.outputFile)):
