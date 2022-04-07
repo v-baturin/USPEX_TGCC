@@ -36,8 +36,6 @@ class LAMMPS_Interface(SHELL_Interface):
     data_file = 'STRUC'
     dump_file = 'lammps.dump'
     
-
-
     _DEFAULT_SLEEP_TIME = 30
     structureType = None
     atomType = None
@@ -76,6 +74,8 @@ class LAMMPS_Interface(SHELL_Interface):
         '''
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
+        system['assembled_cell'] = structure.getRectifiedCell().getEnvelopeCell(structure.getCartesianCoordinates(),
+                                                                                self.vacuumSize)
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
@@ -170,9 +170,8 @@ class LAMMPS_Interface(SHELL_Interface):
         return lammps_completed and tolerance_achieved        
 
     def readOutput(self, system, calcFolder : str):
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
+        disassembler = system.pop('disassembler')
+        assembled_cell = system.pop('assembled_cell')
 
         properties = self.readProperties(calcFolder)
         
@@ -182,9 +181,10 @@ class LAMMPS_Interface(SHELL_Interface):
             numbers = atoms.get_atomic_numbers()
             symbols = [self.specorder[i-1] for i in numbers]
             atomTypes = np.array([self.atomType(symbol) for symbol in symbols], dtype=self.atomType)
-            cell = self.cellType(atoms.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
+            cell = self.cellType(atoms.get_cell().array, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)            positions = cell.center(positions)
             positions = cell.center(positions)
-            system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
+            structure = self.structureType(atomTypes, positions, cell=cell)
+            system.update(disassembler.disassemble(structure))
             system['enthalpy'] = properties['Enthalpy']
             system['energy'] = properties['TotEng']
             system['stressTensor'] = properties['StressTensor']
@@ -231,8 +231,6 @@ class LAMMPS_Interface(SHELL_Interface):
         cls.atomType = atomType
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
-
-
 
 def write_lammps_data_with_label(filepath, atoms, specorder, label=None):
     atoms.write(filepath, format='lammps-data', specorder=specorder)
