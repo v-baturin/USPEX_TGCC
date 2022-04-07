@@ -52,14 +52,13 @@ class QE_Interface(SHELL_Interface):
         self.vacuumSize = vacuumSize
 
     def readOutput(self, system : dict, calcFolder: str):
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
+        assembled_cell = system.pop('assembled_cell')
+        disassembler = system.pop('disassembler')
 
         with open(pj(calcFolder, self.outputFile), 'rt') as f:
             tmp = next(read_espresso_out(f, index=slice(None, -2, -1)))
         if tmp:
-            cell = self.cellType(tmp.get_cell().array, cell.getPBC())
+            cell = self.cellType(tmp.get_cell().array, assembled_cell.getPBC())
             positions = tmp.get_positions()
             cell = cell.getEnvelopeCell(positions, 0)
             positions = cell.center(positions)
@@ -76,6 +75,7 @@ class QE_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        system['assembled_cell'] = cell
         coordinates = cell.center(coordinates)
 
 

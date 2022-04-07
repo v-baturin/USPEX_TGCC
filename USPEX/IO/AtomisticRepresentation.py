@@ -164,9 +164,9 @@ class AtomisticRepresentation(object):
     @classmethod
     def readAtomicStructure(cls, fileDescriptor, disassembler = None, pbc=(1,1,1)) -> dict:
         atoms = read_vasp(fileDescriptor)
-        disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(atoms)) if disassembler is None else disassembler
-        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
         cell = cls.cellType(atoms.get_cell().array, pbc)
+        disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(atoms), cell=cell) if disassembler is None else disassembler
+        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
         return disassembler.disassemble(cls.structureType(atomTypes, atoms.get_positions(), cell = cell))
 
     @classmethod

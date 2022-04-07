@@ -60,6 +60,7 @@ class MLIP_Interface(SHELL_Interface):
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
         coordinates = cell.center(coordinates)
+        system['assembled_cell'] = cell
 
         # create empty input file
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
@@ -91,15 +92,14 @@ class MLIP_Interface(SHELL_Interface):
         return False
 
     def readOutput(self, system, calcFolder: str):
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
+        assembled_cell = system.pop('assembled_cell')
+        disassembler = system.pop('disassembler')
 
         atoms = readcfg(pj(calcFolder, self.out_cfg_file))
         if atoms:
 
             positions = atoms.get_positions()
-            cell = self.cellType(atoms.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)  # Trimming vacuum
+            cell = self.cellType(atoms.get_cell().array, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)  # Trimming vacuum
             positions = cell.center(positions)
             structure = self.structureType([self.atomType(el) for el in atoms.get_chemical_symbols()], positions,
                                            cell=cell)

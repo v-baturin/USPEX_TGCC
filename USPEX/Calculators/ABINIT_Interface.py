@@ -76,9 +76,8 @@ class ABINIT_Interface(SHELL_Interface):
         self.vacuumSize = vacuumSize
 
     def readOutput(self, system, calcFolder: str):
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
+        assembled_cell = system.pop('assembled_cell')
+        disassembler = system.pop('disassembler')
 
         if not os.path.isfile(pj(calcFolder, self.gsr_file_name)):
             msg = (f'file {self.gsr_file_name:s} not found in {os.path.basename(calcFolder):s}.'
@@ -93,7 +92,7 @@ class ABINIT_Interface(SHELL_Interface):
         atomSymbols = [el.short_name for el in atomTypes]
         for i, position in zip(np.argsort(atomSymbols), tmp_positions):
             positions[i] = position
-        cell = self.cellType(gsr.structure.lattice.matrix, cell.getPBC()).getEnvelopeCell(positions, 0)
+        cell = self.cellType(gsr.structure.lattice.matrix, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)
         positions = cell.center(positions)
         system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
         system['enthalpy'] = float(gsr.energy) + \
@@ -112,6 +111,7 @@ class ABINIT_Interface(SHELL_Interface):
         atomTypes = structure.getAtomTypes()
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        system['assembled_cell'] = cell
         coordinates = cell.center(coordinates)
 
 
