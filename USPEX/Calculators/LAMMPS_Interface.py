@@ -23,10 +23,10 @@ REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp',
                                     'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
 
 class LAMMPS_Interface(SHELL_Interface):
-    '''
+    """
     Calculator for LAMMPS.
     Local running
-    '''
+    """
 
     # working output files
     inputFile = 'lammps.in'
@@ -44,12 +44,12 @@ class LAMMPS_Interface(SHELL_Interface):
 
     def __init__(self, tag: str, lammps_in: str, libs: List[str], specorder: List[str],
                  vacuumSize: float = 10.0, targetObject: str = 'default', **kwargs):
-        '''
+        """
 
         :param params: dictionary with parameters:
                 * lammps_in: (str) path to lammps.in-file.
                 * libs: (list) list of paths to interatomic potentials and associated files.
-        '''
+        """
 
         super().__init__(**kwargs)
 
@@ -68,10 +68,10 @@ class LAMMPS_Interface(SHELL_Interface):
         assert self.targetObject in AVAILABLE_TARGET_OBEJECTS
 
     def prepareLocalCalculation(self, system, calcFolder : str):
-        '''
+        """
         :param system:
         :param calcFolder:
-        '''
+        """
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
         system['assembled_cell'] = structure.getRectifiedCell().getEnvelopeCell(structure.getCartesianCoordinates(),
@@ -107,7 +107,7 @@ class LAMMPS_Interface(SHELL_Interface):
         thermo_style_occurence = ['thermo_style' in line for line in content]
         thermo_style_content = 'thermo_style custom step ' + ' '.join(REQUIRED_THERMO_STYLE_PROPERTIES) + '\n'
         if any(thermo_style_occurence):
-            index = np.where(thermo_style_content)[0][0]
+            index = np.where(thermo_style_occurence)[0][0]
             content[index] = thermo_style_content
         else:
             index = np.where(pair_style_occurence)[0][0]
