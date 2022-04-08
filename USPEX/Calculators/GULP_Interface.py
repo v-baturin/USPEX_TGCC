@@ -243,8 +243,8 @@ class GULP_Interface(SHELL_Interface):
     def readEnergy(self, content) -> float:
         energy_entalpy = np.inf
         for i, line in enumerate(content):
-            m = re.match(r'\s*Total lattice energy\s*=\s*(\S+)\s*eV', line)
-            m1 = re.match(r'\s*Total lattice enthalpy\s*=\s*(\S+)\s*eV', line)
+            m = re.match(r'\s*Total lattice energy\s*=\s*(-?[0-9.]+)\s*eV', line)
+            m1 = re.match(r'\s*Total lattice enthalpy\s*=\s*(-?[0-9.]+)\s*eV', line)
             if m or m1:
                 if m:
                     energy_entalpy = float(m.group(1))
