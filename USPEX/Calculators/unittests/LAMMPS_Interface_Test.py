@@ -22,7 +22,8 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
 
     def test_life(self):
         lammps = LAMMPS_Interface(tag='0', perturbate=False,
-                                  libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'))
+                                  libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'),
+                                  specorder=['C'])
         radialDistributionUtility = RadialDistributionUtility()
 
         for ID in range(10):
@@ -54,7 +55,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         # HERE what is written in ginput and goption no make sense.
         # Only output will be parsed and properties checked
         interface = LAMMPS_Interface(tag='0', perturbate=False,
-                                  libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'))
+                                  libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'), specorder=['C'])
         with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
             system = AtomisticRepresentation.readAtomicStructure(f)
         system['ID'] = 0
@@ -64,5 +65,5 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         system['assembled_cell'] = system['cell']
 
         interface.readOutput(system=system, calcFolder=pj(GATHEREDPATH, f'output/CalcFold{ID}'))
-        self.assertTrue(np.isclose(system['enthalpy'], -105.503))
+        self.assertTrue(np.isclose(system['enthalpy'], -102.64364))
 

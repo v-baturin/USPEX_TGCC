@@ -13,7 +13,12 @@ if not exists(FILENAME):
         'presetFitness': {
             'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'enthalpy')),
+            'refinedEnergy': ('minus', 'energy', 'environmentEnergy'),
+            'refinedEnergyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
+                                                                        'simpleMoleculeUtility.composition'), 'refinedEnergy')),
             'refinedEnthalpy': ('minus', 'enthalpy', 'environmentEnthalpy'),
+            'refinedEnthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
+                                                                         'simpleMoleculeUtility.composition'), 'refinedEnthalpy')),
             'normRefinedEnthalpy': ('divide', 'refinedEnthalpy', 'cellUtility.area'),
             'normRefinedAbsCompCH': ('convexHullHeight', ('getAbsoluteCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'normRefinedEnthalpy')),
