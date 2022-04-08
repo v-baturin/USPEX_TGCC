@@ -79,6 +79,7 @@ class GULP_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        system['assembled_cell'] = cell
         coordinates = cell.center(coordinates)
 
         files_to_delete = ['output', 'optimized.structure']
@@ -306,9 +307,8 @@ class GULP_Interface(SHELL_Interface):
         # fractional for bulk
         # cartesian for surface
 
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
+        assembled_cell = system.pop('assembled_cell')
+        disassembler = system.pop('disassembler')
 
         # GULP prints the fractional coordinates before the Final lattice vectors
         # so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
@@ -337,7 +337,7 @@ class GULP_Interface(SHELL_Interface):
                     temp = content[j].split()
                     for k in range(3):
                         lattice_vectors[j - s][k] = float(temp[k])
-                cell = self.cellType(lattice_vectors, pbc = cell.getPBC())
+                cell = self.cellType(lattice_vectors, pbc = assembled_cell.getPBC())
                 if fractional_coordinates is not None:
                     positions = cell.fractionalToCartesian(fractional_coordinates)
 
@@ -348,7 +348,7 @@ class GULP_Interface(SHELL_Interface):
                     temp = content[j].split()
                     for k in range(3):
                         lattice_vectors[j - s][k] = float(temp[k])
-                cell = self.cellType(lattice_vectors, pbc = cell.getPBC())
+                cell = self.cellType(lattice_vectors, pbc = assembled_cell.getPBC())
                 if fractional_coordinates is not None:
                     positions = cell.fractionalToCartesian(fractional_coordinates)
 
@@ -367,7 +367,7 @@ class GULP_Interface(SHELL_Interface):
                     scaled_positions.append(XYZ)
                     atomTypes.append(self.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
-                positions = cell.fractionalToCartesian(fractional_coordinates)
+                positions = assembled_cell.fractionalToCartesian(fractional_coordinates)
         cell = cell.getEnvelopeCell(positions, 0)
         positions = cell.center(positions)
         structure = self.structureType(atomTypes, positions, cell = cell)

@@ -126,6 +126,7 @@ class VASP_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        system['assembled_cell'] = cell
         coordinates = cell.center(coordinates)
 
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
@@ -383,11 +384,9 @@ class VASP_Interface(SHELL_Interface):
         return d_s
 
     def readStructure(self, system, calcFolder : str):
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
-        symbolsOrder = system['symbolsOrder']
-        del system['symbolsOrder']
+        assembled_cell = system.pop('assembled_cell')
+        disassembler = system.pop('disassembler')
+        symbolsOrder = system.pop('symbolsOrder')
 
         tmp = read_vasp_out(pj(calcFolder, self.outcar_file))
         if tmp:
@@ -400,7 +399,7 @@ class VASP_Interface(SHELL_Interface):
                     positions[i] = position
                     atomTypes[i] = self.atomType(symbol)
 
-                cell = self.cellType(tmp.get_cell().array, cell.getPBC()).getEnvelopeCell(positions, 0)
+                cell = self.cellType(tmp.get_cell().array, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)
                 positions = cell.center(positions)
                 system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
                 system['enthalpy'] = float(tmp.get_calculator().results['energy']) + \

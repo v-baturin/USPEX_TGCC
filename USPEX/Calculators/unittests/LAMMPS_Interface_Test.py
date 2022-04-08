@@ -62,7 +62,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         s, d = type(system['molecules'][0]).assemble(**system)
         system['disassembler'] = d
         system['atomTypes'] = s.getAtomTypes()
-
+        system['assembled_cell'] = system['cell']
 
         interface.readOutput(system=system, calcFolder=pj(GATHEREDPATH, f'output/CalcFold{ID}'))
         self.assertTrue(np.isclose(system['enthalpy'], -102.64364))

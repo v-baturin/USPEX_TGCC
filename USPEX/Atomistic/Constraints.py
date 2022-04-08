@@ -31,11 +31,12 @@ class Constraints:
         composition = self.simpleMoleculeUtility.composition(system)
         goodStructure = np.all(atomDistances >= minDistMatrix) \
                         and self.compositionSpace.isGoodComposition(composition) # and self.cellUtility.isGoodCell(cell)
-        if goodStructure and (self.cellUtility.getDim() == 1 or self.cellUtility.getDim() == 2):
+        if goodStructure:
             structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
             cell = structure.getRectifiedCell()
             coordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())
-            cell = cell.getAlignedCell(self.cellUtility.getAxis())
+            if (self.cellUtility.getDim() == 1 or self.cellUtility.getDim() == 2):
+                cell = cell.getAlignedCell(self.cellUtility.getAxis())
             structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell)
             system.update(disassembler.disassemble(structure))
         return goodStructure

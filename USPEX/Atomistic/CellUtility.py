@@ -892,14 +892,14 @@ class Cell:
         :return:
         """
         if affectedDims is None:
-            affectedDims = 1 - np.asarray(self._pbc, dtype=int)
+            affectedDims = self.getAntiPBC()
         affectedDims = np.array(affectedDims).reshape((1, 3))
         fracCoords = self.cartesianToFractional(coordinates)
         shift = np.array([0.5, 0.5, 0.5]) - 0.5 * (np.min(fracCoords, axis=0) + np.max(fracCoords, axis=0))
         newFrac = fracCoords + shift * affectedDims
         return self.fractionalToCartesian(newFrac)
 
-    def decomposeCell(self, other):
+    def decomposeCell(self, other): # TODO
         """
         Decompose cell vectors of given unit cell as linear composition of cell vectors of this unit cell.
 
@@ -907,11 +907,13 @@ class Cell:
 
         :return: 3*3 matrix of decomposition coefficients.
         """
-        assert self._pbc == other.getPBC()
-        matrix = np.eye(3)
-        inds = np.nonzero(self._pbc)
-        matrix[inds] = np.linalg.solve(self.getCellVectors().T,other.getCellVectors().T).T[inds]
-        return matrix
+        if self._pbc == other.getPBC():
+            matrix = np.eye(3)
+            inds = np.nonzero(self._pbc)
+            matrix[inds] = np.linalg.solve(self.getCellVectors().T,other.getCellVectors().T).T[inds]
+            return matrix
+        else:
+            return np.eye(3)
 
     def randomTransformation(self):
         """
