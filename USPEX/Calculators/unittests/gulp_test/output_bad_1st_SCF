@@ -1,0 +1,3005 @@
+********************************************************************************
+*                       GENERAL UTILITY LATTICE PROGRAM                        *
+*                                 Julian Gale                                  *
+*                      Nanochemistry Research Institute                        *
+*                           Department of Chemistry                            *
+*                    Curtin University, Western Australia                      *
+********************************************************************************
+* Version = 3.5.5 * Last modified =  14th February 2011                        *
+********************************************************************************
+*  optimise     - perform optimisation run                                     *
+*  conp         - constant pressure calculation                                *
+*  nosymmetry   - turn off symmetry after initial structure generation         *
+*  conjugate    - use conjugate gradients minimiser                            *
+********************************************************************************
+
+  Job Started  at 21:35.06  8th April      2022                               
+
+  Number of CPUs =     1
+
+
+  Total number of configurations input =   1
+
+********************************************************************************
+*  Input for Configuration =   1                                               *
+********************************************************************************
+
+  Formula = Mo16Mg64O64                                                 
+
+  Number of irreducible atoms/shells =     144
+
+
+  Total number atoms/shells =     144
+
+  Dimensionality = 3               :  Bulk   
+
+
+
+  Cartesian lattice vectors (Angstroms) :
+
+       16.760000    0.000000    0.000000
+       -0.011980   16.741996    0.000000
+        0.000000    0.000000   18.846000
+
+  Cell parameters (Angstroms/Degrees):
+
+  a =      16.7600    alpha =  90.0000
+  b =      16.7420    beta  =  90.0000
+  c =      18.8460    gamma =  90.0410
+
+  Initial cell volume =        5288.109354 Angs**3
+
+  Temperature of configuration =  0.000     K 
+
+  Pressure of configuration =         0.000 GPa 
+
+  Fractional coordinates of asymmetric unit :
+
+--------------------------------------------------------------------------------
+   No.  Atomic       x           y          z         Charge      Occupancy
+        Label      (Frac)      (Frac)     (Frac)        (e)         (Frac)  
+--------------------------------------------------------------------------------
+      1 Mo    c    0.256088    0.383893    0.731646     0.00000    1.000000    
+      2 Mo    c    0.595817 *  0.458397 *  0.493634 *   0.00000    1.000000    
+      3 Mo    c    0.777621 *  0.488919 *  0.572347 *   0.00000    1.000000    
+      4 Mo    c    0.408398 *  0.355242 *  0.534886 *   0.00000    1.000000    
+      5 Mo    c    0.415150 *  0.574615 *  0.622650 *   0.00000    1.000000    
+      6 Mo    c    0.626054 *  0.389603 *  0.424447 *   0.00000    1.000000    
+      7 Mo    c    0.427232 *  0.499792 *  0.394201 *   0.00000    1.000000    
+      8 Mo    c    0.686296 *  0.640921 *  0.734691 *   0.00000    1.000000    
+      9 Mo    c    0.639065 *  0.262605 *  0.571579 *   0.00000    1.000000    
+     10 Mo    c    0.510061 *  0.213748 *  0.438642 *   0.00000    1.000000    
+     11 Mo    c    0.601063 *  0.413193 *  0.718089 *   0.00000    1.000000    
+     12 Mo    c    0.508457 *  0.614603 *  0.265309 *   0.00000    1.000000    
+     13 Mo    c    0.774985 *  0.339177 *  0.407594 *   0.00000    1.000000    
+     14 Mo    c    0.259378 *  0.490546 *  0.578993 *   0.00000    1.000000    
+     15 Mo    c    0.551429 *  0.620353 *  0.492373 *   0.00000    1.000000    
+     16 Mo    c    0.504804 *  0.384319 *  0.602647 *   0.00000    1.000000    
+     17 Mg    c    0.002338 *  0.990111 *  0.276507 *   0.00000    1.000000    
+     18 Mg    c    0.127587 *  0.114999 *  0.276921 *   0.00000    1.000000    
+     19 Mg    c    0.002209 *  0.115259 *  0.389164 *   0.00000    1.000000    
+     20 Mg    c    0.127296 *  0.990067 *  0.389777 *   0.00000    1.000000    
+     21 Mg    c    0.002686 *  0.239763 *  0.275523 *   0.00000    1.000000    
+     22 Mg    c    0.127147 *  0.364825 *  0.274772 *   0.00000    1.000000    
+     23 Mg    c    0.002189 *  0.365304 *  0.387874 *   0.00000    1.000000    
+     24 Mg    c    0.127344 *  0.240619 *  0.389130 *   0.00000    1.000000    
+     25 Mg    c    0.002030 *  0.490070 *  0.274425 *   0.00000    1.000000    
+     26 Mg    c    0.126879 *  0.615458 *  0.273827 *   0.00000    1.000000    
+     27 Mg    c    0.002143 *  0.614841 *  0.387450 *   0.00000    1.000000    
+     28 Mg    c    0.127483 *  0.490293 *  0.386434 *   0.00000    1.000000    
+     29 Mg    c    0.002053 *  0.740467 *  0.275369 *   0.00000    1.000000    
+     30 Mg    c    0.127291 *  0.865524 *  0.276161 *   0.00000    1.000000    
+     31 Mg    c    0.002182 *  0.864839 *  0.389067 *   0.00000    1.000000    
+     32 Mg    c    0.127286 *  0.739768 *  0.387898 *   0.00000    1.000000    
+     33 Mg    c    0.252512 *  0.990396 *  0.277387 *   0.00000    1.000000    
+     34 Mg    c    0.377449 *  0.115124 *  0.278285 *   0.00000    1.000000    
+     35 Mg    c    0.252495 *  0.115608 *  0.390525 *   0.00000    1.000000    
+     36 Mg    c    0.377474 *  0.990128 *  0.390837 *   0.00000    1.000000    
+     37 Mg    c    0.252570 *  0.239705 *  0.276870 *   0.00000    1.000000    
+     38 Mg    c    0.376735 *  0.364680 *  0.272985 *   0.00000    1.000000    
+     39 Mg    c    0.252358 *  0.366082 *  0.386694 *   0.00000    1.000000    
+     40 Mg    c    0.377848 *  0.241772 *  0.390989 *   0.00000    1.000000    
+     41 Mg    c    0.251831 *  0.490164 *  0.270751 *   0.00000    1.000000    
+     42 Mg    c    0.377006 *  0.615571 *  0.270784 *   0.00000    1.000000    
+     43 Mg    c    0.252369 *  0.614832 *  0.385503 *   0.00000    1.000000    
+     44 Mg    c    0.376804 *  0.490681 *  0.384798 *   0.00000    1.000000    
+     45 Mg    c    0.252259 *  0.740857 *  0.274726 *   0.00000    1.000000    
+     46 Mg    c    0.377437 *  0.865680 *  0.276975 *   0.00000    1.000000    
+     47 Mg    c    0.252346 *  0.864709 *  0.389377 *   0.00000    1.000000    
+     48 Mg    c    0.377354 *  0.738986 *  0.387951 *   0.00000    1.000000    
+     49 Mg    c    0.502293 *  0.990178 *  0.278216 *   0.00000    1.000000    
+     50 Mg    c    0.627147 *  0.114759 *  0.276977 *   0.00000    1.000000    
+     51 Mg    c    0.502666 *  0.116333 *  0.390945 *   0.00000    1.000000    
+     52 Mg    c    0.627323 *  0.990242 *  0.390633 *   0.00000    1.000000    
+     53 Mg    c    0.502072 *  0.239323 *  0.275841 *   0.00000    1.000000    
+     54 Mg    c    0.627785 *  0.364637 *  0.270613 *   0.00000    1.000000    
+     55 Mg    c    0.502670 *  0.366391 *  0.381181 *   0.00000    1.000000    
+     56 Mg    c    0.627432 *  0.241854 *  0.387723 *   0.00000    1.000000    
+     57 Mg    c    0.502194 *  0.490325 *  0.269721 *   0.00000    1.000000    
+     58 Mg    c    0.627270 *  0.615591 *  0.272865 *   0.00000    1.000000    
+     59 Mg    c    0.501773 *  0.613082 *  0.384651 *   0.00000    1.000000    
+     60 Mg    c    0.627948 *  0.489552 *  0.383108 *   0.00000    1.000000    
+     61 Mg    c    0.502353 *  0.740596 *  0.276312 *   0.00000    1.000000    
+     62 Mg    c    0.627084 *  0.865100 *  0.277822 *   0.00000    1.000000    
+     63 Mg    c    0.502282 *  0.864128 *  0.390644 *   0.00000    1.000000    
+     64 Mg    c    0.626791 *  0.738036 *  0.390371 *   0.00000    1.000000    
+     65 Mg    c    0.752061 *  0.989800 *  0.276824 *   0.00000    1.000000    
+     66 Mg    c    0.877346 *  0.114753 *  0.275716 *   0.00000    1.000000    
+     67 Mg    c    0.752236 *  0.115750 *  0.388584 *   0.00000    1.000000    
+     68 Mg    c    0.877142 *  0.990056 *  0.389325 *   0.00000    1.000000    
+     69 Mg    c    0.752367 *  0.239602 *  0.272288 *   0.00000    1.000000    
+     70 Mg    c    0.877617 *  0.364831 *  0.274495 *   0.00000    1.000000    
+     71 Mg    c    0.752227 *  0.364632 *  0.386085 *   0.00000    1.000000    
+     72 Mg    c    0.877116 *  0.240285 *  0.387493 *   0.00000    1.000000    
+     73 Mg    c    0.752759 *  0.489988 *  0.273052 *   0.00000    1.000000    
+     74 Mg    c    0.877427 *  0.615314 *  0.274181 *   0.00000    1.000000    
+     75 Mg    c    0.752321 *  0.614764 *  0.384429 *   0.00000    1.000000    
+     76 Mg    c    0.876815 *  0.489924 *  0.387493 *   0.00000    1.000000    
+     77 Mg    c    0.751970 *  0.740584 *  0.275655 *   0.00000    1.000000    
+     78 Mg    c    0.877079 *  0.865202 *  0.276358 *   0.00000    1.000000    
+     79 Mg    c    0.752051 *  0.864488 *  0.389817 *   0.00000    1.000000    
+     80 Mg    c    0.877044 *  0.739624 *  0.388518 *   0.00000    1.000000    
+     81 O     c    0.127454 *  0.990280 *  0.276863 *   0.00000    1.000000    
+     82 O     c    0.002531 *  0.114864 *  0.276251 *   0.00000    1.000000    
+     83 O     c    0.002200 *  0.990037 *  0.389418 *   0.00000    1.000000    
+     84 O     c    0.127330 *  0.115376 *  0.389833 *   0.00000    1.000000    
+     85 O     c    0.127584 *  0.239797 *  0.276231 *   0.00000    1.000000    
+     86 O     c    0.002373 *  0.364840 *  0.274966 *   0.00000    1.000000    
+     87 O     c    0.002159 *  0.240376 *  0.388421 *   0.00000    1.000000    
+     88 O     c    0.127543 *  0.365663 *  0.387792 *   0.00000    1.000000    
+     89 O     c    0.126606 *  0.490099 *  0.273018 *   0.00000    1.000000    
+     90 O     c    0.002085 *  0.615371 *  0.274526 *   0.00000    1.000000    
+     91 O     c    0.002212 *  0.490081 *  0.387310 *   0.00000    1.000000    
+     92 O     c    0.127333 *  0.614962 *  0.386673 *   0.00000    1.000000    
+     93 O     c    0.127085 *  0.740659 *  0.274967 *   0.00000    1.000000    
+     94 O     c    0.002169 *  0.865334 *  0.276150 *   0.00000    1.000000    
+     95 O     c    0.002178 *  0.739758 *  0.388283 *   0.00000    1.000000    
+     96 O     c    0.127267 *  0.864827 *  0.389072 *   0.00000    1.000000    
+     97 O     c    0.377466 *  0.990400 *  0.277941 *   0.00000    1.000000    
+     98 O     c    0.252577 *  0.115076 *  0.277602 *   0.00000    1.000000    
+     99 O     c    0.252406 *  0.990108 *  0.390295 *   0.00000    1.000000    
+    100 O     c    0.377648 *  0.115981 *  0.391149 *   0.00000    1.000000    
+    101 O     c    0.377432 *  0.239733 *  0.277348 *   0.00000    1.000000    
+    102 O     c    0.251900 *  0.364503 *  0.273521 *   0.00000    1.000000    
+    103 O     c    0.252534 *  0.241051 *  0.389928 *   0.00000    1.000000    
+    104 O     c    0.376613 *  0.366066 *  0.385773 *   0.00000    1.000000    
+    105 O     c    0.377018 *  0.489905 *  0.270896 *   0.00000    1.000000    
+    106 O     c    0.251664 *  0.615909 *  0.271639 *   0.00000    1.000000    
+    107 O     c    0.251847 *  0.491112 *  0.381818 *   0.00000    1.000000    
+    108 O     c    0.376561 *  0.614909 *  0.382012 *   0.00000    1.000000    
+    109 O     c    0.377408 *  0.741052 *  0.274449 *   0.00000    1.000000    
+    110 O     c    0.252386 *  0.865684 *  0.276446 *   0.00000    1.000000    
+    111 O     c    0.252321 *  0.739575 *  0.387539 *   0.00000    1.000000    
+    112 O     c    0.377363 *  0.864394 *  0.389836 *   0.00000    1.000000    
+    113 O     c    0.627073 *  0.989955 *  0.277779 *   0.00000    1.000000    
+    114 O     c    0.502265 *  0.114940 *  0.278171 *   0.00000    1.000000    
+    115 O     c    0.502445 *  0.990195 *  0.391090 *   0.00000    1.000000    
+    116 O     c    0.627562 *  0.116313 *  0.389967 *   0.00000    1.000000    
+    117 O     c    0.626893 *  0.239482 *  0.274221 *   0.00000    1.000000    
+    118 O     c    0.502113 *  0.364482 *  0.270206 *   0.00000    1.000000    
+    119 O     c    0.502973 *  0.242538 *  0.390248 *   0.00000    1.000000    
+    120 O     c    0.628326 *  0.366202 *  0.382721 *   0.00000    1.000000    
+    121 O     c    0.627648 *  0.490261 *  0.270740 *   0.00000    1.000000    
+    122 O     c    0.502346 *  0.615774 *  0.271805 *   0.00000    1.000000    
+    123 O     c    0.501807 *  0.490012 *  0.381719 *   0.00000    1.000000    
+    124 O     c    0.626660 *  0.613200 *  0.385714 *   0.00000    1.000000    
+    125 O     c    0.627122 *  0.740416 *  0.276829 *   0.00000    1.000000    
+    126 O     c    0.502324 *  0.865312 *  0.277788 *   0.00000    1.000000    
+    127 O     c    0.502111 *  0.738057 *  0.389709 *   0.00000    1.000000    
+    128 O     c    0.627124 *  0.864167 *  0.390664 *   0.00000    1.000000    
+    129 O     c    0.877211 *  0.989939 *  0.276408 *   0.00000    1.000000    
+    130 O     c    0.752184 *  0.114341 *  0.275093 *   0.00000    1.000000    
+    131 O     c    0.752188 *  0.990201 *  0.389688 *   0.00000    1.000000    
+    132 O     c    0.877181 *  0.115265 *  0.388556 *   0.00000    1.000000    
+    133 O     c    0.877859 *  0.239705 *  0.274089 *   0.00000    1.000000    
+    134 O     c    0.752928 *  0.365058 *  0.272557 *   0.00000    1.000000    
+    135 O     c    0.752869 *  0.240089 *  0.383312 *   0.00000    1.000000    
+    136 O     c    0.876848 *  0.365149 *  0.387524 *   0.00000    1.000000    
+    137 O     c    0.877398 *  0.490093 *  0.274480 *   0.00000    1.000000    
+    138 O     c    0.752353 *  0.615363 *  0.272888 *   0.00000    1.000000    
+    139 O     c    0.752018 *  0.490321 *  0.386666 *   0.00000    1.000000    
+    140 O     c    0.876976 *  0.614710 *  0.387444 *   0.00000    1.000000    
+    141 O     c    0.876997 *  0.740359 *  0.275667 *   0.00000    1.000000    
+    142 O     c    0.751996 *  0.865173 *  0.276938 *   0.00000    1.000000    
+    143 O     c    0.751797 *  0.739024 *  0.389022 *   0.00000    1.000000    
+    144 O     c    0.877091 *  0.864754 *  0.389290 *   0.00000    1.000000    
+--------------------------------------------------------------------------------
+
+
+
+********************************************************************************
+*  General input information                                                   *
+********************************************************************************
+
+  Species output for all configurations : 
+
+--------------------------------------------------------------------------------
+  Species    Type    Atomic    Atomic    Charge       Radii (Angs)     Library
+                     Number     Mass       (e)     Cova   Ionic  VDW   Symbol
+--------------------------------------------------------------------------------
+    Mg       Core       12      24.31   0.000000   1.100  0.000  1.640          
+    Mo       Core       42      95.94   0.000000   1.470  0.000  2.190          
+    O        Core        8      16.00   0.000000   0.730  0.000  1.360          
+--------------------------------------------------------------------------------
+
+
+  Lattice summation method               =    Ewald          (3-D)
+                                         =    Parry          (2-D)
+                                         =    Saunders et al (1-D)
+  Accuracy factor for lattice sums       =   12.000
+
+
+  Time limit = Infinity
+
+  Maximum range for interatomic potentials =    100000.000000 Angstroms
+
+  General interatomic potentials :
+
+--------------------------------------------------------------------------------
+Atom  Types   Potential         A         B         C         D     Cutoffs(Ang)
+  1     2                                                            Min    Max 
+--------------------------------------------------------------------------------
+O    c Mg   c Lenn/es 12  6  1.50      2.13      0.00     0.00      0.000  6.000
+O    c O    c Lenn/es 12  6  1.50      3.01      0.00     0.00      0.000  6.000
+Mg   c Mg   c Lenn/es 12  6  1.50      3.01      0.00     0.00      0.000  6.000
+Mg   c Mo   c Lenn/es 12  6  1.00      2.50      0.00     0.00      0.000  7.000
+O    c Mo   c Lenn/es 12  6  1.00      2.50      0.00     0.00      0.000  7.000
+Mo   c Mo   c Lenn/es 12  6  2.00      2.60      0.00     0.00      0.000  7.000
+--------------------------------------------------------------------------------
+
+********************************************************************************
+*  Output for configuration   1                                                *
+********************************************************************************
+
+
+  Components of energy : 
+
+--------------------------------------------------------------------------------
+  Interatomic potentials     = ******************** eV
+  Monopole - monopole (real) =           0.00000000 eV
+  Monopole - monopole (recip)=           0.00000000 eV
+  Monopole - monopole (total)=           0.00000000 eV
+--------------------------------------------------------------------------------
+  Total lattice energy       = ******************** eV
+--------------------------------------------------------------------------------
+  Total lattice energy       = ******************** kJ/(mole unit cells)
+--------------------------------------------------------------------------------
+
+
+  Number of variables =    435
+
+  Maximum number of calculations  =           850
+  Maximum Hessian update interval =            10
+  Maximum step size               =   1.000000000
+  Maximum parameter tolerance     =   0.000010000
+  Maximum function  tolerance     =   0.000010000
+  Maximum gradient  tolerance     =   0.001000000
+  Maximum gradient  component     =   0.010000000
+
+  Cell parameters to be optimised using strains
+
+  Conjugate gradient optimiser to be used
+
+  Minimiser to switch to RFO
+  When gradient norm is less than     0.010000
+
+  Dumpfile to be written after every cycle
+
+  Start of bulk optimisation :
+
+  Cycle:      0 Energy:*****************  Gnorm:**************  CPU:    0.020
+  Cycle:      1 Energy:   4817852.973880  Gnorm:4113796.963284  CPU:    0.056
+  Cycle:      2 Energy:     69457.261622  Gnorm:  22038.134660  CPU:    0.091
+  Cycle:      3 Energy:     14029.217209  Gnorm:   5621.441923  CPU:    0.127
+  Cycle:      4 Energy:      2063.297267  Gnorm:    503.738406  CPU:    0.160
+  Cycle:      5 Energy:      -524.010777  Gnorm:    144.469087  CPU:    0.192
+  Cycle:      6 Energy:     -1108.900730  Gnorm:     38.136483  CPU:    0.219
+  Cycle:      7 Energy:     -1295.000776  Gnorm:     20.236022  CPU:    0.242
+  Cycle:      8 Energy:     -1361.203891  Gnorm:     10.918559  CPU:    0.269
+  Cycle:      9 Energy:     -1418.991679  Gnorm:      6.279466  CPU:    0.299
+  Cycle:     10 Energy:     -1443.392839  Gnorm:      3.536856  CPU:    0.315
+  Cycle:     11 Energy:     -1478.856261  Gnorm:      3.318157  CPU:    0.333
+  Cycle:     12 Energy:     -1491.915441  Gnorm:      1.757203  CPU:    0.348
+  Cycle:     13 Energy:     -1504.577491  Gnorm:      1.808772  CPU:    0.370
+  Cycle:     14 Energy:     -1511.947980  Gnorm:      1.631001  CPU:    0.384
+  Cycle:     15 Energy:     -1518.366877  Gnorm:      1.259500  CPU:    0.403
+  Cycle:     16 Energy:     -1524.168176  Gnorm:      0.986689  CPU:    0.426
+  Cycle:     17 Energy:     -1531.191925  Gnorm:      1.263875  CPU:    0.454
+  Cycle:     18 Energy:     -1536.980596  Gnorm:      1.109319  CPU:    0.469
+  Cycle:     19 Energy:     -1542.044534  Gnorm:      0.988597  CPU:    0.494
+  Cycle:     20 Energy:     -1544.571354  Gnorm:      0.830354  CPU:    0.511
+  Cycle:     21 Energy:     -1549.640045  Gnorm:      1.177058  CPU:    0.538
+  Cycle:     22 Energy:     -1554.470314  Gnorm:      1.078638  CPU:    0.555
+  Cycle:     23 Energy:     -1558.599062  Gnorm:      0.964980  CPU:    0.573
+  Cycle:     24 Energy:     -1561.260955  Gnorm:      0.856072  CPU:    0.592
+  Cycle:     25 Energy:     -1563.290634  Gnorm:      0.767956  CPU:    0.610
+  Cycle:     26 Energy:     -1565.978263  Gnorm:      0.682120  CPU:    0.628
+  Cycle:     27 Energy:     -1568.570233  Gnorm:      0.762980  CPU:    0.647
+  Cycle:     28 Energy:     -1570.559252  Gnorm:      0.787396  CPU:    0.661
+  Cycle:     29 Energy:     -1573.001748  Gnorm:      0.743350  CPU:    0.679
+  Cycle:     30 Energy:     -1574.657309  Gnorm:      0.542637  CPU:    0.694
+  Cycle:     31 Energy:     -1576.380047  Gnorm:      0.523963  CPU:    0.716
+  Cycle:     32 Energy:     -1577.943388  Gnorm:      0.560529  CPU:    0.736
+  Cycle:     33 Energy:     -1579.337865  Gnorm:      0.611987  CPU:    0.759
+  Cycle:     34 Energy:     -1580.529131  Gnorm:      0.575397  CPU:    0.775
+  Cycle:     35 Energy:     -1581.805119  Gnorm:      0.486871  CPU:    0.796
+  Cycle:     36 Energy:     -1582.644961  Gnorm:      0.339968  CPU:    0.817
+  Cycle:     37 Energy:     -1583.202083  Gnorm:      0.349195  CPU:    0.838
+  Cycle:     38 Energy:     -1583.856001  Gnorm:      0.358246  CPU:    0.857
+  Cycle:     39 Energy:     -1584.901883  Gnorm:      0.551819  CPU:    0.875
+  Cycle:     40 Energy:     -1585.745609  Gnorm:      0.375707  CPU:    0.890
+  Cycle:     41 Energy:     -1586.600354  Gnorm:      0.494462  CPU:    0.909
+  Cycle:     42 Energy:     -1588.891856  Gnorm:      0.699468  CPU:    0.933
+  Cycle:     43 Energy:     -1590.033341  Gnorm:      0.675850  CPU:    0.959
+  Cycle:     44 Energy:     -1591.956421  Gnorm:      0.452863  CPU:    0.978
+  Cycle:     45 Energy:     -1593.120565  Gnorm:      0.464174  CPU:    0.996
+  Cycle:     46 Energy:     -1593.944735  Gnorm:      0.421745  CPU:    1.011
+  Cycle:     47 Energy:     -1594.904244  Gnorm:      0.406023  CPU:    1.030
+  Cycle:     48 Energy:     -1595.953037  Gnorm:      0.440819  CPU:    1.049
+  Cycle:     49 Energy:     -1596.858355  Gnorm:      0.505265  CPU:    1.064
+  Cycle:     50 Energy:     -1597.657986  Gnorm:      0.359137  CPU:    1.080
+  Cycle:     51 Energy:     -1598.219988  Gnorm:      0.325638  CPU:    1.102
+  Cycle:     52 Energy:     -1598.807445  Gnorm:      0.296765  CPU:    1.121
+  Cycle:     53 Energy:     -1599.234590  Gnorm:      0.226574  CPU:    1.140
+  Cycle:     54 Energy:     -1599.481781  Gnorm:      0.185889  CPU:    1.159
+  Cycle:     55 Energy:     -1599.647952  Gnorm:      0.157927  CPU:    1.178
+  Cycle:     56 Energy:     -1599.802498  Gnorm:      0.162939  CPU:    1.196
+  Cycle:     57 Energy:     -1599.960352  Gnorm:      0.176138  CPU:    1.214
+  Cycle:     58 Energy:     -1600.164244  Gnorm:      0.169573  CPU:    1.233
+  Cycle:     59 Energy:     -1600.365157  Gnorm:      0.171848  CPU:    1.251
+  Cycle:     60 Energy:     -1600.440956  Gnorm:      0.107767  CPU:    1.266
+  Cycle:     61 Energy:     -1600.517500  Gnorm:      0.102184  CPU:    1.291
+  Cycle:     62 Energy:     -1600.562870  Gnorm:      0.084979  CPU:    1.306
+  Cycle:     63 Energy:     -1600.611131  Gnorm:      0.103812  CPU:    1.328
+  Cycle:     64 Energy:     -1600.684812  Gnorm:      0.105345  CPU:    1.350
+  Cycle:     65 Energy:     -1600.753097  Gnorm:      0.183503  CPU:    1.368
+  Cycle:     66 Energy:     -1600.786699  Gnorm:      0.179955  CPU:    1.383
+  Cycle:     67 Energy:     -1600.876009  Gnorm:      0.111284  CPU:    1.398
+  Cycle:     68 Energy:     -1600.923805  Gnorm:      0.081660  CPU:    1.413
+  Cycle:     69 Energy:     -1600.954515  Gnorm:      0.061366  CPU:    1.431
+  Cycle:     70 Energy:     -1600.968377  Gnorm:      0.059850  CPU:    1.454
+  Cycle:     71 Energy:     -1600.984620  Gnorm:      0.067107  CPU:    1.472
+  Cycle:     72 Energy:     -1601.009598  Gnorm:      0.049872  CPU:    1.487
+  Cycle:     73 Energy:     -1601.017793  Gnorm:      0.034732  CPU:    1.513
+  Cycle:     74 Energy:     -1601.020194  Gnorm:      0.047599  CPU:    1.542
+  Cycle:     75 Energy:     -1601.035107  Gnorm:      0.070993  CPU:    1.557
+  Cycle:     76 Energy:     -1601.072727  Gnorm:      0.086942  CPU:    1.572
+  Cycle:     77 Energy:     -1601.122696  Gnorm:      0.098911  CPU:    1.591
+  Cycle:     78 Energy:     -1601.159131  Gnorm:      0.042025  CPU:    1.606
+  Cycle:     79 Energy:     -1601.165986  Gnorm:      0.040169  CPU:    1.621
+  Cycle:     80 Energy:     -1601.169496  Gnorm:      0.022848  CPU:    1.639
+  Cycle:     81 Energy:     -1601.193243  Gnorm:      0.075356  CPU:    1.658
+  Cycle:     82 Energy:     -1601.212633  Gnorm:      0.081294  CPU:    1.680
+  Cycle:     83 Energy:     -1601.240505  Gnorm:      0.079963  CPU:    1.695
+  Cycle:     84 Energy:     -1601.258448  Gnorm:      0.030995  CPU:    1.710
+  Cycle:     85 Energy:     -1601.265075  Gnorm:      0.037439  CPU:    1.729
+  Cycle:     86 Energy:     -1601.283880  Gnorm:      0.058752  CPU:    1.758
+  Cycle:     87 Energy:     -1601.312151  Gnorm:      0.090503  CPU:    1.784
+  Cycle:     88 Energy:     -1601.339327  Gnorm:      0.056402  CPU:    1.799
+  Cycle:     89 Energy:     -1601.354253  Gnorm:      0.053048  CPU:    1.814
+  Cycle:     90 Energy:     -1601.359479  Gnorm:      0.027529  CPU:    1.830
+  Cycle:     91 Energy:     -1601.370633  Gnorm:      0.030238  CPU:    1.855
+  Cycle:     92 Energy:     -1601.374811  Gnorm:      0.021636  CPU:    1.885
+  Cycle:     93 Energy:     -1601.378847  Gnorm:      0.028540  CPU:    1.900
+  Cycle:     94 Energy:     -1601.382579  Gnorm:      0.026331  CPU:    1.915
+  Cycle:     95 Energy:     -1601.389414  Gnorm:      0.038681  CPU:    1.930
+  Cycle:     96 Energy:     -1601.399197  Gnorm:      0.025095  CPU:    1.945
+  Cycle:     97 Energy:     -1601.402144  Gnorm:      0.017948  CPU:    1.967
+  Cycle:     98 Energy:     -1601.404510  Gnorm:      0.021176  CPU:    1.991
+  Cycle:     99 Energy:     -1601.419245  Gnorm:      0.022180  CPU:    2.015
+  Cycle:    100 Energy:     -1601.420806  Gnorm:      0.015447  CPU:    2.034
+  Cycle:    101 Energy:     -1601.422010  Gnorm:      0.015685  CPU:    2.049
+  Cycle:    102 Energy:     -1601.423909  Gnorm:      0.022407  CPU:    2.064
+  Cycle:    103 Energy:     -1601.431126  Gnorm:      0.043746  CPU:    2.080
+  Cycle:    104 Energy:     -1601.439819  Gnorm:      0.038728  CPU:    2.095
+  Cycle:    105 Energy:     -1601.445516  Gnorm:      0.029984  CPU:    2.110
+  Cycle:    106 Energy:     -1601.449705  Gnorm:      0.019896  CPU:    2.132
+  Cycle:    107 Energy:     -1601.450847  Gnorm:      0.013113  CPU:    2.148
+  Cycle:    108 Energy:     -1601.451379  Gnorm:      0.010228  CPU:    2.166
+  Cycle:    109 Energy:     -1601.451717  Gnorm:      0.009801  CPU:    2.181
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   4
+  Cycle:    110 Energy:     -1601.451892  Gnorm:      0.010239  CPU:    2.358
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   4
+  Cycle:    111 Energy:     -1601.467329  Gnorm:      0.019884  CPU:    2.586
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   5
+  Cycle:    112 Energy:     -1601.516328  Gnorm:      0.067377  CPU:    2.834
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   4
+  Cycle:    113 Energy:     -1601.562366  Gnorm:      0.119151  CPU:    3.064
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   4
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   4
+  Cycle:    114 Energy:     -1601.616813  Gnorm:      0.237760  CPU:    3.367
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   4
+  Cycle:    115 Energy:     -1601.743542  Gnorm:      0.109824  CPU:    3.611
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   4
+  Cycle:    116 Energy:     -1601.989236  Gnorm:      0.462839  CPU:    3.781
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   2
+  Cycle:    117 Energy:     -1603.289909  Gnorm:      0.332935  CPU:    4.028
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  ** Hessian has required structure
+  Cycle:    118 Energy:     -1603.969473  Gnorm:      0.181922  CPU:    4.321
+  ** Hessian has required structure
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   2
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    119 Energy:     -1604.034426  Gnorm:      0.132536  CPU:    4.729
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    120 Energy:     -1604.074761  Gnorm:      0.067378  CPU:    4.936
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   2
+  Cycle:    121 Energy:     -1604.083536  Gnorm:      0.066455  CPU:    5.196
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   2
+  Cycle:    122 Energy:     -1604.090088  Gnorm:      0.067178  CPU:    5.500
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    123 Energy:     -1604.147459  Gnorm:      0.139001  CPU:    5.727
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    124 Energy:     -1604.149112  Gnorm:      0.163479  CPU:    5.898
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    125 Energy:     -1604.149193  Gnorm:      0.170186  CPU:    6.077
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    126 Energy:     -1604.149211  Gnorm:      0.172011  CPU:    6.261
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    127 Energy:     -1604.149236  Gnorm:      0.172499  CPU:    6.428
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    128 Energy:     -1604.149266  Gnorm:      0.172630  CPU:    6.596
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    129 Energy:     -1604.149296  Gnorm:      0.172665  CPU:    6.774
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    130 Energy:     -1604.149327  Gnorm:      0.172674  CPU:    6.946
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    131 Energy:     -1604.149359  Gnorm:      0.172677  CPU:    7.118
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    132 Energy:     -1604.149390  Gnorm:      0.172678  CPU:    7.285
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    133 Energy:     -1604.149421  Gnorm:      0.172678  CPU:    7.541
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    134 Energy:     -1604.149452  Gnorm:      0.172678  CPU:    7.720
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    135 Energy:     -1604.149483  Gnorm:      0.172678  CPU:    7.884
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    136 Energy:     -1604.149514  Gnorm:      0.172678  CPU:    8.050
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    137 Energy:     -1604.149545  Gnorm:      0.172679  CPU:    8.280
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    138 Energy:     -1604.149576  Gnorm:      0.172679  CPU:    8.525
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    139 Energy:     -1604.149607  Gnorm:      0.172679  CPU:    8.678
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    140 Energy:     -1604.149638  Gnorm:      0.172679  CPU:    8.833
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    141 Energy:     -1604.149669  Gnorm:      0.172679  CPU:    8.991
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    142 Energy:     -1604.149700  Gnorm:      0.172679  CPU:    9.145
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    143 Energy:     -1604.149731  Gnorm:      0.172680  CPU:    9.298
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    144 Energy:     -1604.149762  Gnorm:      0.172680  CPU:    9.457
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    145 Energy:     -1604.149793  Gnorm:      0.172680  CPU:    9.619
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    146 Energy:     -1604.149824  Gnorm:      0.172680  CPU:    9.776
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    147 Energy:     -1604.149855  Gnorm:      0.172680  CPU:    9.928
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    148 Energy:     -1604.149886  Gnorm:      0.172680  CPU:   10.079
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    149 Energy:     -1604.149917  Gnorm:      0.172681  CPU:   10.230
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    150 Energy:     -1604.149948  Gnorm:      0.172681  CPU:   10.390
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    151 Energy:     -1604.149979  Gnorm:      0.172681  CPU:   10.540
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    152 Energy:     -1604.150010  Gnorm:      0.172681  CPU:   10.691
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    153 Energy:     -1604.150041  Gnorm:      0.172681  CPU:   10.842
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    154 Energy:     -1604.150072  Gnorm:      0.172681  CPU:   10.991
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    155 Energy:     -1604.150103  Gnorm:      0.172682  CPU:   11.141
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    156 Energy:     -1604.150134  Gnorm:      0.172682  CPU:   11.292
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    157 Energy:     -1604.150164  Gnorm:      0.172682  CPU:   11.442
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    158 Energy:     -1604.150195  Gnorm:      0.172682  CPU:   11.592
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    159 Energy:     -1604.150226  Gnorm:      0.172682  CPU:   11.742
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    160 Energy:     -1604.150257  Gnorm:      0.172682  CPU:   11.893
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    161 Energy:     -1604.150288  Gnorm:      0.172683  CPU:   12.043
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    162 Energy:     -1604.150319  Gnorm:      0.172683  CPU:   12.194
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    163 Energy:     -1604.150350  Gnorm:      0.172683  CPU:   12.344
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    164 Energy:     -1604.150380  Gnorm:      0.172683  CPU:   12.494
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    165 Energy:     -1604.150411  Gnorm:      0.172683  CPU:   12.643
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    166 Energy:     -1604.150442  Gnorm:      0.172683  CPU:   12.793
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    167 Energy:     -1604.150473  Gnorm:      0.172684  CPU:   12.943
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    168 Energy:     -1604.150503  Gnorm:      0.172684  CPU:   13.093
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    169 Energy:     -1604.150534  Gnorm:      0.172684  CPU:   13.243
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    170 Energy:     -1604.150565  Gnorm:      0.172684  CPU:   13.393
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    171 Energy:     -1604.150596  Gnorm:      0.172684  CPU:   13.542
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    172 Energy:     -1604.150626  Gnorm:      0.172684  CPU:   13.696
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    173 Energy:     -1604.150657  Gnorm:      0.172685  CPU:   13.845
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    174 Energy:     -1604.150688  Gnorm:      0.172685  CPU:   13.995
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    175 Energy:     -1604.150719  Gnorm:      0.172685  CPU:   14.145
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    176 Energy:     -1604.150749  Gnorm:      0.172685  CPU:   14.294
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    177 Energy:     -1604.150780  Gnorm:      0.172685  CPU:   14.444
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    178 Energy:     -1604.150811  Gnorm:      0.172685  CPU:   14.594
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    179 Energy:     -1604.150841  Gnorm:      0.172686  CPU:   14.744
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    180 Energy:     -1604.150872  Gnorm:      0.172686  CPU:   14.894
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    181 Energy:     -1604.150903  Gnorm:      0.172686  CPU:   15.043
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    182 Energy:     -1604.150933  Gnorm:      0.172686  CPU:   15.193
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    183 Energy:     -1604.150964  Gnorm:      0.172686  CPU:   15.343
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    184 Energy:     -1604.150994  Gnorm:      0.172686  CPU:   15.493
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    185 Energy:     -1604.151025  Gnorm:      0.172687  CPU:   15.642
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    186 Energy:     -1604.151056  Gnorm:      0.172687  CPU:   15.793
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    187 Energy:     -1604.151086  Gnorm:      0.172687  CPU:   15.942
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    188 Energy:     -1604.151117  Gnorm:      0.172687  CPU:   16.092
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    189 Energy:     -1604.151147  Gnorm:      0.172687  CPU:   16.242
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    190 Energy:     -1604.151178  Gnorm:      0.172687  CPU:   16.392
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    191 Energy:     -1604.151209  Gnorm:      0.172688  CPU:   16.541
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    192 Energy:     -1604.151239  Gnorm:      0.172688  CPU:   16.691
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    193 Energy:     -1604.151270  Gnorm:      0.172688  CPU:   16.840
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    194 Energy:     -1604.151300  Gnorm:      0.172688  CPU:   16.991
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    195 Energy:     -1604.151331  Gnorm:      0.172688  CPU:   17.140
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    196 Energy:     -1604.151361  Gnorm:      0.172688  CPU:   17.290
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    197 Energy:     -1604.151392  Gnorm:      0.172689  CPU:   17.440
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    198 Energy:     -1604.151422  Gnorm:      0.172689  CPU:   17.590
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    199 Energy:     -1604.151453  Gnorm:      0.172689  CPU:   17.739
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    200 Energy:     -1604.151483  Gnorm:      0.172689  CPU:   17.889
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    201 Energy:     -1604.151513  Gnorm:      0.172689  CPU:   18.039
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    202 Energy:     -1604.151544  Gnorm:      0.172689  CPU:   18.189
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    203 Energy:     -1604.151574  Gnorm:      0.172690  CPU:   18.339
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    204 Energy:     -1604.151605  Gnorm:      0.172690  CPU:   18.489
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    205 Energy:     -1604.151635  Gnorm:      0.172690  CPU:   18.639
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    206 Energy:     -1604.151666  Gnorm:      0.172690  CPU:   18.789
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    207 Energy:     -1604.151696  Gnorm:      0.172690  CPU:   18.938
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    208 Energy:     -1604.151726  Gnorm:      0.172690  CPU:   19.089
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    209 Energy:     -1604.151757  Gnorm:      0.172691  CPU:   19.244
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    210 Energy:     -1604.151787  Gnorm:      0.172691  CPU:   19.393
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    211 Energy:     -1604.151817  Gnorm:      0.172691  CPU:   19.543
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    212 Energy:     -1604.151848  Gnorm:      0.172691  CPU:   19.693
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    213 Energy:     -1604.151878  Gnorm:      0.172691  CPU:   19.842
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    214 Energy:     -1604.151909  Gnorm:      0.172691  CPU:   19.992
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    215 Energy:     -1604.151939  Gnorm:      0.172692  CPU:   20.141
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    216 Energy:     -1604.151969  Gnorm:      0.172692  CPU:   20.291
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    217 Energy:     -1604.151999  Gnorm:      0.172692  CPU:   20.441
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    218 Energy:     -1604.152030  Gnorm:      0.172692  CPU:   20.591
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    219 Energy:     -1604.152060  Gnorm:      0.172692  CPU:   20.741
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    220 Energy:     -1604.152090  Gnorm:      0.172692  CPU:   20.890
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    221 Energy:     -1604.152121  Gnorm:      0.172693  CPU:   21.040
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    222 Energy:     -1604.152151  Gnorm:      0.172693  CPU:   21.190
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    223 Energy:     -1604.152181  Gnorm:      0.172693  CPU:   21.339
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    224 Energy:     -1604.152211  Gnorm:      0.172693  CPU:   21.489
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    225 Energy:     -1604.152242  Gnorm:      0.172693  CPU:   21.640
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    226 Energy:     -1604.152272  Gnorm:      0.172693  CPU:   21.790
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    227 Energy:     -1604.152302  Gnorm:      0.172694  CPU:   21.939
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    228 Energy:     -1604.152332  Gnorm:      0.172694  CPU:   22.088
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    229 Energy:     -1604.152362  Gnorm:      0.172694  CPU:   22.238
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    230 Energy:     -1604.152393  Gnorm:      0.172694  CPU:   22.387
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    231 Energy:     -1604.152423  Gnorm:      0.172694  CPU:   22.536
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    232 Energy:     -1604.152453  Gnorm:      0.172694  CPU:   22.686
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    233 Energy:     -1604.152483  Gnorm:      0.172695  CPU:   22.835
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    234 Energy:     -1604.152513  Gnorm:      0.172695  CPU:   22.984
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    235 Energy:     -1604.152543  Gnorm:      0.172695  CPU:   23.134
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    236 Energy:     -1604.152573  Gnorm:      0.172695  CPU:   23.283
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    237 Energy:     -1604.152604  Gnorm:      0.172695  CPU:   23.431
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    238 Energy:     -1604.152634  Gnorm:      0.172696  CPU:   23.580
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    239 Energy:     -1604.152664  Gnorm:      0.172696  CPU:   23.730
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    240 Energy:     -1604.152694  Gnorm:      0.172696  CPU:   23.879
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    241 Energy:     -1604.152724  Gnorm:      0.172696  CPU:   24.028
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    242 Energy:     -1604.152754  Gnorm:      0.172696  CPU:   24.177
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    243 Energy:     -1604.152784  Gnorm:      0.172696  CPU:   24.327
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    244 Energy:     -1604.152814  Gnorm:      0.172697  CPU:   24.476
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    245 Energy:     -1604.152844  Gnorm:      0.172697  CPU:   24.625
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    246 Energy:     -1604.152874  Gnorm:      0.172697  CPU:   24.774
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    247 Energy:     -1604.152904  Gnorm:      0.172697  CPU:   24.924
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    248 Energy:     -1604.152934  Gnorm:      0.172697  CPU:   25.074
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    249 Energy:     -1604.152964  Gnorm:      0.172697  CPU:   25.223
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    250 Energy:     -1604.152994  Gnorm:      0.172698  CPU:   25.373
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    251 Energy:     -1604.153024  Gnorm:      0.172698  CPU:   25.523
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    252 Energy:     -1604.153054  Gnorm:      0.172698  CPU:   25.673
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    253 Energy:     -1604.153084  Gnorm:      0.172698  CPU:   25.823
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    254 Energy:     -1604.153114  Gnorm:      0.172698  CPU:   25.973
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    255 Energy:     -1604.153144  Gnorm:      0.172698  CPU:   26.122
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    256 Energy:     -1604.153174  Gnorm:      0.172699  CPU:   26.272
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    257 Energy:     -1604.153204  Gnorm:      0.172699  CPU:   26.421
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    258 Energy:     -1604.153234  Gnorm:      0.172699  CPU:   26.570
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    259 Energy:     -1604.153264  Gnorm:      0.172699  CPU:   26.720
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    260 Energy:     -1604.153294  Gnorm:      0.172699  CPU:   26.869
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    261 Energy:     -1604.153323  Gnorm:      0.172699  CPU:   27.018
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    262 Energy:     -1604.153353  Gnorm:      0.172700  CPU:   27.168
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    263 Energy:     -1604.153383  Gnorm:      0.172700  CPU:   27.317
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    264 Energy:     -1604.153413  Gnorm:      0.172700  CPU:   27.467
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    265 Energy:     -1604.153443  Gnorm:      0.172700  CPU:   27.616
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    266 Energy:     -1604.153473  Gnorm:      0.172700  CPU:   27.765
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    267 Energy:     -1604.153503  Gnorm:      0.172700  CPU:   27.914
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    268 Energy:     -1604.153532  Gnorm:      0.172701  CPU:   28.064
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    269 Energy:     -1604.153562  Gnorm:      0.172701  CPU:   28.213
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    270 Energy:     -1604.153592  Gnorm:      0.172701  CPU:   28.363
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    271 Energy:     -1604.153622  Gnorm:      0.172701  CPU:   28.512
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    272 Energy:     -1604.153652  Gnorm:      0.172701  CPU:   28.661
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    273 Energy:     -1604.153681  Gnorm:      0.172701  CPU:   28.811
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    274 Energy:     -1604.153711  Gnorm:      0.172702  CPU:   28.961
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    275 Energy:     -1604.153741  Gnorm:      0.172702  CPU:   29.109
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    276 Energy:     -1604.153771  Gnorm:      0.172702  CPU:   29.258
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    277 Energy:     -1604.153800  Gnorm:      0.172702  CPU:   29.408
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    278 Energy:     -1604.153830  Gnorm:      0.172702  CPU:   29.557
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    279 Energy:     -1604.153860  Gnorm:      0.172703  CPU:   29.706
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    280 Energy:     -1604.153890  Gnorm:      0.172703  CPU:   29.856
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    281 Energy:     -1604.153919  Gnorm:      0.172703  CPU:   30.005
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    282 Energy:     -1604.153949  Gnorm:      0.172703  CPU:   30.154
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    283 Energy:     -1604.153979  Gnorm:      0.172703  CPU:   30.303
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    284 Energy:     -1604.154008  Gnorm:      0.172703  CPU:   30.452
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    285 Energy:     -1604.154038  Gnorm:      0.172704  CPU:   30.601
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    286 Energy:     -1604.154068  Gnorm:      0.172704  CPU:   30.750
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    287 Energy:     -1604.154097  Gnorm:      0.172704  CPU:   30.900
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    288 Energy:     -1604.154127  Gnorm:      0.172704  CPU:   31.048
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    289 Energy:     -1604.154157  Gnorm:      0.172704  CPU:   31.197
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    290 Energy:     -1604.154186  Gnorm:      0.172704  CPU:   31.346
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    291 Energy:     -1604.154216  Gnorm:      0.172705  CPU:   31.496
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    292 Energy:     -1604.154246  Gnorm:      0.172705  CPU:   31.645
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    293 Energy:     -1604.154275  Gnorm:      0.172705  CPU:   31.795
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    294 Energy:     -1604.154305  Gnorm:      0.172705  CPU:   31.944
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    295 Energy:     -1604.154334  Gnorm:      0.172705  CPU:   32.093
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    296 Energy:     -1604.154364  Gnorm:      0.172705  CPU:   32.244
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    297 Energy:     -1604.154393  Gnorm:      0.172706  CPU:   32.393
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    298 Energy:     -1604.154423  Gnorm:      0.172706  CPU:   32.542
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    299 Energy:     -1604.154452  Gnorm:      0.172706  CPU:   32.691
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    300 Energy:     -1604.154482  Gnorm:      0.172706  CPU:   32.841
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    301 Energy:     -1604.154512  Gnorm:      0.172706  CPU:   32.990
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    302 Energy:     -1604.154541  Gnorm:      0.172706  CPU:   33.139
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    303 Energy:     -1604.154571  Gnorm:      0.172707  CPU:   33.288
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    304 Energy:     -1604.154600  Gnorm:      0.172707  CPU:   33.438
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    305 Energy:     -1604.154630  Gnorm:      0.172707  CPU:   33.587
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    306 Energy:     -1604.154659  Gnorm:      0.172707  CPU:   33.738
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    307 Energy:     -1604.154689  Gnorm:      0.172707  CPU:   33.887
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    308 Energy:     -1604.154718  Gnorm:      0.172707  CPU:   34.036
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    309 Energy:     -1604.154747  Gnorm:      0.172708  CPU:   34.185
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    310 Energy:     -1604.154777  Gnorm:      0.172708  CPU:   34.335
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    311 Energy:     -1604.154806  Gnorm:      0.172708  CPU:   34.485
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    312 Energy:     -1604.154836  Gnorm:      0.172708  CPU:   34.634
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    313 Energy:     -1604.154865  Gnorm:      0.172708  CPU:   34.784
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    314 Energy:     -1604.154895  Gnorm:      0.172708  CPU:   34.934
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    315 Energy:     -1604.154924  Gnorm:      0.172709  CPU:   35.084
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    316 Energy:     -1604.154953  Gnorm:      0.172709  CPU:   35.234
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    317 Energy:     -1604.154983  Gnorm:      0.172709  CPU:   35.383
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    318 Energy:     -1604.155012  Gnorm:      0.172709  CPU:   35.534
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    319 Energy:     -1604.155041  Gnorm:      0.172709  CPU:   35.683
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    320 Energy:     -1604.155071  Gnorm:      0.172710  CPU:   35.832
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    321 Energy:     -1604.155100  Gnorm:      0.172710  CPU:   35.982
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    322 Energy:     -1604.155129  Gnorm:      0.172710  CPU:   36.131
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    323 Energy:     -1604.155159  Gnorm:      0.172710  CPU:   36.281
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    324 Energy:     -1604.155188  Gnorm:      0.172710  CPU:   36.430
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    325 Energy:     -1604.155217  Gnorm:      0.172710  CPU:   36.580
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    326 Energy:     -1604.155247  Gnorm:      0.172711  CPU:   36.732
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    327 Energy:     -1604.155276  Gnorm:      0.172711  CPU:   36.882
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    328 Energy:     -1604.155305  Gnorm:      0.172711  CPU:   37.032
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    329 Energy:     -1604.155335  Gnorm:      0.172711  CPU:   37.182
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    330 Energy:     -1604.155364  Gnorm:      0.172711  CPU:   37.331
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    331 Energy:     -1604.155393  Gnorm:      0.172711  CPU:   37.481
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    332 Energy:     -1604.155422  Gnorm:      0.172712  CPU:   37.631
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    333 Energy:     -1604.155452  Gnorm:      0.172712  CPU:   37.781
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    334 Energy:     -1604.155481  Gnorm:      0.172712  CPU:   37.930
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    335 Energy:     -1604.155510  Gnorm:      0.172712  CPU:   38.079
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    336 Energy:     -1604.155539  Gnorm:      0.172712  CPU:   38.230
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    337 Energy:     -1604.155568  Gnorm:      0.172712  CPU:   38.379
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    338 Energy:     -1604.155598  Gnorm:      0.172713  CPU:   38.528
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    339 Energy:     -1604.155627  Gnorm:      0.172713  CPU:   38.678
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    340 Energy:     -1604.155656  Gnorm:      0.172713  CPU:   38.827
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    341 Energy:     -1604.155685  Gnorm:      0.172713  CPU:   38.976
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    342 Energy:     -1604.155714  Gnorm:      0.172713  CPU:   39.126
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    343 Energy:     -1604.155743  Gnorm:      0.172713  CPU:   39.275
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    344 Energy:     -1604.155773  Gnorm:      0.172714  CPU:   39.424
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    345 Energy:     -1604.155802  Gnorm:      0.172714  CPU:   39.574
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    346 Energy:     -1604.155831  Gnorm:      0.172714  CPU:   39.723
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    347 Energy:     -1604.155860  Gnorm:      0.172714  CPU:   39.873
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    348 Energy:     -1604.155889  Gnorm:      0.172714  CPU:   40.022
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    349 Energy:     -1604.155918  Gnorm:      0.172714  CPU:   40.172
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    350 Energy:     -1604.155947  Gnorm:      0.172715  CPU:   40.321
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    351 Energy:     -1604.155976  Gnorm:      0.172715  CPU:   40.470
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    352 Energy:     -1604.156005  Gnorm:      0.172715  CPU:   40.620
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    353 Energy:     -1604.156034  Gnorm:      0.172715  CPU:   40.770
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    354 Energy:     -1604.156063  Gnorm:      0.172715  CPU:   40.920
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    355 Energy:     -1604.156092  Gnorm:      0.172716  CPU:   41.069
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    356 Energy:     -1604.156122  Gnorm:      0.172716  CPU:   41.219
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    357 Energy:     -1604.156151  Gnorm:      0.172716  CPU:   41.369
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    358 Energy:     -1604.156180  Gnorm:      0.172716  CPU:   41.518
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    359 Energy:     -1604.156209  Gnorm:      0.172716  CPU:   41.669
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    360 Energy:     -1604.156238  Gnorm:      0.172716  CPU:   41.819
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    361 Energy:     -1604.156267  Gnorm:      0.172717  CPU:   41.969
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    362 Energy:     -1604.156296  Gnorm:      0.172717  CPU:   42.119
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    363 Energy:     -1604.156324  Gnorm:      0.172717  CPU:   42.268
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    364 Energy:     -1604.156353  Gnorm:      0.172717  CPU:   42.418
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    365 Energy:     -1604.156382  Gnorm:      0.172717  CPU:   42.568
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    366 Energy:     -1604.156411  Gnorm:      0.172717  CPU:   42.718
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    367 Energy:     -1604.156440  Gnorm:      0.172718  CPU:   42.869
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    368 Energy:     -1604.156469  Gnorm:      0.172718  CPU:   43.019
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    369 Energy:     -1604.156498  Gnorm:      0.172718  CPU:   43.169
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    370 Energy:     -1604.156527  Gnorm:      0.172718  CPU:   43.319
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    371 Energy:     -1604.156556  Gnorm:      0.172718  CPU:   43.470
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    372 Energy:     -1604.156585  Gnorm:      0.172718  CPU:   43.620
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    373 Energy:     -1604.156614  Gnorm:      0.172719  CPU:   43.770
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    374 Energy:     -1604.156643  Gnorm:      0.172719  CPU:   43.921
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    375 Energy:     -1604.156671  Gnorm:      0.172719  CPU:   44.071
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    376 Energy:     -1604.156700  Gnorm:      0.172719  CPU:   44.220
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    377 Energy:     -1604.156729  Gnorm:      0.172719  CPU:   44.370
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    378 Energy:     -1604.156758  Gnorm:      0.172719  CPU:   44.522
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    379 Energy:     -1604.156787  Gnorm:      0.172720  CPU:   44.671
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    380 Energy:     -1604.156816  Gnorm:      0.172720  CPU:   44.822
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    381 Energy:     -1604.156844  Gnorm:      0.172720  CPU:   44.972
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    382 Energy:     -1604.156873  Gnorm:      0.172720  CPU:   45.123
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    383 Energy:     -1604.156902  Gnorm:      0.172720  CPU:   45.272
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    384 Energy:     -1604.156931  Gnorm:      0.172720  CPU:   45.422
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    385 Energy:     -1604.156960  Gnorm:      0.172721  CPU:   45.571
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    386 Energy:     -1604.156988  Gnorm:      0.172721  CPU:   45.721
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    387 Energy:     -1604.157017  Gnorm:      0.172721  CPU:   45.871
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    388 Energy:     -1604.157046  Gnorm:      0.172721  CPU:   46.021
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    389 Energy:     -1604.157075  Gnorm:      0.172721  CPU:   46.171
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    390 Energy:     -1604.157103  Gnorm:      0.172722  CPU:   46.321
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    391 Energy:     -1604.157132  Gnorm:      0.172722  CPU:   46.471
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    392 Energy:     -1604.157161  Gnorm:      0.172722  CPU:   46.620
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    393 Energy:     -1604.157189  Gnorm:      0.172722  CPU:   46.770
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    394 Energy:     -1604.157218  Gnorm:      0.172722  CPU:   46.919
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    395 Energy:     -1604.157247  Gnorm:      0.172722  CPU:   47.069
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    396 Energy:     -1604.157276  Gnorm:      0.172723  CPU:   47.218
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    397 Energy:     -1604.157304  Gnorm:      0.172723  CPU:   47.368
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    398 Energy:     -1604.157333  Gnorm:      0.172723  CPU:   47.517
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    399 Energy:     -1604.157362  Gnorm:      0.172723  CPU:   47.667
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    400 Energy:     -1604.157390  Gnorm:      0.172723  CPU:   47.817
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    401 Energy:     -1604.157419  Gnorm:      0.172723  CPU:   47.967
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    402 Energy:     -1604.157447  Gnorm:      0.172724  CPU:   48.117
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    403 Energy:     -1604.157476  Gnorm:      0.172724  CPU:   48.267
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    404 Energy:     -1604.157505  Gnorm:      0.172724  CPU:   48.417
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    405 Energy:     -1604.157533  Gnorm:      0.172724  CPU:   48.567
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    406 Energy:     -1604.157562  Gnorm:      0.172724  CPU:   48.718
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    407 Energy:     -1604.157590  Gnorm:      0.172724  CPU:   48.868
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    408 Energy:     -1604.157619  Gnorm:      0.172725  CPU:   49.018
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    409 Energy:     -1604.157648  Gnorm:      0.172725  CPU:   49.169
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    410 Energy:     -1604.157676  Gnorm:      0.172725  CPU:   49.318
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    411 Energy:     -1604.157705  Gnorm:      0.172725  CPU:   49.468
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    412 Energy:     -1604.157733  Gnorm:      0.172725  CPU:   49.618
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    413 Energy:     -1604.157762  Gnorm:      0.172725  CPU:   49.768
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    414 Energy:     -1604.157790  Gnorm:      0.172726  CPU:   49.918
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    415 Energy:     -1604.157819  Gnorm:      0.172726  CPU:   50.068
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    416 Energy:     -1604.157847  Gnorm:      0.172726  CPU:   50.217
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    417 Energy:     -1604.157876  Gnorm:      0.172726  CPU:   50.367
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    418 Energy:     -1604.157904  Gnorm:      0.172726  CPU:   50.516
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    419 Energy:     -1604.157933  Gnorm:      0.172726  CPU:   50.666
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    420 Energy:     -1604.157961  Gnorm:      0.172727  CPU:   50.815
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    421 Energy:     -1604.157990  Gnorm:      0.172727  CPU:   50.964
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    422 Energy:     -1604.158018  Gnorm:      0.172727  CPU:   51.113
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    423 Energy:     -1604.158047  Gnorm:      0.172727  CPU:   51.261
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    424 Energy:     -1604.158075  Gnorm:      0.172727  CPU:   51.410
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    425 Energy:     -1604.158103  Gnorm:      0.172727  CPU:   51.561
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    426 Energy:     -1604.158132  Gnorm:      0.172728  CPU:   51.710
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    427 Energy:     -1604.158160  Gnorm:      0.172728  CPU:   51.859
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    428 Energy:     -1604.158189  Gnorm:      0.172728  CPU:   52.007
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    429 Energy:     -1604.158217  Gnorm:      0.172728  CPU:   52.157
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    430 Energy:     -1604.158245  Gnorm:      0.172728  CPU:   52.305
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    431 Energy:     -1604.158274  Gnorm:      0.172729  CPU:   52.454
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    432 Energy:     -1604.158302  Gnorm:      0.172729  CPU:   52.603
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    433 Energy:     -1604.158331  Gnorm:      0.172729  CPU:   52.752
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    434 Energy:     -1604.158359  Gnorm:      0.172729  CPU:   52.900
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    435 Energy:     -1604.158387  Gnorm:      0.172729  CPU:   53.049
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    436 Energy:     -1604.158416  Gnorm:      0.172729  CPU:   53.198
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    437 Energy:     -1604.158444  Gnorm:      0.172730  CPU:   53.347
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    438 Energy:     -1604.158472  Gnorm:      0.172730  CPU:   53.495
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    439 Energy:     -1604.158501  Gnorm:      0.172730  CPU:   53.644
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    440 Energy:     -1604.158529  Gnorm:      0.172730  CPU:   53.793
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    441 Energy:     -1604.158557  Gnorm:      0.172730  CPU:   53.942
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    442 Energy:     -1604.158585  Gnorm:      0.172730  CPU:   54.091
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    443 Energy:     -1604.158614  Gnorm:      0.172731  CPU:   54.240
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    444 Energy:     -1604.158642  Gnorm:      0.172731  CPU:   54.389
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    445 Energy:     -1604.158670  Gnorm:      0.172731  CPU:   54.538
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    446 Energy:     -1604.158698  Gnorm:      0.172731  CPU:   54.687
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    447 Energy:     -1604.158727  Gnorm:      0.172731  CPU:   54.837
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    448 Energy:     -1604.158755  Gnorm:      0.172731  CPU:   54.985
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    449 Energy:     -1604.158783  Gnorm:      0.172732  CPU:   55.135
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    450 Energy:     -1604.158811  Gnorm:      0.172732  CPU:   55.283
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    451 Energy:     -1604.158840  Gnorm:      0.172732  CPU:   55.432
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    452 Energy:     -1604.158868  Gnorm:      0.172732  CPU:   55.581
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    453 Energy:     -1604.158896  Gnorm:      0.172732  CPU:   55.731
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    454 Energy:     -1604.158924  Gnorm:      0.172732  CPU:   55.880
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    455 Energy:     -1604.158952  Gnorm:      0.172733  CPU:   56.028
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    456 Energy:     -1604.158981  Gnorm:      0.172733  CPU:   56.177
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    457 Energy:     -1604.159009  Gnorm:      0.172733  CPU:   56.326
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    458 Energy:     -1604.159037  Gnorm:      0.172733  CPU:   56.475
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    459 Energy:     -1604.159065  Gnorm:      0.172733  CPU:   56.624
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    460 Energy:     -1604.159093  Gnorm:      0.172733  CPU:   56.774
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    461 Energy:     -1604.159121  Gnorm:      0.172734  CPU:   56.923
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    462 Energy:     -1604.159149  Gnorm:      0.172734  CPU:   57.073
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    463 Energy:     -1604.159177  Gnorm:      0.172734  CPU:   57.222
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    464 Energy:     -1604.159206  Gnorm:      0.172734  CPU:   57.372
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    465 Energy:     -1604.159234  Gnorm:      0.172734  CPU:   57.522
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    466 Energy:     -1604.159262  Gnorm:      0.172734  CPU:   57.671
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    467 Energy:     -1604.159290  Gnorm:      0.172735  CPU:   57.821
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    468 Energy:     -1604.159318  Gnorm:      0.172735  CPU:   57.970
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    469 Energy:     -1604.159346  Gnorm:      0.172735  CPU:   58.119
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    470 Energy:     -1604.159374  Gnorm:      0.172735  CPU:   58.269
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    471 Energy:     -1604.159402  Gnorm:      0.172735  CPU:   58.419
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    472 Energy:     -1604.159430  Gnorm:      0.172735  CPU:   58.568
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    473 Energy:     -1604.159458  Gnorm:      0.172736  CPU:   58.717
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    474 Energy:     -1604.159486  Gnorm:      0.172736  CPU:   58.866
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    475 Energy:     -1604.159514  Gnorm:      0.172736  CPU:   59.016
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    476 Energy:     -1604.159542  Gnorm:      0.172736  CPU:   59.165
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    477 Energy:     -1604.159570  Gnorm:      0.172736  CPU:   59.315
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    478 Energy:     -1604.159598  Gnorm:      0.172736  CPU:   59.464
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    479 Energy:     -1604.159626  Gnorm:      0.172737  CPU:   59.613
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    480 Energy:     -1604.159654  Gnorm:      0.172737  CPU:   59.763
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    481 Energy:     -1604.159682  Gnorm:      0.172737  CPU:   59.913
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    482 Energy:     -1604.159710  Gnorm:      0.172737  CPU:   60.062
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    483 Energy:     -1604.159738  Gnorm:      0.172737  CPU:   60.212
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    484 Energy:     -1604.159766  Gnorm:      0.172737  CPU:   60.361
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    485 Energy:     -1604.159794  Gnorm:      0.172738  CPU:   60.510
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    486 Energy:     -1604.159821  Gnorm:      0.172738  CPU:   60.660
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    487 Energy:     -1604.159849  Gnorm:      0.172738  CPU:   60.809
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    488 Energy:     -1604.159877  Gnorm:      0.172738  CPU:   60.958
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    489 Energy:     -1604.159905  Gnorm:      0.172738  CPU:   61.108
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    490 Energy:     -1604.159933  Gnorm:      0.172738  CPU:   61.258
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    491 Energy:     -1604.159961  Gnorm:      0.172739  CPU:   61.407
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    492 Energy:     -1604.159989  Gnorm:      0.172739  CPU:   61.557
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    493 Energy:     -1604.160017  Gnorm:      0.172739  CPU:   61.706
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    494 Energy:     -1604.160044  Gnorm:      0.172739  CPU:   61.855
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    495 Energy:     -1604.160072  Gnorm:      0.172739  CPU:   62.004
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    496 Energy:     -1604.160100  Gnorm:      0.172739  CPU:   62.154
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    497 Energy:     -1604.160128  Gnorm:      0.172740  CPU:   62.303
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    498 Energy:     -1604.160156  Gnorm:      0.172740  CPU:   62.453
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    499 Energy:     -1604.160184  Gnorm:      0.172740  CPU:   62.602
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    500 Energy:     -1604.160211  Gnorm:      0.172740  CPU:   62.752
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    501 Energy:     -1604.160239  Gnorm:      0.172740  CPU:   62.902
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    502 Energy:     -1604.160267  Gnorm:      0.172740  CPU:   63.052
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    503 Energy:     -1604.160295  Gnorm:      0.172741  CPU:   63.202
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    504 Energy:     -1604.160322  Gnorm:      0.172741  CPU:   63.352
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    505 Energy:     -1604.160350  Gnorm:      0.172741  CPU:   63.501
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    506 Energy:     -1604.160378  Gnorm:      0.172741  CPU:   63.651
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    507 Energy:     -1604.160406  Gnorm:      0.172741  CPU:   63.804
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    508 Energy:     -1604.160433  Gnorm:      0.172741  CPU:   63.954
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    509 Energy:     -1604.160461  Gnorm:      0.172742  CPU:   64.104
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    510 Energy:     -1604.160489  Gnorm:      0.172742  CPU:   64.254
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    511 Energy:     -1604.160517  Gnorm:      0.172742  CPU:   64.403
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    512 Energy:     -1604.160544  Gnorm:      0.172742  CPU:   64.552
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    513 Energy:     -1604.160572  Gnorm:      0.172742  CPU:   64.701
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    514 Energy:     -1604.160600  Gnorm:      0.172743  CPU:   64.851
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    515 Energy:     -1604.160627  Gnorm:      0.172743  CPU:   65.001
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    516 Energy:     -1604.160655  Gnorm:      0.172743  CPU:   65.150
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    517 Energy:     -1604.160683  Gnorm:      0.172743  CPU:   65.299
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    518 Energy:     -1604.160710  Gnorm:      0.172743  CPU:   65.449
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    519 Energy:     -1604.160738  Gnorm:      0.172743  CPU:   65.598
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    520 Energy:     -1604.160766  Gnorm:      0.172744  CPU:   65.748
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    521 Energy:     -1604.160793  Gnorm:      0.172744  CPU:   65.897
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    522 Energy:     -1604.160821  Gnorm:      0.172744  CPU:   66.047
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    523 Energy:     -1604.160848  Gnorm:      0.172744  CPU:   66.196
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    524 Energy:     -1604.160876  Gnorm:      0.172744  CPU:   66.345
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    525 Energy:     -1604.160904  Gnorm:      0.172744  CPU:   66.494
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    526 Energy:     -1604.160931  Gnorm:      0.172745  CPU:   66.643
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    527 Energy:     -1604.160959  Gnorm:      0.172745  CPU:   66.793
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    528 Energy:     -1604.160986  Gnorm:      0.172745  CPU:   66.943
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    529 Energy:     -1604.161014  Gnorm:      0.172745  CPU:   67.092
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    530 Energy:     -1604.161041  Gnorm:      0.172745  CPU:   67.241
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    531 Energy:     -1604.161069  Gnorm:      0.172745  CPU:   67.390
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    532 Energy:     -1604.161096  Gnorm:      0.172746  CPU:   67.540
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    533 Energy:     -1604.161124  Gnorm:      0.172746  CPU:   67.689
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    534 Energy:     -1604.161151  Gnorm:      0.172746  CPU:   67.839
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    535 Energy:     -1604.161179  Gnorm:      0.172746  CPU:   67.988
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    536 Energy:     -1604.161206  Gnorm:      0.172746  CPU:   68.137
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    537 Energy:     -1604.161234  Gnorm:      0.172746  CPU:   68.286
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    538 Energy:     -1604.161261  Gnorm:      0.172747  CPU:   68.435
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    539 Energy:     -1604.161289  Gnorm:      0.172747  CPU:   68.585
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    540 Energy:     -1604.161316  Gnorm:      0.172747  CPU:   68.734
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    541 Energy:     -1604.161344  Gnorm:      0.172747  CPU:   68.884
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    542 Energy:     -1604.161371  Gnorm:      0.172747  CPU:   69.034
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    543 Energy:     -1604.161399  Gnorm:      0.172747  CPU:   69.183
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    544 Energy:     -1604.161426  Gnorm:      0.172748  CPU:   69.332
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    545 Energy:     -1604.161454  Gnorm:      0.172748  CPU:   69.482
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    546 Energy:     -1604.161481  Gnorm:      0.172748  CPU:   69.632
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    547 Energy:     -1604.161508  Gnorm:      0.172748  CPU:   69.781
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    548 Energy:     -1604.161536  Gnorm:      0.172748  CPU:   69.930
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    549 Energy:     -1604.161563  Gnorm:      0.172748  CPU:   70.079
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    550 Energy:     -1604.161591  Gnorm:      0.172748  CPU:   70.229
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    551 Energy:     -1604.161618  Gnorm:      0.172749  CPU:   70.378
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    552 Energy:     -1604.161645  Gnorm:      0.172749  CPU:   70.527
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    553 Energy:     -1604.161673  Gnorm:      0.172749  CPU:   70.676
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    554 Energy:     -1604.161700  Gnorm:      0.172749  CPU:   70.826
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    555 Energy:     -1604.161727  Gnorm:      0.172749  CPU:   70.977
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    556 Energy:     -1604.161755  Gnorm:      0.172749  CPU:   71.126
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    557 Energy:     -1604.161782  Gnorm:      0.172750  CPU:   71.275
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    558 Energy:     -1604.161809  Gnorm:      0.172750  CPU:   71.425
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    559 Energy:     -1604.161837  Gnorm:      0.172750  CPU:   71.574
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    560 Energy:     -1604.161864  Gnorm:      0.172750  CPU:   71.723
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    561 Energy:     -1604.161891  Gnorm:      0.172750  CPU:   71.873
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    562 Energy:     -1604.161919  Gnorm:      0.172750  CPU:   72.022
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    563 Energy:     -1604.161946  Gnorm:      0.172751  CPU:   72.171
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    564 Energy:     -1604.161973  Gnorm:      0.172751  CPU:   72.320
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    565 Energy:     -1604.162000  Gnorm:      0.172751  CPU:   72.470
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    566 Energy:     -1604.162028  Gnorm:      0.172751  CPU:   72.619
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    567 Energy:     -1604.162055  Gnorm:      0.172751  CPU:   72.768
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    568 Energy:     -1604.162082  Gnorm:      0.172751  CPU:   72.917
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    569 Energy:     -1604.162109  Gnorm:      0.172752  CPU:   73.067
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    570 Energy:     -1604.162137  Gnorm:      0.172752  CPU:   73.216
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    571 Energy:     -1604.162164  Gnorm:      0.172752  CPU:   73.365
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    572 Energy:     -1604.162191  Gnorm:      0.172752  CPU:   73.514
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    573 Energy:     -1604.162218  Gnorm:      0.172752  CPU:   73.664
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    574 Energy:     -1604.162245  Gnorm:      0.172752  CPU:   73.813
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    575 Energy:     -1604.162273  Gnorm:      0.172753  CPU:   73.963
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    576 Energy:     -1604.162300  Gnorm:      0.172753  CPU:   74.113
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    577 Energy:     -1604.162327  Gnorm:      0.172753  CPU:   74.263
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    578 Energy:     -1604.162354  Gnorm:      0.172753  CPU:   74.413
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    579 Energy:     -1604.162381  Gnorm:      0.172753  CPU:   74.562
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    580 Energy:     -1604.162408  Gnorm:      0.172753  CPU:   74.711
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    581 Energy:     -1604.162435  Gnorm:      0.172754  CPU:   74.861
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    582 Energy:     -1604.162463  Gnorm:      0.172754  CPU:   75.010
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    583 Energy:     -1604.162490  Gnorm:      0.172754  CPU:   75.160
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    584 Energy:     -1604.162517  Gnorm:      0.172754  CPU:   75.310
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    585 Energy:     -1604.162544  Gnorm:      0.172754  CPU:   75.459
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    586 Energy:     -1604.162571  Gnorm:      0.172754  CPU:   75.609
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    587 Energy:     -1604.162598  Gnorm:      0.172755  CPU:   75.758
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    588 Energy:     -1604.162625  Gnorm:      0.172755  CPU:   75.907
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    589 Energy:     -1604.162652  Gnorm:      0.172755  CPU:   76.057
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    590 Energy:     -1604.162679  Gnorm:      0.172755  CPU:   76.206
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    591 Energy:     -1604.162706  Gnorm:      0.172755  CPU:   76.356
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    592 Energy:     -1604.162733  Gnorm:      0.172755  CPU:   76.505
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    593 Energy:     -1604.162760  Gnorm:      0.172756  CPU:   76.657
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    594 Energy:     -1604.162787  Gnorm:      0.172756  CPU:   76.806
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    595 Energy:     -1604.162814  Gnorm:      0.172756  CPU:   76.955
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    596 Energy:     -1604.162841  Gnorm:      0.172756  CPU:   77.106
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    597 Energy:     -1604.162868  Gnorm:      0.172756  CPU:   77.255
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    598 Energy:     -1604.162895  Gnorm:      0.172756  CPU:   77.407
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    599 Energy:     -1604.162922  Gnorm:      0.172757  CPU:   77.557
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    600 Energy:     -1604.162949  Gnorm:      0.172757  CPU:   77.706
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    601 Energy:     -1604.162976  Gnorm:      0.172757  CPU:   77.855
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    602 Energy:     -1604.163003  Gnorm:      0.172757  CPU:   78.005
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    603 Energy:     -1604.163030  Gnorm:      0.172757  CPU:   78.154
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    604 Energy:     -1604.163057  Gnorm:      0.172757  CPU:   78.304
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    605 Energy:     -1604.163084  Gnorm:      0.172757  CPU:   78.453
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    606 Energy:     -1604.163111  Gnorm:      0.172758  CPU:   78.602
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    607 Energy:     -1604.163138  Gnorm:      0.172758  CPU:   78.751
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    608 Energy:     -1604.163165  Gnorm:      0.172758  CPU:   78.901
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    609 Energy:     -1604.163192  Gnorm:      0.172758  CPU:   79.050
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    610 Energy:     -1604.163219  Gnorm:      0.172758  CPU:   79.201
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    611 Energy:     -1604.163246  Gnorm:      0.172758  CPU:   79.351
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    612 Energy:     -1604.163273  Gnorm:      0.172759  CPU:   79.500
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    613 Energy:     -1604.163299  Gnorm:      0.172759  CPU:   79.650
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    614 Energy:     -1604.163326  Gnorm:      0.172759  CPU:   79.800
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    615 Energy:     -1604.163353  Gnorm:      0.172759  CPU:   79.949
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    616 Energy:     -1604.163380  Gnorm:      0.172759  CPU:   80.098
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    617 Energy:     -1604.163407  Gnorm:      0.172759  CPU:   80.248
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    618 Energy:     -1604.163434  Gnorm:      0.172760  CPU:   80.397
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    619 Energy:     -1604.163461  Gnorm:      0.172760  CPU:   80.547
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    620 Energy:     -1604.163487  Gnorm:      0.172760  CPU:   80.696
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    621 Energy:     -1604.163514  Gnorm:      0.172760  CPU:   80.845
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    622 Energy:     -1604.163541  Gnorm:      0.172760  CPU:   80.994
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    623 Energy:     -1604.163568  Gnorm:      0.172760  CPU:   81.143
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    624 Energy:     -1604.163595  Gnorm:      0.172761  CPU:   81.292
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    625 Energy:     -1604.163621  Gnorm:      0.172761  CPU:   81.441
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    626 Energy:     -1604.163648  Gnorm:      0.172761  CPU:   81.591
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    627 Energy:     -1604.163675  Gnorm:      0.172761  CPU:   81.741
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    628 Energy:     -1604.163702  Gnorm:      0.172761  CPU:   81.890
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    629 Energy:     -1604.163728  Gnorm:      0.172761  CPU:   82.039
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    630 Energy:     -1604.163755  Gnorm:      0.172762  CPU:   82.188
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    631 Energy:     -1604.163782  Gnorm:      0.172762  CPU:   82.337
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    632 Energy:     -1604.163809  Gnorm:      0.172762  CPU:   82.486
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    633 Energy:     -1604.163835  Gnorm:      0.172762  CPU:   82.635
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    634 Energy:     -1604.163862  Gnorm:      0.172762  CPU:   82.784
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    635 Energy:     -1604.163889  Gnorm:      0.172762  CPU:   82.934
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    636 Energy:     -1604.163915  Gnorm:      0.172763  CPU:   83.083
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    637 Energy:     -1604.163942  Gnorm:      0.172763  CPU:   83.232
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    638 Energy:     -1604.163969  Gnorm:      0.172763  CPU:   83.381
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    639 Energy:     -1604.163995  Gnorm:      0.172763  CPU:   83.530
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    640 Energy:     -1604.164022  Gnorm:      0.172763  CPU:   83.679
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    641 Energy:     -1604.164049  Gnorm:      0.172763  CPU:   83.829
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    642 Energy:     -1604.164075  Gnorm:      0.172763  CPU:   83.979
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    643 Energy:     -1604.164102  Gnorm:      0.172764  CPU:   84.128
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    644 Energy:     -1604.164129  Gnorm:      0.172764  CPU:   84.277
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    645 Energy:     -1604.164155  Gnorm:      0.172764  CPU:   84.426
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    646 Energy:     -1604.164182  Gnorm:      0.172764  CPU:   84.576
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    647 Energy:     -1604.164209  Gnorm:      0.172764  CPU:   84.725
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    648 Energy:     -1604.164235  Gnorm:      0.172764  CPU:   84.874
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    649 Energy:     -1604.164262  Gnorm:      0.172765  CPU:   85.026
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    650 Energy:     -1604.164288  Gnorm:      0.172765  CPU:   85.175
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    651 Energy:     -1604.164315  Gnorm:      0.172765  CPU:   85.324
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    652 Energy:     -1604.164342  Gnorm:      0.172765  CPU:   85.473
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    653 Energy:     -1604.164368  Gnorm:      0.172765  CPU:   85.622
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    654 Energy:     -1604.164395  Gnorm:      0.172765  CPU:   85.771
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    655 Energy:     -1604.164421  Gnorm:      0.172766  CPU:   85.920
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    656 Energy:     -1604.164448  Gnorm:      0.172766  CPU:   86.069
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    657 Energy:     -1604.164474  Gnorm:      0.172766  CPU:   86.218
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    658 Energy:     -1604.164501  Gnorm:      0.172766  CPU:   86.367
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    659 Energy:     -1604.164527  Gnorm:      0.172766  CPU:   86.516
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    660 Energy:     -1604.164554  Gnorm:      0.172766  CPU:   86.666
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    661 Energy:     -1604.164580  Gnorm:      0.172766  CPU:   86.815
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    662 Energy:     -1604.164607  Gnorm:      0.172767  CPU:   86.964
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    663 Energy:     -1604.164633  Gnorm:      0.172767  CPU:   87.113
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    664 Energy:     -1604.164660  Gnorm:      0.172767  CPU:   87.262
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    665 Energy:     -1604.164686  Gnorm:      0.172767  CPU:   87.412
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    666 Energy:     -1604.164713  Gnorm:      0.172767  CPU:   87.561
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    667 Energy:     -1604.164739  Gnorm:      0.172767  CPU:   87.710
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    668 Energy:     -1604.164766  Gnorm:      0.172768  CPU:   87.859
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    669 Energy:     -1604.164792  Gnorm:      0.172768  CPU:   88.008
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    670 Energy:     -1604.164818  Gnorm:      0.172768  CPU:   88.158
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    671 Energy:     -1604.164845  Gnorm:      0.172768  CPU:   88.306
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    672 Energy:     -1604.164871  Gnorm:      0.172768  CPU:   88.455
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    673 Energy:     -1604.164898  Gnorm:      0.172768  CPU:   88.605
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    674 Energy:     -1604.164924  Gnorm:      0.172769  CPU:   88.754
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    675 Energy:     -1604.164950  Gnorm:      0.172769  CPU:   88.903
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    676 Energy:     -1604.164977  Gnorm:      0.172769  CPU:   89.052
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    677 Energy:     -1604.165003  Gnorm:      0.172769  CPU:   89.201
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    678 Energy:     -1604.165030  Gnorm:      0.172769  CPU:   89.351
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    679 Energy:     -1604.165056  Gnorm:      0.172769  CPU:   89.500
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    680 Energy:     -1604.165082  Gnorm:      0.172769  CPU:   89.649
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    681 Energy:     -1604.165109  Gnorm:      0.172770  CPU:   89.798
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    682 Energy:     -1604.165135  Gnorm:      0.172770  CPU:   89.947
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    683 Energy:     -1604.165161  Gnorm:      0.172770  CPU:   90.096
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    684 Energy:     -1604.165188  Gnorm:      0.172770  CPU:   90.245
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    685 Energy:     -1604.165214  Gnorm:      0.172770  CPU:   90.394
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    686 Energy:     -1604.165240  Gnorm:      0.172770  CPU:   90.543
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    687 Energy:     -1604.165267  Gnorm:      0.172771  CPU:   90.692
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    688 Energy:     -1604.165293  Gnorm:      0.172771  CPU:   90.841
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    689 Energy:     -1604.165319  Gnorm:      0.172771  CPU:   90.991
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    690 Energy:     -1604.165345  Gnorm:      0.172771  CPU:   91.140
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    691 Energy:     -1604.165372  Gnorm:      0.172771  CPU:   91.290
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    692 Energy:     -1604.165398  Gnorm:      0.172771  CPU:   91.440
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    693 Energy:     -1604.165424  Gnorm:      0.172772  CPU:   91.589
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    694 Energy:     -1604.165450  Gnorm:      0.172772  CPU:   91.739
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    695 Energy:     -1604.165477  Gnorm:      0.172772  CPU:   91.888
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    696 Energy:     -1604.165503  Gnorm:      0.172772  CPU:   92.037
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    697 Energy:     -1604.165529  Gnorm:      0.172772  CPU:   92.186
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    698 Energy:     -1604.165555  Gnorm:      0.172772  CPU:   92.334
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    699 Energy:     -1604.165582  Gnorm:      0.172772  CPU:   92.483
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    700 Energy:     -1604.165608  Gnorm:      0.172773  CPU:   92.632
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    701 Energy:     -1604.165634  Gnorm:      0.172773  CPU:   92.781
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    702 Energy:     -1604.165660  Gnorm:      0.172773  CPU:   92.931
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    703 Energy:     -1604.165686  Gnorm:      0.172773  CPU:   93.079
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    704 Energy:     -1604.165713  Gnorm:      0.172773  CPU:   93.228
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    705 Energy:     -1604.165739  Gnorm:      0.172773  CPU:   93.377
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    706 Energy:     -1604.165765  Gnorm:      0.172774  CPU:   93.526
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    707 Energy:     -1604.165791  Gnorm:      0.172774  CPU:   93.674
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    708 Energy:     -1604.165817  Gnorm:      0.172774  CPU:   93.824
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    709 Energy:     -1604.165843  Gnorm:      0.172774  CPU:   93.973
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    710 Energy:     -1604.165869  Gnorm:      0.172774  CPU:   94.122
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    711 Energy:     -1604.165896  Gnorm:      0.172774  CPU:   94.271
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    712 Energy:     -1604.165922  Gnorm:      0.172774  CPU:   94.420
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    713 Energy:     -1604.165948  Gnorm:      0.172775  CPU:   94.571
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    714 Energy:     -1604.165974  Gnorm:      0.172775  CPU:   94.720
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    715 Energy:     -1604.166000  Gnorm:      0.172775  CPU:   94.869
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    716 Energy:     -1604.166026  Gnorm:      0.172775  CPU:   95.017
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    717 Energy:     -1604.166052  Gnorm:      0.172775  CPU:   95.166
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    718 Energy:     -1604.166078  Gnorm:      0.172775  CPU:   95.315
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    719 Energy:     -1604.166104  Gnorm:      0.172776  CPU:   95.465
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    720 Energy:     -1604.166130  Gnorm:      0.172776  CPU:   95.613
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    721 Energy:     -1604.166156  Gnorm:      0.172776  CPU:   95.762
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    722 Energy:     -1604.166182  Gnorm:      0.172776  CPU:   95.911
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    723 Energy:     -1604.166208  Gnorm:      0.172776  CPU:   96.060
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    724 Energy:     -1604.166234  Gnorm:      0.172776  CPU:   96.209
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    725 Energy:     -1604.166260  Gnorm:      0.172776  CPU:   96.358
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    726 Energy:     -1604.166286  Gnorm:      0.172777  CPU:   96.507
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    727 Energy:     -1604.166312  Gnorm:      0.172777  CPU:   96.656
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    728 Energy:     -1604.166338  Gnorm:      0.172777  CPU:   96.806
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    729 Energy:     -1604.166364  Gnorm:      0.172777  CPU:   96.955
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    730 Energy:     -1604.166390  Gnorm:      0.172777  CPU:   97.105
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    731 Energy:     -1604.166416  Gnorm:      0.172777  CPU:   97.254
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    732 Energy:     -1604.166442  Gnorm:      0.172778  CPU:   97.403
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    733 Energy:     -1604.166468  Gnorm:      0.172778  CPU:   97.552
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    734 Energy:     -1604.166494  Gnorm:      0.172778  CPU:   97.701
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    735 Energy:     -1604.166520  Gnorm:      0.172778  CPU:   97.851
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    736 Energy:     -1604.166546  Gnorm:      0.172778  CPU:   98.002
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    737 Energy:     -1604.166572  Gnorm:      0.172778  CPU:   98.151
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    738 Energy:     -1604.166598  Gnorm:      0.172778  CPU:   98.301
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    739 Energy:     -1604.166624  Gnorm:      0.172779  CPU:   98.450
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    740 Energy:     -1604.166650  Gnorm:      0.172779  CPU:   98.599
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    741 Energy:     -1604.166676  Gnorm:      0.172779  CPU:   98.748
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    742 Energy:     -1604.166701  Gnorm:      0.172779  CPU:   98.897
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    743 Energy:     -1604.166727  Gnorm:      0.172779  CPU:   99.046
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    744 Energy:     -1604.166753  Gnorm:      0.172779  CPU:   99.195
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    745 Energy:     -1604.166779  Gnorm:      0.172780  CPU:   99.344
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    746 Energy:     -1604.166805  Gnorm:      0.172780  CPU:   99.493
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    747 Energy:     -1604.166831  Gnorm:      0.172780  CPU:   99.642
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    748 Energy:     -1604.166857  Gnorm:      0.172780  CPU:   99.791
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    749 Energy:     -1604.166882  Gnorm:      0.172780  CPU:   99.940
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    750 Energy:     -1604.166908  Gnorm:      0.172780  CPU:  100.089
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    751 Energy:     -1604.166934  Gnorm:      0.172780  CPU:  100.238
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    752 Energy:     -1604.166960  Gnorm:      0.172781  CPU:  100.388
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    753 Energy:     -1604.166986  Gnorm:      0.172781  CPU:  100.537
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    754 Energy:     -1604.167011  Gnorm:      0.172781  CPU:  100.686
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    755 Energy:     -1604.167037  Gnorm:      0.172781  CPU:  100.836
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    756 Energy:     -1604.167063  Gnorm:      0.172781  CPU:  100.985
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    757 Energy:     -1604.167089  Gnorm:      0.172781  CPU:  101.134
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    758 Energy:     -1604.167115  Gnorm:      0.172781  CPU:  101.283
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    759 Energy:     -1604.167140  Gnorm:      0.172782  CPU:  101.432
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    760 Energy:     -1604.167166  Gnorm:      0.172782  CPU:  101.582
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    761 Energy:     -1604.167192  Gnorm:      0.172782  CPU:  101.731
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    762 Energy:     -1604.167217  Gnorm:      0.172782  CPU:  101.880
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    763 Energy:     -1604.167243  Gnorm:      0.172782  CPU:  102.029
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    764 Energy:     -1604.167269  Gnorm:      0.172782  CPU:  102.179
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    765 Energy:     -1604.167295  Gnorm:      0.172783  CPU:  102.328
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    766 Energy:     -1604.167320  Gnorm:      0.172783  CPU:  102.476
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    767 Energy:     -1604.167346  Gnorm:      0.172783  CPU:  102.625
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    768 Energy:     -1604.167372  Gnorm:      0.172783  CPU:  102.774
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    769 Energy:     -1604.167397  Gnorm:      0.172783  CPU:  102.923
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    770 Energy:     -1604.167423  Gnorm:      0.172783  CPU:  103.072
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    771 Energy:     -1604.167449  Gnorm:      0.172783  CPU:  103.221
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    772 Energy:     -1604.167474  Gnorm:      0.172784  CPU:  103.370
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    773 Energy:     -1604.167500  Gnorm:      0.172784  CPU:  103.520
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    774 Energy:     -1604.167526  Gnorm:      0.172784  CPU:  103.670
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    775 Energy:     -1604.167551  Gnorm:      0.172784  CPU:  103.819
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    776 Energy:     -1604.167577  Gnorm:      0.172784  CPU:  103.969
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    777 Energy:     -1604.167603  Gnorm:      0.172784  CPU:  104.118
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    778 Energy:     -1604.167628  Gnorm:      0.172784  CPU:  104.267
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    779 Energy:     -1604.167654  Gnorm:      0.172785  CPU:  104.416
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    780 Energy:     -1604.167679  Gnorm:      0.172785  CPU:  104.565
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    781 Energy:     -1604.167705  Gnorm:      0.172785  CPU:  104.715
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    782 Energy:     -1604.167731  Gnorm:      0.172785  CPU:  104.864
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    783 Energy:     -1604.167756  Gnorm:      0.172785  CPU:  105.013
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    784 Energy:     -1604.167782  Gnorm:      0.172785  CPU:  105.162
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    785 Energy:     -1604.167807  Gnorm:      0.172786  CPU:  105.311
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    786 Energy:     -1604.167833  Gnorm:      0.172786  CPU:  105.461
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    787 Energy:     -1604.167858  Gnorm:      0.172786  CPU:  105.610
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    788 Energy:     -1604.167884  Gnorm:      0.172786  CPU:  105.760
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    789 Energy:     -1604.167909  Gnorm:      0.172786  CPU:  105.909
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    790 Energy:     -1604.167935  Gnorm:      0.172786  CPU:  106.058
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    791 Energy:     -1604.167961  Gnorm:      0.172786  CPU:  106.207
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    792 Energy:     -1604.167986  Gnorm:      0.172787  CPU:  106.356
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    793 Energy:     -1604.168012  Gnorm:      0.172787  CPU:  106.505
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    794 Energy:     -1604.168037  Gnorm:      0.172787  CPU:  106.654
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    795 Energy:     -1604.168063  Gnorm:      0.172787  CPU:  106.803
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    796 Energy:     -1604.168088  Gnorm:      0.172787  CPU:  106.952
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    797 Energy:     -1604.168113  Gnorm:      0.172787  CPU:  107.101
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    798 Energy:     -1604.168139  Gnorm:      0.172787  CPU:  107.250
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    799 Energy:     -1604.168164  Gnorm:      0.172788  CPU:  107.400
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    800 Energy:     -1604.168190  Gnorm:      0.172788  CPU:  107.548
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    801 Energy:     -1604.168215  Gnorm:      0.172788  CPU:  107.698
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    802 Energy:     -1604.168241  Gnorm:      0.172788  CPU:  107.847
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    803 Energy:     -1604.168266  Gnorm:      0.172788  CPU:  107.996
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    804 Energy:     -1604.168292  Gnorm:      0.172788  CPU:  108.146
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    805 Energy:     -1604.168317  Gnorm:      0.172788  CPU:  108.295
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    806 Energy:     -1604.168342  Gnorm:      0.172789  CPU:  108.444
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    807 Energy:     -1604.168368  Gnorm:      0.172789  CPU:  108.593
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    808 Energy:     -1604.168393  Gnorm:      0.172789  CPU:  108.742
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    809 Energy:     -1604.168419  Gnorm:      0.172789  CPU:  108.891
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    810 Energy:     -1604.168444  Gnorm:      0.172789  CPU:  109.041
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    811 Energy:     -1604.168469  Gnorm:      0.172789  CPU:  109.190
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    812 Energy:     -1604.168495  Gnorm:      0.172789  CPU:  109.338
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    813 Energy:     -1604.168520  Gnorm:      0.172790  CPU:  109.487
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    814 Energy:     -1604.168545  Gnorm:      0.172790  CPU:  109.636
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    815 Energy:     -1604.168571  Gnorm:      0.172790  CPU:  109.785
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    816 Energy:     -1604.168596  Gnorm:      0.172790  CPU:  109.934
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    817 Energy:     -1604.168621  Gnorm:      0.172790  CPU:  110.083
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    818 Energy:     -1604.168647  Gnorm:      0.172790  CPU:  110.232
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    819 Energy:     -1604.168672  Gnorm:      0.172790  CPU:  110.381
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    820 Energy:     -1604.168697  Gnorm:      0.172791  CPU:  110.530
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    821 Energy:     -1604.168723  Gnorm:      0.172791  CPU:  110.679
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    822 Energy:     -1604.168748  Gnorm:      0.172791  CPU:  110.828
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    823 Energy:     -1604.168773  Gnorm:      0.172791  CPU:  110.977
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    824 Energy:     -1604.168799  Gnorm:      0.172791  CPU:  111.126
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    825 Energy:     -1604.168824  Gnorm:      0.172791  CPU:  111.275
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    826 Energy:     -1604.168849  Gnorm:      0.172792  CPU:  111.424
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    827 Energy:     -1604.168874  Gnorm:      0.172792  CPU:  111.573
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    828 Energy:     -1604.168900  Gnorm:      0.172792  CPU:  111.722
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    829 Energy:     -1604.168925  Gnorm:      0.172792  CPU:  111.871
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    830 Energy:     -1604.168950  Gnorm:      0.172792  CPU:  112.020
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    831 Energy:     -1604.168975  Gnorm:      0.172792  CPU:  112.169
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    832 Energy:     -1604.169001  Gnorm:      0.172792  CPU:  112.318
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    833 Energy:     -1604.169026  Gnorm:      0.172793  CPU:  112.467
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    834 Energy:     -1604.169051  Gnorm:      0.172793  CPU:  112.617
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    835 Energy:     -1604.169076  Gnorm:      0.172793  CPU:  112.766
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    836 Energy:     -1604.169101  Gnorm:      0.172793  CPU:  112.915
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    837 Energy:     -1604.169127  Gnorm:      0.172793  CPU:  113.064
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    838 Energy:     -1604.169152  Gnorm:      0.172793  CPU:  113.213
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    839 Energy:     -1604.169177  Gnorm:      0.172793  CPU:  113.362
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    840 Energy:     -1604.169202  Gnorm:      0.172794  CPU:  113.511
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    841 Energy:     -1604.169224  Gnorm:      0.171708  CPU:  113.674
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    842 Energy:     -1604.169241  Gnorm:      0.172505  CPU:  113.824
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    843 Energy:     -1604.169264  Gnorm:      0.172716  CPU:  113.973
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    844 Energy:     -1604.169285  Gnorm:      0.171686  CPU:  114.137
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    845 Energy:     -1604.169303  Gnorm:      0.172499  CPU:  114.287
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    846 Energy:     -1604.169325  Gnorm:      0.172716  CPU:  114.435
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    847 Energy:     -1604.169346  Gnorm:      0.171687  CPU:  114.599
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    848 Energy:     -1604.169364  Gnorm:      0.172501  CPU:  114.748
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    849 Energy:     -1604.169386  Gnorm:      0.172717  CPU:  114.897
+  ** Hessian has wrong structure
+  ** Imaginary eigenvectors =   1
+  Cycle:    850 Energy:     -1604.169407  Gnorm:      0.171688  CPU:  115.061
+
+
+  **** Maximum number of function calls has been reached ****
+
+
+  Final energy =   -1604.16940744 eV
+  Final Gnorm  =       0.17168849
+
+  Components of energy : 
+
+--------------------------------------------------------------------------------
+  Interatomic potentials     =       -1604.16940744 eV
+  Monopole - monopole (real) =           0.00000000 eV
+  Monopole - monopole (recip)=           0.00000000 eV
+  Monopole - monopole (total)=           0.00000000 eV
+--------------------------------------------------------------------------------
+  Total lattice energy       =       -1604.16940744 eV
+--------------------------------------------------------------------------------
+  Total lattice energy       =         -154777.8258 kJ/(mole unit cells)
+--------------------------------------------------------------------------------
+
+  Final fractional coordinates of atoms :
+
+--------------------------------------------------------------------------------
+   No.  Atomic        x           y          z          Radius
+        Label       (Frac)      (Frac)     (Frac)       (Angs) 
+--------------------------------------------------------------------------------
+     1  Mo    c     0.256088    0.383893    0.731646    0.000000
+     2  Mo    c     0.451593    0.518398    0.535676    0.000000
+     3  Mo    c     0.582989    0.596759    0.529250    0.000000
+     4  Mo    c     0.323931    0.438133    0.532776    0.000000
+     5  Mo    c     0.386534    0.593763    0.657781    0.000000
+     6  Mo    c     0.583598    0.446290    0.524738    0.000000
+     7  Mo    c     0.321417    0.592160    0.531431    0.000000
+     8  Mo    c     0.518895    0.672067    0.654482    0.000000
+     9  Mo    c     0.532920    0.362481    0.645791    0.000000
+    10  Mo    c     0.455309    0.357969    0.532679    0.000000
+    11  Mo    c     0.522128    0.517303    0.654448    0.000000
+    12  Mo    c     0.521427    0.579038    0.171708    0.000000
+    13  Mo    c     0.673017    0.326769    0.536833    0.000000
+    14  Mo    c     0.256696    0.515479    0.655214    0.000000
+    15  Mo    c     0.450039    0.676352    0.533766    0.000000
+    16  Mo    c     0.391525    0.437344    0.656806    0.000000
+    17  Mg    c     0.936133    0.015837    0.293094    0.000000
+    18  Mg    c     0.061061    0.140636    0.293385    0.000000
+    19  Mg    c     0.910070    0.140853    0.418691    0.000000
+    20  Mg    c     0.035371    0.015622    0.418706    0.000000
+    21  Mg    c     0.936123    0.265440    0.293046    0.000000
+    22  Mg    c     0.061179    0.390460    0.292364    0.000000
+    23  Mg    c     0.909985    0.390867    0.417541    0.000000
+    24  Mg    c     0.035338    0.265918    0.418454    0.000000
+    25  Mg    c     0.936815    0.515567    0.291244    0.000000
+    26  Mg    c     0.061500    0.640790    0.291525    0.000000
+    27  Mg    c     0.910592    0.640479    0.416300    0.000000
+    28  Mg    c     0.035699    0.515680    0.417248    0.000000
+    29  Mg    c     0.936606    0.766005    0.291562    0.000000
+    30  Mg    c     0.061283    0.890932    0.292784    0.000000
+    31  Mg    c     0.910420    0.890441    0.417890    0.000000
+    32  Mg    c     0.035665    0.765390    0.417456    0.000000
+    33  Mg    c     0.186097    0.015786    0.293487    0.000000
+    34  Mg    c     0.311003    0.140567    0.293504    0.000000
+    35  Mg    c     0.160545    0.140905    0.418854    0.000000
+    36  Mg    c     0.285553    0.015645    0.419119    0.000000
+    37  Mg    c     0.186109    0.265481    0.292880    0.000000
+    38  Mg    c     0.311317    0.390503    0.289581    0.000000
+    39  Mg    c     0.161084    0.390948    0.417316    0.000000
+    40  Mg    c     0.286167    0.266569    0.417980    0.000000
+    41  Mg    c     0.186286    0.515615    0.291716    0.000000
+    42  Mg    c     0.311611    0.640829    0.288843    0.000000
+    43  Mg    c     0.161188    0.640394    0.416649    0.000000
+    44  Mg    c     0.286452    0.515612    0.416633    0.000000
+    45  Mg    c     0.186395    0.765943    0.292148    0.000000
+    46  Mg    c     0.311135    0.890952    0.293233    0.000000
+    47  Mg    c     0.160629    0.890370    0.418431    0.000000
+    48  Mg    c     0.286157    0.764774    0.417436    0.000000
+    49  Mg    c     0.435875    0.015733    0.293867    0.000000
+    50  Mg    c     0.560878    0.140572    0.293172    0.000000
+    51  Mg    c     0.410610    0.141623    0.418981    0.000000
+    52  Mg    c     0.535348    0.015659    0.418904    0.000000
+    53  Mg    c     0.436150    0.265359    0.292139    0.000000
+    54  Mg    c     0.562539    0.390402    0.285441    0.000000
+    55  Mg    c     0.412495    0.392152    0.412000    0.000000
+    56  Mg    c     0.535699    0.267798    0.417521    0.000000
+    57  Mg    c     0.436649    0.515675    0.287849    0.000000
+    58  Mg    c     0.562286    0.641358    0.286847    0.000000
+    59  Mg    c     0.411998    0.639121    0.412301    0.000000
+    60  Mg    c     0.538258    0.515861    0.410571    0.000000
+    61  Mg    c     0.436288    0.766062    0.292041    0.000000
+    62  Mg    c     0.560878    0.890851    0.293237    0.000000
+    63  Mg    c     0.410586    0.889739    0.418927    0.000000
+    64  Mg    c     0.535530    0.763715    0.417850    0.000000
+    65  Mg    c     0.685976    0.015690    0.292936    0.000000
+    66  Mg    c     0.811090    0.140657    0.293028    0.000000
+    67  Mg    c     0.660225    0.141288    0.417759    0.000000
+    68  Mg    c     0.785200    0.015634    0.418339    0.000000
+    69  Mg    c     0.686816    0.264961    0.289158    0.000000
+    70  Mg    c     0.812412    0.390344    0.290302    0.000000
+    71  Mg    c     0.662344    0.390720    0.409477    0.000000
+    72  Mg    c     0.784351    0.266239    0.418357    0.000000
+    73  Mg    c     0.687980    0.515804    0.285887    0.000000
+    74  Mg    c     0.812705    0.640889    0.288804    0.000000
+    75  Mg    c     0.662761    0.640756    0.409460    0.000000
+    76  Mg    c     0.785348    0.515649    0.415269    0.000000
+    77  Mg    c     0.686626    0.766540    0.289914    0.000000
+    78  Mg    c     0.811306    0.891037    0.292188    0.000000
+    79  Mg    c     0.660420    0.890022    0.417729    0.000000
+    80  Mg    c     0.785661    0.765262    0.416217    0.000000
+    81  O     c     0.061130    0.015806    0.293290    0.000000
+    82  O     c     0.936069    0.140635    0.293257    0.000000
+    83  O     c     0.910246    0.015628    0.418513    0.000000
+    84  O     c     0.035303    0.140812    0.418796    0.000000
+    85  O     c     0.061068    0.265474    0.293044    0.000000
+    86  O     c     0.936495    0.390422    0.292198    0.000000
+    87  O     c     0.909883    0.265960    0.418414    0.000000
+    88  O     c     0.035541    0.390860    0.417774    0.000000
+    89  O     c     0.061461    0.515579    0.291835    0.000000
+    90  O     c     0.936954    0.640816    0.290886    0.000000
+    91  O     c     0.910354    0.515671    0.416667    0.000000
+    92  O     c     0.035812    0.640486    0.416944    0.000000
+    93  O     c     0.061457    0.765958    0.292034    0.000000
+    94  O     c     0.936315    0.890972    0.292474    0.000000
+    95  O     c     0.910585    0.765378    0.416987    0.000000
+    96  O     c     0.035499    0.890457    0.418201    0.000000
+    97  O     c     0.311021    0.015764    0.293708    0.000000
+    98  O     c     0.186050    0.140613    0.293431    0.000000
+    99  O     c     0.160503    0.015629    0.418900    0.000000
+   100  O     c     0.285694    0.141225    0.418904    0.000000
+   101  O     c     0.311249    0.265320    0.292247    0.000000
+   102  O     c     0.186015    0.390481    0.291587    0.000000
+   103  O     c     0.160743    0.266025    0.418236    0.000000
+   104  O     c     0.286644    0.390919    0.414006    0.000000
+   105  O     c     0.311395    0.515657    0.289754    0.000000
+   106  O     c     0.186242    0.640812    0.290855    0.000000
+   107  O     c     0.161266    0.515685    0.417151    0.000000
+   108  O     c     0.286522    0.640505    0.413109    0.000000
+   109  O     c     0.311466    0.766173    0.291651    0.000000
+   110  O     c     0.186219    0.890928    0.293001    0.000000
+   111  O     c     0.160864    0.765297    0.417506    0.000000
+   112  O     c     0.285700    0.890083    0.418633    0.000000
+   113  O     c     0.560807    0.015704    0.293518    0.000000
+   114  O     c     0.435866    0.140634    0.293654    0.000000
+   115  O     c     0.410463    0.015659    0.419240    0.000000
+   116  O     c     0.535385    0.141629    0.418435    0.000000
+   117  O     c     0.561200    0.265223    0.290704    0.000000
+   118  O     c     0.436873    0.390459    0.287339    0.000000
+   119  O     c     0.411160    0.267702    0.418416    0.000000
+   120  O     c     0.537973    0.392396    0.409702    0.000000
+   121  O     c     0.562566    0.515828    0.286014    0.000000
+   122  O     c     0.436674    0.641201    0.288240    0.000000
+   123  O     c     0.411365    0.515589    0.412663    0.000000
+   124  O     c     0.537177    0.639210    0.411153    0.000000
+   125  O     c     0.561218    0.766178    0.291394    0.000000
+   126  O     c     0.435942    0.890805    0.293606    0.000000
+   127  O     c     0.410915    0.763769    0.418423    0.000000
+   128  O     c     0.535442    0.889713    0.418553    0.000000
+   129  O     c     0.811111    0.015843    0.292929    0.000000
+   130  O     c     0.686186    0.140210    0.292029    0.000000
+   131  O     c     0.660268    0.015671    0.418336    0.000000
+   132  O     c     0.784973    0.141026    0.418408    0.000000
+   133  O     c     0.811430    0.265460    0.292275    0.000000
+   134  O     c     0.688180    0.390409    0.285715    0.000000
+   135  O     c     0.660448    0.266168    0.413867    0.000000
+   136  O     c     0.784530    0.390830    0.417017    0.000000
+   137  O     c     0.812319    0.515534    0.289682    0.000000
+   138  O     c     0.687915    0.641213    0.285688    0.000000
+   139  O     c     0.661830    0.516225    0.411860    0.000000
+   140  O     c     0.785830    0.640418    0.414756    0.000000
+   141  O     c     0.811646    0.766079    0.290881    0.000000
+   142  O     c     0.686122    0.891087    0.292327    0.000000
+   143  O     c     0.660658    0.764703    0.415938    0.000000
+   144  O     c     0.785391    0.890326    0.417620    0.000000
+--------------------------------------------------------------------------------
+
+  Final Cartesian lattice vectors (Angstroms) :
+
+       16.683665    0.018788    1.619275
+        0.006842   16.749017   -0.008440
+        1.820814   -0.008198   17.178089
+
+
+  Final cell parameters and derivatives :
+
+--------------------------------------------------------------------------------
+       a           16.762072 Angstrom     dE/de1(xx)     3.750423 eV/strain
+       b           16.749020 Angstrom     dE/de2(yy)     2.709130 eV/strain
+       c           17.274321 Angstrom     dE/de3(zz)   -42.107797 eV/strain
+       alpha       90.053435 Degrees      dE/de4(yz)    -4.173918 eV/strain
+       beta        78.405869 Degrees      dE/de5(xz)    16.574333 eV/strain
+       gamma       89.915272 Degrees      dE/de6(xy)    11.965000 eV/strain
+--------------------------------------------------------------------------------
+
+  Primitive cell volume =          4750.772444 Angs**3
+
+  Density of cell =      1.438298 g/cm**3
+
+  Non-primitive cell volume =          4750.772444 Angs**3
+
+
+  Final internal derivatives :
+
+--------------------------------------------------------------------------------
+   No.  Atomic          a             b             c           Radius
+        Label          (eV)          (eV)          (eV)        (eV/Angs)
+--------------------------------------------------------------------------------
+      1 Mo    c       0.000000      0.000000      0.000000      0.000000
+      2 Mo    c       1.977063     -0.908983      1.787994      0.000000
+      3 Mo    c       1.537591      1.881635      0.134871      0.000000
+      4 Mo    c      -1.416717     -0.579260     -3.100392      0.000000
+      5 Mo    c       2.476060     -0.859161     -5.790987      0.000000
+      6 Mo    c       0.772181      0.898516     -2.498664      0.000000
+      7 Mo    c      -0.582198      0.257791     -3.031329      0.000000
+      8 Mo    c       2.054055     -1.048070     -4.173394      0.000000
+      9 Mo    c      -0.225722      1.904409     -4.589763      0.000000
+     10 Mo    c       0.439293      3.475469     -1.092268      0.000000
+     11 Mo    c       0.775253     -1.904141     -7.146267      0.000000
+     12 Mo    c      -1.192732      0.801159      4.169275      0.000000
+     13 Mo    c      -1.181361     -1.309852     -1.575075      0.000000
+     14 Mo    c       4.887847      1.117045    -11.034048      0.000000
+     15 Mo    c       1.689404     -1.985387     -3.337372      0.000000
+     16 Mo    c     -13.256677     -8.362848      6.023922      0.000000
+     17 Mg    c      -1.219275      0.701466      4.433375      0.000000
+     18 Mg    c      -1.125438      0.728098      4.418703      0.000000
+     19 Mg    c       1.226982     -0.826576     -4.530547      0.000000
+     20 Mg    c       1.290804     -0.818213     -4.569999      0.000000
+     21 Mg    c      -1.059369      0.763136      4.467185      0.000000
+     22 Mg    c      -1.168604      0.754911      4.466689      0.000000
+     23 Mg    c       1.280340     -0.859624     -4.584149      0.000000
+     24 Mg    c       1.214453     -0.856311     -4.545376      0.000000
+     25 Mg    c      -1.132090      0.785701      4.467220      0.000000
+     26 Mg    c      -1.194465      0.751097      4.406864      0.000000
+     27 Mg    c       1.286618     -0.777920     -4.587125      0.000000
+     28 Mg    c       1.245818     -0.870338     -4.560271      0.000000
+     29 Mg    c      -1.214449      0.713466      4.432586      0.000000
+     30 Mg    c      -1.167678      0.725369      4.452741      0.000000
+     31 Mg    c       1.223438     -0.758785     -4.510778      0.000000
+     32 Mg    c       1.244537     -0.771776     -4.513565      0.000000
+     33 Mg    c      -1.148492      0.676921      4.435770      0.000000
+     34 Mg    c      -1.151964      0.731255      4.431148      0.000000
+     35 Mg    c       1.310707     -0.799848     -4.594222      0.000000
+     36 Mg    c       1.326665     -0.757656     -4.589744      0.000000
+     37 Mg    c      -1.100362      0.722158      4.515609      0.000000
+     38 Mg    c      -0.940539      0.683599      4.750124      0.000000
+     39 Mg    c       1.053268     -0.911575     -4.436342      0.000000
+     40 Mg    c       1.223397     -0.910437     -4.503471      0.000000
+     41 Mg    c      -1.098808      0.710690      4.540374      0.000000
+     42 Mg    c      -0.939334      0.590107      4.712700      0.000000
+     43 Mg    c       1.047764     -0.830126     -4.389009      0.000000
+     44 Mg    c       1.517394     -0.796280     -3.226431      0.000000
+     45 Mg    c      -1.156219      0.651323      4.435167      0.000000
+     46 Mg    c      -1.156557      0.721885      4.480125      0.000000
+     47 Mg    c       1.250611     -0.694917     -4.503347      0.000000
+     48 Mg    c       1.320709     -0.581872     -4.270594      0.000000
+     49 Mg    c      -1.189251      0.684341      4.452023      0.000000
+     50 Mg    c      -1.189178      0.650460      4.442122      0.000000
+     51 Mg    c       1.265388     -0.836629     -4.667165      0.000000
+     52 Mg    c       1.209095     -0.803759     -4.579222      0.000000
+     53 Mg    c      -1.194946      1.093807      4.596851      0.000000
+     54 Mg    c      -1.476440      1.035009      5.129034      0.000000
+     55 Mg    c       0.100431     -0.575986     -2.674590      0.000000
+     56 Mg    c       0.672767     -0.680771     -3.376799      0.000000
+     57 Mg    c      -0.693328      1.311777      4.383468      0.000000
+     58 Mg    c      -1.710824      0.093823      4.587308      0.000000
+     59 Mg    c       0.518480     -1.217219     -1.960651      0.000000
+     60 Mg    c      -0.555281     -0.696039     -1.327669      0.000000
+     61 Mg    c      -1.169276      0.470643      4.282484      0.000000
+     62 Mg    c      -1.132294      0.686698      4.544502      0.000000
+     63 Mg    c       1.262984     -0.740905     -4.533089      0.000000
+     64 Mg    c       1.162224     -0.674046     -3.799914      0.000000
+     65 Mg    c      -1.192089      0.737776      4.437957      0.000000
+     66 Mg    c      -1.194847      0.565265      4.439057      0.000000
+     67 Mg    c       1.169078     -0.986374     -4.516520      0.000000
+     68 Mg    c       1.201102     -0.769235     -4.524481      0.000000
+     69 Mg    c      -1.213676      1.316821      4.963500      0.000000
+     70 Mg    c      -1.710446      0.671272      4.414806      0.000000
+     71 Mg    c      -0.187165      0.281629     -2.236523      0.000000
+     72 Mg    c       1.244243     -0.664198     -3.846917      0.000000
+     73 Mg    c      -1.719004      0.906403      4.725721      0.000000
+     74 Mg    c      -1.720366      0.738017      4.487190      0.000000
+     75 Mg    c      -0.240475     -1.286214     -3.321694      0.000000
+     76 Mg    c       1.491203     -0.703347     -4.332657      0.000000
+     77 Mg    c      -1.251950      0.443874      4.332446      0.000000
+     78 Mg    c      -1.206486      0.666845      4.410813      0.000000
+     79 Mg    c       1.116272     -0.731004     -4.513566      0.000000
+     80 Mg    c       1.226889     -0.646922     -4.482680      0.000000
+     81 O     c      -1.122925      0.677271      4.423103      0.000000
+     82 O     c      -1.144847      0.679489      4.412822      0.000000
+     83 O     c       1.204735     -0.753835     -4.514108      0.000000
+     84 O     c       1.237022     -0.816246     -4.573282      0.000000
+     85 O     c      -1.145923      0.703926      4.448975      0.000000
+     86 O     c      -1.042612      0.727959      4.481526      0.000000
+     87 O     c       1.236634     -0.817474     -4.549780      0.000000
+     88 O     c       1.205141     -0.848156     -4.542526      0.000000
+     89 O     c      -1.156022      0.708203      4.466737      0.000000
+     90 O     c      -1.192702      0.731793      4.428296      0.000000
+     91 O     c       1.311789     -0.837768     -4.568976      0.000000
+     92 O     c       1.203732     -0.796665     -4.567141      0.000000
+     93 O     c      -1.172391      0.671858      4.423204      0.000000
+     94 O     c      -1.191723      0.675782      4.428431      0.000000
+     95 O     c       1.208526     -0.729083     -4.510118      0.000000
+     96 O     c       1.273154     -0.690892     -4.490595      0.000000
+     97 O     c      -1.169933      0.680349      4.421986      0.000000
+     98 O     c      -1.134579      0.749694      4.435515      0.000000
+     99 O     c       1.271087     -0.792542     -4.587187      0.000000
+    100 O     c       1.333511     -0.761493     -4.619032      0.000000
+    101 O     c      -1.110856      1.051351      4.583261      0.000000
+    102 O     c      -0.988857      0.731340      4.345416      0.000000
+    103 O     c       1.239867     -0.875820     -4.566646      0.000000
+    104 O     c       1.867304     -0.405335     -3.795300      0.000000
+    105 O     c      -0.885737      0.868724      4.271851      0.000000
+    106 O     c      -0.963893      0.707647      4.238888      0.000000
+    107 O     c       1.052891     -0.841787     -4.446605      0.000000
+    108 O     c       2.095812     -1.290455     -4.281034      0.000000
+    109 O     c      -1.080520      0.477869      4.254240      0.000000
+    110 O     c      -1.161188      0.749467      4.458908      0.000000
+    111 O     c       1.190571     -0.669660     -4.495307      0.000000
+    112 O     c       1.345941     -0.691010     -4.520137      0.000000
+    113 O     c      -1.146665      0.679648      4.435031      0.000000
+    114 O     c      -1.190073      0.673291      4.428984      0.000000
+    115 O     c       1.269946     -0.746379     -4.579144      0.000000
+    116 O     c       1.066495     -0.871659     -4.608656      0.000000
+    117 O     c      -1.153259      1.186928      4.385535      0.000000
+    118 O     c      -1.286333      0.946392      4.929362      0.000000
+    119 O     c       1.065957     -0.935634     -4.139621      0.000000
+    120 O     c       0.264149     -1.327788     -2.013894      0.000000
+    121 O     c      -1.481128      1.040687      5.065085      0.000000
+    122 O     c      -0.434057     -0.262303      3.710631      0.000000
+    123 O     c       1.413346     -0.518655     -2.670753      0.000000
+    124 O     c       0.166305      0.017662     -1.939674      0.000000
+    125 O     c      -1.083991      0.496799      4.264942      0.000000
+    126 O     c      -1.191829      0.688555      4.541910      0.000000
+    127 O     c       1.269345     -0.672190     -3.937439      0.000000
+    128 O     c       1.242477     -0.739304     -4.508586      0.000000
+    129 O     c      -1.214226      0.706545      4.428288      0.000000
+    130 O     c      -1.211439      0.857855      4.431129      0.000000
+    131 O     c       1.145904     -0.839676     -4.590964      0.000000
+    132 O     c       1.286449     -0.915432     -4.543011      0.000000
+    133 O     c      -1.306383      0.768261      4.436405      0.000000
+    134 O     c      -1.731957      0.784221      5.358691      0.000000
+    135 O     c       1.638124     -0.213474     -3.450549      0.000000
+    136 O     c       1.391892     -1.034670     -3.758164      0.000000
+    137 O     c      -1.484651      0.836410      4.638540      0.000000
+    138 O     c      -1.707290      0.593442      5.230774      0.000000
+    139 O     c      -0.018515     -0.705318     -2.245588      0.000000
+    140 O     c       1.385211     -0.646752     -4.363239      0.000000
+    141 O     c      -1.212359      0.676881      4.460937      0.000000
+    142 O     c      -1.202830      0.616754      4.427527      0.000000
+    143 O     c       1.111170     -0.656194     -4.204905      0.000000
+    144 O     c       1.177684     -0.762307     -4.515039      0.000000
+--------------------------------------------------------------------------------
+  Maximum abs        13.256677      8.362848     11.034048      0.000000
+--------------------------------------------------------------------------------
+
+
+  Time to end of optimisation =     115.0616 seconds
+
+
+  Peak dynamic memory used =       4.63 MB 
+
+
+  Timing analysis for GULP :
+
+--------------------------------------------------------------------------------
+  Task / Subroutine                                          Time (Seconds)
+--------------------------------------------------------------------------------
+  Calculation of real space energy and derivatives               57.2173
+  Symmetry generation of equivalent positions                     0.0004
+  Global summation overhead                                       0.0038
+--------------------------------------------------------------------------------
+  Total CPU time                                                115.0616
+--------------------------------------------------------------------------------
+
+
+  Dump file written as optimized.structure                                     
+
+
+  Job Finished at 21:37.01  8th April      2022                               
+
