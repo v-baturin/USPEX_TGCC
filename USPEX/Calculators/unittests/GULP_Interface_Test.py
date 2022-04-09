@@ -81,3 +81,9 @@ class GULP_InterfaceTest(unittest.TestCase):
         strains_ref = np.array([0.012703, -0.031870, -0.039885, -0.000385, -0.008334, 0.182955])
         self.assertTrue(np.allclose(system['strains'], strains_ref))
 
+    def test_read_energy(self):
+         with open(pj(HOMEPATH, 'gulp_test', 'output_bad_1st_SCF'), 'rt') as f:
+             contents = f.readlines()
+         ev = GULP_Interface.readEnergy(None, contents)
+         self.assertAlmostEqual(ev, -1604.1694, delta=0.001)
+

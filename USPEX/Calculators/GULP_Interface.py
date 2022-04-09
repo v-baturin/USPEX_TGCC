@@ -241,18 +241,15 @@ class GULP_Interface(SHELL_Interface):
 
 
     def readEnergy(self, content) -> float:
-        energy_entalpy = np.inf
-        for i, line in enumerate(content):
-            m = re.match(r'\s*Total lattice energy\s*=\s*(\S+)\s*eV', line)
-            m1 = re.match(r'\s*Total lattice enthalpy\s*=\s*(\S+)\s*eV', line)
-            if m or m1:
-                if m:
-                    energy_entalpy = float(m.group(1))
-                elif m1:
-                    energy_entalpy = float(m1.group(1))
-                else:
-                    raise RuntimeError('Read_GULP: GULP 1st SCF is not done, got bad value.')
-        return energy_entalpy
+        energy_enthalpy = np.inf
+        for line in content:
+            m = re.match(r'\s*Total lattice en\S+\s*=\s*(-?[0-9.]+)\s*eV', line)
+            if m:
+                energy_enthalpy = float(m.group(1))
+        if energy_enthalpy < np.inf:
+            return energy_enthalpy
+        else:
+            raise RuntimeError('Read_GULP: GULP 1st SCF is not done, got bad value.')
 
     def readStressTensor(self, content):
         """
