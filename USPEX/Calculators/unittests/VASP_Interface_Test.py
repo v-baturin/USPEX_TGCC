@@ -74,5 +74,7 @@ class VASP_interfaceTest(unittest.TestCase):
         self.interface = VASP_Interface(tag='1', incar=pj(wd, 'Specific', 'INCAR_1'), potcarsPath=pj(wd, 'Specific'),
                                         kresol=0.05)
 
-        stress = self.interface.readPressureTensor(outcar)
+        with open(outcar, 'rt') as f:
+            content = f.readlines()
+        stress = self.interface.readPressureTensor(content)
         assert stress.shape == (3, 3)

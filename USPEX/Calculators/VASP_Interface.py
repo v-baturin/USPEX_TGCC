@@ -285,8 +285,8 @@ class VASP_Interface(SHELL_Interface):
             system['dielectricConstant'] = self.readDielectricConstant(content)
         if 'dipoleMoment' in self.targetProperties:
             system['dipoleMoment'] = self.readDipoleMoment(content)
-        if 'energyFermy' in self.targetProperties:
-            system['energyFermy'] = self.readFermi(content)
+        if 'energyFermi' in self.targetProperties:
+            system['energyFermi'] = self.readFermi(content)
         if 'elasticConstants' in self.targetProperties:
             system['elasticMatrix'] = self.readElasticMatrix(content)
 
