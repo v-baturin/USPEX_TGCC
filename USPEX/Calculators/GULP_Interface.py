@@ -215,6 +215,8 @@ class GULP_Interface(SHELL_Interface):
             system['strains'] = self.readStrains(content)
         if 'forces' in self.targetProperties:
             system['forces'] = self.readForces(content, len(system['molecules']))
+        if 'dielectricTensor' in self.targetProperties:
+            system['dielectricTensor'] = self.readDielectricProperties(content)
         if 'elasticConstants' in self.targetProperties:
             system['elasticMatrix'] = self.readElasticMatrix(content)
 
@@ -367,15 +369,20 @@ class GULP_Interface(SHELL_Interface):
 
         return np.array(forces)
 
+    def readDielectricProperties(self, content):
+        Diel_Tens = np.zeros((3, 3))
+        for i, line in enumerate(content):
+            if 'Static dielectric constant' in line:
+                for j, row in enumerate(content[i + 5, i + 8]):
+                    Diel_Tens[j, :] = np.array(row.split()[1:4], dtype=float)
+        return Diel_Tens
+
     def readElasticMatrix(self, content):
         elasticMatrix = np.zeros((6, 6), dtype=float)
         for i, line in enumerate(content):
             if 'Elastic Constant Matrix' in line:
-                for row in content[i + 5: i + 11]:
+                for j, row in enumerate(content[i + 5: i + 11]):
                     elasticMatrix[i, :] = np.array(row.split()[1: 7], dtype=float)
-                break
-        else:
-            raise RuntimeError("No elastic constant matrix information in the output.")
         return elasticMatrix
 
     def version(self):

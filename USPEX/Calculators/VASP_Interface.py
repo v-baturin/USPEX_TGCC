@@ -281,8 +281,8 @@ class VASP_Interface(SHELL_Interface):
             content = fp.readlines()
         if 'stressTensor' in self.targetProperties:
             system['stressTensor'] = self.readPressureTensor(content)
-        if 'dielectricConstant' in self.targetProperties:
-            system['dielectricConstant'] = self.readDielectricConstant(content)
+        if 'dielectricTensor' in self.targetProperties:
+            system['dielectricTensor'] = self.readDielectricProperties(content)
         if 'dipoleMoment' in self.targetProperties:
             system['dipoleMoment'] = self.readDipoleMoment(content)
         if 'energyFermi' in self.targetProperties:
@@ -343,7 +343,7 @@ class VASP_Interface(SHELL_Interface):
                         stop += len(target)
             return [target[i] for i in range(start, stop, step)]
 
-    def readDielectricConstant(self, content):
+    def readDielectricProperties(self, content):
         '''
         reads dielectric susceptibility tensor from OUTCAR file. Format:
         MACROSCOPIC STATIC DIELECTRIC TENSOR (including local field effects in DFT)
@@ -415,8 +415,8 @@ class VASP_Interface(SHELL_Interface):
         elasticMatrix = np.zeros((6, 6), dtype=float)
         for i, line in enumerate(content):
             if 'TOTAL ELASTIC MODULI' in line:
-                for row in content[i + 3: i + 9]:
-                    elasticMatrix[i, [0, 1, 2, 5, 3, 4]] = np.array(row.split()[1: 7], dtype=float)
+                for j, row in enumerate(content[i + 3: i + 9]):
+                    elasticMatrix[j, [0, 1, 2, 5, 3, 4]] = np.array(row.split()[1: 7], dtype=float)
         return elasticMatrix
 
 
