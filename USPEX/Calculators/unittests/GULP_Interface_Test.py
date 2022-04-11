@@ -65,7 +65,8 @@ class GULP_InterfaceTest(unittest.TestCase):
         # HERE what is written in ginput and goption no make sense.
         # Only output will be parsed and properties checked
         interface = GULP_Interface(tag='1', ginput=pj(HOMEPATH, 'Specific', 'ginput_1'),
-                                            goptions=pj(HOMEPATH, 'Specific', 'goptions_1'))
+                                            goptions=pj(HOMEPATH, 'Specific', 'goptions_1'),
+                                   targetProperties=['structure', 'enthalpy', 'stressTensor', 'strains'])
         # with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
         with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
