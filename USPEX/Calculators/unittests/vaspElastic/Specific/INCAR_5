@@ -1,0 +1,12 @@
+SYSTEM = C - elastic constants calculation
+PREC = Normal
+ENCUT = 550
+EDIFF = 1e-4
+IBRION = 6
+ISIF = 3
+NSW = 1000
+ISMEAR = 1 ; SIGMA = 0.060
+POTIM = 0.020
+ISTART = 0
+LCHARG = FALSE
+LWAVE = FALSE

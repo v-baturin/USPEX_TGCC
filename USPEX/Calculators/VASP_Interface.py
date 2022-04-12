@@ -269,12 +269,13 @@ class VASP_Interface(SHELL_Interface):
         if aseStructure:
             if 'structure' in self.targetProperties:
                 self.readStructure(system, aseStructure)
-            enthalpy = float(aseStructure.get_calculator().results['energy']) + \
-                                     aseStructure.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-            if 'enthalpy' in self.targetProperties:
-                system['enthalpy'] = enthalpy
-            if 'environmentEnthalpy' in self.targetProperties:
-                system['environmentEnthalpy'] = enthalpy
+            if 'enthalpy' in self.targetProperties or 'environmentEnthalpy' in self.targetProperties:
+                enthalpy = float(aseStructure.get_calculator().results['energy']) + \
+                           aseStructure.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+                if 'enthalpy' in self.targetProperties:
+                    system['enthalpy'] = enthalpy
+                elif 'environmentEnthalpy' in self.targetProperties:
+                    system['environmentEnthalpy'] = enthalpy
             if 'forces' in self.targetProperties:
                 system['forces'] = np.copy(aseStructure.get_calculator().results['forces'])
         with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
@@ -416,7 +417,7 @@ class VASP_Interface(SHELL_Interface):
         for i, line in enumerate(content):
             if 'TOTAL ELASTIC MODULI' in line:
                 for j, row in enumerate(content[i + 3: i + 9]):
-                    elasticMatrix[j, [0, 1, 2, 5, 3, 4]] = np.array(row.split()[1: 7], dtype=float)
+                    elasticMatrix[j, :] = np.array(row.split()[1: 7], dtype=float)
         return elasticMatrix
 
 
