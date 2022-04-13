@@ -263,9 +263,10 @@ class AtomicStructure:
             coordinates.extend(environment.getStructure().getCartesianCoordinates())
         else:
             assembledCell = cell
-        structure = AtomicStructure(atomTypes, coordinates, assembledCell)
-        assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
-        coordinates = assembledCell.center(structure.getCartesianCoordinates())
+        if vacuumSize > 0:
+            structure = AtomicStructure(atomTypes, coordinates, assembledCell)
+            assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
+            coordinates = assembledCell.center(structure.getCartesianCoordinates())
         return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
                 AtomicDisassembler(indices, environment, cell))  # cell of molecules
 
