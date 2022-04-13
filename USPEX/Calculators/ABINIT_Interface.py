@@ -44,7 +44,7 @@ class ABINIT_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag: str, kresol: float,  in_file: str = None, pp_files: List[str] = None,
-                 vacuumSize=10, **kwargs):
+                 vacuumSize=10, targetProperties: list = None, **kwargs):
         """
         Initializes the class.
 
@@ -74,45 +74,19 @@ class ABINIT_Interface(SHELL_Interface):
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
         self.vacuumSize = vacuumSize
-
-    def readOutput(self, system, calcFolder: str):
-        assembled_cell = system.pop('assembled_cell')
-        disassembler = system.pop('disassembler')
-
-        if not os.path.isfile(pj(calcFolder, self.gsr_file_name)):
-            msg = (f'file {self.gsr_file_name:s} not found in {os.path.basename(calcFolder):s}.'
-                   'Your ABINIT executable needs to be compiled with NETCDF support in order to be used with USPEX.')
-            raise IOError(msg)
-
-        gsr = abilab.abiopen(pj(calcFolder, self.gsr_file_name))
-
-        tmp_positions = gsr.structure.cart_coords
-        atomTypes = [self.atomType(el.symbol) for el in gsr.structure.species]
-        positions = np.empty(tmp_positions.shape, dtype=float)
-        atomSymbols = [el.short_name for el in atomTypes]
-        for i, position in zip(np.argsort(atomSymbols), tmp_positions):
-            positions[i] = position
-        cell = self.cellType(gsr.structure.lattice.matrix, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)
-        positions = cell.center(positions)
-        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
-        system['enthalpy'] = float(gsr.energy) + \
-                            cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-        # system.forces = np.copy(gsr.cart_forces)
-        system['stressTensor'] = np.copy(gsr.cart_stress_tensor)
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : str):
         """
         :param system: our system
         :return:
         """
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
-
-        atomTypes = structure.getAtomTypes()
+        cell = structure.getCell()
+        system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-        system['assembled_cell'] = cell
-        coordinates = cell.center(coordinates)
+        atomTypes = structure.getAtomTypes()
 
 
         ############################# FILES FILE ################################
@@ -299,6 +273,38 @@ class ABINIT_Interface(SHELL_Interface):
                     return False
 
         return True
+
+    def readOutput(self, system, calcFolder: str):
+        if not os.path.isfile(pj(calcFolder, self.gsr_file_name)):
+            msg = (f'file {self.gsr_file_name:s} not found in {os.path.basename(calcFolder):s}.'
+                   'Your ABINIT executable needs to be compiled with NETCDF support in order to be used with USPEX.')
+            raise IOError(msg)
+
+        gsr = abilab.abiopen(pj(calcFolder, self.gsr_file_name))
+        if 'structure' in self.targetProperties:
+            self.readStructure(system, gsr)
+        if 'enthalpy' in self.targetProperties:
+            system['enthalpy'] = float(gsr.energy) + \
+                                 np.linalg.det(gsr.structure.lattice.matrix) * system['externalPressure'] * \
+                                 EV_PER_CUBIC_ANGSTREM_PER_GPA
+        if 'forces' in self.targetProperties:
+            system['forces'] = np.copy(gsr.cart_forces)
+        if 'stressTensor' in self.targetProperties:
+            system['stressTensor'] = np.copy(gsr.cart_stress_tensor)
+
+    def readStructure(self, system, gsr):
+        assembledCell = system.pop('assembledCell')
+        disassembler = system.pop('disassembler')
+
+        tmp_positions = gsr.structure.cart_coords
+        atomTypes = [self.atomType(el.symbol) for el in gsr.structure.species]
+        positions = np.empty(tmp_positions.shape, dtype=float)
+        atomSymbols = [el.short_name for el in atomTypes]
+        for i, position in zip(np.argsort(atomSymbols), tmp_positions):
+            positions[i] = position
+        cell = self.cellType(gsr.structure.lattice.matrix, assembledCell.getPBC())
+        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
+
 
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):

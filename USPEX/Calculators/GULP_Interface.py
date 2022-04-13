@@ -30,7 +30,8 @@ class GULP_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: List[str] = None,
-                 moleculeSpecifics: dict = None, perturbate: bool = True, fixCell: bool = False, vacuumSize = 10, **kwargs):
+                 moleculeSpecifics: dict = None, perturbate: bool = True, fixCell: bool = False, vacuumSize = 10,
+                 targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -67,6 +68,7 @@ class GULP_Interface(SHELL_Interface):
         self.perturbate = perturbate
         self.fixCell = fixCell
         self.vacuumSize = vacuumSize
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
         logger.debug('GULP calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -74,13 +76,11 @@ class GULP_Interface(SHELL_Interface):
 
         """
 
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
-
+        cell = structure.getCell()
+        system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-        system['assembled_cell'] = cell
-        coordinates = cell.center(coordinates)
 
         files_to_delete = ['output', 'optimized.structure']
         for f in files_to_delete:
@@ -197,48 +197,95 @@ class GULP_Interface(SHELL_Interface):
         return False
 
     def readOutput(self, system, calcFolder : str):
-        res = False
+        # TODO: implement http://qsh.ess.sunysb.edu:8000/trac/changeset/1255
+        # Improve the GULP reader in case optimized_structure file is broken
+        # Now ready to use parallel GULP  (applied to EX18-ZnOH)
         with open(pj(calcFolder, self.outputFile), 'rt') as f:
-            # TODO: implement http://qsh.ess.sunysb.edu:8000/trac/changeset/1255
-            # Improve the GULP reader in case optimized_structure file is broken
-            # Now ready to use parallel GULP  (applied to EX18-ZnOH)
             content = f.readlines()
 
+        if 'structure' in self.targetProperties:
             self.readStructure(system, content)
+        if 'enthalpy' in self.targetProperties:
+            system['enthalpy'] = self.readEnergy(content)
+        if 'stressTensor' in self.targetProperties:
+            system['stressTensor'] = self.readStressTensor(content)
+        if 'strains' in self.targetProperties:
+            system['strains'] = self.readStrains(content)
+        if 'forces' in self.targetProperties:
+            system['forces'] = self.readForces(content, len(system['molecules']))
+        if 'dielectricTensor' in self.targetProperties:
+            system['dielectricTensor'] = self.readDielectricProperties(content)
+        if 'elasticConstants' in self.targetProperties:
+            system['elasticMatrix'] = self.readElasticMatrix(content)
 
-            try:  # read energy
-                system['enthalpy'] = self.readEnergy(content)
-            except:
-                logger.info('Can\'t read energy\n')
+    def readStructure(self, system, content):
+        # This routine is to read crystal structure from GULP output
+        # File: output
+        # fractional for bulk
+        # cartesian for surface
 
-            try:  # read pressure tensor
-                system['stressTensor'] = self.readStressTensor(content)
-            except:
-                logger.info('Can\'t read stress tensor\n')
+        assembledCell = system.pop('assembledCell')
+        disassembler = system.pop('disassembler')
 
-            try:  # read strains
-                system['strains'] = self.readStrains(content)
-            except:
-                logger.info('Can\'t read strains\n')
+        # GULP prints the fractional coordinates before the Final lattice vectors
+        # so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
+        fractional_coordinates = None
+        for i, line in enumerate(content):
+            if line.find('Final cartesian coordinates of atoms') != -1:
+                s = i + 5
+                positions = []
+                atomTypes = []
+                while True:
+                    s = s + 1
+                    if content[s].find("------------") != -1:
+                        break
+                    if content[s].find(" s ") != -1:
+                        continue
+                    element, _, *xyz = content[s].split()[1:6]
+                    XYZ = [float(x) for x in xyz]
+                    positions.append(XYZ)
+                    atomTypes.append(self.atomType(element))
+                positions = np.array(positions)
 
-            try:  # read forces
-                system['forces'] = self.readForces(content, len(system))
-            except:
-                logger.info('Can\'t read forces\n')
+            elif line.find('Final Cartesian lattice vectors') != -1:
+                lattice_vectors = np.zeros((3, 3))
+                s = i + 2
+                for j in range(s, s + 3):
+                    temp = content[j].split()
+                    for k in range(3):
+                        lattice_vectors[j - s][k] = float(temp[k])
+                cell = self.cellType(lattice_vectors, pbc = assembledCell.getPBC())
+                if fractional_coordinates is not None:
+                    positions = cell.fractionalToCartesian(fractional_coordinates)
 
-        # else:
-        #     # TODO update logic here
-        #     # if (code~=1) && (code~=8) && (code~=9) && (code~=14) && (code~=17)
-        #     #     # If error appears in the empirical code, skip this structure.
-        #     #     POP_STRUC.POPULATION(Ind_No).Error = maxErrors + 1;
-        #     # else
-        #     #     # For VASP/QE/FHI, let's try again
-        #     #     POP_STRUC.POPULATION(Ind_No).Error = POP_STRUC.POPULATION(Ind_No).Error + 1;
-        #     # [a,b]=unix(['echo PROBLEM_reading Structure' num2str(Ind_No)]);
-        #
-        #     # just skiping this structure
-        #     system.error = sys.maxint
+            elif line.find('Cartesian lattice vectors') != -1:
+                lattice_vectors = np.zeros((3, 3))
+                s = i + 2
+                for j in range(s, s + 3):
+                    temp = content[j].split()
+                    for k in range(3):
+                        lattice_vectors[j - s][k] = float(temp[k])
+                cell = self.cellType(lattice_vectors, pbc = assembledCell.getPBC())
+                if fractional_coordinates is not None:
+                    positions = cell.fractionalToCartesian(fractional_coordinates)
 
+            elif line.find('Final fractional coordinates of atoms') != -1:
+                s = i + 5
+                scaled_positions = []
+                atomTypes = []
+                while True:
+                    s = s + 1
+                    if content[s].find("------------") != -1:
+                        break
+                    if content[s].find(" s ") != -1:
+                        continue
+                    element, _, *xyz = content[s].split()[1:6]
+                    XYZ = [float(x) for x in xyz]
+                    scaled_positions.append(XYZ)
+                    atomTypes.append(self.atomType(element))
+                fractional_coordinates = np.asarray(scaled_positions)
+                positions = assembledCell.fractionalToCartesian(fractional_coordinates)
+        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell = cell)))
 
     def readEnergy(self, content) -> float:
         energy_enthalpy = np.inf
@@ -298,78 +345,6 @@ class GULP_Interface(SHELL_Interface):
                 break
         return np.array(strains)
 
-    def readStructure(self, system, content):
-        # This routine is to read crystal structure from GULP output
-        # File: output
-        # fractional for bulk
-        # cartesian for surface
-
-        assembled_cell = system.pop('assembled_cell')
-        disassembler = system.pop('disassembler')
-
-        # GULP prints the fractional coordinates before the Final lattice vectors
-        # so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
-        fractional_coordinates = None
-        for i, line in enumerate(content):
-            if line.find('Final cartesian coordinates of atoms') != -1:
-                s = i + 5
-                positions = []
-                atomTypes = []
-                while True:
-                    s = s + 1
-                    if content[s].find("------------") != -1:
-                        break
-                    if content[s].find(" s ") != -1:
-                        continue
-                    element, _, *xyz = content[s].split()[1:6]
-                    XYZ = [float(x) for x in xyz]
-                    positions.append(XYZ)
-                    atomTypes.append(self.atomType(element))
-                positions = np.array(positions)
-
-            elif line.find('Final Cartesian lattice vectors') != -1:
-                lattice_vectors = np.zeros((3, 3))
-                s = i + 2
-                for j in range(s, s + 3):
-                    temp = content[j].split()
-                    for k in range(3):
-                        lattice_vectors[j - s][k] = float(temp[k])
-                cell = self.cellType(lattice_vectors, pbc = assembled_cell.getPBC())
-                if fractional_coordinates is not None:
-                    positions = cell.fractionalToCartesian(fractional_coordinates)
-
-            elif line.find('Cartesian lattice vectors') != -1:
-                lattice_vectors = np.zeros((3, 3))
-                s = i + 2
-                for j in range(s, s + 3):
-                    temp = content[j].split()
-                    for k in range(3):
-                        lattice_vectors[j - s][k] = float(temp[k])
-                cell = self.cellType(lattice_vectors, pbc = assembled_cell.getPBC())
-                if fractional_coordinates is not None:
-                    positions = cell.fractionalToCartesian(fractional_coordinates)
-
-            elif line.find('Final fractional coordinates of atoms') != -1:
-                s = i + 5
-                scaled_positions = []
-                atomTypes = []
-                while True:
-                    s = s + 1
-                    if content[s].find("------------") != -1:
-                        break
-                    if content[s].find(" s ") != -1:
-                        continue
-                    element, _, *xyz = content[s].split()[1:6]
-                    XYZ = [float(x) for x in xyz]
-                    scaled_positions.append(XYZ)
-                    atomTypes.append(self.atomType(element))
-                fractional_coordinates = np.asarray(scaled_positions)
-                positions = assembled_cell.fractionalToCartesian(fractional_coordinates)
-        cell = cell.getEnvelopeCell(positions, 0)
-        positions = cell.center(positions)
-        structure = self.structureType(atomTypes, positions, cell = cell)
-        system.update(disassembler.disassemble(structure))
-
     def readForces(self, content, numAtoms : int):
         assert numAtoms > 0
 
@@ -389,6 +364,21 @@ class GULP_Interface(SHELL_Interface):
 
         return np.array(forces)
 
+    def readDielectricProperties(self, content):
+        Diel_Tens = np.zeros((3, 3))
+        for i, line in enumerate(content):
+            if 'Static dielectric constant' in line:
+                for j, row in enumerate(content[i + 5, i + 8]):
+                    Diel_Tens[j, :] = np.array(row.split()[1:4], dtype=float)
+        return Diel_Tens
+
+    def readElasticMatrix(self, content):
+        elasticMatrix = np.zeros((6, 6), dtype=float)
+        for i, line in enumerate(content):
+            if 'Elastic Constant Matrix' in line:
+                for j, row in enumerate(content[i + 5: i + 11]):
+                    elasticMatrix[i, :] = np.array(row.split()[1: 7], dtype=float)
+        return elasticMatrix
 
     def version(self):
         number = ''

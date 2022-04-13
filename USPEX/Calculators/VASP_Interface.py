@@ -70,7 +70,7 @@ class VASP_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag: str, kresol: float, incar: str = None, potcarsPath: str = None, perturbate: bool = True,
-                 vacuumSize = 10, targetObject: str = 'default', **kwargs):
+                 vacuumSize = 10, targetProperties: list = None, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -98,36 +98,22 @@ class VASP_Interface(SHELL_Interface):
         self.failedSystems = []
 
         self.vacuumSize = vacuumSize
-        self.targetObject = targetObject
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
         self.perturbate = perturbate
 
-
-    def readOutput(self, system, calcFolder : str):
-        self.readStructure(system, calcFolder)
-
-        if self.targetObject == 'default':
-            try:
-                with open(pj(calcFolder, self.outcar_file)) as fp:
-                    system['stressTensor'] = self.readPressureTensor(fp)
-            except:
-                logger.debug('Pressure tensor can\'t be find in output')
-        elif self.targetObject == 'environment':
-            pass
 
     def prepareLocalCalculation(self, system, calcFolder: str):
         '''
         :param system: our system
         :return:
         '''
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
         atomTypes = structure.getAtomTypes()
         system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])
-
+        cell = structure.getCell()
+        system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-        system['assembled_cell'] = cell
-        coordinates = cell.center(coordinates)
 
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
@@ -155,15 +141,15 @@ class VASP_Interface(SHELL_Interface):
             coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
 
         with open(pj(calcFolder, self.poscar_file), 'wt') as f:
-            if self.targetObject == 'default':
+            if 'environmentEnthalpy' in self.targetProperties:
+                environment = system['environment'].getStructure()
+                atoms = Atoms([el.short_name for el in environment.getAtomTypes()], environment.getCartesianCoordinates(), cell = cell.getCellVectors())
+                write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+            else:
                 atoms = Atoms([el.short_name for el in atomTypes], coordinates, cell = cell.getCellVectors())
                 if 'environment' in system:
                     indices = disassembler.envIndices[system['environment'].getFixedIndices()]
                     atoms.set_constraint(FixAtoms(indices=indices))
-                write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
-            elif self.targetObject == 'environment':
-                environment = system['environment'].getStructure()
-                atoms = Atoms([el.short_name for el in environment.getAtomTypes()], environment.getCartesianCoordinates(), cell = cell.getCellVectors())
                 write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
 
         ############################# KPOINTS #################################
@@ -276,20 +262,48 @@ class VASP_Interface(SHELL_Interface):
             self.failedSystems.append(calcFolder)
             return False
 
-    def readPressureTensor(self, filename='OUTCAR', index=-1):
-        '''
+    def readOutput(self, system, calcFolder : str):
+        aseStructure = read_vasp_out(pj(calcFolder, self.outcar_file))
+        if aseStructure:
+            if 'structure' in self.targetProperties:
+                self.readStructure(system, aseStructure)
+            if 'enthalpy' in self.targetProperties or 'environmentEnthalpy' in self.targetProperties:
+                enthalpy = float(aseStructure.get_calculator().results['energy']) + \
+                           aseStructure.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+                if 'enthalpy' in self.targetProperties:
+                    system['enthalpy'] = enthalpy
+                elif 'environmentEnthalpy' in self.targetProperties:
+                    system['environmentEnthalpy'] = enthalpy
+            if 'forces' in self.targetProperties:
+                system['forces'] = np.copy(aseStructure.get_calculator().results['forces'])
+        with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
+            content = fp.readlines()
+        if 'stressTensor' in self.targetProperties:
+            system['stressTensor'] = self.readPressureTensor(content)
+        if 'dielectricTensor' in self.targetProperties:
+            system['dielectricTensor'] = self.readDielectricProperties(content)
+        if 'dipoleMoment' in self.targetProperties:
+            system['dipoleMoment'] = self.readDipoleMoment(content)
+        if 'energyFermi' in self.targetProperties:
+            system['energyFermi'] = self.readFermi(content)
+        if 'elasticConstants' in self.targetProperties:
+            system['elasticMatrix'] = self.readElasticMatrix(content)
 
-        :param filename:
-        :param index:
-        :return:
-        '''
+    def readStructure(self, system, aseStructure):
+        assembledCell = system.pop('assembledCell')
+        disassembler = system.pop('disassembler')
+        symbolsOrder = system.pop('symbolsOrder')
+        tmp_positions = aseStructure.get_positions()
+        positions = np.empty(tmp_positions.shape, dtype=float)
+        tmp_symbols = aseStructure.get_chemical_symbols()
+        atomTypes = np.empty(len(tmp_symbols), dtype=self.atomType)
+        for i, symbol, position in zip(symbolsOrder, tmp_symbols, tmp_positions):
+            positions[i] = position
+            atomTypes[i] = self.atomType(symbol)
+        cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC())
+        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
 
-        if isinstance(filename, str):
-            f = open(filename)
-        else:  # Assume it's a file-like object
-            f = filename
-        content = f.readlines()
-
+    def readPressureTensor(self, content, index=-1):
         target = []
         for line in content:
             if 'in kB' in line:
@@ -326,7 +340,7 @@ class VASP_Interface(SHELL_Interface):
                         stop += len(target)
             return [target[i] for i in range(start, stop, step)]
 
-    def readDielectricConstant(self, filename='OUTCAR', index=-1):
+    def readDielectricProperties(self, content):
         '''
         reads dielectric susceptibility tensor from OUTCAR file. Format:
         MACROSCOPIC STATIC DIELECTRIC TENSOR (including local field effects in DFT)
@@ -344,9 +358,6 @@ class VASP_Interface(SHELL_Interface):
         '''
         d_s = np.zeros((6, 1), dtype=float)
         d_s_ion = np.zeros((6, 1), dtype=float)
-        with open(filename, 'rb') as f:
-            content = f.readlines()
-
         offset = len(content)
         for n, line in enumerate(reversed(content)):
             if 'MACROSCOPIC STATIC DIELECTRIC TENSOR IONIC' in line:
@@ -383,96 +394,28 @@ class VASP_Interface(SHELL_Interface):
 
         return d_s
 
-    def readStructure(self, system, calcFolder : str):
-        assembled_cell = system.pop('assembled_cell')
-        disassembler = system.pop('disassembler')
-        symbolsOrder = system.pop('symbolsOrder')
-
-        tmp = read_vasp_out(pj(calcFolder, self.outcar_file))
-        if tmp:
-            if self.targetObject == 'default':
-                tmp_positions = tmp.get_positions()
-                positions = np.empty(tmp_positions.shape, dtype=float)
-                tmp_symbols = tmp.get_chemical_symbols()
-                atomTypes = np.empty(len(tmp_symbols), dtype=self.atomType)
-                for i, symbol, position in zip(symbolsOrder, tmp_symbols, tmp_positions):
-                    positions[i] = position
-                    atomTypes[i] = self.atomType(symbol)
-
-                cell = self.cellType(tmp.get_cell().array, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)
-                positions = cell.center(positions)
-                system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
-                system['enthalpy'] = float(tmp.get_calculator().results['energy']) + \
-                                     tmp.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-                # system.forces = np.copy(tmp.get_calculator().results['forces'])
-            elif self.targetObject == 'environment':
-                system['environmentEnthalpy'] = float(tmp.get_calculator().results['energy']) + \
-                                  tmp.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-                
-
-
-    # TODO check this out
-    def readEnergy(self):
-        energy_free, energy_zero = 0, 0
-        if all:
-            energy_free = []
-            energy_zero = []
-        for line in open(self.outcar_file, 'r'):
-            # Free energy
-            if line.lower().startswith('  free  energy   toten'):
-                if all:
-                    energy_free.append(float(line.split()[-2]))
-                else:
-                    energy_free = float(line.split()[-2])
-
-            # Extrapolated zero point energy
-            if line.startswith('  energy  without entropy'):
-                if all:
-                    energy_zero.append(float(line.split()[-1]))
-                else:
-                    energy_zero = float(line.split()[-1])
-        return [energy_free, energy_zero]
-
-    def readForces(self, atoms, all=False):
-        """Method that reads forces from OUTCAR file.
-
-        If 'all' is switched on, the forces for all ionic steps
-        in the OUTCAR file be returned, in other case only the
-        forces for the last ionic configuration is returned."""
-
-        file = open(self.outcar_file, 'r')
-        lines = file.readlines()
-        file.close()
-        n = 0
-        if all:
-            all_forces = []
-        for line in lines:
-            if line.rfind('TOTAL-FORCE') > -1:
-                forces = []
-                for i in range(len(atoms)):
-                    forces.append(np.array([float(force) for force in
-                                            lines[n + 2 + i].split()[3:6]]))
-                if all:
-                    all_forces.append(np.array(forces)[self.resort])
-            n += 1
-        if all:
-            return np.array(all_forces)
-        else:
-            return np.array(forces)[self.resort]
-
-    def readDipoleMoment(self):
+    def readDipoleMoment(self, content):
         dipoleMoment = np.zeros([1, 3])
-        for line in open(self.outcar_file, 'r'):
-            if line.rfind('dipolmoment') > -1:
-                dipoleMoment = np.array([float(f) for f in line.split()[1:4]])
+        for line in content:
+            if 'dipolmoment' in line:
+                dipoleMoment = np.array(line.split()[1:4], dtype=float)
         return dipoleMoment
 
-    def readFermi(self):
+    def readFermi(self, content):
         energyFermi = None
-        for line in open(self.outcar_file, 'r'):
-            if line.rfind('E-fermi') > -1:
+        for line in content:
+            if 'E-fermi' in line:
                 energyFermi = float(line.split()[2])
         return energyFermi
+
+    def readElasticMatrix(self, content):
+        elasticMatrix = np.zeros((6, 6), dtype=float)
+        for i, line in enumerate(content):
+            if 'TOTAL ELASTIC MODULI' in line:
+                for j, row in enumerate(content[i + 3: i + 9]):
+                    elasticMatrix[j, :] = np.array(row.split()[1: 7], dtype=float)
+        return elasticMatrix
+
 
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):

@@ -181,7 +181,7 @@ class AtomicStructure:
                                np.dot(self._coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
             val, vectors = AtomicStructure(self._atomTypes, orthogPancake).getPrincipalAxes()
             vectors = vectors.T
-            if val[0] == 0:  # Check if inertia tensor has a singular matrix
+            if val[0] < 1e-5:  # Check if inertia tensor has a singular matrix
                 if np.dot(vectors[0], periodicUnit) == 1:
                     vectors[0] = vectors[1]
                 vectors[0] -= np.dot(vectors[0], periodicUnit) * periodicUnit
@@ -236,7 +236,7 @@ class AtomicStructure:
         return newStructure
 
     @staticmethod
-    def assemble(molecules, cell, environment=None, vacuum_sizes=None, **kwargs): # lots of work with calcs
+    def assemble(molecules, cell, environment=None, vacuumSize=0, **kwargs): # lots of work with calcs
         """
         TODO move to AtomicDisassembler class.
 
@@ -263,6 +263,10 @@ class AtomicStructure:
             coordinates.extend(environment.getStructure().getCartesianCoordinates())
         else:
             assembledCell = cell
+        if vacuumSize > 0:
+            structure = AtomicStructure(atomTypes, coordinates, assembledCell)
+            assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
+            coordinates = assembledCell.center(structure.getCartesianCoordinates())
         return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
                 AtomicDisassembler(indices, environment, cell))  # cell of molecules
 

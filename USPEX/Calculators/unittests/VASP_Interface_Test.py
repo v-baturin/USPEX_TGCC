@@ -16,6 +16,7 @@ import filecmp
 
 from os.path import join as pj
 
+import numpy as np
 
 from ...Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from ..VASP_Interface import VASP_Interface
@@ -74,5 +75,23 @@ class VASP_interfaceTest(unittest.TestCase):
         self.interface = VASP_Interface(tag='1', incar=pj(wd, 'Specific', 'INCAR_1'), potcarsPath=pj(wd, 'Specific'),
                                         kresol=0.05)
 
-        stress = self.interface.readPressureTensor(outcar)
+        with open(outcar, 'rt') as f:
+            content = f.readlines()
+        stress = self.interface.readPressureTensor(content)
         assert stress.shape == (3, 3)
+
+class VASP_interface_elastic_Test(unittest.TestCase):
+
+    def test1(self):
+        elasticMatrix_ref = [[11184.5135,   609.9831,  1016.7341,  -519.9028,  -109.7639,   -17.9217],
+                             [  609.9831,  6321.3677,  1366.9666,   326.5026,   269.2209,    66.3167],
+                             [ 1016.7341,  1366.9666,  8253.6909,   -31.0933,   -870.108,    35.496 ],
+                             [ -519.9028,   326.5026,   -31.0933,  3193.6427,   308.2938,  -321.5579],
+                             [ -109.7639,   269.2209,   -870.108,   308.2938,  1504.6799,   -32.696 ],
+                             [  -17.9217,    66.3167,     35.496,  -321.5579,    -32.696,  4247.3728]]
+        wd = pj(HOMEPATH, 'vaspElastic')
+        self.interface = VASP_Interface(tag='5', incar=pj(wd, 'Specific', 'INCAR_5'), potcarsPath=pj(wd, 'Specific'),
+                                        kresol=0.06, targetProperties=['elasticConstants'])
+        system = {}
+        self.interface.readOutput(system, calcFolder=pj(wd, 'output'))
+        self.assertTrue(np.allclose(system['elasticMatrix'], elasticMatrix_ref))

@@ -32,7 +32,7 @@ class QE_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag : str, kresol : float, options: str = None, libs: list = None, vacuumSize: float = 10,
-                 **kwargs):
+                 targetProperties: list = None, **kwargs):
         '''
 
         :param tag: tag of the stage
@@ -50,33 +50,15 @@ class QE_Interface(SHELL_Interface):
         self.libs = libs if libs else []
         self.kPoints = KPoints(kresol)
         self.vacuumSize = vacuumSize
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def readOutput(self, system : dict, calcFolder: str):
-        assembled_cell = system.pop('assembled_cell')
-        disassembler = system.pop('disassembler')
-
-        with open(pj(calcFolder, self.outputFile), 'rt') as f:
-            tmp = next(read_espresso_out(f, index=slice(None, -2, -1)))
-        if tmp:
-            cell = self.cellType(tmp.get_cell().array, assembled_cell.getPBC())
-            positions = tmp.get_positions()
-            cell = cell.getEnvelopeCell(positions, 0)
-            positions = cell.center(positions)
-            structure = self.structureType([self.atomType(el) for el in tmp.get_chemical_symbols()], positions,
-                                           cell=cell)
-            system.update(disassembler.disassemble(structure))
-
-            system['enthalpy'] = tmp.get_calculator().results['energy']
-            # system.forces = np.copy(tmp.get_calculator().results['forces'])
 
     def prepareLocalCalculation(self, system: dict, calcFolder: str):
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
-
+        cell = structure.getCell()
+        system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-        system['assembled_cell'] = cell
-        coordinates = cell.center(coordinates)
 
 
         atomTypes = structure.getAtomTypes()
@@ -142,6 +124,41 @@ class QE_Interface(SHELL_Interface):
         if not res:
             logger.error('Quantum Espresso is not completely Done')
         return res
+
+    def readOutput(self, system : dict, calcFolder: str):
+
+        with open(pj(calcFolder, self.outputFile), 'rt') as f:
+            aseStructure = next(read_espresso_out(f, index=slice(None, -2, -1)))
+            f.seek(0)
+            content = f.readlines()
+
+        if aseStructure:
+            if 'structure' in self.targetProperties:
+                self.readStructure(system, aseStructure)
+            if 'enthalpy' in  self.targetProperties:
+                system['enthalpy'] = aseStructure.get_calculator().results['energy']
+            if 'forces' in self.targetProperties:
+                system['forces'] = np.copy(aseStructure.get_calculator().results['forces'])
+        if 'stressTensor' in self.targetProperties:
+            system['stressTensor'] = self.readStressTensor(content)
+
+    def readStructure(self, system, aseStructure):
+        assembledCell = system.pop('assembledCell')
+        disassembler = system.pop('disassembler')
+
+        cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC())
+        positions = aseStructure.get_positions()
+        structure = self.structureType([self.atomType(el) for el in aseStructure.get_chemical_symbols()], positions,
+                                       cell=cell)
+        system.update(disassembler.disassemble(structure))
+
+    def readStressTensor(self, content):
+        stressTensor = np.zeros((3, 3), dtype=float)
+        for i, line in enumerate(content):
+            if 'total   stress' in line:
+                for row in content[i + 1: i + 4]:
+                    stressTensor[i, :] = np.array(row.split()[3: 6], dtype=float)
+        return stressTensor
 
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):

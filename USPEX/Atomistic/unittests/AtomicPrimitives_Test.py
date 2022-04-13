@@ -37,7 +37,7 @@ class bad_principal_test(unittest.TestCase):
         self.test_pbc = (0, 1, 0)
         self.testStruct = AtomisticRepresentation.readAtomicStructure(self.testFile)
         self.testStruct['cell'] = Cell(self.testStruct['cell'].getCellVectors(), pbc=self.test_pbc)
-        self.structure, _ = AtomicStructure.assemble(**self.testStruct)
+        self.structure, _ = AtomicStructure.assemble(**self.testStruct, vacuumSize=1.0)
 
     def test_bad_principal(self):
         newCell = self.structure.getRectifiedCell()
