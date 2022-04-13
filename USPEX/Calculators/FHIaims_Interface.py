@@ -30,7 +30,7 @@ class FHIaims_Interface(SHELL_Interface):
     out_geometry_file = 'geometry.in.next_step'
 
     def __init__(self, tag: str, kresol: float, control: str = None, perturbate: bool = True, fixCell: bool = False,
-                 vacuumSize=10, **kwargs):
+                 vacuumSize=10, targetProperties: list = None, **kwargs):
 
         super().__init__(**kwargs)
         if control is None:
@@ -46,7 +46,7 @@ class FHIaims_Interface(SHELL_Interface):
         self.perturbate = perturbate
         self.fixCell = fixCell
         self.vacuumSize = vacuumSize
-        logger.debug('GULP calculator created.')
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : str):
         structure, disassembler = self.structureType.assemble(**system)
@@ -56,7 +56,7 @@ class FHIaims_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-        system['assembled_cell'] = cell
+        system['assembledCell'] = cell
         coordinates = cell.center(coordinates)
 
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
@@ -108,14 +108,6 @@ class FHIaims_Interface(SHELL_Interface):
         return True
 
     def readOutput(self, system, calcFolder : str):
-        with open(pj(calcFolder, self.outputFile), 'r') as f:
-            content = f.read()
-
-        content = content.split('\n')
-        for line in content:
-            if 'Total energy corrected' in line:
-                system['enthalpy'] = float(line.split()[5])
-                break
 
         # In FHI-081213 geometry.in.next_step automatically will be created but
         # for FHI-081219 user need to specify restart_relaxations .true.
@@ -125,17 +117,25 @@ class FHIaims_Interface(SHELL_Interface):
         # and FHI finishes without changing the relaxed structure, thus
         # geometry.in.next_step won't be created.
 
-        geometry_file = pj(calcFolder, self.out_geometry_file)
-        if not os.path.exists(geometry_file):
-            shutil.copy(pj(calcFolder, self.geometry_file), geometry_file)
+        if 'structure' in self.targetProperties:
+            geometry_file = pj(calcFolder, self.out_geometry_file)
+            if not os.path.exists(geometry_file):
+                shutil.copy(pj(calcFolder, self.geometry_file), geometry_file)
+            with open(geometry_file,'r') as f:
+                content = f.read()
+            self.readStructure(system, content)
 
+        if 'enthalpy' in self.targetProperties:
+            with open(pj(calcFolder, self.outputFile), 'r') as f:
+                content = f.readlines()
 
-        with open(geometry_file,'r') as f:
-            content = f.read()
+            for line in content:
+                if 'Total energy corrected' in line:
+                    system['enthalpy'] = float(line.split()[5])
+                    break
 
+    def readStructure(self, system, content):
         content_list = content.split('\n')
-
-        lat = None
 
         lattice = []
         coordinates = []
@@ -165,11 +165,10 @@ class FHIaims_Interface(SHELL_Interface):
             lat = np.diag(coor.max(axis=0) - coor.min(axis=0) + 10)
             coor += np.diag(lat * 0.5)
 
-        assembled_cell = system.pop('assembled_cell')
+        assembledCell = system.pop('assembledCell')
         disassembler = system.pop('disassembler')
-        cell = self.cellType(lat, assembled_cell.getPBC()).getEnvelopeCell(coor, 0)
-        positions = cell.center(coor)
-        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
+        cell = self.cellType(lat, assembledCell.getPBC())
+        system.update(disassembler.disassemble(self.structureType(atomTypes, coor, cell=cell)))
 
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):

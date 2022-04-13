@@ -59,7 +59,7 @@ class QE_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-        system['assembled_cell'] = cell
+        system['assembledCell'] = cell
         coordinates = cell.center(coordinates)
 
 
@@ -145,10 +145,10 @@ class QE_Interface(SHELL_Interface):
             system['stressTensor'] = self.readStressTensor(content)
 
     def readStructure(self, system, aseStructure):
-        assembled_cell = system.pop('assembled_cell')
+        assembledCell = system.pop('assembledCell')
         disassembler = system.pop('disassembler')
 
-        cell = self.cellType(aseStructure.get_cell().array, assembled_cell.getPBC())
+        cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC())
         positions = aseStructure.get_positions()
         structure = self.structureType([self.atomType(el) for el in aseStructure.get_chemical_symbols()], positions,
                                        cell=cell)

@@ -18,8 +18,7 @@ from .Common.SHELL_Interface import SHELL_Interface
 logger = logging.getLogger(__name__)
 
 
-AVAILABLE_TARGET_OBEJECTS = ['default', 'environment']
-REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp', 
+REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp',
                                     'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
 
 class LAMMPS_Interface(SHELL_Interface):
@@ -43,7 +42,7 @@ class LAMMPS_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag: str, lammps_in: str, libs: List[str], specorder: List[str],
-                 vacuumSize: float = 10.0, targetObject: str = 'default', **kwargs):
+                 vacuumSize: float = 10.0, targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -64,8 +63,7 @@ class LAMMPS_Interface(SHELL_Interface):
 
         self.failedSystems = []
         self.vacuumSize = vacuumSize
-        self.targetObject = targetObject.lower()
-        assert self.targetObject in AVAILABLE_TARGET_OBEJECTS
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : str):
         """
@@ -74,7 +72,7 @@ class LAMMPS_Interface(SHELL_Interface):
         """
         structure, disassembler = self.structureType.assemble(**system)
         system['disassembler'] = disassembler
-        system['assembled_cell'] = structure.getRectifiedCell().getEnvelopeCell(structure.getCartesianCoordinates(),
+        system['assembledCell'] = structure.getRectifiedCell().getEnvelopeCell(structure.getCartesianCoordinates(),
                                                                                 self.vacuumSize)
 
         coordinates = structure.getCartesianCoordinates()
@@ -124,9 +122,9 @@ class LAMMPS_Interface(SHELL_Interface):
         with open(pj(calcFolder, self.inputFile), 'w') as f:
             f.writelines(content)
         
-        if self.targetObject == 'default':
+        if 'environmentEnthalpy' not in self.targetProperties:
             atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell = cell.getCellVectors())
-        elif self.targetObject == 'environment':
+        else:
             environment = system['environment'].getStructure()
             atoms = Atoms([el.short_name for el in environment.getAtomTypes()], environment.getCartesianCoordinates(), cell = cell.getCellVectors())
         
@@ -170,28 +168,34 @@ class LAMMPS_Interface(SHELL_Interface):
         return lammps_completed and tolerance_achieved        
 
     def readOutput(self, system, calcFolder : str):
-        disassembler = system.pop('disassembler')
-        assembled_cell = system.pop('assembled_cell')
+        aseStructure = read(pj(calcFolder, self.dump_file), format='lammps-dump-text')
+        if 'structure' in self.targetProperties:
+            self.readStructure(system, aseStructure)
 
         properties = self.readProperties(calcFolder)
-        
-        if self.targetObject == 'default':
-            atoms = read(pj(calcFolder, self.dump_file), format='lammps-dump-text')
-            positions = atoms.get_positions()
-            numbers = atoms.get_atomic_numbers()
-            symbols = [self.specorder[i-1] for i in numbers]
-            atomTypes = np.array([self.atomType(symbol) for symbol in symbols], dtype=self.atomType)
-            cell = self.cellType(atoms.get_cell().array, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)
-            positions = cell.center(positions)
-            structure = self.structureType(atomTypes, positions, cell=cell)
-            system.update(disassembler.disassemble(structure))
+        if 'enthalpy' in self.targetProperties:
             system['enthalpy'] = properties['Enthalpy']
+        if 'energy' in self.targetProperties:
             system['energy'] = properties['TotEng']
+        if 'stressTensor' in self.targetProperties:
             system['stressTensor'] = properties['StressTensor']
-        elif self.targetObject == 'environment':
+        if 'environmentEnthalpy' in self.targetProperties:
             system['environmentEnthalpy'] = properties['Enthalpy']
+        if 'environmentEnergy' in self.targetProperties:
             system['environmentEnergy'] = properties['TotEng']
+        if 'environmentStressTensor' in self.targetProperties:
             system['environmentStressTensor'] = properties['StressTensor']
+
+    def readStructure(self, system, aseStructure):
+        disassembler = system.pop('disassembler')
+        assembledCell = system.pop('assembledCell')
+        positions = aseStructure.get_positions()
+        numbers = aseStructure.get_atomic_numbers()
+        symbols = [self.specorder[i - 1] for i in numbers]
+        atomTypes = np.array([self.atomType(symbol) for symbol in symbols], dtype=self.atomType)
+        cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC())
+        structure = self.structureType(atomTypes, positions, cell=cell)
+        system.update(disassembler.disassemble(structure))
 
     def readProperties(self, calcFolder: str):
         if os.path.exists(pj(calcFolder, self.outputFile)):

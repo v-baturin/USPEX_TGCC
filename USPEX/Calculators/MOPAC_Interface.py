@@ -30,7 +30,7 @@ class MOPAC_Interface(SHELL_Interface):
     atomicDisassemblerType = None
 
     def __init__(self, tag: str, mop_input: str = None,
-                 **kwargs):
+                 targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -50,6 +50,7 @@ class MOPAC_Interface(SHELL_Interface):
         #     self.moleculeSpecifics = moleculeSpecifics
         # else:
         #     self.moleculeSpecifics = {}
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
         logger.debug('MOPAC calculator created.')
 
@@ -65,7 +66,7 @@ class MOPAC_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell()
-        system['assembled_cell'] = cell
+        system['assembledCell'] = cell
 
         # files_to_delete = ['output', 'optimized.structure']
         # for f in files_to_delete:
@@ -116,47 +117,47 @@ class MOPAC_Interface(SHELL_Interface):
     def readOutput(self, system, calcFolder: str):
 
         with open(pj(calcFolder, self.arcFile), 'rt') as arc_fid:
+            content = arc_fid.readlines()
 
-            assembled_cell = system.pop('assembled_cell')
-            disassembler = system.pop('disassembler')
+        if 'structure' in self.targetProperties:
+            self.readStructure(system, content)
+        if 'enthalpy' in self.targetProperties:
+            for line in content:
+                if 'TOTAL ENERGY' in line:
+                    e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
+                    system['enthalpy'] = float(e.group(1))
+                break
 
+    def readStructure(self, system, content):
 
-            #  Parsing energy
-            line = ''
-            while 'TOTAL ENERGY' not in line:
-                line = arc_fid.readline()
-            e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
-            system['enthalpy'] = float(e.group(1))
+        assembledCell = system.pop('assembledCell')
+        disassembler = system.pop('disassembler')
 
+        atomTypes = []
+        positions = []
+        lattice_vectors = assembledCell.getCellVectors()
+        new_lattice = []
+        for i, line in enumerate(content):
+            if 'FINAL GEOMETRY OBTAINED' in line:
+                coords_regex = r'\s*([A-Z][a-z]?)' + r'\s+(-?\d*\.\d+)\s+\S+' * 3
+                for line in content[i:]:
+                    coordsgroup = re.findall(coords_regex, line)
+                    if coordsgroup:
+                        sym = coordsgroup[0][0]
+                        vector = [float(x) for x in coordsgroup[0][1:]]
+                        if sym == 'Tv':
+                            new_lattice.append(vector)
+                        else:
+                            positions.append(vector)
+                            atomTypes.append(self.atomType(sym))
 
-            # Parsing geometry
-            while 'FINAL GEOMETRY OBTAINED' not in line:
-                line = arc_fid.readline()
-            atomTypes = []
-            positions = []
-            new_lattice = []
-            coords_regex = r'\s*([A-Z][a-z]?)' + r'\s+(-?\d*\.\d+)\s+\S+' * 3
-            for line in arc_fid:
-                coordsgroup = re.findall(coords_regex, line)
-                if coordsgroup:
-                    sym = coordsgroup[0][0]
-                    vector = [float(x) for x in coordsgroup[0][1:]]
-                    if sym == 'Tv':
-                        new_lattice.append(vector)
-                    else:
-                        positions.append(vector)
-                        atomTypes.append(self.atomType(sym))
-
-            positions = np.asarray(positions)
-            lattice_vectors = assembled_cell.getCellVectors()
-            for i, dim in enumerate(assembled_cell.getPBC()):
-                if dim:
-                    lattice_vectors[i] = np.asarray(new_lattice.pop(0))
-            cell = self.cellType(lattice_vectors, pbc=assembled_cell.getPBC())
-            cell = cell.getEnvelopeCell(positions, 0)
-            positions = cell.center(positions)
-            structure = self.structureType(atomTypes, positions, cell=cell)
-            system.update(disassembler.disassemble(structure))
+                positions = np.asarray(positions)
+                for i, dim in enumerate(assembledCell.getPBC()):
+                    if dim:
+                        lattice_vectors[i] = np.asarray(new_lattice.pop(0))
+        cell = self.cellType(lattice_vectors, pbc=assembledCell.getPBC())
+        structure = self.structureType(atomTypes, positions, cell=cell)
+        system.update(disassembler.disassemble(structure))
 
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):

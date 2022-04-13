@@ -38,7 +38,8 @@ class MLIP_Interface(SHELL_Interface):
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, tag: str, input: str = None, potential: str = None, vacuumSize = 10, **kwargs):
+    def __init__(self, tag: str, input: str = None, potential: str = None, vacuumSize = 10,
+                 targetProperties: list = None, **kwargs):
         super().__init__(**kwargs)
 
         if input is not None:
@@ -51,6 +52,7 @@ class MLIP_Interface(SHELL_Interface):
         else:
             self.potential = pj(os.getcwd(), 'Specific/potential.mtp')
         self.vacuumSize = vacuumSize
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: str):
         structure, disassembler = self.structureType.assemble(**system)
@@ -60,7 +62,7 @@ class MLIP_Interface(SHELL_Interface):
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
         coordinates = cell.center(coordinates)
-        system['assembled_cell'] = cell
+        system['assembledCell'] = cell
 
         # create empty input file
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
@@ -92,22 +94,14 @@ class MLIP_Interface(SHELL_Interface):
         return False
 
     def readOutput(self, system, calcFolder: str):
-        assembled_cell = system.pop('assembled_cell')
-        disassembler = system.pop('disassembler')
-
         atoms = readcfg(pj(calcFolder, self.out_cfg_file))
         if atoms:
-
-            positions = atoms.get_positions()
-            cell = self.cellType(atoms.get_cell().array, assembled_cell.getPBC()).getEnvelopeCell(positions, 0)  # Trimming vacuum
-            positions = cell.center(positions)
-            structure = self.structureType([self.atomType(el) for el in atoms.get_chemical_symbols()], positions,
-                                           cell=cell)
-            system.update(disassembler.disassemble(structure))
-            system['enthalpy'] = atoms.energy + atoms.get_volume() * \
-                                 system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-
-            try:
+            if 'structure' in self.targetProperties:
+                self.readStructure(system, atoms)
+            if 'enthalpy' in self.targetProperties:
+                system['enthalpy'] = atoms.energy + atoms.get_volume() * \
+                                     system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+            if 'stressTensor' in self.targetProperties:
                 stress_tensor = np.zeros((3, 3))
                 stress_tensor[0, 0] = atoms.stresses[0]
                 stress_tensor[1, 1] = atoms.stresses[1]
@@ -118,15 +112,23 @@ class MLIP_Interface(SHELL_Interface):
                 stress_tensor[2, 0] = atoms.stresses[4]
                 stress_tensor[0, 1] = atoms.stresses[5]
                 stress_tensor[1, 0] = atoms.stresses[5]
-
                 system['stressTensor'] = stress_tensor
-            except:
-                logger.debug('Pressure tensor can\'t be find in output')
-        else:
-            ID = system['ID']
-            logger.info(f'structure {ID} led to extrapolation and will be discarded.')
-            # system['structure'].set_cell(np.identity(3) * system['structure'].minVectorLength * 0.9)
-            system['enthalpy'] = 1000
+        # else:
+        #     ID = system['ID']
+        #     logger.info(f'structure {ID} led to extrapolation and will be discarded.')
+        #     # system['structure'].set_cell(np.identity(3) * system['structure'].minVectorLength * 0.9)
+        #     system['enthalpy'] = 1000
+
+    def readStructure(self, system, aseStructure):
+        assembledCell = system.pop('assembledCell')
+        disassembler = system.pop('disassembler')
+
+        cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC())
+        positions = aseStructure.get_positions()
+        structure = self.structureType([self.atomType(el) for el in aseStructure.get_chemical_symbols()], positions,
+                                       cell=cell)
+        system.update(disassembler.disassemble(structure))
+
 
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):

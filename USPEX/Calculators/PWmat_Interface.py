@@ -40,7 +40,7 @@ class PWmat_Interface(SHELL_Interface):
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, tag, etot_input, potcars, kresol, vacuumSize = 10, **kwargs):
+    def __init__(self, tag, etot_input, potcars, kresol, vacuumSize = 10, targetProperties: list = None, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -60,21 +60,8 @@ class PWmat_Interface(SHELL_Interface):
 
         self.kPoints = KPoints(kresol)
         self.vacuumSize = vacuumSize
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
         self.failedSystems = []
-
-
-    def readOutput(self, system, calcFolder : str):
-        """
-
-        :rtype: object
-        """
-        self.readStructure(system, calcFolder)
-
-        try:
-            #with open(os.path.join(calcFolder , self.MOVEMENT),'r') as fp:
-                system['pressureTensor'] = self.readPressureTensor(os.path.join(calcFolder , self.MOVEMENT))
-        except:
-            logging.debug('Pressure tensor can\'t be find in output')
 
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -90,6 +77,7 @@ class PWmat_Interface(SHELL_Interface):
 
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        system['assembledCell'] = cell
         coordinates = cell.center(coordinates)
 
 
@@ -205,22 +193,19 @@ class PWmat_Interface(SHELL_Interface):
             shutil.copy2(os.path.join(calcFolder + self.REPORT), '%s-%s' % (os.path.join(calcFolder, 'ERROR'), self.REPORT))
             return False
 
-    def readStructure(self, system, calcFolder : str):
+    def readOutput(self, system, calcFolder : str):
+        """
 
-        cell = system['cell']
-        disassembler = system['disassembler']
-        del system['disassembler']
-
-
+        :rtype: object
+        """
         files_in_calcFolder = os.listdir(calcFolder)
         if 'final.config' not in files_in_calcFolder:
             os.system('cp %s %s' % (os.path.join(calcFolder, 'atom.config'), os.path.join(calcFolder, 'final.config')))
-
-        with open(os.path.join(calcFolder , self.FINAL_CONFIG),'r') as fp:
+        with open(os.path.join(calcFolder , self.FINAL_CONFIG), 'r') as fp:
             content = fp.readlines()
-
+        assembledCell = system.pop('assembledCell')
+        disassembler = system.pop('disassembler')
         atoms = int(content[0].split()[0])
-
         lat = []
         coor = []
         atomTypes = []
@@ -234,21 +219,21 @@ class PWmat_Interface(SHELL_Interface):
                     temp = content[n + 1 + i].split()
                     atomTypes.append(self.atomType(int(temp[0])))
                     coor += [[float(temp[1]), float(temp[2]), float(temp[3])]]
+        cell = self.cellType(lat, assembledCell.getPBC())
 
-        cell = self.cellType(lat, cell.getPBC()).getEnvelopeCell(coor, 0)
-        coor = cell.center(coor)
-        system.update(disassembler.disassemble(self.structureType(atomTypes, coor,
-                                                               cell=cell)))
+        if 'structure' in self.targetProperties:
+            system.update(disassembler.disassemble(self.structureType(atomTypes, coor, cell=cell)))
+        if 'enthalpy' in self.targetProperties:
+            with open(os.path.join(calcFolder , self.REPORT), 'r') as fp:
+                content = fp.readlines()
+            system['enthalpy'] = self.readEnergy(content) + \
+                                 cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+        if 'stressTensor' in self.targetProperties:
+            with open(os.path.join(calcFolder , self.MOVEMENT), 'r') as fp:
+                content = fp.readlines()
+            system['pressureTensor'] = self.readPressureTensor(content)
 
-        try:  # read energy
-            #with open(os.path.join(calcFolder , self.REPORT),'r') as fp:
-            system['enthalpy'] = self.readEnergy(os.path.join(calcFolder , self.REPORT)) + \
-                                 system['cell'].getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-        except:
-            logging.debug('enthalpy can\'t be find in output')
-
-
-    def readPressureTensor(self, filename='MOVEMENT', index=-1):
+    def readPressureTensor(self, content, index=-1):
         '''
 
         :param filename:
@@ -256,11 +241,6 @@ class PWmat_Interface(SHELL_Interface):
         :return:
         '''
 
-        if isinstance(filename, str):
-            f = open(filename)
-        else:  # Assume it's a file-like object
-            f = filename
-        content = f.readlines()
 
         target = []
         for n, line in enumerate(content):
@@ -298,20 +278,19 @@ class PWmat_Interface(SHELL_Interface):
 
 
     # TODO check this out
-    def readEnergy(self,filename='REPORT'):
+    def readEnergy(self, content):
         E_tot = 0
         # if all:
         #     E_tot = []
 
-        with open(filename, 'r') as f:
-            for line in f.readlines():
-            # Free energy
-                if 'result' in line.lower() and 'e_tot' in line.lower():
-                     # if all:
-                     #     E_tot.append(float(line.split()[-1]))
-                     # else:
-                          E_tot = float(line.split()[-1])
-            return E_tot
+        for line in content:
+        # Free energy
+            if 'result' in line.lower() and 'e_tot' in line.lower():
+                 # if all:
+                 #     E_tot.append(float(line.split()[-1]))
+                 # else:
+                      E_tot = float(line.split()[-1])
+        return E_tot
 
     def readForces(self, atoms, all=False):
         """Method that reads forces from MOVEMENT file.
