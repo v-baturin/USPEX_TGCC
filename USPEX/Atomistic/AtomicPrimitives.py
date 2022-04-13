@@ -181,7 +181,7 @@ class AtomicStructure:
                                np.dot(self._coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
             val, vectors = AtomicStructure(self._atomTypes, orthogPancake).getPrincipalAxes()
             vectors = vectors.T
-            if val[0] == 0:  # Check if inertia tensor has a singular matrix
+            if val[0] < 1e-5:  # Check if inertia tensor has a singular matrix
                 if np.dot(vectors[0], periodicUnit) == 1:
                     vectors[0] = vectors[1]
                 vectors[0] -= np.dot(vectors[0], periodicUnit) * periodicUnit
