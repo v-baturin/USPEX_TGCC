@@ -302,9 +302,7 @@ class VASP_Interface(SHELL_Interface):
         for i, symbol, position in zip(symbolsOrder, tmp_symbols, tmp_positions):
             positions[i] = position
             atomTypes[i] = self.atomType(symbol)
-
-        cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC()).getEnvelopeCell(positions, 0)
-        positions = cell.center(positions)
+        cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC())
         system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
 
     def readPressureTensor(self, content, index=-1):

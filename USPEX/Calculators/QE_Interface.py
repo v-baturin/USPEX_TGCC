@@ -150,8 +150,6 @@ class QE_Interface(SHELL_Interface):
 
         cell = self.cellType(aseStructure.get_cell().array, assembled_cell.getPBC())
         positions = aseStructure.get_positions()
-        cell = cell.getEnvelopeCell(positions, 0)
-        positions = cell.center(positions)
         structure = self.structureType([self.atomType(el) for el in aseStructure.get_chemical_symbols()], positions,
                                        cell=cell)
         system.update(disassembler.disassemble(structure))

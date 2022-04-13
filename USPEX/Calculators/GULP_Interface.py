@@ -287,10 +287,7 @@ class GULP_Interface(SHELL_Interface):
                     atomTypes.append(self.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
                 positions = assembledCell.fractionalToCartesian(fractional_coordinates)
-        cell = cell.getEnvelopeCell(positions, 0)
-        positions = cell.center(positions)
-        structure = self.structureType(atomTypes, positions, cell = cell)
-        system.update(disassembler.disassemble(structure))
+        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell = cell)))
 
     def readEnergy(self, content) -> float:
         energy_enthalpy = np.inf
