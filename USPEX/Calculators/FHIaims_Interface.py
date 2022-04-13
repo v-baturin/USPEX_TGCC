@@ -49,15 +49,13 @@ class FHIaims_Interface(SHELL_Interface):
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : str):
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
         atomTypes = structure.getAtomTypes()
         system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])
-
-        coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        cell = structure.getCell()
         system['assembledCell'] = cell
-        coordinates = cell.center(coordinates)
+        coordinates = structure.getCartesianCoordinates()
 
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass

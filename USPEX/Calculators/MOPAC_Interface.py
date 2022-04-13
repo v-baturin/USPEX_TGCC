@@ -61,12 +61,11 @@ class MOPAC_Interface(SHELL_Interface):
         :param isFullRelaxation:
         """
 
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=0)
         system['disassembler'] = disassembler
-
-        coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell()
         system['assembledCell'] = cell
+        coordinates = structure.getCartesianCoordinates()
 
         # files_to_delete = ['output', 'optimized.structure']
         # for f in files_to_delete:

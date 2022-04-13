@@ -55,14 +55,12 @@ class MLIP_Interface(SHELL_Interface):
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: str):
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
-
-        atomTypes = structure.getAtomTypes()
-        coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-        coordinates = cell.center(coordinates)
+        cell = structure.getCell()
         system['assembledCell'] = cell
+        coordinates = structure.getCartesianCoordinates()
+        atomTypes = structure.getAtomTypes()
 
         # create empty input file
         with open(pj(calcFolder, self.inputFile), 'wt') as f:

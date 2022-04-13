@@ -81,14 +81,12 @@ class ABINIT_Interface(SHELL_Interface):
         :param system: our system
         :return:
         """
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
-
-        atomTypes = structure.getAtomTypes()
-        coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        cell = structure.getCell()
         system['assembledCell'] = cell
-        coordinates = cell.center(coordinates)
+        coordinates = structure.getCartesianCoordinates()
+        atomTypes = structure.getAtomTypes()
 
 
         ############################# FILES FILE ################################

@@ -69,16 +69,13 @@ class PWmat_Interface(SHELL_Interface):
         :param system: our system
         :return:
         '''
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
-
+        cell = structure.getCell()
+        system['assembledCell'] = cell
+        coordinates = structure.getCartesianCoordinates()
         atomTypes = structure.getAtomTypes()
         atomSymbols = [el.short_name for el in atomTypes]
-
-        coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-        system['assembledCell'] = cell
-        coordinates = cell.center(coordinates)
 
 
         ############################# POTCAR ##################################

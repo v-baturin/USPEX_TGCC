@@ -54,13 +54,11 @@ class QE_Interface(SHELL_Interface):
 
 
     def prepareLocalCalculation(self, system: dict, calcFolder: str):
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
-
-        coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+        cell = structure.getCell()
         system['assembledCell'] = cell
-        coordinates = cell.center(coordinates)
+        coordinates = structure.getCartesianCoordinates()
 
 
         atomTypes = structure.getAtomTypes()

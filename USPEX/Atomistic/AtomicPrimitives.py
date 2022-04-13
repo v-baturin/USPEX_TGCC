@@ -236,7 +236,7 @@ class AtomicStructure:
         return newStructure
 
     @staticmethod
-    def assemble(molecules, cell, environment=None, vacuum_sizes=None, **kwargs): # lots of work with calcs
+    def assemble(molecules, cell, environment=None, vacuumSize=0, **kwargs): # lots of work with calcs
         """
         TODO move to AtomicDisassembler class.
 
@@ -263,6 +263,9 @@ class AtomicStructure:
             coordinates.extend(environment.getStructure().getCartesianCoordinates())
         else:
             assembledCell = cell
+        structure = AtomicStructure(atomTypes, coordinates, assembledCell)
+        assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
+        coordinates = assembledCell.center(structure.getCartesianCoordinates())
         return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
                 AtomicDisassembler(indices, environment, cell))  # cell of molecules
 

@@ -70,15 +70,12 @@ class LAMMPS_Interface(SHELL_Interface):
         :param system:
         :param calcFolder:
         """
-        structure, disassembler = self.structureType.assemble(**system)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
-        system['assembledCell'] = structure.getRectifiedCell().getEnvelopeCell(structure.getCartesianCoordinates(),
-                                                                                self.vacuumSize)
-
+        cell = structure.getCell()
+        system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
-        cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-        coordinates = cell.center(coordinates)
-        
+
         if not os.path.exists(calcFolder):
             os.makedirs(calcFolder)
         
