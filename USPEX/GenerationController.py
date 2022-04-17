@@ -8,7 +8,7 @@ from copy import copy, deepcopy
 from enum import Enum
 
 from USPEX.LifeState import LifeState
-from USPEX.Calculators.SHELL_Calculator import SHELL_Calculator, ReferenceMismatch
+from USPEX.Calculators.SHELL_Calculator import SHELL_Calculator
 from .IO.OutputRepresentation import OutputRepresentation
 from .IO.InputParser import read
 from .IO.compileParams import compileParams
@@ -109,9 +109,6 @@ class GenerationController(object):
             else:
                 try:
                     await stage.run(system)
-                except ReferenceMismatch:
-                    exc_info = sys.exc_info()
-                    raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
                 except Exception as ex:
                     logger.warning(f'system {ID} error in relaxation:')
                     logger.exception(ex)

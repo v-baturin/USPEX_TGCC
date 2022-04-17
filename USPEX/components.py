@@ -43,30 +43,38 @@ GlobalOptimizer.registerTarget('Atomistic',
 from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 
-from USPEX.Calculators.Interfaces.ABINIT_Interface import ABINIT_Interface
+from .Calculators.SHELL_Calculator import SHELL_Calculator
+from .Calculators.Interfaces.ABINIT_Interface import ABINIT_Interface
 ABINIT_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from USPEX.Calculators.Interfaces.GULP_Interface import GULP_Interface
+SHELL_Calculator.registerInterface('abinit', ABINIT_Interface)
+from .Calculators.Interfaces.GULP_Interface import GULP_Interface
 GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from USPEX.Calculators.Interfaces.LAMMPS_Interface import LAMMPS_Interface
+SHELL_Calculator.registerInterface('gulp', GULP_Interface)
+from .Calculators.Interfaces.LAMMPS_Interface import LAMMPS_Interface
 LAMMPS_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from USPEX.Calculators.Interfaces.MLIP_Interface import MLIP_Interface
+SHELL_Calculator.registerInterface('lammps', LAMMPS_Interface)
+from .Calculators.Interfaces.MLIP_Interface import MLIP_Interface
 MLIP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from USPEX.Calculators.Interfaces.PWmat_Interface import PWmat_Interface
+SHELL_Calculator.registerInterface('mlip', MLIP_Interface)
+from .Calculators.Interfaces.PWmat_Interface import PWmat_Interface
 PWmat_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from USPEX.Calculators.Interfaces.QE_Interface import QE_Interface
+from .Calculators.Interfaces.QE_Interface import QE_Interface
 QE_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from USPEX.Calculators.Interfaces.VASP_Interface import VASP_Interface
+SHELL_Calculator.registerInterface('qe', QE_Interface)
+from .Calculators.Interfaces.VASP_Interface import VASP_Interface
 VASP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from USPEX.Calculators.Interfaces.MOPAC_Interface import MOPAC_Interface
+SHELL_Calculator.registerInterface('vasp', VASP_Interface)
+from .Calculators.Interfaces.MOPAC_Interface import MOPAC_Interface
 MOPAC_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from USPEX.Calculators.Interfaces.FHIaims_Interface import FHIaims_Interface
+SHELL_Calculator.registerInterface('mopac', MOPAC_Interface)
+from .Calculators.Interfaces.FHIaims_Interface import FHIaims_Interface
 FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
+SHELL_Calculator.registerInterface('aims', FHIaims_Interface)
+from .Calculators.TaskManagers.BSUB import BSUB
+SHELL_Calculator.registerTaskManager('BSUB', BSUB)
+from .Calculators.TaskManagers.QSUB import QSUB
+SHELL_Calculator.registerTaskManager('QSUB', QSUB)
+from .Calculators.TaskManagers.SBATCH import SBATCH
+SHELL_Calculator.registerTaskManager('SBATCH', SBATCH)
+from .Calculators.TaskManagers.SHELL import SHELL
+SHELL_Calculator.registerTaskManager('SHELL', SHELL)

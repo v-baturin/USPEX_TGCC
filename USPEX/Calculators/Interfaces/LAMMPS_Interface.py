@@ -50,8 +50,6 @@ class LAMMPS_Interface:
                 * libs: (list) list of paths to interatomic potentials and associated files.
         """
 
-        super().__init__(**kwargs)
-
         self.lammps_in = lammps_in
         self.specorder = specorder
         assert os.path.exists(self.lammps_in)
