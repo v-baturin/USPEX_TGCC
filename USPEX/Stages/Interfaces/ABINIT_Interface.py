@@ -14,7 +14,7 @@ from abipy import abilab
 from os.path import join as pj
 from typing import List
 
-from USPEX.Calculators.Interfaces.KPoints import KPoints, BadKPoints
+from .KPoints import KPoints, BadKPoints
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208

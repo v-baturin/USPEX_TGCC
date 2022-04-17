@@ -19,7 +19,7 @@ from os.path import join as pj
 import numpy as np
 
 from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from USPEX.Calculators.Interfaces.VASP_Interface import VASP_Interface
+from ..VASP_Interface import VASP_Interface
 from USPEX.components import AtomisticRepresentation
 
 

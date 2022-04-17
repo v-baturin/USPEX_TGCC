@@ -16,7 +16,7 @@ import numpy as np
 
 
 from USPEX.components import AtomisticRepresentation
-from USPEX.Calculators.Interfaces.PWmat_Interface import  PWmat_Interface
+from ..PWmat_Interface import  PWmat_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))

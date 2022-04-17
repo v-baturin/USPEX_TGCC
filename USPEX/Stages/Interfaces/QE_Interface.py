@@ -11,7 +11,7 @@ import numpy as np
 from os.path import join as pj
 from ase.io.espresso import read_espresso_out
 
-from USPEX.Calculators.Interfaces.KPoints import KPoints, BadKPoints
+from .KPoints import KPoints, BadKPoints
 
 logger = logging.getLogger(__name__)
 

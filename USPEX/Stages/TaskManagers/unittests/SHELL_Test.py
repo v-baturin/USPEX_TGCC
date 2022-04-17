@@ -9,7 +9,7 @@
 
 import unittest
 from ..SHELL import SHELL
-from USPEX.Calculators.Connector import Connector
+from ...Connector import Connector
 
 import os
 import shutil

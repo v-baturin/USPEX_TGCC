@@ -1,13 +1,11 @@
 """
-@file        VASP_CalculatorTest.py
-@author:     Artem Samtsevich
+@file        ABINIT_Interface_Test.py
+@author:     Michele Galasso
 @copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        19 September 2016
-@brief       Class for testing VASP_Calculator class.
+@contact:    m.galasso@yandex.com
+@date        8 June 2020
+@brief       Class for testing ABINIT_Interface class.
 """
-
-__author__ = 'asamtsevich'
 
 import os
 import shutil
@@ -18,33 +16,35 @@ from os.path import join as pj
 
 
 from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from USPEX.Calculators.Interfaces.FHIaims_Interface import FHIaims_Interface
+from ..ABINIT_Interface import ABINIT_Interface
 from USPEX.components import AtomisticRepresentation
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'aimsSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'aimsGatheredData')
-WORKPATH = pj(HOMEPATH, 'F2_aims')
+SPECIFICPATH = os.path.join(HOMEPATH, 'abinitSpecific')
+GATHEREDPATH = os.path.join(HOMEPATH, 'abinitGatheredData')
+WORKPATH = os.path.join(HOMEPATH, 'Eu2H18_abinit')
 
 
-class VASP_CalculatorTest2(unittest.TestCase):
+class ABINIT_Interface_Test(unittest.TestCase):
     """
     Checking correct parsing properties
     """
+
     def test_life(self):
-        aims = FHIaims_Interface(tag='1', perturbate=False,
-                              control=pj(SPECIFICPATH, 'aims_control_1'), kresol=0.14)
+        abinit = ABINIT_Interface(tag='0', in_file=pj(SPECIFICPATH, 'abinit.in_1'), kresol=0.13,
+                                  pp_files=[pj(SPECIFICPATH, 'H.psp8'), pj(SPECIFICPATH, 'Eu.psp8')])
         radialDistributionUtility = RadialDistributionUtility()
 
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
                 system = AtomisticRepresentation.readAtomicStructure(f)
+                system['assembled_cell'] = system['cell']
                 system['ID'] = ID
-                system['externalPressure'] = 0.0001
+                system['externalPressure'] = 130.0
             os.mkdir(WORKPATH)
-            aims.prepareLocalCalculation(system, WORKPATH)
+            abinit.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
@@ -54,9 +54,8 @@ class VASP_CalculatorTest2(unittest.TestCase):
             self.assertTrue(match)
             folder = pj(GATHEREDPATH, 'output')
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-            aims.readOutput(system, WORKPATH)
+            abinit.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
                 systemRef = AtomisticRepresentation.readAtomicStructure(f)
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
-

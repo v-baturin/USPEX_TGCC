@@ -12,7 +12,7 @@ import numpy as np
 from os.path import join as pj
 from ase.atoms import Atoms
 
-from USPEX.Calculators.Interfaces.MLIPCfgParser import readcfg, savecfg
+from .MLIPCfgParser import readcfg, savecfg
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1 / 160.21766208

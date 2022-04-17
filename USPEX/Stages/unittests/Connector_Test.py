@@ -12,7 +12,7 @@ import os
 import asyncio
 import shutil
 
-from USPEX.Calculators.Connector import Connector
+from ..Connector import Connector
 
 
 class Connector_Test(unittest.TestCase):

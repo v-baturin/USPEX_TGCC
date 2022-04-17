@@ -7,7 +7,7 @@ import filecmp
 
 from os.path import join as pj
 
-from USPEX.Calculators.Interfaces.LAMMPS_Interface import LAMMPS_Interface
+from ..LAMMPS_Interface import LAMMPS_Interface
 from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from USPEX.components import AtomisticRepresentation
 

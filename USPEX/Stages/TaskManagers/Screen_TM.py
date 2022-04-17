@@ -7,7 +7,7 @@ USPEX.Calculators.TaskManagers.Screen_TM
 """
 import logging
 
-from USPEX.Calculators.TaskManagers.Screen import Screen, list_screens_id, kill_screen_by_id
+from .Screen import Screen, list_screens_id, kill_screen_by_id
 
 logger = logging.getLogger(__name__)
 

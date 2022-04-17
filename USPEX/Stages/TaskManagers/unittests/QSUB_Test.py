@@ -1,15 +1,15 @@
 '''
-@file        BSUB_Test.py
-@author:     Artem Samtsevich
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        9 September 2016
-@brief       Class for task manager.
+@file        QSUB_Test.py
+@author:     Michele Galasso
+@copyright:  2018 Oganov's Lab. All rights reserved.
+@contact:    m.galasso@yandex.com
+@date        11 April 2018
+@brief       Class for testing QSUB.
 '''
 
 import unittest
-from ..BSUB import BSUB
-from USPEX.Calculators.Connector import Connector
+from ..QSUB import QSUB
+from ...Connector import Connector
 
 import os
 import shutil
@@ -19,17 +19,15 @@ Nchan = 40
 
 TESTPATH = os.path.dirname(os.path.abspath(__file__))
 
-HEADER =  '''#!/bin/sh
-#BSUB -q normal
-#BSUB -W 06:00:00
-#BSUB -n 1
-#BSUB -R "span[ptile=8]"
-#BSUB -sp 100
-#BSUB -a intelmpi
+
+HEADER = '''#!/bin/sh
+#PBS -l nodes=1:ppn=8
+#PBS -l walltime=48:00:00
 
 '''
 
-class BSUB_Test(unittest.TestCase):
+
+class QSUB_Test(unittest.TestCase):
     '''
 
     '''
@@ -60,7 +58,7 @@ class BSUB_Test(unittest.TestCase):
 
     def test_submit_kill_isExist_remote(self):
 
-        self.taskManager = BSUB(HEADER, Connector(domain = 'localhost', known_hosts=None))
+        self.taskManager = QSUB(HEADER, Connector(domain = 'localhost', known_hosts=None))
         coros = []
         for i in range(Nchan):
             coros.append(self.coro(i))
@@ -68,7 +66,7 @@ class BSUB_Test(unittest.TestCase):
         isExists = loop.run_until_complete(asyncio.gather(*coros))
 
     def test_submit_kill_isExist_local(self):
-        self.taskManager = BSUB(HEADER, Connector())
+        self.taskManager = QSUB(HEADER, Connector())
         coros = []
         for i in range(Nchan):
             coros.append(self.coro(i))

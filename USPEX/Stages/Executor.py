@@ -16,7 +16,7 @@ from .Connector import Connector
 logger = logging.getLogger(__name__)
 
 
-class SHELL_Calculator(object):
+class Executor(object):
     CALC_FOLDER_TEMPLATE = 'CalcFold{}_{}'   # Path to folder to made QM/MM calculation
 
     _DEFAULT_SLEEP_TIME = 1

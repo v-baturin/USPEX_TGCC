@@ -1,12 +1,3 @@
-"""
-@file        ABINIT_Interface_Test.py
-@author:     Michele Galasso
-@copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    m.galasso@yandex.com
-@date        8 June 2020
-@brief       Class for testing ABINIT_Interface class.
-"""
-
 import os
 import shutil
 import unittest
@@ -16,35 +7,33 @@ from os.path import join as pj
 
 
 from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from USPEX.Calculators.Interfaces.ABINIT_Interface import ABINIT_Interface
 from USPEX.components import AtomisticRepresentation
+from ..QE_Interface import QE_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = os.path.join(HOMEPATH, 'abinitSpecific')
-GATHEREDPATH = os.path.join(HOMEPATH, 'abinitGatheredData')
-WORKPATH = os.path.join(HOMEPATH, 'Eu2H18_abinit')
+SPECIFICPATH = pj(HOMEPATH, 'qeSpecific')
+GATHEREDPATH = pj(HOMEPATH, 'qeGatheredData')
+WORKPATH = pj(HOMEPATH, 'Ca4F8_qe')
 
 
-class ABINIT_Interface_Test(unittest.TestCase):
+class QE_CalculatorTest2(unittest.TestCase):
     """
     Checking correct parsing properties
     """
-
     def test_life(self):
-        abinit = ABINIT_Interface(tag='0', in_file=pj(SPECIFICPATH, 'abinit.in_1'), kresol=0.13,
-                                  pp_files=[pj(SPECIFICPATH, 'H.psp8'), pj(SPECIFICPATH, 'Eu.psp8')])
+        qe = QE_Interface(tag='1', options=pj(SPECIFICPATH, 'qEspresso_options_1'),
+                          libs=[pj(SPECIFICPATH, 'SiC.C.pbe-van_bm.upf')], kresol=0.16)
         radialDistributionUtility = RadialDistributionUtility()
 
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
                 system = AtomisticRepresentation.readAtomicStructure(f)
-                system['assembled_cell'] = system['cell']
                 system['ID'] = ID
-                system['externalPressure'] = 130.0
+                system['externalPressure'] = 0.0001
             os.mkdir(WORKPATH)
-            abinit.prepareLocalCalculation(system, WORKPATH)
+            qe.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
@@ -54,7 +43,7 @@ class ABINIT_Interface_Test(unittest.TestCase):
             self.assertTrue(match)
             folder = pj(GATHEREDPATH, 'output')
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-            abinit.readOutput(system, WORKPATH)
+            qe.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
                 systemRef = AtomisticRepresentation.readAtomicStructure(f)

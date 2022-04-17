@@ -10,7 +10,7 @@ import shutil
 import numpy as np
 from os.path import join as pj
 
-from USPEX.Calculators.Interfaces.KPoints import KPoints, BadKPoints
+from .KPoints import KPoints, BadKPoints
 
 logger = logging.getLogger(__name__)
 

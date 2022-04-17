@@ -1,11 +1,13 @@
 """
-@file        MLIP_Interface_Test.py
-@author:     Michele Galasso
+@file        VASP_CalculatorTest.py
+@author:     Artem Samtsevich
 @copyright:  2017 Oganov's Lab. All rights reserved.
-@contact:    m.galasso@yandex.com
-@date        10 January 2020
-@brief       Class for testing MLIP_Interface.
+@contact:    samtsevichartem@gmail.com
+@date        19 September 2016
+@brief       Class for testing VASP_Calculator class.
 """
+
+__author__ = 'asamtsevich'
 
 import os
 import shutil
@@ -16,43 +18,45 @@ from os.path import join as pj
 
 
 from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
+from ..FHIaims_Interface import FHIaims_Interface
 from USPEX.components import AtomisticRepresentation
-from USPEX.Calculators.Interfaces.MLIP_Interface import MLIP_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'mlipSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'mlipGatheredData')
-WORKPATH = pj(HOMEPATH, 'NaCl_mlip')
+SPECIFICPATH = pj(HOMEPATH, 'aimsSpecific')
+GATHEREDPATH = pj(HOMEPATH, 'aimsGatheredData')
+WORKPATH = pj(HOMEPATH, 'F2_aims')
 
 
-class MLIP_CalculatorTest2(unittest.TestCase):
+class VASP_CalculatorTest2(unittest.TestCase):
     """
     Checking correct parsing properties
     """
     def test_life(self):
-        mlip = MLIP_Interface(tag='1', input=pj(SPECIFICPATH, 'input_1.ini'),
-                              potential=pj(SPECIFICPATH, 'potential.mtp'))
+        aims = FHIaims_Interface(tag='1', perturbate=False,
+                              control=pj(SPECIFICPATH, 'aims_control_1'), kresol=0.14)
         radialDistributionUtility = RadialDistributionUtility()
+
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
                 system = AtomisticRepresentation.readAtomicStructure(f)
-            system['externalPressure'] = 100
-            system['ID'] = ID
+                system['ID'] = ID
+                system['externalPressure'] = 0.0001
             os.mkdir(WORKPATH)
-            mlip.prepareLocalCalculation(system, WORKPATH)
+            aims.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
                 match = match and not dcmp.subdirs[common_dir].diff_files
-            self.assertTrue(match)
             shutil.rmtree(WORKPATH)
+            self.assertTrue(match)
             folder = pj(GATHEREDPATH, 'output')
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-            mlip.readOutput(system, WORKPATH)
+            aims.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
                 systemRef = AtomisticRepresentation.readAtomicStructure(f)
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
+
