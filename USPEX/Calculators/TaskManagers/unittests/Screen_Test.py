@@ -9,10 +9,9 @@
 
 import unittest
 from ..Screen_TM import Screen_TM
-from ...Common.Connector import Connector
+from USPEX.Calculators.Connector import Connector
 
 import os
-import pickle
 import shutil
 import asyncio
 

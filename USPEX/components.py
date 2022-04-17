@@ -43,30 +43,30 @@ GlobalOptimizer.registerTarget('Atomistic',
 from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 
-from .Calculators.ABINIT_Interface import ABINIT_Interface
+from USPEX.Calculators.Interfaces.ABINIT_Interface import ABINIT_Interface
 ABINIT_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-from .Calculators.GULP_Interface import GULP_Interface
+from USPEX.Calculators.Interfaces.GULP_Interface import GULP_Interface
 GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-from .Calculators.LAMMPS_Interface import LAMMPS_Interface
+from USPEX.Calculators.Interfaces.LAMMPS_Interface import LAMMPS_Interface
 LAMMPS_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-from .Calculators.MLIP_Interface import MLIP_Interface
+from USPEX.Calculators.Interfaces.MLIP_Interface import MLIP_Interface
 MLIP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-from .Calculators.PWmat_Interface import PWmat_Interface
+from USPEX.Calculators.Interfaces.PWmat_Interface import PWmat_Interface
 PWmat_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-from .Calculators.QE_Interface import QE_Interface
+from USPEX.Calculators.Interfaces.QE_Interface import QE_Interface
 QE_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-from .Calculators.VASP_Interface import VASP_Interface
+from USPEX.Calculators.Interfaces.VASP_Interface import VASP_Interface
 VASP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-from .Calculators.MOPAC_Interface import MOPAC_Interface
+from USPEX.Calculators.Interfaces.MOPAC_Interface import MOPAC_Interface
 MOPAC_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 
-from .Calculators.FHIaims_Interface import FHIaims_Interface
+from USPEX.Calculators.Interfaces.FHIaims_Interface import FHIaims_Interface
 FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 

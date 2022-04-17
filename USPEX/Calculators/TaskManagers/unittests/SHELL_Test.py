@@ -9,10 +9,9 @@
 
 import unittest
 from ..SHELL import SHELL
-from ...Common.Connector import Connector
+from USPEX.Calculators.Connector import Connector
 
 import os
-import pickle
 import shutil
 import asyncio
 

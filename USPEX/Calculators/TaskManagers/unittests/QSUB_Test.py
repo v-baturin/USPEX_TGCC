@@ -9,10 +9,9 @@
 
 import unittest
 from ..QSUB import QSUB
-from ...Common.Connector import Connector
+from USPEX.Calculators.Connector import Connector
 
 import os
-import pickle
 import shutil
 import asyncio
 
