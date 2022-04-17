@@ -12,18 +12,17 @@ import shutil
 from os.path import join as pj
 from typing import List
 
-from USPEX.Calculators.SHELL_Interface import SHELL_Interface
-
 logger = logging.getLogger(__name__)
 
 
-class GULP_Interface(SHELL_Interface):
+class GULP_Interface:
     """
     Calculator for Gulp.
     Local running
     """
 
-    _DEFAULT_SLEEP_TIME = 10
+    DEFAULT_SLEEP_TIME = 10
+    inputFile, outputFile, errorFile = 'input', 'output', 'error'
     structureType = None
     atomType = None
     cellType = None

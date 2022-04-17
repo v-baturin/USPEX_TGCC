@@ -14,14 +14,13 @@ from ase.io import read
 from ase import Atoms
 from typing import List
 from os.path import join as pj
-from USPEX.Calculators.SHELL_Interface import SHELL_Interface
 logger = logging.getLogger(__name__)
 
 
 REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp',
                                     'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
 
-class LAMMPS_Interface(SHELL_Interface):
+class LAMMPS_Interface:
     """
     Calculator for LAMMPS.
     Local running
@@ -30,12 +29,13 @@ class LAMMPS_Interface(SHELL_Interface):
     # working output files
     inputFile = 'lammps.in'
     outputFile = 'lammps.out'
-    
+    errorFile = 'error'
+
     log_file = 'log.lammps'
     data_file = 'STRUC'
     dump_file = 'lammps.dump'
     
-    _DEFAULT_SLEEP_TIME = 30
+    DEFAULT_SLEEP_TIME = 30
     structureType = None
     atomType = None
     cellType = None

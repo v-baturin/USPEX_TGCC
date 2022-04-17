@@ -13,12 +13,11 @@ import re
 import numpy as np
 
 from USPEX.Calculators.Interfaces.KPoints import KPoints, BadKPoints
-from USPEX.Calculators.SHELL_Interface import SHELL_Interface
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
 
-class PWmat_Interface(SHELL_Interface):
+class PWmat_Interface:
     '''
     Calculator for PWmat.
     Local running
@@ -28,6 +27,8 @@ class PWmat_Interface(SHELL_Interface):
     shortname = 'pwmat'
 
     sleepTime = 30
+
+    inputFile, outputFile, errorFile = 'input', 'output', 'error'
 
     # working files
     REPORT = 'REPORT'

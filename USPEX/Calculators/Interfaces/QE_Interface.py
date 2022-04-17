@@ -12,11 +12,10 @@ from os.path import join as pj
 from ase.io.espresso import read_espresso_out
 
 from USPEX.Calculators.Interfaces.KPoints import KPoints, BadKPoints
-from USPEX.Calculators.SHELL_Interface import SHELL_Interface
 
 logger = logging.getLogger(__name__)
 
-class QE_Interface(SHELL_Interface):
+class QE_Interface:
     '''
     Calculator for QE.
     Local running
@@ -24,8 +23,9 @@ class QE_Interface(SHELL_Interface):
 
 
     SPECIFIC_FOLDER = os.getcwd() + '/Specific'
+    inputFile, outputFile, errorFile = 'input', 'output', 'error'
 
-    _DEFAULT_SLEEP_TIME = 30
+    DEFAULT_SLEEP_TIME = 30
     structureType = None
     atomType = None
     cellType = None

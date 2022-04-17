@@ -15,14 +15,13 @@ from os.path import join as pj
 from typing import List
 
 from USPEX.Calculators.Interfaces.KPoints import KPoints, BadKPoints
-from USPEX.Calculators.SHELL_Interface import SHELL_Interface
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
 GPA_TO_HARTREE_PER_CUBIC_BOHR = 1/29421.033
 
 
-class ABINIT_Interface(SHELL_Interface):
+class ABINIT_Interface:
     """
     Calculator for ABINIT.
     Local running
@@ -35,9 +34,11 @@ class ABINIT_Interface(SHELL_Interface):
     # working input files
     inputFile = 'abinit.files'
     in_file_name = 'abinit.in'
+    outputFile = 'output'
+    errorFile = 'error'
 
 
-    _DEFAULT_SLEEP_TIME = 30
+    DEFAULT_SLEEP_TIME = 30
     structureType = None
     atomType = None
     cellType = None

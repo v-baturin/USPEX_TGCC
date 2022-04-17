@@ -15,7 +15,6 @@ from os.path import join as pj
 from typing import List
 
 from USPEX.Calculators.Interfaces.KPoints import KPoints, BadKPoints
-from USPEX.Calculators.SHELL_Interface import SHELL_Interface
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
@@ -44,11 +43,13 @@ def split_up_data(data:List[str], out_size:int):
     return res
 
 
-class VASP_Interface(SHELL_Interface):
+class VASP_Interface:
     '''
     Calculator for VASP.
     Local running
     '''
+
+    inputFile, outputFile, errorFile = 'input', 'output', 'error'
 
     # working output files
     outcar_file = 'OUTCAR'
@@ -63,7 +64,7 @@ class VASP_Interface(SHELL_Interface):
     potcar_file = 'POTCAR'
 
 
-    _DEFAULT_SLEEP_TIME = 30
+    DEFAULT_SLEEP_TIME = 30
     structureType = None
     atomType = None
     cellType = None

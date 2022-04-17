@@ -12,18 +12,17 @@ import re
 import numpy as np
 from os.path import join as pj
 
-from USPEX.Calculators.SHELL_Interface import SHELL_Interface
-
 logger = logging.getLogger(__name__)
 
 
-class MOPAC_Interface(SHELL_Interface):
+class MOPAC_Interface:
     """
      Calculator for Gulp.
      Local running
      """
+    outputFile, errorFile = 'output', 'error'
     inputFile, mopacOut, arcFile = 'calc.mop', 'calc.out', 'calc.arc'
-    _DEFAULT_SLEEP_TIME = 1
+    DEFAULT_SLEEP_TIME = 1
     structureType = None
     atomType = None
     cellType = None

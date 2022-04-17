@@ -10,20 +10,20 @@ import shutil
 import numpy as np
 from os.path import join as pj
 
-from USPEX.Calculators.SHELL_Interface import SHELL_Interface
 from USPEX.Calculators.Interfaces.KPoints import KPoints, BadKPoints
 
 logger = logging.getLogger(__name__)
 
 
-class FHIaims_Interface(SHELL_Interface):
+class FHIaims_Interface:
 
-    _DEFAULT_SLEEP_TIME = 30
+    DEFAULT_SLEEP_TIME = 30
     structureType = None
     atomType = None
     cellType = None
     atomicDisassemblerType = None
 
+    inputFile, outputFile, errorFile = 'input', 'output', 'error'
     control_file = 'control.in'
     geometry_file = 'geometry.in'
 

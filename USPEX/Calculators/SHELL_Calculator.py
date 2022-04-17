@@ -20,9 +20,12 @@ logger = logging.getLogger(__name__)
 class SHELL_Calculator(object):
     CALC_FOLDER_TEMPLATE = 'CalcFold{}_{}'   # Path to folder to made QM/MM calculation
 
+    _DEFAULT_SLEEP_TIME = 1
+
+
     def __init__(self, type : str, commandExecutable : str, tag : str, workingDirectory : str = '.',
                  remote=None, taskManager=None, gather : bool = False, referenceFolder : str = None,
-                 keepFolders : bool = False, **kwargs):
+                 keepFolders : bool = False, sleepTime : int = None, **kwargs):
         """
 
         :param commandExecutable:
@@ -68,11 +71,15 @@ class SHELL_Calculator(object):
         elif type == 'aims':
             from USPEX.Calculators.Interfaces.FHIaims_Interface import FHIaims_Interface
             self._interface = FHIaims_Interface(tag, **kwargs)
-        elif type == 'none':
-            from .SHELL_Interface import SHELL_Interface
-            self._interface = SHELL_Interface()
         else:
             raise RuntimeError(f'Invalid Calculator Type: {type}')
+
+        if sleepTime is not None and sleepTime > 0:
+            self.sleepTime = sleepTime
+        elif hasattr(self._interface, 'DEFAULT_SLEEP_TIME'):
+            self.sleepTime = self._interface.DEFAULT_SLEEP_TIME
+        else:
+            self.sleepTime = self._DEFAULT_SLEEP_TIME
 
         self.tag = tag
 
@@ -82,18 +89,18 @@ class SHELL_Calculator(object):
 
         if taskManager is not None:
             if taskManager['type'] == 'BSUB':
-                from ..TaskManagers.BSUB import BSUB
+                from .TaskManagers.BSUB import BSUB
                 self._taskManager = BSUB(taskManager['header'], connector=self._connector)
             elif taskManager['type'] == 'QSUB':
-                from ..TaskManagers.QSUB import QSUB
+                from .TaskManagers.QSUB import QSUB
                 self._taskManager = QSUB(taskManager['header'], connector=self._connector)
             elif taskManager['type'] == 'SBATCH':
-                from ..TaskManagers.SBATCH import SBATCH
+                from .TaskManagers.SBATCH import SBATCH
                 self._taskManager = SBATCH(taskManager['header'], connector=self._connector)
             else:
                 raise RuntimeError(f'Invalid Task Manager Type: {taskManager["type"]}')
         else:
-            from ..TaskManagers.SHELL import SHELL
+            from .TaskManagers.SHELL import SHELL
             self._taskManager = SHELL(connector=self._connector)
             logger.debug('     with a task manager')
 
@@ -134,8 +141,8 @@ class SHELL_Calculator(object):
 
             if jobID > 0:
                 while not await self._taskManager.isReady(jobID):
-                    logger.debug(f'system {ID} will wait for update {self._interface.sleepTime}s')
-                    await asyncio.sleep(self._interface.sleepTime)
+                    logger.debug(f'system {ID} will wait for update {self.sleepTime}s')
+                    await asyncio.sleep(self.sleepTime)
 
             await self._connector.sync_r2l(calcFolder)
             await self._connector.clean(calcFolder)
@@ -192,7 +199,7 @@ class SHELL_Calculator(object):
             return
         folder = pj(self.gatheredDataPath, ioType)
         copytree(calcFolder, pj(folder, os.path.basename(calcFolder)))
-        from ...components import AtomisticRepresentation
+        from ..components import AtomisticRepresentation
         with open(pj(folder, f"system{system['ID']}_{tag}"), 'wt') as f:
             AtomisticRepresentation.writeAtomicStructure(f, system)
 

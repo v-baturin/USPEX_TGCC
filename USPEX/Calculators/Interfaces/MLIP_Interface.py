@@ -13,17 +13,19 @@ from os.path import join as pj
 from ase.atoms import Atoms
 
 from USPEX.Calculators.Interfaces.MLIPCfgParser import readcfg, savecfg
-from USPEX.Calculators.SHELL_Interface import SHELL_Interface
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1 / 160.21766208
 
 
-class MLIP_Interface(SHELL_Interface):
+class MLIP_Interface:
     '''
     Calculator for MLIP.
     Local running
     '''
+
+
+    inputFile, outputFile, errorFile = 'input', 'output', 'error'
 
     # working input files
     in_cfg_file = 'for_relax.cfg'
@@ -32,7 +34,7 @@ class MLIP_Interface(SHELL_Interface):
     out_cfg_file = 'relaxed.cfg_0'
     out_sampled_file = 'sampled.cfg_0'
 
-    _DEFAULT_SLEEP_TIME = 10
+    DEFAULT_SLEEP_TIME = 10
     structureType = None
     atomType = None
     cellType = None
