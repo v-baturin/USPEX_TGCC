@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.GULP_Interface
-================================
+USPEX.Stages.GULP_Interface
+===========================
 
 """
 

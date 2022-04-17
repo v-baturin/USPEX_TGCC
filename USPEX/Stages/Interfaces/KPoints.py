@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.Common.KPoints
-================================
+USPEX.Stages.Interfaces.KPoints
+===============================
 
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 

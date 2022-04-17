@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.LAMMPS_Interface
-==================================
+USPEX.Stages.LAMMPS_Interface
+=============================
 
 .. codeauthor:: Arslan Mazitov <arslan.mazitov@phystech.edu>
 

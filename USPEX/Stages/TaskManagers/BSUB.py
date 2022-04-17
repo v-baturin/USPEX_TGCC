@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.TaskManagers.BSUB
-===================================
+USPEX.Stages.TaskManagers.BSUB
+==============================
 
 """
 

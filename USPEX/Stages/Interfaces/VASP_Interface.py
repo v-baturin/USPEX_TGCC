@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.VASP_Interface
-================================
+USPEX.Stages.VASP_Interface
+===========================
 
 """
 

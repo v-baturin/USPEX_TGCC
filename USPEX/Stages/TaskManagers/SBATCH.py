@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.TaskManagers.SBATCH
-=====================================
+USPEX.Stages.TaskManagers.SBATCH
+================================
 
 """
 

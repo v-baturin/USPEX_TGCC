@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.TaskManagers.Screen_TM
-========================================
+USPEX.Stages.TaskManagers.Screen_TM
+===================================
 
 .. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
 

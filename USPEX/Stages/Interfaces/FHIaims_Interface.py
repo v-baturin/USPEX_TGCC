@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.FHIaims_Interface
-===================================
+USPEX.Stages.FHIaims_Interface
+==============================
 
 """
 

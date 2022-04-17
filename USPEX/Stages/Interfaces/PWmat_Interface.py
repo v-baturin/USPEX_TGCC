@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.PWmat_Interface
-=================================
+USPEX.Stages.PWmat_Interface
+============================
 
 .. codeauthor:: Hao Li
 

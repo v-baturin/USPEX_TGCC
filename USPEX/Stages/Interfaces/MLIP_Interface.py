@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.MLIP_Interface
-================================
+USPEX.Stages.MLIP_Interface
+===========================
 
 .. codeauthor:: Michele Galasso <m.galasso@yandex.com>
 

@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.MOPAC_Interface
-=================================
+USPEX.Stages.MOPAC_Interface
+============================
 
 .. codeauthor:: Vladimir Baturin <vsbat@yandex.ru>
 

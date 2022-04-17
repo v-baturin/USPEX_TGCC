@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.TaskManagers.QSUB
-===================================
+USPEX.Stages.TaskManagers.QSUB
+==============================
 
 """
 import logging

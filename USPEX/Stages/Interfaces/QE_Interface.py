@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.QE_Interface
-==============================
+USPEX.Stages.QE_Interface
+=========================
 
 """
 

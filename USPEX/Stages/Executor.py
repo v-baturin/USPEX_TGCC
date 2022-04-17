@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.Common.SHELL_Calculator
-=========================================
+USPEX.Stages.Executor
+=====================
 
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 

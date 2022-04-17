@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.ABINIT_Interface
-==================================
+USPEX.Stages.ABINIT_Interface
+=============================
 
 .. codeauthor:: Michele Galasso <m.galasso@yandex.com>
 

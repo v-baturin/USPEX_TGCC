@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.Common.Connector
-==================================
+USPEX.Stages.Connector
+======================
 
 .. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
 

@@ -1,6 +1,6 @@
 """
-USPEX.Calculators.TaskManagers.SHELL
-====================================
+USPEX.Stages.TaskManagers.SHELL
+===============================
 
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 
