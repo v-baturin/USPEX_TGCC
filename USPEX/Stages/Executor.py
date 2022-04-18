@@ -79,6 +79,7 @@ class Executor(object):
     async def run(self, system):
         ID = system['ID']
         tag = self.tag
+        self._gatherSystems(system, tag, ioType='input')
         calcFolder = pj(self.workingDirectory, self.CALC_FOLDER_TEMPLATE.format(ID, tag))
         for attempt in range(self._ATTEMPTS):
             if calcFolder in self.submittedTasks:
@@ -88,8 +89,7 @@ class Executor(object):
                 shutil.rmtree(calcFolder, ignore_errors=True)
                 os.makedirs(calcFolder)
                 self._interface.prepareLocalCalculation(system, calcFolder)
-                if self.gather:
-                    self._gatherData(system, tag, calcFolder, ioType='input')
+                self._gatherData(calcFolder, ioType='input')
                 await self._connector.sync_l2r(calcFolder)
                 logger.info(f'System {ID} with tag {tag} will be submitted now.')
                 jobID = await self._taskManager.submit(self.commandExecutable, f'USPEX-{ID}S{tag}',
@@ -105,30 +105,30 @@ class Executor(object):
             await self._connector.sync_r2l(calcFolder)
             await self._connector.clean(calcFolder)
             del self.submittedTasks[calcFolder]
+            self._gatherData(calcFolder, ioType='output')
 
             if self._interface.isConverged(calcFolder):
                 logger.debug('System converged. Proceeding update.')
                 self._interface.readOutput(system, calcFolder)
-                if self.gather:
-                    self._gatherData(system, tag, calcFolder, ioType ='output')
                 logger.info(f'system {ID} with tag {tag} relaxation successful.')
                 if not self.keepFolders:
                     shutil.rmtree(calcFolder, ignore_errors=True)
-                return
-            else:
-                if self.gather:
-                    self._gatherData(system, tag, calcFolder, ioType ='output')
+                break
+        else:
+            raise RuntimeError(f'Task failed {self._ATTEMPTS} times')
+        self._gatherSystems(system, tag, ioType='output')
 
-        raise RuntimeError(f'Task failed {self._ATTEMPTS} times')
+    def _gatherSystems(self, system, tag : str, ioType : str):
+        if self.gather:
+            folder = pj(self.workingDirectory, 'GatheredData', ioType)
+            os.makedirs(folder, exist_ok=True)
+            from ..components import AtomisticRepresentation
+            with open(pj(folder, f"system{system['ID']}_{tag}"), 'wt') as f:
+                AtomisticRepresentation.writeAtomicStructure(f, system)
 
-    def _gatherData(self, system, tag : str, calcFolder : str, ioType : str):
-        if not (ioType == 'input' or ioType == 'output'):
-            return
-        folder = pj(self.workingDirectory, 'GatheredData', ioType)
-        copytree(calcFolder, pj(folder, os.path.basename(calcFolder)))
-        from ..components import AtomisticRepresentation
-        with open(pj(folder, f"system{system['ID']}_{tag}"), 'wt') as f:
-            AtomisticRepresentation.writeAtomicStructure(f, system)
+    def _gatherData(self, calcFolder : str, ioType : str):
+        if self.gather:
+            copytree(calcFolder, pj(self.workingDirectory, 'GatheredData', ioType, os.path.basename(calcFolder)))
 
 
 def copytree(src, dst, symlinks=False, ignore=None):
