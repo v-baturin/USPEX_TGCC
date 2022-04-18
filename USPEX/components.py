@@ -40,33 +40,42 @@ GlobalOptimizer.registerTarget('Atomistic',
                       creations=[RandTop, RandSym, RandSymPyXtal],
                       seeds=Seeds)
 
+from .Stages.Executor import Executor
+from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
+ABINIT_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+Executor.registerInterface('abinit', ABINIT_Interface)
+from .Stages.Interfaces.GULP_Interface import GULP_Interface
+GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+Executor.registerInterface('gulp', GULP_Interface)
+from .Stages.Interfaces.LAMMPS_Interface import LAMMPS_Interface
+LAMMPS_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+Executor.registerInterface('lammps', LAMMPS_Interface)
+from .Stages.Interfaces.MLIP_Interface import MLIP_Interface
+MLIP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+Executor.registerInterface('mlip', MLIP_Interface)
+from .Stages.Interfaces.PWmat_Interface import PWmat_Interface
+PWmat_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Stages.Interfaces.QE_Interface import QE_Interface
+QE_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+Executor.registerInterface('qe', QE_Interface)
+from .Stages.Interfaces.VASP_Interface import VASP_Interface
+VASP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+Executor.registerInterface('vasp', VASP_Interface)
+from .Stages.Interfaces.MOPAC_Interface import MOPAC_Interface
+MOPAC_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+Executor.registerInterface('mopac', MOPAC_Interface)
+from .Stages.Interfaces.FHIaims_Interface import FHIaims_Interface
+FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+Executor.registerInterface('aims', FHIaims_Interface)
+from .Stages.TaskManagers.BSUB import BSUB
+Executor.registerTaskManager('BSUB', BSUB)
+from .Stages.TaskManagers.QSUB import QSUB
+Executor.registerTaskManager('QSUB', QSUB)
+from .Stages.TaskManagers.SBATCH import SBATCH
+Executor.registerTaskManager('SBATCH', SBATCH)
+from .Stages.TaskManagers.SHELL import SHELL
+Executor.registerTaskManager('SHELL', SHELL)
+
 from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
-
-from .Calculators.ABINIT_Interface import ABINIT_Interface
-ABINIT_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from .Calculators.GULP_Interface import GULP_Interface
-GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from .Calculators.LAMMPS_Interface import LAMMPS_Interface
-LAMMPS_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from .Calculators.MLIP_Interface import MLIP_Interface
-MLIP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from .Calculators.PWmat_Interface import PWmat_Interface
-PWmat_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from .Calculators.QE_Interface import QE_Interface
-QE_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from .Calculators.VASP_Interface import VASP_Interface
-VASP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from .Calculators.MOPAC_Interface import MOPAC_Interface
-MOPAC_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
-from .Calculators.FHIaims_Interface import FHIaims_Interface
-FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
+GenerationController.registerStage('execute', Executor)
