@@ -35,13 +35,13 @@ class Executor(object):
         assert name not in cls.knownTaskManagers
         cls.knownTaskManagers[name] = taskManagerType
 
-    def __init__(self, name: str, commandExecutable: str, tag: str, workingDirectory: str = '.', remote=None,
+    def __init__(self, type: str, commandExecutable: str, tag: str, workingDirectory: str = '.', remote=None,
                  taskManager=None, gather: bool = False, keepFolders: bool = False, sleepTime: int = None, **kwargs):
         """
 
         :param commandExecutable:
         :param workingDirectory:
-        :param name:
+        :param type:
         :param remote:
         :param taskManager:
         :type gather: bool
@@ -55,7 +55,7 @@ class Executor(object):
         self.gather = gather
         self.keepFolders = keepFolders
 
-        self._interface = self.knownInterfaces[name](tag, **kwargs)
+        self._interface = self.knownInterfaces[type](tag, **kwargs)
 
         if sleepTime is not None and sleepTime > 0:
             self.sleepTime = sleepTime
