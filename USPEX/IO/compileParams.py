@@ -1,6 +1,5 @@
 import logging
 import sys
-from copy import copy
 
 from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
@@ -9,17 +8,9 @@ from .read_molecule import read_molecule
 logger = logging.getLogger(__name__)
 
 
-def compileParams(main: dict, **definitions) -> dict:
+def compileParams(main: dict) -> dict:
     stages = main['stages']
     for i, stage in enumerate(stages):
-        if stage in definitions:
-            stage = copy(definitions[stage])
-            assert isinstance(stage, dict)
-            stages[i] = stage
-        if 'taskManager' in stage and isinstance(stage['taskManager'], str) and stage['taskManager'] in definitions:
-            taskManager = definitions[stage['taskManager']]
-            assert isinstance(taskManager, dict)
-            stage['taskManager'] = taskManager
         if 'tag' not in stage:
             stages[i]['tag'] = str(i+1)
 
@@ -31,10 +22,11 @@ def compileParams(main: dict, **definitions) -> dict:
         symbols = target['compositionSpace']['symbols']
         molecules = {}
         for i, symbol in enumerate(symbols):
-            if symbol in definitions:
+            if isinstance(symbol, dict):
                 try:
-                    molDct = read_molecule(definitions[symbol]['filename'])
-                    molecules[symbol] = molDct
+                    molDct = read_molecule(symbol['filename'])
+                    molecules[symbol['name']] = molDct
+                    symbols[i] = symbol['name']
                 except Exception as ex:
                     logger.exception(ex)
                     exc_info = sys.exc_info()
@@ -48,11 +40,6 @@ def compileParams(main: dict, **definitions) -> dict:
                 target['ionDistances']['volumeType'] = 0.5
             else:
                 target['ionDistances']['volumeType'] = 0
-        if 'environmentUtility' in target:
-            assert 'environments' in target['environmentUtility']
-            for i, environment in enumerate(target['environmentUtility']['environments']):
-                assert environment in definitions
-                target['environmentUtility']['environments'][i] = definitions[environment]
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
         selection = optimizer['selection']

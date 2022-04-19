@@ -23,14 +23,14 @@
             }
         }
     },
-    'stages': ['gulp', 'gulp', 'gulp', 'gulp', 'gulp5'],
+    'stages': ['gulpStage', 'gulpStage', 'gulpStage', 'gulpStage', 'gulpStage5'],
     'numParallelCalcs': 2,
     'numGenerations': 3,
     'stopCrit': 3
 }
 
-#define gulp
+#define gulpStage
 {'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions'}
 
-#define gulp5
+#define gulpStage5
 {'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions', 'ginput' : './Specific/ginput_4'}

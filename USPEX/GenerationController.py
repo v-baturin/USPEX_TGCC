@@ -70,9 +70,8 @@ class GenerationController(object):
             logger.info('Calculation initialized from dump file.')
         elif os.path.exists(GenerationController.INPUT_FILENAME):
             input = read(GenerationController.INPUT_FILENAME)
-            params = compileParams(**input)
+            params = compileParams(input)
             optimizer = params['optimizer']
-            stages = params['stages']
             numParallelCalcs = params['numParallelCalcs']
             numGenerations = params['numGenerations']
             stopCrit = params['stopCrit']
