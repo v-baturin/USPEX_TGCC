@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from ..InputParser import read
+from ..InputParser import read, write
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -50,9 +50,9 @@ class InputParser_Test(unittest.TestCase):
     def test_read(self):
         self.assertEqual(read(os.path.join(HOMEPATH, 'input.uspex')), self.params_ref)
 
-    # def test_write_read(self):
-    #     filename = os.path.join(HOMEPATH, 'input_test.uspex')
-    #     write(filename, self.reference)
-    #     definitions = read(filename)
-    #     self.assertEqual(definitions, self.reference)
-    #     os.remove(filename)
+    def test_write_read(self):
+        filename = os.path.join(HOMEPATH, 'input_test.uspex')
+        write(filename, self.params_ref)
+        definitions = read(filename)
+        self.assertEqual(definitions, self.params_ref)
+        os.remove(filename)

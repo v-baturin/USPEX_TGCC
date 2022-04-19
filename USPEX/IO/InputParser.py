@@ -1,4 +1,5 @@
 from copy import copy
+from pprint import pformat
 
 from .RawParser import parse
 
@@ -25,3 +26,9 @@ def _process(input, definitions: dict):
     for i, element in items:
         input[i] = _process(element, definitions)
     return input
+
+
+def write(filename, params):
+    content = f"{pformat(params, width=120)}\n"
+    with open(filename, 'wt') as f:
+        f.write(content)
