@@ -41,23 +41,23 @@ class Fitness_Test(unittest.TestCase):
                                                                  coordinates, None)
         molecules = system['molecules']
         self.systems = [{'ID': 0, 'molecules': molecules, 'enthalpy': -646.695,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
                         {'ID': 1, 'molecules': molecules, 'enthalpy': -644.480,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2]}, None, None)},
                         {'ID': 2, 'molecules': molecules, 'enthalpy': -650.098,
-                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
                         {'ID': 3, 'molecules': molecules, 'enthalpy': -649.082,
-                         'fingerprint': Fingerprint({'b': [0.1,-0.5]}, None)},
+                         'fingerprint': Fingerprint({'b': [0.1,-0.5]}, None, None)},
                         {'ID': 4, 'molecules': molecules, 'enthalpy': -651.279,
-                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
                         {'ID': 5, 'molecules': molecules, 'enthalpy': -643.925,
-                         'fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None, None)},
                         {'ID': 6, 'molecules': molecules, 'enthalpy': -652.042,
-                         'fingerprint': Fingerprint({'b': [0.1,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'b': [0.1,-0.2]}, None, None)},
                         {'ID': 7, 'molecules': molecules, 'enthalpy': -648.368,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
                         {'ID': 8, 'molecules': molecules, 'enthalpy': -648.335,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)}]
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)}]
         self.pool = SystemPool()
         self.pool.update(self.systems)
         self.compositionSpace = CompositionSpace(symbols=['Mg','Al','O'], blocks=[[4,8,16]], range=[[1,1]])

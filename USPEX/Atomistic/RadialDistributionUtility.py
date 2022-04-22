@@ -24,11 +24,12 @@ class Fingerprint(Mapping):
     """
     Class representing radial distribution fingerprint.
     """
-    def __init__(self, value : dict, weights):
+    def __init__(self, value : dict, weights, delta):
         sizes = [len(v) for v in value.values()]
         assert len(sizes) > 0
         self._value = value
         self._weights = weights
+        self.delta = delta
         self._size = sizes[0]
         super().__init__()
 
@@ -48,7 +49,7 @@ class Fingerprint(Mapping):
     def order(self):
         # eq. 5 in CPC-2010
         return np.sqrt(np.sum(np.fromiter((self._weights[key] * np.sum(self._value[key] ** 2)
-                                           for key in self._value.keys()), dtype=float)))
+                                           for key in self._value.keys()), dtype=float)) * self.delta)
 
     def __repr__(self):
         return self._value.__repr__()
@@ -216,15 +217,13 @@ class RadialDistributionUtility(object):
         lat = cell.getCellVectors()
         dist_matrix = _make_matrices(coordinates, molIndices, envIndices, lat, numIons, pbc=fp_pbc, Rmax=self.Rmax)
 
-        # TODO think about volume in lesser dimensions
-        V = np.linalg.det(lat)
         N_type = numIons.shape[0]
         N_atom = np.sum(numIons)
         N_pair = dist_matrix.shape[0]  # the number of atomic pairs being considered
-        normalizer = 1
+        normalizer = numIons / np.linalg.det(lat) if sum(fp_pbc) == 3 else np.zeros((1,), dtype=float)
 
         N_Bins = int(round(self.Rmax / float(self.delta)))
-        fing = np.zeros((N_type ** 2, N_Bins))
+        fing = np.zeros((N_type, N_type, N_Bins))
         atom_fing = np.zeros((N_atom, N_type, N_Bins))
         sigma = self.sigma / (2.0 * np.log(2.0)) ** 0.5
         sqrt2_sigm = sigma * 2.0 ** 0.5
@@ -270,7 +269,7 @@ class RadialDistributionUtility(object):
                 row = '%12.8f' % delt[j]
                 print row
             '''
-            delt_type = delt / numIons[type2.astype(int)]  # used for atomfing
+            # delt_type = delt / numIons[type2.astype(int)]  # used for atomfing
             '''
             for j in range(delt_type.shape[0]):
                 row = '%12.8f' % delt_type[j]
@@ -280,7 +279,7 @@ class RadialDistributionUtility(object):
             # Atomfing has 3 dimensions: we need to categorize by the following:
             for j in range(N_atom):
                 tmp_ID1 = np.where(atom1 == j)  # 1st filter by atom ID
-                delt_type1 = delt_type[tmp_ID1]
+                delt_type1 = delt[tmp_ID1]
                 '''
                 for k in range(delt_type1.shape[0]):
                     row = '%12.8f' % delt_type[k]
@@ -335,7 +334,7 @@ class RadialDistributionUtility(object):
 
                 for k in range(N_Bins):
                     ID = np.where(min_bin[ID1] - 1 == k)[0]  # 2nd filter by dist (bin)
-                    fing[j, k] += sum(delt1[ID])
+                    fing[j // N_type, j % N_type, k] += sum(delt1[ID])
 
             '''
             print
@@ -346,30 +345,21 @@ class RadialDistributionUtility(object):
 
             min_bin += 1  # move to the next neighboring bin
 
-        atom_fing = atom_fing * V / (4.0 * np.pi * self.delta) - normalizer
-        '''
-        num = 124
-        for m in range(atom_fing[:, :, num].shape[0]):
-            row = '%12.8f %12.8f %12.8f' % tuple(atom_fing[m, :, num])
-            print row
-        '''
+        atom_fing /= (4.0 * np.pi * self.delta)
+        atom_fing -= normalizer.reshape((1, -1, 1))
 
-        for i in range(N_type):
-            for j in range(N_type):
-                fing[i * N_type + j, :] = fing[i * N_type + j, :] * V / (
-                        4.0 * np.pi * numIons[i] * numIons[j] * self.delta) - normalizer
+        fing /= (4.0 * np.pi * numIons.reshape((-1, 1, 1)) * self.delta)
+        fing -= normalizer.reshape((1, -1, 1))
 
-        n = len(uniqueSimbols)
-        fing = {(s1.short_name, s2.short_name): fing[i * n + j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
         atomFings = []
         weights = {s.short_name: w for s, w in zip(uniqueSimbols, numIons / np.sum(numIons))}
         for i in revertIndices:
             f = Fingerprint(value={s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)},
-                            weights=weights)
+                            weights=weights,
+                            delta=self.delta)
             atomFings.append(f)
 
         order = np.fromiter((atomFing.order for atomFing in atomFings), dtype=float)
-        order *= np.sqrt(self.delta / (V / len(structure)) ** (1.0 / 3.0))
         molOrder = np.fromiter((order[np.asarray(indices)].sum()/len(indices) for indices in disassembler.indices), dtype=float)
 
         if np.any(np.isfinite(order)):
@@ -377,8 +367,9 @@ class RadialDistributionUtility(object):
         else:
             a_order = np.nan
 
-        fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure))
-        s_order = fingerprint.order * np.sqrt(self.delta / (V / len(structure)) ** (1.0 / 3.0))
+        fing = {(s1.short_name, s2.short_name): fing[i, j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
+        fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure), delta=self.delta)
+        s_order = fingerprint.order
 
         uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
                                                     return_inverse=True,
