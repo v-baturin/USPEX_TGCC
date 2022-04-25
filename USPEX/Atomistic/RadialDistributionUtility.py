@@ -13,6 +13,7 @@ from collections import Counter
 from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
+from pandas import DataFrame, isna
 
 
 RMAX_DEFAULT = 10.0
@@ -97,23 +98,53 @@ class ComplexFingerprint:
     """
     def __init__(self, values: dict, weights, tolerance):
         self.values = values
-        self.weights = weights
-        self._tolerance = tolerance
+        s = np.sum(list(weights.values()))
+        self.weights = {}
+        for key, weight in weights.items():
+            self.weights[key] = weight / s
+        self.tolerance = tolerance
 
-    def cosineDistance(self, fingerprint1, fingerprint2):
+    @staticmethod
+    def fromAtomicFingerprints(atomTypes, atomFings, tolerance):
+        fing = {}
+        atomsCounter = Counter()
+        weightsCounter = Counter()
+        for atomType, aFing in zip(atomTypes, atomFings):
+            symbol = atomType.short_name
+            for key, f in fing.items():
+                refSymbol, count = key.split('_')
+                if symbol == refSymbol and Fingerprint.cosine_distance(f, aFing) < tolerance:
+                    weightsCounter[key] += 1
+                    break
+            else:
+                atomsCounter[symbol] += 1
+                name = f'{symbol}_{atomsCounter[symbol]}'
+                fing[name] = aFing
+                weightsCounter[name] += 1
+        return ComplexFingerprint(fing, weightsCounter, tolerance)
+
+
+    @staticmethod
+    def cosineDistance(fingerprint1, fingerprint2):
         values1 = copy(fingerprint1.values)
         values2 = copy(fingerprint2.values)
         weights1 = fingerprint1.weights
         weights2 = fingerprint2.weights
-        coef = 0
-        for key1, fing1 in values1.items():
+        tolerance = min(fingerprint1.tolerance, fingerprint2.tolerance)
+        dist = 0
+        distMatrix = {}
+        for key1, fing1 in fingerprint1.values.items():
             for key2, fing2 in values2.items():
-                dist = Fingerprint.cosine_distance(fing1, fing2)
-                if dist < self._tolerance:
-                    coef += np.sqrt(weights1[key1] * weights2[key2]) * (1.0 - dist)
+                pairDist = Fingerprint.cosine_distance(fing1, fing2)
+                distMatrix[f"{key1}_{key2}"] = pairDist
+                if pairDist < tolerance:
+                    dist += weights1[key1] * weights2[key2] * pairDist
+                    del values1[key1]
                     del values2[key2]
                     break
-        dist = (1 - coef / (np.sum(list(weights1.values())) * np.sum(list(weights2.values()))) ** 0.5) / 2
+        for key1 in values1.keys():
+            for key2 in values2.keys():
+                dist += weights1[key1] * weights2[key2] * distMatrix[f"{key1}_{key2}"]
         return dist
 
 
@@ -137,6 +168,7 @@ class RadialDistributionUtility(object):
         self.sigma = sigma
         self.delta = delta
         self.tolerance = tolerance
+        self.distances = DataFrame(dtype=float)
 
     def structureFingerprint(self, system):
         """
@@ -231,6 +263,8 @@ class RadialDistributionUtility(object):
             del system['radialDistribitionUtility.order']
         if 'radialDistribitionUtility.quasientropy' in system:
             del system['radialDistribitionUtility.quasientropy']
+        self.distances.drop(system['ID'], axis=0)
+        self.distances.drop(system['ID'], axis=1)
 
     def _calcFingerprint(self, system):
         """
@@ -239,7 +273,8 @@ class RadialDistributionUtility(object):
         molecules = system['molecules']
         systemFactory = type(molecules[0])
         structure, disassembler = systemFactory.assemble(**system)
-        uniqueSimbols, inverse, numIons = np.unique(structure.getAtomTypes(), return_inverse=True, return_counts=True)
+        atomTypes = structure.getAtomTypes()
+        uniqueSimbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
         revertIndices = np.argsort(indices)
         cartesian = structure.getCartesianCoordinates()
@@ -405,22 +440,7 @@ class RadialDistributionUtility(object):
         fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure), delta=self.delta)
         s_order = fingerprint.order
 
-        fing = {}
-        atomsCounter = Counter()
-        weightsCounter = Counter()
-        for atomType, aFing in zip(structure.getAtomTypes(), atomFings):
-            symbol = atomType.short_name
-            for key, f in fing.items():
-                refSymbol, count = key.split('_')
-                if symbol == refSymbol and Fingerprint.cosine_distance(f, aFing) < self.tolerance:
-                    weightsCounter[key] += 1
-                    break
-            else:
-                atomsCounter[symbol] += 1
-                name = f'{symbol}_{atomsCounter[symbol]}'
-                fing[name] = aFing
-                weightsCounter[name] += 1
-        comlexFingerprint = ComplexFingerprint(fing, weightsCounter, self.tolerance)
+        complexFingerprint = ComplexFingerprint.fromAtomicFingerprints(atomTypes, atomFings, self.tolerance)
 
         sQE = 0.0
         weight = numIons / np.sum(numIons)
@@ -449,7 +469,7 @@ class RadialDistributionUtility(object):
         system['radialDistribitionUtility.averageOrder'] = a_order
         system['radialDistribitionUtility.structureOrder'] = s_order
         system['radialDistribitionUtility.structureFingerprint'] = fingerprint
-        system['radialDistribitionUtility.complexFingerprint'] = comlexFingerprint
+        system['radialDistribitionUtility.complexFingerprint'] = complexFingerprint
         system['radialDistribitionUtility.quasientropy'] = -sQE
 
 
@@ -463,21 +483,33 @@ class RadialDistributionUtility(object):
 
         :return: distance between systems.
         """
+        id1 = system1['ID']
+        id2 = system2['ID']
+        if id1 in self.distances and id2 in self.distances:
+            dist = self.distances.loc[id1, id2]
+            if not isna(dist):
+                return float(dist)
         cf1 = self.complexFingerprint(system1)
         cf2 = self.complexFingerprint(system2)
-        return cf1.cosineDistance(cf1, cf2)
+        dist = cf1.cosineDistance(cf1, cf2)
+        df = DataFrame(index=[id1, id2], columns=[id1, id2],
+                       data=[[0, dist], [dist, 0]])
+        self.distances = self.distances.combine_first(df)
+        return dist
 
-    def equal(self, system1, system2):
+    def equal(self, system1, system2, tolerance=None):
         """
         Checks if systems coincide. It calculates distance between systems using **dist** method.
         If such distance is less then set up tolerance, then systems coincide.
 
         :param system1: dictionary describing first system.
         :param system2: dictionary describing second system.
+        :param tolerance: threshold for systems to be considered equivalent.
 
         :return: if systems coincide or not.
         """
-        return self.dist(system1, system2) < self.tolerance
+        tolerance = self.tolerance if tolerance is None else tolerance
+        return self.dist(system1, system2) < tolerance
 
     @staticmethod
     def _fingerprintWeights(structure):
