@@ -6,8 +6,10 @@ USPEX.Atomistic.RadialDistributionUtility
 """
 
 import numpy as np
+from copy import copy
 from typing import Dict, Tuple
 from collections.abc import Mapping
+from collections import Counter
 from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
@@ -89,6 +91,30 @@ class Fingerprint(Mapping):
         dist = (1 - coef1 / (coef2 * coef3) ** 0.5) / 2
         return dist
 
+class ComplexFingerprint:
+    """
+    Class representing radial distribution fingerprint.
+    """
+    def __init__(self, values: dict, weights, tolerance):
+        self.values = values
+        self.weights = weights
+        self._tolerance = tolerance
+
+    def cosineDistance(self, fingerprint1, fingerprint2):
+        values1 = copy(fingerprint1.values)
+        values2 = copy(fingerprint2.values)
+        weights1 = fingerprint1.weights
+        weights2 = fingerprint2.weights
+        coef = 0
+        for key1, fing1 in values1.items():
+            for key2, fing2 in values2.items():
+                dist = Fingerprint.cosine_distance(fing1, fing2)
+                if dist < self._tolerance:
+                    coef += np.sqrt(weights1[key1] * weights2[key2]) * (1.0 - dist)
+                    del values2[key2]
+                    break
+        dist = (1 - coef / (np.sum(list(weights1.values())) * np.sum(list(weights2.values()))) ** 0.5) / 2
+        return dist
 
 
 class RadialDistributionUtility(object):
@@ -123,6 +149,18 @@ class RadialDistributionUtility(object):
         if not 'radialDistribitionUtility.structureFingerprint' in system:
             self._calcFingerprint(system)
         return system['radialDistribitionUtility.structureFingerprint']
+
+    def complexFingerprint(self, system):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculate or retrieve structure fingerprint of a system.
+        """
+        if not 'radialDistribitionUtility.complexFingerprint' in system:
+            self._calcFingerprint(system)
+        return system['radialDistribitionUtility.complexFingerprint']
 
     def order(self, system):
         """
@@ -360,20 +398,30 @@ class RadialDistributionUtility(object):
             atomFings.append(f)
 
         order = np.fromiter((atomFing.order for atomFing in atomFings), dtype=float)
-        molOrder = np.fromiter((order[np.asarray(indices)].sum()/len(indices) for indices in disassembler.indices), dtype=float)
-
-        if np.any(np.isfinite(order)):
-            a_order = np.mean(order[np.isfinite(order)])
-        else:
-            a_order = np.nan
+        molOrder = np.fromiter((order[np.asarray(inds)].sum()/len(inds) for inds in disassembler.indices), dtype=float)
+        a_order = np.mean(order[np.isfinite(order)]) if np.any(np.isfinite(order)) else np.nan
 
         fing = {(s1.short_name, s2.short_name): fing[i, j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
         fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure), delta=self.delta)
         s_order = fingerprint.order
 
-        uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
-                                                    return_inverse=True,
-                                                    return_counts=True)
+        fing = {}
+        atomsCounter = Counter()
+        weightsCounter = Counter()
+        for atomType, aFing in zip(structure.getAtomTypes(), atomFings):
+            symbol = atomType.short_name
+            for key, f in fing.items():
+                refSymbol, count = key.split('_')
+                if symbol == refSymbol and Fingerprint.cosine_distance(f, aFing) < self.tolerance:
+                    weightsCounter[key] += 1
+                    break
+            else:
+                atomsCounter[symbol] += 1
+                name = f'{symbol}_{atomsCounter[symbol]}'
+                fing[name] = aFing
+                weightsCounter[name] += 1
+        comlexFingerprint = ComplexFingerprint(fing, weightsCounter, self.tolerance)
+
         sQE = 0.0
         weight = numIons / np.sum(numIons)
 
@@ -401,6 +449,7 @@ class RadialDistributionUtility(object):
         system['radialDistribitionUtility.averageOrder'] = a_order
         system['radialDistribitionUtility.structureOrder'] = s_order
         system['radialDistribitionUtility.structureFingerprint'] = fingerprint
+        system['radialDistribitionUtility.complexFingerprint'] = comlexFingerprint
         system['radialDistribitionUtility.quasientropy'] = -sQE
 
 
@@ -414,7 +463,9 @@ class RadialDistributionUtility(object):
 
         :return: distance between systems.
         """
-        return Fingerprint.cosine_distance(self.structureFingerprint(system1), self.structureFingerprint(system2))
+        cf1 = self.complexFingerprint(system1)
+        cf2 = self.complexFingerprint(system2)
+        return cf1.cosineDistance(cf1, cf2)
 
     def equal(self, system1, system2):
         """
