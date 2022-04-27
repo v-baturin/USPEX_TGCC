@@ -72,10 +72,11 @@ class SimpleMoleculeUtility(object):
                     molecule = Transformation.fromRotVector(Transformation.randomRotVector(),
                                                             [0., 0., 0.]).transform(molecule)
                     for position, operation in zip(nodeCoordinates, np.random.choice(groups, 1)[0].operators):
-                        cartesianPosition = optimizedCell.getWrapedCartesianCoordinates(
-                            cell.fractionalToCartesian(position))
-                        transformation = Transformation.fromMatrix(cell.fractionalToCartesianOperator(operation[0:3, 0:3]),
-                                                                   cartesianPosition)
+                        # cartesianPosition = optimizedCell.getWrapedCartesianCoordinates(
+                        #     cell.fractionalToCartesian(position))
+                        operation = np.copy(operation)
+                        operation[0:3, 3] = position
+                        transformation = cell.fractionalToCartesianOperator(operation)
                         molecules.append(transformation.transform(molecule))
             else:
                 for nodeCoordinates in atomCoordinates:

@@ -42,11 +42,9 @@ class Transmutation:
                     else:
                         transCoordinates[s] = [[molecules[i].getCenterOfMassCartesianCoordinates()]]
 
-                offspringMolecules = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
-                offspringMolecules.extend(self.simpleMoleculeUtility.populateStructure(cell, transCoordinates, None))
-
-                offspring = {'molecules': offspringMolecules, 'cell': cell}
-                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
+                offspring = self.simpleMoleculeUtility.populateStructure(cell, transCoordinates, None)
+                offspring['molecules'][0:0] = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
+                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 composition = self.simpleMoleculeUtility.composition(offspring)
                 if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):

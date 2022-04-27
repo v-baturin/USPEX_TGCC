@@ -61,7 +61,7 @@ class ConvexHull(object):
         if not len(systems):
             return
 
-        self._df = pd.DataFrame(columns=['argument', 'property', 'height', 'depth'])
+        self._df = pd.DataFrame(data=np.empty((0, 4), dtype=float), columns=['argument', 'property', 'height', 'depth'])
         for i, system in enumerate(systems.tolist()):
             self._df.loc[i] = system[:-1], system[-1], np.inf, -np.inf
 
