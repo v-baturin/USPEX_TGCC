@@ -21,7 +21,7 @@
             }
         }
     }
-    stages: [gulp gulp gulp gulp gulp]
+    stages: [glp glp glp glp glp]
     numParallelCalcs: 2
     numGenerations: 3
     stopCrit: 3
