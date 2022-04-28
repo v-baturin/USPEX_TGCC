@@ -69,8 +69,7 @@ class GenerationController(object):
                 controller = pcl.load(f)
             logger.info('Calculation initialized from dump file.')
         elif os.path.exists(GenerationController.INPUT_FILENAME):
-            input = read(GenerationController.INPUT_FILENAME)
-            params = compileParams(input)
+            params = compileParams(read(GenerationController.INPUT_FILENAME))
             optimizer = params['optimizer']
             numParallelCalcs = params['numParallelCalcs']
             numGenerations = params['numGenerations']
