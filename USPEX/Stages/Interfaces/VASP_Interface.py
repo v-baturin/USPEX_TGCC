@@ -81,8 +81,6 @@ class VASP_Interface:
         :param step: int of current step
         '''
 
-        super().__init__(**kwargs)
-
         if incar is not None:
             self.incar = incar
         else:

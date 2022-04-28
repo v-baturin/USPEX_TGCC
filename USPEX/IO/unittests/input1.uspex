@@ -10,7 +10,8 @@
         optType: enthalpy
         selection: {
             type: USPEXClassic
-            popSize: 10
+            popSize: 40
+            bestFrac: 0.6
             optType: (aging enthalpy)
             fractions: {
                 heredity: (0.1 1.0 0.5)
@@ -21,11 +22,11 @@
             }
         }
     }
-    stages: [glp glp glp glp glp]
-    numParallelCalcs: 2
-    numGenerations: 3
-    stopCrit: 3
+    stages: [glp glp glp glp]
+    numParallelCalcs: 20
+    numGenerations: 60
+    stopCrit: 30
 }
 
 #define glp
-{type : gulp, commandExecutable : 'gulp', goptions : './Specific/goptions'}
+{type : gulp, commandExecutable : 'gulp'}

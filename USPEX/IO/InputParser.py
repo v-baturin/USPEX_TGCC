@@ -6,32 +6,31 @@ from .RawParser import parse
 
 def read(filename):
     with open(filename, 'rt') as f:
-        content = f.read()
-    sections = content.split('#define ')
-
+        sections = f.read().split('#define ')
     definitions = {}
-    content = sections.pop(0)
-    if content:
-        definitions['main'] = parse(content)
-
-    for section in sections:
+    for section in sections[1:]:
         name, definition = section.split('\n', 1)
-        assert name != 'main'
         definitions[name] = parse(definition)
+        definitions[name]['name'] = name
+    return _process(parse(sections[0]), definitions)
 
-    return definitions
 
-def write(filename, definitions):
-    definitions = copy(definitions)
-
-    if 'main' in definitions:
-        content = f"{pformat(definitions['main'], width=120)}\n"
-        del definitions['main']
+def _process(input, definitions: dict):
+    if isinstance(input, str) and input in definitions:
+        input = copy(definitions[input])
+    if isinstance(input, list):
+        items = enumerate(input)
+    elif isinstance(input, dict):
+        items = input.items()
     else:
-        content = ""
+        items = []
+    for i, element in items:
+        if i is not 'name':
+            input[i] = _process(element, definitions)
+    return input
 
-    for name, definition in definitions.items():
-        content += f"#define {name}\n{pformat(definition, width=120)}\n"
 
+def write(filename, params):
+    content = f"{pformat(params, width=120)}\n"
     with open(filename, 'wt') as f:
         f.write(content)

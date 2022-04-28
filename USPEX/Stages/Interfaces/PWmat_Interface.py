@@ -54,8 +54,6 @@ class PWmat_Interface:
         assert isinstance(etot_input, str) and os.path.exists(etot_input)
         assert isinstance(potcars, list) and np.all([os.path.exists(potcar) for potcar in potcars])
 
-        super().__init__(**kwargs)
-
         self.etot_input = etot_input
         self.potcars = potcars
 

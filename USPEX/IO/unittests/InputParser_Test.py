@@ -9,40 +9,74 @@ HOMEPATH = os.path.dirname(os.path.abspath(__file__))
 
 class InputParser_Test(unittest.TestCase):
     def setUp(self) -> None:
-        self.reference = {'gulp': {'commandExecutable': 'gulp', 'goptions': './Specific/goptions', 'type': 'gulp'},
-                          'gulp5': {'commandExecutable': 'gulp',
-                                 'ginput': './Specific/ginput_4',
-                                 'goptions': './Specific/goptions',
-                                 'type': 'gulp'},
-                          'main': {'numGenerations': 3,
-                                'numParallelCalcs': 2,
-                                'optimizer': {'optType': 'enthalpy',
-                                              'selection': {'optType': ('aging', 'enthalpy'),
-                                                            'fractions': {'heredity': (0.0, 1.0, 0.5),
-                                                                          'permutation': (0.0, 1.0, 0.1),
-                                                                          'randSym': (0.0, 1.0, 0.0),
-                                                                          'randTop': (0.0, 1.0, 0.2),
-                                                                          'softmodemutation': (0.0, 1.0, 0.1),
-                                                                          'twinning': (0.0, 1.0, 0.1)},
-                                                            'popSize': 10,
-                                                            'type': 'USPEXClassic'},
-                                              'stopFitness': -655.062,
-                                              'target': {'compositionSpace': {'blocks': [[4, 8, 16]],
-                                                                              'symbols': ['Mg', 'Al', 'O']},
-                                                         'conditions': {'externalPressure': 100},
-                                                         'type': 'Crystal'},
-                                              'type': 'GlobalOptimizer'},
-                                'stages': ['gulp', 'gulp', 'gulp', 'gulp', 'gulp5'],
-                                'stopCrit': 3}}
+        self.params_ref = {
+            'optimizer': {
+                'type': 'GlobalOptimizer',
+                'target': {
+                    'type': 'Atomistic',
+                    'conditions': {'externalPressure': 100},
+                    'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
+                                         'blocks': [[4, 8, 16]]},
+                },
+                'optType': 'enthalpy',
+                'selection': {
+                    'type': 'USPEXClassic',
+                    'popSize': 40,
+                    'bestFrac': 0.6,
+                    'optType': ('aging', 'enthalpy'),
+                    'fractions': {
+                        'heredity': (0.1, 1.0, 0.5),
+                        'softmodemutation': (0.1, 1.0, 0.2),
+                        'randSym': (0.05, 1.0, 0.1),
+                        'randTop': (0.05, 1.0, 0.1),
+                        'permutation': (0.05, 1.0, 0.1)
+                    }
+                }
+            },
+            'stages': [
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'}],
+            'numParallelCalcs': 20,
+            'numGenerations': 60,
+            'stopCrit': 30
+        }
 
 
     def test_read(self):
-        definitions = read(os.path.join(HOMEPATH, 'input.uspex'))
-        self.assertEqual(definitions, self.reference)
+        self.assertEqual(read(os.path.join(HOMEPATH, 'input1.uspex')), self.params_ref)
 
     def test_write_read(self):
         filename = os.path.join(HOMEPATH, 'input_test.uspex')
-        write(filename, self.reference)
+        write(filename, self.params_ref)
         definitions = read(filename)
-        self.assertEqual(definitions, self.reference)
+        self.assertEqual(definitions, self.params_ref)
         os.remove(filename)
+
+    def test_molecules(self):
+        params_ref = {
+            'optimizer': {
+                'type': 'GlobalOptimizer',
+                'target': {
+                    'type': 'Atomistic',
+                    'conditions': {'externalPressure': 20.0},
+                    'compositionSpace': {'symbols': [{'name': 'mol_h2o', 'filename': 'MOL_H2O'}],
+                                         'blocks': [[4]]},
+                },
+                'optType': 'enthalpy',
+                'selection': {'type': 'USPEXClassic',
+                              'optType': ('aging', 'enthalpy'),
+                              'popSize': 20,
+                              'fractions': {'heredity': (0.1, 1.0, 0.5),
+                                             'softmodemutation': (0.1, 1.0, 0.3),
+                                              'randTop': (0.1, 1.0, 0.2),
+                                          }
+                              }
+            },
+            'stages': [],
+            'numParallelCalcs': 20,
+            'numGenerations': 30,
+            'stopCrit': 6,
+        }
+        self.assertEqual(read(os.path.join(HOMEPATH, 'input2.uspex')), params_ref)
