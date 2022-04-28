@@ -29,10 +29,9 @@ class FHIaims_Interface:
 
     out_geometry_file = 'geometry.in.next_step'
 
-    def __init__(self, tag: str, kresol: float, control: str = None, perturbate: bool = True, fixCell: bool = False,
-                 vacuumSize=10, targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str, kresol: float = None, control: str = None, perturbate: bool = True, fixCell: bool = False,
+                 targetProperties: list = None, **kwargs):
 
-        super().__init__(**kwargs)
         if control is None:
             control = pj(os.getcwd(), f'Specific/aims_control_{tag}')
 
@@ -41,15 +40,14 @@ class FHIaims_Interface:
         with open(control, 'r') as f:
             self.control = f.read()
 
-        self.kPoints = KPoints(kresol)
+        self.kPoints = KPoints(kresol) if kresol is not None else None
 
         self.perturbate = perturbate
         self.fixCell = fixCell
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : str):
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=0)
         system['disassembler'] = disassembler
         atomTypes = structure.getAtomTypes()
         system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])
@@ -63,15 +61,16 @@ class FHIaims_Interface:
         with open(pj(calcFolder, self.control_file), 'wt') as dest:
             dest.write(self.control)
 
-        try:
-            kPoints = self.kPoints.build(cell)
-        except BadKPoints:
-            # This LATTICE is extremely wrong, let's skip it from now
-            logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
-            kPoints = [1, 1, 1]
+        if self.kPoints is not None:
+            try:
+                kPoints = self.kPoints.build(cell)
+            except BadKPoints:
+                # This LATTICE is extremely wrong, let's skip it from now
+                logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
+                kPoints = [1, 1, 1]
 
-        with open(pj(calcFolder, self.control_file), 'a') as f:
-            f.write('k_grid {} {} {}'.format(*kPoints))
+            with open(pj(calcFolder, self.control_file), 'a') as f:
+                f.write('k_grid {} {} {}'.format(*kPoints))
 
         with open(pj(calcFolder, self.geometry_file), 'wt') as fp:
 
