@@ -11,6 +11,7 @@ def read(filename):
     for section in sections[1:]:
         name, definition = section.split('\n', 1)
         definitions[name] = parse(definition)
+        definitions[name]['name'] = name
     return _process(parse(sections[0]), definitions)
 
 
@@ -24,7 +25,8 @@ def _process(input, definitions: dict):
     else:
         items = []
     for i, element in items:
-        input[i] = _process(element, definitions)
+        if i is not 'name':
+            input[i] = _process(element, definitions)
     return input
 
 

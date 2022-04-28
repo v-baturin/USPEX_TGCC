@@ -13,42 +13,39 @@ class InputParser_Test(unittest.TestCase):
             'optimizer': {
                 'type': 'GlobalOptimizer',
                 'target': {
-                    'type': 'Crystal',
+                    'type': 'Atomistic',
                     'conditions': {'externalPressure': 100},
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
                 },
                 'optType': 'enthalpy',
-                'stopFitness': -655.062,
                 'selection': {
                     'type': 'USPEXClassic',
-                    'popSize': 10,
+                    'popSize': 40,
+                    'bestFrac': 0.6,
                     'optType': ('aging', 'enthalpy'),
                     'fractions': {
-                        'heredity': (0.0, 1.0, 0.5),
-                        'twinning': (0.0, 1.0, 0.1),
-                        'softmodemutation': (0.0, 1.0, 0.1),
-                        'randSym': (0.0, 1.0, 0.0),
-                        'randTop': (0.0, 1.0, 0.2),
-                        'permutation': (0.0, 1.0, 0.1)
+                        'heredity': (0.1, 1.0, 0.5),
+                        'softmodemutation': (0.1, 1.0, 0.2),
+                        'randSym': (0.05, 1.0, 0.1),
+                        'randTop': (0.05, 1.0, 0.1),
+                        'permutation': (0.05, 1.0, 0.1)
                     }
                 }
             },
             'stages': [
-                {'type': 'gulp', 'commandExecutable': 'gulp', 'goptions': './Specific/goptions'},
-                {'type': 'gulp', 'commandExecutable': 'gulp', 'goptions': './Specific/goptions'},
-                {'type': 'gulp', 'commandExecutable': 'gulp', 'goptions': './Specific/goptions'},
-                {'type': 'gulp', 'commandExecutable': 'gulp', 'goptions': './Specific/goptions'},
-                {'type': 'gulp', 'commandExecutable': 'gulp', 'goptions': './Specific/goptions',
-                 'ginput': './Specific/ginput_4'}],
-            'numParallelCalcs': 2,
-            'numGenerations': 3,
-            'stopCrit': 3
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'}],
+            'numParallelCalcs': 20,
+            'numGenerations': 60,
+            'stopCrit': 30
         }
 
 
     def test_read(self):
-        self.assertEqual(read(os.path.join(HOMEPATH, 'input.uspex')), self.params_ref)
+        self.assertEqual(read(os.path.join(HOMEPATH, 'input1.uspex')), self.params_ref)
 
     def test_write_read(self):
         filename = os.path.join(HOMEPATH, 'input_test.uspex')
@@ -56,3 +53,30 @@ class InputParser_Test(unittest.TestCase):
         definitions = read(filename)
         self.assertEqual(definitions, self.params_ref)
         os.remove(filename)
+
+    def test_molecules(self):
+        params_ref = {
+            'optimizer': {
+                'type': 'GlobalOptimizer',
+                'target': {
+                    'type': 'Atomistic',
+                    'conditions': {'externalPressure': 20.0},
+                    'compositionSpace': {'symbols': [{'name': 'mol_h2o', 'filename': 'MOL_H2O'}],
+                                         'blocks': [[4]]},
+                },
+                'optType': 'enthalpy',
+                'selection': {'type': 'USPEXClassic',
+                              'optType': ('aging', 'enthalpy'),
+                              'popSize': 20,
+                              'fractions': {'heredity': (0.1, 1.0, 0.5),
+                                             'softmodemutation': (0.1, 1.0, 0.3),
+                                              'randTop': (0.1, 1.0, 0.2),
+                                          }
+                              }
+            },
+            'stages': [],
+            'numParallelCalcs': 20,
+            'numGenerations': 30,
+            'stopCrit': 6,
+        }
+        self.assertEqual(read(os.path.join(HOMEPATH, 'input2.uspex')), params_ref)
