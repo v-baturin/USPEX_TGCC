@@ -41,7 +41,6 @@ class GULP_Interface:
                 * taskManager: (dict) task managers params     # optional
         """
 
-        super().__init__(**kwargs)
         if ginput is None:
             ginput = pj(os.getcwd(), f'Specific/ginput_{tag}')
 

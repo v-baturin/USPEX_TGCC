@@ -37,7 +37,6 @@ class MOPAC_Interface:
                 * vacuumSize=10
         """
 
-        super().__init__(**kwargs)
         if mop_input is None:
             mop_input = pj(os.getcwd(), f'Specific/mop_{tag}')
         assert os.path.exists(mop_input)

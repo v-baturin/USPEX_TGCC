@@ -42,7 +42,6 @@ class MLIP_Interface:
 
     def __init__(self, tag: str, input: str = None, potential: str = None, vacuumSize = 10,
                  targetProperties: list = None, **kwargs):
-        super().__init__(**kwargs)
 
         if input is not None:
             self.input = input
