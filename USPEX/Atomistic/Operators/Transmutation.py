@@ -12,8 +12,8 @@ class Transmutation:
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
-        if self.simpleMoleculeUtility.isTrueMolecular:
-            raise RuntimeError("Transmutation does not currently work in molecular regime.")
+        # if self.simpleMoleculeUtility.isTrueMolecular:
+        #     raise RuntimeError("Transmutation does not currently work in molecular regime.")
         self.specificTrans = []
         self.howManyTrans = howManyTrans
         self.transAttempts = transAttempts
@@ -34,15 +34,21 @@ class Transmutation:
                 numberOfTrans = np.random.randint(1, self.howManyTrans + 1)
                 permutation = np.random.choice(trans, numberOfTrans)
                 transCoordinates = {}
+                operations = {}
+                operation = np.eye(4, dtype=float)
                 excluded = []
                 for i, s in permutation:
                     excluded.append(i)
+                    position = molecules[i].getCenterOfMassCartesianCoordinates()
+                    operation[0:3, 3] = position
                     if s in transCoordinates:
-                        transCoordinates[s].append([molecules[i].getCenterOfMassCartesianCoordinates()])
+                        transCoordinates[s].append([position])
+                        operations[s].append([[np.copy(operation)]])
                     else:
                         transCoordinates[s] = [[molecules[i].getCenterOfMassCartesianCoordinates()]]
+                        operations[s] = [[[np.copy(operation)]]]
 
-                offspring = self.simpleMoleculeUtility.populateStructure(cell, transCoordinates, None)
+                offspring = self.simpleMoleculeUtility.populateStructure(cell, transCoordinates, operations)
                 offspring['molecules'][0:0] = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
