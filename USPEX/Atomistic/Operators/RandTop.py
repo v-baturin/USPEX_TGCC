@@ -102,11 +102,10 @@ class RandTop:
                                     cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber)
                                     operations = dict(zip(symbols, operations))
                                     all_coordinates = np.vstack([*itertools.chain(*coordinates)])
-                                    coordinates = dict(zip(symbols, coordinates))
                                     attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
 
                                     for i in range(attemptsRotation):
-                                        system = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                                        system = self.simpleMoleculeUtility.populateStructure(cell, operations)
                                         molecules = system['molecules']
                                         cell = system['cell']
                                         if len(molecules) != totalAtomNumber:

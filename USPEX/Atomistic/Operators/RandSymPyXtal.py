@@ -7,6 +7,7 @@ import numpy as np
 
 from pyxtal.crystal import Lattice
 from pyxtal import pyxtal
+from pyxtal.msg import Comp_CompatibilityError
 
 MAX_PYXTAL_TIME = 30
 MAX_RANDOM_TIME = 300
@@ -29,6 +30,7 @@ class RandSymPyXtal:
             self.nsym = list(parseIntSet(nsym))
         else:
             self.nsym = nsym
+        signal.signal(signal.SIGALRM, signal_handler)
 
     def __call__(self, *args, **kwargs):
         composition = self.compositionSpace.randomComposition()
@@ -51,7 +53,6 @@ class RandSymPyXtal:
                 numIons.pop(i)
 
         startTime = time()
-        signal.signal(signal.SIGALRM, signal_handler)
         failCounter = 0
         while True:
             endTime = time()
@@ -72,7 +73,12 @@ class RandSymPyXtal:
 
                 structurePyxtal = pyxtal()
                 signal.alarm(MAX_PYXTAL_TIME)
-                structurePyxtal.from_random(3, nsym, symbols, numIons)
+                try:
+                    structurePyxtal.from_random(3, nsym, symbols, numIons)
+                except Comp_CompatibilityError as e:
+                    logger.debug(e)
+                    signal.alarm(0)
+                    raise RuntimeError("RandSymPyXtal failed.")
                 signal.alarm(0)
 
             elif self.cellUtility.getDim() == 2:
@@ -88,7 +94,12 @@ class RandSymPyXtal:
                 structurePyxtal = pyxtal()
                 lat = generate2Dcell(nsym, LayerThickness, LayerArea)
                 signal.alarm(MAX_PYXTAL_TIME)
-                structurePyxtal.from_random(2, nsym, symbols, numIons, lattice=lat)
+                try:
+                    structurePyxtal.from_random(2, nsym, symbols, numIons, lattice=lat)
+                except Comp_CompatibilityError as e:
+                    logger.debug(e)
+                    signal.alarm(0)
+                    raise RuntimeError("RandSymPyXtal failed.")
                 signal.alarm(0)
 
             elif self.cellUtility.getDim() == 1:
@@ -104,7 +115,12 @@ class RandSymPyXtal:
                 structurePyxtal = pyxtal()
                 lat = generate1Dcell(nsym, CylinderRadius, CylinderLength)
                 signal.alarm(MAX_PYXTAL_TIME)
-                structurePyxtal.from_random(1, nsym, symbols, numIons, lattice=lat)
+                try:
+                    structurePyxtal.from_random(1, nsym, symbols, numIons, lattice=lat)
+                except Comp_CompatibilityError as e:
+                    logger.debug(e)
+                    signal.alarm(0)
+                    raise RuntimeError("RandSymPyXtal failed.")
                 signal.alarm(0)
 
             elif self.cellUtility.getDim() == 0:
@@ -116,16 +132,19 @@ class RandSymPyXtal:
 
                 structurePyxtal = pyxtal()
                 signal.alarm(MAX_PYXTAL_TIME)
-                structurePyxtal.from_random(0, nsym, symbols, numIons)
+                try:
+                    structurePyxtal.from_random(0, nsym, symbols, numIons)
+                except Comp_CompatibilityError as e:
+                    logger.debug(e)
+                    signal.alarm(0)
+                    raise RuntimeError("RandSymPyXtal failed.")
                 signal.alarm(0)
 
             if structurePyxtal.valid:
-                tmp_cell, coordinates, operations = convertStruc(structurePyxtal, randcell.getPBC(),
-                                                                 symbols, LOCAL_VACUUM)
+                tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
                 cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons))
-                coordinates = dict(zip(symbols, coordinates))
                 operations = dict(zip(symbols, operations))
-                system = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                system = self.simpleMoleculeUtility.populateStructure(cell, operations)
                 molecules = system['molecules']
                 cell = system['cell']
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
@@ -337,19 +356,14 @@ def convertStruc(structurePyxtal, pbc, symbols, LOCAL_VACUUM):
         candidate[:,[0,1,2]] = candidate[:,[2,0,1]]
     ase_nat = ase_struc.get_global_number_of_atoms()
     ase_symb = ase_struc.get_chemical_symbols()
-    coordinates = []
     operations = []
     operation = np.eye(4, dtype=float)
     for s in symbols:
-        tmp_coordinates = []
         tmp_operations = []
         for i in range(ase_nat):
             if ase_symb[i] == s:
-                position = np.array([candidate[i]])
-                tmp_coordinates.append(position)
-                operation[0:3, 3] = position
+                operation[0:3, 3] = np.array([candidate[i]])
                 tmp_operations.append(np.copy(operation))
-        coordinates.append(tmp_coordinates)
         operations.append([[tmp_operations]])
 
-    return tmp_cell, coordinates, operations
+    return tmp_cell, operations

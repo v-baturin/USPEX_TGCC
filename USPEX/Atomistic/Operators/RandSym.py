@@ -42,23 +42,18 @@ def determineOperations(lat, numIons, candidate):
     #     operations.append(atomOperations)
     #     i += n
 
-    coordinates = []
     operations = []
     operation = np.eye(4, dtype=float)
     offset = 0
     for n in numIons:
-        tmp_coordinates = []
         tmp_operations = []
         for i in range(n):
-            position = candidate[i + offset]
-            operation[0:3, 3] = position
-            tmp_coordinates.append(position)
+            operation[0:3, 3] = candidate[i + offset]
             tmp_operations.append(np.copy(operation))
-        coordinates.append([tmp_coordinates])
         operations.append([[tmp_operations]])
         offset += n
 
-    return None, lat, coordinates, operations
+    return None, lat, operations
 
 
 
@@ -167,12 +162,11 @@ class RandSym:
 
                     candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,
                                                     estimatedVolume, self.sym_coef)
-                name, cell, coordinates, operations = determineOperations(lat, numIons, candidate)
+                name, cell, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
-                coordinates = dict(zip(symbols, coordinates))
                 cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons))
                 for i in range(self.attemptsRotation):
-                    system = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                    system = self.simpleMoleculeUtility.populateStructure(cell, operations)
                     molecules = system['molecules']
                     cell = system['cell']
                     atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
