@@ -34,14 +34,8 @@ class TopologicalNet(object):
         self.name = name
         self.group = group
         self.nodes = np.asarray(nodes)
-        self.operations = NodeOperations(group, nodes)
-        # for node in self.nodes:
-        #     nodeOperationsVariants = self.group.getNotPositionInvariantSubgroups(node)
-        #     self.operations.append(nodeOperationsVariants)
-        self.multiplicities = np.asarray([len(orbit) for orbit in self.group(self.nodes)])
-        self.bonds = bonds
-        self.coordinationNumbers = []
-        self.coordinationNumbers = np.asarray(self.coordinationNumbers)
+        self._multiplicities = None
+        self._operations = None
 
     def flavours(self, supercell: tuple = (1, 1, 1)):
         """
@@ -55,43 +49,27 @@ class TopologicalNet(object):
         """
         return TopologicalFlavours(self, supercell)
 
+    @property
+    def multiplicities(self):
+        if self._multiplicities is None:
+            self._multiplicities = np.asarray([len(orbit) for orbit in self.group(self.nodes)])
+        return self._multiplicities
 
-class NodeOperations(Sequence):
-    """
-    Class representing node operations.
-    """
-
-    def __init__(self, group, nodes):
-        """
-        Initialize node operations object.
-
-        :type group: :class:`~USPEX.Common.SpaceGroups.SpaceGroups3D.Group`
-        :param group: Space group corresponding to the net.
-        :type nodes: list
-        :param nodes: Symmetry inequivalent nodes.
-        """
-        self.group = group
-        self.nodes = np.asarray(nodes)
-        self._operations = [None] * len(self.nodes)
-
-    def __getitem__(self, i):
-        """
-        Special method for retrieving operations associated to the i-th node.
-
-        :type i: int
-        :param i: node index.
-        :rtype: :class:`~USPEX.Common.SpaceGroups.SpaceGroups3D.Subgroups`
-        :return: subgroups which preserve the i-th node.
-        """
-        if self._operations[i] is None:
-            self._operations[i] = self.group.getNotPositionInvariantSubgroups(self.nodes[i])
-        return self._operations[i]
-
-    def __len__(self):
-        """
-        Special method which returns the number of nodes.
-        """
-        return len(self.nodes)
+    @property
+    def operations(self):
+        if self._operations is None:
+            self._operations = []
+            for node, positions in zip(self.nodes, self.group(self.nodes)):
+                nodeOperationsVariants = []
+                for variant in self.group.getNotPositionInvariantSubgroups(node):
+                    operations = []
+                    for operation, position in zip(variant.operators, positions):
+                        operation = np.copy(operation)
+                        operation[0:3, 3] = position
+                        operations.append(operation)
+                    nodeOperationsVariants.append(operations)
+                self._operations.append(nodeOperationsVariants)
+        return self._operations
 
 
 class TopologicalFlavours(Sequence):

@@ -68,14 +68,12 @@ class SimpleMoleculeUtility(object):
         for symbol, atomCoordinates in coordinates.items():
             molecule = self.molecules[symbol]
             if len(molecule) > 1:
-                for nodeCoordinates, groups in zip(atomCoordinates, operations[symbol]):
+                for variants in operations[symbol]:
                     molecule = Transformation.fromRotVector(Transformation.randomRotVector(),
                                                             [0., 0., 0.]).transform(molecule)
-                    for position, operation in zip(nodeCoordinates, np.random.choice(groups, 1)[0].operators):
+                    for operation in variants[np.random.randint(len(variants))]:
                         # cartesianPosition = optimizedCell.getWrapedCartesianCoordinates(
                         #     cell.fractionalToCartesian(position))
-                        operation = np.copy(operation)
-                        operation[0:3, 3] = position
                         transformation = cell.fractionalToCartesianOperator(operation)
                         molecules.append(transformation.transform(molecule))
             else:
