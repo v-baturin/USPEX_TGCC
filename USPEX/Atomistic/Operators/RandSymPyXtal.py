@@ -72,10 +72,7 @@ class RandSymPyXtal:
 
                 structurePyxtal = pyxtal()
                 signal.alarm(MAX_PYXTAL_TIME)
-                try:
-                    structurePyxtal.from_random(3, nsym, symbols, numIons)
-                except Exception as e:
-                    logger.debug(e, exc_info=True)
+                structurePyxtal.from_random(3, nsym, symbols, numIons)
                 signal.alarm(0)
 
             elif self.cellUtility.getDim() == 2:
@@ -91,10 +88,7 @@ class RandSymPyXtal:
                 structurePyxtal = pyxtal()
                 lat = generate2Dcell(nsym, LayerThickness, LayerArea)
                 signal.alarm(MAX_PYXTAL_TIME)
-                try:
-                    structurePyxtal.from_random(2, nsym, symbols, numIons, lattice=lat)
-                except Exception as e:
-                    logger.debug(e, exc_info=True)
+                structurePyxtal.from_random(2, nsym, symbols, numIons, lattice=lat)
                 signal.alarm(0)
 
             elif self.cellUtility.getDim() == 1:
@@ -110,10 +104,7 @@ class RandSymPyXtal:
                 structurePyxtal = pyxtal()
                 lat = generate1Dcell(nsym, CylinderRadius, CylinderLength)
                 signal.alarm(MAX_PYXTAL_TIME)
-                try:
-                    structurePyxtal.from_random(1, nsym, symbols, numIons, lattice=lat)
-                except Exception as e:
-                    logger.debug(e, exc_info=True)
+                structurePyxtal.from_random(1, nsym, symbols, numIons, lattice=lat)
                 signal.alarm(0)
 
             elif self.cellUtility.getDim() == 0:
@@ -125,10 +116,7 @@ class RandSymPyXtal:
 
                 structurePyxtal = pyxtal()
                 signal.alarm(MAX_PYXTAL_TIME)
-                try:
-                    structurePyxtal.from_random(0, nsym, symbols, numIons)
-                except Exception as e:
-                    logger.debug(e, exc_info=True)
+                structurePyxtal.from_random(0, nsym, symbols, numIons)
                 signal.alarm(0)
 
             if structurePyxtal.valid:
@@ -350,11 +338,18 @@ def convertStruc(structurePyxtal, pbc, symbols, LOCAL_VACUUM):
     ase_nat = ase_struc.get_global_number_of_atoms()
     ase_symb = ase_struc.get_chemical_symbols()
     coordinates = []
+    operations = []
+    operation = np.eye(4, dtype=float)
     for s in symbols:
         tmp_coordinates = []
+        tmp_operations = []
         for i in range(ase_nat):
             if ase_symb[i] == s:
-                tmp_coordinates.append(np.array([candidate[i]]))
+                position = np.array([candidate[i]])
+                tmp_coordinates.append(position)
+                operation[0:3, 3] = position
+                tmp_operations.append(np.copy(operation))
         coordinates.append(tmp_coordinates)
+        operations.append([[tmp_operations]])
 
-    return tmp_cell, coordinates, [None] * len(coordinates)
+    return tmp_cell, coordinates, operations
