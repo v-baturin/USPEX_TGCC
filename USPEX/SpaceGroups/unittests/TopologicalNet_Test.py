@@ -186,7 +186,7 @@ class RandTop_Test3(unittest.TestCase):
                                                  range(len(flavour.nodes))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
@@ -214,7 +214,7 @@ class RandTop_Test4(unittest.TestCase):
                                                  range(len(flavour.nodes))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
@@ -242,7 +242,7 @@ class RandTop_Test5(unittest.TestCase):
                                                  range(len(flavour.nodes))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
@@ -270,7 +270,7 @@ class RandTopTest6(unittest.TestCase):
                                                  range(len(flavour.nodes))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
@@ -298,14 +298,14 @@ class RandTopTest7(unittest.TestCase):
                                                  range(len(flavour.nodes))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
                 if not goodVariantExist:
                     # print(i, n, mult, len(operations))
                     allGood = False
-        self.assertFalse(allGood)
+        self.assertTrue(allGood)
 
 
 class RandTopTest8(unittest.TestCase):

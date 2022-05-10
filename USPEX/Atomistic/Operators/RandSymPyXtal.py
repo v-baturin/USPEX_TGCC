@@ -7,7 +7,6 @@ import numpy as np
 
 from pyxtal.crystal import Lattice
 from pyxtal import pyxtal
-from pyxtal.msg import Comp_CompatibilityError
 
 MAX_PYXTAL_TIME = 30
 MAX_RANDOM_TIME = 300
@@ -75,10 +74,9 @@ class RandSymPyXtal:
                 signal.alarm(MAX_PYXTAL_TIME)
                 try:
                     structurePyxtal.from_random(3, nsym, symbols, numIons)
-                except Comp_CompatibilityError as e:
-                    logger.debug(e)
+                except Exception as e:
                     signal.alarm(0)
-                    raise RuntimeError("RandSymPyXtal failed.")
+                    raise RuntimeError(e)
                 signal.alarm(0)
 
             elif self.cellUtility.getDim() == 2:
@@ -96,10 +94,9 @@ class RandSymPyXtal:
                 signal.alarm(MAX_PYXTAL_TIME)
                 try:
                     structurePyxtal.from_random(2, nsym, symbols, numIons, lattice=lat)
-                except Comp_CompatibilityError as e:
-                    logger.debug(e)
+                except Exception as e:
                     signal.alarm(0)
-                    raise RuntimeError("RandSymPyXtal failed.")
+                    raise RuntimeError(e)
                 signal.alarm(0)
 
             elif self.cellUtility.getDim() == 1:
@@ -117,10 +114,9 @@ class RandSymPyXtal:
                 signal.alarm(MAX_PYXTAL_TIME)
                 try:
                     structurePyxtal.from_random(1, nsym, symbols, numIons, lattice=lat)
-                except Comp_CompatibilityError as e:
-                    logger.debug(e)
+                except Exception as e:
                     signal.alarm(0)
-                    raise RuntimeError("RandSymPyXtal failed.")
+                    raise RuntimeError(e)
                 signal.alarm(0)
 
             elif self.cellUtility.getDim() == 0:
@@ -134,10 +130,9 @@ class RandSymPyXtal:
                 signal.alarm(MAX_PYXTAL_TIME)
                 try:
                     structurePyxtal.from_random(0, nsym, symbols, numIons)
-                except Comp_CompatibilityError as e:
-                    logger.debug(e)
+                except Exception as e:
                     signal.alarm(0)
-                    raise RuntimeError("RandSymPyXtal failed.")
+                    raise RuntimeError(e)
                 signal.alarm(0)
 
             if structurePyxtal.valid:
