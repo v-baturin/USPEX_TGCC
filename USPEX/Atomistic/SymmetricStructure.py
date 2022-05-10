@@ -46,9 +46,13 @@ class SymmetricStructure(object):
         :rtype: :class:`SymmetricFlavours`
         :return: sequence of topological nets.
         """
-        return SymmetricFlavours(self.name, self.sites, self.group.getAllSubgroups(supercell))
+        supercellGroup = self.group.getSupercellGroup(supercell)
+        return SymmetricFlavours(self.name, supercellGroup(self.sites), supercellGroup.getAllSubgroups())
 
     def getOrbits(self):
+        """
+        :return: List of orbits (numpy arrays) for each site.
+        """
         if self._orbits is None:
             self._orbits = self.group(self.sites)
         return deepcopy(self._orbits)
@@ -78,18 +82,21 @@ class SymmetricStructure(object):
 
 class SymmetricFlavours(Sequence):
     """
-    Class representing sequence of topological net flavours.
+    Class representing sequence of symmetric flavours of given structure.
     Creating a list of flavours is an expensive operation, so we simulate such list
     and generate requested flavour on the fly instead.
-    A flavour is a topological net with some chosen nodes colouring.
+    A flavour is a symmetric structure with some chosen sites colouring.
     """
 
-    def __init__(self, name, sites, subgroups):
+    def __init__(self, name, orbits, subgroups):
         """
+        :param name: Name of base structre.
+        :param orbits: list of orbits (numpy arrays) for each site.
+        :param subgroups: sequence of subgroups corresponding site colouring.
         """
         self._name = name
-        self._sites = sites
         self._subgroups = subgroups
+        self._orbits = orbits
 
     def __getitem__(self, i):
         """
@@ -98,12 +105,12 @@ class SymmetricFlavours(Sequence):
         :type i: int
         :param i: Index
         :rtype: :class:`SymmetricStructure`
-        :return: Topological net object describing obtained flavour.
+        :return: Symmetric structure object describing obtained flavour.
         """
         subgroup = self._subgroups[i]
         nodeCoordinates = []
-        for remOrbit in self._subgroups.calcOrbits(self._sites):
-            for subOrbit in subgroup(remOrbit):
+        for orbit in self._orbits:
+            for subOrbit in subgroup(orbit):
                 for subNode in subOrbit:
                     if in_array_list(nodeCoordinates, subNode):
                         break

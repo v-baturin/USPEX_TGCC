@@ -112,7 +112,7 @@ class Group(object):
     Class representing a space group.
     """
 
-    def __init__(self, generators: list, dimensions: list):
+    def __init__(self, generators: list, dimensions: list, supercell: tuple = (1, 1, 1)):
         """
         Initialize Group object.
 
@@ -120,18 +120,26 @@ class Group(object):
         :param generators: operators which generates our group.
         :type dimensions: list
         :param dimensions: dimensions of provided generators.
+        :param supercell: (i, j, k) defining supercell size for given group.
         """
         self.generators = copy(generators)
         self.dimensions = copy(dimensions)
-        self._operators = _generate_full_symmetry_ops(self.generators)
+        self._supercell = supercell
+        self._operators = _generate_full_symmetry_ops(self.generators, supercell)
 
-    @property
-    def operators(self):
+    @staticmethod
+    def getGroupFromSymbol(symbol: str):
         """
-        :rtype: numpy array
-        :return: symmetry operators.
+        Creates Group object fot given spacegroup symbol.
+
+        :type symbol: str
+        :param symbol: spacegroup symbol.
+        :rtype: :class:`Group`
+        :return: space group corresponding to the given symbol.
         """
-        return self._operators
+        generators = [np.asarray(generator) for generator in DECOMPOSITIONS[symbol]['generators']]
+        dimensions = DECOMPOSITIONS[symbol]['dimensions']
+        return Group(generators, dimensions)
 
     def __contains__(self, op):
         """
@@ -154,36 +162,63 @@ class Group(object):
         :rtype: list
         :return: list of orbits, where each orbit is an array of positions.
         """
-        return calcOrbits(self.operators, nodes)
+        return calcOrbits(self.operators, nodes, self._supercell)
 
-    def redefineGenerators(self):
-        """
-        If the number of operators in this group mismatches the product of dimensions of generators, this method
-        tries to fix it by trying to choose some other set of generators. Such fix is not possible in some cases.
-        """
+    @property
+    def supercell(self):
+        return self._supercell
 
+    @property
+    def operators(self):
+        """
+        :rtype: numpy array
+        :return: symmetry operators.
+        """
+        return self._operators
+
+    def getWrappedGroup(self):
+        """
+        Creates wrapped group. Supercell becomes cell.
+
+        :rtype: :class:`Group`
+        :return: wrapped group.
+        """
+        generators = deepcopy(self.generators)
+        generators_final = [np.eye(4)]
+        dimensions_final = [1]
+        operators_final = _generate_full_symmetry_ops(generators_final)
+        for gen in generators:
+            gen[0:3, 3] = np.divmod(gen[0:3, 3] / self._supercell, 1)[1]
+            gen[np.where(np.abs(np.asarray((1, 1, 1)) - gen[0:3, 3]) < 1e-4), 3] = 0
+            if not in_array_list(operators_final, gen):
+                span = _generate_full_symmetry_ops([np.eye(4), gen], (1, 1, 1))
+                generators_final.append(gen)
+                dimensions_final.append(len(span))
+                operators_final = _generate_full_symmetry_ops(generators_final)
+        # If the number of operators in this group mismatches the product of dimensions of generators,
+        # we try to fix it by choosing some other set of generators. Such fix is not possible in some cases.
         attempts = 5
-        while len(self.operators) != np.prod(self.dimensions) and attempts:
+        while len(operators_final) != np.prod(dimensions_final) and attempts:
             # First generator is identity. We dont want to consider it.
-            generators = self.generators[1:]
-            dimensions = self.dimensions[1:]
+            generators = generators_final[1:]
+            dimensions = dimensions_final[1:]
             for pair in combinations(list(range(len(generators))), 2):
                 if pair[0] < len(generators) and pair[1] < len(generators):
-                    # We considering all pairs of generators and a group they generates.
+                    # We consider all pairs of generators and a group they generate.
                     operators = _generate_full_symmetry_ops([np.eye(4), generators[pair[0]], generators[pair[1]]],
                                                             (1, 1, 1))
-                    # If this group dimension mismathches product of dimensions of this two operators
-                    # we try to chose other set of generators for this group.
+                    # If this group dimension mismatches product of dimensions of this two operators
+                    # we try to choose other set of generators for this group.
                     if len(operators) != dimensions[pair[0]] * dimensions[pair[1]]:
                         tmpDimensions = [1]
                         for operator in operators[1:]:
                             tmpDimensions.append(len(_generate_full_symmetry_ops([np.eye(4), operator], (1, 1, 1))))
-                        # We want to chose as generator the operator with largest dimension.
+                        # We want to choose as generator the operator with the largest dimension.
                         indLarge = np.argsort(tmpDimensions)[-1]
                         dim, rem = np.divmod(len(operators), tmpDimensions[indLarge])
                         assert rem == 0, (len(operators), tmpDimensions[indLarge])
                         if dim == 1:
-                            # If the span of this largest generator covers all group then we done
+                            # If the span of this largest generator covers all group then we're done
                             # and just delete the second generator. Proceed to actually changing first generator
                             del generators[pair[1]]
                             del dimensions[pair[1]]
@@ -197,12 +232,12 @@ class Group(object):
                                     if len(_generate_full_symmetry_ops([np.eye(4), operators[indLarge],
                                                                         operators[ind]])) == len(operators):
                                         indSmall = ind
-                                        # If found we done. Proceed to actually changing first generator
+                                        # If found we're done. Proceed to actually changing first generator
                                         break
                             if indSmall is None:
                                 # It is possible that there is a generator with mismatched dimension but which
                                 # generates the whole group together with largest. Take it as the second generator.
-                                # This does not solves the problem but it makes the generator choice more robust.
+                                # This does not solve the problem, but it makes the generator choice more robust.
                                 # Looking for generator based on its dimension starting from second from largest
                                 # to the lowest.
                                 for dimTry in np.unique(tmpDimensions)[-2:0:-1]:
@@ -226,40 +261,45 @@ class Group(object):
                         generators[pair[0]] = operators[indLarge]
                         dimensions[pair[0]] = tmpDimensions[indLarge]
                         break
-            # Finally add identity
+            # Finally, add identity
             generators.insert(0, np.eye(4))
             dimensions.insert(0, 1)
-            self.generators = generators
-            self.dimensions = dimensions
+            generators_final = generators
+            dimensions_final = dimensions
             attempts -= 1
-        assert len(_generate_full_symmetry_ops(self.generators, (1, 1, 1))) == len(self._operators)
+        assert len(_generate_full_symmetry_ops(generators_final)) == len(operators_final)
         if not attempts:
-            logger.debug('Number of operators {} mismatches generators dimensions {}'.format(len(self.operators),
-                                                                                             self.dimensions))
+            logger.debug(f'Number of operators: {len(operators_final)},'
+                         f' mismatched generators dimensions: {dimensions_final}')
 
-    def getAllSubgroups(self, supercell: tuple = (1, 1, 1)):
+        return Group(generators_final, dimensions_final)
+
+    def getSupercellGroup(self, supercell: tuple = (1, 1, 1)):
         """
-        Enumerates all subgroups of this group which preserve the given supercell.
-
-        :type supercell: tuple
-        :param supercell: 3-tuple describing supercell.
-        :rtype: :class:`Subgroups`
-        :return: Subgroups object.
+        Creates group object corresponding to the same group but with different choice of supercell.
         """
         generators = copy(self.generators)
         dimensions = copy(self.dimensions)
-
         extendedOperators = self.operators
         for m, translation in zip(supercell, TRANSLATIONS):
             if m > 1 and not in_array_list(extendedOperators, translation):
                 generators.append(translation)
                 dimensions.append(m)
                 extendedOperators = _generate_full_symmetry_ops(generators, supercell)
+        return Group(generators, dimensions, supercell)
 
-        genNum = len(generators)
+    def getAllSubgroups(self):
+        """
+        Enumerates all subgroups of this group taking into account the supercell.
+
+        :rtype: :class:`Subgroups`
+        :return: Subgroups object.
+        """
+
+        genNum = len(self.generators)
         inds = []  # Indices of generators preserving supercell.
-        for i, generator in enumerate(generators):
-            if np.allclose(np.abs(np.dot(generator[0:3, 0:3], supercell)), supercell) \
+        for i, generator in enumerate(self.generators):
+            if np.allclose(np.abs(np.dot(generator[0:3, 0:3], self._supercell)), self._supercell) \
                     and not np.allclose(generator, np.eye(4)):
                 inds.append(i)
 
@@ -268,7 +308,7 @@ class Group(object):
             for subgroup in combinations(inds, q+1):
                 remainder = tuple(set(inds) - set(subgroup))
                 generatorsCombinations.append(((0,) + subgroup, (0,) + remainder))
-        return Subgroups(generators, dimensions, generatorsCombinations, supercell)
+        return Subgroups(self, generatorsCombinations)
 
     def getNotPositionInvariantSubgroups(self, position):
         """
@@ -283,6 +323,7 @@ class Group(object):
         # and plane. This is needed because some positions may be preserved by one of such simpler generators and
         # not by the other, which make the whole complex generator nontrivial and we get mismatch in number of
         # nontrivial operations and actual multiplicities of positions.
+        assert self._supercell == (1, 1, 1)
         generators = [np.eye(4)]
         dimensions = [1]
         for generator, dim in zip(self.generators[1:], self.dimensions[1:]):
@@ -392,51 +433,7 @@ class Group(object):
                 else:
                     n += 1
 
-        return Subgroups(allGenerators, allDimensions, [(nonTrivialGenerators, trivialGenerators)])
-
-    @staticmethod
-    def getWrappedGroup(generators: list, dimensions: list, supercell: tuple):
-        """
-        Creates wrapped group. Supercell becomes cell.
-
-        :type generators: list
-        :param generators: operators which generates our group.
-        :type dimensions: list
-        :param dimensions: dimensions of provided generators.
-        :type supercell: tuple
-        :param supercell: 3-tuple describing supercell.
-        :rtype: :class:`Group`
-        :return: wrapped group.
-        """
-        generators = deepcopy(generators)
-        generators_final = [np.eye(4)]
-        dimensions_final = [1]
-        operators = _generate_full_symmetry_ops(generators_final, (1, 1, 1))
-        for gen in generators:
-            gen[0:3, 3] = np.divmod(gen[0:3, 3] / supercell, 1)[1]
-            gen[np.where(np.abs(np.asarray((1, 1, 1)) - gen[0:3, 3]) < 1e-4), 3] = 0
-            if not in_array_list(operators, gen):
-                span = _generate_full_symmetry_ops([np.eye(4), gen], (1, 1, 1))
-                generators_final.append(gen)
-                dimensions_final.append(len(span))
-                operators = _generate_full_symmetry_ops(generators_final)
-        group = Group(generators_final, dimensions_final)
-        group.redefineGenerators()
-        return group
-
-    @staticmethod
-    def getGroupFromSymbol(symbol: str):
-        """
-        Creates Group object fot given spacegroup symbol.
-
-        :type symbol: str
-        :param symbol: spacegroup symbol.
-        :rtype: :class:`Group`
-        :return: space group corresponding to the given symbol.
-        """
-        generators = [np.asarray(generator) for generator in DECOMPOSITIONS[symbol]['generators']]
-        dimensions = DECOMPOSITIONS[symbol]['dimensions']
-        return Group(generators, dimensions)
+        return Subgroups(Group(allGenerators, allDimensions), [(nonTrivialGenerators, trivialGenerators)])
 
 
 class Subgroups(Sequence):
@@ -446,29 +443,21 @@ class Subgroups(Sequence):
     and generate the requested subgroup on the fly instead.
     """
 
-    def __init__(self, generators: list, dimensions: list, combinations: list, supercell: tuple = (1, 1, 1)):
+    def __init__(self, group, combinations: list):
         """
         Initialize subgroups sequence.
 
-        :type generators: list
-        :param generators: operators which generates our group.
-        :type dimensions: list
-        :param dimensions: dimensions of provided generators.
+        :param group: parent group.
         :type combinations: list
         :param combinations: combinations of generators to be considered.
-        :type supercell: tuple
-        :param supercell: 3-tuple describing supercell.
         """
-        self.generators = generators
-        self.dimensions = dimensions
-        self.combinations = combinations
-        self.supercell = supercell
+        self._group = group
+        self._combinations = combinations
 
-        self.combinationWeights = []
-        for sub, rem in self.combinations:
-            self.combinationWeights.append(np.asarray(self.dimensions)[np.asarray(rem)].prod() ** (len(sub) - 1))
-        self.combinationRanges = np.cumsum(self.combinationWeights)
-        self.operators = _generate_full_symmetry_ops(self.generators, self.supercell)
+        self._combinationWeights = []
+        for sub, rem in self._combinations:
+            self._combinationWeights.append(np.asarray(self._group.dimensions)[np.asarray(rem)].prod() ** (len(sub) - 1))
+        self._combinationRanges = np.cumsum(self._combinationWeights)
 
     def __getitem__(self, ind: int):
         """
@@ -481,16 +470,16 @@ class Subgroups(Sequence):
         """
         logger.debug('Trying {}th subgroup'.format(ind))
         # First we determine combination of generators in which range ind gets.
-        combInd = (self.combinationRanges > ind).nonzero()[0][0]
-        # Now redefine ind as index within subgroups corresponding deterined combination.
-        ind = ind - self.combinationRanges[combInd - 1] if combInd else ind
+        combInd = (self._combinationRanges > ind).nonzero()[0][0]
+        # Now redefine ind as index within subgroups corresponding determined combination.
+        ind = ind - self._combinationRanges[combInd - 1] if combInd else ind
         # Get generators and their dimensions which got to the subgroup (subgroup_generators and subgroup_dimensions)
         # and those which did not get to it but will be used to modify it (remainder_generators and remainder_dimensions).
-        sub_ind, rem_ind = self.combinations[combInd]
-        subgroup_generators = [self.generators[i] for i in sub_ind]
-        remainder_generators = np.stack(tuple(self.generators[i] for i in rem_ind))
-        subgroup_dimensions = np.asarray(self.dimensions)[np.asarray(sub_ind)]
-        remainder_dimensions = np.asarray(self.dimensions)[np.asarray(rem_ind)]
+        sub_ind, rem_ind = self._combinations[combInd]
+        subgroup_generators = [self._group.generators[i] for i in sub_ind]
+        remainder_generators = np.stack(tuple(self._group.generators[i] for i in rem_ind))
+        subgroup_dimensions = np.asarray(self._group.dimensions)[np.asarray(sub_ind)]
+        remainder_dimensions = np.asarray(self._group.dimensions)[np.asarray(rem_ind)]
         # We interpret our ind as set of masks for each generators got to the subgroup defining which operations
         # from remainder are used to modify it. Mask looks like set of numbers for each generator from remainder
         # defining how much times this generator should be used to modify currents generator from the subgroup.
@@ -507,7 +496,7 @@ class Subgroups(Sequence):
                     subgroup_generators[i] = np.dot(subgroup_generators[i], operator)
                     order -= 1
         assert ind == 0
-        return Group.getWrappedGroup(subgroup_generators, subgroup_dimensions.tolist(), self.supercell)
+        return Group(subgroup_generators, subgroup_dimensions.tolist(), self._group.supercell).getWrappedGroup()
 
     def __len__(self):
         """
@@ -518,16 +507,4 @@ class Subgroups(Sequence):
         """
         # Our subgroups divided into blocks according combinations of generators. Boundaries of these blocks are stored
         # in combinationRanges. So the total number of our subgroups correspond to the last boundary.
-        return self.combinationRanges[-1]
-
-    def calcOrbits(self, nodes):
-        """
-        Calculates orbits of provided positions with respect to operators of this Subgroups object and its supercell.
-        The orbit of a position is the set of positions which can be obtained by acting with operations of the group.
-
-        :type nodes: numpy array
-        :param nodes: array of positions.
-        :rtype: list
-        :return: list of orbits, where each orbit is an array of positions.
-        """
-        return calcOrbits(self.operators, nodes, self.supercell)
+        return self._combinationRanges[-1]

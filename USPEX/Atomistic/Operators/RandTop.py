@@ -70,7 +70,7 @@ class RandTop:
                     topend = time.perf_counter()
                     if topend - topstart > 15:
                         break
-                    if len(flavour.nodes) >= len(numberOfAtoms):
+                    if len(flavour.sites) >= len(numberOfAtoms):
                         atomPermutations = list(itertools.permutations(enumerate(numberOfAtoms)))
                         for nodePartition in randomPartitionSampler(len(flavour.multiplicities), len(numberOfAtoms), 50):
                             logger.debug(f'Trying {nodePartition} partition')
@@ -83,7 +83,7 @@ class RandTop:
                                     operations = []
                                     for atomNumber in np.argsort(permutationAtoms):
                                         nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=np.int)
-                                        coordinates.append(flavour.group(flavour.nodes[nodeIndices]))
+                                        coordinates.append(flavour.group(flavour.sites[nodeIndices]))
                                         operations.append([flavour.operations[ind] for ind in nodeIndices])
                                     cell = np.asarray(params['cell']) * np.asarray(supercell)
 
