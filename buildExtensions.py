@@ -30,7 +30,7 @@ extensions = [
     Extension("USPEX.XRay.SingleCrystalSpectrumAnalyzer", ["USPEX/XRay/SingleCrystalSpectrumAnalyzer.py"]),
     Extension("USPEX.XRay.get_reflections", ["USPEX/XRay/get_reflections.py"]),
     Extension("USPEX.Atomistic.AtomicPrimitives", ["USPEX/Atomistic/AtomicPrimitives.py"]),
-    Extension("USPEX.Atomistic.SymmetricStructure", ["USPEX/Atomistic/SimmetricStructure.py"]),
+    Extension("USPEX.Atomistic.SymmetricStructure", ["USPEX/Atomistic/SymmetricStructure.py"]),
     Extension("USPEX.Atomistic.Bonds", ["USPEX/Atomistic/Bonds.py"]),
     Extension("USPEX.Atomistic.CellUtility", ["USPEX/Atomistic/CellUtility.py"]),
     Extension("USPEX.Atomistic.EnvironmentUtility", ["USPEX/Atomistic/EnvironmentUtility.py"]),

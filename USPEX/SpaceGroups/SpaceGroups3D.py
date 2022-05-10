@@ -104,7 +104,7 @@ def calcOrbits(operators, nodes, supercell: tuple = (1, 1, 1)):
     orbits = np.remainder(orbits, supercell)
     orbits[np.where(np.abs(np.asarray(supercell) - orbits) < 1e-4)] = 0
 
-    return list(uniqueRows(orbit, thresh=1.0e-4) / supercell for orbit in orbits)
+    return list(uniqueRows(orbit, thresh=1.0e-4) for orbit in orbits)
 
 
 class Group(object):
@@ -162,7 +162,7 @@ class Group(object):
         :rtype: list
         :return: list of orbits, where each orbit is an array of positions.
         """
-        return calcOrbits(self.operators, nodes, self._supercell)
+        return calcOrbits(self.operators, nodes)
 
     @property
     def supercell(self):

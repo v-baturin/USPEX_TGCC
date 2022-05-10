@@ -11,6 +11,7 @@ import numpy as np
 from collections.abc import Sequence
 from copy import deepcopy
 from pymatgen.symmetry.groups import in_array_list
+from itertools import chain
 
 
 class SymmetricStructure(object):
@@ -46,8 +47,11 @@ class SymmetricStructure(object):
         :rtype: :class:`SymmetricFlavours`
         :return: sequence of topological nets.
         """
-        supercellGroup = self.group.getSupercellGroup(supercell)
-        return SymmetricFlavours(self.name, supercellGroup(self.sites), supercellGroup.getAllSubgroups())
+        a, b, c = supercell
+        shifts = np.array([np.array((i, j, k), dtype=float) for i in range(a) for j in range(b) for k in range(c)])
+        positions = (np.stack(chain(*self.getOrbits())).reshape((-1, 1, 3))
+                     + shifts.reshape((1, -1, 3))).reshape((-1, 3)) / supercell
+        return SymmetricFlavours(self.name, positions, self.group.getSupercellGroup(supercell).getAllSubgroups())
 
     def getOrbits(self):
         """
@@ -88,7 +92,7 @@ class SymmetricFlavours(Sequence):
     A flavour is a symmetric structure with some chosen sites colouring.
     """
 
-    def __init__(self, name, orbits, subgroups):
+    def __init__(self, name, positions, subgroups):
         """
         :param name: Name of base structre.
         :param orbits: list of orbits (numpy arrays) for each site.
@@ -96,7 +100,7 @@ class SymmetricFlavours(Sequence):
         """
         self._name = name
         self._subgroups = subgroups
-        self._orbits = orbits
+        self._positions = positions
 
     def __getitem__(self, i):
         """
@@ -109,13 +113,12 @@ class SymmetricFlavours(Sequence):
         """
         subgroup = self._subgroups[i]
         nodeCoordinates = []
-        for orbit in self._orbits:
-            for subOrbit in subgroup(orbit):
-                for subNode in subOrbit:
-                    if in_array_list(nodeCoordinates, subNode):
-                        break
-                else:
-                    nodeCoordinates.append(subOrbit[0])
+        for subOrbit in subgroup(self._positions):
+            for subNode in subOrbit:
+                if in_array_list(nodeCoordinates, subNode):
+                    break
+            else:
+                nodeCoordinates.append(subOrbit[0])
         return SymmetricStructure(name=self._name, group=subgroup, sites=nodeCoordinates)
 
     def __len__(self):
