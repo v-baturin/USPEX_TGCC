@@ -1,6 +1,6 @@
 """
-USPEX.Common.SpaceGroups.TopologicalNet
-=======================================
+USPEX.Common.SpaceGroups.SymmetricStructure
+===========================================
 
 Collection of objects for working with topologies
 
@@ -9,16 +9,16 @@ Collection of objects for working with topologies
 
 import numpy as np
 from collections.abc import Sequence
+from copy import deepcopy
+from pymatgen.symmetry.groups import in_array_list
 
-from .SpaceGroups3D import in_array_list
 
-
-class TopologicalNet(object):
+class SymmetricStructure(object):
     """
     Class representing topological net.
     """
 
-    def __init__(self, name, group, nodes, bonds):
+    def __init__(self, name, group, sites):
         """
         Initialize topological net object.
 
@@ -26,16 +26,15 @@ class TopologicalNet(object):
         :param name: Net name from TOPOS database.
         :type group: :class:`~USPEX.Common.SpaceGroups.SpaceGroups3D.Group`
         :param group: Space group corresponding to the net.
-        :type nodes: list
-        :param nodes: Symmetry inequivalent nodes.
-        :type bonds: list or None
-        :param bonds: Symmetry inequivalent bonds.
+        :type sites: list
+        :param sites: Symmetry inequivalent nodes.
         """
         self.name = name
         self.group = group
-        self.nodes = np.asarray(nodes)
+        self.sites = np.asarray(sites)
         self._multiplicities = None
         self._operations = None
+        self._orbits = None
 
     def flavours(self, supercell: tuple = (1, 1, 1)):
         """
@@ -44,26 +43,31 @@ class TopologicalNet(object):
 
         :type supercell: tuple
         :param supercell: 3-tuple defining supercell.
-        :rtype: :class:`TopologicalFlavours`
+        :rtype: :class:`SymmetricFlavours`
         :return: sequence of topological nets.
         """
-        return TopologicalFlavours(self, supercell)
+        return SymmetricFlavours(self.name, self.sites, self.group.getAllSubgroups(supercell))
+
+    def getOrbits(self):
+        if self._orbits is None:
+            self._orbits = self.group(self.sites)
+        return deepcopy(self._orbits)
 
     @property
     def multiplicities(self):
         if self._multiplicities is None:
-            self._multiplicities = np.asarray([len(orbit) for orbit in self.group(self.nodes)])
+            self._multiplicities = np.asarray([len(orbit) for orbit in self.getOrbits()])
         return self._multiplicities
 
     @property
     def operations(self):
         if self._operations is None:
             self._operations = []
-            for node, positions in zip(self.nodes, self.group(self.nodes)):
+            for node, positions in zip(self.sites, self.getOrbits()):
                 nodeOperationsVariants = []
-                for variant in self.group.getNotPositionInvariantSubgroups(node):
+                for group in self.group.getNotPositionInvariantSubgroups(node):
                     operations = []
-                    for operation, position in zip(variant.operators, positions):
+                    for operation, position in zip(group.operators, positions):
                         operation = np.copy(operation)
                         operation[0:3, 3] = position
                         operations.append(operation)
@@ -72,7 +76,7 @@ class TopologicalNet(object):
         return self._operations
 
 
-class TopologicalFlavours(Sequence):
+class SymmetricFlavours(Sequence):
     """
     Class representing sequence of topological net flavours.
     Creating a list of flavours is an expensive operation, so we simulate such list
@@ -80,17 +84,12 @@ class TopologicalFlavours(Sequence):
     A flavour is a topological net with some chosen nodes colouring.
     """
 
-    def __init__(self, net,  supercell: tuple = (1, 1, 1)):
+    def __init__(self, name, sites, subgroups):
         """
-        Initialize topological flavour.
-
-        :type net: :class:`TopologicalNet`
-        :param net: Parent topological net.
-        :type supercell: tuple
-        :param supercell: 3-tuple defining supercell.
         """
-        self._net = net
-        self._subgroups = net.group.getAllSubgroups(supercell)
+        self._name = name
+        self._sites = sites
+        self._subgroups = subgroups
 
     def __getitem__(self, i):
         """
@@ -98,22 +97,19 @@ class TopologicalFlavours(Sequence):
 
         :type i: int
         :param i: Index
-        :rtype: :class:`TopologicalNet`
+        :rtype: :class:`SymmetricStructure`
         :return: Topological net object describing obtained flavour.
         """
         subgroup = self._subgroups[i]
         nodeCoordinates = []
-        for remOrbit in self._subgroups.calcOrbits(self._net.nodes):
+        for remOrbit in self._subgroups.calcOrbits(self._sites):
             for subOrbit in subgroup(remOrbit):
-                nodeIsUnique = True
                 for subNode in subOrbit:
                     if in_array_list(nodeCoordinates, subNode):
-                        nodeIsUnique = False
                         break
-                if nodeIsUnique:
+                else:
                     nodeCoordinates.append(subOrbit[0])
-        # TODO Redefine bonds
-        return TopologicalNet(name=self._net.name, group=subgroup, nodes=nodeCoordinates, bonds=None)
+        return SymmetricStructure(name=self._name, group=subgroup, sites=nodeCoordinates)
 
     def __len__(self):
         """

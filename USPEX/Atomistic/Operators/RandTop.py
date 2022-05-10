@@ -11,7 +11,7 @@ import time
 
 from sympy.combinatorics.partitions import Partition, RGS_rank
 
-from ...SpaceGroups.TopologicalNet import TopologicalNet
+from ..SymmetricStructure import SymmetricStructure
 from ...SpaceGroups.SpaceGroups3D import Group
 
 
@@ -59,7 +59,7 @@ class RandTop:
             supersize = totalAtomNumber // params['totalAtomNumber']
             if supersize > self.maxSupersize:
                 continue
-            net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+            net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
             logger.debug(f'Trying {name} topology with {params["groupName"]} symmetry')
             supercells = decompose3(supersize) if self.supercells is None \
                 else [supercell for supercell in self.supercells if np.prod(supercell) == supersize]
