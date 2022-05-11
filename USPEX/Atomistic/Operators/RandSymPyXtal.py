@@ -27,6 +27,18 @@ class RandSymPyXtal:
             self.nsym = [nsym]
         elif isinstance(nsym, str):
             self.nsym = list(parseIntSet(nsym))
+        elif nsym is None:
+            dim = self.cellUtility.getDim()
+            if dim == 3:
+                self.nsym = list(range(1, 231))
+            elif dim == 2:
+                self.nsym = list(range(1, 81))
+            elif dim == 1:
+                self.nsym = list(range(1, 76))
+            elif dim == 0:
+                self.nsym = list(range(1, 57))
+            else:
+                raise ValueError(f"Wrong dim {dim}.")
         else:
             self.nsym = nsym
         signal.signal(signal.SIGALRM, signal_handler)
@@ -51,6 +63,7 @@ class RandSymPyXtal:
                 symbols.pop(i)
                 numIons.pop(i)
 
+        dim = self.cellUtility.getDim()
         startTime = time()
         failCounter = 0
         while True:
@@ -59,81 +72,32 @@ class RandSymPyXtal:
             if failCounter > MAX_PYXTAL_ATTEMPTS or failedTime > MAX_RANDOM_TIME:
                 raise RuntimeError("RandSymPyXtal failed.")
 
+            nsym, = np.random.choice(self.nsym, 1)
+            logger.debug(f"Trying {nsym} symmetry")
+
             #randcell is an auxiliary cell object to get required info from
-            elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
             randcell = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons))
-
-            if self.cellUtility.getDim() == 3:
-
-                if self.nsym is None:
-                    self.nsym = list(range(1, 231))
-                nsym, = np.random.choice(self.nsym, 1)
-                logger.debug(f"Trying {nsym} symmetry")
-
-                structurePyxtal = pyxtal()
-                signal.alarm(MAX_PYXTAL_TIME)
-                try:
-                    structurePyxtal.from_random(3, nsym, symbols, numIons)
-                except Exception as e:
-                    signal.alarm(0)
-                    raise RuntimeError(e)
-                signal.alarm(0)
-
-            elif self.cellUtility.getDim() == 2:
-
-                if self.nsym is None:
-                    self.nsym = list(range(1, 81))
-                nsym, = np.random.choice(self.nsym, 1)
-                logger.debug(f"Trying {nsym} symmetry")
-
+            if dim == 3 or dim == 0:
+                lat = None
+            elif dim == 2:
                 LayerThickness = self.cellUtility.getThickness()
                 LayerArea = randcell.getArea()
-
-                structurePyxtal = pyxtal()
                 lat = generate2Dcell(nsym, LayerThickness, LayerArea)
-                signal.alarm(MAX_PYXTAL_TIME)
-                try:
-                    structurePyxtal.from_random(2, nsym, symbols, numIons, lattice=lat)
-                except Exception as e:
-                    signal.alarm(0)
-                    raise RuntimeError(e)
-                signal.alarm(0)
-
-            elif self.cellUtility.getDim() == 1:
-
-                if self.nsym is None:
-                    self.nsym = list(range(1, 76))
-                nsym, = np.random.choice(self.nsym, 1)
-                logger.debug(f"Trying {nsym} symmetry")
-
+            elif dim == 1:
                 CylinderRadius = self.cellUtility.getThickness() / 2.0
                 CylinderLength = randcell.getLength()
-
-                structurePyxtal = pyxtal()
                 lat = generate1Dcell(nsym, CylinderRadius, CylinderLength)
-                signal.alarm(MAX_PYXTAL_TIME)
-                try:
-                    structurePyxtal.from_random(1, nsym, symbols, numIons, lattice=lat)
-                except Exception as e:
-                    signal.alarm(0)
-                    raise RuntimeError(e)
+            else:
+                raise ValueError(f"Wrong dim {dim}.")
+
+            structurePyxtal = pyxtal()
+            signal.alarm(MAX_PYXTAL_TIME)
+            try:
+                structurePyxtal.from_random(dim, nsym, symbols, numIons, lattice=lat)
+            except Exception as e:
                 signal.alarm(0)
-
-            elif self.cellUtility.getDim() == 0:
-
-                if self.nsym is None:
-                    self.nsym = list(range(1, 57))
-                nsym, = np.random.choice(self.nsym, 1)
-                logger.debug(f"Trying {nsym} symmetry")
-
-                structurePyxtal = pyxtal()
-                signal.alarm(MAX_PYXTAL_TIME)
-                try:
-                    structurePyxtal.from_random(0, nsym, symbols, numIons)
-                except Exception as e:
-                    signal.alarm(0)
-                    raise RuntimeError(e)
-                signal.alarm(0)
+                raise RuntimeError("RandSymPyXtal failed.") from e
+            signal.alarm(0)
 
             if structurePyxtal.valid:
                 tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
@@ -147,7 +111,7 @@ class RandSymPyXtal:
                 if np.all(atomDistances >= minDistMatrix):
                     self.environmentUtility.putEnvironment(system)
                     self.conditions.putConditions(system)
-                    return (system,)
+                    return system,
 
             failCounter += 1
 
