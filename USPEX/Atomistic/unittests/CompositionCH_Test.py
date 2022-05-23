@@ -1,9 +1,8 @@
 import unittest
 import numpy as np
-import os
 
 from ..CompositionCH import CompositionCH
-from ..CellUtility import Cell
+from ..AtomicPrimitives import AtomicStructure
 from ...components import CompositionSpace, SimpleMoleculeUtility
 
 
@@ -12,18 +11,18 @@ class CompostionCH_Test(unittest.TestCase):
         compositionSpace = CompositionSpace(symbols=['Mo'], blocks=[[1]], range=[[1, 18]])
         simpleMoleculeUtility = SimpleMoleculeUtility()
 
-        system0 = {'ID': 0, 'enthalpy': -2.0}
-        system0.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0.,0.,0.,])]*1]}, None))
-        system1 = {'ID': 1, 'enthalpy': -8.0}
-        system1.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0.,0.,0.,])]*4]}, None))
-        system2 = {'ID': 2, 'enthalpy': -16.0}
-        system2.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0.,0.,0.,])]*4]}, None))
-        system3 = {'ID': 3, 'enthalpy': -8.0}
-        system3.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0.,0.,0.,])]*8]}, None))
+        system0 = {'ID': 0, 'enthalpy': -2.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] ]}
+        system1 = {'ID': 1, 'enthalpy': -8.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 4]}
+        system2 = {'ID': 2, 'enthalpy': -16.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 4]}
+        system3 = {'ID': 3, 'enthalpy': -8.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 8]}
         self.convexHull = CompositionCH([system0], compositionSpace, simpleMoleculeUtility)
 
         # ans = self.convexHull.height[0]
@@ -50,36 +49,30 @@ class CompostionCH_Test(unittest.TestCase):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
         simpleMoleculeUtility = SimpleMoleculeUtility()
-
-        system1 = {'ID': 0, 'enthalpy': -5.0}
-        system1.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                               {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
-                                                                'B': [[np.asarray([0., 0., 0., ])] * 10]}, None))
-        system2 = {'ID': 1, 'enthalpy': -14.0}
-        system2.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 10]}, None))
-        system3 = {'ID': 2, 'enthalpy': -8.0}
-        system3.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 8]}, None))
-        system4 = {'ID': 3, 'enthalpy': -2.0}
-        system4.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8]}, None))
-        system5 = {'ID': 4, 'enthalpy': -4.0}
-        system5.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8]}, None))
-        system6 = {'ID': 5, 'enthalpy': -12.0}
-        system6.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'B': [[np.asarray([0., 0., 0., ])] * 10]}, None))
-        system7 = {'ID': 6, 'enthalpy': -2.0}
-        system7.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 4]}, None))
-        system8 = {'ID': 7, 'enthalpy': -16.0}
-        system8.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 6]}, None))
+        system1 = {'ID': 0, 'enthalpy': -5.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 4 + ['B'] * 10]}
+        system2 = {'ID': 1, 'enthalpy': -14.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 4 + ['B'] * 10]}
+        system3 = {'ID': 2, 'enthalpy': -8.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 8 + ['B'] * 8]}
+        system4 = {'ID': 3, 'enthalpy': -2.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 8]}
+        system5 = {'ID': 4, 'enthalpy': -4.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 8]}
+        system6 = {'ID': 5, 'enthalpy': -12.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['B'] * 10]}
+        system7 = {'ID': 6, 'enthalpy': -2.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 6 + ['B'] * 4]}
+        system8 = {'ID': 7, 'enthalpy': -16.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 4 + ['B'] * 6]}
 
 
 
@@ -160,35 +153,30 @@ class CompostionCH_Test(unittest.TestCase):
         compositionSpace = CompositionSpace(symbols=['Mo', 'B'], blocks=[[1, 0], [0, 1]], range=[[0, 18], [0, 18]],
                                             minAt=8, maxAt=18)
         simpleMoleculeUtility = SimpleMoleculeUtility()
-        system1 = {'ID': 0, 'enthalpy': -5.0}
-        system1.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 10]}, None))
-        system2 = {'ID': 1, 'enthalpy': -14.0}
-        system2.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 10]}, None))
-        system3 = {'ID': 2, 'enthalpy': -8.0}
-        system3.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 8]}, None))
-        system4 = {'ID': 3, 'enthalpy': -2.0}
-        system4.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8]}, None))
-        system5 = {'ID': 4, 'enthalpy': -4.0}
-        system5.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 8]}, None))
-        system6 = {'ID': 5, 'enthalpy': -12.0}
-        system6.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'B': [[np.asarray([0., 0., 0., ])] * 10]}, None))
-        system7 = {'ID': 6, 'enthalpy': -2.0}
-        system7.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 4]}, None))
-        system8 = {'ID': 7, 'enthalpy': -16.0}
-        system8.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 4],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 6]}, None))
+        system1 = {'ID': 0, 'enthalpy': -5.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 4 + ['B'] * 10]}
+        system2 = {'ID': 1, 'enthalpy': -14.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 4 + ['B'] * 10]}
+        system3 = {'ID': 2, 'enthalpy': -8.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 8 + ['B'] * 8]}
+        system4 = {'ID': 3, 'enthalpy': -2.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 8]}
+        system5 = {'ID': 4, 'enthalpy': -4.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 8]}
+        system6 = {'ID': 5, 'enthalpy': -12.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['B'] * 10]}
+        system7 = {'ID': 6, 'enthalpy': -2.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 6 + ['B'] * 4]}
+        system8 = {'ID': 7, 'enthalpy': -16.0,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 4 + ['B'] * 6]}
 
         systems = [system1, system2, system3, system4, system5, system6, system7, system8]
         self.convexHull = CompositionCH(systems, compositionSpace, simpleMoleculeUtility)
@@ -275,30 +263,24 @@ class CompostionCH_Test(unittest.TestCase):
                                             minAt=8, maxAt=18)
         simpleMoleculeUtility = SimpleMoleculeUtility()
 
-        system1 = {'ID': 0, 'enthalpy': -178.845}
-        system1.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 14]}, None))
-        system2 = {'ID': 1, 'enthalpy': -225.103}
-        system2.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 16],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 10]}, None))
-        system3 = {'ID': 2, 'enthalpy': -162.761}
-        system3.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 5],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 14]}, None))
-        system4 = {'ID': 3, 'enthalpy': -176.250}
-        system4.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 14]}, None))
-        system5 = {'ID': 4, 'enthalpy': -150.735}
-        system5.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 13],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 5]}, None))
-        system6 = {'ID': 5, 'enthalpy': -77.661}
-        system6.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 9],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 1]}, None))
+        system1 = {'ID': 0, 'enthalpy': -178.845,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 6 + ['B'] * 14]}
+        system2 = {'ID': 1, 'enthalpy': -225.103,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 16 + ['B'] * 10]}
+        system3 = {'ID': 2, 'enthalpy': -162.761,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 5 + ['B'] * 14]}
+        system4 = {'ID': 3, 'enthalpy': -176.250,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 6 + ['B'] * 14]}
+        system5 = {'ID': 4, 'enthalpy': -150.735,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 13 + ['B'] * 5]}
+        system6 = {'ID': 5, 'enthalpy': -77.661,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 9 + ['B'] * 1]}
         systems = [system1, system2, system3, system4, system5, system6]
 
         self.convexHull = CompositionCH(systems, compositionSpace, simpleMoleculeUtility)
@@ -341,24 +323,21 @@ class CompostionCH_Test(unittest.TestCase):
                                             minAt=8, maxAt=18)
         simpleMoleculeUtility = SimpleMoleculeUtility()
 
-        system1 = {'ID': 0, 'enthalpy': -173.325}
-        system1.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 5],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 15]}, None))
-        system2 = {'ID': 1, 'enthalpy': -42.944}
-        system2.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 5]}, None))
-        system3 = {'ID': 2, 'enthalpy': -104.041}
-        system3.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 3],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 9]}, None))
-        system4 = {'ID': 3, 'enthalpy': -177.431}
-        system4.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 6],
-                                                             'B': [[np.asarray([0., 0., 0., ])] * 14]}, None))
-        system5 = {'ID': 4, 'enthalpy': -69.214}
-        system5.update(simpleMoleculeUtility.populateStructure(Cell(np.eye(3), (1, 1, 1)),
-                                                            {'Mo': [[np.asarray([0., 0., 0., ])] * 9]}, None))
+        system1 = {'ID': 0, 'enthalpy': -173.325,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 5 + ['B'] * 15]}
+        system2 = {'ID': 1, 'enthalpy': -42.944,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 5]}
+        system3 = {'ID': 2, 'enthalpy': -104.041,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 3 + ['B'] * 9]}
+        system4 = {'ID': 3, 'enthalpy': -177.431,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 6 + ['B'] * 14]}
+        system5 = {'ID': 4, 'enthalpy': -69.214,
+                   'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mo'] * 9]}
         systems = [system1, system2, system3, system4, system5]
 
         self.convexHull = CompositionCH(systems, compositionSpace, simpleMoleculeUtility)

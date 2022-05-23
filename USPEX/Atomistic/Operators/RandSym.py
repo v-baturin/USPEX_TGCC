@@ -42,16 +42,18 @@ def determineOperations(lat, numIons, candidate):
     #     operations.append(atomOperations)
     #     i += n
 
-    coordinates = []
+    operations = []
+    operation = np.eye(4, dtype=float)
     offset = 0
     for n in numIons:
-        tmp_coordinates = []
+        tmp_operations = []
         for i in range(n):
-            tmp_coordinates.append(candidate[i + offset])
-        coordinates.append([tmp_coordinates])
+            operation[0:3, 3] = candidate[i + offset]
+            tmp_operations.append(np.copy(operation))
+        operations.append([[tmp_operations]])
         offset += n
 
-    return None, lat, coordinates, [None] * len(coordinates)
+    return None, lat, operations
 
 
 
@@ -64,8 +66,6 @@ class RandSym:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
         self.conditions = utilities.conditions
-        if self.simpleMoleculeUtility.isTrueMolecular:
-            raise RuntimeError("RandSym does not currently work in molecular regime.")
         self.nsymN = nsymN
         if nsym is None:
             self.nsym = list(range(2, 231))
@@ -108,7 +108,7 @@ class RandSym:
                 short_direction = vectors[np.argmin(values)]
                 height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.getCartesianCoordinates()]
                 ind = np.argmin(height_map)
-                atomRaduis = self.ionDistances.volumeEstimator.calcAtomVolume(molecule.getAtomTypes(), self.conditions.externalPressure)[ind] ** (1.0 / 3.0)
+                atomRaduis = self.ionDistances.volumeEstimator.calcAtomVolume(molecule.getAtomTypes()[ind], self.conditions.externalPressure) ** (1.0 / 3.0)
                 radii.append(0.45 * atomRaduis + height_map[ind])
         for i, j in combinations_with_replacement(range(len(radii)), 2):
             centerMinDistMatrix[i, j] = centerMinDistMatrix[j, i] = (radii[i] + radii[j])
@@ -162,12 +162,11 @@ class RandSym:
 
                     candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,
                                                     estimatedVolume, self.sym_coef)
-                name, cell, coordinates, operations = determineOperations(lat, numIons, candidate)
+                name, cell, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
-                coordinates = dict(zip(symbols, coordinates))
                 cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons))
                 for i in range(self.attemptsRotation):
-                    system = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                    system = self.simpleMoleculeUtility.populateStructure(cell, operations)
                     molecules = system['molecules']
                     cell = system['cell']
                     atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)

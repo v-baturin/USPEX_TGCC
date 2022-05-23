@@ -1,8 +1,8 @@
 """
-USPEX.Common.SpaceGroups.unittests.TopologicalNet_Test
-======================================================
+USPEX.Common.SpaceGroups.unittests.SymmetricStructure_Test
+==========================================================
 
-Class for TopologicalNet testing
+Class for SymmetricStructure testing
 
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
@@ -10,8 +10,8 @@ Class for TopologicalNet testing
 import unittest
 import numpy as np
 
-from ..TopologicalNet import TopologicalNet
-from ..SpaceGroups3D import Group
+from ..SymmetricStructure import SymmetricStructure
+from ...SpaceGroups.SpaceGroups3D import Group
 
 
 net_def_1 = {
@@ -123,55 +123,45 @@ net_def_9 = {
 }
 
 
-# class RandTop_Test1(unittest.TestCase):
+# This test is way too long
+# class SymmetricStructure_Test1(unittest.TestCase):
 #     def setUp(self):
 #         name, params = list(net_def_1.items())[0]
-#         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+#         self.net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
 #
 #     def test_flavours(self):
 #         flavours = self.net.flavours((2, 3, 1))
-#         # for i, flavour in enumerate(flavours):
-#         i = 0
 #         allGood = True
-#         while i < len(flavours):
-#             flavour = flavours[i]
+#         for i, flavour in enumerate(flavours):
 #             self.assertTrue(np.sum(flavour.multiplicities) == 18,
-#                             msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i,flavour.multiplicities))
+#                             msg = 'Error with {}th flavour. Multiplicities are {}.'.format(i, flavour.multiplicities))
 #             for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities,
-#                                                  flavour.nodes, range(len(flavour.nodes))):
+#                                                  flavour.sites, range(len(flavour.sites))):
 #                 goodVariantExist = False
 #                 for j, variant in enumerate(operations):
-#                     if len(variant.operators) == mult:
+#                     if len(variant) == mult:
 #                         goodVariantExist = True
 #                     # else:
 #                     #     print(i, n, len(variant.operators), mult, j, len(operations))
 #                 if not goodVariantExist:
 #                     print(i, n, mult, len(operations))
 #                     allGood = False
-#                     # self.assertEqual(len(variant.operators), mult,
-#                     #                  msg = 'In {}th flavour operations and multiplicities are inconsistent.'.format(i))
-#             i += 1
 #         self.assertTrue(allGood)
-#         # flavour = flavours[10]
-#         # operations, mult, node = flavour.operations[2], flavour.multiplicities[2], flavour.nodes[2]
-#         # variant = operations[1]
-#         # print(len(variant.operators), mult)
-#         # print(variant.operators, node)
 
 
-class RandTop_Test2(unittest.TestCase):
+class SymmetricStructure_Test2(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_2.items())[0]
-        self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+        self.net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
 
     def test_isMultiplicities(self):
         self.assertTrue(np.all(self.net.multiplicities == [4, 8, 16]))
 
 
-class RandTop_Test3(unittest.TestCase):
+class SymmetricStructure_Test3(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_3.items())[0]
-        self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+        self.net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
 
     def test_isMultiplicities(self):
         self.assertTrue(np.all(self.net.multiplicities == [2, 8, 4]))
@@ -182,11 +172,11 @@ class RandTop_Test3(unittest.TestCase):
         for i, flavour in enumerate(flavours):
             self.assertTrue(np.sum(flavour.multiplicities) == 28,
                             msg='Error with {}th flavour. Multiplicities are {}.'.format(i, flavour.multiplicities))
-            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes,
-                                                 range(len(flavour.nodes))):
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.sites,
+                                                 range(len(flavour.sites))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
@@ -196,10 +186,10 @@ class RandTop_Test3(unittest.TestCase):
         self.assertTrue(allGood)
 
 
-class RandTop_Test4(unittest.TestCase):
+class SymmetricStructure_Test4(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_4.items())[0]
-        self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+        self.net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
 
     def test_isMultiplicities(self):
         self.assertTrue(np.all(self.net.multiplicities == [3, 3, 1]))
@@ -210,11 +200,11 @@ class RandTop_Test4(unittest.TestCase):
         for i, flavour in enumerate(flavours):
             self.assertTrue(np.sum(flavour.multiplicities) == 28,
                             msg='Error with {}th flavour. Multiplicities are {}.'.format(i, flavour.multiplicities))
-            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes,
-                                                 range(len(flavour.nodes))):
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.sites,
+                                                 range(len(flavour.sites))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
@@ -224,10 +214,10 @@ class RandTop_Test4(unittest.TestCase):
         self.assertTrue(allGood)
 
 
-class RandTop_Test5(unittest.TestCase):
+class SymmetricStructure_Test5(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_5.items())[0]
-        self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+        self.net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
 
     def test_isMultiplicities(self):
         self.assertTrue(np.all(self.net.multiplicities == [8, 6]))
@@ -238,11 +228,11 @@ class RandTop_Test5(unittest.TestCase):
         for i, flavour in enumerate(flavours):
             self.assertTrue(np.sum(flavour.multiplicities) == 28,
                             msg='Error with {}th flavour. Multiplicities are {}.'.format(i, flavour.multiplicities))
-            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes,
-                                                 range(len(flavour.nodes))):
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.sites,
+                                                 range(len(flavour.sites))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
@@ -252,10 +242,10 @@ class RandTop_Test5(unittest.TestCase):
         self.assertTrue(allGood)
 
 
-class RandTopTest6(unittest.TestCase):
+class SymmetricStructure_Test6(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_6.items())[0]
-        self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+        self.net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
 
     def test_isMultiplicities(self):
         self.assertTrue(np.all(self.net.multiplicities == [9]))
@@ -266,11 +256,11 @@ class RandTopTest6(unittest.TestCase):
         for i, flavour in enumerate(flavours):
             self.assertTrue(np.sum(flavour.multiplicities) == 18,
                             msg='Error with {}th flavour. Multiplicities are {}.'.format(i, flavour.multiplicities))
-            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes,
-                                                 range(len(flavour.nodes))):
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.sites,
+                                                 range(len(flavour.sites))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
@@ -280,10 +270,10 @@ class RandTopTest6(unittest.TestCase):
         self.assertTrue(allGood)
 
 
-class RandTopTest7(unittest.TestCase):
+class SymmetricStructure_Test7(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_7.items())[0]
-        self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+        self.net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
 
     def test_isMultiplicities(self):
         self.assertTrue(np.all(self.net.multiplicities == [1, 1]))
@@ -294,24 +284,23 @@ class RandTopTest7(unittest.TestCase):
         for i, flavour in enumerate(flavours):
             self.assertTrue(np.sum(flavour.multiplicities) == 4,
                             msg='Error with {}th flavour. Multiplicities are {}.'.format(i, flavour.multiplicities))
-            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes,
-                                                 range(len(flavour.nodes))):
+            for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.sites,
+                                                 range(len(flavour.sites))):
                 goodVariantExist = False
                 for j, variant in enumerate(operations):
-                    if len(variant.operators) == mult:
+                    if len(variant) == mult:
                         goodVariantExist = True
                     # else:
                     #     print(i, n, len(variant.operators), mult, j, len(operations))
                 if not goodVariantExist:
-                    # print(i, n, mult, len(operations))
                     allGood = False
-        self.assertFalse(allGood)
+        self.assertTrue(allGood)
 
 
-class RandTopTest8(unittest.TestCase):
+class SymmetricStructure_Test8(unittest.TestCase):
     def setUp(self):
         name, params = list(net_def_8.items())[0]
-        self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+        self.net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
 
     def test_flavours(self):
         flavours = self.net.flavours((1, 1, 1))
@@ -320,10 +309,11 @@ class RandTopTest8(unittest.TestCase):
                             msg='Error with {}th flavour. Multiplicities are {}.'.format(i, flavour.multiplicities))
 
 
-# class RandTopTest9(unittest.TestCase):
+# This test is way too long
+# class SymmetricStructure_Test9(unittest.TestCase):
 #     def setUp(self):
 #         name, params = list(net_def_9.items())[0]
-#         self.net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+#         self.net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
 #
 #     def test_isMultiplicities(self):
 #         self.assertTrue(np.all(self.net.multiplicities == [6]))
@@ -334,15 +324,14 @@ class RandTopTest8(unittest.TestCase):
 #         for i, flavour in enumerate(flavours):
 #             self.assertTrue(np.sum(flavour.multiplicities) == 6,
 #                             msg='Error with {}th flavour. Multiplicities are {}.'.format(i, flavour.multiplicities))
-#             for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.nodes,
-#                                                  range(len(flavour.nodes))):
+#             for operations, mult, node, n in zip(flavour.operations, flavour.multiplicities, flavour.sites,
+#                                                  range(len(flavour.sites))):
 #                 goodVariantExist = False
 #                 for j, variant in enumerate(operations):
-#                     if len(variant.operators) == mult:
+#                     if len(variant) == mult:
 #                         goodVariantExist = True
 #                     # else:
 #                     #     print(i, n, len(variant.operators), mult, j, len(operations))
 #                 if not goodVariantExist:
-#                     #print(i, n, mult, len(operations))
 #                     allGood = False
 #         self.assertFalse(allGood)
