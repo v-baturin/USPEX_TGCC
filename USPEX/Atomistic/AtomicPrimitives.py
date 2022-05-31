@@ -285,7 +285,7 @@ class AtomicDisassembler:
         :param environment:
 
         """
-        self.indices = [np.asarray(inds, dtype = int) for inds in indices]
+        self.indices = [np.asarray(inds, dtype=int) for inds in indices]
         self.environment = environment
         self.cell = cell
 
@@ -340,15 +340,16 @@ class AtomicDisassembler:
 
     def decomposeDisplacements(self, displacements, structure):
         """
-        Decompose atomic displacements into molecular translations and rotations and intramolecular atomic displacements.
+        Decompose atomic displacements into molecular transformations (translations and rotations)
+        and atomic displacements relative to corresponding molecules.
 
         :type displacements: numpy array N*3
         :param displacements: array of atomic displacements, where N is number of atoms in structure.
         :param structure:
 
-        :rtype: List[Tuple[vector, vector, array of vectors]]
-        :return: List of tuples for each molecule with translation vector, rotation vector and array of intramolecular
-            atomic displacements.
+        :rtype: List[Tuple[**Transformation**, array of vectors]]
+        :return: List of tuples for each molecule with transformation of the whole molecule
+        and array of relative atomic displacements.
         """
         assert len(displacements) == len(structure)
         molecularDispacements = []
