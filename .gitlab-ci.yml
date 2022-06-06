@@ -64,18 +64,6 @@ test_package:
     paths:
       - testFolder
 
-build_image:
-  image: docker:stable
-  services:
-    - docker:dind
-  stage: build_phase3
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build -t $CI_REGISTRY_IMAGE .
-    - docker push $CI_REGISTRY_IMAGE
-  only:
-    - master
-
 build_documentation:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: build_phase3
