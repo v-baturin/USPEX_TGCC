@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 from .formatters import createHeader_wrap
 from ..Presets import presetOutput
+from .RawParser import parse
 
 matplotlib.use('Agg')
 
@@ -143,31 +144,38 @@ class AtomisticRepresentation(object):
 
 
     @classmethod
-    def writeAtomicStructure(cls, fileDescriptor, system: dict):
-        structure, disassembler = cls.structureType.assemble(**system)
+    def writeAtomicStructureRaw(cls, fileDescriptor, structure, label):
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell().getEnvelopeCell(coordinates, 10)
         coordinates = cell.center(coordinates)
         atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
-        write_vasp(fileDescriptor, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+        write_vasp(fileDescriptor, atoms, label=label, sort=True, direct=True, vasp5=True, long_format=False)
 
     @classmethod
-    def readAtomicStructureRaw(cls, fileDescriptor, pbc=(1,1,1)) -> dict:
+    def writeAtomicStructure(cls, structureFileDescriptor, system: dict, disassemblerFileDescriptor=None):
+        structure, disassembler = cls.structureType.assemble(**system)
+        cls.writeAtomicStructureRaw(structureFileDescriptor, structure, f"EA{system['ID']}")
+        if disassemblerFileDescriptor is not None:
+            indices = " ".join(f"[{' '.join(f'{i}' for i in inds)}]" for inds in disassembler.indices)
+            disassemblerFileDescriptor.write("{indices: [" + indices + "]}")
+
+    @classmethod
+    def readAtomicStructureRaw(cls, fileDescriptor, pbc=(1, 1, 1)):
         atoms = read_vasp(fileDescriptor)
         atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
         cell = cls.cellType(atoms.get_cell().array, pbc)
         coordinates = atoms.get_positions()
-        # cell = cls.cellType(atoms.get_cell().array, pbc).getEnvelopeCell(coordinates)
-        # coordinates = cell.center(coordinates)
-        return cls.structureType(atomTypes, coordinates, cell = cell)
+        return cls.structureType(atomTypes, coordinates, cell)
 
     @classmethod
-    def readAtomicStructure(cls, fileDescriptor, disassembler = None, pbc=(1,1,1)) -> dict:
-        atoms = read_vasp(fileDescriptor)
-        cell = cls.cellType(atoms.get_cell().array, pbc)
-        disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(atoms), cell=cell) if disassembler is None else disassembler
-        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
-        return disassembler.disassemble(cls.structureType(atomTypes, atoms.get_positions(), cell = cell))
+    def readAtomicStructure(cls, structureFileDescriptor, disassemblerFileDescriptor=None, pbc=(1, 1, 1)) -> dict:
+        structure = cls.readAtomicStructureRaw(structureFileDescriptor, pbc)
+        if disassemblerFileDescriptor is None:
+            disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(structure), cell=structure.getCell())
+        else:
+            params = parse(disassemblerFileDescriptor.read())
+            disassembler = cls.atomicDisassemblerType(params['indices'], None, structure.getCell())
+        return disassembler.disassemble(structure)
 
     @classmethod
     def getZmatrixRepresentation(cls, molecule, utility) -> str:
