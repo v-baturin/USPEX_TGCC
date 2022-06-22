@@ -345,10 +345,11 @@ class AtomisticRepresentation(object):
         qe = 0
         comb = list(combinations(population, 2))
         for s1, s2 in comb:
-            tmp_fing1 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s1)
-            tmp_fing2 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s2)
-            dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
-            qe += (1 - dist) * np.log(1 - dist)
+            if not s1['isBad'] and not s2['isBad']:
+                tmp_fing1 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s1)
+                tmp_fing2 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s2)
+                dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
+                qe += (1 - dist) * np.log(1 - dist)
         qe /= -len(comb) if comb else 1
 
         block = [ '    Generation Summary',
