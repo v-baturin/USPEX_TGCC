@@ -476,25 +476,27 @@ class RadialDistributionUtility(object):
     def dist(self, system1, system2):
         """
         Calculated distance between two systems. First it retrieves structure fingerprints of systems.
-        Then claculates cosine distance between them.
+        Then calculates cosine distance between them.
 
         :param system1: dictionary describing first system.
         :param system2: dictionary describing second system.
 
         :return: distance between systems.
         """
-        id1 = system1['ID']
-        id2 = system2['ID']
-        if id1 in self.distances and id2 in self.distances:
-            dist = self.distances.loc[id1, id2]
-            if not isna(dist):
-                return float(dist)
+        if 'ID' in system1 and 'ID' in system2:
+            id1 = system1['ID']
+            id2 = system2['ID']
+            if id1 in self.distances and id2 in self.distances:
+                dist = self.distances.loc[id1, id2]
+                if not isna(dist):
+                    return float(dist)
         cf1 = self.complexFingerprint(system1)
         cf2 = self.complexFingerprint(system2)
         dist = cf1.cosineDistance(cf1, cf2)
-        df = DataFrame(index=[id1, id2], columns=[id1, id2],
-                       data=[[0, dist], [dist, 0]])
-        self.distances = self.distances.combine_first(df)
+        if 'ID' in system1 and 'ID' in system2:
+            df = DataFrame(index=[id1, id2], columns=[id1, id2],
+                           data=[[0, dist], [dist, 0]])
+            self.distances = self.distances.combine_first(df)
         return dist
 
     def equal(self, system1, system2, tolerance=None):
