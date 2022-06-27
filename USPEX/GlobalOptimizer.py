@@ -157,16 +157,16 @@ class GlobalOptimizer(object):
         logger.info('Looking for duplicates.')
         cleanedPopulation = []
         for system in population:
-            for ref_system in list(self.pool.uniqueSystems) + cleanedPopulation:
-                if self.fingerprintUtility.equal(system, ref_system):
-                    logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
-                    self.fingerprintUtility.clean(system)
-                    system['originalID'] = ref_system['ID']
-                    system = ref_system
-                    break
-
             if not system['isBad']:
+                for ref_system in list(self.pool.uniqueSystems) + cleanedPopulation:
+                    if self.fingerprintUtility.equal(system, ref_system):
+                        logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
+                        self.fingerprintUtility.clean(system)
+                        system['originalID'] = ref_system['ID']
+                        system = ref_system
+                        break
                 cleanedPopulation.append(system)
+
         assert cleanedPopulation, 'All systems in population failed relaxation.'
         population[:] = cleanedPopulation
 

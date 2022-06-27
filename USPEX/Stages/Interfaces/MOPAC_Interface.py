@@ -37,7 +37,6 @@ class MOPAC_Interface:
                 * vacuumSize=10
         """
 
-        super().__init__(**kwargs)
         if mop_input is None:
             mop_input = pj(os.getcwd(), f'Specific/mop_{tag}')
         assert os.path.exists(mop_input)
@@ -124,7 +123,7 @@ class MOPAC_Interface:
                 if 'TOTAL ENERGY' in line:
                     e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
                     system['enthalpy'] = float(e.group(1))
-                break
+                    break
 
     def readStructure(self, system, content):
 

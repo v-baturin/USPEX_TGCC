@@ -59,8 +59,6 @@ class ABINIT_Interface:
         :param kwargs: parameters for initializing the parent class.
         """
 
-        super().__init__(**kwargs)
-
         if in_file is None:
             in_file = pj(os.getcwd(), f'./Specific/abinit.in_{tag}')
 

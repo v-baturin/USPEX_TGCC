@@ -41,7 +41,6 @@ class QE_Interface:
         :param libs: (list) list of paths to interatomic potentials.
         :param kwargs:
         '''
-        super().__init__(**kwargs)
 
         if options is not None:
             self.options = options

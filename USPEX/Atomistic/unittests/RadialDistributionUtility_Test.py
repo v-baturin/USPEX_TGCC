@@ -1,12 +1,9 @@
 import os
 import unittest
-import numpy as np
 from os.path import join as pj
-from ase.io.vasp import read_vasp
 
 from ..RadialDistributionUtility import RadialDistributionUtility
-from ...components import SimpleMoleculeUtility
-from ..CellUtility import Cell
+from ...components import AtomisticRepresentation
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 
@@ -14,38 +11,12 @@ PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 class RadialDistributionUtility_Test(unittest.TestCase):
     def setUp(self):
         self.utility = RadialDistributionUtility()
-        self.systemRDU1 = {}
-        self.systemRDU2 = {}
-        self.systemRDU3 = {}
-
-        simpleMoleculeUtilityt = SimpleMoleculeUtility()
-
-        tmp1 = read_vasp(pj(PATH_WITH_TESTS, "systemRDU1.POSCAR"))
-        cell = Cell(tmp1.get_cell().array, (1,1,1))
-        symbols, indices = np.unique(tmp1.get_chemical_symbols(), return_inverse = True)
-        all_coordinates = tmp1.get_scaled_positions()
-        coordinates = {s: [] for s in symbols}
-        for index, coord in zip(indices, all_coordinates):
-            coordinates[symbols[index]].append([coord])
-        self.systemRDU1 = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
-
-        tmp2 = read_vasp(pj(PATH_WITH_TESTS, "systemRDU2.POSCAR"))
-        cell = Cell(tmp2.get_cell().array, (1,1,1))
-        symbols, indices = np.unique(tmp2.get_chemical_symbols(), return_inverse = True)
-        all_coordinates = tmp2.get_scaled_positions()
-        coordinates = {s: [] for s in symbols}
-        for index, coord in zip(indices, all_coordinates):
-            coordinates[symbols[index]].append([coord])
-        self.systemRDU2 = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
-
-        tmp3 = read_vasp(pj(PATH_WITH_TESTS, "systemRDU3.POSCAR"))
-        cell = Cell(tmp3.get_cell().array, (1,1,1))
-        symbols, indices = np.unique(tmp3.get_chemical_symbols(), return_inverse = True)
-        all_coordinates = tmp3.get_scaled_positions()
-        coordinates = {s: [] for s in symbols}
-        for index, coord in zip(indices, all_coordinates):
-            coordinates[symbols[index]].append([coord])
-        self.systemRDU3 = simpleMoleculeUtilityt.populateStructure(cell, coordinates, None)
+        with open(pj(PATH_WITH_TESTS, "systemRDU1.POSCAR"), 'rt') as f:
+            self.systemRDU1 = AtomisticRepresentation.readAtomicStructure(f)
+        with open(pj(PATH_WITH_TESTS, "systemRDU2.POSCAR"), 'rt') as f:
+            self.systemRDU2 = AtomisticRepresentation.readAtomicStructure(f)
+        with open(pj(PATH_WITH_TESTS, "systemRDU3.POSCAR"), 'rt') as f:
+            self.systemRDU3 = AtomisticRepresentation.readAtomicStructure(f)
 
     def test_structureOrder(self):
         self.assertAlmostEqual(self.utility.structureOrder(self.systemRDU1), 0.207, places=3)

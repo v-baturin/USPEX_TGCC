@@ -169,7 +169,7 @@ class USPEXClassic(object):
                         howMany -= len(offsprings)
                         actualParents.append(parent)
                     except RuntimeError as e:
-                        logger.debug(e)
+                        logger.debug(e, exc_info=True)
                     except Exception as e:
                         logger.error(e, exc_info=True)
                 if hasattr(mutation, 'standby'):
@@ -203,7 +203,7 @@ class USPEXClassic(object):
                         howMany -= len(offsprings)
                         actualParents.extend([parent1, parent2])
                     except RuntimeError as e:
-                        logger.debug(e)
+                        logger.debug(e, exc_info=True)
                     except Exception as e:
                         logger.error(e, exc_info=True)
                 if hasattr(hybridization, 'standby'):
@@ -229,7 +229,7 @@ class USPEXClassic(object):
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                 except RuntimeError as e:
-                    logger.debug(e)
+                    logger.debug(e, exc_info=True)
                 except Exception as e:
                     logger.error(e, exc_info=True)
             if hasattr(creation, 'standby'):

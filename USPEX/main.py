@@ -1,10 +1,12 @@
 import logging
+import sys
+import asyncio
 
 logging.basicConfig(filename='log', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def main():
-    import sys
     import argparse
 
     parser = argparse.ArgumentParser(description='USPEX')
@@ -100,9 +102,14 @@ def main():
         _run()
 
 def _run():
-    import asyncio
-    from .components import GenerationController
-    asyncio.get_event_loop().run_until_complete(GenerationController.createController().run())
+    try:
+        from .components import GenerationController
+        asyncio.get_event_loop().run_until_complete(GenerationController.createController().run())
+    except Exception as ex:
+        logger.exception(ex)
+        exc_info = sys.exc_info()
+        raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
+
 
 if __name__ == '__main__':
     _run()

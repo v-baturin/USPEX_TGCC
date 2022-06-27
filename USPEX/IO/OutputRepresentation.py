@@ -69,7 +69,7 @@ class OutputRepresentation(object):
         else:
             raise RuntimeError('Unknown optimizer type in output initialization.')
         os.makedirs(self.RES_FOLDER, exist_ok=True)
-        write(pj(self.RES_FOLDER, self.PARAMETERS_FILENAME), {'main': params})
+        write(pj(self.RES_FOLDER, self.PARAMETERS_FILENAME), params)
 
     def presentSystems(self, systems: dict, optimizer):
         return self.targetRepresentation.presentSystems(systems, optimizer, len(self.stages))

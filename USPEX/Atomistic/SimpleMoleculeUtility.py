@@ -52,7 +52,7 @@ class SimpleMoleculeUtility(object):
                 self.molecules[symbol] = molecule
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
 
-    def populateStructure(self, cell, coordinates, operations):
+    def populateStructure(self, cell, operations):
         """
         Creates list list of molecules by placing corresponding molecule in place specified by map *coordinates*
         in orientation specified by map operations.
@@ -65,25 +65,17 @@ class SimpleMoleculeUtility(object):
         """
         molecules = []
         optimizedCell = cell.getOptimizedCell()
-        for symbol, atomCoordinates in coordinates.items():
+        for symbol, speciesOperations in operations.items():
             molecule = self.molecules[symbol]
-            if len(molecule) > 1:
-                for nodeCoordinates, groups in zip(atomCoordinates, operations[symbol]):
-                    molecule = Transformation.fromRotVector(Transformation.randomRotVector(),
-                                                            [0., 0., 0.]).transform(molecule)
-                    for position, operation in zip(nodeCoordinates, np.random.choice(groups, 1)[0].operators):
-                        cartesianPosition = optimizedCell.getWrapedCartesianCoordinates(
-                            cell.fractionalToCartesian(position))
-                        transformation = Transformation.fromMatrix(cell.fractionalToCartesianOperator(operation[0:3, 0:3]),
-                                                                   cartesianPosition)
-                        molecules.append(transformation.transform(molecule))
-            else:
-                for nodeCoordinates in atomCoordinates:
-                    for position in nodeCoordinates:
-                        cartesianPosition = optimizedCell.getWrapedCartesianCoordinates(
-                            cell.fractionalToCartesian(position))
-                        transformation = Transformation.fromRotVector([0.,0.,0.], cartesianPosition)
-                        molecules.append(transformation.transform(molecule))
+            for variants in speciesOperations:
+                if len(molecule) > 1:
+                    molecule = Transformation.fromRotVector(Transformation.randomRotVector(), [0., 0., 0.]).transform(molecule)
+                for operation in variants[np.random.randint(len(variants))]:
+                    transformation = cell.fractionalToCartesianOperator(operation)
+                    matrix, position = (transformation.rotMatrix, transformation.transVec)
+                    position = optimizedCell.getWrapedCartesianCoordinates(position)
+                    transformation = Transformation(matrix, position)
+                    molecules.append(transformation.transform(molecule))
         return {'molecules': molecules, 'cell': optimizedCell}
 
     def determineMoleculeType(self, molecule):
