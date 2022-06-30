@@ -98,6 +98,14 @@ class Bonds:
         else:
             self.goodBonds = None
 
+    def isConnected(self, structure):
+        try:
+            self.getMinimalGraphBonds(structure)
+            res = True
+        except:
+            res = False
+        return res
+
     def getMinimalGraphBonds(self, SYSTEM) -> list:
         '''
         Calculates bond graph minimal for the structure to be 3D connected.

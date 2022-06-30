@@ -1,7 +1,5 @@
 from __future__ import division
 
-from .getMinimalGraphBonds import getMinimalGraphBonds
-
 from ..Element import Element
 
 

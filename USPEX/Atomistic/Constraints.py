@@ -16,6 +16,7 @@ class Constraints:
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.conditions = utilities.conditions
 
     def systemCheckAndFix(self, system):
@@ -33,6 +34,7 @@ class Constraints:
                         and self.compositionSpace.isGoodComposition(composition) # and self.cellUtility.isGoodCell(cell)
         if goodStructure:
             structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+            goodStructure = goodStructure and self.bonds.isConnected(structure)
             cell = structure.getRectifiedCell()
             coordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())
             if (self.cellUtility.getDim() == 1 or self.cellUtility.getDim() == 2):

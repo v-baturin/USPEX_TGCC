@@ -32,7 +32,11 @@ class Softmodemutation:
             if ID in self.knownSystems:
                 frequencies, eigenVectors = self.knownSystems[ID]
             else:
-                bonds = self.bonds.getMinimalGraphBonds(structure)
+                try:
+                    bonds = self.bonds.getMinimalGraphBonds(structure)
+                except Exception as e:
+                    logger.debug(e)
+                    raise RuntimeError("Softmutation failed.")
                 frequencies, eigenVectors = calcSoftModes(structure, bonds)
                 self.knownSystems[ID] = (frequencies, eigenVectors)
             while len(frequencies) > 0:
@@ -63,14 +67,18 @@ class Softmodemutation:
                     system = {'molecules': molecules1, 'cell': cell}
                     self.environmentUtility.putEnvironment(system, environment)
                     self.conditions.putConditions(system)
-                    offsprings += (system,)
+                    structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                    if self.bonds.isConnected(structure):
+                        offsprings += (system,)
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules2, cell)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if np.all(atomDistances >= minDistMatrix):
                     system = {'molecules': molecules2, 'cell': cell}
                     self.environmentUtility.putEnvironment(system, environment)
                     self.conditions.putConditions(system)
-                    offsprings += (system,)
+                    structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                    if self.bonds.isConnected(structure):
+                        offsprings += (system,)
                 if offsprings:
                     return offsprings
 

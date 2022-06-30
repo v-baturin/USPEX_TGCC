@@ -20,6 +20,7 @@ class RandSymPyXtal:
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.conditions = utilities.conditions
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("RandSymPyXtal does not currently work in molecular regime.")
@@ -111,7 +112,9 @@ class RandSymPyXtal:
                 if np.all(atomDistances >= minDistMatrix):
                     self.environmentUtility.putEnvironment(system)
                     self.conditions.putConditions(system)
-                    return system,
+                    structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                    if self.bonds.isConnected(structure):
+                        return (system,)
 
             failCounter += 1
 

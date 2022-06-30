@@ -15,6 +15,7 @@ class Permutation:
         self.environmentUtility = utilities.environmentUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
         if len(self.compositionSpace.symbols) == 1:
@@ -54,6 +55,8 @@ class Permutation:
                         offspring = {'molecules': offspringMolecules, 'cell': cell}
                         self.environmentUtility.putEnvironment(offspring, environment)
                         self.conditions.putConditions(offspring)
-                        return (offspring,)
+                        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
+                        if self.bonds.isConnected(structure):
+                            return (offspring,)
 
         raise RuntimeError("Permutation failed.")
