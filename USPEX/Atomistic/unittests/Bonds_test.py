@@ -1,7 +1,7 @@
-from ..getMinimalGraphBonds import getMinimalGraphBonds
-from ...CellUtility import Cell
-from ...AtomicPrimitives import AtomicStructure
-from ...Element import Element
+from ..Bonds import Bonds
+from ..CellUtility import Cell
+from ..AtomicPrimitives import AtomicStructure
+from ..Element import Element
 
 
 from ase.io.vasp import read_vasp
@@ -34,7 +34,8 @@ class test_BondHardness(unittest.TestCase):
         # system = Crystal(symbols=tmp.get_chemical_symbols(),
         #                          scaled_positions=tmp.get_scaled_positions(),
         #                          cell=tmp.get_cell(), goodBonds = {('C', 'C'): 0.5})
-        bond_in = getMinimalGraphBonds(system, goodBonds={frozenset(('C', 'C')): 0.5})
+        bonds = Bonds(goodBonds={frozenset(('C', 'C')): 0.5})
+        bond_in = bonds.getMinimalGraphBonds(system)
 
 
     def test_1(self):
@@ -58,7 +59,8 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((0, 2, 1.828, 1, 0., 0., -1.))
         bonds_ref.append((0, 2, 1.828, 1, 0., 0., 0.))
 
-        bonds = getMinimalGraphBonds(system, goodBonds = {frozenset(('C', 'C')): 0.5})
+        bonds = Bonds(goodBonds={frozenset(('C', 'C')): 0.5})
+        bonds = bonds.getMinimalGraphBonds(system)
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -184,7 +186,8 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((  6, 22, 1.828 , 1,   0. ,     0.  ,    0.   ))
 
 
-        bonds = getMinimalGraphBonds(system, goodBonds = {frozenset(('C', 'C')): 0.5})
+        bonds = Bonds(goodBonds={frozenset(('C', 'C')): 0.5})
+        bonds = bonds.getMinimalGraphBonds(system)
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -645,9 +648,10 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((2, 6, 0.750275712322, 99, -1.0 , 0.0 , 0.0))
         bonds_ref.append((0, 1, 0.762998361337, 100, 0.0 , 0.0 , 0.0))
 
-        bonds = getMinimalGraphBonds(system, goodBonds = {frozenset(('Mg','Mg')): 0.1, frozenset(('Mg','Al')): 0.14142136,
-                                                          frozenset(('Mg','O')): 0.17320508, frozenset(('Al','Al')): 0.2,
-                                                          frozenset(('Al','O')): 0.24494897, frozenset(('O', 'O')): 0.3})
+        bonds = Bonds(goodBonds={frozenset(('Mg','Mg')): 0.1, frozenset(('Mg','Al')): 0.14142136,
+                                 frozenset(('Mg','O')): 0.17320508, frozenset(('Al','Al')): 0.2,
+                                 frozenset(('Al','O')): 0.24494897, frozenset(('O', 'O')): 0.3})
+        bonds = bonds.getMinimalGraphBonds(system)
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -702,9 +706,10 @@ class test_BondHardness(unittest.TestCase):
         # system = Crystal(symbols=symbols, scaled_positions=scaled_positions, cell=cell,
         #                  goodBonds = {('Mg','Mg'): 0.1, ('Mg','Al'): 0.14142136, ('Mg','O'):0.17320508,
         #                               ('Al','Al'): 0.2, ('Al','O'): 0.24494897, ('O','O'): 0.3})
-        bond_in = getMinimalGraphBonds(system, goodBonds = {frozenset(('Mg','Mg')): 0.1, frozenset(('Mg','Al')): 0.14142136,
-                                                            frozenset(('Mg','O')):0.17320508, frozenset(('Al','Al')): 0.2,
-                                                            frozenset(('Al','O')): 0.24494897, frozenset(('O','O')): 0.3})
+        bonds = Bonds(goodBonds={frozenset(('Mg','Mg')): 0.1, frozenset(('Mg','Al')): 0.14142136,
+                                 frozenset(('Mg','O')):0.17320508, frozenset(('Al','Al')): 0.2,
+                                 frozenset(('Al','O')): 0.24494897, frozenset(('O','O')): 0.3})
+        bond_in = bonds.getMinimalGraphBonds(system)
 
         print('1')
 
@@ -728,8 +733,9 @@ class test_BondHardness(unittest.TestCase):
         system = AtomicStructure(symbolsToElements(symbols), cell.fractionalToCartesian(scaled_positions), cell = cell)
         # system = Crystal(symbols=symbols, scaled_positions=scaled_positions, cell=cell,
         #                  goodBonds = {('Mg', 'Mg'): 0.1, ('Mg', 'O'):0.17320508, ('O', 'O'): 0.3})
-        bond_in = getMinimalGraphBonds(system, goodBonds = {frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'O')):0.17320508,
-                                                            frozenset(('O', 'O')): 0.3})
+        bonds = Bonds(goodBonds={frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'O')):0.17320508,
+                                 frozenset(('O', 'O')): 0.3})
+        bond_in = bonds.getMinimalGraphBonds(system)
         print('MgO_new1')
 
     def test_graphite2(self):
@@ -758,7 +764,8 @@ class test_BondHardness(unittest.TestCase):
         bonds_ref.append((0, 5,  1.79558711, 1,-0., -1., -1.))
         bonds_ref.append((3, 4,  1.80766622, 1,-1., -0., -1.))
 
-        bonds = getMinimalGraphBonds(graphite, goodBonds = {frozenset(('C','C')): 0.5})
+        bonds = Bonds(goodBonds={frozenset(('C','C')): 0.5})
+        bonds = bonds.getMinimalGraphBonds(graphite)
         count = 0
         len_bonds = 0
         for i, bond_group in enumerate(bonds):
@@ -778,7 +785,8 @@ class test_BondHardness(unittest.TestCase):
         cell = Cell(tmp.get_cell().array, (0, 0, 0))
         system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()), cell.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell)
-        bond_in = getMinimalGraphBonds(system, goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+        bonds = Bonds(goodBonds={frozenset(('Mo','Mo')): 0.5})
+        bond_in = bonds.getMinimalGraphBonds(system)
 
     def test_Periodic1d(self):
         # tmp = read_vasp(pj(CURRENT_DIR, 'Mo3_periodic_POSCARy'))
@@ -786,7 +794,8 @@ class test_BondHardness(unittest.TestCase):
         cell = Cell(tmp.get_cell().array, (0, 0, 1))
         system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()), cell.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell)
-        bond_in = getMinimalGraphBonds(system, goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+        bonds = Bonds(goodBonds={frozenset(('Mo','Mo')): 0.5})
+        bond_in = bonds.getMinimalGraphBonds(system)
 
     def test_Conflict_dimensions(self):
         tmp = read_vasp(pj(CURRENT_DIR, 'Mo3_periodic_POSCARy'))
@@ -795,7 +804,8 @@ class test_BondHardness(unittest.TestCase):
                                  cell.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell)
         with self.assertRaises(IndexError) as context:
-            bond_in = getMinimalGraphBonds(system, goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+            bonds = Bonds(goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+            bond_in = bonds.getMinimalGraphBonds(system)
 
         self.assertTrue('pop from empty' in str(context.exception))
 

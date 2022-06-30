@@ -9,42 +9,28 @@ Objects and methods for handling chemical bonds
 """
 
 import numpy as np
-from ase.atom import Atom
-# from ase.neighborlist import primitive_neighbor_list
-from dataclasses import dataclass
-from itertools import combinations_with_replacement
 from typing import Dict, List, Tuple
+from ase.atoms import Atom, Atoms
+from ase.neighborlist import primitive_neighbor_list
+from itertools import chain, combinations_with_replacement
+from scipy.sparse.csgraph import connected_components
 
 from ..Atomistic.Element import Element
 
 
-@dataclass
+SAME_BOND_THRESHOLD = 0.05  # (Angstroms) same bond within this distance.
+MAX_BOND = 5.0  # (Angstroms) maximum distance deviation for bonds search.
+LOWER_BOND = 0.5  # (Angstroms) lower bound for the distance of atoms in a bond.
+
+
 class Bond(object):
     """
     Class for the chemical bond description. It has the follow parameters:
 
-    * _atom1 (Atom): reference to the first atom in bond
-    * _atom2 (Atom): reference to the second atom in bond
-    * type (int): just a number. If bond1.type == bond2.type then the two bonds have
-                  the same distance and type (like C-C and C-C are the same)
     * delta (float): distance between atoms - (R_val_1 + R_val_2), in Angstroms
-
-    Some constant parameters that can be used from outside:
-
-    * SAME_BOND_THRESHOLD = 0.05  # (Angstroms) same bond within this distance.
-    * MAX_BOND = 5.0              # (Angstroms) maximum distance deviation for bonds search.
-    * LOWER_BOUND = 0.5           # (Angstroms) lower bound for the distance of atoms in a bond.
     """
 
-    _atom1 : Atom
-    _atom2 : Atom
-    enable : bool = False
-
-    SAME_BOND_THRESHOLD = 0.05  # (Angstroms) same bond within this distance.
-    MAX_BOND = 5.0              # (Angstroms) maximum distance deviation for bonds search.
-    LOWER_BOUND = 0.5           # (Angstroms) lower bound for the distance of atoms in a bond.
-
-    def __init__(self, atom1 : Atom, atom2 : Atom, dir1 : List[int] = [0,0,0], dir2 : List[int] = [0,0,0]):
+    def __init__(self, atom1: Atom, atom2: Atom, dir1: Tuple[int] = (0, 0, 0), dir2: Tuple[int] = (0, 0, 0)):
         """
         :type atom1: Atom
         :param atom1: reference to the first atom in bond.
@@ -57,15 +43,15 @@ class Bond(object):
         assert 3 == len(dir1) == len(dir2)
         self._cell = atom1.atoms.get_cell()
         self._atom1, self._atom2 = atom1, atom2
-        self._dir1 = np.array(dir1, dtype=int)
-        self._dir2 = np.array(dir2, dtype=int)
+        self._dir1 = np.asarray(dir1, dtype=int)
+        self._dir2 = np.asarray(dir2, dtype=int)
 
     @property
     def indicies(self) -> Tuple[int, int]:
         return self._atom1.index, self._atom2.index
 
     @property
-    def direction(self) -> List[int]:
+    def direction(self):
         return self._dir2 - self._dir1
 
     @property
@@ -73,7 +59,7 @@ class Bond(object):
         return self._atom1.symbol, self._atom2.symbol
 
     @property
-    def vector(self) -> List[float]:
+    def vector(self):
         return self._atom2.position - self._atom1.position + np.dot(self._dir2-self._dir1, self._cell)
 
     @property
@@ -93,33 +79,159 @@ class Bond(object):
         """
         return self._atom1, self._atom2
 
-    def __eq__(self, other) -> bool:
+    def isClose(self, other, threshold):
+        isEqualSymbols = self.symbols == other.symbols or self.symbols == reversed(other.symbols)
+        isEqualDistance = np.abs(self.distance - other.distance) < threshold
+        return isEqualSymbols and isEqualDistance
+
+
+class Bonds:
+
+    def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None):
+        self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
+        self.maxBond = maxBond if maxBond is not None else MAX_BOND
+        self.lowerBond = lowerBond if lowerBond is not None else LOWER_BOND
+        if goodBonds is not None:
+            self.goodBonds = {}
+            for key, value in goodBonds.items():
+                self.goodBonds[frozenset(key)] = value
+        else:
+            self.goodBonds = None
+
+    def isConnected(self, structure):
+        try:
+            self.getMinimalGraphBonds(structure)
+            res = True
+        except:
+            res = False
+        return res
+
+    def getMinimalGraphBonds(self, SYSTEM) -> list:
+        '''
+        Calculates bond graph minimal for the structure to be 3D connected.
+
+        :param SYSTEM:
+        :return:
+        '''
+
+        N_atom = len(SYSTEM)
+        goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
+                     for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}\
+            if self.goodBonds is None else self.goodBonds
+        structure = Atoms(symbols=[s.short_name for s in SYSTEM.getAtomTypes()],
+                          positions=SYSTEM.getCartesianCoordinates(),
+                          cell=SYSTEM.getCell().getCellVectors(),
+                          pbc=SYSTEM.getCell().getPBC())
+
+        # 1) Calculate bonds within upper bound to max_bond.
+        # 2) Group bonds by using same_bond criterion.
+        bonds = []
+        i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=structure.pbc,
+                                                                    cell=structure.get_cell(complete=True),
+                                                                    positions=structure.get_scaled_positions(),
+                                                                    cutoff=self.maxBond, numbers=structure.numbers,
+                                                                    use_scaled_positions=True)
+
+        for i, j, dist, vec, dir in zip(i_init, j_init, dists, vecs, dirs):
+            # TODO Why we had this less 0.5A and not more than 5A (usually)
+            # if np.abs(dist - tmp_Rval) > cutoff or dist < 0.5:
+            if dist < self.lowerBond or j < i:
+                continue
+            bonds.append(Bond(atom1=structure[i], atom2=structure[j], dir2=dir))
+
+        tmp_bonds = sorted(bonds, key=lambda x: x.delta)
+
+        bond_total = []
+        while tmp_bonds:
+            bond = tmp_bonds.pop(0)
+            bonds_one_type = [bond]
+            bonds_remain = []
+            # Obtain all bonds with the same type by distance:
+            for b in tmp_bonds:
+                if b.isClose(bond, self.sameBond):
+                    bonds_one_type.append(b)
+                else:
+                    bonds_remain.append(b)
+            tmp_bonds = bonds_remain
+            bond_total.append(bonds_one_type)
+
+        # 3) Add bonds by group.
+        bond_in = []
+        bond_left = []
+
+        # delete short bonds
+        for bond_group in bond_total:
+            a, b = bond_group[0].symbols
+            small_bond = -0.37 * np.log(goodBonds[frozenset((a, b))])
+            if min([bond.delta for bond in bond_group]) < small_bond:
+                bond_in.append(bond_group)  # Add by group
+            else:
+                bond_left.append(bond_group)
+        # del bond_group[0]
+
+        # 5, check 3D connectivity, if not satisfied, add more bonds
+        #   but we only include those bonds which could increase connectivity
+        # ---Looks like we have to include all bonds before the connectivity changes
+        #   otherwise, we won't add them
+
+        N_components = self._connectedComponents(N_atom, bond_in, pbc=structure.pbc)
+        # List = connectList(chain(*bond_in))
+
+        while N_components > 1:
+            # disp('The stuture is not fully connected, adding more bonds');
+            bond_tmp = bond_in + [bond_left.pop(0)]
+            # List_new = connectList(chain(*bond_tmp))
+            N_components_new = self._connectedComponents(N_atom, bond_tmp, pbc=structure.pbc)
+            # if len(List_new) > len(List) or len(List) == 1: # increase connectivity accept
+            if N_components_new < N_components:
+                # disp('The connectivity is increased, accept adding more bonds');
+                # List = List_new
+                N_components = N_components_new
+                bond_in = bond_tmp
+                # else
+                # disp('The connectivity is not increased, reject adding more bonds');
+
+        # 6, Remove double count of bond like [i,i] pair;
+        for i, bonds_tmp in enumerate(bond_in):
+            indicies = []
+            for j, bond in enumerate(bonds_tmp):
+                a, b = bond.indicies
+                if a == b:
+                    indicies.append(j)
+            for j in sorted(indicies[::2], reverse=True):
+                del bond_in[i][j]
+
+        return bond_in
+
+    def _connectedComponents(self, N, bonds, pbc):
         """
-        Special method for supporting '==' operator.
-
-        :type other: :class:`Bond`
-        :param other: another bond for comparison.
-        :rtype: bool
-        :return: True if the two bond lengths are closer than SAME_BOND_THRESHOLD, False otherwise.
+        Calculate number of connected components.
+        :param N: number of atoms
+        :param bonds: bond graph
+        :param pbc: pbc
+        :return: Number of connected components
         """
 
-        isEqual_Symbols = self.symbols == other.symbols or self.symbols == reversed(other.symbols)
-        isEqualDistance = np.abs(self.distance - other.distance) < self.SAME_BOND_THRESHOLD
-        return isEqual_Symbols and isEqualDistance
+        supercell_size = 2
 
-    def __ne__(self, other) -> bool:
-        """
-        Special method for supporting '!=' operator.
+        supercell_dims = pbc * (supercell_size - 1) + 1
+        supercell_ranges = np.array([[0, 1]] * 3) * supercell_dims.reshape(3, -1)
+        all_cells_in_super = np.array(np.meshgrid(*[range(*x) for x in supercell_ranges])).T.reshape(-1, 3)
+        total_cells = len(all_cells_in_super)
 
-        :type other: :class:`Bond`
-        :param other: another bond for comparison.
-        :rtype: bool
-        :return: False if the two bond lengths are closer than SAME_BOND_THRESHOLD, True otherwise.
-        """
-        isEqual_Symbols = self.symbols == other.symbols or self.symbols == reversed(other.symbols)
-        isEqualDistance = np.abs(self.distance - other.distance) < self.SAME_BOND_THRESHOLD
-        return not (isEqual_Symbols and isEqualDistance)
+        graph = np.zeros((total_cells * N, total_cells * N))
 
+        pwrs = np.zeros(3, dtype=int)
+        pwrs[pbc] = np.array([2, 1, 0])[np.sort(pbc)]
+        for bond in chain(*bonds):
+            i, j = bond.indicies
+            for klm in all_cells_in_super:
+                i_super = i + np.sum(supercell_dims ** pwrs * klm * N)
+                j_super = j + np.sum(supercell_dims ** pwrs * ((klm + bond.direction) % supercell_dims) * N)
+                graph[i_super, j_super] = 1
+
+        N_components, labels = connected_components(graph)
+        return N_components
 
 
 def defaultGoodBonds(symbols: List[str]) -> Dict[Tuple[str, str], float]:
