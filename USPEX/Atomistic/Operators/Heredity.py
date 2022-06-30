@@ -124,9 +124,9 @@ class Heredity:
                         system = {'molecules': molecules, 'cell': outputCell}
                         self.environmentUtility.putEnvironment(system)
                         self.conditions.putConditions(system)
-                        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
-                        if self.bonds.isConnected(structure):
-                            return (system,)
+                        # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                        # if self.bonds.isConnected(structure):
+                        return (system,)
 
 
         raise RuntimeError("Heredity failed.")

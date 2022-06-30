@@ -67,18 +67,18 @@ class Softmodemutation:
                     system = {'molecules': molecules1, 'cell': cell}
                     self.environmentUtility.putEnvironment(system, environment)
                     self.conditions.putConditions(system)
-                    structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
-                    if self.bonds.isConnected(structure):
-                        offsprings += (system,)
+                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                    # if self.bonds.isConnected(structure):
+                    offsprings += (system,)
                 atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules2, cell)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if np.all(atomDistances >= minDistMatrix):
                     system = {'molecules': molecules2, 'cell': cell}
                     self.environmentUtility.putEnvironment(system, environment)
                     self.conditions.putConditions(system)
-                    structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
-                    if self.bonds.isConnected(structure):
-                        offsprings += (system,)
+                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                    # if self.bonds.isConnected(structure):
+                    offsprings += (system,)
                 if offsprings:
                     return offsprings
 

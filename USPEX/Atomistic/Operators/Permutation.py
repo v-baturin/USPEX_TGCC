@@ -55,8 +55,8 @@ class Permutation:
                         offspring = {'molecules': offspringMolecules, 'cell': cell}
                         self.environmentUtility.putEnvironment(offspring, environment)
                         self.conditions.putConditions(offspring)
-                        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
-                        if self.bonds.isConnected(structure):
-                            return (offspring,)
+                        # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
+                        # if self.bonds.isConnected(structure):
+                        return (offspring,)
 
         raise RuntimeError("Permutation failed.")

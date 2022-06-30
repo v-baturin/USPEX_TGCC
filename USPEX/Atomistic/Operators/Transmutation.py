@@ -54,8 +54,8 @@ class Transmutation:
                 if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
                     self.environmentUtility.putEnvironment(offspring, environment)
                     self.conditions.putConditions(offspring)
-                    structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
-                    if self.bonds.isConnected(structure):
-                        return (offspring,)
+                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
+                    # if self.bonds.isConnected(structure):
+                    return (offspring,)
 
         raise RuntimeError("Transmutation failed.")
