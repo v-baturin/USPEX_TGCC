@@ -32,6 +32,7 @@ class RandTop:
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.conditions = utilities.conditions
         self.supercells = supercells
         self.maxSupersize = maxSupersize
@@ -123,7 +124,10 @@ class RandTop:
                                                 self.arxiv[name].append(all_coordinates)
                                                 self.environmentUtility.putEnvironment(system)
                                                 self.conditions.putConditions(system)
-                                                return (system,)
+                                                structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(
+                                                    **system)
+                                                if self.bonds.isConnected(structure):
+                                                    return (system,)
         raise RuntimeError("RandTop failed.")
 
 
