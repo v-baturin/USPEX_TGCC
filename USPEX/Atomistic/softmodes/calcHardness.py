@@ -10,7 +10,7 @@ from .getMinimalGraphBonds import getMinimalGraphBonds
 
 
 
-def calcHardness(system) -> float:
+def calcHardness(system, bonds) -> float:
     '''
     Calculate hardness for a given structure from bond hardness model.
     See http://han.ess.sunysb.edu/hardness/ for details.
@@ -32,8 +32,6 @@ def calcHardness(system) -> float:
     # coor, lat = optLattice(_system.coordinates, _system.cell)
     # system = AtomicStructure(symbols=_system.chemicalSymbols, positions=coor, cell=lat)
     # system *= m
-
-    bonds = getMinimalGraphBonds(system)
 
     # Calculate bond valence using classical Brown's bond valence model.
     # nu_factor should be normalized to satisfy sum rule.

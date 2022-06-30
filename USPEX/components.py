@@ -19,6 +19,7 @@ from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.Conditions import Conditions
 from .Atomistic.IonDistances import IonDistances
+from .Atomistic.Bonds import Bonds
 from .Atomistic.Constraints import Constraints
 from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
@@ -33,7 +34,7 @@ from .Atomistic.Operators.Seeds import Seeds
 Seeds.registerTypes(AtomisticRepresentation)
 GlobalOptimizer.registerTarget('Atomistic',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility, SimpleMoleculeUtility,
-                                 Conditions, IonDistances, Constraints,
+                                 Conditions, IonDistances, Bonds, Constraints,
                                  PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation],

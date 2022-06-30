@@ -7,6 +7,7 @@ from ase.io.vasp import read_vasp
 from os.path import join as pj
 
 from ..calcSoftModes import calcSoftModes
+from ...Bonds import Bonds
 from ...CellUtility import Cell
 from ...AtomicPrimitives import AtomicStructure
 from ...Element import Element
@@ -23,6 +24,7 @@ class SoftModes_test(unittest.TestCase):
 
     def setUp(self):
         self.CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.bonds = Bonds()
 
     def test_MgAlO_system_1(self):
         print('Test MgAlO 1')
@@ -34,7 +36,8 @@ class SoftModes_test(unittest.TestCase):
         # system = Crystal(scaled_positions=tmp.get_scaled_positions(),
         #                  cell=tmp.get_cell(),
         #                  symbols=tmp.get_chemical_symbols())
-        freq, eigvector = calcSoftModes(system)
+        bonds = self.bonds.getMinimalGraphBonds(system)
+        freq, eigvector = calcSoftModes(system, bonds)
 
     def test_MgAlO_system_2(self):
         print('Test MgAlO 2')
@@ -46,7 +49,8 @@ class SoftModes_test(unittest.TestCase):
         # system = Crystal(scaled_positions=tmp.get_scaled_positions(),
         #                  cell=tmp.get_cell(),
         #                  symbols=tmp.get_chemical_symbols())
-        freq, eigvector = calcSoftModes(system)
+        bonds = self.bonds.getMinimalGraphBonds(system)
+        freq, eigvector = calcSoftModes(system, bonds)
 
     def test_MgAlO_system_3(self):
         print('Test MgAlO 3')
@@ -58,7 +62,8 @@ class SoftModes_test(unittest.TestCase):
         # system = Crystal(scaled_positions=tmp.get_scaled_positions(),
         #                  cell=tmp.get_cell(),
         #                  symbols=tmp.get_chemical_symbols())
-        freq, eigvector = calcSoftModes(system)
+        bonds = self.bonds.getMinimalGraphBonds(system)
+        freq, eigvector = calcSoftModes(system, bonds)
 
     # Carbon systems
     def test_graphite(self):
@@ -70,7 +75,8 @@ class SoftModes_test(unittest.TestCase):
                                  cell = cell)
         # graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         N = len(graphite)
-        freq, eigvector = calcSoftModes(graphite)
+        bonds = self.bonds.getMinimalGraphBonds(graphite)
+        freq, eigvector = calcSoftModes(graphite, bonds)
 
         freq_ref = [-3.14018492e-16, -2.07235140e-17, 0.00000000e+00, 0.00000000e+00, 2.74458612e-23, 7.54840750e-17,
                      1.78390610e-16, 8.28730183e-03, 2.70874463e+00,  2.70874473e+00,  2.70892967e+00,  2.70893071e+00]
@@ -89,7 +95,8 @@ class SoftModes_test(unittest.TestCase):
         # graphite = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         # graphite *= 2
         N = len(graphite)
-        freq, eigvector = calcSoftModes(graphite)
+        bonds = self.bonds.getMinimalGraphBonds(graphite)
+        freq, eigvector = calcSoftModes(graphite, bonds)
 
         freq_ref = [ -6.88734374e-16 , -5.81698639e-16 , -5.81698639e-16 , -3.31208915e-16,
                      -2.44283384e-16 , -2.44283384e-16 , -2.00449320e-16 , -2.00449320e-16,
@@ -128,7 +135,8 @@ class SoftModes_test(unittest.TestCase):
                                  cell = cell)
         # diamond = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         N = len(diamond)
-        freq, eigvector = calcSoftModes(diamond)
+        bonds = self.bonds.getMinimalGraphBonds(diamond)
+        freq, eigvector = calcSoftModes(diamond, bonds)
         freq_ref = [ -2.22044605e-16, -2.22044605e-16, -2.22044605e-16,  1.66088535e+00, 1.66088535e+00,  1.66088535e+00]
         self.assertTrue(np.allclose(freq, freq_ref))
 
@@ -144,7 +152,8 @@ class SoftModes_test(unittest.TestCase):
         # diamond = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
         # diamond *= 2
         N = len(diamond)
-        freq, eigvector = calcSoftModes(diamond)
+        bonds = self.bonds.getMinimalGraphBonds(diamond)
+        freq, eigvector = calcSoftModes(diamond, bonds)
 
         freq_ref = [ -4.81633103e-16,  -2.68342179e-16 , -2.38233999e-16 , -2.38233999e-16,
                      -2.07559197e-16,  -2.07559197e-16 , -9.21082950e-17 , -9.21082950e-17,
@@ -171,7 +180,8 @@ class SoftModes_test(unittest.TestCase):
                                  cell = cell)
         # system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
 
-        freq, eigvector = calcSoftModes(system)
+        bonds = self.bonds.getMinimalGraphBonds(system)
+        freq, eigvector = calcSoftModes(system, bonds)
 
     def test_MgO_2(self):
         print('Test MgO 2')
@@ -182,4 +192,5 @@ class SoftModes_test(unittest.TestCase):
                                  cell = cell)
         # system = Crystal(symbols=symbols, scaled_positions=tmp.get_scaled_positions(), cell=tmp.get_cell())
 
-        freq, eigvector = calcSoftModes(system)
+        bonds = self.bonds.getMinimalGraphBonds(system)
+        freq, eigvector = calcSoftModes(system, bonds)

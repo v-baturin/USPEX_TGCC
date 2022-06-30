@@ -14,6 +14,7 @@ class Softmodemutation:
     def __init__(self, utilities, degree: float = None):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.environmentUtility = utilities.environmentUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
@@ -31,7 +32,8 @@ class Softmodemutation:
             if ID in self.knownSystems:
                 frequencies, eigenVectors = self.knownSystems[ID]
             else:
-                frequencies, eigenVectors = calcSoftModes(structure)
+                bonds = self.bonds.getMinimalGraphBonds(structure)
+                frequencies, eigenVectors = calcSoftModes(structure, bonds)
                 self.knownSystems[ID] = (frequencies, eigenVectors)
             while len(frequencies) > 0:
                 freq = frequencies.pop(0)
