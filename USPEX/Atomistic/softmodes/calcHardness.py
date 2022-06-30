@@ -6,8 +6,6 @@ from scipy.stats import gmean
 from itertools import chain
 
 from ..Element import Element
-from .getMinimalGraphBonds import getMinimalGraphBonds
-
 
 
 def calcHardness(system, bonds) -> float:
