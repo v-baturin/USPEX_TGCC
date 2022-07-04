@@ -268,12 +268,10 @@ class USPEXClassic(object):
         mostDiverse = []
         while deltaTol > 0.000001:
             for system in population:
-                goodSystem = True
                 for ref_system in mostDiverse:
-                    if self.fingerprintUtility.dist(system, ref_system) < tolerance:
-                        goodSystem = False
+                    if self.fingerprintUtility.equal(system, ref_system, tolerance):
                         break
-                if goodSystem:
+                else:
                     mostDiverse.append(system)
             if len(mostDiverse) < howManyDiverse:
                 tolerance -= deltaTol

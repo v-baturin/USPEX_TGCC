@@ -125,9 +125,9 @@ For submission details of each stage see parameters.txt.
 | 9  | TopRandom |    -647.638   |    205.861   |  P2_1    (4)   |
 +----+-----------+---------------+--------------+----------------+
     Generation Summary
-      Correlation coefficient: 0.497
+      Correlation coefficient: 0.4641
       Approximate volume(s)  : 208.2 A^3
-      Quasi entropy          : 0.2456
+      Quasi entropy          : 0.2265
 
  Generation    1
      Best and diverse structures from previous generation
@@ -157,9 +157,9 @@ For submission details of each stage see parameters.txt.
 | 19 | TopRandom |    -647.766   |    206.538   | P1      (1)  |
 +----+-----------+---------------+--------------+--------------+
     Generation Summary
-      Correlation coefficient: -0.05424
+      Correlation coefficient: -0.03616
       Approximate volume(s)  : 205.0 A^3
-      Quasi entropy          : 0.1868
+      Quasi entropy          : 0.164
 
  Generation    2
      Best and diverse structures from previous generation
@@ -189,7 +189,7 @@ For submission details of each stage see parameters.txt.
 | 29 | TopRandom |    -641.818   |    207.387   |  P1      (1)  |
 +----+-----------+---------------+--------------+---------------+
     Generation Summary
-      Correlation coefficient: -0.4889
+      Correlation coefficient: -0.5008
       Approximate volume(s)  : 204.4 A^3
-      Quasi entropy          : 0.1897
+      Quasi entropy          : 0.172
 
