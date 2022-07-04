@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.linalg import norm
 from scipy.spatial.distance import cdist
 from ..AtomicPrimitives import AtomicStructure
+from .. Element import Element
 
 
 class AddAtom:
@@ -20,31 +21,33 @@ class AddAtom:
         structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)  # ,environment)
 
         # choose it with surface + database utility, type(atom1) = class AtomicStructure
-        atom1, atom2 = AtomicStructure(['Si'], np.array([[0,0,0]])), \
-                       AtomicStructure(['Si'], np.array([[0,0,2.5]]))
-        atom1coord = atom1.getCartesianCoordinates()
-        atom2coord = atom2.getCartesianCoordinates()
-        newAtomType = 'Si'  # how is chosen? If molecule?
-        covRad1 = atom1.getAtomTypes()[0].covalent_radius
-        covRad2 = atom2.getAtomTypes()[0].covalent_radius
+        atom1Type = Element('Si')
+        atom2Type = Element('Si')
+        atom1coord = np.array([[0, 0, 0]])
+        atom2coord = np.array([[0, 0, 2.5]])
+        newAtomType = Element('Si')  # how is chosen? If molecule?
+        covRad1 = atom1Type.covalent_radius
+        covRad2 = atom2Type.covalent_radius
         covRadNew = newAtomType.covalent_radius
         massCenter = structure.getCenterOfMassFractionalCoordinates()  # of all structure?
-        vectorInPlain = 0.5*(atom1coord + atom2coord) - massCenter
+        edgeCenter = 0.5*(atom1coord + atom2coord)
+        vectorInPlain = edgeCenter - massCenter
         surfaceVector = atom1coord-atom2coord
-        if norm(surfaceVector) > covRad1 + covRad2 + 2*covRadNew:
+        surfaceNorm = norm(surfaceVector)
+        surfaceVector /= surfaceNorm
+        newBondLength = covRadNew + np.max([covRad1, covRad2])
+        if surfaceNorm/2 > newBondLength:
             # adding atom between atom1 and atom2
             # If molecule?
-            newAtomCoords = 0.5*(atom1coord + atom2coord)
+            newAtomCoords = edgeCenter
         else:
-            normalVector = vectorInPlain - np.dot(vectorInPlain, surfaceVector)/norm(surfaceVector)**2 * surfaceVector
-            newBonDLength = covRadNew + np.max([covRad1, covRad2])
-            newAtomCoords = 0.5*(atom1coord + atom2coord) +\
-                            (norm(newBonDLength)**2 - norm(0.5*surfaceVector)**2)**0.5 * normalVector +\
-                            0.01*np.random.rand(3)
-        newStructure = np.concatenate(structure.getCartesianCoordinates(), np.reshape(newAtomCoords, (3,1)), axis=0)
+            normal = vectorInPlain - np.dot(vectorInPlain, surfaceVector)
+            normal /= norm(normal)
+            newAtomCoords = edgeCenter + (newBondLength**2 - (surfaceNorm/2)**2)**0.5 * normal + 0.01*np.random.rand(3)
+        newStructure = np.concatenate((structure.getCartesianCoordinates(), np.reshape(newAtomCoords, (3, 1))), axis=0)
         # to molecule?
         # new structure must be added to database
-        return AtomicStructure(structure.getAtomTypes()+newAtomType, newStructure)
+        return AtomicStructure(structure.getAtomTypes()+[newAtomType], newStructure)
 
     @classmethod
     def createAtomDatabase(cls, structure, cell):
