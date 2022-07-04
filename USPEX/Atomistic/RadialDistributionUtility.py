@@ -153,7 +153,8 @@ class RadialDistributionUtility(object):
     Utility for working with radial distribution related properties of systems.
     """
 
-    def __init__(self, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT):
+    def __init__(self, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
+                 legacy=False):
         """
         :type Rmax: float
         :param Rmax: threshold distance between i-th anf j-th atom.
@@ -168,6 +169,7 @@ class RadialDistributionUtility(object):
         self.sigma = sigma
         self.delta = delta
         self.tolerance = tolerance
+        self.legacy = legacy
         self.distances = DataFrame(dtype=float)
 
     def structureFingerprint(self, system):
@@ -483,21 +485,24 @@ class RadialDistributionUtility(object):
 
         :return: distance between systems.
         """
-        if 'ID' in system1 and 'ID' in system2:
-            id1 = system1['ID']
-            id2 = system2['ID']
-            if id1 in self.distances and id2 in self.distances:
-                dist = self.distances.loc[id1, id2]
-                if not isna(dist):
-                    return float(dist)
-        cf1 = self.complexFingerprint(system1)
-        cf2 = self.complexFingerprint(system2)
-        dist = cf1.cosineDistance(cf1, cf2)
-        if 'ID' in system1 and 'ID' in system2:
-            df = DataFrame(index=[id1, id2], columns=[id1, id2],
-                           data=[[0, dist], [dist, 0]])
-            self.distances = self.distances.combine_first(df)
-        return dist
+        if self.legacy:
+            return Fingerprint.cosine_distance(self.structureFingerprint(system1), self.structureFingerprint(system2))
+        else:
+            if 'ID' in system1 and 'ID' in system2:
+                id1 = system1['ID']
+                id2 = system2['ID']
+                if id1 in self.distances and id2 in self.distances:
+                    dist = self.distances.loc[id1, id2]
+                    if not isna(dist):
+                        return float(dist)
+            cf1 = self.complexFingerprint(system1)
+            cf2 = self.complexFingerprint(system2)
+            dist = cf1.cosineDistance(cf1, cf2)
+            if 'ID' in system1 and 'ID' in system2:
+                df = DataFrame(index=[id1, id2], columns=[id1, id2],
+                               data=[[0, dist], [dist, 0]])
+                self.distances = self.distances.combine_first(df)
+            return dist
 
     def equal(self, system1, system2, tolerance=None):
         """
