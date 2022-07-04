@@ -9,12 +9,9 @@ Class for PowderSpectrumAnalyzer testing
 
 import os
 import unittest
-import numpy as np
+from os.path import join as pj
 
-from ase.io.vasp import read_vasp
-from ...Atomistic.CellUtility import Cell
-from ...components import SimpleMoleculeUtility
-
+from ...components import AtomisticRepresentation
 from ..PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
 PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
@@ -22,14 +19,8 @@ PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 
 class SpectrumAnalyzer_Test(unittest.TestCase):
     def setUp(self):
-        tmp = read_vasp('{}/Na8Cl24.vasp'.format(PATH_WITH_TESTS))
-        simpleMoleculeUtility = SimpleMoleculeUtility()
-        cell = Cell(tmp.get_cell().array, (1, 1, 1))
-        symbols, indices = np.unique(tmp.get_chemical_symbols(), return_inverse=True)
-        coordinates = {s: [] for s in symbols}
-        for index, coord in zip(indices, tmp.get_scaled_positions()):
-            coordinates[symbols[index]].append([coord])
-        self.system = simpleMoleculeUtility.populateStructure(cell, coordinates, None)
+        with open(pj(PATH_WITH_TESTS, 'Na8Cl24.vasp'), 'rt') as f:
+            self.system = AtomisticRepresentation.readAtomicStructure(f)
         self.system['ID'] = 0
 
     def test(self):

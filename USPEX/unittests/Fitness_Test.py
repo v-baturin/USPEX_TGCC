@@ -9,15 +9,14 @@ Class for Fitness testing
 
 import unittest
 import numpy as np
-from ase.io import read
 import os
+from os.path import join as pj
 from types import SimpleNamespace
 
 
 from ..Fitness import Fitness
-from ..SystemPool import SystemPool
-from ..components import CompositionSpace, SimpleMoleculeUtility
-from ..Atomistic.CellUtility import Cell
+from ..components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation
+from ..Atomistic.AtomicPrimitives import AtomicStructure
 from ..Atomistic.RadialDistributionUtility import Fingerprint
 from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
@@ -33,37 +32,31 @@ class System(object):
 
 class Fitness_Test(unittest.TestCase):
     def setUp(self) -> None:
-        self.simpleMoleculeUtility = SimpleMoleculeUtility()
-        coordinates = {'Mg':[[np.asarray([0.,0.,0.,])]*4],
-                       'Al':[[np.asarray([0.,0.,0.,])]*8],
-                       'O':[[np.asarray([0.,0.,0.,])]*16]}
-        system = self.simpleMoleculeUtility.populateStructure(Cell(np.eye(3),(1,1,1)),
-                                                                 coordinates, None)
-        molecules = system['molecules']
+        molecules = [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
+                     for symbol in ['Mg'] * 4 + ['Al'] * 8 + ['O'] * 16]
         self.systems = [{'ID': 0, 'molecules': molecules, 'enthalpy': -646.695,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
                         {'ID': 1, 'molecules': molecules, 'enthalpy': -644.480,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2]}, None, None)},
                         {'ID': 2, 'molecules': molecules, 'enthalpy': -650.098,
-                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
                         {'ID': 3, 'molecules': molecules, 'enthalpy': -649.082,
-                         'fingerprint': Fingerprint({'b': [0.1,-0.5]}, None)},
+                         'fingerprint': Fingerprint({'b': [0.1,-0.5]}, None, None)},
                         {'ID': 4, 'molecules': molecules, 'enthalpy': -651.279,
-                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
                         {'ID': 5, 'molecules': molecules, 'enthalpy': -643.925,
-                         'fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None, None)},
                         {'ID': 6, 'molecules': molecules, 'enthalpy': -652.042,
-                         'fingerprint': Fingerprint({'b': [0.1,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'b': [0.1,-0.2]}, None, None)},
                         {'ID': 7, 'molecules': molecules, 'enthalpy': -648.368,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
                         {'ID': 8, 'molecules': molecules, 'enthalpy': -648.335,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)}]
-        self.pool = SystemPool()
-        self.pool.update(self.systems)
-        self.compositionSpace = CompositionSpace(symbols=['Mg','Al','O'], blocks=[[4,8,16]], range=[[1,1]])
-        utilities = SimpleNamespace(compositionSpace = self.compositionSpace,
-                                    simpleMoleculeUtility = self.simpleMoleculeUtility)
-        self.fitness = Fitness(self.pool.uniqueSystems, utilities)
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)}]
+        self.compositionSpace = CompositionSpace(symbols=['Mg', 'Al', 'O'], blocks=[[4, 8, 16]], range=[[1, 1]])
+        self.simpleMoleculeUtility = SimpleMoleculeUtility()
+        utilities = SimpleNamespace(compositionSpace=self.compositionSpace,
+                                    simpleMoleculeUtility=self.simpleMoleculeUtility)
+        self.fitness = Fitness(tuple(self.systems), utilities)
 
     def test_enthalpy(self):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
@@ -195,32 +188,22 @@ class Fitness_Test(unittest.TestCase):
 class FitnessXray_Test(unittest.TestCase):
     def setUp(self) -> None:
         # 'externalPressure': 135,
-        with open(os.path.join(HOMEPATH,'XRay_POSCARS'), 'rt') as f:
-            aseSystems = [read(f, format='vasp') for i in range(10)]
+        with open(pj(HOMEPATH,'XRay_POSCARS'), 'rt') as f:
+            self.systems = [AtomisticRepresentation.readAtomicStructure(f) for i in range(10)]
         enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
-        self.systems = []
-        simpleMoleculeUtility = SimpleMoleculeUtility()
-        for ID, atoms, enthalpy in zip(range(10), aseSystems, enthalpies):
-            cell = Cell(atoms.get_cell().array, (1,1,1))
-            symbols, indices = np.unique(atoms.get_chemical_symbols(), return_inverse=True)
-            coordinates = {s: [] for s in symbols}
-            for index, coord in zip(indices, atoms.get_scaled_positions()):
-                coordinates[symbols[index]].append([coord])
-            system = simpleMoleculeUtility.populateStructure(cell, coordinates, None)
+        for ID, system in enumerate(self.systems):
             system['ID'] = ID
-            system['enthalpy'] = enthalpy
-            self.systems.append(system)
-        self.pool = SystemPool()
-        self.pool.update(self.systems)
-        self.compositionSpace = CompositionSpace(symbols = ['Ba', 'H'], blocks = [[1, 12]], range = [[4, 4]])
+            system['enthalpy'] = enthalpies[ID]
 
-        self.powderSpectrumAnalyzer = PowderSpectrumAnalyzer(**PowderSpectrumAnalyzer.parse(os.path.join(HOMEPATH, 'spectrum.txt')))
+        self.compositionSpace = CompositionSpace(symbols=['Ba', 'H'], blocks=[[1, 12]], range=[[4, 4]])
+        self.powderSpectrumAnalyzer = PowderSpectrumAnalyzer(**PowderSpectrumAnalyzer.parse(pj(HOMEPATH, 'spectrum.txt')))
+        self.simpleMoleculeUtility = SimpleMoleculeUtility()
 
-        utilities = SimpleNamespace(compositionSpace = self.compositionSpace,
-                                    powderSpectrumAnalyzer = self.powderSpectrumAnalyzer,
-                                    simpleMoleculeUtility = simpleMoleculeUtility)
+        utilities = SimpleNamespace(compositionSpace=self.compositionSpace,
+                                    powderSpectrumAnalyzer=self.powderSpectrumAnalyzer,
+                                    simpleMoleculeUtility=self.simpleMoleculeUtility)
 
-        self.fitness = Fitness(self.pool.uniqueSystems, utilities)
+        self.fitness = Fitness(tuple(self.systems), utilities)
 
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]

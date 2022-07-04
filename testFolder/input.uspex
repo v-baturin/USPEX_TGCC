@@ -21,11 +21,11 @@
             }
         }
     }
-    stages: [gulp gulp gulp gulp gulp]
+    stages: [glp glp glp glp glp]
     numParallelCalcs: 2
     numGenerations: 3
     stopCrit: 3
 }
 
-#define gulp
+#define glp
 {type : gulp, commandExecutable : 'gulp', goptions : './Specific/goptions'}

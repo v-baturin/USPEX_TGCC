@@ -1,7 +1,7 @@
 from os.path import join, expanduser, exists, dirname
 from os import makedirs
 
-from .IO.InputParser import read, write
+from .IO.InputParser import read
 
 
 FILENAME = join(expanduser('~'), '.config/uspex/presets.uspex')

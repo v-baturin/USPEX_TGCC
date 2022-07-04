@@ -1,14 +1,12 @@
 import logging
 import os
-import sys
 import asyncio
 import pickle as pcl
 from shutil import copyfile
 from copy import copy, deepcopy
 from enum import Enum
 
-from .Calculators.LifeState import LifeState
-from .Calculators.Common.SHELL_Calculator import SHELL_Calculator, ReferenceMismatch
+from .LifeState import LifeState
 from .IO.OutputRepresentation import OutputRepresentation
 from .IO.InputParser import read
 from .IO.compileParams import compileParams
@@ -31,6 +29,17 @@ class GenerationController(object):
     DUMP_FILENAME = "controller.dump"
     DUMP_FILENAME_BACKUP = "controller.dump.back"
     knownOptimizers = {}
+    knownStages = {}
+
+    @classmethod
+    def registerOptimizer(cls, optimizerType: type):
+        assert optimizerType.__name__ not in cls.knownOptimizers
+        cls.knownOptimizers[optimizerType.__name__] = optimizerType
+
+    @classmethod
+    def registerStage(cls, name, stageType: type):
+        assert name not in cls.knownStages
+        cls.knownStages[name] = stageType
 
     def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages : list,
                  optimizer, outputRepresentation, outputRefreshDelay):
@@ -52,6 +61,39 @@ class GenerationController(object):
         self.systems = {}
 
         self.save()
+
+    @staticmethod
+    def createController():
+        if os.path.exists(GenerationController.DUMP_FILENAME):
+            with open(GenerationController.DUMP_FILENAME, 'rb') as f:
+                controller = pcl.load(f)
+            logger.info('Calculation initialized from dump file.')
+        elif os.path.exists(GenerationController.INPUT_FILENAME):
+            params = compileParams(read(GenerationController.INPUT_FILENAME))
+            optimizer = params['optimizer']
+            numParallelCalcs = params['numParallelCalcs']
+            numGenerations = params['numGenerations']
+            stopCrit = params['stopCrit']
+            outputRefreshDelay = params['outputRefreshDelay'] if 'outputRefreshDelay' in params \
+                else DEFAULT_OUTPUT_REFRESH_DELAY
+
+            if optimizer['type'] in GenerationController.knownOptimizers:
+                optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
+            else:
+                RuntimeError(f"Unknown optimizer type: {optimizer['type']}.")
+            stages = []
+            for stage in params['stages']:
+                if 'stageType' in stage:
+                    stages.append(GenerationController.knownStages[stage.pop('stageType')](**stage))
+                else:
+                    stages.append(GenerationController.knownStages['execute'](**stage))
+            outputRepresentation = OutputRepresentation(optimizer, **params)
+            controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
+                                              outputRepresentation, outputRefreshDelay)
+            logger.info('Calculation initialized from input parameters.')
+        else:
+            raise RuntimeError('No input or dump file to start.')
+        return controller
 
     async def run(self):
         self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
@@ -109,9 +151,6 @@ class GenerationController(object):
             else:
                 try:
                     await stage.run(system)
-                except ReferenceMismatch:
-                    exc_info = sys.exc_info()
-                    raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
                 except Exception as ex:
                     logger.warning(f'system {ID} error in relaxation:')
                     logger.exception(ex)
@@ -138,38 +177,3 @@ class GenerationController(object):
             copyfile(GenerationController.DUMP_FILENAME, GenerationController.DUMP_FILENAME_BACKUP)
         with open(GenerationController.DUMP_FILENAME, 'wb') as f:
             pcl.dump(self, f)
-
-    @staticmethod
-    def createController():
-        if os.path.exists(GenerationController.DUMP_FILENAME):
-            with open(GenerationController.DUMP_FILENAME, 'rb') as f:
-                controller = pcl.load(f)
-            logger.info('Calculation initialized from dump file.')
-        elif os.path.exists(GenerationController.INPUT_FILENAME):
-            input = read(GenerationController.INPUT_FILENAME)
-            params = compileParams(**input)
-            optimizer = params['optimizer']
-            stages = params['stages']
-            numParallelCalcs = params['numParallelCalcs']
-            numGenerations = params['numGenerations']
-            stopCrit = params['stopCrit']
-            outputRefreshDelay = params['outputRefreshDelay'] if 'outputRefreshDelay' in params \
-                else DEFAULT_OUTPUT_REFRESH_DELAY
-
-            if optimizer['type'] in GenerationController.knownOptimizers:
-                optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
-            else:
-                RuntimeError(f"Unknown optimizer type: {optimizer['type']}.")
-            stages = [SHELL_Calculator(**stage) for stage in stages]
-            outputRepresentation = OutputRepresentation(optimizer, **params)
-            controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
-                                              outputRepresentation, outputRefreshDelay)
-            logger.info('Calculation initialized from input parameters.')
-        else:
-            raise RuntimeError('No input or dump file to start.')
-        return controller
-
-    @staticmethod
-    def registerOptimizer(optimizerType: type):
-        assert optimizerType.__name__ not in GenerationController.knownOptimizers
-        GenerationController.knownOptimizers[optimizerType.__name__] = optimizerType

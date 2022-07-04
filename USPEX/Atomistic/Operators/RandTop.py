@@ -11,7 +11,7 @@ import time
 
 from sympy.combinatorics.partitions import Partition, RGS_rank
 
-from ...SpaceGroups.TopologicalNet import TopologicalNet
+from ..SymmetricStructure import SymmetricStructure
 from ...SpaceGroups.SpaceGroups3D import Group
 
 
@@ -32,6 +32,7 @@ class RandTop:
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.conditions = utilities.conditions
         self.supercells = supercells
         self.maxSupersize = maxSupersize
@@ -59,7 +60,7 @@ class RandTop:
             supersize = totalAtomNumber // params['totalAtomNumber']
             if supersize > self.maxSupersize:
                 continue
-            net = TopologicalNet(name, Group.getGroupFromSymbol(params['groupName']), params['nods'], params['bonds'])
+            net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
             logger.debug(f'Trying {name} topology with {params["groupName"]} symmetry')
             supercells = decompose3(supersize) if self.supercells is None \
                 else [supercell for supercell in self.supercells if np.prod(supercell) == supersize]
@@ -70,7 +71,7 @@ class RandTop:
                     topend = time.perf_counter()
                     if topend - topstart > 15:
                         break
-                    if len(flavour.nodes) >= len(numberOfAtoms):
+                    if len(flavour.sites) >= len(numberOfAtoms):
                         atomPermutations = list(itertools.permutations(enumerate(numberOfAtoms)))
                         for nodePartition in randomPartitionSampler(len(flavour.multiplicities), len(numberOfAtoms), 50):
                             logger.debug(f'Trying {nodePartition} partition')
@@ -83,7 +84,7 @@ class RandTop:
                                     operations = []
                                     for atomNumber in np.argsort(permutationAtoms):
                                         nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=np.int)
-                                        coordinates.append(flavour.group(flavour.nodes[nodeIndices]))
+                                        coordinates.append(flavour.group(flavour.sites[nodeIndices]))
                                         operations.append([flavour.operations[ind] for ind in nodeIndices])
                                     cell = np.asarray(params['cell']) * np.asarray(supercell)
 
@@ -102,11 +103,10 @@ class RandTop:
                                     cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber)
                                     operations = dict(zip(symbols, operations))
                                     all_coordinates = np.vstack([*itertools.chain(*coordinates)])
-                                    coordinates = dict(zip(symbols, coordinates))
                                     attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
 
                                     for i in range(attemptsRotation):
-                                        system = self.simpleMoleculeUtility.populateStructure(cell, coordinates, operations)
+                                        system = self.simpleMoleculeUtility.populateStructure(cell, operations)
                                         molecules = system['molecules']
                                         cell = system['cell']
                                         if len(molecules) != totalAtomNumber:
@@ -124,7 +124,10 @@ class RandTop:
                                                 self.arxiv[name].append(all_coordinates)
                                                 self.environmentUtility.putEnvironment(system)
                                                 self.conditions.putConditions(system)
-                                                return (system,)
+                                                structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(
+                                                    **system)
+                                                if self.bonds.isConnected(structure):
+                                                    return (system,)
         raise RuntimeError("RandTop failed.")
 
 

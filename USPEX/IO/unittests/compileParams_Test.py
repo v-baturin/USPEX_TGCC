@@ -17,46 +17,43 @@ class CompileParams_Test(unittest.TestCase):
 
     def test_stages(self):
         definitions = {
-            'main':{
-                'optimizer': {
-                    'type': 'GlobalOptimizer',
-                    'target': {
-                        'type': 'Crystal',
-                        'conditions': {'externalPressure': 100},
-                        'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
-                                             'blocks': [[4, 8, 16]]}
-                    },
-                    'optType': 'enthalpy',
-                    'stopFitness': -655.062,
-                    'selection': {
-                        'type': 'USPEXClassic',
-                        'popSize': 10,
-                        'optType': ('aging', 'enthalpy'),
-                        'fractions': {
-                            'heredity': [0.0, 1.0, 0.5],
-                            'twinning': [0.0, 1.0, 0.1],
-                            'softmodemutation': [0.0, 1.0, 0.1],
-                            'randSym': [0.0, 1.0, 0.0],
-                            'randTop': [0.0, 1.0, 0.2],
-                            'permutation': [0.0, 1.0, 0.1]
-                        }
-                    }
+            'optimizer': {
+                'type': 'GlobalOptimizer',
+                'target': {
+                    'type': 'Atomistic',
+                    'conditions': {'externalPressure': 100},
+                    'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
+                                         'blocks': [[4, 8, 16]]},
                 },
-                'stages': ['gulp', 'gulp', 'gulp', 'gulp', 'gulp5'],
-                'numParallelCalcs': 2,
-                'numGenerations': 3,
-                'stopCrit': 3
+                'optType': 'enthalpy',
+                'selection': {
+                    'type': 'USPEXClassic',
+                    'popSize': 40,
+                    'bestFrac': 0.6,
+                    'optType': ('aging', 'enthalpy'),
+                    'fractions': {
+                        'heredity': (0.1, 1.0, 0.5),
+                        'softmodemutation': (0.1, 1.0, 0.2),
+                        'randSym': (0.05, 1.0, 0.1),
+                        'randTop': (0.05, 1.0, 0.1),
+                        'permutation': (0.05, 1.0, 0.1)
+                    }
+                }
             },
-        'gulp': {'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions'},
-        'gulp5': {'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions',
-                  'ginput' : './Specific/ginput_4'}
-
+            'stages': [
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'}],
+            'numParallelCalcs': 20,
+            'numGenerations': 60,
+            'stopCrit': 30
         }
         params_ref = {
             'optimizer': {
                 'type': 'GlobalOptimizer',
                 'target': {
-                    'type': 'Crystal',
+                    'type': 'Atomistic',
                     'conditions': {'externalPressure': 100},
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
@@ -64,64 +61,61 @@ class CompileParams_Test(unittest.TestCase):
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
-                'stopFitness': -655.062,
                 'selection': {
                     'type': 'USPEXClassic',
-                    'popSize': 10,
+                    'popSize': 40,
+                    'bestFrac': 0.6,
                     'optType': ('aging', 'enthalpy'),
                     'fractions': {
-                        'heredity': [0.0, 1.0, 0.5],
-                        'twinning': [0.0, 1.0, 0.1],
-                        'softmodemutation': [0.0, 1.0, 0.1],
-                        'randSym': [0.0, 1.0, 0.0],
-                        'randTop': [0.0, 1.0, 0.2],
-                        'permutation': [0.0, 1.0, 0.1]
+                        'heredity': (0.1, 1.0, 0.5),
+                        'softmodemutation': (0.1, 1.0, 0.2),
+                        'randSym': (0.05, 1.0, 0.1),
+                        'randTop': (0.05, 1.0, 0.1),
+                        'permutation': (0.05, 1.0, 0.1)
                     }
                 }
             },
             'stages': [
-                {'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions', 'tag': '1'},
-                {'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions', 'tag': '2'},
-                {'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions', 'tag': '3'},
-                {'type' : 'gulp', 'commandExecutable' : 'gulp', 'goptions' : './Specific/goptions', 'tag': '4'},
-                {'type': 'gulp', 'commandExecutable': 'gulp', 'goptions': './Specific/goptions',
-                 'ginput': './Specific/ginput_4', 'tag': '5'}],
-            'numParallelCalcs': 2,
-            'numGenerations': 3,
-            'stopCrit': 3
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '2'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '3'},
+                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '4'}],
+            'numParallelCalcs': 20,
+            'numGenerations': 60,
+            'stopCrit': 30
         }
-        params = compileParams(**definitions)
+        params = compileParams(definitions)
         self.assertEqual(params, params_ref)
 
     def test_molecules(self):
         definitions = {
-            'main':{
-                'optimizer': {
-                    'type': 'GlobalOptimizer',
-                    'target': {
-                        'type': 'Crystal',
-                        'conditions': {'externalPressure': 100},
-                        'compositionSpace': {'symbols': ['mol_h2o'],
-                                             'blocks': [[4]],
-                                             'range': [[1,1]]}
-                    },
-                    'optType': 'enthalpy',
-                    'selection': {},
+            'optimizer': {
+                'type': 'GlobalOptimizer',
+                'target': {
+                    'type': 'Atomistic',
+                    'conditions': {'externalPressure': 20.0},
+                    'compositionSpace': {'symbols': [{'name': 'mol_h2o', 'filename': 'MOL_H2O'}],
+                                         'blocks': [[4]]},
                 },
-                'stages': [],
-                'numParallelCalcs': 2,
-                'numGenerations': 3,
-                'stopCrit': 3
+                'optType': 'enthalpy',
+                'selection': {'type': 'USPEXClassic',
+                              'optType': ('aging', 'enthalpy'),
+                              'popSize': 20,
+                              'fractions': {'heredity': (0.1, 1.0, 0.5),
+                                             'softmodemutation': (0.1, 1.0, 0.3),
+                                             'randTop': (0.1, 1.0, 0.2)}}
             },
-        'mol_h2o': {'filename': 'MOL_H2O'}
-
+            'stages': [],
+            'numParallelCalcs': 20,
+            'numGenerations': 30,
+            'stopCrit': 6,
         }
         params_ref = {
             'optimizer': {
                 'type': 'GlobalOptimizer',
                 'target': {
-                    'type': 'Crystal',
-                    'conditions': {'externalPressure': 100},
+                    'type': 'Atomistic',
+                    'conditions': {'externalPressure': 20.0},
                     'simpleMoleculeUtility': {'molecules': {'mol_h2o': {'symbols': ['H', 'O', 'H'],
                                                                         'labels': ['', '', ''],
                                                                         'positions': [[0.0, -0.1988, -0.7632],
@@ -130,29 +124,32 @@ class CompileParams_Test(unittest.TestCase):
                                                                         'configZMatrix': [[0, 0, 0],[1, 0, 0],[2, 1, 0]],
                                                                         'flexDihedrals': []}}},
                     'compositionSpace': {'symbols': ['mol_h2o'],
-                                         'blocks': [[4]],
-                                         'range': [[1,1]]},
+                                         'blocks': [[4]]},
                     'ionDistances': {'volumeType': 0.5}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
-                'selection': {'optType': 'enthalpy'}
+                'selection': {'type': 'USPEXClassic',
+                              'optType': ('aging', 'enthalpy'),
+                              'popSize': 20,
+                              'fractions': {'heredity': (0.1, 1.0, 0.5),
+                                             'softmodemutation': (0.1, 1.0, 0.3),
+                                             'randTop': (0.1, 1.0, 0.2)}}
             },
             'stages': [],
-            'numParallelCalcs': 2,
-            'numGenerations': 3,
-            'stopCrit': 3,
+            'numParallelCalcs': 20,
+            'numGenerations': 30,
+            'stopCrit': 6,
         }
-        params = compileParams(**definitions)
+        params = compileParams(definitions)
         self.assertEqual(params, params_ref)
 
     def test_XRay(self):
         definitions = {
-            'main':{
                 'optimizer': {
                     'type': 'GlobalOptimizer',
                     'target': {
-                        'type': 'Crystal',
+                        'type': 'Atomistic',
                         'conditions': {'externalPressure': 100},
                         'powderSpectrumAnalyzer': 'spectrum.txt',
                         'compositionSpace': {'symbols': ['Na', 'Cl'],
@@ -166,13 +163,12 @@ class CompileParams_Test(unittest.TestCase):
                 'numParallelCalcs': 2,
                 'numGenerations': 3,
                 'stopCrit': 3
-            }
         }
         params_ref = {
             'optimizer': {
                 'type': 'GlobalOptimizer',
                 'target': {
-                    'type': 'Crystal',
+                    'type': 'Atomistic',
                     'conditions': {'externalPressure': 100},
                     'powderSpectrumAnalyzer': PowderSpectrumAnalyzer.parse('spectrum.txt'),
                     'compositionSpace': {'symbols': ['Na', 'Cl'],
@@ -189,5 +185,5 @@ class CompileParams_Test(unittest.TestCase):
             'numGenerations': 3,
             'stopCrit': 3,
         }
-        params = compileParams(**definitions)
+        params = compileParams(definitions)
         self.assertEqual(params, params_ref)

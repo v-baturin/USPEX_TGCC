@@ -10,10 +10,11 @@ class Transmutation:
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
-        if self.simpleMoleculeUtility.isTrueMolecular:
-            raise RuntimeError("Transmutation does not currently work in molecular regime.")
+        # if self.simpleMoleculeUtility.isTrueMolecular:
+        #     raise RuntimeError("Transmutation does not currently work in molecular regime.")
         self.specificTrans = []
         self.howManyTrans = howManyTrans
         self.transAttempts = transAttempts
@@ -33,25 +34,28 @@ class Transmutation:
             for _ in range(self.transAttempts):
                 numberOfTrans = np.random.randint(1, self.howManyTrans + 1)
                 permutation = np.random.choice(trans, numberOfTrans)
-                transCoordinates = {}
+                operations = {}
+                operation = np.eye(4, dtype=float)
                 excluded = []
                 for i, s in permutation:
                     excluded.append(i)
-                    if s in transCoordinates:
-                        transCoordinates[s].append([molecules[i].getCenterOfMassCartesianCoordinates()])
+                    position = molecules[i].getCenterOfMassCartesianCoordinates()
+                    operation[0:3, 3] = position
+                    if s in operations:
+                        operations[s].append([[np.copy(operation)]])
                     else:
-                        transCoordinates[s] = [[molecules[i].getCenterOfMassCartesianCoordinates()]]
+                        operations[s] = [[[np.copy(operation)]]]
 
-                offspringMolecules = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
-                offspringMolecules.extend(self.simpleMoleculeUtility.populateStructure(cell, transCoordinates, None))
-
-                offspring = {'molecules': offspringMolecules, 'cell': cell}
-                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
+                offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                offspring['molecules'][0:0] = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
+                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 composition = self.simpleMoleculeUtility.composition(offspring)
                 if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
                     self.environmentUtility.putEnvironment(offspring, environment)
                     self.conditions.putConditions(offspring)
+                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
+                    # if self.bonds.isConnected(structure):
                     return (offspring,)
 
         raise RuntimeError("Transmutation failed.")
