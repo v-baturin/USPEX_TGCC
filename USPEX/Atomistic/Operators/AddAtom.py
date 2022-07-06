@@ -3,13 +3,17 @@ import pandas as pd
 from scipy.linalg import norm
 from scipy.spatial.distance import cdist
 from ..AtomicPrimitives import AtomicStructure
-from .. Element import Element
+from ..Element import Element
 
 
 class AddAtom:
     def __init__(self, utilities):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
+        self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
+        self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
         self.availableAtomsDatabase = None
 
@@ -19,35 +23,50 @@ class AddAtom:
         cell = system['cell']
         environment = system['environment'] if 'environment' in system else None
         structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)  # ,environment)
+        atomTypes = structure.getAtomTypes()
+        uniqueAtomTypes = np.unique(atomTypes)
+        coordinates = structure.getCartesianCoordinates()
 
         # choose it with surface + database utility, type(atom1) = class AtomicStructure
-        atom1Type = Element('Si')
-        atom2Type = Element('Si')
-        atom1coord = np.array([[0, 0, 0]])
-        atom2coord = np.array([[0, 0, 2.5]])
-        newAtomType = Element('Si')  # how is chosen? If molecule?
-        covRad1 = atom1Type.covalent_radius
-        covRad2 = atom2Type.covalent_radius
-        covRadNew = newAtomType.covalent_radius
-        massCenter = structure.getCenterOfMassFractionalCoordinates()  # of all structure?
+        i, j = 0, 1
+
+        atom1Type = atomTypes[i]
+        atom2Type = atomTypes[j]
+        newAtomType = np.random.choice(uniqueAtomTypes)
+        # for molecules we should estimate its radius instead of using covalent
+        newBondLength = newAtomType.covalent_radius + np.max([atom1Type.covalent_radius, atom2Type.covalent_radius])
+
+        massCenter = structure.getCenterOfMassFractionalCoordinates()
+        atom1coord = coordinates[i]
+        atom2coord = coordinates[j]
+
         edgeCenter = 0.5*(atom1coord + atom2coord)
-        vectorInPlain = edgeCenter - massCenter
-        surfaceVector = atom1coord-atom2coord
-        surfaceNorm = norm(surfaceVector)
-        surfaceVector /= surfaceNorm
-        newBondLength = covRadNew + np.max([covRad1, covRad2])
-        if surfaceNorm/2 > newBondLength:
-            # adding atom between atom1 and atom2
-            # If molecule?
+        edgeVector = atom1coord - atom2coord
+        edgeLength = norm(edgeVector)
+        edgeVector /= edgeLength
+        if edgeLength/2 > newBondLength:
             newAtomCoords = edgeCenter
         else:
-            normal = vectorInPlain - np.dot(vectorInPlain, surfaceVector)
+            vectorInPlain = edgeCenter - massCenter
+            normal = vectorInPlain - np.dot(vectorInPlain, edgeVector) * edgeVector
             normal /= norm(normal)
-            newAtomCoords = edgeCenter + (newBondLength**2 - (surfaceNorm/2)**2)**0.5 * normal + 0.01*np.random.rand(3)
-        newStructure = np.concatenate((structure.getCartesianCoordinates(), np.reshape(newAtomCoords, (3, 1))), axis=0)
-        # to molecule?
+            newAtomCoords = edgeCenter + np.sqrt(newBondLength**2 - (edgeLength/2)**2) * normal + 0.01*np.random.rand(3)
+
         # new structure must be added to database
-        return AtomicStructure(structure.getAtomTypes()+[newAtomType], newStructure)
+
+        operations = {newAtomType.short_name: [[newAtomCoords]]}
+        offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
+        offspring['molecules'][0:0] = molecules
+        atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
+        minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+        composition = self.simpleMoleculeUtility.composition(offspring)
+        if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
+            self.environmentUtility.putEnvironment(offspring, environment)
+            self.conditions.putConditions(offspring)
+            # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
+            # if self.bonds.isConnected(structure):
+            return offspring,
+
 
     @classmethod
     def createAtomDatabase(cls, structure, cell):
