@@ -15,6 +15,7 @@ class AddAtom:
         self.bonds = utilities.bonds
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
+        self.bondHardnessUtility = utilities.bondHardnessUtility
         self.availableAtomsDatabase = None
 
     def __call__(self, system):
@@ -28,6 +29,7 @@ class AddAtom:
         coordinates = structure.getCartesianCoordinates()
 
         # choose it with surface + database utility, type(atom1) = class AtomicStructure
+        coordinationNumbers = self.bondHardnessUtility.calcCoordinationNumbers(structure)
         i, j = 0, 1
 
         atom1Type = atomTypes[i]

@@ -15,6 +15,7 @@ from .Atomistic.EnvironmentUtility import EnvironmentUtility
 EnvironmentUtility.setRepresentation(AtomisticRepresentation)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from .Atomistic.CellUtility import CellUtility
+from .Atomistic.BondHardnessUtility import BondHardnessUtility
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.Conditions import Conditions
@@ -33,9 +34,9 @@ from .Atomistic.Operators.Transmutation import Transmutation
 from .Atomistic.Operators.Seeds import Seeds
 Seeds.registerTypes(AtomisticRepresentation)
 GlobalOptimizer.registerTarget('Atomistic',
-                      utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility, SimpleMoleculeUtility,
-                                 Conditions, IonDistances, Bonds, Constraints,
-                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
+                      utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
+                                 SimpleMoleculeUtility, Conditions, IonDistances, Bonds, Constraints,
+                                 BondHardnessUtility, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation],
                       creations=[RandTop, RandSym, RandSymPyXtal],
