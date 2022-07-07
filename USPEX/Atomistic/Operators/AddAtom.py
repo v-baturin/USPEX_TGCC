@@ -28,9 +28,14 @@ class AddAtom:
         uniqueAtomTypes = np.unique(atomTypes)
         coordinates = structure.getCartesianCoordinates()
 
-        # choose it with surface + database utility, type(atom1) = class AtomicStructure
         coordinationNumbers = self.bondHardnessUtility.calcCoordinationNumbers(structure)
-        i, j = 0, 1
+        deltaCNs = np.empty(atomTypes.shape, dtype=float)
+        for atomType in uniqueAtomTypes:
+            inds = (atomTypes == atomType).nonzero()
+            atomTypeCNs = coordinationNumbers[inds]
+            deltaCNs[inds] = (atomTypeCNs - atomTypeCNs.mean())**2
+        i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
+        j = i + 1
 
         atom1Type = atomTypes[i]
         atom2Type = atomTypes[j]
@@ -87,27 +92,3 @@ class AddAtom:
             availAtomDB.loc[atomInd, 'atomType'] = atomType
             availAtomDB.loc[atomInd, 'coordNum'] = cls.calculate_coordination_numbers(atomType.covalent_radius, cell,
                                                                                       structure.getCartesianCoordinates()[Natoms])
-
-    @staticmethod
-    def calculate_coordination_numbers(radii, lattice, coordinates):
-        # radii - covalent radius
-        
-        # this program calculates coordination numbers of cell with given lattice, coordinates and radii of atoms
-        # developer - Bushlanov Pavel
-        sz = 27
-        closest = np.array(
-            [[[0, 0, 0]], [[-1, 0, 0]], [[-1, 0, -1]], [[-1, -1, -1]], [[-1, -1, 0]], [[0, -1, 0]], [[0, -1, -1]],
-             [[0, 0, -1]], [[-1, -1, 1]], [[-1, 0, 1]], [[-1, 1, 1]], [[-1, 1, 0]], [[-1, 1, -1]], [[0, -1, 1]],
-             [[0, 0, 1]], [[0, 1, 1]], [[0, 1, 0]], [[0, 1, -1]], [[1, 0, 0]], [[1, 0, -1]], [[1, -1, -1]],
-             [[1, -1, 0]], [[1, -1, 1]], [[1, 0, 1]], [[1, 1, 1]], [[1, 1, 0]], [[1, 1, -1]]])
-        vertices = np.dot(np.concatenate((closest + coordinates), axis=0), lattice)
-        radii_large = np.tile(radii, sz)
-        dists = cdist(vertices, vertices)
-        dists_no_self = np.delete(np.triu(dists, 1), 0, 1) + np.delete(np.tril(dists, -1), dists.shape[1] - 1, 1)
-        base_bond_legth = radii_large.reshape(1, radii_large.size) + radii_large.reshape(radii_large.size, 1)
-        base_bond_legth_no_self = np.delete(np.triu(base_bond_legth, 1), 0, 1) + np.delete(np.tril(base_bond_legth, -1),
-                                                                                           base_bond_legth.shape[1] - 1,
-                                                                                           1)
-        order = np.exp(-(dists_no_self - base_bond_legth_no_self) / 0.23)
-        coord_number = order.sum(axis=1) / order.max(axis=1)
-        return coord_number
