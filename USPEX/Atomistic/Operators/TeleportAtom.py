@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
+from copy import copy
 from scipy.linalg import norm
 
 
-class AddAtom:
+class TeleportAtom:
     def __init__(self, utilities):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
@@ -34,6 +35,7 @@ class AddAtom:
             atomTypeCNs = coordinationNumbers[inds]
             deltaCNs[inds] = (atomTypeCNs - atomTypeCNs.mean())**2
         i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
+        j = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
         atom1Type = atomTypes[i]
         atom1coord = coordinates[i]
 
@@ -47,7 +49,7 @@ class AddAtom:
             coef *= 1.1
         atom2Type, atom2coord = np.random.choice(edges)
 
-        newAtomType = np.random.choice(species)
+        newAtomType = atomTypes[j]
         # for molecules we should estimate its radius instead of using covalent
         newBondLength = newAtomType.covalent_radius + np.max([atom1Type.covalent_radius, atom2Type.covalent_radius])
 
@@ -69,7 +71,10 @@ class AddAtom:
 
         operations = {newAtomType.short_name: [[newAtomCoords]]}
         offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
-        offspring['molecules'][0:0] = molecules
+        for molecule, inds in zip(molecules, disassembler.indices):
+            if j not in inds:
+                offspring['molecules'].insert(len(offspring['molecules']) - 1, copy(molecule))
+
         atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
         composition = self.simpleMoleculeUtility.composition(offspring)
@@ -79,20 +84,3 @@ class AddAtom:
             # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
             # if self.bonds.isConnected(structure):
             return offspring,
-
-
-    def createAtomDatabase(self, structure):
-        # 'atomInd': atom index
-        # 'availability': 1 - this position hasn't been used
-        #                 0 - this position has been used (not available)
-        #                 -1 - doesn't belong to surface: for future alpha-surfaces code
-        # !availability column for each type of atom/molecule to add
-        # !availability for atom to remove
-        atomTypes = structure.getAtomTypes()
-        species = np.unique(atomTypes)
-        coordinationNumbers = self.bondHardnessUtility.calcCoordinationNumbers(structure)
-        columns = ['atomType', 'coordNum', 'removability'] + [f'addability|{atomType}' for atomType in species]
-        availAtomDB = pd.DataFrame(np.ones((len(structure), 3 + len(species))), columns=columns)
-        for atomInd, atomType in enumerate(atomTypes):
-            availAtomDB.loc[atomInd, 'atomType'] = atomType
-            availAtomDB.loc[atomInd, 'coordNum'] = coordinationNumbers[atomInd]
