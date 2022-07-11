@@ -35,17 +35,24 @@ class AddAtom:
             atomTypeCNs = coordinationNumbers[inds]
             deltaCNs[inds] = (atomTypeCNs - atomTypeCNs.mean())**2
         i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
-        j = i + 1
-
         atom1Type = atomTypes[i]
-        atom2Type = atomTypes[j]
+        atom1coord = coordinates[i]
+
+        edges = []
+        coef = 1.4
+        while not edges:
+            for atomType, atomcoord in zip(atomTypes, coordinates):
+                dist = norm(atomcoord - atom1coord)
+                if 0 < dist <= coef*(atom1Type.covalent_radius + atomType.covalent_radius):
+                    edges.append((atomType, atomcoord))
+            coef *= 1.1
+        atom2Type, atom2coord = np.random.choice(edges)
+
         newAtomType = np.random.choice(uniqueAtomTypes)
         # for molecules we should estimate its radius instead of using covalent
         newBondLength = newAtomType.covalent_radius + np.max([atom1Type.covalent_radius, atom2Type.covalent_radius])
 
         massCenter = structure.getCenterOfMassFractionalCoordinates()
-        atom1coord = coordinates[i]
-        atom2coord = coordinates[j]
 
         edgeCenter = 0.5*(atom1coord + atom2coord)
         edgeVector = atom1coord - atom2coord
