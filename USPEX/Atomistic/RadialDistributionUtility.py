@@ -13,7 +13,7 @@ from collections import Counter
 from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
-from pandas import DataFrame, isna
+from pandas import DataFrame, Series, isna
 
 
 RMAX_DEFAULT = 10.0
@@ -30,8 +30,8 @@ class Fingerprint(Mapping):
     def __init__(self, value : dict, weights, delta):
         sizes = [len(v) for v in value.values()]
         assert len(sizes) > 0
-        self._value = value
-        self._weights = weights
+        self._value = Series(value)
+        self._weights = Series(weights)
         self.delta = delta
         self._size = sizes[0]
         super().__init__()
@@ -96,12 +96,10 @@ class ComplexFingerprint:
     """
     Class representing radial distribution fingerprint.
     """
-    def __init__(self, values: dict, weights, tolerance):
-        self.values = values
-        s = np.sum(list(weights.values()))
-        self.weights = {}
-        for key, weight in weights.items():
-            self.weights[key] = weight / s
+    def __init__(self, values, weights, tolerance):
+        self.values = Series(values)
+        self.weights = Series(weights)
+        self.weights[:] /= self.weights.sum()
         self.tolerance = tolerance
 
     @staticmethod
@@ -123,28 +121,57 @@ class ComplexFingerprint:
                 weightsCounter[name] += 1
         return ComplexFingerprint(fing, weightsCounter, tolerance)
 
+    #
+    # @staticmethod
+    # def multipleDistances(fingerprint1: DataFrame, fingerprint2: DataFrame):
+    #     for fing1 in fingerprint1.iterrows():
+    #         for fing2 in fingerprint2.iterrows():
+    #     value1 = fingerprint1.value
+    #     weights1 = fingerprint1.weights
+    #     value2 = fingerprint2.value
+    #     weights2 = fingerprint2.weights
+    #     coef1 = 0
+    #     coef2 = 0
+    #     coef3 = 0
+    #     for key in set(value1.keys()) | set(value2.keys()):
+    #         fing1 = value1[key] if key in value1 else np.zeros((1), dtype=float)
+    #         fing2 = value2[key] if key in value2 else np.zeros((1), dtype=float)
+    #         weight1 = weights1[key] if key in weights1 else 0
+    #         weight2 = weights2[key] if key in weights2 else 0
+    #         coef1 += np.sqrt(weight1 * weight2) * np.sum(fing1 * fing2)
+    #         coef2 += weight1 * np.sum(fing1 * fing1)
+    #         coef3 += weight2 * np.sum(fing2 * fing2)
+    #     dist = (1 - coef1 / (coef2 * coef3) ** 0.5) / 2
+    #
 
     @staticmethod
     def cosineDistance(fingerprint1, fingerprint2):
-        values1 = copy(fingerprint1.values)
-        values2 = copy(fingerprint2.values)
-        weights1 = fingerprint1.weights
-        weights2 = fingerprint2.weights
+        # values1 = copy(fingerprint1.values)
+        # values2 = copy(fingerprint2.values)
+        weights = fingerprint1.weights.to_frame() @ fingerprint2.weights.to_frame().T
         tolerance = min(fingerprint1.tolerance, fingerprint2.tolerance)
-        dist = 0
-        distMatrix = {}
+        # dist = 0
+        distMatrix = DataFrame(index=weights.index, columns=weights.columns,
+                               data=np.zeros(weights.shape, dtype=float))
         for key1, fing1 in fingerprint1.values.items():
-            for key2, fing2 in values2.items():
-                pairDist = Fingerprint.cosine_distance(fing1, fing2)
-                distMatrix[f"{key1}_{key2}"] = pairDist
-                if pairDist < tolerance:
-                    dist += weights1[key1] * weights2[key2] * pairDist
-                    del values1[key1]
-                    del values2[key2]
-                    break
-        for key1 in values1.keys():
-            for key2 in values2.keys():
-                dist += weights1[key1] * weights2[key2] * distMatrix[f"{key1}_{key2}"]
+            for key2, fing2 in fingerprint2.values.items():
+                distMatrix.at[key1, key2] = Fingerprint.cosine_distance(fing1, fing2)
+                # distMatrix.at[key1, key2] = pairDist
+                # if pairDist < tolerance:
+                #     dist += weights.at[key1, key2] * pairDist
+                #     del values1[key1]
+                #     del values2[key2]
+                #     break
+        mask = distMatrix < tolerance
+        distMatrix *= weights
+        dist = distMatrix.where(mask).sum().sum()
+        mask = (~mask).to_numpy()
+        mask = mask.all(axis=0).reshape((1, -1)) * mask.all(axis=1).reshape((-1, 1))
+        mask = DataFrame(data=mask, index=distMatrix.index, columns=distMatrix.columns)
+        dist += distMatrix.where(mask).sum().sum()
+        # for key1 in values1.keys():
+        #     for key2 in values2.keys():
+        #         dist += weights.at[key1, key2] * distMatrix.at[key1, key2]
         return dist
 
 
