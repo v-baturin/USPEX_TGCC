@@ -14,7 +14,7 @@ class AddAtom:
         self.cellUtility = utilities.cellUtility
         self.bondHardnessUtility = utilities.bondHardnessUtility
         if self.simpleMoleculeUtility.isTrueMolecular:
-            raise RuntimeError("RandSymPyXtal does not currently work in molecular regime.")
+            raise RuntimeError("AddAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
 
     def __call__(self, system):
