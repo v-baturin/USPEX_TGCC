@@ -111,8 +111,13 @@ class RandTop:
                                         cell = system['cell']
                                         if len(molecules) != totalAtomNumber:
                                             continue
-                                        atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
+                                        self.environmentUtility.putEnvironment(system)
+                                        atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
                                         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                                        if disassembler.environment is not None:
+                                            inds = disassembler.envIndices
+                                            atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
+                                                tuple(np.meshgrid(inds, inds))]
                                         if np.all(atomDistances >= minDistMatrix):
                                             if name not in self.arxiv:
                                                 self.arxiv[name] = []
@@ -122,7 +127,6 @@ class RandTop:
                                                     break
                                             else:
                                                 self.arxiv[name].append(all_coordinates)
-                                                self.environmentUtility.putEnvironment(system)
                                                 self.conditions.putConditions(system)
                                                 structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(
                                                     **system)

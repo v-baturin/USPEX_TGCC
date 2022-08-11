@@ -64,6 +64,9 @@ class Substrate:
                 elif not sysPBC[idx]:
                     offsetVector += curr_axis * (0.5 - 0.5 * (frac_coords[:, idx].min() + frac_coords[:, idx].max()))
         return offsetVector
+
+    def getUpdatedEnvironment(self, atomTypes, coordinates, cell, envStructure):
+        return Substrate(envStructure, self._thickness, np.min(coordinates, axis=0))
         
     def getStructure(self):
         """
@@ -78,6 +81,34 @@ class Substrate:
         Get indices of atoms in substrate positions of which are fixed.
         """
         return self._indices
+
+
+class Bulk:
+
+    def __init__(self, structure):
+        self._structure = structure
+        self._indices = np.arrange(len(structure))
+
+    def calculateOffset(self, molecules, syscell=None):
+        return np.array([0.0, 0.0, 0.0])
+
+    def getUpdatedEnvironment(self, atomTypes, coordinates, cell, envStructure):
+        return Substrate(envStructure)
+
+    def getStructure(self):
+        """
+        Retrieve atomic structure associated with environment.
+
+        :return: atomic structure.
+        """
+        return self._structure
+
+    def getFixedIndices(self):
+        """
+        Get indices of atoms in substrate positions of which are fixed.
+        """
+        return self._indices
+
 
 class EnvironmentUtility:
     """
@@ -118,7 +149,13 @@ class EnvironmentUtility:
             system['environment'] = environment
         elif self._environments:
             environment = copy(np.random.choice(self._environments))
-            assert environment.pop('type') == 'substrate'
+            name = environment.pop('name')
+            envType = environment.pop('type')
             structure = environment.pop('structure')
             environment['structure'] = structure.makeSupercell(np.round(structure.getCell().decomposeCell(system['cell'])))
-            system['environment'] = Substrate(**environment)
+            if envType == 'substrate':
+                system['environment'] = Substrate(**environment)
+            elif envType == 'bulk':
+                system['environment'] = Bulk(**environment)
+            else:
+                raise ValueError(f"Unknown environment type {envType}.")

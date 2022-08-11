@@ -118,11 +118,14 @@ class Heredity:
                 moleculeTypes = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in molecules]
                 composition = Counter(dict(zip(*np.unique(moleculeTypes, return_counts=True))))
                 if composition == desiredComposition:
-                    atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, outputCell)
+                    system = {'molecules': molecules, 'cell': outputCell}
+                    self.environmentUtility.putEnvironment(system)
+                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    if disassembler.environment is not None:
+                        inds = disassembler.envIndices
+                        atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                     if np.all(atomDistances >= minDistMatrix):
-                        system = {'molecules': molecules, 'cell': outputCell}
-                        self.environmentUtility.putEnvironment(system)
                         self.conditions.putConditions(system)
                         # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
                         # if self.bonds.isConnected(structure):
