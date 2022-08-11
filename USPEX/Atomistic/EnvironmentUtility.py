@@ -87,7 +87,7 @@ class Bulk:
 
     def __init__(self, structure):
         self._structure = structure
-        self._indices = np.arrange(len(structure))
+        self._indices = np.arange(len(structure))
 
     def calculateOffset(self, molecules, syscell=None):
         return np.array([0.0, 0.0, 0.0])

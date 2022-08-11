@@ -106,7 +106,11 @@ class RandTop:
                                     attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
 
                                     for i in range(attemptsRotation):
-                                        system = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                                        try:
+                                            system = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                                        except ValueError as e:
+                                            logger.debug(e, exc_info=True)
+                                            raise RuntimeError("RandTop failed.")
                                         molecules = system['molecules']
                                         cell = system['cell']
                                         if len(molecules) != totalAtomNumber:
