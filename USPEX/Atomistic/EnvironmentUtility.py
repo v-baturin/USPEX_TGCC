@@ -93,7 +93,7 @@ class Bulk:
         return np.array([0.0, 0.0, 0.0])
 
     def getUpdatedEnvironment(self, atomTypes, coordinates, cell, envStructure):
-        return Substrate(envStructure)
+        return Bulk(envStructure)
 
     def getStructure(self):
         """
