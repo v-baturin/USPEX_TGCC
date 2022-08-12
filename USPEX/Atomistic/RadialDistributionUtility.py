@@ -27,11 +27,11 @@ class Fingerprint(Mapping):
     """
     Class representing radial distribution fingerprint.
     """
-    def __init__(self, value : dict, weights, delta):
+    def __init__(self, value: dict, weights, delta):
         sizes = [len(v) for v in value.values()]
         assert len(sizes) > 0
-        self._value = Series(value)
-        self._weights = Series(weights)
+        self._value = value
+        self._weights = weights
         self.delta = delta
         self._size = sizes[0]
         super().__init__()
@@ -113,7 +113,7 @@ class ComplexFingerprint:
         for atomType, aFing in zip(atomTypes, atomFings):
             size = aFing.size
             symbol = atomType.short_name
-            row = aFing.value * np.sqrt(aFing.weights)
+            row = Series(aFing.value) * np.sqrt(Series(aFing.weights))
             for name, f in fing.iterrows():
                 refSymbol, count = name.split('_')
                 if symbol == refSymbol and ComplexFingerprint.cosine_distance(f, row) < tolerance:
