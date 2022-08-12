@@ -106,7 +106,7 @@ class ComplexFingerprint:
 
     @staticmethod
     def fromAtomicFingerprints(atomTypes, atomFings, tolerance):
-        fing = DataFrame(data=np.empty((0, 0), dtype=object))
+        fing = DataFrame(dtype=object)
         atomsCounter = Counter()
         weightsCounter = Counter()
         size = None
@@ -116,7 +116,8 @@ class ComplexFingerprint:
             row = Series(aFing.value) * np.sqrt(Series(aFing.weights))
             for name, f in fing.iterrows():
                 refSymbol, count = name.split('_')
-                if symbol == refSymbol and ComplexFingerprint.cosine_distance(f, row) < tolerance:
+                if symbol == refSymbol \
+                        and ComplexFingerprint.cosineDistance(np.concatenate(f), np.concatenate(row)) < tolerance:
                     break
             else:
                 atomsCounter[symbol] += 1
@@ -126,40 +127,32 @@ class ComplexFingerprint:
         return ComplexFingerprint(fing, weightsCounter, size, tolerance)
 
     @staticmethod
-    def cosine_distance(row1, row2):
+    def cosineDistance(fing1, fing2):
         """
         Calculation of cosine distances using eq.(6b) from JCP-2009.
         """
-        # index = row1.index.union(row2.index)
-        # fing1 = np.concatenate(row1.reindex(index, fill_value=np.zeros((1), dtype=float)))
-        # fing2 = np.concatenate(row2.reindex(index, fill_value=np.zeros((1), dtype=float)))
-        fing1 = np.concatenate(row1)
-        fing2 = np.concatenate(row2)
-        return (1 - np.dot(fing1, fing2) / np.sqrt(np.dot(fing1, fing1) * np.dot(fing2, fing2))) / 2
-
-
-    @staticmethod
-    def multipleDistances(fingerprint1: DataFrame, fingerprint2: DataFrame) -> DataFrame:
-        index = fingerprint1.index
-        columns = fingerprint2.index
-        distMatrix = DataFrame(index=index, columns=columns, data=np.zeros((len(index), len(columns)), dtype=float))
-        for key1, row1 in fingerprint1.iterrows():
-            for key2, row2 in fingerprint2.iterrows():
-                distMatrix.at[key1, key2] = ComplexFingerprint.cosine_distance(row1, row2)
-        return distMatrix
+        if len(fing1.shape) == 1:
+            fing1 = fing1.reshape((1, -1))
+        if len(fing2.shape) == 1:
+            fing2 = fing2.reshape((1, -1))
+        norm1 = np.linalg.norm(fing1, axis=1)
+        norm2 = np.linalg.norm(fing2, axis=1)
+        return (1 - np.dot(fing1, fing2.T) / (norm1.reshape((-1, 1)) * norm2.reshape((1, -1)))) / 2
 
     @staticmethod
-    def cosineDistance(fingerprint1, fingerprint2):
+    def dist(fingerprint1, fingerprint2):
         assert fingerprint1.size == fingerprint2.size
-        tolerance = min(fingerprint1.tolerance, fingerprint2.tolerance)
-        distMatrix = ComplexFingerprint.multipleDistances(fingerprint1.values, fingerprint2.values)
-        mask = distMatrix < tolerance
-        distMatrix *= fingerprint1.weights @ fingerprint2.weights.T
-        dist = distMatrix.where(mask).sum().sum()
-        mask = (~mask).to_numpy()
-        mask = mask.all(axis=0).reshape((1, -1)) & mask.all(axis=1).reshape((-1, 1))
-        dist += distMatrix.where(mask).sum().sum()
-        return dist
+        size = fingerprint1.size
+        combined = concat([fingerprint1.values.reset_index(drop=True), fingerprint2.values.reset_index(drop=True)],
+                          keys=['1', '2'])
+        fing1 = np.vstack([np.concatenate([elem if elem is not None else np.zeros(size, dtype=float)
+                                                for elem in row]) for ind, row in combined.loc['1'].iterrows()])
+        fing2 = np.vstack([np.concatenate([elem if elem is not None else np.zeros(size, dtype=float)
+                                                for elem in row]) for ind, row in combined.loc['2'].iterrows()])
+        distMatrix = ComplexFingerprint.cosineDistance(fing1, fing2)
+        mask1 = (np.abs(distMatrix) < min(fingerprint1.tolerance, fingerprint2.tolerance))
+        mask2 = (~mask1).all(axis=0).reshape((1, -1)) & (~mask1).all(axis=1).reshape((-1, 1))
+        return (distMatrix * (fingerprint1.weights @ fingerprint2.weights.T)).where(mask1 | mask2).sum().sum()
 
 
 class RadialDistributionUtility(object):
@@ -511,7 +504,7 @@ class RadialDistributionUtility(object):
                         return float(dist)
             cf1 = self.complexFingerprint(system1)
             cf2 = self.complexFingerprint(system2)
-            dist = cf1.cosineDistance(cf1, cf2)
+            dist = cf1.dist(cf1, cf2)
             if 'ID' in system1 and 'ID' in system2:
                 df = DataFrame(index=[id1, id2], columns=[id1, id2],
                                data=[[0, dist], [dist, 0]])
