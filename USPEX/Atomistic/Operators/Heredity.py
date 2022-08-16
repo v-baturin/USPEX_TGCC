@@ -13,7 +13,7 @@ NSLUBS = 2
 
 class Heredity:
 
-    def __init__(self, utilities, nslubs = None, attempts = ATTEMPTS, debug = False):
+    def __init__(self, utilities, nslabs = None, attempts = ATTEMPTS, debug = False):
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
@@ -22,7 +22,7 @@ class Heredity:
         self.ionDistances = utilities.ionDistances
         self.bonds = utilities.bonds
         self.conditions = utilities.conditions
-        self.nslubs = nslubs
+        self.nslabs = nslabs
         self.attempts = attempts
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -51,9 +51,9 @@ class Heredity:
             outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell()
             if self.cellUtility.isGoodCell(outputCell):
                 axis = np.random.randint(3)
-                if self.nslubs is None:
+                if self.nslabs is None:
                     if composition1 == composition2:
-                        nslubs = 2
+                        nslabs = 2
                     else:
                         elementalComposition1 = self.simpleMoleculeUtility.getElementalComposition(composition1)
                         elementalComposition2 = self.simpleMoleculeUtility.getElementalComposition(composition2)
@@ -62,13 +62,13 @@ class Heredity:
                         minSlice = radii.min()
                         maxSlice = radii.max()
                         medSlice = (minSlice + maxSlice) / 2
-                        nslubs = int(np.round(outputCell.getCellParameters()[axis] / medSlice))
-                        if nslubs < 2:
-                            nslubs = 2
+                        nslabs = int(np.round(outputCell.getCellParameters()[axis] / medSlice))
+                        if nslabs < 2:
+                            nslabs = 2
                 else:
-                    nslubs = self.nslubs
+                    nslabs = self.nslabs
 
-                gaugesOfSlabs = tuple(np.random.randint(3, 9, size=nslubs).tolist())
+                gaugesOfSlabs = tuple(np.random.randint(3, 9, size=nslabs).tolist())
 
                 if outputCell.dim == 0:
                     logger.debug(f"trying  {gaugesOfSlabs}-size slabs.")
