@@ -1,6 +1,5 @@
 import numpy as np
-import pandas as pd
-from copy import copy
+from copy import copy, deepcopy
 from scipy.linalg import norm
 
 
@@ -23,6 +22,9 @@ class TeleportAtom:
         molecules = system['molecules']
         cell = system['cell']
         environment = system['environment'] if 'environment' in system else None
+        if 'tagsAddRemove' not in system:
+            system['tagsAddRemove'] = [[] for _ in range(len(molecules))]
+        tagsAddRemove = system['tagsAddRemove']
         structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)  # ,environment)
         atomTypes = structure.getAtomTypes()
         species = np.unique(atomTypes)
@@ -34,10 +36,26 @@ class TeleportAtom:
             inds = (atomTypes == atomType).nonzero()
             atomTypeCNs = coordinationNumbers[inds]
             deltaCNs[inds] = (atomTypeCNs - atomTypeCNs.mean())**2
-        i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
-        j = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
-        atom1Type = atomTypes[i]
-        atom1coord = coordinates[i]
+
+        for _ in range(100):
+            j = np.random.choice(len(structure), p=deltaCNs / deltaCNs.sum())
+            molInd = disassembler.findMolIndex(j)
+            if 'removed' not in tagsAddRemove[molInd]:
+                break
+        else:
+            raise RuntimeError("RemoveAtom failed.")
+        newAtomType = atomTypes[j]
+
+
+        for _ in range(100):
+            i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
+            atom1Type = atomTypes[i]
+            atom1coord = coordinates[i]
+            mol1Ind = disassembler.findMolIndex(i)
+            if f'added_{newAtomType}' not in tagsAddRemove[mol1Ind]:
+                break
+        else:
+            raise RuntimeError("AddAtom failed.")
 
         edges = []
         coef = 1.4
@@ -47,10 +65,18 @@ class TeleportAtom:
                 if 0 < dist <= coef*(atom1Type.covalent_radius + atomType.covalent_radius):
                     edges.append((atomType, coord))
             coef *= 1.1
-        atom2Type, atom2coord = np.random.choice(edges)
 
-        newAtomType = atomTypes[j]
-        # for molecules we should estimate its radius instead of using covalent
+        for _ in range(100):
+            k = np.random.choice(edges)
+            atom2Type = atomTypes[k]
+            atom2coord = coordinates[k]
+            mol2Ind = disassembler.findMolIndex(k)
+            if f'added_{newAtomType}' not in tagsAddRemove[mol2Ind]:
+                break
+        else:
+            raise RuntimeError("AddAtom failed.")
+
+        # TODO for molecules we should estimate its radius instead of using covalent
         newBondLength = newAtomType.covalent_radius + np.max([atom1Type.covalent_radius, atom2Type.covalent_radius])
 
         massCenter = structure.getCenterOfMassFractionalCoordinates()
@@ -67,8 +93,6 @@ class TeleportAtom:
             normal /= norm(normal)
             newAtomCoords = edgeCenter + np.sqrt(newBondLength**2 - (edgeLength/2)**2) * normal + 0.01*np.random.rand(3)
 
-        # new structure must be added to database
-
         operations = {newAtomType.short_name: [[newAtomCoords]]}
         offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
         for molecule, inds in zip(molecules, disassembler.indices):
@@ -81,6 +105,13 @@ class TeleportAtom:
         if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
             self.environmentUtility.putEnvironment(offspring, environment)
             self.conditions.putConditions(offspring)
+            tagsAddRemove[molInd].append('removed')
+            tagsAddRemove[mol1Ind].append(f'added_{newAtomType}')
+            tagsAddRemove[mol2Ind].append(f'added_{newAtomType}')
+            offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)
+            del offspring['tagsAddRemove'][molInd]
+            offspring['tagsAddRemove'].append([])
+
             # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
             # if self.bonds.isConnected(structure):
             return offspring,

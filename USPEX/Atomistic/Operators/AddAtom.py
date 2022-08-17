@@ -1,6 +1,6 @@
 import numpy as np
-import pandas as pd
 from scipy.linalg import norm
+from copy import deepcopy
 
 
 class AddAtom:
@@ -22,10 +22,15 @@ class AddAtom:
         molecules = system['molecules']
         cell = system['cell']
         environment = system['environment'] if 'environment' in system else None
+        if 'tagsAddRemove' not in system:
+            system['tagsAddRemove'] = [[] for _ in range(len(molecules))]
+        tagsAddRemove = system['tagsAddRemove']
         structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)  # ,environment)
         atomTypes = structure.getAtomTypes()
         species = np.unique(atomTypes)
         coordinates = structure.getCartesianCoordinates()
+
+        newAtomType = np.random.choice(species)
 
         coordinationNumbers = self.bondHardnessUtility.calcCoordinationNumbers(structure)
         deltaCNs = np.empty(atomTypes.shape, dtype=float)
@@ -33,22 +38,37 @@ class AddAtom:
             inds = (atomTypes == atomType).nonzero()
             atomTypeCNs = coordinationNumbers[inds]
             deltaCNs[inds] = (atomTypeCNs - atomTypeCNs.mean())**2
-        i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
-        atom1Type = atomTypes[i]
-        atom1coord = coordinates[i]
+
+        for _ in range(100):
+            i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
+            atom1Type = atomTypes[i]
+            atom1coord = coordinates[i]
+            mol1Ind = disassembler.findMolIndex(i)
+            if f'added_{newAtomType}' not in tagsAddRemove[mol1Ind]:
+                break
+        else:
+            raise RuntimeError("AddAtom failed.")
 
         edges = []
         coef = 1.4
         while not edges:
-            for atomType, coord in zip(atomTypes, coordinates):
+            for j, (atomType, coord) in enumerate(zip(atomTypes, coordinates)):
                 dist = norm(coord - atom1coord)
                 if 0 < dist <= coef*(atom1Type.covalent_radius + atomType.covalent_radius):
-                    edges.append((atomType, coord))
+                    edges.append(j)
             coef *= 1.1
-        atom2Type, atom2coord = np.random.choice(edges)
 
-        newAtomType = np.random.choice(species)
-        # for molecules we should estimate its radius instead of using covalent
+        for _ in range(100):
+            j = np.random.choice(edges)
+            atom2Type = atomTypes[j]
+            atom2coord = coordinates[j]
+            mol2Ind = disassembler.findMolIndex(j)
+            if f'added_{newAtomType}' not in tagsAddRemove[mol2Ind]:
+                break
+        else:
+            raise RuntimeError("AddAtom failed.")
+
+        # TODO for molecule we should estimate its radius instead of using covalent
         newBondLength = newAtomType.covalent_radius + np.max([atom1Type.covalent_radius, atom2Type.covalent_radius])
 
         massCenter = structure.getCenterOfMassFractionalCoordinates()
@@ -65,8 +85,6 @@ class AddAtom:
             normal /= norm(normal)
             newAtomCoords = edgeCenter + np.sqrt(newBondLength**2 - (edgeLength/2)**2) * normal + 0.01*np.random.rand(3)
 
-        # new structure must be added to database
-
         operations = {newAtomType.short_name: [[newAtomCoords]]}
         offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
         offspring['molecules'][0:0] = molecules
@@ -76,23 +94,10 @@ class AddAtom:
         if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
             self.environmentUtility.putEnvironment(offspring, environment)
             self.conditions.putConditions(offspring)
+            tagsAddRemove[mol1Ind].append(f'added_{newAtomType}')
+            tagsAddRemove[mol2Ind].append(f'added_{newAtomType}')
+            offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)
+            offspring['tagsAddRemove'].append([])
             # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
             # if self.bonds.isConnected(structure):
             return offspring,
-
-
-    def createAtomDatabase(self, structure):
-        # 'atomInd': atom index
-        # 'availability': 1 - this position hasn't been used
-        #                 0 - this position has been used (not available)
-        #                 -1 - doesn't belong to surface: for future alpha-surfaces code
-        # !availability column for each type of atom/molecule to add
-        # !availability for atom to remove
-        atomTypes = structure.getAtomTypes()
-        species = np.unique(atomTypes)
-        coordinationNumbers = self.bondHardnessUtility.calcCoordinationNumbers(structure)
-        columns = ['atomType', 'coordNum', 'removability'] + [f'addability|{atomType}' for atomType in species]
-        availAtomDB = pd.DataFrame(np.ones((len(structure), 3 + len(species))), columns=columns)
-        for atomInd, atomType in enumerate(atomTypes):
-            availAtomDB.loc[atomInd, 'atomType'] = atomType
-            availAtomDB.loc[atomInd, 'coordNum'] = coordinationNumbers[atomInd]

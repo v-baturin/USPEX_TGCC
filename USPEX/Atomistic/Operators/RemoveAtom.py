@@ -1,6 +1,5 @@
 import numpy as np
-import pandas as pd
-from copy import copy
+from copy import copy, deepcopy
 
 
 class RemoveAtom:
@@ -22,6 +21,9 @@ class RemoveAtom:
         molecules = system['molecules']
         cell = system['cell']
         environment = system['environment'] if 'environment' in system else None
+        if 'tagsAddRemove' not in system:
+            system['tagsAddRemove'] = [[] for _ in range(len(molecules))]
+        tagsAddRemove = system['tagsAddRemove']
         structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)  # ,environment)
         atomTypes = structure.getAtomTypes()
         species = np.unique(atomTypes)
@@ -32,7 +34,14 @@ class RemoveAtom:
             inds = (atomTypes == atomType).nonzero()
             atomTypeCNs = coordinationNumbers[inds]
             deltaCNs[inds] = (atomTypeCNs - atomTypeCNs.mean())**2
-        i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
+
+        for _ in range(100):
+            i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
+            molInd = disassembler.findMolIndex(i)
+            if 'removed' not in tagsAddRemove[molInd]:
+                break
+        else:
+            raise RuntimeError("RemoveAtom failed.")
 
         offspring = {'molecules': [], 'cell': cell}
         for molecule, inds in zip(molecules, disassembler.indices):
@@ -45,6 +54,9 @@ class RemoveAtom:
         if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
             self.environmentUtility.putEnvironment(offspring, environment)
             self.conditions.putConditions(offspring)
+            tagsAddRemove[molInd].append('removed')
+            offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)
+            del offspring['tagsAddRemove'][molInd]
             # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
             # if self.bonds.isConnected(structure):
             return offspring,
