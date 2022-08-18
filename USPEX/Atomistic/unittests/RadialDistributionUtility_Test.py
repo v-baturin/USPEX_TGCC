@@ -10,7 +10,7 @@ PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 
 class RadialDistributionUtility_Test(unittest.TestCase):
     def setUp(self):
-        self.utility = RadialDistributionUtility()
+        self.utility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'])
         with open(pj(PATH_WITH_TESTS, "systemRDU1.POSCAR"), 'rt') as f:
             self.systemRDU1 = AtomisticRepresentation.readAtomicStructure(f)
         with open(pj(PATH_WITH_TESTS, "systemRDU2.POSCAR"), 'rt') as f:
