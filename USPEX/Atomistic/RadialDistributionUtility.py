@@ -503,6 +503,7 @@ class RadialDistributionUtility(object):
             dist = ComplexFingerprint.dist(self.complexFingerprint(system1), self.complexFingerprint(system2))
             df = DataFrame(index=[id1, id2], columns=[id1, id2], data=[[0, dist], [dist, 0]])
             self.distances = self.distances.combine_first(df)
+            return dist
         else:
             return ComplexFingerprint.dist(self.complexFingerprint(system1), self.complexFingerprint(system2))
 

@@ -24,7 +24,7 @@ class QE_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         qe = QE_Interface(tag='1', options=pj(SPECIFICPATH, 'qEspresso_options_1'),
                           libs=[pj(SPECIFICPATH, 'SiC.C.pbe-van_bm.upf')], kresol=0.16)
-        radialDistributionUtility = RadialDistributionUtility()
+        radialDistributionUtility = RadialDistributionUtility(symbols=['C'])
 
 
         for ID in range(10):
