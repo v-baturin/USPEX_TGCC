@@ -49,11 +49,14 @@ class Permutation:
                         offspringMolecules[i1] = transformation.transform(molecules[i1])
                         offspringMolecules[i2] = (-transformation).transform(molecules[i2])
 
-                    atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(offspringMolecules, cell)
+                    offspring = {'molecules': offspringMolecules, 'cell': cell}
+                    self.environmentUtility.putEnvironment(offspring, environment)
+                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    if disassembler.environment is not None:
+                        inds = disassembler.envIndices
+                        atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                     if np.all(atomDistances >= minDistMatrix):
-                        offspring = {'molecules': offspringMolecules, 'cell': cell}
-                        self.environmentUtility.putEnvironment(offspring, environment)
                         self.conditions.putConditions(offspring)
                         # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
                         # if self.bonds.isConnected(structure):
