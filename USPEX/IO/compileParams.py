@@ -38,5 +38,8 @@ def compileParams(main: dict) -> dict:
         if 'singleCrystalSpectrumAnalyzer' in target:
             sCS = target['singleCrystalSpectrumAnalyzer']
             sCS['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(sCS.pop('hklFile'))
+        if 'radialDistributionUtility' not in target:
+            target['radialDistributionUtility'] = {}
+            target['radialDistributionUtility']['symbols'] = target['compositionSpace']['symbols']
 
     return main
