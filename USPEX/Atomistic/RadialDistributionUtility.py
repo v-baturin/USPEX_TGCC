@@ -264,8 +264,9 @@ class RadialDistributionUtility(object):
             del system['radialDistribitionUtility.order']
         if 'radialDistribitionUtility.quasientropy' in system:
             del system['radialDistribitionUtility.quasientropy']
-        self.distances.drop(system['ID'], axis=0)
-        self.distances.drop(system['ID'], axis=1)
+        if not self.legacy:
+            self.distances.drop(system['ID'], axis=0)
+            self.distances.drop(system['ID'], axis=1)
 
     def _calcFingerprint(self, system):
         """
