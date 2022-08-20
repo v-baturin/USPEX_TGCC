@@ -31,6 +31,9 @@ from .Atomistic.Operators.RandSymPyXtal import RandSymPyXtal
 from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .Atomistic.Operators.Permutation import Permutation
 from .Atomistic.Operators.Transmutation import Transmutation
+from .Atomistic.Operators.AddAtom import AddAtom
+from .Atomistic.Operators.RemoveAtom import RemoveAtom
+from .Atomistic.Operators.TeleportAtom import TeleportAtom
 from .Atomistic.Operators.Seeds import Seeds
 Seeds.registerTypes(AtomisticRepresentation)
 GlobalOptimizer.registerTarget('Atomistic',
@@ -38,7 +41,7 @@ GlobalOptimizer.registerTarget('Atomistic',
                                  SimpleMoleculeUtility, Conditions, IonDistances, Bonds, Constraints,
                                  BondHardnessUtility, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer],
                       hybridizations=[Heredity],
-                      mutations=[Softmodemutation, Permutation, Transmutation],
+                      mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal],
                       seeds=Seeds)
 

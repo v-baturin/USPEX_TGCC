@@ -35,28 +35,29 @@ class RemoveAtom:
             atomTypeCNs = coordinationNumbers[inds]
             deltaCNs[inds] = (atomTypeCNs - atomTypeCNs.mean())**2
 
-        for _ in range(100):
-            i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
-            molInd = disassembler.findMolIndex(i)
-            if 'removed' not in tagsAddRemove[molInd]:
-                break
-        else:
-            raise RuntimeError("RemoveAtom failed.")
+        for attempt in range(100):
+            for _ in range(100):
+                i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
+                molInd = disassembler.findMolIndex(i)
+                if 'removed' not in tagsAddRemove[molInd]:
+                    break
+            else:
+                raise RuntimeError("RemoveAtom failed.")
 
-        offspring = {'molecules': [], 'cell': cell}
-        for molecule, inds in zip(molecules, disassembler.indices):
-            if i not in inds:
-                offspring['molecules'].append(copy(molecule))
+            offspring = {'molecules': [], 'cell': cell}
+            offspring['molecules'][0:0] = molecules
+            del offspring['molecules'][molInd]
+            atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
+            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+            composition = self.simpleMoleculeUtility.composition(offspring)
+            if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
+                self.environmentUtility.putEnvironment(offspring, environment)
+                self.conditions.putConditions(offspring)
+                tagsAddRemove[molInd].append('removed')
+                offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)
+                del offspring['tagsAddRemove'][molInd]
+                # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
+                # if self.bonds.isConnected(structure):
+                return offspring,
 
-        atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
-        minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
-        composition = self.simpleMoleculeUtility.composition(offspring)
-        if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-            self.environmentUtility.putEnvironment(offspring, environment)
-            self.conditions.putConditions(offspring)
-            tagsAddRemove[molInd].append('removed')
-            offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)
-            del offspring['tagsAddRemove'][molInd]
-            # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
-            # if self.bonds.isConnected(structure):
-            return offspring,
+        raise RuntimeError("RemoveAtom failed.")

@@ -37,81 +37,84 @@ class TeleportAtom:
             atomTypeCNs = coordinationNumbers[inds]
             deltaCNs[inds] = (atomTypeCNs - atomTypeCNs.mean())**2
 
-        for _ in range(100):
-            j = np.random.choice(len(structure), p=deltaCNs / deltaCNs.sum())
-            molInd = disassembler.findMolIndex(j)
-            if 'removed' not in tagsAddRemove[molInd]:
-                break
-        else:
-            raise RuntimeError("RemoveAtom failed.")
-        newAtomType = atomTypes[j]
+        for attempt in range(100):
+            for _ in range(100):
+                j = np.random.choice(len(structure), p=deltaCNs / deltaCNs.sum())
+                molInd = disassembler.findMolIndex(j)
+                if 'removed' not in tagsAddRemove[molInd]:
+                    break
+            else:
+                raise RuntimeError("RemoveAtom failed.")
+            newAtomType = atomTypes[j]
 
 
-        for _ in range(100):
-            i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
-            atom1Type = atomTypes[i]
-            atom1coord = coordinates[i]
-            mol1Ind = disassembler.findMolIndex(i)
-            if f'added_{newAtomType}' not in tagsAddRemove[mol1Ind]:
-                break
-        else:
-            raise RuntimeError("AddAtom failed.")
+            for _ in range(100):
+                i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
+                atom1Type = atomTypes[i]
+                atom1coord = coordinates[i]
+                mol1Ind = disassembler.findMolIndex(i)
+                if f'added_{newAtomType}' not in tagsAddRemove[mol1Ind]:
+                    break
+            else:
+                raise RuntimeError("AddAtom failed.")
 
-        edges = []
-        coef = 1.4
-        while not edges:
-            for atomType, coord in zip(atomTypes, coordinates):
-                dist = norm(coord - atom1coord)
-                if 0 < dist <= coef*(atom1Type.covalent_radius + atomType.covalent_radius):
-                    edges.append((atomType, coord))
-            coef *= 1.1
+            edges = []
+            coef = 1.4
+            while not edges:
+                for k, (atomType, coord) in enumerate(zip(atomTypes, coordinates)):
+                    dist = norm(coord - atom1coord)
+                    if 0 < dist <= coef*(atom1Type.covalent_radius + atomType.covalent_radius):
+                        edges.append(k)
+                coef *= 1.1
 
-        for _ in range(100):
-            k = np.random.choice(edges)
-            atom2Type = atomTypes[k]
-            atom2coord = coordinates[k]
-            mol2Ind = disassembler.findMolIndex(k)
-            if f'added_{newAtomType}' not in tagsAddRemove[mol2Ind]:
-                break
-        else:
-            raise RuntimeError("AddAtom failed.")
+            for _ in range(100):
+                k = np.random.choice(edges)
+                atom2Type = atomTypes[k]
+                atom2coord = coordinates[k]
+                mol2Ind = disassembler.findMolIndex(k)
+                if f'added_{newAtomType}' not in tagsAddRemove[mol2Ind]:
+                    break
+            else:
+                raise RuntimeError("AddAtom failed.")
 
-        # TODO for molecules we should estimate its radius instead of using covalent
-        newBondLength = newAtomType.covalent_radius + np.max([atom1Type.covalent_radius, atom2Type.covalent_radius])
+            # TODO for molecules we should estimate its radius instead of using covalent
+            newBondLength = newAtomType.covalent_radius + np.max([atom1Type.covalent_radius, atom2Type.covalent_radius])
 
-        massCenter = structure.getCenterOfMassFractionalCoordinates()
+            massCenter = structure.getCenterOfMassFractionalCoordinates()
 
-        edgeCenter = 0.5*(atom1coord + atom2coord)
-        edgeVector = atom1coord - atom2coord
-        edgeLength = norm(edgeVector)
-        edgeVector /= edgeLength
-        if edgeLength/2 > newBondLength:
-            newAtomCoords = edgeCenter
-        else:
-            vectorInPlain = edgeCenter - massCenter
-            normal = vectorInPlain - np.dot(vectorInPlain, edgeVector) * edgeVector
-            normal /= norm(normal)
-            newAtomCoords = edgeCenter + np.sqrt(newBondLength**2 - (edgeLength/2)**2) * normal + 0.01*np.random.rand(3)
+            edgeCenter = 0.5*(atom1coord + atom2coord)
+            edgeVector = atom1coord - atom2coord
+            edgeLength = norm(edgeVector)
+            edgeVector /= edgeLength
+            if edgeLength/2 > newBondLength:
+                newAtomCoords = edgeCenter
+            else:
+                vectorInPlain = edgeCenter - massCenter
+                normal = vectorInPlain - np.dot(vectorInPlain, edgeVector) * edgeVector
+                normal /= norm(normal)
+                newAtomCoords = edgeCenter + np.sqrt(newBondLength**2 - (edgeLength/2)**2) * normal + 0.01*np.random.rand(3)
 
-        operations = {newAtomType.short_name: [[newAtomCoords]]}
-        offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
-        for molecule, inds in zip(molecules, disassembler.indices):
-            if j not in inds:
-                offspring['molecules'].insert(len(offspring['molecules']) - 1, copy(molecule))
+            operation = np.eye(4, dtype=float)
+            operation[0:3, 3] = cell.cartesianToFractional(newAtomCoords)
+            operations = {newAtomType.short_name: [[[operation]]]}
+            offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
+            offspring['molecules'][0:0] = molecules
+            del offspring['molecules'][molInd]
+            atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
+            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+            composition = self.simpleMoleculeUtility.composition(offspring)
+            if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
+                self.environmentUtility.putEnvironment(offspring, environment)
+                self.conditions.putConditions(offspring)
+                tagsAddRemove[molInd].append('removed')
+                tagsAddRemove[mol1Ind].append(f'added_{newAtomType}')
+                tagsAddRemove[mol2Ind].append(f'added_{newAtomType}')
+                offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)
+                del offspring['tagsAddRemove'][molInd]
+                offspring['tagsAddRemove'].append([])
 
-        atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
-        minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
-        composition = self.simpleMoleculeUtility.composition(offspring)
-        if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-            self.environmentUtility.putEnvironment(offspring, environment)
-            self.conditions.putConditions(offspring)
-            tagsAddRemove[molInd].append('removed')
-            tagsAddRemove[mol1Ind].append(f'added_{newAtomType}')
-            tagsAddRemove[mol2Ind].append(f'added_{newAtomType}')
-            offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)
-            del offspring['tagsAddRemove'][molInd]
-            offspring['tagsAddRemove'].append([])
+                # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
+                # if self.bonds.isConnected(structure):
+                return offspring,
 
-            # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
-            # if self.bonds.isConnected(structure):
-            return offspring,
+        raise RuntimeError("TeleportAtom failed.")
