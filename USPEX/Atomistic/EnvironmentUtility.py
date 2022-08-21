@@ -85,7 +85,7 @@ class Substrate:
 
 class Bulk:
 
-    def __init__(self, structure, isFixed: bool):
+    def __init__(self, structure, isFixed: bool = True):
         self._structure = structure
         self.isFixed = isFixed
         if self.isFixed:
