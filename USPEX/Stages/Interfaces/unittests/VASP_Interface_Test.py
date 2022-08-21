@@ -36,7 +36,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         vasp = VASP_Interface(tag='1', perturbate=False,
                               incar=pj(SPECIFICPATH, 'INCAR_1'), potcarsPath=SPECIFICPATH, kresol=0.13)
-        radialDistributionUtility = RadialDistributionUtility()
+        radialDistributionUtility = RadialDistributionUtility(symbols=['Ca', 'F'])
 
 
         for ID in range(10):

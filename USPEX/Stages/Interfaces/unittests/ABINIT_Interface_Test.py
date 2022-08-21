@@ -34,7 +34,7 @@ class ABINIT_Interface_Test(unittest.TestCase):
     def test_life(self):
         abinit = ABINIT_Interface(tag='0', in_file=pj(SPECIFICPATH, 'abinit.in_1'), kresol=0.13,
                                   pp_files=[pj(SPECIFICPATH, 'H.psp8'), pj(SPECIFICPATH, 'Eu.psp8')])
-        radialDistributionUtility = RadialDistributionUtility()
+        radialDistributionUtility = RadialDistributionUtility(symbols=['Eu', 'H'])
 
 
         for ID in range(10):

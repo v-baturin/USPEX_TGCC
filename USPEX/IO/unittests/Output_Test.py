@@ -20,7 +20,8 @@ class Output_Test(unittest.TestCase):
                                       'conditions': {'externalPressure': 100},
                                       'compositionSpace': {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]],
                                                            'range': [[1, 1]]},
-                                      'cellUtility': {'pbc': (1,1,1)}
+                                      'cellUtility': {'pbc': (1,1,1)},
+                                      'radialDistributionUtility': {'symbols': ['Mg', 'Al', 'O']}
                                       },
                            'fingerprintUtility': 'radialDistributionUtility',
                            'optType': 'enthalpy',
