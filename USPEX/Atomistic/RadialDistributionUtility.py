@@ -274,9 +274,6 @@ class RadialDistributionUtility(object):
             del system['radialDistribitionUtility.order']
         if 'radialDistribitionUtility.quasientropy' in system:
             del system['radialDistribitionUtility.quasientropy']
-        if not self.legacy:
-            self.distances.drop(system['ID'], axis=0)
-            self.distances.drop(system['ID'], axis=1)
 
     def _calcFingerprint(self, system):
         """
@@ -504,17 +501,6 @@ class RadialDistributionUtility(object):
         """
         if self.legacy:
             return Fingerprint.cosine_distance(self.structureFingerprint(system1), self.structureFingerprint(system2))
-        elif 'ID' in system1 and 'ID' in system2:
-            id1 = system1['ID']
-            id2 = system2['ID']
-            if id1 in self.distances and id2 in self.distances:
-                dist = self.distances.loc[id1, id2]
-                if not isna(dist):
-                    return float(dist)
-            dist = ComplexFingerprint.dist(self.complexFingerprint(system1), self.complexFingerprint(system2))
-            df = DataFrame(index=[id1, id2], columns=[id1, id2], data=[[0, dist], [dist, 0]])
-            self.distances = self.distances.combine_first(df)
-            return dist
         else:
             return ComplexFingerprint.dist(self.complexFingerprint(system1), self.complexFingerprint(system2))
 
