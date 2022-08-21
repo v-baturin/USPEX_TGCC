@@ -133,7 +133,7 @@ class SimpleMoleculeUtility(object):
                     comp[symbol] += value*amount
         return comp
 
-    def getMinDistances(self, molecules, cell):
+    def getMinDistances(self, molecules, cell, environment=None, **kwargs):
         """
         Calculates minimal distances between atoms excluding intramolecular distances.
 
@@ -159,7 +159,7 @@ class SimpleMoleculeUtility(object):
         #     if not inMolecule: return False
         # return True
 
-        structure, disassembler = self.structureType.assemble(molecules, cell)
+        structure, disassembler = self.structureType.assemble(molecules, cell, environment)
         actualDistances = structure.getAllDistances()
         constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
         for inds, molecule in zip(disassembler.indices, molecules):
@@ -172,7 +172,7 @@ class SimpleMoleculeUtility(object):
                         distVectorsMatrix[i,j] = cell.fractionalToCartesian(vect + constNeighbours[np.argmin(dists)])
             actualDistances[tuple(np.meshgrid(inds, inds))] = np.linalg.norm(distVectorsMatrix, axis=2)
 
-        return structure.getAtomTypes(), actualDistances
+        return structure.getAtomTypes(), actualDistances, disassembler
 
     @staticmethod
     def rotationClearance(inertiaValues):
