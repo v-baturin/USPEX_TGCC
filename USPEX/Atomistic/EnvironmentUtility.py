@@ -89,15 +89,15 @@ class Bulk:
         self._structure = structure
         self.isFixed = isFixed
         if self.isFixed:
-            self._indices = np.array([], dtype=int)
-        else:
             self._indices = np.arange(len(structure))
+        else:
+            self._indices = np.array([], dtype=int)
 
     def calculateOffset(self, molecules, syscell=None):
         return np.array([0.0, 0.0, 0.0])
 
     def getUpdatedEnvironment(self, atomTypes, coordinates, cell, envStructure):
-        return Bulk(envStructure)
+        return Bulk(envStructure, self.isFixed)
 
     def getStructure(self):
         """
