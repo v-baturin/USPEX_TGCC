@@ -33,7 +33,7 @@ class MLIP_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         mlip = MLIP_Interface(tag='1', input=pj(SPECIFICPATH, 'input_1.ini'),
                               potential=pj(SPECIFICPATH, 'potential.mtp'))
-        radialDistributionUtility = RadialDistributionUtility()
+        radialDistributionUtility = RadialDistributionUtility(symbols=['Na', 'Cl'])
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
