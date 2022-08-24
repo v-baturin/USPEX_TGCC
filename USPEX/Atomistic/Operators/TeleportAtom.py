@@ -100,8 +100,12 @@ class TeleportAtom:
             offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
             offspring['molecules'][0:0] = molecules
             del offspring['molecules'][molInd]
-            atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
+            atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
             minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+            if disassembler.environment is not None:
+                inds = disassembler.envIndices
+                atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
+                    tuple(np.meshgrid(inds, inds))]
             composition = self.simpleMoleculeUtility.composition(offspring)
             if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
                 self.environmentUtility.putEnvironment(offspring, environment)
