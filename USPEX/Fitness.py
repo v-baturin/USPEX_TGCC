@@ -197,13 +197,15 @@ class Fitness:
 
     @staticmethod
     def simpleHeight(space: np.ndarray) -> np.ndarray:
-        if space.shape[1] > 1:
-            values = np.empty(len(space), dtype=float)
+        nRows, nColumns = space.shape
+        if nColumns > 1:
+            values = np.empty(nRows, dtype=float)
             for row in space:
-                arg = np.empty((len(row) - 1, len(space)), dtype=float)
+                arg = np.empty((nColumns - 1, nRows), dtype=float)
                 *arg[:], value = (space - row).T
                 where = np.isclose(arg.all(axis=0), 0).nonzero()
-                values[where] = value[where]
+                value = value[where]
+                values[where] = value - value.min()
         else:
             values = (space - space.min(axis=0)).flatten()
         return values

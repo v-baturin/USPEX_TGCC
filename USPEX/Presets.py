@@ -127,7 +127,7 @@ if not exists(FILENAME):
                 'columns': [
                     ('simpleMoleculeUtility.composition', 'Composition'),
                     ('enthalpy', 'Enthalpy (eV)'),
-                    ('enthalpyCCH', 'Enthalpy per Block above CCH (eV)'),
+                    ('enthalpyCS', 'Enthalpy per Block above the best for composition(eV'),
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
