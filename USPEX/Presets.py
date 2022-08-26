@@ -40,7 +40,8 @@ if not exists(FILENAME):
                 'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             },
             'CrystalVarComp': {
                 'columns': [
@@ -55,7 +56,8 @@ if not exists(FILENAME):
                 ],
                 'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': True
             },
             'Nano2DFixComp': {
                 'columns': [
@@ -68,7 +70,8 @@ if not exists(FILENAME):
                 ],
                 'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             },
             'Nano2DVarComp': {
                 'columns': [
@@ -83,7 +86,8 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
                 ],
                 'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': True
             },
             'Nano1DFixComp': {
                 'columns': [
@@ -96,7 +100,8 @@ if not exists(FILENAME):
                 ],
                 'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             },
             'Nano1DVarComp': {
                 'columns': [
@@ -109,7 +114,8 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
                 ],
                 'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': True
             },
             'Nano0DFixComp': {
                 'columns': [
@@ -121,7 +127,8 @@ if not exists(FILENAME):
                 ],
                 'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             },
             'Nano0DVarComp': {
                 'columns': [
@@ -133,7 +140,8 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
                 ],
                 'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             }
 
         }
