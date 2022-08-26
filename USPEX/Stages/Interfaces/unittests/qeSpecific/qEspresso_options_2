@@ -1,9 +1,9 @@
 &CONTROL
-  calculation  = "relax",
-  restart_mode = "from_scratch",
-  prefix       = "pp",
-  pseudo_dir   = "./",
-  outdir       = "./",
+  calculation  = 'relax',
+  restart_mode = 'from_scratch',
+  prefix       = 'pp',
+  pseudo_dir   = './',
+  outdir       = './',
   wf_collect   = false
   nstep = 250
   disk_io = 'none'
