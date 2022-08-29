@@ -57,7 +57,7 @@ class CompileParams_Test(unittest.TestCase):
                     'conditions': {'externalPressure': 100},
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
-                    'radialDistributionUtility': {'symbols': ['Mg', 'Al', 'O']},
+                    'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O']},
                     'ionDistances': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
@@ -126,7 +126,7 @@ class CompileParams_Test(unittest.TestCase):
                                                                         'flexDihedrals': []}}},
                     'compositionSpace': {'symbols': ['mol_h2o'],
                                          'blocks': [[4]]},
-                    'radialDistributionUtility': {'symbols': ['mol_h2o']},
+                    'radialDistributionUtility': {'symbols': ['H', 'O']},
                     'ionDistances': {'volumeType': 0.5}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
@@ -176,7 +176,7 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['Na', 'Cl'],
                                          'blocks': [[8,24]],
                                          'range': [[1,1]]},
-                    'radialDistributionUtility': {'symbols': ['Na', 'Cl']},
+                    'radialDistributionUtility': {'symbols': ['Cl', 'Na']},
                     'ionDistances': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
