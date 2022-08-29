@@ -92,7 +92,8 @@ class USPEXClassic(object):
         """
         self.pool = pool
         self.target = target
-        self.target.utilities.antiseeds = Antiseeds(antiseeds)
+        antiseeds = {} if antiseeds is None else antiseeds
+        self.target.utilities.antiseeds = Antiseeds(**antiseeds)
         self.fingerprintUtility = fingerprintUtility
         self.optType = optType
         self.fractions = fractions
