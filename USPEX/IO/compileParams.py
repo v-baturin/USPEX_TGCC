@@ -45,6 +45,6 @@ def compileParams(main: dict) -> dict:
         if 'radialDistributionUtility' not in target:
             target['radialDistributionUtility'] = {}
         if 'symbols' not in target['radialDistributionUtility']:
-            target['radialDistributionUtility']['symbols'] = list(elementalSymbols)
+            target['radialDistributionUtility']['symbols'] = sorted(elementalSymbols)
 
     return main
