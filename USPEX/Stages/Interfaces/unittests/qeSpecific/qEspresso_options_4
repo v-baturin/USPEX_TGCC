@@ -1,9 +1,9 @@
 &CONTROL
-  calculation  = "vc-relax",
-  restart_mode = "from_scratch",
-  prefix       = "pp",
-  pseudo_dir   = "./",
-  outdir       = "./",
+  calculation  = 'vc-relax',
+  restart_mode = 'from_scratch',
+  prefix       = 'pp',
+  pseudo_dir   = './',
+  outdir       = './',
   wf_collect   = .false.
   nstep = 250
 /
