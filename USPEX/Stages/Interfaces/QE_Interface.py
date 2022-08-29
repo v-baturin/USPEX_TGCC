@@ -9,6 +9,7 @@ import shutil
 import numpy as np
 
 from ase.atoms import Atoms
+from ase.constraints import FixAtoms
 from ase.io.espresso import read_fortran_namelist, read_espresso_out, write_espresso_in
 from pathlib import Path
 
@@ -71,16 +72,19 @@ class QE_Interface:
         cell = structure.getCell()
         system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
+        fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
 
         atoms = Atoms(symbols=[el.short_name for el in structure.getAtomTypes()],
                       cell=cell.getCellVectors(),
                       positions=structure.getCartesianCoordinates())
+        if 'environment' in system:
+            indices = disassembler.envIndices[system['environment'].getFixedIndices()]
+            atoms.set_constraint(FixAtoms(indices=fixedIndices))
 
         # Copying pseudopotentials to calc folder
         for s, pseudo in self.pseudopotentials.items():
             if Path(pseudo).exists():
                 shutil.copy(pseudo, calcFolder)
-
 
         ############################# KPOINTS #################################
         try:
