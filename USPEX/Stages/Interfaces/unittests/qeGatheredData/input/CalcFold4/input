@@ -1,46 +1,53 @@
 &CONTROL
-  calculation  = "relax",
-  restart_mode = "from_scratch",
-  prefix       = "pp",
-  pseudo_dir   = "./",
-  outdir       = "./",
-  wf_collect   = false
-  nstep = 250
-  disk_io = 'none'
+   calculation      = 'relax'
+   restart_mode     = 'from_scratch'
+   wf_collect       = .false.
+   nstep            = 250
+   outdir           = './'
+   prefix           = 'pp'
+   disk_io          = 'none'
+   pseudo_dir       = './'
 /
 &SYSTEM
-  ibrav     = 0
-  nat       = 8
-  ntyp      = 1
-  ecutwfc   = 40.D0
-  nosym     = .true.
- occupations='smearing'
- degauss=0.02
- smearing='marzari-vanderbilt'
+   ibrav            = 0
+   nat              = 8
+   ntyp             = 1
+   ecutwfc          = 40.0
+   nosym            = .true.
+   occupations      = 'smearing'
+   degauss          = 0.02
+   smearing         = 'marzari-vanderbilt'
 /
 &ELECTRONS
-  conv_thr    = 5.D-04,
-  mixing_beta=0.5,
-  electron_maxstep = 250
+   electron_maxstep = 250
+   conv_thr         = 0.0005
+   mixing_beta      = 0.5
 /
 &IONS
-  ion_dynamics='bfgs'
-  trust_radius_max = 0.2
+   ion_dynamics     = 'bfgs'
+   trust_radius_max = 0.2
 /
+&CELL
+/
+
 ATOMIC_SPECIES
-C  12. C.pbe-van_bm.upf
-CELL_PARAMETERS bohr
- 14.7651   0.0000   0.0000
-  0.0000   7.3825   0.0000
-  0.0000   0.0000   5.2202
-ATOMIC_POSITIONS {crystal}
-C        0.875000     0.000000     0.000000
-C        0.125000     0.000000     0.000000
-C        0.500000     0.250000     0.500000
-C        0.000000     0.250000     0.500000
-C        0.000000     0.750000     0.500000
-C        0.625000     0.000000     0.000000
-C        0.375000     0.000000     0.000000
-C        0.500000     0.750000     0.500000
-K_POINTS {automatic}
-   1    2    3  0 0 0
+C 12.011 C.pbe-van_bm.upf
+
+K_POINTS automatic
+1 2 3  0 0 0
+
+CELL_PARAMETERS angstrom
+7.81333700000000 0.00000000000000 0.00000000000000
+0.00000000000000 3.90666900000000 0.00000000000000
+0.00000000000000 0.00000000000000 2.76240500000000
+
+ATOMIC_POSITIONS crystal
+C 0.8750000000 0.0000000000 0.0000000000 
+C 0.1250000000 0.0000000000 0.0000000000 
+C 0.5000000000 0.2500000000 0.5000000000 
+C 0.0000000000 0.2500000000 0.5000000000 
+C 0.0000000000 0.7500000000 0.5000000000 
+C 0.6250000000 0.0000000000 0.0000000000 
+C 0.3750000000 0.0000000000 0.0000000000 
+C 0.5000000000 0.7500000000 0.5000000000 
+
