@@ -71,15 +71,20 @@ class QE_Interface:
         system['disassembler'] = disassembler
         cell = structure.getCell()
         system['assembledCell'] = cell
-        coordinates = structure.getCartesianCoordinates()
         fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
 
-        atoms = Atoms(symbols=[el.short_name for el in structure.getAtomTypes()],
-                      cell=cell.getCellVectors(),
-                      positions=structure.getCartesianCoordinates())
-        if 'environment' in system:
-            indices = disassembler.envIndices[system['environment'].getFixedIndices()]
-            atoms.set_constraint(FixAtoms(indices=fixedIndices))
+        if 'environmentEnthalpy' in self.targetProperties:
+            environment = system['environment'].getStructure()
+            atoms = Atoms(symbols=[el.short_name for el in environment.getAtomTypes()],
+                          positions=environment.getCartesianCoordinates(),
+                          cell=cell.getCellVectors())
+        else:
+            atoms = Atoms(symbols=[el.short_name for el in structure.getAtomTypes()],
+                          positions=structure.getCartesianCoordinates(),
+                          cell=cell.getCellVectors())
+            if 'environment' in system:
+                indices = disassembler.envIndices[system['environment'].getFixedIndices()]
+                atoms.set_constraint(FixAtoms(indices=fixedIndices))
 
         # Copying pseudopotentials to calc folder
         for s, pseudo in self.pseudopotentials.items():
