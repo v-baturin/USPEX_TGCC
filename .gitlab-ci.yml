@@ -6,10 +6,6 @@ stages:
   - test_phase3
   - build_phase3
 
-variables:
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_DRIVER: overlay2
-
 test_sources:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase1
@@ -18,7 +14,7 @@ test_sources:
     - nosetests -v .
 
 build_extensions:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
   stage: build_phase1
   script:
     - mkdir unittests
@@ -38,8 +34,8 @@ test_binaries:
     - cd ./BuildExt/USPEX
     - nosetests -v .
 
-build_whl36:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython:master
+build_whl38:
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
   stage: build_phase2
   script:
     - mkdir build
@@ -48,7 +44,7 @@ build_whl36:
     - cd build
     - flit build --format wheel
     - cd dist
-    - rename  's/py3\-none\-any/cp36\-cp36m\-linux_x86_64/' *.whl
+    - rename  's/py3\-none\-any/cp38m\-cp38m\-linux_x86_64/' *.whl
   artifacts:
     paths:
       - build/dist
@@ -57,7 +53,7 @@ test_package:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase3
   script:
-    - pip install build/dist/uspex-*-cp36-cp36m-linux_x86_64.whl
+    - pip install build/dist/uspex-*-cp38m-cp38m-linux_x86_64.whl
     - cd testFolder
     - uspex -r
   artifacts:
@@ -68,44 +64,12 @@ build_documentation:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: build_phase3
   script:
-    - pip install build/dist/uspex-*-cp36-cp36m-linux_x86_64.whl
+    - pip install build/dist/uspex-*-cp38m-cp38m-linux_x86_64.whl
     - sphinx-build -b html sphinx build_docs
   artifacts:
     paths:
       - build_docs
     expire_in: 1 mos 1 day
-
-build_whl37:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython37:master
-  stage: build_phase3
-  script:
-    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
-    - python buildExtensions.py build_uspex -b ./BuildExt37
-    - cp -r ./BuildExt37/* build/
-    - cp pyproject.toml build/
-    - cd build
-    - flit build --format wheel
-    - cd dist
-    - rename  's/py3\-none\-any/cp37\-cp37m\-linux_x86_64/' *.whl
-  artifacts:
-    paths:
-      - build/dist
-
-build_whl38:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
-  stage: build_phase3
-  script:
-    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
-    - python buildExtensions.py build_uspex -b ./BuildExt38
-    - cp -r ./BuildExt38/* build/
-    - cp pyproject.toml build/
-    - cd build
-    - flit build --format wheel
-    - cd dist
-    - rename  's/py3\-none\-any/cp38\-cp38\-linux_x86_64/' *.whl
-  artifacts:
-    paths:
-      - build/dist
 
 build_whl39:
   image: $CI_REGISTRY/uspex_python/thirdparty/cython39:master
@@ -122,3 +86,20 @@ build_whl39:
   artifacts:
     paths:
       - build/dist
+
+build_whl310:
+  image: $CI_REGISTRY/uspex_python/thirdparty/cython310:master
+  stage: build_phase3
+  script:
+    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
+    - python buildExtensions.py build_uspex -b ./BuildExt310
+    - cp -r ./BuildExt310/* build/
+    - cp pyproject.toml build/
+    - cd build
+    - flit build --format wheel
+    - cd dist
+    - rename  's/py3\-none\-any/cp310m\-cp310m\-linux_x86_64/' *.whl
+  artifacts:
+    paths:
+      - build/dist
+
