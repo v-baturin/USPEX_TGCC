@@ -105,6 +105,13 @@ class Fitness_Test(unittest.TestCase):
                                                                ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition'), 'enthalpy'))), ref))
 
+    def test_simpleHeightComposition(self):
+        ref = [5.347, 7.562, 1.944, 2.96, 0.763, 8.117, 0., 3.674, 3.707]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('simpleHeight',
+                                                              ('getRelativeCHSpace',
+                                                               ('compositionSpace.numBlocksFromCompositions',
+                                                              'simpleMoleculeUtility.composition'), 'enthalpy'))), ref))
+
     def test_pareto(self):
         ref = [6, 7, 2, 3, 1, 8, 0, 4, 5]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('pareto', ('convexHullHeight',

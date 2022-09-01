@@ -380,6 +380,13 @@ class AtomicDisassembler:
             molecularDispacements.append((Transformation.fromRotVector(rotation, translation), atomicDisplacements))
         return molecularDispacements
 
+    def findMolIndex(self, index):
+        for molIndex, inds in enumerate(self.indices):
+            if index in inds:
+                return molIndex
+        raise RuntimeError("Bad index or empty structure.")
+
+
 def _lattice_points_in_supercell(supercell_matrix):
     """
     Returns the list of points on the original lattice contained in the

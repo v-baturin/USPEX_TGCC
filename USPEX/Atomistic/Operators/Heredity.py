@@ -52,7 +52,7 @@ class Heredity:
             if self.cellUtility.isGoodCell(outputCell):
                 axis = np.random.randint(3)
                 if self.nslabs is None:
-                    if composition1 == composition2:
+                    if (composition1 == composition2) or outputCell.dim < 3:
                         nslabs = 2
                     else:
                         elementalComposition1 = self.simpleMoleculeUtility.getElementalComposition(composition1)
