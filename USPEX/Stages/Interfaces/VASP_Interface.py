@@ -101,6 +101,7 @@ class VASP_Interface:
     def prepareLocalCalculation(self, system, calcFolder: Path):
         '''
         :param system: our system
+        :param calcFolder: calculation folder
         :return:
         '''
         with open(calcFolder/self.inputFile, 'wt') as f:
@@ -202,9 +203,11 @@ class VASP_Interface:
 
         return ''
 
+############reading part
+
     def isConverged(self, calcFolder: Path):
         '''
-        :param SYSTEM:
+        :param calcFolder:
         :return: (bool) whether system calculation converged
         '''
 
