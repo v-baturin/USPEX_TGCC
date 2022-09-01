@@ -6,10 +6,11 @@ USPEX.Stages.Executor
 
 """
 
+import asyncio
 import logging
 import os, shutil
-import asyncio
-from os.path import join as pj
+
+from pathlib import Path
 
 from .Connector import Connector
 
@@ -50,7 +51,7 @@ class Executor(object):
         logger.debug('Created calculator.')
 
         self.commandExecutable = commandExecutable
-        self.workingDirectory = workingDirectory
+        self.workingDirectory = Path(workingDirectory)
         self.tag = tag
         self.gather = gather
         self.keepFolders = keepFolders
@@ -80,15 +81,15 @@ class Executor(object):
         ID = system['ID']
         tag = self.tag
         self._gatherSystems(system, tag, ioType='input')
-        calcFolder = pj(self.workingDirectory, self.CALC_FOLDER_TEMPLATE.format(ID, tag))
+        calcFolder = self.workingDirectory/self.CALC_FOLDER_TEMPLATE.format(ID, tag)
         for attempt in range(self._ATTEMPTS):
             if calcFolder in self.submittedTasks:
                 jobID = self.submittedTasks[calcFolder]
                 logger.info(f'System {ID} with tag {tag} was already submitted as {jobID} job.')
             else:
                 shutil.rmtree(calcFolder, ignore_errors=True)
-                os.makedirs(calcFolder)
-                args = self._interface.prepareLocalCalculation(system, calcFolder)
+                calcFolder.mkdir(parents=True)
+                self._interface.prepareLocalCalculation(system, calcFolder)
                 self._gatherData(calcFolder, ioType='input')
                 await self._connector.sync_l2r(calcFolder)
                 logger.info(f'System {ID} with tag {tag} will be submitted now.')
@@ -119,17 +120,17 @@ class Executor(object):
         self._gatherSystems(system, tag, ioType='output')
         return results
 
-    def _gatherSystems(self, system, tag : str, ioType : str):
+    def _gatherSystems(self, system, tag: str, ioType: str):
         if self.gather:
-            folder = pj(self.workingDirectory, 'GatheredData', ioType)
-            os.makedirs(folder, exist_ok=True)
+            folder = self.workingDirectory/'GatheredData'/ioType
+            folder.mkdir(exist_ok=True)
             from ..components import AtomisticRepresentation
-            with open(pj(folder, f"system{system['ID']}_{tag}"), 'wt') as f:
+            with open(folder/f"system{system['ID']}_{tag}", 'wt') as f:
                 AtomisticRepresentation.writeAtomicStructure(f, system)
 
-    def _gatherData(self, calcFolder : str, ioType : str):
+    def _gatherData(self, calcFolder: Path, ioType : str):
         if self.gather:
-            copytree(calcFolder, pj(self.workingDirectory, 'GatheredData', ioType, os.path.basename(calcFolder)))
+            copytree(calcFolder, self.workingDirectory/'GatheredData'/ioType/calcFolder.name)
 
 
 def copytree(src, dst, symlinks=False, ignore=None):
