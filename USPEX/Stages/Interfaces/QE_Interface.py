@@ -57,7 +57,6 @@ class QE_Interface:
         if 'system' not in data:
             raise KeyError('Required section &SYSTEM not found.')
         self.data = data
-        self.libs = []
 
         self.pseudopotentials = pseudopotentials
         assert kresol > 0
@@ -67,6 +66,7 @@ class QE_Interface:
 
 
     def prepareLocalCalculation(self, system: dict, calcFolder: str):
+        calcFolder = Path(calcFolder)
         structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
         cell = structure.getCell()
@@ -106,17 +106,19 @@ class QE_Interface:
                               crystal_coordinates=True)
 
     def isConverged(self, calcFolder: str):
-        if not Path(calcFolder).joinpath(self.outputFile).exists():
+        calcFolder = Path(calcFolder)
+        if not calcFolder.joinpath(self.outputFile).exists():
             res = False
         else:
-            with open(Path(calcFolder)/self.outputFile, 'rt') as out:
+            with open(calcFolder/self.outputFile, 'rt') as out:
                 res = 'JOB DONE' in out.read()
         if not res:
             logger.error('Quantum Espresso is not completely Done')
         return res
 
-    def readOutput(self, system : dict, calcFolder: str):
-        with open(Path(calcFolder)/self.outputFile, 'rt') as f:
+    def readOutput(self, system: dict, calcFolder: str):
+        calcFolder = Path(calcFolder)
+        with open(calcFolder/self.outputFile, 'rt') as f:
             aseStructure = next(read_espresso_out(f, index=slice(None, -2, -1)))
             f.seek(0)
             content = f.readlines()
