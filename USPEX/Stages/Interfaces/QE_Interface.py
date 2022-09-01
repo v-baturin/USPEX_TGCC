@@ -60,13 +60,25 @@ class QE_Interface:
         assert kresol > 0
         self.kPoints = KPoints(kresol)
 
-        self.adapter = self.aseAdapterType(self.options)
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+    def prepareLocalCalculation(self, system: dict, calcFolder: Path):
+        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
+        system['disassembler'] = disassembler
+        cell = structure.getCell()
+        system['assembledCell'] = cell
+        fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
 
-    def prepareLocalCalculation(self, system: dict, calcFolder: str):
-        calcFolder = Path(calcFolder)
-
-        structure = system['structure']
+        if 'environmentEnthalpy' in self.targetProperties:
+            environment = system['environment'].getStructure()
+            atoms = Atoms(symbols=[el.short_name for el in environment.getAtomTypes()],
+                          positions=environment.getCartesianCoordinates(),
+                          cell=cell.getCellVectors())
+        else:
+            atoms = Atoms(symbols=[el.short_name for el in structure.getAtomTypes()],
+                          positions=structure.getCartesianCoordinates(),
+                          cell=cell.getCellVectors())
+            if 'environment' in system:
+                indices = disassembler.envIndices[system['environment'].getFixedIndices()]
+                atoms.set_constraint(FixAtoms(indices=fixedIndices))
 
         # Copying pseudopotentials to calc folder
         for s, pseudo in self.pseudopotentials.items():
@@ -86,9 +98,8 @@ class QE_Interface:
 
         return ''
 
-    def isConverged(self, calcFolder: str):
-        calcFolder = Path(calcFolder)
-        if not calcFolder.joinpath(self.outputFile).exists():
+    def isConverged(self, calcFolder: Path):
+        if not Path(calcFolder).joinpath(self.outputFile).exists():
             res = False
         else:
             with open(calcFolder/self.outputFile, 'rt') as out:
@@ -97,6 +108,10 @@ class QE_Interface:
             logger.error('Quantum Espresso is not completely Done')
         return res
 
+    def readOutput(self, system: dict, calcFolder: Path):
+        with open(Path(calcFolder)/self.outputFile, 'rt') as f:
+            aseStructure = next(read_espresso_out(f, index=slice(None, -2, -1)))
+            f.seek(0)
     def readOutput(self, system: dict, calcFolder: str):
         calcFolder = Path(calcFolder)
         aseData = self.adapter.read(calcFolder, **system.pop('ase'))
