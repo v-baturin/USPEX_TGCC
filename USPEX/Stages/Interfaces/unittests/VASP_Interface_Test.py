@@ -15,6 +15,7 @@ import unittest
 import filecmp
 
 from os.path import join as pj
+from pathlib import Path
 
 import numpy as np
 
@@ -23,10 +24,10 @@ from ..VASP_Interface import VASP_Interface
 from USPEX.components import AtomisticRepresentation
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'vaspSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'vaspGatheredData')
-WORKPATH = pj(HOMEPATH, 'Ca4F8_vasp')
+HOMEPATH = Path(__file__).parent
+SPECIFICPATH = HOMEPATH/'vaspSpecific'
+GATHEREDPATH = HOMEPATH/'vaspGatheredData'
+WORKPATH = HOMEPATH/'Ca4F8_vasp'
 
 
 class VASP_CalculatorTest2(unittest.TestCase):
@@ -35,7 +36,9 @@ class VASP_CalculatorTest2(unittest.TestCase):
     """
     def test_life(self):
         vasp = VASP_Interface(tag='1', perturbate=False,
-                              incar=pj(SPECIFICPATH, 'INCAR_1'), potcarsPath=SPECIFICPATH, kresol=0.13)
+                              incar=SPECIFICPATH/'INCAR_1',
+                              potcarsPath=SPECIFICPATH,
+                              kresol=0.13)
         radialDistributionUtility = RadialDistributionUtility(symbols=['Ca', 'F'])
 
 
@@ -67,12 +70,14 @@ class VASP_interfaceTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.working_dir = pj(HOMEPATH, 'wierd_vasp')
+        cls.working_dir = HOMEPATH/'wierd_vasp'
 
     def test1(self):
         wd = self.working_dir
-        outcar = pj(wd, 'OUTCAR')
-        self.interface = VASP_Interface(tag='1', incar=pj(wd, 'Specific', 'INCAR_1'), potcarsPath=pj(wd, 'Specific'),
+        outcar = wd/'OUTCAR'
+        self.interface = VASP_Interface(tag='1',
+                                        incar=wd/'Specific'/'INCAR_1',
+                                        potcarsPath=wd/'Specific',
                                         kresol=0.05)
 
         with open(outcar, 'rt') as f:
@@ -89,9 +94,9 @@ class VASP_interface_elastic_Test(unittest.TestCase):
                              [ -519.9028,   326.5026,   -31.0933,  3193.6427,   308.2938,  -321.5579],
                              [ -109.7639,   269.2209,   -870.108,   308.2938,  1504.6799,   -32.696 ],
                              [  -17.9217,    66.3167,     35.496,  -321.5579,    -32.696,  4247.3728]]
-        wd = pj(HOMEPATH, 'vaspElastic')
-        self.interface = VASP_Interface(tag='5', incar=pj(wd, 'Specific', 'INCAR_5'), potcarsPath=pj(wd, 'Specific'),
+        wd = HOMEPATH/'vaspElastic'
+        self.interface = VASP_Interface(tag='5', incar=wd/'Specific'/'INCAR_5', potcarsPath=wd/'Specific',
                                         kresol=0.06, targetProperties=['elasticConstants'])
         system = {}
-        self.interface.readOutput(system, calcFolder=pj(wd, 'output'))
+        self.interface.readOutput(system, calcFolder=wd/'output')
         self.assertTrue(np.allclose(system['elasticMatrix'], elasticMatrix_ref))
