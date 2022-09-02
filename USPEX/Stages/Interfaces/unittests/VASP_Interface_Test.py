@@ -9,18 +9,16 @@
 
 __author__ = 'asamtsevich'
 
-import os
 import shutil
 import unittest
 import filecmp
 
-from os.path import join as pj
 from pathlib import Path
 
 import numpy as np
 
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from ..VASP_Interface import VASP_Interface
+from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from USPEX.components import AtomisticRepresentation
 
 
@@ -43,24 +41,24 @@ class VASP_CalculatorTest2(unittest.TestCase):
 
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
+            with open(GATHEREDPATH/f'input/system{ID}.vasp', 'rt') as f:
                 system = AtomisticRepresentation.readAtomicStructure(f)
                 system['ID'] = ID
                 system['externalPressure'] = 0.0001
-            os.mkdir(WORKPATH)
+            WORKPATH.mkdir(exist_ok=True)
             vasp.prepareLocalCalculation(system, WORKPATH)
-            folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
+            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
                 match = match and not dcmp.subdirs[common_dir].diff_files
             shutil.rmtree(WORKPATH)
             self.assertTrue(match)
-            folder = pj(GATHEREDPATH, 'output')
-            shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
+            folder = GATHEREDPATH/'output'
+            shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
             vasp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
+            with open(folder/f"system{system['ID']}.vasp", 'rt') as f:
                 systemRef = AtomisticRepresentation.readAtomicStructure(f)
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
@@ -84,6 +82,7 @@ class VASP_interfaceTest(unittest.TestCase):
             content = f.readlines()
         stress = self.interface.readPressureTensor(content)
         assert stress.shape == (3, 3)
+
 
 class VASP_interface_elastic_Test(unittest.TestCase):
 

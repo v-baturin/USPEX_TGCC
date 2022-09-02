@@ -72,14 +72,17 @@ class VASP_Interface:
     atomicDisassemblerType = None
 
     def __init__(self, tag: str, kresol: float, incar: Path = None, potcarsPath: Path = None, perturbate: bool = True,
-                 vacuumSize= 10, targetProperties: list = None, **kwargs):
+                 vacuumSize=10, targetProperties: list = None, **kwargs):
         '''
-        :param params: dictionary with parameters:
-                * commandExecutable: str of executable command
-                * kresol: float of K-points resolution
-                * remote: dict of remote server params
-                * taskManager: dict of task managers params
-        :param step: int of current step
+
+        :param tag:
+        :param kresol:
+        :param incar:
+        :param potcarsPath:
+        :param perturbate:
+        :param vacuumSize:
+        :param targetProperties:
+        :param kwargs:
         '''
 
         if incar is not None:
@@ -101,13 +104,13 @@ class VASP_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
         self.perturbate = perturbate
 
-
     def prepareLocalCalculation(self, system, calcFolder: Path):
         '''
         :param system: our system
         :param calcFolder: calculation folder
         :return:
         '''
+        calcFolder = Path(calcFolder)
         structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
         atomTypes = structure.getAtomTypes()
@@ -220,13 +223,14 @@ class VASP_Interface:
         # end
 
 
-############reading part
+    ############ reading part
 
     def isConverged(self, calcFolder: Path):
         '''
         :param calcFolder:
         :return: (bool) whether system calculation converged
         '''
+        calcFolder = Path(calcFolder)
 
         if not (calcFolder.joinpath(self.outcar_file).exists() and
                 calcFolder.joinpath(self.oszicar_file).exists() and
@@ -263,6 +267,7 @@ class VASP_Interface:
             return False
 
     def readOutput(self, system, calcFolder: Path):
+        calcFolder = Path(calcFolder)
         aseStructure = read_vasp_out(calcFolder/self.outcar_file)
         if aseStructure:
             if 'structure' in self.targetProperties:

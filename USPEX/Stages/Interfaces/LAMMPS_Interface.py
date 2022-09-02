@@ -6,14 +6,16 @@ USPEX.Stages.LAMMPS_Interface
 
 """
 import logging
+import numpy as np
 import os
 import shutil
 
-import numpy as np
 from ase.io import read
 from ase import Atoms
+
+from pathlib import Path
 from typing import List
-from os.path import join as pj
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +36,7 @@ class LAMMPS_Interface:
     log_file = 'log.lammps'
     data_file = 'STRUC'
     dump_file = 'lammps.dump'
-    
+
     DEFAULT_SLEEP_TIME = 30
     structureType = None
     atomType = None
@@ -50,32 +52,34 @@ class LAMMPS_Interface:
                 * libs: (list) list of paths to interatomic potentials and associated files.
         """
 
-        self.lammps_in = lammps_in
+        self.lammps_in = Path(lammps_in)
         self.specorder = specorder
-        assert os.path.exists(self.lammps_in)
+        assert self.lammps_in.exists()
 
         if libs is not None:
-            self.libs = libs
+            self.libs = [Path(x) for x in libs]
 
-        assert all([os.path.exists(lib) for lib in libs])
+        assert all([lib.exists() for lib in self.libs])
 
         self.failedSystems = []
         self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
         """
         :param system:
         :param calcFolder:
         """
+
+        calcFolder = Path(calcFolder)
         structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
         cell = structure.getCell()
         system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
 
-        if not os.path.exists(calcFolder):
-            os.makedirs(calcFolder)
+        if not calcFolder.exists():
+            calcFolder.mkdir(parents=True)
         
         with open(self.lammps_in, 'r') as f:
             content = f.readlines()
@@ -114,7 +118,7 @@ class LAMMPS_Interface:
     
         # Step 4. We write all the input files to our calcFolder
         
-        with open(pj(calcFolder, self.inputFile), 'w') as f:
+        with open(calcFolder/self.inputFile, 'w') as f:
             f.writelines(content)
         
         if 'environmentEnthalpy' not in self.targetProperties:
@@ -123,22 +127,22 @@ class LAMMPS_Interface:
             environment = system['environment'].getStructure()
             atoms = Atoms([el.short_name for el in environment.getAtomTypes()], environment.getCartesianCoordinates(), cell = cell.getCellVectors())
         
-        write_lammps_data_with_label(pj(calcFolder, self.data_file), atoms, specorder=self.specorder, label=f"EA{system['ID']}")
+        write_lammps_data_with_label(calcFolder/self.data_file, atoms, specorder=self.specorder, label=f"EA{system['ID']}")
         
         for lib in self.libs:
             shutil.copy2(lib, calcFolder)
-                
 
-    def isConverged(self, calcFolder : str):
+    def isConverged(self, calcFolder: Path):
+        calcFolder = Path(calcFolder)
         lammps_completed = False
         tolerance_achieved = False
-        if os.path.exists(pj(calcFolder, self.outputFile)):
-            output = pj(calcFolder, self.outputFile)
-        elif os.path.exists(pj(calcFolder, self.log_file)):
-            output = pj(calcFolder, self.log_file)
+        if calcFolder.joinpath(self.outputFile).exists():
+            output = calcFolder/self.outputFile
+        elif calcFolder.joinpath(self.log_file).exists():
+            output = calcFolder/self.log_file
         else:
             return False
-        
+
         with open(output, 'r') as f:
             content = f.readlines()
 
@@ -155,15 +159,16 @@ class LAMMPS_Interface:
             if 'Breaking threshold exceeded' in line:
                 lammps_completed = True
                 tolerance_achieved = True
-        
+
         if not tolerance_achieved:
             logger.error('LAMMPS minimization tolerance criteria is not achieved.')
-            shutil.copy(output,  pj(calcFolder, 'ERROR-'+self.outputFile))
+            shutil.copy(output,  calcFolder/f'ERROR-{self.outputFile}')
             self.failedSystems.append(calcFolder)
         return lammps_completed and tolerance_achieved        
 
-    def readOutput(self, system, calcFolder : str):
-        aseStructure = read(pj(calcFolder, self.dump_file), format='lammps-dump-text')
+    def readOutput(self, system, calcFolder: Path):
+        calcFolder = Path(calcFolder)
+        aseStructure = read(calcFolder/self.dump_file, format='lammps-dump-text')
         if 'structure' in self.targetProperties:
             self.readStructure(system, aseStructure)
 
@@ -192,11 +197,11 @@ class LAMMPS_Interface:
         structure = self.structureType(atomTypes, positions, cell=cell)
         system.update(disassembler.disassemble(structure))
 
-    def readProperties(self, calcFolder: str):
-        if os.path.exists(pj(calcFolder, self.outputFile)):
-            output = pj(calcFolder, self.outputFile)
-        elif os.path.exists(pj(calcFolder, self.log_file)):
-            output = pj(calcFolder, self.log_file)
+    def readProperties(self, calcFolder: Path):
+        if calcFolder.joinpath(self.outputFile).exists():
+            output = calcFolder/self.outputFile
+        elif calcFolder.joinpath(self.log_file).exists():
+            output = calcFolder/self.log_file
         else:
             raise FileNotFoundError('Cannot find either {self.outputFile} or {self.log_file}.')
         with open(output, 'r') as f:

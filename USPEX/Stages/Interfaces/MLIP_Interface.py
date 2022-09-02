@@ -6,11 +6,11 @@ USPEX.Stages.MLIP_Interface
 
 """
 import logging
-import os
 import shutil
 import numpy as np
-from os.path import join as pj
+
 from ase.atoms import Atoms
+from pathlib import Path
 
 from .MLIPCfgParser import readcfg, savecfg
 
@@ -40,22 +40,39 @@ class MLIP_Interface:
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, tag: str, input: str = None, potential: str = None, vacuumSize = 10,
+    def __init__(self, tag: str, input: str = None, potential: str = None, vacuumSize=10,
                  targetProperties: list = None, **kwargs):
+        '''
+
+        :param tag:
+        :param input:
+        :param potential:
+        :param vacuumSize:
+        :param targetProperties:
+        :param kwargs:
+        '''
 
         if input is not None:
-            self.input = input
+            self.input = Path(input)
         else:
-            self.input = pj(os.getcwd(), f'Specific/input_{tag}.ini')
+            self.input = Path.cwd()/f'Specific/input_{tag}.ini'
 
         if potential is not None:
-            self.potential = potential
+            self.potential = Path(potential)
         else:
-            self.potential = pj(os.getcwd(), 'Specific/potential.mtp')
+            self.potential = Path.cwd()/'Specific/potential.mtp'
         self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system, calcFolder: str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
+        '''
+
+        :param system:
+        :param calcFolder:
+        :return:
+        '''
+
+        calcFolder = Path(calcFolder)
         structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
         cell = structure.getCell()
@@ -64,13 +81,13 @@ class MLIP_Interface:
         atomTypes = structure.getAtomTypes()
 
         # create empty input file
-        with open(pj(calcFolder, self.inputFile), 'wt') as f:
+        with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
         # cfg file
-        atoms = Atoms([el.short_name for el in atomTypes], positions = coordinates,
-                      cell = cell.getCellVectors())
-        savecfg(pj(calcFolder, self.in_cfg_file), atoms)
+        atoms = Atoms([el.short_name for el in atomTypes], positions=coordinates,
+                      cell=cell.getCellVectors())
+        savecfg(calcFolder/self.in_cfg_file, atoms)
 
         # input file
         shutil.copy2(self.input, calcFolder)
@@ -78,22 +95,24 @@ class MLIP_Interface:
         # potential file
         shutil.copy2(self.potential, calcFolder)
 
-    def isConverged(self, calcFolder: str):
-        if os.path.isfile(pj(calcFolder, self.out_cfg_file)):
-            with open(pj(calcFolder, self.out_cfg_file), 'r') as f:
+    def isConverged(self, calcFolder: Path):
+        calcFolder = Path(calcFolder)
+        if calcFolder.joinpath(self.out_cfg_file).is_file():
+            with open(calcFolder/self.out_cfg_file, 'r') as f:
                 content = f.read()
             if content:
                 return True
             # if the structure ended up unrelaxed because of extrapolation
-            elif os.path.isfile(pj(calcFolder, self.out_sampled_file)):
-                with open(pj(calcFolder, self.errorFile)) as stderr:
+            elif calcFolder.joinpath(self.out_sampled_file).is_file():
+                with open(calcFolder/self.errorFile) as stderr:
                     content = stderr.read()
                 if not content:
                     return True
         return False
 
-    def readOutput(self, system, calcFolder: str):
-        atoms = readcfg(pj(calcFolder, self.out_cfg_file))
+    def readOutput(self, system, calcFolder: Path):
+        calcFolder = Path(calcFolder)
+        atoms = readcfg(calcFolder/self.out_cfg_file)
         if atoms:
             if 'structure' in self.targetProperties:
                 self.readStructure(system, atoms)
@@ -127,7 +146,6 @@ class MLIP_Interface:
         structure = self.structureType([self.atomType(el) for el in aseStructure.get_chemical_symbols()], positions,
                                        cell=cell)
         system.update(disassembler.disassemble(structure))
-
 
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):

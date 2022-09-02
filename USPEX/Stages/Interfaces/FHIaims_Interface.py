@@ -5,10 +5,10 @@ USPEX.Stages.FHIaims_Interface
 """
 
 import logging
-import os
 import shutil
 import numpy as np
-from os.path import join as pj
+
+from pathlib import Path
 
 from .KPoints import KPoints, BadKPoints
 
@@ -33,9 +33,9 @@ class FHIaims_Interface:
                  targetProperties: list = None, **kwargs):
 
         if control is None:
-            control = pj(os.getcwd(), f'Specific/aims_control_{tag}')
+            control = Path.cwd()/f'Specific/aims_control_{tag}'
 
-        assert os.path.exists(control)
+        assert control.exists()
 
         with open(control, 'r') as f:
             self.control = f.read()
@@ -46,7 +46,7 @@ class FHIaims_Interface:
         self.fixCell = fixCell
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
         structure, disassembler = self.structureType.assemble(**system, vacuumSize=0)
         system['disassembler'] = disassembler
         atomTypes = structure.getAtomTypes()
@@ -55,10 +55,10 @@ class FHIaims_Interface:
         system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
 
-        with open(pj(calcFolder, self.inputFile), 'wt') as f:
+        with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
-        with open(pj(calcFolder, self.control_file), 'wt') as dest:
+        with open(calcFolder/self.control_file, 'wt') as dest:
             dest.write(self.control)
 
         if self.kPoints is not None:
@@ -69,10 +69,10 @@ class FHIaims_Interface:
                 logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
                 kPoints = [1, 1, 1]
 
-            with open(pj(calcFolder, self.control_file), 'a') as f:
+            with open(calcFolder/self.control_file, 'a') as f:
                 f.write('k_grid {} {} {}'.format(*kPoints))
 
-        with open(pj(calcFolder, self.geometry_file), 'wt') as fp:
+        with open(calcFolder/self.geometry_file, 'wt') as fp:
 
             if cell.dim != 0:
 
@@ -90,10 +90,10 @@ class FHIaims_Interface:
                 if i in fixedIndices:
                     fp.write('constrain_relaxation .true.\n')
 
-    def isConverged(self, calcFolder : str):
-        if not os.path.exists(pj(calcFolder, self.outputFile)):
+    def isConverged(self, calcFolder: Path):
+        if not calcFolder.joinpath(self.outputFile).exists():
             return False
-        with open(pj(calcFolder, self.outputFile), 'r') as f:
+        with open(calcFolder/self.outputFile, 'r') as f:
             content = f.read()
         if 'Have a nice day' not in content:
             logger.error('FHI-aims is not completely Done')
@@ -104,7 +104,7 @@ class FHIaims_Interface:
             return False
         return True
 
-    def readOutput(self, system, calcFolder : str):
+    def readOutput(self, system, calcFolder: Path):
 
         # In FHI-081213 geometry.in.next_step automatically will be created but
         # for FHI-081219 user need to specify restart_relaxations .true.
@@ -114,16 +114,18 @@ class FHIaims_Interface:
         # and FHI finishes without changing the relaxed structure, thus
         # geometry.in.next_step won't be created.
 
+        calcFolder = Path(calcFolder)
+
         if 'structure' in self.targetProperties:
-            geometry_file = pj(calcFolder, self.out_geometry_file)
-            if not os.path.exists(geometry_file):
-                shutil.copy(pj(calcFolder, self.geometry_file), geometry_file)
-            with open(geometry_file,'r') as f:
+            geometry_file = calcFolder/self.out_geometry_file
+            if not geometry_file.exists():
+                shutil.copy(calcFolder/self.geometry_file, geometry_file)
+            with open(geometry_file, 'r') as f:
                 content = f.read()
             self.readStructure(system, content)
 
         if 'enthalpy' in self.targetProperties:
-            with open(pj(calcFolder, self.outputFile), 'r') as f:
+            with open(calcFolder/self.outputFile, 'r') as f:
                 content = f.readlines()
 
             for line in content:

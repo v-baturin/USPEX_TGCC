@@ -6,10 +6,9 @@ USPEX.Stages.GULP_Interface
 
 import logging
 import numpy as np
-import os
 import re
 import shutil
-from os.path import join as pj
+from pathlib import Path
 from typing import List
 
 logger = logging.getLogger(__name__)
@@ -29,35 +28,43 @@ class GULP_Interface:
     atomicDisassemblerType = None
 
     def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: List[str] = None,
-                 moleculeSpecifics: dict = None, perturbate: bool = True, fixCell: bool = False, vacuumSize = 10,
+                 moleculeSpecifics: dict = None, perturbate: bool = True, fixCell: bool = False, vacuumSize= 10,
                  targetProperties: list = None, **kwargs):
         """
 
-        :param params: dictionary with parameters:
-                * ginput: (str) path to ginput-file.
-                * goption: (str) path to goption-file.
-                * commandExecutable: (str) executable command
-                * remote: (dict) remote server params    # optional
-                * taskManager: (dict) task managers params     # optional
+        :param tag:
+        :param ginput:
+        :param goptions:
+        :param libs:
+        :param moleculeSpecifics:
+        :param perturbate:
+        :param fixCell:
+        :param vacuumSize:
+        :param targetProperties:
+        :param kwargs:
         """
 
         if ginput is None:
-            ginput = pj(os.getcwd(), f'Specific/ginput_{tag}')
+            ginput = Path.cwd()/'Specific'/f'ginput_{tag}'
+        else:
+            ginput = Path(ginput)
 
         if goptions is None:
-            goptions = pj(os.getcwd(), f'Specific/goptions_{tag}')
+            goptions = Path.cwd(), f'Specific/goptions_{tag}'
+        else:
+            goptions = Path(goptions)
 
         self.optimizedStructure = 'optimized.structure'
 
-        assert os.path.exists(ginput)
-        assert os.path.exists(goptions)
+        assert ginput.exists()
+        assert goptions.exists()
 
         with open(ginput, 'r') as f:
             self.ginput = f.read()
         with open(goptions, 'r') as f:
             self.goptions = f.read()
 
-        self.libs = libs if libs else []
+        self.libs = [Path(x) for x in libs] if libs else []
         if moleculeSpecifics is not None:
             self.moleculeSpecifics = moleculeSpecifics
         else:
@@ -69,21 +76,23 @@ class GULP_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
         logger.debug('GULP calculator created.')
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
-        """
+    def prepareLocalCalculation(self, system, calcFolder: Path):
+        '''
 
-        """
-
+        :param system:
+        :param calcFolder:
+        :return:
+        '''
+        calcFolder = Path(calcFolder)
         structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
         cell = structure.getCell()
         system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
 
-        files_to_delete = ['output', 'optimized.structure']
+        files_to_delete = [Path.cwd()/'output', Path.cwd()/'optimized.structure']
         for f in files_to_delete:
-            if os.path.isfile(f):
-                os.remove(f)
+            f.unlink(missing_ok=True)
 
         # TODO connectivities in molecular mode.
         # if system.isMolecule:
@@ -154,24 +163,25 @@ class GULP_Interface:
             total_content += f"pressure {system['externalPressure']:.1f}\n"
         total_content += 'dump every optimized.structure\n'
 
-        with open(pj(calcFolder, self.inputFile), 'wt') as f:
+        with open(calcFolder/self.inputFile, 'wt') as f:
             f.write(total_content)
         for lib in self.libs:
-            if isinstance(lib,str) and os.path.exists(lib):
+            if lib.exists():
                 shutil.copy(lib, calcFolder)
 
         logger.debug('GULP calculator prepared calculation.')
 
-    def isConverged(self, calcFolder : str):
+    def isConverged(self, calcFolder: Path):
         """
-        :param SYSTEM:
+        :param calcFolder:
         :return: whether optimization converged
         """
-        with open(pj(calcFolder, self.errorFile), 'rt') as fp:
+        calcFolder = Path(calcFolder)
+        with open(calcFolder/self.errorFile, 'rt') as fp:
             content = fp.readlines()
             if 'STOP GULP terminated with an error\n' in content:
                 return False
-        with open(pj(calcFolder, self.outputFile), 'rt') as fp:
+        with open(calcFolder/self.outputFile, 'rt') as fp:
             content = fp.readlines()
             for line in reversed(content):
                 if ' Energy:' in line:
@@ -184,7 +194,7 @@ class GULP_Interface:
                         return True
 
         try:
-            with open(pj(calcFolder, self.optimizedStructure), 'rt') as fp:
+            with open(calcFolder/self.optimizedStructure, 'rt') as fp:
                 content = fp.readlines()
                 for line in reversed(content):
                     if 'dump' in line:
@@ -194,11 +204,12 @@ class GULP_Interface:
 
         return False
 
-    def readOutput(self, system, calcFolder : str):
+    def readOutput(self, system, calcFolder: Path):
         # TODO: implement http://qsh.ess.sunysb.edu:8000/trac/changeset/1255
         # Improve the GULP reader in case optimized_structure file is broken
         # Now ready to use parallel GULP  (applied to EX18-ZnOH)
-        with open(pj(calcFolder, self.outputFile), 'rt') as f:
+        calcFolder = Path(calcFolder)
+        with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
 
         if 'structure' in self.targetProperties:
@@ -343,7 +354,7 @@ class GULP_Interface:
                 break
         return np.array(strains)
 
-    def readForces(self, content, numAtoms : int):
+    def readForces(self, content, numAtoms: int):
         assert numAtoms > 0
 
         # force_orig = callAWK('GULP_force.awk', 'output', ['num=', num2str(numIons)]);
