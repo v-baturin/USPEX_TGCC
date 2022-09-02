@@ -58,7 +58,10 @@ class QE_Interface:
             raise KeyError('Required section &SYSTEM not found.')
         self.data = data
 
-        self.pseudopotentials = pseudopotentials
+        self.pseudopotentials = {s:Path(p) for s,p in pseudopotentials.items()}
+        for x, p in self.pseudopotentials.items():
+            assert p.exists()
+
         assert kresol > 0
         self.kPoints = KPoints(kresol)
         self.vacuumSize = vacuumSize
@@ -88,7 +91,7 @@ class QE_Interface:
 
         # Copying pseudopotentials to calc folder
         for s, pseudo in self.pseudopotentials.items():
-            if Path(pseudo).exists():
+            if pseudo.exists():
                 shutil.copy(pseudo, calcFolder)
 
         ############################# KPOINTS #################################
