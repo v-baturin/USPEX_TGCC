@@ -102,6 +102,11 @@ class RandSymPyXtal:
 
             if structurePyxtal.valid:
                 tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
+                if self.environmentUtility.hasEnvironment():
+                    environment = self.environmentUtility.getRandomEnvironment()
+                else:
+                    environment = None
+                self.cellUtility.communicateWithEnvironment(environment)
                 cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons))
                 operations = dict(zip(symbols, operations))
                 system = self.simpleMoleculeUtility.populateStructure(cell, operations)

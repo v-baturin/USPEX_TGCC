@@ -8,6 +8,7 @@ USPEX.Stages.LAMMPS_Interface
 import logging
 import os
 import shutil
+import sys
 
 import numpy as np
 from ase.io import read
@@ -17,8 +18,17 @@ from os.path import join as pj
 logger = logging.getLogger(__name__)
 
 
-REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp',
-                                    'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
+REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp', 'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
+BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3
+STRUCTURE_STYLES = ['structure', 'adjustedStructure']
+ENTHALPY_STYLES = ['enthalpy', 'adjustedEnthalpy', 'environmentEnthalpy', 'lowerEnvironmentEnthalpy', 'upperEnvironmentEnthalpy']
+ENERGY_STYLES = ['energy', 'adjustedEnergy', 'environmentEnergy', 'lowerEnvironmentEnergy', 'upperEnvironmentEnergy']
+STRESS_TENSOR_STYLES = ['stressTensor', 'environmentStressTensor', 'lowerEnvironmentStressTensor', 'upperEnvironmentStressTensor']
+ONLY_ENVIRONMENT_STYLES = {
+        'onlyEnvironment': 'getStructure',
+        'onlyLowerEnvironment': 'getLowerStructure',
+        'onlyUpperEnvironment': 'getUpperStructure'
+}
 
 class LAMMPS_Interface:
     """
@@ -42,7 +52,7 @@ class LAMMPS_Interface:
     atomicDisassemblerType = None
 
     def __init__(self, tag: str, lammps_in: str, libs: List[str], specorder: List[str],
-                 vacuumSize: float = 10.0, targetProperties: list = None, **kwargs):
+                 vacuumSize: float = 10.0, targetProperties: list = None, adjustEnvironment: bool = False, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -62,17 +72,38 @@ class LAMMPS_Interface:
         self.failedSystems = []
         self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.adjustEnvironment = adjustEnvironment
 
     def prepareLocalCalculation(self, system, calcFolder : str):
         """
         :param system:
         :param calcFolder:
         """
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
+
+        molecules, cell = system['molecules'], system['cell']
+        environment = system.get('environment')
+        if self.adjustEnvironment:
+            logger.debug('"adjustEnvironment" option was enabled , building the adjusted system')
+            if 'adjustedMolecules' not in system or 'adjustedCell' not in system or 'adjustedEnvironment' not in system:
+                molecules, cell, environment = system['molecules'], system['cell'], system['environment']
+                logger.debug(f'cellVectors: {cell.getCellVectors()} (film), {environment.getStructure().getCell().getCellVectors()} (substrate)')
+                adjustedMolecules, adjustedCell, adjustedEnvironment = type(environment).adjustSystem(molecules, cell, environment)
+                system['adjustedMolecules'], system['adjustedCell'], system['adjustedEnvironment'] = adjustedMolecules, adjustedCell, adjustedEnvironment
+                system['adjustedSupercellFactor'] = int(len(adjustedMolecules) / len(molecules))
+            else:
+                logger.debug('Adjusted data was found in system, proceeding with it')
+                adjustedMolecules, adjustedCell, adjustedEnvironment = system['adjustedMolecules'], system['adjustedCell'], system['adjustedEnvironment']
+            molecules, cell, environment = adjustedMolecules, adjustedCell, adjustedEnvironment
+        if 'noEnvironment' in self.targetProperties:
+            logger.debug('"noEnvironment" option was found in targetProperties, proceeding without environment')
+            structure, disassembler = self.structureType.assemble(molecules, cell, vacuumSize=self.vacuumSize)
+        else:
+            logger.debug('Assembling the structure')
+            structure, disassembler = self.structureType.assemble(molecules, cell, environment, vacuumSize=self.vacuumSize)
+
         system['disassembler'] = disassembler
         cell = structure.getCell()
         system['assembledCell'] = cell
-        coordinates = structure.getCartesianCoordinates()
 
         if not os.path.exists(calcFolder):
             os.makedirs(calcFolder)
@@ -105,6 +136,7 @@ class LAMMPS_Interface:
         else:
             index = np.where(pair_style_occurence)[0][0]
             content.insert(index+1, thermo_style_content)
+            
         # Step 3. We check if lammps.dump file will be written properly 
         # with dump command after calculation is finished
         
@@ -117,12 +149,16 @@ class LAMMPS_Interface:
         with open(pj(calcFolder, self.inputFile), 'w') as f:
             f.writelines(content)
         
-        if 'environmentEnthalpy' not in self.targetProperties:
-            atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell = cell.getCellVectors())
-        else:
-            environment = system['environment'].getStructure()
-            atoms = Atoms([el.short_name for el in environment.getAtomTypes()], environment.getCartesianCoordinates(), cell = cell.getCellVectors())
-        
+        for onlyEnvironment, getStructure in ONLY_ENVIRONMENT_STYLES.items():
+            if onlyEnvironment in self.targetProperties:
+                envStructure = getattr(environment, getStructure)()
+                coordinates = envStructure.getCartesianCoordinates()
+                cell = envStructure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+                coordinates = cell.center(coordinates)
+                structure = type(envStructure)(envStructure.getAtomTypes(), coordinates, cell)
+                
+        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(), cell = structure.getCell().getCellVectors())
+            
         write_lammps_data_with_label(pj(calcFolder, self.data_file), atoms, specorder=self.specorder, label=f"EA{system['ID']}")
         
         for lib in self.libs:
@@ -164,22 +200,23 @@ class LAMMPS_Interface:
 
     def readOutput(self, system, calcFolder : str):
         aseStructure = read(pj(calcFolder, self.dump_file), format='lammps-dump-text')
-        if 'structure' in self.targetProperties:
+        if any([item in self.targetProperties for item in STRUCTURE_STYLES]):
             self.readStructure(system, aseStructure)
-
         properties = self.readProperties(calcFolder)
-        if 'enthalpy' in self.targetProperties:
-            system['enthalpy'] = properties['Enthalpy']
-        if 'energy' in self.targetProperties:
-            system['energy'] = properties['TotEng']
-        if 'stressTensor' in self.targetProperties:
-            system['stressTensor'] = properties['StressTensor']
-        if 'environmentEnthalpy' in self.targetProperties:
-            system['environmentEnthalpy'] = properties['Enthalpy']
-        if 'environmentEnergy' in self.targetProperties:
-            system['environmentEnergy'] = properties['TotEng']
-        if 'environmentStressTensor' in self.targetProperties:
-            system['environmentStressTensor'] = properties['StressTensor']
+
+        for enthalpyStyle in ENTHALPY_STYLES:
+            if enthalpyStyle in self.targetProperties:
+                system[enthalpyStyle] = properties['Enthalpy']
+        for energyStyle in ENERGY_STYLES:
+            if energyStyle in self.targetProperties:
+                system[energyStyle] = properties['TotEng']
+        for stressTensorStyle in STRESS_TENSOR_STYLES:
+            if stressTensorStyle in self.targetProperties:
+                system[stressTensorStyle] = properties['StressTensor']
+
+        if abs(properties['TotEng']) / len(aseStructure) > BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD:
+            logger.error(f"System {system['ID']} seems to has wrong energy: {properties['TotEng']}. It will be discarded.")
+            system['isBad'] = True
 
     def readStructure(self, system, aseStructure):
         disassembler = system.pop('disassembler')
@@ -190,7 +227,15 @@ class LAMMPS_Interface:
         atomTypes = np.array([self.atomType(symbol) for symbol in symbols], dtype=self.atomType)
         cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC())
         structure = self.structureType(atomTypes, positions, cell=cell)
-        system.update(disassembler.disassemble(structure))
+        newSystem = disassembler.disassemble(structure)
+        if 'adjustedStructure' in self.targetProperties:
+            newSystem['adjustedMolecules'] = newSystem['molecules']
+            newSystem['adjustedCell'] = newSystem['cell']
+            newSystem['adjustedEnvironment'] = newSystem['environment']
+            del newSystem['molecules']
+            del newSystem['cell']
+            del newSystem['environment']
+        system.update(**newSystem)
 
     def readProperties(self, calcFolder: str):
         if os.path.exists(pj(calcFolder, self.outputFile)):
@@ -201,7 +246,6 @@ class LAMMPS_Interface:
             raise FileNotFoundError('Cannot find either {self.outputFile} or {self.log_file}.')
         with open(output, 'r') as f:
             content = f.readlines()
-        
         for i, line in enumerate(content):
             if "Step" in line:
                 properties_list = line.split()

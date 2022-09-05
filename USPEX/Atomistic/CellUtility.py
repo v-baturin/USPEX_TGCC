@@ -8,6 +8,7 @@ import numpy as np
 import spglib
 from copy import copy
 from scipy.spatial.transform import Rotation
+from scipy.linalg import orthogonal_procrustes
 
 from .Transformation import Transformation
 
@@ -21,7 +22,7 @@ class CellUtility:
     """
 
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
-                 thickness=None, supercellDegree = None, symTolerance=None, debug = False):
+                 thickness=None, supercellDegree = None, symTolerance=None, gatherEnvironmentCell = False, debug = False):
         """
 
         :param dim: dimensionality, i.e. number of periodic directions.
@@ -36,6 +37,7 @@ class CellUtility:
         :param thickness: for 2D, 1D and 0D structures constraint on size of containment space.
         :param supercellDegree: int or list of int with allowed supercell sizes.
         :param symTolerance: allowed imperfection of atomic positions when determining symmetry of structure.
+        :param gatherEnvironmentCell: makes the cell of the system match the cell of the environment
         :param debug: switch between two levels of logging. True for debug level, false for INFO level.
 
         """
@@ -65,25 +67,27 @@ class CellUtility:
         elif self._dim == 2:
             assert thickness is not None
             if cellVectors is not None:
-                assert cellParameters is None and axis is None and cellVolume is None
+                assert cellParameters is None and axis is None and cellVolume is None and gatherEnvironmentCell is False
             elif cellParameters is not None:
-                assert axis is not None and cellVolume is None
+                assert axis is not None and cellVolume is None and gatherEnvironmentCell is False
             else:
                 assert axis is not None
         elif self._dim == 1:
             assert thickness is not None
             if cellVectors is not None:
-                assert cellParameters is None and axis is None and cellVolume is None
+                assert cellParameters is None and axis is None and cellVolume is None and gatherEnvironmentCell is False
             elif cellParameters is not None:
-                assert axis is not None and cellVolume is None
+                assert axis is not None and cellVolume is None and gatherEnvironmentCell is False
             else:
                 assert axis is not None
         elif self._dim == 0:
-            assert cellVectors is None and cellParameters is None and cellVolume is None and axis is None
+            assert cellVectors is None and cellParameters is None and cellVolume is None and axis is None and gatherEnvironmentCell is False
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
 
         self._axis = np.asarray(axis, dtype=float) if axis is not None else None
+
+        self._gatherEnvironmentCell = gatherEnvironmentCell
 
         if cellVectors is not None:
             self._cell = Cell.initFromCellVectors(self._pbc, cellVectors)
@@ -177,6 +181,17 @@ class CellUtility:
         :return: volume of unit cell if it is set or the cell is fixed, otherwise *None*.
         """
         return self._volume
+
+    def communicateWithEnvironment(self, environment=None):
+        """
+        Replaces internal self._cell object with environment cell
+        """
+        if environment is not None and self._gatherEnvironmentCell:
+            environmentCell = environment.getStructure().getCell().getAlignedCell(self._axis)
+            environmentCellVectors = environmentCell.getCellVectorsPBC()
+            cell = environmentCell.initFromCellVectors(self._pbc, environmentCellVectors)
+            self._cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
+
 
     def adjustCell(self, cellVectors, estimatedVolume, numAtoms):
         """
@@ -365,7 +380,7 @@ class CellUtility:
                 matrix[ind, ind] = factor
             else:
                 raise RuntimeError(f"Wrong dim {self._dim}.")
-            if np.linalg.det(matrix) == factor:
+            if np.round(np.linalg.det(matrix)) == factor:
                 return matrix
 
     def isGoodCell(self, cell):
@@ -417,7 +432,6 @@ class CellUtility:
         :return: calculated length of system.
         """
         return system['cell'].getLength()
-
 
     def symmetry(self, system: dict):
         """
@@ -540,6 +554,23 @@ class Cell:
             return Cell(np.eye(3), pbc)
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
+
+    def getOrthogonallyTransformedCell(self, targetCell):
+        """
+        Transforms cellVectors closely to the cellVectors of the targetCell 
+        within orthogonal transformation. 
+
+        :param targetCell: targen cell to be aligned with.
+
+        :return: **Cell** object with adjusted parameters.
+        """
+        
+        cellVectors = self.getCellVectors()
+        targetCellVectors = targetCell.getCellVectors()
+        transformationMatrix, _ = orthogonal_procrustes(cellVectors, targetCellVectors)
+        newCellVectors = (transformationMatrix.T @ cellVectors.T).T
+        newCell = type(self)(newCellVectors, pbc=self.getPBC())
+        return newCell
 
     def getAlignedCell(self, axis):
         """
@@ -914,6 +945,17 @@ class Cell:
             return matrix
         else:
             return np.eye(3)
+
+    def isClose(self, other, tol=5e-2): 
+        """
+        Checks if cell vectors of the given cell are close to ones of the other cell
+
+        :param other: unit cell to compare with.
+
+        :return: True or False.
+        """
+        decompositionMatrix = self.decomposeCell(other)
+        return np.isclose(np.linalg.norm(decompositionMatrix, axis=1).mean(), 1.0, atol=tol)
 
     def randomTransformation(self):
         """

@@ -100,6 +100,11 @@ class RandTop:
                                         elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
                                         estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
                                                                                                                   self.conditions.externalPressure)
+                                    if self.environmentUtility.hasEnvironment():
+                                            environment = self.environmentUtility.getRandomEnvironment()
+                                    else:
+                                        environment = None
+                                    self.cellUtility.communicateWithEnvironment(environment)
                                     cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber)
                                     operations = dict(zip(symbols, operations))
                                     all_coordinates = np.vstack([*itertools.chain(*coordinates)])

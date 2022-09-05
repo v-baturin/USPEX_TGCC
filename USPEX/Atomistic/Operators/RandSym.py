@@ -165,6 +165,11 @@ class RandSym:
                                                     estimatedVolume, self.sym_coef)
                 name, cell, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
+                if self.environmentUtility.hasEnvironment():
+                    environment = self.environmentUtility.getRandomEnvironment()
+                else:
+                    environment = None
+                self.cellUtility.communicateWithEnvironment(environment)
                 cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons))
                 for i in range(self.attemptsRotation):
                     system = self.simpleMoleculeUtility.populateStructure(cell, operations)
