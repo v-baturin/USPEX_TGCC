@@ -196,8 +196,10 @@ class AtomisticRepresentation(object):
         filename = Path(filename)
         if filename.suffix == '.uspex':
             with open(filename) as f:
-                systems = yaml.safe_load(f.read())
-            files = {name: cls.readAtomicStructuresRaw(name) for name in np.unique([s['filename'] for s in systems])}
+                descriptions = yaml.safe_load(f.read())
+            files = {name: cls.readAtomicStructuresRaw(name) for name in np.unique([s['filename'] for s in descriptions])}
+            systems = [cls.atomicDisassemblerType.fromDescription(**s).disassemble(files[s['filename']][s['index']])
+                       for s in descriptions]
         else:
             systems = [cls.atomicDisassemblerType.createFlatDisassembler(len(s), s.getCell()).disassemble(s)
                        for s in cls.readAtomicStructuresRaw(filename)]

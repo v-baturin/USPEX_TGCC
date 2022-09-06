@@ -54,8 +54,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         # Only output will be parsed and properties checked
         interface = LAMMPS_Interface(tag='0', perturbate=False,
                                   libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'), specorder=['C'])
-        with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-            system = AtomisticRepresentation.readAtomicStructure(f)
+        system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
         system['ID'] = 0
         s, d = type(system['molecules'][0]).assemble(**system)
         system['disassembler'] = d

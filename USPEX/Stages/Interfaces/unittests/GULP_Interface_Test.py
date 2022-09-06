@@ -67,8 +67,7 @@ class GULP_InterfaceTest(unittest.TestCase):
                                    targetProperties=['structure', 'enthalpy', 'stressTensor', 'strains'])
         # with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
-        with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-            system = AtomisticRepresentation.readAtomicStructure(f)
+        system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
         system['assembledCell'] = system['cell']
         system['ID'] = 0
         system['disassembler'] = AtomisticRepresentation.atomicDisassemblerType.createFlatDisassembler(len(system['molecules']), cell=system['cell'])
