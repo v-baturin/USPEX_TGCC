@@ -195,8 +195,8 @@ class Fitness_Test(unittest.TestCase):
 class FitnessXray_Test(unittest.TestCase):
     def setUp(self) -> None:
         # 'externalPressure': 135,
-        with open(pj(HOMEPATH,'XRay_POSCARS'), 'rt') as f:
-            self.systems = [AtomisticRepresentation.readAtomicStructure(f) for i in range(10)]
+        filename = pj(HOMEPATH,'XRay_POSCARS')
+        self.systems = [AtomisticRepresentation.readAtomicStructure(filename) for i in range(10)]
         enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
         for ID, system in enumerate(self.systems):
             system['ID'] = ID

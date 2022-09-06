@@ -37,8 +37,7 @@ class PWmat_InterfaceTest(unittest.TestCase):
                   'potcars': ['{}/Specific/Si.SG15.PBE.UPF'.format(HOMEPATH)]}
 
         cls.vcEmpty = PWmat_Interface(**params)
-        with open(os.path.join(HOMEPATH, 'Si4System.vasp'), 'rt') as f:
-            cls.testSystem = AtomisticRepresentation.readAtomicStructure(f)
+        cls.testSystem = AtomisticRepresentation.readAtomicStructure(os.path.join(HOMEPATH, 'Si4System.vasp'))
         cls.testSystem['ID'] = 0
         cls.testSystem['externalPressure'] = 0.00001
 

@@ -30,10 +30,10 @@ def read_structures_and_energies(symbols, folder : str):
     DATA = pd.DataFrame(columns=['Generation', 'ID', 'composition', 'enthalpy'], dtype=int)
     all_systems = []
     try:
-        with open(pj(folder, 'gatheredPOSCARS'), 'r') as fp:
-            while True:
-                system = AtomisticRepresentation.readAtomicStructure(fp)
-                all_systems.append(system)
+        filename = pj(folder, 'gatheredPOSCARS')
+        while True:
+            system = AtomisticRepresentation.readAtomicStructure(filename)
+            all_systems.append(system)
     except:
         print('Reading of the pathway has finished.')
     assert len(all_systems)

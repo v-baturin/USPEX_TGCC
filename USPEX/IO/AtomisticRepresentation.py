@@ -152,32 +152,32 @@ class AtomisticRepresentation(object):
 
 
     @classmethod
-    def writeAtomicStructureRaw(cls, fileDescriptor, structure, label):
+    def writeAtomicStructureRaw(cls, filename, structure, label):
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell().getEnvelopeCell(coordinates, 10)
         coordinates = cell.center(coordinates)
         atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
-        write_vasp(fileDescriptor, atoms, label=label, sort=True, direct=True, vasp5=True, long_format=False)
+        write_vasp(filename, atoms, label=label, sort=True, direct=True, vasp5=True, long_format=False)
 
     @classmethod
-    def writeAtomicStructure(cls, structureFileDescriptor, system: dict, disassemblerFileDescriptor=None):
+    def writeAtomicStructure(cls, filename, system: dict, disassemblerFileDescriptor=None):
         structure, disassembler = cls.structureType.assemble(**system)
-        cls.writeAtomicStructureRaw(structureFileDescriptor, structure, f"EA{system['ID']}")
+        cls.writeAtomicStructureRaw(filename, structure, f"EA{system['ID']}")
         if disassemblerFileDescriptor is not None:
             indices = " ".join(f"[{' '.join(f'{i}' for i in inds)}]" for inds in disassembler.indices)
             disassemblerFileDescriptor.write("{indices: [" + indices + "]}")
 
     @classmethod
-    def readAtomicStructureRaw(cls, fileDescriptor, pbc=(1, 1, 1)):
-        atoms = read_vasp(fileDescriptor)
+    def readAtomicStructureRaw(cls, filename, pbc=(1, 1, 1)):
+        atoms = read_vasp(filename)
         atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
         cell = cls.cellType(atoms.get_cell().array, pbc)
         coordinates = atoms.get_positions()
         return cls.structureType(atomTypes, coordinates, cell)
 
     @classmethod
-    def readAtomicStructure(cls, structureFileDescriptor, disassemblerFileDescriptor=None, pbc=(1, 1, 1)) -> dict:
-        structure = cls.readAtomicStructureRaw(structureFileDescriptor, pbc)
+    def readAtomicStructure(cls, filename, disassemblerFileDescriptor=None, pbc=(1, 1, 1)) -> dict:
+        structure = cls.readAtomicStructureRaw(filename, pbc)
         if disassemblerFileDescriptor is None:
             disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(structure), cell=structure.getCell())
         else:

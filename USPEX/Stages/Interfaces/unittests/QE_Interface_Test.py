@@ -28,10 +28,9 @@ class QE_CalculatorTest2(unittest.TestCase):
         radialDistributionUtility = RadialDistributionUtility(symbols=['C'])
 
         for ID in range(10):
-            with open(GATHEREDPATH/f'input/system{ID}.vasp', 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
-                system['ID'] = ID
-                system['externalPressure'] = 0.0001
+            system = AtomisticRepresentation.readAtomicStructure(GATHEREDPATH/f'input/system{ID}.vasp')
+            system['ID'] = ID
+            system['externalPressure'] = 0.0001
             WORKPATH.mkdir(exist_ok=True)
             qe.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
@@ -45,6 +44,5 @@ class QE_CalculatorTest2(unittest.TestCase):
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
             qe.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(folder/f"system{system['ID']}.vasp", 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
+            systemRef = AtomisticRepresentation.readAtomicStructure(folder/f"system{system['ID']}.vasp")
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))

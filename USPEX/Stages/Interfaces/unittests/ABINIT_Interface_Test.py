@@ -38,11 +38,10 @@ class ABINIT_Interface_Test(unittest.TestCase):
 
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
-                system['assembled_cell'] = system['cell']
-                system['ID'] = ID
-                system['externalPressure'] = 130.0
+            system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
+            system['assembled_cell'] = system['cell']
+            system['ID'] = ID
+            system['externalPressure'] = 130.0
             os.mkdir(WORKPATH)
             abinit.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -56,6 +55,5 @@ class ABINIT_Interface_Test(unittest.TestCase):
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             abinit.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
+            systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
