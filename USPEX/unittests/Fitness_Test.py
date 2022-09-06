@@ -35,23 +35,23 @@ class Fitness_Test(unittest.TestCase):
         molecules = [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mg'] * 4 + ['Al'] * 8 + ['O'] * 16]
         self.systems = [{'ID': 0, 'molecules': molecules, 'enthalpy': -646.695,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
                         {'ID': 1, 'molecules': molecules, 'enthalpy': -644.480,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2]}, None, None)},
                         {'ID': 2, 'molecules': molecules, 'enthalpy': -650.098,
-                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
                         {'ID': 3, 'molecules': molecules, 'enthalpy': -649.082,
-                         'fingerprint': Fingerprint({'b': [0.1,-0.5]}, None)},
+                         'fingerprint': Fingerprint({'b': [0.1,-0.5]}, None, None)},
                         {'ID': 4, 'molecules': molecules, 'enthalpy': -651.279,
-                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
                         {'ID': 5, 'molecules': molecules, 'enthalpy': -643.925,
-                         'fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None, None)},
                         {'ID': 6, 'molecules': molecules, 'enthalpy': -652.042,
-                         'fingerprint': Fingerprint({'b': [0.1,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'b': [0.1,-0.2]}, None, None)},
                         {'ID': 7, 'molecules': molecules, 'enthalpy': -648.368,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)},
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
                         {'ID': 8, 'molecules': molecules, 'enthalpy': -648.335,
-                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None)}]
+                         'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)}]
         self.compositionSpace = CompositionSpace(symbols=['Mg', 'Al', 'O'], blocks=[[4, 8, 16]], range=[[1, 1]])
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
         utilities = SimpleNamespace(compositionSpace=self.compositionSpace,
@@ -101,6 +101,13 @@ class Fitness_Test(unittest.TestCase):
     def test_convexHullHeightComposition(self):
         ref = [5.347, 7.562, 1.944, 2.96,  0.763, 8.117, 0., 3.674, 3.707]
         self.assertTrue(np.allclose(self.fitness.calcFitness(('convexHullHeight',
+                                                              ('getRelativeCHSpace',
+                                                               ('compositionSpace.numBlocksFromCompositions',
+                                                              'simpleMoleculeUtility.composition'), 'enthalpy'))), ref))
+
+    def test_simpleHeightComposition(self):
+        ref = [5.347, 7.562, 1.944, 2.96, 0.763, 8.117, 0., 3.674, 3.707]
+        self.assertTrue(np.allclose(self.fitness.calcFitness(('simpleHeight',
                                                               ('getRelativeCHSpace',
                                                                ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition'), 'enthalpy'))), ref))

@@ -34,7 +34,7 @@ class GULP_CalculatorTest(unittest.TestCase):
 
         gulp = GULP_Interface(tag='0', perturbate=False,
                               goptions=pj(SPECIFICPATH, 'goptions'), ginput=pj(SPECIFICPATH, 'ginput_1'))
-        radialDistributionUtility = RadialDistributionUtility()
+        radialDistributionUtility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'])
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:

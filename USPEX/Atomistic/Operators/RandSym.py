@@ -65,6 +65,7 @@ class RandSym:
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.conditions = utilities.conditions
         self.nsymN = nsymN
         if nsym is None:
@@ -169,12 +170,17 @@ class RandSym:
                     system = self.simpleMoleculeUtility.populateStructure(cell, operations)
                     molecules = system['molecules']
                     cell = system['cell']
-                    atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
+                    self.environmentUtility.putEnvironment(system)
+                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    if disassembler.environment is not None:
+                        inds = disassembler.envIndices
+                        atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                     if np.all(atomDistances >= distCoeff * minDistMatrix):
-                        self.environmentUtility.putEnvironment(system)
                         self.conditions.putConditions(system)
-                        return (system,)
+                        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                        if self.bonds.isConnected(structure):
+                            return (system,)
             except Exception as e:
                 logger.debug(e, exc_info=True)
 

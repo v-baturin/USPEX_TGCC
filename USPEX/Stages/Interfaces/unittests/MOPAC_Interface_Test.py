@@ -26,7 +26,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
 
     def test_life(self):
         mopac = MOPAC_Interface(tag='0', mop_input=pj(SPECIFICPATH, 'mop_1'))
-        radialDistributionUtility = RadialDistributionUtility()
+        radialDistributionUtility = RadialDistributionUtility(symbols=['Si', 'O'])
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:

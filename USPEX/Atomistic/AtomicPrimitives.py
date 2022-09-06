@@ -288,6 +288,13 @@ class AtomicDisassembler:
         self.indices = [np.asarray(inds, dtype=int) for inds in indices]
         self.environment = environment
         self.cell = cell
+        if self.environment is not None:
+            molIndices = set(np.concatenate(self.indices))
+            allIndices = list(range(len(molIndices) + len(self.environment.getStructure())))
+            self.envIndices = np.asarray(list(set(allIndices).difference(molIndices)), dtype=int)
+        else:
+            self.envIndices = np.empty(0, dtype=int)
+
 
     @staticmethod
     def createFlatDisassembler(N, cell):
@@ -299,15 +306,6 @@ class AtomicDisassembler:
         """
         return AtomicDisassembler([[i] for i in range(N)], environment=None, cell=cell)
 
-    @property
-    def envIndices(self):
-        if self.environment is not None:
-            molIndices = set(np.concatenate(self.indices))
-            allIndices = list(range(len(molIndices) + len(self.environment.getStructure())))
-            return np.asarray(list(set(allIndices).difference(molIndices)), dtype = int)
-        else:
-            return np.empty(0, dtype=int)
-
     def disassemble(self, atomicStructure):
         """
         Decomposes given structure into molecules and environment.
@@ -318,18 +316,21 @@ class AtomicDisassembler:
         """
         atomTypes = atomicStructure.getAtomTypes()
         coordinates = atomicStructure.getCartesianCoordinates()
-        sys_allcoords = []
+        syscoords = []
+        sysAtomTypes = []
         for indices in self.indices:
-            sys_allcoords.extend(coordinates[indices])
-        sys_allcoords = np.array(sys_allcoords)
+            syscoords.extend(coordinates[indices])
+            sysAtomTypes.extend(atomTypes[indices])
+        syscoords = np.array(syscoords)
+        sysAtomTypes = np.asarray(sysAtomTypes)
         assembledCell = atomicStructure.getCell()
-        cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.cell.getPBC()).getEnvelopeCell(sys_allcoords,
+        cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.cell.getPBC()).getEnvelopeCell(syscoords,
                                                                                                            vacuumSize=1.0)
-        system=dict()
+        system = dict()
+        envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
         if self.environment is not None:
-            offsetVector = np.min(sys_allcoords, axis=0)
-            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
-            system['environment'] = type(self.environment)(envStructure, self.environment.getThickness(), offsetVector)
+            system['environment'] = self.environment.getUpdatedEnvironment(sysAtomTypes, syscoords, cell, envStructure)
+            offsetVector = system['environment'].calculateOffset(None)
         else:
             offsetVector = 0
         molecules = []
@@ -378,6 +379,13 @@ class AtomicDisassembler:
                 atomicDisplacements = np.array([[0.,0.,0.]])
             molecularDispacements.append((Transformation.fromRotVector(rotation, translation), atomicDisplacements))
         return molecularDispacements
+
+    def findMolIndex(self, index):
+        for molIndex, inds in enumerate(self.indices):
+            if index in inds:
+                return molIndex
+        raise RuntimeError("Bad index or empty structure.")
+
 
 def _lattice_points_in_supercell(supercell_matrix):
     """

@@ -14,11 +14,15 @@ def compileParams(main: dict) -> dict:
         target = optimizer['target']
         symbols = target['compositionSpace']['symbols']
         molecules = {}
+        elementalSymbols = set()
         for i, symbol in enumerate(symbols):
             if isinstance(symbol, dict):
                 molDct = read_molecule(symbol['filename'])
                 molecules[symbol['name']] = molDct
                 symbols[i] = symbol['name']
+                elementalSymbols |= set(molDct['symbols'])
+            else:
+                elementalSymbols.add(symbol)
             if molecules:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
         if 'ionDistances' not in target:
@@ -38,5 +42,9 @@ def compileParams(main: dict) -> dict:
         if 'singleCrystalSpectrumAnalyzer' in target:
             sCS = target['singleCrystalSpectrumAnalyzer']
             sCS['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(sCS.pop('hklFile'))
+        if 'radialDistributionUtility' not in target:
+            target['radialDistributionUtility'] = {}
+        if 'symbols' not in target['radialDistributionUtility']:
+            target['radialDistributionUtility']['symbols'] = sorted(elementalSymbols)
 
     return main

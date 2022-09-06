@@ -13,15 +13,16 @@ NSLUBS = 2
 
 class Heredity:
 
-    def __init__(self, utilities, nslubs = None, attempts = ATTEMPTS, debug = False):
+    def __init__(self, utilities, nslabs = None, attempts = ATTEMPTS, debug = False):
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
         self.radialDistributionUtility = utilities.radialDistributionUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.conditions = utilities.conditions
-        self.nslubs = nslubs
+        self.nslabs = nslabs
         self.attempts = attempts
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -50,9 +51,9 @@ class Heredity:
             outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell()
             if self.cellUtility.isGoodCell(outputCell):
                 axis = np.random.randint(3)
-                if self.nslubs is None:
-                    if composition1 == composition2:
-                        nslubs = 2
+                if self.nslabs is None:
+                    if (composition1 == composition2) or outputCell.dim < 3:
+                        nslabs = 2
                     else:
                         elementalComposition1 = self.simpleMoleculeUtility.getElementalComposition(composition1)
                         elementalComposition2 = self.simpleMoleculeUtility.getElementalComposition(composition2)
@@ -61,13 +62,13 @@ class Heredity:
                         minSlice = radii.min()
                         maxSlice = radii.max()
                         medSlice = (minSlice + maxSlice) / 2
-                        nslubs = int(np.round(outputCell.getCellParameters()[axis] / medSlice))
-                        if nslubs < 2:
-                            nslubs = 2
+                        nslabs = int(np.round(outputCell.getCellParameters()[axis] / medSlice))
+                        if nslabs < 2:
+                            nslabs = 2
                 else:
-                    nslubs = self.nslubs
+                    nslabs = self.nslabs
 
-                gaugesOfSlabs = tuple(np.random.randint(3, 9, size=nslubs).tolist())
+                gaugesOfSlabs = tuple(np.random.randint(3, 9, size=nslabs).tolist())
 
                 if outputCell.dim == 0:
                     logger.debug(f"trying  {gaugesOfSlabs}-size slabs.")
@@ -117,13 +118,19 @@ class Heredity:
                 moleculeTypes = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in molecules]
                 composition = Counter(dict(zip(*np.unique(moleculeTypes, return_counts=True))))
                 if composition == desiredComposition:
-                    atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules, outputCell)
+                    system = {'molecules': molecules, 'cell': outputCell}
+                    self.environmentUtility.putEnvironment(system)
+                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    if disassembler.environment is not None:
+                        inds = disassembler.envIndices
+                        atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                     if np.all(atomDistances >= minDistMatrix):
-                        system = {'molecules': molecules, 'cell': outputCell}
-                        self.environmentUtility.putEnvironment(system)
                         self.conditions.putConditions(system)
+                        # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                        # if self.bonds.isConnected(structure):
                         return (system,)
+
 
         raise RuntimeError("Heredity failed.")
 

@@ -10,6 +10,7 @@ class Transmutation:
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
         # if self.simpleMoleculeUtility.isTrueMolecular:
@@ -47,12 +48,17 @@ class Transmutation:
 
                 offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
                 offspring['molecules'][0:0] = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
-                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(**offspring)
+                self.environmentUtility.putEnvironment(offspring, environment)
+                atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                if disassembler.environment is not None:
+                    inds = disassembler.envIndices
+                    atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 composition = self.simpleMoleculeUtility.composition(offspring)
                 if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-                    self.environmentUtility.putEnvironment(offspring, environment)
                     self.conditions.putConditions(offspring)
+                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
+                    # if self.bonds.isConnected(structure):
                     return (offspring,)
 
         raise RuntimeError("Transmutation failed.")

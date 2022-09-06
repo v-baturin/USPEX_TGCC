@@ -35,7 +35,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         aims = FHIaims_Interface(tag='1', perturbate=False,
                               control=pj(SPECIFICPATH, 'aims_control_1'), kresol=0.14)
-        radialDistributionUtility = RadialDistributionUtility()
+        radialDistributionUtility = RadialDistributionUtility(symbols=['P'])
 
 
         for ID in range(10):

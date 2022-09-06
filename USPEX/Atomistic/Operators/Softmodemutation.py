@@ -14,6 +14,7 @@ class Softmodemutation:
     def __init__(self, utilities, degree: float = None):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
+        self.bonds = utilities.bonds
         self.environmentUtility = utilities.environmentUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
@@ -31,7 +32,12 @@ class Softmodemutation:
             if ID in self.knownSystems:
                 frequencies, eigenVectors = self.knownSystems[ID]
             else:
-                frequencies, eigenVectors = calcSoftModes(structure)
+                try:
+                    bonds = self.bonds.getMinimalGraphBonds(structure)
+                except Exception as e:
+                    logger.debug(e)
+                    raise RuntimeError("Softmutation failed.")
+                frequencies, eigenVectors = calcSoftModes(structure, bonds)
                 self.knownSystems[ID] = (frequencies, eigenVectors)
             while len(frequencies) > 0:
                 freq = frequencies.pop(0)
@@ -55,19 +61,29 @@ class Softmodemutation:
                     molecules2.append(molecule2)
 
                 offsprings = ()
-                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules1, cell)
+                system = {'molecules': molecules1, 'cell': cell}
+                self.environmentUtility.putEnvironment(system, environment)
+                atomSymbols, atomDistances, disassembler1 = self.simpleMoleculeUtility.getMinDistances(**system)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                if disassembler1.environment is not None:
+                    inds = disassembler1.envIndices
+                    atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
-                    system = {'molecules': molecules1, 'cell': cell}
-                    self.environmentUtility.putEnvironment(system, environment)
                     self.conditions.putConditions(system)
+                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                    # if self.bonds.isConnected(structure):
                     offsprings += (system,)
-                atomSymbols, atomDistances = self.simpleMoleculeUtility.getMinDistances(molecules2, cell)
+                system = {'molecules': molecules2, 'cell': cell}
+                self.environmentUtility.putEnvironment(system, environment)
+                atomSymbols, atomDistances, disassembler2 = self.simpleMoleculeUtility.getMinDistances(**system)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                if disassembler2.environment is not None:
+                    inds = disassembler2.envIndices
+                    atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
-                    system = {'molecules': molecules2, 'cell': cell}
-                    self.environmentUtility.putEnvironment(system, environment)
                     self.conditions.putConditions(system)
+                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                    # if self.bonds.isConnected(structure):
                     offsprings += (system,)
                 if offsprings:
                     return offsprings

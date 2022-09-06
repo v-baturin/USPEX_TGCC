@@ -24,7 +24,7 @@ Si_gch_path = pj(TESTPATH, 'Si_gch_test')
 FeC_gch_path = pj(TESTPATH, 'FeC_gch_test')
 
 
-def read_structures_and_energies(folder : str):
+def read_structures_and_energies(symbols, folder : str):
     with open(pj(folder, 'Individuals'), 'r') as fp:
         info = fp.readlines()[2:]
     DATA = pd.DataFrame(columns=['Generation', 'ID', 'composition', 'enthalpy'], dtype=int)
@@ -37,7 +37,7 @@ def read_structures_and_energies(folder : str):
     except:
         print('Reading of the pathway has finished.')
     assert len(all_systems)
-    radialDistributionUtility = RadialDistributionUtility()
+    radialDistributionUtility = RadialDistributionUtility(symbols=symbols)
 
     populations = []
     for i, (_info, system) in enumerate(zip(info, all_systems)):
@@ -62,7 +62,7 @@ def read_structures_and_energies(folder : str):
 class GenConvexHull_Si_Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.data, cls.populations, cls.all_systems = read_structures_and_energies(folder=Si_gch_path)
+        cls.data, cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Si'], folder=Si_gch_path)
         cls.config = CompositionSpace(symbols=['Si'], blocks=[[8]], range=[[1, 1]])
         # All systems will be added to the convex hull at one moment.
         # Systems will be added to the convex hull step by step.
@@ -101,7 +101,7 @@ class GenConvexHull_Si_Test(unittest.TestCase):
 class GenConvexHull_FeC_Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.data, cls.populations, cls.all_systems = read_structures_and_energies(folder=FeC_gch_path)
+        cls.data, cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Fe', 'C'], folder=FeC_gch_path)
         cls.config = CompositionSpace(symbols=['Fe', 'C'], blocks=[[3,1]], range=[[1, 10]], minAt=4, maxAt=40)
 
     def test_is_on_CH_short(self):

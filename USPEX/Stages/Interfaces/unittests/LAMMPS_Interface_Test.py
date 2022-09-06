@@ -24,7 +24,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
         lammps = LAMMPS_Interface(tag='0', perturbate=False,
                                   libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'),
                                   specorder=['C'])
-        radialDistributionUtility = RadialDistributionUtility()
+        radialDistributionUtility = RadialDistributionUtility(symbols=['C'])
 
         for ID in range(10):
             with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:

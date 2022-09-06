@@ -123,7 +123,7 @@ class MOPAC_Interface:
                 if 'TOTAL ENERGY' in line:
                     e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
                     system['enthalpy'] = float(e.group(1))
-                break
+                    break
 
     def readStructure(self, system, content):
 

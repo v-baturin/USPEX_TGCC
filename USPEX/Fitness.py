@@ -12,6 +12,7 @@ import numpy as np
 from copy import copy
 from collections.abc import Mapping
 from sklearn.decomposition import PCA
+from pandas import DataFrame
 
 from .ConvexHull import ConvexHull
 from .paretoRanking import paretoRanking
@@ -193,6 +194,21 @@ class Fitness:
     @staticmethod
     def convexHullHeight(space: np.ndarray) -> np.ndarray:
         return copy(ConvexHull(space).height)
+
+    @staticmethod
+    def simpleHeight(space: np.ndarray) -> np.ndarray:
+        nRows, nColumns = space.shape
+        if nColumns > 1:
+            values = np.empty(nRows, dtype=float)
+            for row in space:
+                arg = np.empty((nColumns - 1, nRows), dtype=float)
+                *arg[:], value = (space - row).T
+                where = np.isclose(arg.all(axis=0), 0).nonzero()
+                value = value[where]
+                values[where] = value - value.min()
+        else:
+            values = (space - space.min(axis=0)).flatten()
+        return values
 
     @staticmethod
     def getRelativeCHSpace(arguments: np.ndarray, properties: np.ndarray) -> np.ndarray:

@@ -13,6 +13,8 @@ if not exists(FILENAME):
         'presetFitness': {
             'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'enthalpy')),
+            'enthalpyCS': ('simpleHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
+                                                                        'simpleMoleculeUtility.composition'), 'enthalpy')),
             'refinedEnergy': ('minus', 'energy', 'environmentEnergy'),
             'refinedEnergyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'refinedEnergy')),
@@ -38,7 +40,8 @@ if not exists(FILENAME):
                 'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             },
             'CrystalVarComp': {
                 'columns': [
@@ -53,7 +56,8 @@ if not exists(FILENAME):
                 ],
                 'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': True
             },
             'Nano2DFixComp': {
                 'columns': [
@@ -66,7 +70,8 @@ if not exists(FILENAME):
                 ],
                 'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             },
             'Nano2DVarComp': {
                 'columns': [
@@ -81,7 +86,8 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
                 ],
                 'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': True
             },
             'Nano1DFixComp': {
                 'columns': [
@@ -94,7 +100,8 @@ if not exists(FILENAME):
                 ],
                 'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             },
             'Nano1DVarComp': {
                 'columns': [
@@ -107,7 +114,8 @@ if not exists(FILENAME):
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
                 ],
                 'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': True
             },
             'Nano0DFixComp': {
                 'columns': [
@@ -119,19 +127,21 @@ if not exists(FILENAME):
                 ],
                 'toDraw': [('dep', 'enthalpy', 'raw', 'ID', 'raw'),
                            ('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             },
             'Nano0DVarComp': {
                 'columns': [
                     ('simpleMoleculeUtility.composition', 'Composition'),
                     ('enthalpy', 'Enthalpy (eV)'),
-                    ('enthalpyCCH', 'Enthalpy per Block above CCH (eV)'),
+                    ('enthalpyCS', 'Enthalpy per Block above the best for composition(eV'),
                     ('radialDistributionUtility.structureOrder', 'Structure order'),
                     ('radialDistributionUtility.averageOrder', 'Average order'),
                     ('radialDistributionUtility.quasientropy', 'Quasientropy')
                 ],
                 'toDraw': [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
-                           ('stat', 'enthalpy', 'per_atom', '', '')]
+                           ('stat', 'enthalpy', 'per_atom', '', '')],
+                'presentConvexHull': False
             }
 
         }

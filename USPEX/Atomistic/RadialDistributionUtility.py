@@ -6,11 +6,16 @@ USPEX.Atomistic.RadialDistributionUtility
 """
 
 import numpy as np
+from copy import copy
 from typing import Dict, Tuple
 from collections.abc import Mapping
+from collections import Counter
+
+import pandas as pd
 from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
+from pandas import DataFrame, Series, isna, concat
 
 
 RMAX_DEFAULT = 10.0
@@ -24,11 +29,12 @@ class Fingerprint(Mapping):
     """
     Class representing radial distribution fingerprint.
     """
-    def __init__(self, value : dict, weights):
+    def __init__(self, value: dict, weights, delta):
         sizes = [len(v) for v in value.values()]
         assert len(sizes) > 0
         self._value = value
         self._weights = weights
+        self.delta = delta
         self._size = sizes[0]
         super().__init__()
 
@@ -48,7 +54,7 @@ class Fingerprint(Mapping):
     def order(self):
         # eq. 5 in CPC-2010
         return np.sqrt(np.sum(np.fromiter((self._weights[key] * np.sum(self._value[key] ** 2)
-                                           for key in self._value.keys()), dtype=float)))
+                                           for key in self._value.keys()), dtype=float)) * self.delta)
 
     def __repr__(self):
         return self._value.__repr__()
@@ -88,6 +94,64 @@ class Fingerprint(Mapping):
         dist = (1 - coef1 / (coef2 * coef3) ** 0.5) / 2
         return dist
 
+class ComplexFingerprint:
+    """
+    Class representing radial distribution fingerprint.
+    """
+    def __init__(self, values, weights, symbols):
+        self.values = DataFrame(data=values).T
+        self.weights = Series(weights)
+        self.weights[:] /= self.weights.sum()
+        self.weights = self.weights.to_frame()
+        self.symbols = symbols
+
+    @staticmethod
+    def fromAtomicFingerprints(symbols, atomTypes, atomFings, tolerance):
+        fing = {}
+        atomsCounter = Counter()
+        weightsCounter = Counter()
+        for atomType, aFing in zip(atomTypes, atomFings):
+            symbol = atomType.short_name
+            row = np.hstack(Series(aFing.value, index=symbols) * np.sqrt(Series(aFing.weights, index=symbols)))
+            for (refSymbol, count), f in fing.items():
+                if symbol == refSymbol \
+                        and ComplexFingerprint.cosineDistance(f, row) < tolerance:
+                    break
+            else:
+                atomsCounter[symbol] += 1
+                count = atomsCounter[symbol]
+                fing[(symbol, count)] = row
+            weightsCounter[(symbol, count)] += 1
+        return ComplexFingerprint(fing, weightsCounter, symbols)
+
+    @staticmethod
+    def cosineDistance(fing1, fing2):
+        """
+        Calculation of cosine distances using eq.(6b) from JCP-2009.
+        """
+        if len(fing1.shape) == 1:
+            fing1 = fing1.reshape((1, -1))
+        if len(fing2.shape) == 1:
+            fing2 = fing2.reshape((1, -1))
+        norm1 = np.linalg.norm(fing1, axis=1)
+        norm2 = np.linalg.norm(fing2, axis=1)
+        return (1 - np.dot(fing1, fing2.T) / (norm1.reshape((-1, 1)) * norm2.reshape((1, -1)))) / 2
+
+    @staticmethod
+    def dist(fingerprint1, fingerprint2):
+        assert set(fingerprint1.symbols) == set(fingerprint2.symbols)
+        index1 = fingerprint1.values.index.levels[0]
+        index2 = fingerprint2.values.index.levels[0]
+        dist = 0
+        for symbol in fingerprint1.symbols:
+            if symbol in index1 and symbol in index2:
+                distMatrix = ComplexFingerprint.cosineDistance(fingerprint1.values.loc[symbol].to_numpy(),
+                                                               fingerprint2.values.loc[symbol].to_numpy())
+                dist += ((distMatrix.min(axis=0)*fingerprint2.weights.loc[symbol].T.to_numpy()).sum() +
+                         (distMatrix.min(axis=1)*fingerprint1.weights.loc[symbol].T.to_numpy()).sum()) / 2
+            elif symbol in index1 or symbol in index2:
+                dist += 0.5
+        return dist
 
 
 class RadialDistributionUtility(object):
@@ -95,7 +159,8 @@ class RadialDistributionUtility(object):
     Utility for working with radial distribution related properties of systems.
     """
 
-    def __init__(self, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT):
+    def __init__(self, symbols, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
+                 legacy=False):
         """
         :type Rmax: float
         :param Rmax: threshold distance between i-th anf j-th atom.
@@ -106,10 +171,13 @@ class RadialDistributionUtility(object):
         :type tolerance: float
         :param tolerance: tolerance within which systems considered the same.
         """
+        self.symbols=symbols
         self.Rmax = Rmax
         self.sigma = sigma
         self.delta = delta
         self.tolerance = tolerance
+        self.legacy = legacy
+        self.distances = DataFrame(dtype=float)
 
     def structureFingerprint(self, system):
         """
@@ -122,6 +190,18 @@ class RadialDistributionUtility(object):
         if not 'radialDistribitionUtility.structureFingerprint' in system:
             self._calcFingerprint(system)
         return system['radialDistribitionUtility.structureFingerprint']
+
+    def complexFingerprint(self, system):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculate or retrieve structure fingerprint of a system.
+        """
+        if not 'radialDistribitionUtility.complexFingerprint' in system:
+            self._calcFingerprint(system)
+        return system['radialDistribitionUtility.complexFingerprint']
 
     def order(self, system):
         """
@@ -184,6 +264,8 @@ class RadialDistributionUtility(object):
         """
         if 'radialDistribitionUtility.structureFingerprint' in system:
             del system['radialDistribitionUtility.structureFingerprint']
+        if 'radialDistribitionUtility.complexFingerprint' in system:
+            del system['radialDistribitionUtility.complexFingerprint']
         if 'radialDistribitionUtility.structureOrder' in system:
             del system['radialDistribitionUtility.structureOrder']
         if 'radialDistribitionUtility.atomFingerprints' in system:
@@ -200,7 +282,8 @@ class RadialDistributionUtility(object):
         molecules = system['molecules']
         systemFactory = type(molecules[0])
         structure, disassembler = systemFactory.assemble(**system)
-        uniqueSimbols, inverse, numIons = np.unique(structure.getAtomTypes(), return_inverse=True, return_counts=True)
+        atomTypes = structure.getAtomTypes()
+        uniqueSimbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
         revertIndices = np.argsort(indices)
         cartesian = structure.getCartesianCoordinates()
@@ -216,15 +299,13 @@ class RadialDistributionUtility(object):
         lat = cell.getCellVectors()
         dist_matrix = _make_matrices(coordinates, molIndices, envIndices, lat, numIons, pbc=fp_pbc, Rmax=self.Rmax)
 
-        # TODO think about volume in lesser dimensions
-        V = np.linalg.det(lat)
         N_type = numIons.shape[0]
         N_atom = np.sum(numIons)
         N_pair = dist_matrix.shape[0]  # the number of atomic pairs being considered
-        normalizer = 1
+        normalizer = numIons / np.linalg.det(lat) if sum(fp_pbc) == 3 else np.zeros((1,), dtype=float)
 
         N_Bins = int(round(self.Rmax / float(self.delta)))
-        fing = np.zeros((N_type ** 2, N_Bins))
+        fing = np.zeros((N_type, N_type, N_Bins))
         atom_fing = np.zeros((N_atom, N_type, N_Bins))
         sigma = self.sigma / (2.0 * np.log(2.0)) ** 0.5
         sqrt2_sigm = sigma * 2.0 ** 0.5
@@ -270,7 +351,7 @@ class RadialDistributionUtility(object):
                 row = '%12.8f' % delt[j]
                 print row
             '''
-            delt_type = delt / numIons[type2.astype(int)]  # used for atomfing
+            # delt_type = delt / numIons[type2.astype(int)]  # used for atomfing
             '''
             for j in range(delt_type.shape[0]):
                 row = '%12.8f' % delt_type[j]
@@ -280,7 +361,7 @@ class RadialDistributionUtility(object):
             # Atomfing has 3 dimensions: we need to categorize by the following:
             for j in range(N_atom):
                 tmp_ID1 = np.where(atom1 == j)  # 1st filter by atom ID
-                delt_type1 = delt_type[tmp_ID1]
+                delt_type1 = delt[tmp_ID1]
                 '''
                 for k in range(delt_type1.shape[0]):
                     row = '%12.8f' % delt_type[k]
@@ -335,7 +416,7 @@ class RadialDistributionUtility(object):
 
                 for k in range(N_Bins):
                     ID = np.where(min_bin[ID1] - 1 == k)[0]  # 2nd filter by dist (bin)
-                    fing[j, k] += sum(delt1[ID])
+                    fing[j // N_type, j % N_type, k] += sum(delt1[ID])
 
             '''
             print
@@ -346,43 +427,37 @@ class RadialDistributionUtility(object):
 
             min_bin += 1  # move to the next neighboring bin
 
-        atom_fing = atom_fing * V / (4.0 * np.pi * self.delta) - normalizer
-        '''
-        num = 124
-        for m in range(atom_fing[:, :, num].shape[0]):
-            row = '%12.8f %12.8f %12.8f' % tuple(atom_fing[m, :, num])
-            print row
-        '''
+        atom_fing /= (4.0 * np.pi * self.delta)
+        atom_fing -= normalizer.reshape((1, -1, 1))
 
-        for i in range(N_type):
-            for j in range(N_type):
-                fing[i * N_type + j, :] = fing[i * N_type + j, :] * V / (
-                        4.0 * np.pi * numIons[i] * numIons[j] * self.delta) - normalizer
+        fing /= (4.0 * np.pi * numIons.reshape((-1, 1, 1)) * self.delta)
+        fing -= normalizer.reshape((1, -1, 1))
 
-        n = len(uniqueSimbols)
-        fing = {(s1.short_name, s2.short_name): fing[i * n + j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
         atomFings = []
         weights = {s.short_name: w for s, w in zip(uniqueSimbols, numIons / np.sum(numIons))}
+        for s in self.symbols:
+            if s not in weights:
+                weights[s] = 0
         for i in revertIndices:
-            f = Fingerprint(value={s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)},
-                            weights=weights)
+            value = {s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)}
+            for s in self.symbols:
+                if s not in value:
+                    value[s] = np.zeros(N_Bins, dtype=float)
+            f = Fingerprint(value=value, weights=weights, delta=self.delta)
             atomFings.append(f)
 
         order = np.fromiter((atomFing.order for atomFing in atomFings), dtype=float)
-        order *= np.sqrt(self.delta / (V / len(structure)) ** (1.0 / 3.0))
-        molOrder = np.fromiter((order[np.asarray(indices)].sum()/len(indices) for indices in disassembler.indices), dtype=float)
+        molOrder = np.fromiter((order[np.asarray(inds)].sum()/len(inds) for inds in disassembler.indices), dtype=float)
+        a_order = np.mean(order[np.isfinite(order)]) if np.any(np.isfinite(order)) else np.nan
 
-        if np.any(np.isfinite(order)):
-            a_order = np.mean(order[np.isfinite(order)])
-        else:
-            a_order = np.nan
+        fing = {(s1.short_name, s2.short_name): fing[i, j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
+        fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure),
+                                  delta=self.delta)
+        s_order = fingerprint.order
 
-        fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure))
-        s_order = fingerprint.order * np.sqrt(self.delta / (V / len(structure)) ** (1.0 / 3.0))
+        complexFingerprint = ComplexFingerprint.fromAtomicFingerprints(self.symbols, atomTypes, atomFings,
+                                                                       self.tolerance)
 
-        uniqueSymbols, inverse, numIons = np.unique(structure.getAtomTypes(),
-                                                    return_inverse=True,
-                                                    return_counts=True)
         sQE = 0.0
         weight = numIons / np.sum(numIons)
 
@@ -410,32 +485,38 @@ class RadialDistributionUtility(object):
         system['radialDistribitionUtility.averageOrder'] = a_order
         system['radialDistribitionUtility.structureOrder'] = s_order
         system['radialDistribitionUtility.structureFingerprint'] = fingerprint
+        system['radialDistribitionUtility.complexFingerprint'] = complexFingerprint
         system['radialDistribitionUtility.quasientropy'] = -sQE
 
 
     def dist(self, system1, system2):
         """
         Calculated distance between two systems. First it retrieves structure fingerprints of systems.
-        Then claculates cosine distance between them.
+        Then calculates cosine distance between them.
 
         :param system1: dictionary describing first system.
         :param system2: dictionary describing second system.
 
         :return: distance between systems.
         """
-        return Fingerprint.cosine_distance(self.structureFingerprint(system1), self.structureFingerprint(system2))
+        if self.legacy:
+            return Fingerprint.cosine_distance(self.structureFingerprint(system1), self.structureFingerprint(system2))
+        else:
+            return ComplexFingerprint.dist(self.complexFingerprint(system1), self.complexFingerprint(system2))
 
-    def equal(self, system1, system2):
+    def equal(self, system1, system2, tolerance=None):
         """
         Checks if systems coincide. It calculates distance between systems using **dist** method.
         If such distance is less then set up tolerance, then systems coincide.
 
         :param system1: dictionary describing first system.
         :param system2: dictionary describing second system.
+        :param tolerance: threshold for systems to be considered equivalent.
 
         :return: if systems coincide or not.
         """
-        return self.dist(system1, system2) < self.tolerance
+        tolerance = self.tolerance if tolerance is None else tolerance
+        return self.dist(system1, system2) < tolerance
 
     @staticmethod
     def _fingerprintWeights(structure):
