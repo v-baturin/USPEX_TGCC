@@ -10,12 +10,13 @@ from itertools import combinations
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
 from os.path import join as pj
+from pathlib import Path
+import yaml
 from prettytable import PrettyTable
 import matplotlib.pyplot as plt
 
 from .formatters import createHeader_wrap
 from ..Presets import presetOutput
-from .RawParser import parse
 
 matplotlib.use('Agg')
 
@@ -176,14 +177,31 @@ class AtomisticRepresentation(object):
         return cls.structureType(atomTypes, coordinates, cell)
 
     @classmethod
-    def readAtomicStructure(cls, filename, disassemblerFileDescriptor=None, pbc=(1, 1, 1)) -> dict:
-        structure = cls.readAtomicStructureRaw(filename, pbc)
-        if disassemblerFileDescriptor is None:
-            disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(structure), cell=structure.getCell())
+    def readAtomicStructuresRaw(cls, filename):
+        all_systems = []
+        with open(filename, 'rt') as f:
+            while True:
+                try:
+                    all_systems.append(AtomisticRepresentation.readAtomicStructureRaw(f))
+                except Exception:
+                    break
+        return all_systems
+
+    @classmethod
+    def readAtomicStructure(cls, filename, pbc=(1, 1, 1)) -> dict:
+        return cls.readAtomicStructures(filename)[0]
+
+    @classmethod
+    def readAtomicStructures(cls, filename) -> list:
+        filename = Path(filename)
+        if filename.suffix == '.uspex':
+            with open(filename) as f:
+                systems = yaml.safe_load(f.read())
+            files = {name: cls.readAtomicStructuresRaw(name) for name in np.unique([s['filename'] for s in systems])}
         else:
-            params = parse(disassemblerFileDescriptor.read())
-            disassembler = cls.atomicDisassemblerType(params['indices'], None, structure.getCell())
-        return disassembler.disassemble(structure)
+            systems = [cls.atomicDisassemblerType.createFlatDisassembler(len(s), s.getCell()).disassemble(s)
+                       for s in cls.readAtomicStructuresRaw(filename)]
+        return systems
 
     @classmethod
     def getZmatrixRepresentation(cls, molecule, utility) -> str:
