@@ -16,6 +16,7 @@ EnvironmentUtility.setRepresentation(AtomisticRepresentation)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 RadialDistributionUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.CellUtility import CellUtility
+CellUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.BondHardnessUtility import BondHardnessUtility
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)

@@ -243,38 +243,29 @@ class AtomicDisassembler:
     """
 
 
-    def __init__(self, indices, environment, pbc):
+    def __init__(self, molecules=None, environment=None, pbc=(1,1,1)):
         """
 
         :param indices:
         :param environment:
 
         """
-        self.indices = [np.asarray(inds, dtype=int) for inds in indices]
+        self.indices = None if molecules is None else []
+        if self.indices:
+            for mol in molecules:
+                if isinstance(mol, str):
+                    inds = mol.split(' ')
+                else:
+                    inds = mol
+                self.indices.append(np.asarray(inds, dtype=int))
         self.environment = environment
         self.pbc = pbc
         if self.environment is not None:
-            molIndices = set(np.concatenate(self.indices))
+            molIndices = set(np.concatenate(self.indices)) if self.indices else set()
             allIndices = list(range(len(molIndices) + len(self.environment.getStructure())))
             self.envIndices = np.asarray(list(set(allIndices).difference(molIndices)), dtype=int)
         else:
             self.envIndices = np.empty(0, dtype=int)
-
-
-    @staticmethod
-    def createFlatDisassembler(N, pbc):
-        """
-        Helper constructor. Creates disassembler for structure of given size, which decomposes it into individual atoms.
-
-        :param N: size of structure for which disaasembler is required.
-
-        """
-        return AtomicDisassembler([[i] for i in range(N)], environment=None, pbc=pbc)
-
-    @staticmethod
-    def fromDescription(molecules, environment, pbc):
-        indices = [mol.split(' ') for mol in molecules]
-        return AtomicDisassembler(indices,)
 
     @staticmethod
     def assemble(molecules, cell, environment=None, vacuumSize=0, **kwargs): # lots of work with calcs
@@ -297,7 +288,7 @@ class AtomicDisassembler:
             indices.append(list(range(lowerBound, lowerBound + size)))
             lowerBound += size
         if environment is not None:
-            coordinates = list(np.asarray(coordinates, dtype = float) + environment.calculateOffset(coordinates, cell.getPBC()))
+            coordinates = list(np.asarray(coordinates, dtype=float) + environment.calculateOffset(coordinates, cell.getPBC()))
             assembledCell = environment.getStructure().getCell()
             atomTypes.extend(environment.getStructure().getAtomTypes())
             coordinates.extend(environment.getStructure().getCartesianCoordinates())
@@ -320,13 +311,17 @@ class AtomicDisassembler:
         """
         atomTypes = atomicStructure.getAtomTypes()
         coordinates = atomicStructure.getCartesianCoordinates()
-        syscoords = []
-        sysAtomTypes = []
-        for indices in self.indices:
-            syscoords.extend(coordinates[indices])
-            sysAtomTypes.extend(atomTypes[indices])
-        syscoords = np.array(syscoords)
-        sysAtomTypes = np.asarray(sysAtomTypes)
+        if self.indices is None:
+            syscoords = coordinates
+            sysAtomTypes = atomTypes
+        else:
+            syscoords = []
+            sysAtomTypes = []
+            for indices in self.indices:
+                syscoords.extend(coordinates[indices])
+                sysAtomTypes.extend(atomTypes[indices])
+            syscoords = np.array(syscoords)
+            sysAtomTypes = np.asarray(sysAtomTypes)
         assembledCell = atomicStructure.getCell()
         cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(syscoords, vacuumSize=1.0)
         system = dict()
@@ -337,8 +332,9 @@ class AtomicDisassembler:
         else:
             offsetVector = 0
         molecules = []
-        for indices in self.indices:
-            molecules.append(AtomicStructure(atomTypes[indices], coordinates[indices] - offsetVector))
+        indices = self.indices if self.indices is not None else np.arange(len(coordinates)).reshape((-1, 1))
+        for inds in indices:
+            molecules.append(AtomicStructure(atomTypes[inds], coordinates[inds] - offsetVector))
         system.update({'molecules': molecules, 'cell': cell})
         return system
 

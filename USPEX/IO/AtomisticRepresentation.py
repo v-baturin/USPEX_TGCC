@@ -198,11 +198,10 @@ class AtomisticRepresentation(object):
             with open(filename) as f:
                 descriptions = yaml.safe_load(f.read())
             files = {name: cls.readAtomicStructuresRaw(name) for name in np.unique([s['filename'] for s in descriptions])}
-            systems = [cls.atomicDisassemblerType.fromDescription(**s).disassemble(files[s['filename']][s['index']])
+            systems = [cls.atomicDisassemblerType(**s).disassemble(files[s['filename']][s['index']])
                        for s in descriptions]
         else:
-            systems = [cls.atomicDisassemblerType.createFlatDisassembler(len(s), s.getCell().getPBC()).disassemble(s)
-                       for s in cls.readAtomicStructuresRaw(filename)]
+            systems = [cls.atomicDisassemblerType().disassemble(s) for s in cls.readAtomicStructuresRaw(filename)]
         return systems
 
     @classmethod
