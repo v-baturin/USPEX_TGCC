@@ -162,7 +162,7 @@ class AtomisticRepresentation(object):
 
     @classmethod
     def writeAtomicStructure(cls, filename, system: dict, disassemblerFileDescriptor=None):
-        structure, disassembler = cls.structureType.assemble(**system)
+        structure, disassembler = cls.atomicDisassemblerType.assemble(**system)
         cls.writeAtomicStructureRaw(filename, structure, f"EA{system['ID']}")
         if disassemblerFileDescriptor is not None:
             indices = " ".join(f"[{' '.join(f'{i}' for i in inds)}]" for inds in disassembler.indices)

@@ -47,7 +47,7 @@ class FHIaims_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : str):
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=0)
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system, vacuumSize=0)
         system['disassembler'] = disassembler
         atomTypes = structure.getAtomTypes()
         system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])

@@ -37,7 +37,7 @@ class Substrate:
         """
         return self._thickness
 
-    def calculateOffset(self, molecules, syscell=None):
+    def calculateOffset(self, coordinates, sysPBC):
         """
         Calculate or retrieve vector to be added to each molecule when assemble whole structure.
         If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
@@ -52,8 +52,7 @@ class Substrate:
             offsetVector = np.asarray(self._offsetVector, dtype=float)
         else:
             cell = self._structure.getCell()
-            frac_coords = type(self._structure).assemble(molecules, cell)[0].getFractionalCoordinates()
-            sysPBC = syscell.getPBC()
+            frac_coords =  cell.cartesianToFractional(coordinates)
             offsetVector = np.zeros(3)
             for idx in range(3):
                 curr_axis = cell.getCellVectors()[idx]

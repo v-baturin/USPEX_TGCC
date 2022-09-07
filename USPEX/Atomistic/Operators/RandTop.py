@@ -132,7 +132,7 @@ class RandTop:
                                             else:
                                                 self.arxiv[name].append(all_coordinates)
                                                 self.conditions.putConditions(system)
-                                                structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(
+                                                structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(
                                                     **system)
                                                 if self.bonds.isConnected(structure):
                                                     return (system,)

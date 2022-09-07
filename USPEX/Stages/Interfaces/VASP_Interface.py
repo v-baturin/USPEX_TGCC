@@ -106,7 +106,7 @@ class VASP_Interface:
         :param system: our system
         :return:
         '''
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
         atomTypes = structure.getAtomTypes()
         system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])

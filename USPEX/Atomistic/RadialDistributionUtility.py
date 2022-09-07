@@ -158,6 +158,25 @@ class RadialDistributionUtility(object):
     """
     Utility for working with radial distribution related properties of systems.
     """
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        """
+        Register types used by this utility.
+
+        :param structureType: type representing atomic structure.
+        :param atomType: type representing chemical element.
+        :param cellType: type representing unit cell.
+        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
+        """
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, symbols, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
                  legacy=False):
@@ -280,8 +299,7 @@ class RadialDistributionUtility(object):
         Calculates fingerprint and related things.
         """
         molecules = system['molecules']
-        systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(**system)
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system)
         atomTypes = structure.getAtomTypes()
         uniqueSimbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)

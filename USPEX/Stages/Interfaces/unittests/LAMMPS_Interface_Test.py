@@ -56,7 +56,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
                                   libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'), specorder=['C'])
         system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
         system['ID'] = 0
-        s, d = type(system['molecules'][0]).assemble(**system)
+        s, d = AtomisticRepresentation.atomicDisassemblerType.assemble(**system)
         system['disassembler'] = d
         system['atomTypes'] = s.getAtomTypes()
         system['assembledCell'] = system['cell']

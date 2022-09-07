@@ -96,7 +96,7 @@ class PWmat_InterfaceTest(unittest.TestCase):
         self.vcEmpty.readOutput(self.testSystem, self.CALC_FOLDER)
         #self.vcEmpty.clean(self.testSystem)
 
-        structure, disassembler = type(self.testSystem['molecules'][0]).assemble(**self.testSystem)
+        structure, disassembler = AtomisticRepresentation.atomicDisassemblerType.assemble(**self.testSystem)
         self.assertTrue(np.allclose(self.POSITIONS_FINAL, structure.getCartesianCoordinates(), atol=1.0e-3))
         self.assertTrue(np.allclose(self.LATTICE_FINAL, structure.getCell().getCellVectors(), atol=1.0e-3))
         self.assertAlmostEqual(self.knownSystemEnergy, self.testSystem['enthalpy'], delta=1.0e-3)

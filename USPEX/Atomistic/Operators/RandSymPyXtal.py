@@ -115,7 +115,7 @@ class RandSymPyXtal:
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
                     self.conditions.putConditions(system)
-                    structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**system)
                     if self.bonds.isConnected(structure):
                         return (system,)
 

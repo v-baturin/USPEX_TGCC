@@ -235,41 +235,6 @@ class AtomicStructure:
         newStructure = AtomicStructure(newAtomTypes, newCoordinates, newCell)
         return newStructure
 
-    @staticmethod
-    def assemble(molecules, cell, environment=None, vacuumSize=0, **kwargs): # lots of work with calcs
-        """
-        TODO move to AtomicDisassembler class.
-
-        :param molecules:
-        :param cell:
-        :param environment:
-        :param kwargs:
-
-        """
-        atomTypes = []
-        coordinates = []
-        indices = []
-        lowerBound = 0
-        for molecule in molecules:
-            atomTypes.extend(molecule.getAtomTypes())
-            coordinates.extend(molecule.getCartesianCoordinates())
-            size = len(molecule)
-            indices.append(list(range(lowerBound, lowerBound + size)))
-            lowerBound += size
-        if environment is not None:
-            coordinates = list(np.asarray(coordinates, dtype = float) + environment.calculateOffset(molecules, cell))
-            assembledCell = environment.getStructure().getCell()
-            atomTypes.extend(environment.getStructure().getAtomTypes())
-            coordinates.extend(environment.getStructure().getCartesianCoordinates())
-        else:
-            assembledCell = cell
-        if vacuumSize > 0:
-            structure = AtomicStructure(atomTypes, coordinates, assembledCell)
-            assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
-            coordinates = assembledCell.center(structure.getCartesianCoordinates())
-        return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
-                AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
-
 
 class AtomicDisassembler:
     """
@@ -311,6 +276,40 @@ class AtomicDisassembler:
         indices = [mol.split(' ') for mol in molecules]
         return AtomicDisassembler(indices,)
 
+    @staticmethod
+    def assemble(molecules, cell, environment=None, vacuumSize=0, **kwargs): # lots of work with calcs
+        """
+
+        :param molecules:
+        :param cell:
+        :param environment:
+        :param kwargs:
+
+        """
+        atomTypes = []
+        coordinates = []
+        indices = []
+        lowerBound = 0
+        for molecule in molecules:
+            atomTypes.extend(molecule.getAtomTypes())
+            coordinates.extend(molecule.getCartesianCoordinates())
+            size = len(molecule)
+            indices.append(list(range(lowerBound, lowerBound + size)))
+            lowerBound += size
+        if environment is not None:
+            coordinates = list(np.asarray(coordinates, dtype = float) + environment.calculateOffset(coordinates, cell.getPBC()))
+            assembledCell = environment.getStructure().getCell()
+            atomTypes.extend(environment.getStructure().getAtomTypes())
+            coordinates.extend(environment.getStructure().getCartesianCoordinates())
+        else:
+            assembledCell = cell
+        if vacuumSize > 0:
+            structure = AtomicStructure(atomTypes, coordinates, assembledCell)
+            assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
+            coordinates = assembledCell.center(structure.getCartesianCoordinates())
+        return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
+                AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
+
     def disassemble(self, atomicStructure):
         """
         Decomposes given structure into molecules and environment.
@@ -334,7 +333,7 @@ class AtomicDisassembler:
         envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
         if self.environment is not None:
             system['environment'] = self.environment.getUpdatedEnvironment(sysAtomTypes, syscoords, cell, envStructure)
-            offsetVector = system['environment'].calculateOffset(None)
+            offsetVector = system['environment'].calculateOffset(None, None)
         else:
             offsetVector = 0
         molecules = []

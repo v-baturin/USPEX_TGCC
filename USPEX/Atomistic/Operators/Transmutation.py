@@ -23,7 +23,7 @@ class Transmutation:
         molecules = system['molecules']
         cell = system['cell']
         environment = system['environment'] if 'environment' in system else None
-        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
+        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbolsIn = self.simpleMoleculeUtility.moleculeTypes(system)
             symbolsOut = self.compositionSpace.symbols
