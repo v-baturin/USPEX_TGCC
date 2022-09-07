@@ -70,7 +70,7 @@ class GULP_InterfaceTest(unittest.TestCase):
         system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
         system['assembledCell'] = system['cell']
         system['ID'] = 0
-        system['disassembler'] = AtomisticRepresentation.atomicDisassemblerType.createFlatDisassembler(len(system['molecules']), cell=system['cell'])
+        system['disassembler'] = AtomisticRepresentation.atomicDisassemblerType.createFlatDisassembler(len(system['molecules']), cell=system['cell'].getPBC())
 
         interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'gulp_test'))
         self.assertTrue(np.isclose(system['enthalpy'], -645.80329121))

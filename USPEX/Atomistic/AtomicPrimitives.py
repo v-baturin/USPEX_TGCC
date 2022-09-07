@@ -268,7 +268,7 @@ class AtomicStructure:
             assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
             coordinates = assembledCell.center(structure.getCartesianCoordinates())
         return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
-                AtomicDisassembler(indices, environment, cell))  # cell of molecules
+                AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
 
 
 class AtomicDisassembler:
@@ -278,7 +278,7 @@ class AtomicDisassembler:
     """
 
 
-    def __init__(self, indices, environment, cell):
+    def __init__(self, indices, environment, pbc):
         """
 
         :param indices:
@@ -287,7 +287,7 @@ class AtomicDisassembler:
         """
         self.indices = [np.asarray(inds, dtype=int) for inds in indices]
         self.environment = environment
-        self.cell = cell
+        self.pbc = pbc
         if self.environment is not None:
             molIndices = set(np.concatenate(self.indices))
             allIndices = list(range(len(molIndices) + len(self.environment.getStructure())))
@@ -297,14 +297,19 @@ class AtomicDisassembler:
 
 
     @staticmethod
-    def createFlatDisassembler(N, cell):
+    def createFlatDisassembler(N, pbc):
         """
         Helper constructor. Creates disassembler for structure of given size, which decomposes it into individual atoms.
 
         :param N: size of structure for which disaasembler is required.
 
         """
-        return AtomicDisassembler([[i] for i in range(N)], environment=None, cell=cell)
+        return AtomicDisassembler([[i] for i in range(N)], environment=None, pbc=pbc)
+
+    @staticmethod
+    def fromDescription(molecules, environment, pbc):
+        indices = [mol.split(' ') for mol in molecules]
+        return AtomicDisassembler(indices,)
 
     def disassemble(self, atomicStructure):
         """
@@ -324,8 +329,7 @@ class AtomicDisassembler:
         syscoords = np.array(syscoords)
         sysAtomTypes = np.asarray(sysAtomTypes)
         assembledCell = atomicStructure.getCell()
-        cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.cell.getPBC()).getEnvelopeCell(syscoords,
-                                                                                                           vacuumSize=1.0)
+        cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(syscoords, vacuumSize=1.0)
         system = dict()
         envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
         if self.environment is not None:

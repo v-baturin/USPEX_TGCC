@@ -201,7 +201,7 @@ class AtomisticRepresentation(object):
             systems = [cls.atomicDisassemblerType.fromDescription(**s).disassemble(files[s['filename']][s['index']])
                        for s in descriptions]
         else:
-            systems = [cls.atomicDisassemblerType.createFlatDisassembler(len(s), s.getCell()).disassemble(s)
+            systems = [cls.atomicDisassemblerType.createFlatDisassembler(len(s), s.getCell().getPBC()).disassemble(s)
                        for s in cls.readAtomicStructuresRaw(filename)]
         return systems
 
