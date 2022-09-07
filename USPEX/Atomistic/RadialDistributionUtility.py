@@ -298,7 +298,6 @@ class RadialDistributionUtility(object):
         """
         Calculates fingerprint and related things.
         """
-        molecules = system['molecules']
         structure, disassembler = self.atomicDisassemblerType.assemble(**system)
         atomTypes = structure.getAtomTypes()
         uniqueSimbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)

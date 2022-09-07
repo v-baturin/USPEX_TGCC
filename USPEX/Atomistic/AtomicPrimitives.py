@@ -251,7 +251,7 @@ class AtomicDisassembler:
 
         """
         self.indices = None if molecules is None else []
-        if self.indices:
+        if self.indices is not None:
             for mol in molecules:
                 if isinstance(mol, str):
                     inds = mol.split(' ')
