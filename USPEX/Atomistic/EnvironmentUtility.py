@@ -52,7 +52,7 @@ class Substrate:
             offsetVector = np.asarray(self._offsetVector, dtype=float)
         else:
             cell = self._structure.getCell()
-            frac_coords =  cell.cartesianToFractional(coordinates)
+            frac_coords = cell.cartesianToFractional(np.asarray(coordinates, dtype=float))
             offsetVector = np.zeros(3)
             for idx in range(3):
                 curr_axis = cell.getCellVectors()[idx]
@@ -117,11 +117,6 @@ class EnvironmentUtility:
     """
     Class representing utility which generates possible environmemnts for calculation.
     """
-    structureRepresentation = None
-
-    @classmethod
-    def setRepresentation(cls, representation):
-        cls.structureRepresentation = representation
 
     def __init__(self, environments: list = None):
         """
@@ -130,13 +125,7 @@ class EnvironmentUtility:
         :param pbc: periodic boundary conditions of environment structures.
 
         """
-        self._environments = []
-        if environments is not None:
-            for environment in environments:
-                file = environment.pop('file')
-                pbc = environment.pop('pbc')
-                environment['structure'] = self.structureRepresentation.readAtomicStructureRaw(file, pbc)
-                self._environments.append(environment)
+        self._environments = copy(environments) if environments is not None else []
 
     def hasEnvironment(self):
         return len(self._environments) > 0

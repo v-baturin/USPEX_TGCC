@@ -12,7 +12,6 @@ from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.EnvironmentUtility import EnvironmentUtility
-EnvironmentUtility.setRepresentation(AtomisticRepresentation)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 RadialDistributionUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.CellUtility import CellUtility
