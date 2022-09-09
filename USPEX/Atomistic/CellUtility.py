@@ -22,7 +22,7 @@ class CellUtility:
     """
 
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
-                 thickness=None, supercellDegree = None, symTolerance=None, gatherEnvironmentCell = False, debug = False):
+                 thickness=None, supercellDegree = None, symTolerance=None, debug = False):
         """
 
         :param dim: dimensionality, i.e. number of periodic directions.
@@ -37,7 +37,6 @@ class CellUtility:
         :param thickness: for 2D, 1D and 0D structures constraint on size of containment space.
         :param supercellDegree: int or list of int with allowed supercell sizes.
         :param symTolerance: allowed imperfection of atomic positions when determining symmetry of structure.
-        :param gatherEnvironmentCell: makes the cell of the system match the cell of the environment
         :param debug: switch between two levels of logging. True for debug level, false for INFO level.
 
         """
@@ -67,27 +66,25 @@ class CellUtility:
         elif self._dim == 2:
             assert thickness is not None
             if cellVectors is not None:
-                assert cellParameters is None and axis is None and cellVolume is None and gatherEnvironmentCell is False
+                assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
-                assert axis is not None and cellVolume is None and gatherEnvironmentCell is False
+                assert axis is not None and cellVolume is None
             else:
                 assert axis is not None
         elif self._dim == 1:
             assert thickness is not None
             if cellVectors is not None:
-                assert cellParameters is None and axis is None and cellVolume is None and gatherEnvironmentCell is False
+                assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
-                assert axis is not None and cellVolume is None and gatherEnvironmentCell is False
+                assert axis is not None and cellVolume is None
             else:
                 assert axis is not None
         elif self._dim == 0:
-            assert cellVectors is None and cellParameters is None and cellVolume is None and axis is None and gatherEnvironmentCell is False
+            assert cellVectors is None and cellParameters is None and cellVolume is None and axis is None
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
 
         self._axis = np.asarray(axis, dtype=float) if axis is not None else None
-
-        self._gatherEnvironmentCell = gatherEnvironmentCell
 
         if cellVectors is not None:
             self._cell = Cell.initFromCellVectors(self._pbc, cellVectors)
@@ -181,17 +178,6 @@ class CellUtility:
         :return: volume of unit cell if it is set or the cell is fixed, otherwise *None*.
         """
         return self._volume
-
-    def communicateWithEnvironment(self, environment=None):
-        """
-        Replaces internal self._cell object with environment cell
-        """
-        if environment is not None and self._gatherEnvironmentCell:
-            environmentCell = environment.getStructure().getCell().getAlignedCell(self._axis)
-            environmentCellVectors = environmentCell.getCellVectorsPBC()
-            cell = environmentCell.initFromCellVectors(self._pbc, environmentCellVectors)
-            self._cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
-
 
     def adjustCell(self, cellVectors, estimatedVolume, numAtoms):
         """
