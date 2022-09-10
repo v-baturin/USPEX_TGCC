@@ -260,7 +260,8 @@ class AtomicStructure:
             indices.append(list(range(lowerBound, lowerBound + size)))
             lowerBound += size
         if environment is not None:
-            atomTypes, coordinates, assembledCell = environment.assemble(molecules, cell)
+            coordinates = list(np.asarray(coordinates, dtype = float) + environment.calculateOffset(molecules, cell))
+            atomTypes, coordinates, assembledCell = environment.assemble(atomTypes, coordinates, cell)
         else:
             assembledCell = cell
         if vacuumSize > 0:

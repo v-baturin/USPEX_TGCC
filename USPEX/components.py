@@ -13,6 +13,8 @@ GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.EnvironmentUtility import EnvironmentUtility
 EnvironmentUtility.setRepresentation(AtomisticRepresentation)
+from .Atomistic.EnvironmentBuilder import EnvironmentBuilder
+EnvironmentBuilder.setRepresentation(AtomisticRepresentation)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from .Atomistic.CellUtility import CellUtility
 from .Atomistic.BondHardnessUtility import BondHardnessUtility
