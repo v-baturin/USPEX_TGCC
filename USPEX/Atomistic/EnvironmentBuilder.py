@@ -59,11 +59,6 @@ def buildSubstrate(file, pbc, plane, slabThickness, **kwargs):
     )
     return environment
 
-# TODO.
-# 1. Implement build via compileParams
-# 2. Make sure the rest of the parameters (gap, bufferThickness) are properly gathered
-# 3. Test new Environment Utility
-
 
 class EnvironmentBuilder:
     """
