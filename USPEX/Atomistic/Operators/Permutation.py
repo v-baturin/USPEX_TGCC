@@ -50,7 +50,7 @@ class Permutation:
                         offspringMolecules[i2] = (-transformation).transform(molecules[i2])
 
                     offspring = {'molecules': offspringMolecules, 'cell': cell}
-                    self.environmentUtility.putEnvironment(offspring)
+                    self.environmentUtility.putEnvironment(offspring, environment)
                     atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                     if disassembler.environment is not None:

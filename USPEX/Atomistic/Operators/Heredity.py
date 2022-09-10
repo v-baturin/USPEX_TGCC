@@ -48,11 +48,6 @@ class Heredity:
         order2 = self.radialDistributionUtility.order(system2)
 
         for i in range(self.attempts):
-            if self.environmentUtility.hasEnvironment():
-                environment = self.environmentUtility.getRandomEnvironment()
-            else:
-                environment = None
-            self.cellUtility.communicateWithEnvironment(environment)
             outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell()
             if self.cellUtility.isGoodCell(outputCell):
                 axis = np.random.randint(3)
