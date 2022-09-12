@@ -80,13 +80,15 @@ class AtomisticRepresentation(object):
     atomType = None
     cellType = None
     atomicDisassemblerType = None
+    environmentUtilityType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType, environmentUtilityType):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
+        cls.environmentUtilityType = environmentUtilityType
 
     def __init__(self, RES_FOLDER: str, columns, toDraw, presentConvexHull: bool,
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
@@ -198,8 +200,15 @@ class AtomisticRepresentation(object):
             with open(filename) as f:
                 descriptions = yaml.safe_load(f.read())
             files = {name: cls.readAtomicStructuresRaw(name) for name in np.unique([s['filename'] for s in descriptions])}
-            systems = [cls.atomicDisassemblerType(**s).disassemble(files[s['filename']][s['index']])
-                       for s in descriptions]
+            systems = []
+            for d in descriptions:
+                d = copy(d)
+                structure = files[d.pop('filename')][d.pop('index')]
+                if 'molecules' in d:
+                    d['molecules'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
+                if 'environment' in d:
+                    d['environment'] = cls.environmentUtilityType.initEnvironment(structure, **d.pop('environment'))
+                systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
         else:
             systems = [cls.atomicDisassemblerType().disassemble(s) for s in cls.readAtomicStructuresRaw(filename)]
         return systems

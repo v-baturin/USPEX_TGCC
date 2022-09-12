@@ -151,3 +151,7 @@ class EnvironmentUtility:
                 system['environment'] = Bulk(**environment)
             else:
                 raise ValueError(f"Unknown environment type {envType}.")
+
+    @classmethod
+    def initEnvironment(cls, structure, type, relaxable, fixed, pbc):
+        pass

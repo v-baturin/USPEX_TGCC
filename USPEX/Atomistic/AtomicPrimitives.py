@@ -250,14 +250,7 @@ class AtomicDisassembler:
         :param environment:
 
         """
-        self.indices = None if molecules is None else []
-        if self.indices is not None:
-            for mol in molecules:
-                if isinstance(mol, str):
-                    inds = mol.split(' ')
-                else:
-                    inds = mol
-                self.indices.append(np.asarray(inds, dtype=int))
+        self.indices = molecules
         self.environment = environment
         self.pbc = pbc
         if self.environment is not None:
