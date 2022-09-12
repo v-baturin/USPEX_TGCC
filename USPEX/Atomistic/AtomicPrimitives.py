@@ -251,8 +251,6 @@ class AtomicStructure:
         indices = []
         lowerBound = 0
 
-        if ('adjustedMolecules' in kwargs) and ('adjustedCell' in kwargs) and ('adjustedEnvironment' in kwargs):
-            molecules, cell, environment = kwargs['adjustedMolecules'], kwargs['adjustedCell'], kwargs['adjustedEnvironment']
         for molecule in molecules:
             atomTypes.extend(molecule.getAtomTypes())
             coordinates.extend(molecule.getCartesianCoordinates())

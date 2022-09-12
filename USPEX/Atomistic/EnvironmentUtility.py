@@ -10,7 +10,10 @@ import logging
 from pymatgen.analysis.interfaces.zsl import ZSLGenerator
 from pymatgen.analysis.interfaces.coherent_interfaces import get_2d_transform, Deformation
 
-from USPEX.Atomistic.AtomicPrimitives import AtomicStructure
+from pymatgen.analysis.gb.grain import GrainBoundaryGenerator
+from pymatgen.core.surface import SlabGenerator
+from pymatgen.core import Structure
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +70,7 @@ class Substrate:
             offsetVector = np.asarray(self._offsetVector, dtype=float)
         else:
             cell = self._structure.getCell()
-            frac_coords = AtomicStructure.assemble(molecules, cell)[0].getFractionalCoordinates()
+            frac_coords = EnvironmentUtility.structureType.assemble(molecules, cell)[0].getFractionalCoordinates()
             sysPBC = syscell.getPBC()
             offsetVector = np.zeros(3)
             for idx in range(3):
@@ -135,8 +138,20 @@ class Substrate:
             maxMisfitStrain = environment._maxMisfitStrain,
             maxEnvironmentArea = environment._maxEnvironmentArea
         )
-        newEnvironment = type(environment)(**newEnvironmentDict)
+        newEnvironment = cls(**newEnvironmentDict)
         return newMolecules, newCell, newEnvironment
+
+    @staticmethod
+    def build(file, pbc, plane, slabThickness, **kwargs):
+        """
+        Builds the environment objects for a given description.
+        """
+        initStructure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(file, pbc=(1,1,1))
+        structure = constructSurfaceSlab(initStructure, pbc, plane, slabThickness)
+        environment = dict(
+            structure=structure,
+        )
+        return environment
 
 
 class Interface:
@@ -201,7 +216,7 @@ class Interface:
             if molecules is None and syscell is None:
                 thickness = self._thickness if self._thickness else self._gap * 2.0
             else:
-                coords = AtomicStructure.assemble(molecules, cell)[0].getCartesianCoordinates()
+                coords = EnvironmentUtility.structureType.assemble(molecules, cell)[0].getCartesianCoordinates()
                 thickness = coords[:, ind].max() - coords[:, ind].min()
             for idx in range(3):
                 curr_axis = cell.getCellVectors()[idx]
@@ -229,7 +244,7 @@ class Interface:
         else:
             structure, ind = self._structures[0], self._inds[0]
             cell = structure.getCell()
-            frac_coords = AtomicStructure.assemble(molecules, cell)[0].getFractionalCoordinates()
+            frac_coords = EnvironmentUtility.structureType.assemble(molecules, cell)[0].getFractionalCoordinates()
             sysPBC = syscell.getPBC()
             offsetVector = np.zeros(3)
             for idx in range(3):
@@ -256,7 +271,7 @@ class Interface:
                 tmpCoords = list(np.asarray(tmpCoords, dtype = float) + self._internalOffsetVector)
             coordinates.extend(tmpCoords)
         assembledCell = self._structures[0].getCell()
-        structure = AtomicStructure(atomTypes, coordinates, assembledCell)
+        structure = EnvironmentUtility.structureType(atomTypes, coordinates, assembledCell)
         assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize=DEFAULT_VACUUM)
         coordinates = assembledCell.center(structure.getCartesianCoordinates())
         return atomTypes, coordinates, assembledCell
@@ -274,8 +289,8 @@ class Interface:
                 internalOffsetVector[idx] = coordinates[:, idx].max()
         lowerEnvIndices = list(range(len(self.getLowerStructure())))
         upperEnvIndices = list(range(len(self.getLowerStructure()), len(self.getLowerStructure()) + len(self.getUpperStructure())))
-        lowerEnvStructure = AtomicStructure(envAtomTypes[lowerEnvIndices], envCoordinates[lowerEnvIndices], envCell)
-        upperEnvStructure = AtomicStructure(envAtomTypes[upperEnvIndices], envCoordinates[upperEnvIndices] - internalOffsetVector, envCell)
+        lowerEnvStructure = EnvironmentUtility.structureType(envAtomTypes[lowerEnvIndices], envCoordinates[lowerEnvIndices], envCell)
+        upperEnvStructure = EnvironmentUtility.structureType(envAtomTypes[upperEnvIndices], envCoordinates[upperEnvIndices] - internalOffsetVector, envCell)
         environment = dict(
             lowerStructure = lowerEnvStructure,
             upperStructure = upperEnvStructure,
@@ -298,7 +313,7 @@ class Interface:
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, DEFAULT_VACUUM)
         coordinates = cell.center(coordinates)
-        return AtomicStructure(structure.getAtomTypes(), coordinates, cell)
+        return EnvironmentUtility.structureType(structure.getAtomTypes(), coordinates, cell)
 
     def getUpperStructure(self):
         """
@@ -310,7 +325,7 @@ class Interface:
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getRectifiedCell().getEnvelopeCell(coordinates, DEFAULT_VACUUM)
         coordinates = cell.center(coordinates)
-        return AtomicStructure(structure.getAtomTypes(), coordinates, cell)   
+        return EnvironmentUtility.structureType(structure.getAtomTypes(), coordinates, cell)   
 
     def getStructure(self):
         """
@@ -319,7 +334,7 @@ class Interface:
         :return: atomic structure.
         """
         atomTypes, coordinates, assembledCell = self.assemble(atomTypes=[], coordinates=[], cell=None)
-        return AtomicStructure(atomTypes, coordinates, assembledCell)
+        return EnvironmentUtility.structureType(atomTypes, coordinates, assembledCell)
 
     @classmethod
     def adjustSystem(cls, molecules, cell, environment):
@@ -384,6 +399,41 @@ class Interface:
         newEnvironment = type(environment)(**newEnvironmentDict)
         return newMolecules, newCell, newEnvironment
 
+    @staticmethod
+    def build(lowerFile, upperFile, pbc, slabThickness, adjust=False, sigma=None, plane=None, rotAxis=None, 
+                lowerPlane=None, upperPlane=None, maxMisfitStrain=None, maxEnvironmentArea=None, **kwagrs):
+        """
+        Builds the environment objects for a given description.
+        """
+        if lowerFile == upperFile and sigma is not None:
+            logger.debug(f'Proceeding with Grain Boundary mode')
+            initStructure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(lowerFile, pbc=(1,1,1))
+            lowerStructure, upperStructure = constructGrainsSlabs(initStructure, pbc, sigma, plane, rotAxis, slabThickness)
+            logger.debug('Grains are successfully created')
+        else:
+            logger.debug(f'Proceeding with Heterostructure mode')
+            initLowerStructure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(lowerFile, pbc=(1,1,1))
+            initUpperStructure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(upperFile, pbc=(1,1,1))
+            lowerStructure = constructSurfaceSlab(initLowerStructure, pbc, lowerPlane, slabThickness)
+            upperStructure = constructSurfaceSlab(initUpperStructure, pbc, upperPlane, slabThickness)
+            logger.debug('Surface Slabs are successfully created')
+        if adjust:
+            logger.debug(f'Auto-adjustment of interfacial slabs was enabled')
+            antiPBC = tuple((~np.asarray(pbc, dtype=bool)).tolist())
+            nonPBCAxis = np.flatnonzero(antiPBC)[0]
+            maxMisfitStrain = maxMisfitStrain if maxMisfitStrain else DEFAULT_MAX_MISFIT_STRAIN
+            maxEnvironmentArea = maxEnvironmentArea if maxEnvironmentArea else DEFAULT_MAX_ENVIRONMENT_AREA
+            lowerStructure, upperStructure, _ = adjustStructures(lowerStructure, upperStructure, axis=nonPBCAxis, 
+                                                                    maxMisfitStrain=maxMisfitStrain,
+                                                                    maxSubstrateArea=maxEnvironmentArea)
+            logger.debug(f'Interfacial slabs are successfully adjusted')
+        environment = dict(
+            lowerStructure=lowerStructure,
+            upperStructure=upperStructure,
+        )
+        return environment
+
+
 
 class Bulk:
 
@@ -427,6 +477,18 @@ class Bulk:
         """
         return self._indices
 
+    @staticmethod
+    def build(file, pbc, **kwargs):
+        """
+        Builds the environment objects for a given description.
+        """
+        structure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(file, pbc)
+        environment = dict(
+            structure=structure,
+        )
+        return environment
+
+
 class EnvironmentUtility:
     """
     Class representing utility which generates possible environmemnts for calculation.
@@ -441,6 +503,21 @@ class EnvironmentUtility:
     @classmethod
     def setRepresentation(cls, representation):
         cls.structureRepresentation = representation
+    
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        """
+        Register types used by this utility.
+
+        :param structureType: type representing atomic structure.
+        :param atomType: type representing chemical element.
+        :param cellType: type representing unit cell.
+        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
+        """
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, environments: list = None):
         """
@@ -452,16 +529,13 @@ class EnvironmentUtility:
         self._environments = []
         if environments is not None:
             for environment in environments:
-                pbc = environment.pop('pbc')
-                if environment['type'].lower() == 'substrate' or environment['type'].lower() == 'bulk':
-                    file = environment.pop('file')
-                    environment.setdefault('structure', self.structureRepresentation.readAtomicStructureRaw(file, pbc))
-                elif environment['type'].lower() == 'interface':
-                    lowerFile = environment.pop('lowerFile')
-                    upperFile = environment.pop('upperFile')
-                    environment.setdefault('lowerStructure', self.structureRepresentation.readAtomicStructureRaw(lowerFile, pbc))
-                    environment.setdefault('upperStructure', self.structureRepresentation.readAtomicStructureRaw(upperFile, pbc))
-                self._environments.append(environment)
+                envType = environment['type'].lower()
+                envConstructor = EnvironmentUtility.supportedEnvironments.get(envType)
+                if envConstructor is not None:
+                    environment.update(**envConstructor.build(**environment))
+                    self._environments.append(envConstructor(**environment))
+                else:
+                    raise ValueError(f"Unknown environment type {envType}.")
 
     def hasEnvironment(self):
         return len(self._environments) > 0
@@ -473,17 +547,8 @@ class EnvironmentUtility:
         :param system: system dictionary.
 
         """
-        if environment is not None:
-            system['environment'] = environment
-        elif self._environments:
-            environment = copy(np.random.choice(self._environments))
-            name = environment.pop('name')
-            envType = environment.pop('type').lower()
-            envConstructor = EnvironmentUtility.supportedEnvironments.get(envType)
-            if envConstructor is not None:
-                system['environment'] = envConstructor(**environment)
-            else:
-                raise ValueError(f"Unknown environment type {envType}.")
+        environment = environment if environment is not None else copy(np.random.choice(self._environments))
+        system['environment'] = environment
 
 
 def adjustSystem(molecules, cell, envStructure, axis, maxSubstrateArea, maxMisfitStrain, returnSupercellMatrices=False):
@@ -492,7 +557,7 @@ def adjustSystem(molecules, cell, envStructure, axis, maxSubstrateArea, maxMisfi
     """
     logger.debug(f'Got the system with {len(molecules)} atoms')
     logger.debug(f'Got the envStructure with {len(envStructure)} atoms')
-    structure, disassembler = AtomicStructure.assemble(molecules, cell)
+    structure, disassembler = EnvironmentUtility.structureType.assemble(molecules, cell)
     newEnvStructure, newStructure, supercellMatrices = adjustStructures(envStructure, structure, axis=axis, 
                                                     maxMisfitStrain=maxMisfitStrain, maxSubstrateArea=maxSubstrateArea)
     disassembler = type(disassembler)(indices=[[i] for i in range(len(newStructure))], cell=newStructure.getCell(), environment=None)
@@ -568,7 +633,7 @@ def alignStructure(structure, targetStructure):
     cell = structure.getCell()
     targetCell = targetStructure.getCell()
     newCell = cell.getOrthogonallyTransformedCell(targetCell)
-    newStructure = AtomicStructure.initFromFractionalCoordinates(structure.getAtomTypes(), 
+    newStructure = EnvironmentUtility.structureType.initFromFractionalCoordinates(structure.getAtomTypes(), 
                                                                 structure.getFractionalCoordinates(), newCell)
     return newStructure
 
@@ -588,3 +653,84 @@ def convert3DMatrixTo2D(matrix, axis):
     """
     rows = np.delete(np.arange(3), axis)
     return matrix[np.ix_(rows, rows)]
+
+def convertFromPymatgen(pmgStructure, pbc):
+    """
+    Converts the pymatgen Structure object to the USPEX EnvironmentUtility.structureType object
+    """
+    cellVectors = pmgStructure.lattice.matrix[np.flatnonzero(pbc)]
+    cell = EnvironmentUtility.cellType.initFromCellVectors(pbc, cellVectors)
+    species = [EnvironmentUtility.atomType(specie.name) for specie in pmgStructure.species]
+    coordinates = pmgStructure.cart_coords
+    structure = EnvironmentUtility.structureType(species, coordinates, cell)
+    return structure
+
+def convertToPymatgen(structure):
+    """
+    Converts the USPEX EnvironmentUtility.structureType object to the pymatgen Structure object 
+    """
+    cellVectors = structure.getRectifiedCell().getCellVectors()
+    coordinates = structure.getCartesianCoordinates()
+    species = [el.short_name for el in structure.getAtomTypes()]
+    pmgStructure = Structure(cellVectors, species, coordinates, coords_are_cartesian=True)
+    return pmgStructure
+
+def constructSurfaceSlab(structure, pbc, plane, slabThickness, **kwargs):
+    """
+    Creates a surface slab with given plane Miller indices and slabThickness 
+    """
+    logger.debug(f'Surface Slab Constructor is initialized')
+    pmgStructure = convertToPymatgen(structure)
+    logger.debug('Creating slab with parameters:')
+    logger.debug(f'Plane: {plane}')
+    slabGenerator = SlabGenerator(pmgStructure, miller_index=plane, min_slab_size=slabThickness, 
+                                  min_vacuum_size=1e-3, lll_reduce=True, center_slab=True, **kwargs)
+    slab = slabGenerator.get_slab()
+    slabStructure = convertFromPymatgen(slab, pbc)
+    return slabStructure
+
+def constructGrainsSlabs(structure, pbc, sigma, plane, rotAxis, slabThickness, **kwargs):
+    """
+    Creates two grain slabs with given plane Miller indices, Sigma value and rotation axis
+    within CSL Model.
+    """
+    logger.debug(f'Grains Constructor is initialized')
+    antiPBC = tuple((~np.asarray(pbc, dtype=bool)).tolist())
+    nonPBCAxis = np.flatnonzero(antiPBC)[0]
+    pmgStructure = convertToPymatgen(structure)
+    spgAnalzyer = SpacegroupAnalyzer(pmgStructure)
+    crystalSystem = spgAnalzyer.get_crystal_system()
+    logger.debug(f'Grains crystal system was determined as {crystalSystem}')
+    gbGenerator = GrainBoundaryGenerator(initial_structure=pmgStructure)
+    angle = min(gbGenerator.get_rotation_angle_from_sigma(sigma, rotAxis, lat_type=crystalSystem[0]))
+    logger.debug('Creating graines with parameters:')
+    logger.debug(f'Sigma: {sigma}, Angle: {angle:.3f}, Plane: {plane}, Axis: {rotAxis}')
+    gb = gbGenerator.gb_from_parameters(rotAxis, angle, plane=plane, expand_times=1, rm_ratio=0.5)
+    unitSlabThickness = np.linalg.norm(gb.lattice.matrix[nonPBCAxis]) / 2
+    expandTimes = int(np.ceil(slabThickness / unitSlabThickness))
+    gb = gbGenerator.gb_from_parameters(rotAxis, angle, plane=plane, expand_times=expandTimes, rm_ratio=0.5)
+    assert None not in gb.site_properties['grain_label']
+    lowerGrain = SpacegroupAnalyzer(gb.bottom_grain).get_refined_structure()
+    upperGrain = SpacegroupAnalyzer(gb.top_grain).get_refined_structure()
+    grainThickness = lowerGrain.cart_coords[:, nonPBCAxis].max() - lowerGrain.cart_coords[:, nonPBCAxis].min()
+    upperShiftVector = np.zeros(3)
+    lowerShiftVector = np.zeros(3)
+    for i in range(3):
+        if i == nonPBCAxis:
+            upperShiftVector[i] = grainThickness / 2 + 1e-5
+            lowerShiftVector[i] = - lowerGrain.cart_coords[:, i].min()
+    upperGrain.translate_sites(indices=list(range(len(upperGrain))), vector=upperShiftVector, frac_coords=False)
+    lowerGrain.translate_sites(indices=list(range(len(lowerGrain))), vector=lowerShiftVector, frac_coords=False)
+    lowerGrainStructure = convertFromPymatgen(lowerGrain, pbc)
+    upperGrainStructure = convertFromPymatgen(upperGrain, pbc)
+    lowerGrainStructure = centerAndEnvelope(lowerGrainStructure)
+    upperGrainStructure = centerAndEnvelope(upperGrainStructure)
+    return lowerGrainStructure, upperGrainStructure
+
+def centerAndEnvelope(structure):
+    cell = structure.getRectifiedCell()
+    coordinates = structure.getCartesianCoordinates()
+    coordinates = cell.center(coordinates)
+    structure._cell = cell
+    structure._coordinates = coordinates
+    return structure
