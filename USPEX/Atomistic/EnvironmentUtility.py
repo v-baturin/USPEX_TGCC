@@ -553,8 +553,10 @@ class EnvironmentUtility:
         :param system: system dictionary.
 
         """
-        environment = environment if environment is not None else copy(np.random.choice(self._environments))
-        system['environment'] = environment
+        if environment is not None:
+            system['environment'] = environment
+        elif self._environments:
+            system['environment'] = copy(np.random.choice(self._environments))
 
 # TODO create a unittest for all environment types
 def adjustSystem(molecules, cell, envStructure, axis, maxSubstrateArea, maxMisfitStrain, returnSupercellMatrices=False):
