@@ -1,7 +1,5 @@
-from cgitb import enable
 from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
-from ..Atomistic.EnvironmentBuilder import EnvironmentBuilder
 from .read_molecule import read_molecule
 
 
@@ -44,11 +42,6 @@ def compileParams(main: dict) -> dict:
         if 'singleCrystalSpectrumAnalyzer' in target:
             sCS = target['singleCrystalSpectrumAnalyzer']
             sCS['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(sCS.pop('hklFile'))
-        if 'environmentUtility' in target:
-            enableBuilder = target['environmentUtility'].pop('enableBuilder')
-            if enableBuilder:
-                environments = target['environmentUtility']['environments']
-                target['environmentUtility']['environments'] = EnvironmentBuilder.build(environments)
         if 'radialDistributionUtility' not in target:
             target['radialDistributionUtility'] = {}
         if 'symbols' not in target['radialDistributionUtility']:

@@ -30,6 +30,9 @@ ONLY_ENVIRONMENT_STYLES = {
         'onlyUpperEnvironment': 'getUpperStructure'
 }
 
+# TODO Rewoerk styles to make a combination via structure and variable
+# TODO Transfer ONLY_ENVIRONMENT_STYLES to Envrionment classes
+
 class LAMMPS_Interface:
     """
     Calculator for LAMMPS.
@@ -84,10 +87,10 @@ class LAMMPS_Interface:
         environment = system.get('environment')
         if self.adjustEnvironment:
             logger.debug('"adjustEnvironment" option was enabled , building the adjusted system')
-            if 'adjustedMolecules' not in system or 'adjustedCell' not in system or 'adjustedEnvironment' not in system:
+            if 'adjustedMolecules' not in system or 'adjustedCell' not in system or 'adjustedEnvironment' not in system: # TODO Make adjustedSystem instead of molecules, cell and environment 
                 molecules, cell, environment = system['molecules'], system['cell'], system['environment']
                 logger.debug(f'cellVectors: {cell.getCellVectors()} (film), {environment.getStructure().getCell().getCellVectors()} (substrate)')
-                adjustedMolecules, adjustedCell, adjustedEnvironment = type(environment).adjustSystem(molecules, cell, environment)
+                adjustedMolecules, adjustedCell, adjustedEnvironment = type(environment).adjustSystem(molecules, cell, environment) # TODO Rework to make adjustSystem as an environment instance method
                 system['adjustedMolecules'], system['adjustedCell'], system['adjustedEnvironment'] = adjustedMolecules, adjustedCell, adjustedEnvironment
                 system['adjustedSupercellFactor'] = int(len(adjustedMolecules) / len(molecules))
             else:

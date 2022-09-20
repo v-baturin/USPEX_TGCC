@@ -22,6 +22,7 @@ DEFAULT_MAX_MISFIT_STRAIN = 5E-3
 DEFAULT_MAX_ENVIRONMENT_AREA = 1000
 DEFAULT_VACUUM = 1e-3
 
+
 class Substrate:
     """
     Class representing part of structure which is not being altered via variation operators.
@@ -146,7 +147,7 @@ class Substrate:
         """
         Builds the environment objects for a given description.
         """
-        initStructure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(file, pbc=(1,1,1))
+        initStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file, pbc=(1,1,1))
         structure = constructSurfaceSlab(initStructure, pbc, plane, slabThickness)
         environment = dict(
             structure=structure,
@@ -407,13 +408,13 @@ class Interface:
         """
         if lowerFile == upperFile and sigma is not None:
             logger.debug(f'Proceeding with Grain Boundary mode')
-            initStructure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(lowerFile, pbc=(1,1,1))
+            initStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(lowerFile, pbc=(1,1,1))
             lowerStructure, upperStructure = constructGrainsSlabs(initStructure, pbc, sigma, plane, rotAxis, slabThickness)
             logger.debug('Grains are successfully created')
         else:
             logger.debug(f'Proceeding with Heterostructure mode')
-            initLowerStructure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(lowerFile, pbc=(1,1,1))
-            initUpperStructure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(upperFile, pbc=(1,1,1))
+            initLowerStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(lowerFile, pbc=(1,1,1))
+            initUpperStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(upperFile, pbc=(1,1,1))
             lowerStructure = constructSurfaceSlab(initLowerStructure, pbc, lowerPlane, slabThickness)
             upperStructure = constructSurfaceSlab(initUpperStructure, pbc, upperPlane, slabThickness)
             logger.debug('Surface Slabs are successfully created')
@@ -432,7 +433,6 @@ class Interface:
             upperStructure=upperStructure,
         )
         return environment
-
 
 
 class Bulk:
@@ -482,7 +482,7 @@ class Bulk:
         """
         Builds the environment objects for a given description.
         """
-        structure = EnvironmentUtility.structureRepresentation.readEnvironmentUtility.structureTypeRaw(file, pbc)
+        structure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file, pbc)
         environment = dict(
             structure=structure,
         )
@@ -494,11 +494,16 @@ class EnvironmentUtility:
     Class representing utility which generates possible environmemnts for calculation.
     """
     structureRepresentation = None
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
     supportedEnvironments = {
         'interface': Interface,
         'substrate': Substrate,
         'bulk': Bulk
     }
+   
 
     @classmethod
     def setRepresentation(cls, representation):
@@ -532,6 +537,7 @@ class EnvironmentUtility:
                 envType = environment['type'].lower()
                 envConstructor = EnvironmentUtility.supportedEnvironments.get(envType)
                 if envConstructor is not None:
+                    # TODO: Add a check for build keyword in environment description
                     environment.update(**envConstructor.build(**environment))
                     self._environments.append(envConstructor(**environment))
                 else:
@@ -550,7 +556,7 @@ class EnvironmentUtility:
         environment = environment if environment is not None else copy(np.random.choice(self._environments))
         system['environment'] = environment
 
-
+# TODO create a unittest for all environment types
 def adjustSystem(molecules, cell, envStructure, axis, maxSubstrateArea, maxMisfitStrain, returnSupercellMatrices=False):
     """
     Adjusts the cells of the environment and the structure to make them fit each other
