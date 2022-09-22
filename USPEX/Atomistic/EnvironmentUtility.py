@@ -478,11 +478,11 @@ class Bulk:
         return self._indices
 
     @staticmethod
-    def build(file, pbc, **kwargs):
+    def build(file, **kwargs):
         """
         Builds the environment objects for a given description.
         """
-        structure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file, pbc)
+        structure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file)
         environment = dict(
             structure=structure,
         )
@@ -491,7 +491,7 @@ class Bulk:
 
 class EnvironmentUtility:
     """
-    Class representing utility which generates possible environmemnts for calculation.
+    Class representing utility which generates possible environments for calculation.
     """
     structureRepresentation = None
     structureType = None
@@ -524,27 +524,21 @@ class EnvironmentUtility:
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
+    @classmethod
+    def build(cls, description):
+        return EnvironmentUtility.supportedEnvironments.get(description['type']).build(**description)
+
     def __init__(self, environments: list = None):
         """
 
-        :param files: files with structures for possile environments.
-        :param pbc: periodic boundary conditions of environment structures.
-
         """
-        self._environments = []
-        if environments is not None:
-            for environment in environments:
-                envType = environment['type'].lower()
-                envConstructor = EnvironmentUtility.supportedEnvironments.get(envType)
-                if envConstructor is not None:
-                    # TODO: Add a check for build keyword in environment description
-                    environment.update(**envConstructor.build(**environment))
-                    self._environments.append(envConstructor(**environment))
-                else:
-                    raise ValueError(f"Unknown environment type {envType}.")
+        if environments is None:
+            environments = []
+        self._environments = [EnvironmentUtility.supportedEnvironments.get(environment['type'])(**environment)
+                              for environment in environments]
 
-    def hasEnvironment(self):
-        return len(self._environments) > 0
+    def getEnvironments(self):
+        return self._environments
 
     def putEnvironment(self, system, environment=None):
         """
@@ -557,6 +551,7 @@ class EnvironmentUtility:
             system['environment'] = environment
         elif self._environments:
             system['environment'] = copy(np.random.choice(self._environments))
+
 
 # TODO create a unittest for all environment types
 def adjustSystem(molecules, cell, envStructure, axis, maxSubstrateArea, maxMisfitStrain, returnSupercellMatrices=False):
