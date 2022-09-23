@@ -499,14 +499,15 @@ class RadialDistributionUtility(object):
 
         :return: distance between systems.
         """
-        pair = frozenset((system1['ID'], system2['ID']))
+        pair = frozenset((system1['ID'], system2['ID'])) if 'ID' in system1 and 'ID' in system2 else None
         if pair not in self.distances:
             if self.legacy:
                 distance = Fingerprint.cosine_distance(self.structureFingerprint(system1),
                                                        self.structureFingerprint(system2))
             else:
                 distance = ComplexFingerprint.dist(self.complexFingerprint(system1), self.complexFingerprint(system2))
-            self.distances[pair] = distance
+            if pair is not None:
+                self.distances[pair] = distance
         else:
             distance = self.distances[pair]
         return distance
