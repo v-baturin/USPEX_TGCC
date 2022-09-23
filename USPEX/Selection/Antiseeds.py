@@ -43,9 +43,6 @@ class Antiseeds:
                     system['antiseeds.corrections'] += self.max * np.exp(-dist ** 2 / (2 * sigma ** 2))
             else:
                 system['antiseeds.corrections'] = 0
-                for ref_system in pool:
-                    dist = fingerprintUtility.dist(ref_system, system)
-                    system['antiseeds.corrections'] += self.max * np.exp(-dist ** 2 / (2 * sigma ** 2))
 
     def corrections(self, system : dict):
         """

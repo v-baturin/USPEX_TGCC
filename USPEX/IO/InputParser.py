@@ -10,6 +10,7 @@ def read(filename):
     definitions = {}
     for section in sections[1:]:
         name, definition = section.split('\n', 1)
+        name = name.strip()
         definitions[name] = parse(definition)
         definitions[name]['name'] = name
     return _process(parse(sections[0]), definitions)

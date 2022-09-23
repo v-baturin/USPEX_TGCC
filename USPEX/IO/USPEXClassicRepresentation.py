@@ -51,20 +51,21 @@ class USPEXClassicRepresentation(object):
 
     @staticmethod
     def getPopulationCreationBlock(population, optimizer, targetRepresentation) -> list:
-        mostDiverseTable = targetRepresentation.getNewSystemsTable()
-        for system in optimizer.createPopulation.getMostDiverse():
-            mostDiverseTable.update(system['ID'], system, optimizer.fitness)
+        block = []
+        if not optimizer.createPopulation.globalParentsPool:
+            block.append('     Best and diverse structures from previous generation')
+            mostDiverseTable = targetRepresentation.getNewSystemsTable()
+            for system in optimizer.createPopulation.getMostDiverse():
+                mostDiverseTable.update(system['ID'], system, optimizer.fitness)
+            block.append(mostDiverseTable.table.get_string())
 
         amounts = Counter()
         for system in population:
             amounts[system['howCome']] += 1
-        seedsAmount = amounts['Seeds']
-        del amounts['Seeds']
+        seedsAmount = amounts.pop('Seeds') if 'Seeds' in amounts else 0
         total = sum(amounts.values())
 
-        block = ['     Best and diverse structures from previous generation',
-                  mostDiverseTable.table.get_string(),
-                  '    Variation Operators (amount and fraction)',
+        block += ['    Variation Operators (amount and fraction)',
                *(f'      {howCome:20}:    {amount:4}, {amount/total:4.2}' for howCome, amount in amounts.items()),
                  f'      Seeds               :    {seedsAmount:4}'
         ]
