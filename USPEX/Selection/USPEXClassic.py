@@ -137,7 +137,8 @@ class USPEXClassic(object):
             tournament = [(i + 1.0) ** 2 for i in reversed(range(howManyProliferate))]
             tournament /= np.sum(tournament)
 
-            self._mostDiverse = self.determineMostDiverse(parentsPool, self.howManyDiverse, self.diversityTolerance)
+            if not self.globalParentsPool:
+                self._mostDiverse = self.determineMostDiverse(parentsPool, self.howManyDiverse, self.diversityTolerance)
 
             popSize = self.popSize
         else:
