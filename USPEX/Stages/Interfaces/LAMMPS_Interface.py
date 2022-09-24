@@ -89,24 +89,42 @@ class LAMMPS_Interface:
                 logger.debug('Adjusted data was found in system, proceeding with it')
                 adjSystem = system['adjustedSystem']
                 molecules, cell, environment = adjSystem['molecules'], adjSystem['cell'], adjSystem['environment']
-        if 'noEnvironment' in self.targetProperties:
-            logger.debug('"noEnvironment" option was found in targetProperties, proceeding without environment')
-            structure, disassembler = self.structureType.assemble(molecules, cell, vacuumSize=self.vacuumSize)
+        processingStyles = environment.processingStyles if environment is not None else {}
+        for onlyEnvironment, getStructure in processingStyles.items():
+            if onlyEnvironment in self.targetProperties:
+                envStructure = getattr(environment, getStructure)()
+                coordinates = envStructure.getCartesianCoordinates()
+                cell = envStructure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+                coordinates = cell.center(coordinates)
+                structure = type(envStructure)(envStructure.getAtomTypes(), coordinates, cell)
+                fixedIndices = environment.getFixedIndices()
+                break
         else:
-            logger.debug('Assembling the structure')
-            structure, disassembler = self.structureType.assemble(molecules, cell, environment, vacuumSize=self.vacuumSize)
+            if 'noEnvironment' in self.targetProperties:
+                logger.debug('"noEnvironment" option was found in targetProperties, proceeding without environment')
+                structure, disassembler = self.structureType.assemble(molecules, cell, vacuumSize=self.vacuumSize)
+                fixedIndices = []
+            else:
+                logger.debug('Assembling the structure')
+                structure, disassembler = self.structureType.assemble(molecules, cell, environment,
+                                                                      vacuumSize=self.vacuumSize)
+                fixedIndices = disassembler.envIndices[environment.getFixedIndices()]
+            system['disassembler'] = disassembler
 
-        system['disassembler'] = disassembler
-        cell = structure.getCell()
-        system['assembledCell'] = cell
+        system['assembledCell'] = structure.getCell()
+
+        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(),
+                      cell=structure.getCell().getCellVectors())
+
+        write_lammps_data_with_label(pj(calcFolder, self.data_file), atoms, specorder=self.specorder,
+                                     label=f"EA{system['ID']}")
 
         if not os.path.exists(calcFolder):
             os.makedirs(calcFolder)
         
         with open(self.lammps_in, 'r') as f:
             content = f.readlines()
-        
-        
+
         # Step 1. We check if our lammps data file will be read properly 
         # with read_data command when calculation is started
         
@@ -143,20 +161,7 @@ class LAMMPS_Interface:
         
         with open(pj(calcFolder, self.inputFile), 'w') as f:
             f.writelines(content)
-        
-        for onlyEnvironment, getStructure in environment.processingStyles.items():
-            if onlyEnvironment in self.targetProperties:
-                envStructure = getattr(environment, getStructure)()
-                coordinates = envStructure.getCartesianCoordinates()
-                cell = envStructure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-                coordinates = cell.center(coordinates)
-                structure = type(envStructure)(envStructure.getAtomTypes(), coordinates, cell)
-                break
-                
-        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(), cell = structure.getCell().getCellVectors())
-            
-        write_lammps_data_with_label(pj(calcFolder, self.data_file), atoms, specorder=self.specorder, label=f"EA{system['ID']}")
-        
+
         for lib in self.libs:
             shutil.copy2(lib, calcFolder)
                 
@@ -225,7 +230,7 @@ class LAMMPS_Interface:
         structure = self.structureType(atomTypes, positions, cell=cell)
         newSystem = disassembler.disassemble(structure)
         if 'adjustedStructure' in self.targetProperties:
-            system['adjustedSystem'].update(newSystem)
+            system['adjustedSystem'].update(**newSystem)
         else:
             system.update(**newSystem)
 

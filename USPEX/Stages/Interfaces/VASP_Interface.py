@@ -112,6 +112,9 @@ class VASP_Interface:
         :param system: our system
         :return:
         '''
+        with open(pj(calcFolder, self.inputFile), 'wt') as f:
+            pass
+
         molecules, cell = system['molecules'], system['cell']
         environment = system.get('environment')
         if self.adjustEnvironment:
@@ -125,23 +128,47 @@ class VASP_Interface:
                 logger.debug('Adjusted data was found in system, proceeding with it')
                 adjSystem = system['adjustedSystem']
                 molecules, cell, environment = adjSystem['molecules'], adjSystem['cell'], adjSystem['environment']
-        if 'noEnvironment' in self.targetProperties:
-            logger.debug('"noEnvironment" option was found in targetProperties, proceeding without environment')
-            structure, disassembler = self.structureType.assemble(molecules, cell, vacuumSize=self.vacuumSize)
+        processingStyles = environment.processingStyles if environment is not None else {}
+        for onlyEnvironment, getStructure in processingStyles.items():
+            if onlyEnvironment in self.targetProperties:
+                envStructure = getattr(environment, getStructure)()
+                coordinates = envStructure.getCartesianCoordinates()
+                cell = envStructure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
+                coordinates = cell.center(coordinates)
+                structure = type(envStructure)(envStructure.getAtomTypes(), coordinates, cell)
+                fixedIndices = environment.getFixedIndices()
+                break
         else:
-            logger.debug('Assembling the structure')
-            structure, disassembler = self.structureType.assemble(molecules, cell, environment, vacuumSize=self.vacuumSize)
+            if 'noEnvironment' in self.targetProperties:
+                logger.debug('"noEnvironment" option was found in targetProperties, proceeding without environment')
+                structure, disassembler = self.structureType.assemble(molecules, cell, vacuumSize=self.vacuumSize)
+                fixedIndices = []
+            else:
+                logger.debug('Assembling the structure')
+                structure, disassembler = self.structureType.assemble(molecules, cell, environment,
+                                                                      vacuumSize=self.vacuumSize)
+                fixedIndices = disassembler.envIndices[environment.getFixedIndices()]
+            system['disassembler'] = disassembler
 
-
-        system['disassembler'] = disassembler
-        atomTypes = structure.getAtomTypes()
-        system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])
         cell = structure.getCell()
         system['assembledCell'] = cell
         coordinates = structure.getCartesianCoordinates()
 
-        with open(pj(calcFolder, self.inputFile), 'wt') as f:
-            pass
+        if self.perturbate:
+            # TODO don't perturbate fixed atoms
+            coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
+
+        atomTypes = structure.getAtomTypes()
+        system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])
+        atoms = Atoms([el.short_name for el in atomTypes], coordinates, cell=cell.getCellVectors())
+        if fixedIndices:
+            atoms.set_constraint(FixAtoms(indices=fixedIndices))
+
+        ############################# POSCAR ##################################
+
+
+        with open(pj(calcFolder, self.poscar_file), 'wt') as f:
+            write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
 
         ############################## INCAR ##################################
         shutil.copy2(self.incar, pj(calcFolder, self.incar_file))
@@ -154,27 +181,6 @@ class VASP_Interface:
                 myfile.write('ISYM=0\n')
 
 
-        ############################# POSCAR ##################################
-        if self.perturbate:
-            coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
-
-        with open(pj(calcFolder, self.poscar_file), 'wt') as f:
-            for onlyEnvironment, getStructure in environment.processingStyles.items():
-                if onlyEnvironment in self.targetProperties:
-                    envStructure = getattr(environment, getStructure)()
-                    coordinates = envStructure.getCartesianCoordinates()
-                    cell = envStructure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-                    coordinates = cell.center(coordinates)
-                    structure = type(envStructure)(envStructure.getAtomTypes(), coordinates, cell)
-                    fixedIndices = disassembler.envIndices[environment.getFixedIndices()]
-                else:
-                    fixedIndices = []
-
-            atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(), cell = structure.getCell().getCellVectors())
-            if fixedIndices:
-                atoms.set_constraint(FixAtoms(indices=fixedIndices))
-            write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
-            
         ############################# POTCAR ##################################
         if os.path.exists(pj(calcFolder, 'POTCAR')):
             os.remove(pj(calcFolder, 'POTCAR'))
@@ -339,7 +345,7 @@ class VASP_Interface:
         structure = self.structureType(atomTypes, positions, cell=cell)
         newSystem = disassembler.disassemble(structure)
         if 'adjustedStructure' in self.targetProperties:
-            system['adjustedSystem'].update(newSystem)
+            system['adjustedSystem'].update(**newSystem)
         else:
             system.update(**newSystem)
 
