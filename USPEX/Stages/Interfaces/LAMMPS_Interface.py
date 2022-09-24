@@ -83,7 +83,7 @@ class LAMMPS_Interface:
             if 'adjustedMolecules' not in system or 'adjustedCell' not in system or 'adjustedEnvironment' not in system: # TODO Make adjustedSystem instead of molecules, cell and environment 
                 molecules, cell, environment = system['molecules'], system['cell'], system['environment']
                 logger.debug(f'cellVectors: {cell.getCellVectors()} (film), {environment.getStructure().getCell().getCellVectors()} (substrate)')
-                adjustedMolecules, adjustedCell, adjustedEnvironment = type(environment).adjustSystem(molecules, cell, environment) # TODO Rework to make adjustSystem as an environment instance method
+                adjustedMolecules, adjustedCell, adjustedEnvironment = environment.adjustSystem(molecules, cell)
                 system['adjustedMolecules'], system['adjustedCell'], system['adjustedEnvironment'] = adjustedMolecules, adjustedCell, adjustedEnvironment
                 system['adjustedSupercellFactor'] = int(len(adjustedMolecules) / len(molecules))
             else:

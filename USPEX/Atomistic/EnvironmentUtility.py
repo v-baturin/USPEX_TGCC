@@ -124,25 +124,24 @@ class Substrate:
         """
         return self._indices
 
-    @classmethod
-    def adjustSystem(cls, molecules, cell, environment):
+    def adjustSystem(self, molecules, cell):
         """
         Adjusts the cells of the environment and the structure to fit each other
         """
-        envStructure = environment.getStructure()
-        axis = environment._ind
-        maxEnvironmentArea = environment._maxEnvironmentArea
-        maxMisfitStrain = environment._maxMisfitStrain
+        envStructure = self.getStructure()
+        axis = self._ind
+        maxEnvironmentArea = self._maxEnvironmentArea
+        maxMisfitStrain = self._maxMisfitStrain
         newMolecules, newCell, newEnvStructure = adjustSystem(molecules, cell, envStructure, axis, maxEnvironmentArea, maxMisfitStrain)
         newEnvironmentDict = dict(
             structure = newEnvStructure, 
-            bufferThickness = environment._thickness, 
-            offsetVector = environment._offsetVector, 
-            gap = environment._gap, 
-            maxMisfitStrain = environment._maxMisfitStrain,
-            maxEnvironmentArea = environment._maxEnvironmentArea
+            bufferThickness = self._thickness,
+            offsetVector = self._offsetVector,
+            gap = self._gap,
+            maxMisfitStrain = self._maxMisfitStrain,
+            maxEnvironmentArea = self._maxEnvironmentArea
         )
-        newEnvironment = cls(**newEnvironmentDict)
+        newEnvironment = Substrate(**newEnvironmentDict)
         return newMolecules, newCell, newEnvironment
 
     @staticmethod
@@ -344,15 +343,14 @@ class Interface:
         atomTypes, coordinates, assembledCell = self.assemble(atomTypes=[], coordinates=[], cell=None)
         return EnvironmentUtility.structureType(atomTypes, coordinates, assembledCell)
 
-    @classmethod
-    def adjustSystem(cls, molecules, cell, environment):
+    def adjustSystem(self, molecules, cell):
         """
         Adjusts the cells of the environment and the structure to fit each other
         """
-        maxMisfitStrain = environment._maxMisfitStrain
-        maxEnvironmentArea = environment._maxEnvironmentArea
-        lowerEnvStructure, upperEnvStructure = environment._structures
-        lowerAxis, upperAxis = environment._inds
+        maxMisfitStrain = self._maxMisfitStrain
+        maxEnvironmentArea = self._maxEnvironmentArea
+        lowerEnvStructure, upperEnvStructure = self._structures
+        lowerAxis, upperAxis = self._inds
         lowerCell = lowerEnvStructure.getCell()
         upperCell = upperEnvStructure.getCell()
         logger.debug('Starting adjustment of the Interface')
@@ -396,15 +394,15 @@ class Interface:
         newEnvironmentDict = dict(
             lowerStructure=newLowerEnvStructure,
             upperStructure=newUpperEnvStructure,
-            bufferThickness=environment._thickness,
-            offsetVector=environment._offsetVector,
-            internalOffsetVector=environment._internalOffsetVector,
-            gap=environment._gap,
-            maxEnvironmentArea=environment._maxEnvironmentArea,
-            maxMisfitStrain=environment._maxMisfitStrain
+            bufferThickness=self._thickness,
+            offsetVector=self._offsetVector,
+            internalOffsetVector=self._internalOffsetVector,
+            gap=self._gap,
+            maxEnvironmentArea=self._maxEnvironmentArea,
+            maxMisfitStrain=self._maxMisfitStrain
         )
 
-        newEnvironment = type(environment)(**newEnvironmentDict)
+        newEnvironment = Interface(**newEnvironmentDict)
         return newMolecules, newCell, newEnvironment
 
     @staticmethod
