@@ -28,6 +28,9 @@ class Substrate:
     Class representing part of structure which is not being altered via variation operators.
     I.e. it acts as environment for individual.
     """
+    processingStyles = {
+        'onlyEnvironment': 'getStructure'
+    }
 
     def __init__(self, structure, bufferThickness: float = None, offsetVector = None, gap: float = None,
                  maxMisfitStrain: float = None, maxEnvironmentArea: float = None, **kwargs): # TODO: add tiling (maybe)
@@ -160,6 +163,10 @@ class Interface:
     Class representing part of structure which is not being altered via variation operators.
     I.e. it acts as environment for individual.
     """
+    processingStyles = {
+        'onlyLowerEnvironment': 'getLowerStructure',
+        'onlyUpperEnvironment': 'getUpperStructure'
+    }
 
     def __init__(self, lowerStructure, upperStructure, bufferThickness: float = None, offsetVector = None, internalOffsetVector = None, gap: float = None,
                  maxMisfitStrain: float = None, maxEnvironmentArea: float = None, **kwargs):
@@ -436,6 +443,10 @@ class Interface:
 
 
 class Bulk:
+
+    processingStyles = {
+        'onlyEnvironment': 'getStructure'
+    }
 
     def __init__(self, structure, isFixed: bool = True, **kwargs):
         self._structure = structure

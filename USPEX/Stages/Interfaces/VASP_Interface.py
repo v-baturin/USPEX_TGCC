@@ -23,11 +23,6 @@ STRUCTURE_STYLES = ['structure', 'adjustedStructure']
 ENTHALPY_STYLES = ['enthalpy', 'adjustedEnthalpy', 'environmentEnthalpy', 'lowerEnvironmentEnthalpy', 'upperEnvironmentEnthalpy']
 ENERGY_STYLES = ['energy', 'adjustedEnergy', 'environmentEnergy', 'lowerEnvironmentEnergy', 'upperEnvironmentEnergy']
 STRESS_TENSOR_STYLES = ['stressTensor', 'environmentStressTensor', 'lowerEnvironmentStressTensor', 'upperEnvironmentStressTensor']
-ONLY_ENVIRONMENT_STYLES = {
-        'onlyEnvironment': 'getStructure',
-        'onlyLowerEnvironment': 'getLowerStructure',
-        'onlyUpperEnvironment': 'getUpperStructure'
-}
 
 
 def split_up_data(data:List[str], out_size:int):
@@ -165,7 +160,7 @@ class VASP_Interface:
             coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
 
         with open(pj(calcFolder, self.poscar_file), 'wt') as f:
-            for onlyEnvironment, getStructure in ONLY_ENVIRONMENT_STYLES.items():
+            for onlyEnvironment, getStructure in environment.processingStyles.items():
                 if onlyEnvironment in self.targetProperties:
                     envStructure = getattr(environment, getStructure)()
                     coordinates = envStructure.getCartesianCoordinates()

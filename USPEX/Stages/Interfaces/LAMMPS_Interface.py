@@ -8,7 +8,6 @@ USPEX.Stages.LAMMPS_Interface
 import logging
 import os
 import shutil
-import sys
 
 import numpy as np
 from ase.io import read
@@ -24,14 +23,8 @@ STRUCTURE_STYLES = ['structure', 'adjustedStructure']
 ENTHALPY_STYLES = ['enthalpy', 'adjustedEnthalpy', 'environmentEnthalpy', 'lowerEnvironmentEnthalpy', 'upperEnvironmentEnthalpy']
 ENERGY_STYLES = ['energy', 'adjustedEnergy', 'environmentEnergy', 'lowerEnvironmentEnergy', 'upperEnvironmentEnergy']
 STRESS_TENSOR_STYLES = ['stressTensor', 'environmentStressTensor', 'lowerEnvironmentStressTensor', 'upperEnvironmentStressTensor']
-ONLY_ENVIRONMENT_STYLES = {
-        'onlyEnvironment': 'getStructure',
-        'onlyLowerEnvironment': 'getLowerStructure',
-        'onlyUpperEnvironment': 'getUpperStructure'
-}
 
 # TODO Rewoerk styles to make a combination via structure and variable
-# TODO Transfer ONLY_ENVIRONMENT_STYLES to Envrionment classes
 
 class LAMMPS_Interface:
     """
@@ -152,13 +145,14 @@ class LAMMPS_Interface:
         with open(pj(calcFolder, self.inputFile), 'w') as f:
             f.writelines(content)
         
-        for onlyEnvironment, getStructure in ONLY_ENVIRONMENT_STYLES.items():
+        for onlyEnvironment, getStructure in environment.processingStyles.items():
             if onlyEnvironment in self.targetProperties:
                 envStructure = getattr(environment, getStructure)()
                 coordinates = envStructure.getCartesianCoordinates()
                 cell = envStructure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
                 coordinates = cell.center(coordinates)
                 structure = type(envStructure)(envStructure.getAtomTypes(), coordinates, cell)
+                break
                 
         atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(), cell = structure.getCell().getCellVectors())
             
