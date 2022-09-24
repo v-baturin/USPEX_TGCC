@@ -19,7 +19,6 @@ from .KPoints import KPoints, BadKPoints
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
-STRUCTURE_STYLES = ['structure', 'adjustedStructure']
 ENTHALPY_STYLES = ['enthalpy', 'adjustedEnthalpy', 'environmentEnthalpy', 'lowerEnvironmentEnthalpy', 'upperEnvironmentEnthalpy']
 ENERGY_STYLES = ['energy', 'adjustedEnergy', 'environmentEnergy', 'lowerEnvironmentEnergy', 'upperEnvironmentEnergy']
 STRESS_TENSOR_STYLES = ['stressTensor', 'environmentStressTensor', 'lowerEnvironmentStressTensor', 'upperEnvironmentStressTensor']
@@ -147,7 +146,7 @@ class VASP_Interface:
                 logger.debug('Assembling the structure')
                 structure, disassembler = self.structureType.assemble(molecules, cell, environment,
                                                                       vacuumSize=self.vacuumSize)
-                fixedIndices = disassembler.envIndices[environment.getFixedIndices()]
+                fixedIndices = disassembler.envIndices[environment.getFixedIndices()] if environment is not None else []
             system['disassembler'] = disassembler
 
         cell = structure.getCell()
@@ -305,7 +304,7 @@ class VASP_Interface:
         except (KeyError, aseParseError):
             aseStructure = list(read_vasp_xml(pj(calcFolder, self.xml_file)))[-1]
         if aseStructure:
-            if any([item in self.targetProperties for item in STRUCTURE_STYLES]):
+            if 'structure' in self.targetProperties:
                 self.readStructure(system, aseStructure)
         for enthalpyStyle in ENERGY_STYLES:
             if enthalpyStyle in self.targetProperties:

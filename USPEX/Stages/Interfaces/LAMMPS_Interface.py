@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp', 'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
 BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3
-STRUCTURE_STYLES = ['structure', 'adjustedStructure']
 ENTHALPY_STYLES = ['enthalpy', 'adjustedEnthalpy', 'environmentEnthalpy', 'lowerEnvironmentEnthalpy', 'upperEnvironmentEnthalpy']
 ENERGY_STYLES = ['energy', 'adjustedEnergy', 'environmentEnergy', 'lowerEnvironmentEnergy', 'upperEnvironmentEnergy']
 STRESS_TENSOR_STYLES = ['stressTensor', 'environmentStressTensor', 'lowerEnvironmentStressTensor', 'upperEnvironmentStressTensor']
@@ -108,7 +107,7 @@ class LAMMPS_Interface:
                 logger.debug('Assembling the structure')
                 structure, disassembler = self.structureType.assemble(molecules, cell, environment,
                                                                       vacuumSize=self.vacuumSize)
-                fixedIndices = disassembler.envIndices[environment.getFixedIndices()]
+                fixedIndices = disassembler.envIndices[environment.getFixedIndices()] if environment is not None else []
             system['disassembler'] = disassembler
 
         system['assembledCell'] = structure.getCell()
@@ -201,7 +200,7 @@ class LAMMPS_Interface:
 
     def readOutput(self, system, calcFolder : str):
         aseStructure = read(pj(calcFolder, self.dump_file), format='lammps-dump-text')
-        if any([item in self.targetProperties for item in STRUCTURE_STYLES]):
+        if 'structure' in self.targetProperties:
             self.readStructure(system, aseStructure)
         properties = self.readProperties(calcFolder)
 
