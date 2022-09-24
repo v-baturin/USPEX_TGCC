@@ -116,16 +116,15 @@ class VASP_Interface:
         environment = system.get('environment')
         if self.adjustEnvironment:
             logger.debug('"adjustEnvironment" option was enabled , building the adjusted system')
-            if 'adjustedMolecules' not in system or 'adjustedCell' not in system or 'adjustedEnvironment' not in system:
-                molecules, cell, environment = system['molecules'], system['cell'], system['environment']
+            if 'adjustedSystem' not in system:
                 logger.debug(f'cellVectors: {cell.getCellVectors()} (film), {environment.getStructure().getCell().getCellVectors()} (substrate)')
-                adjustedMolecules, adjustedCell, adjustedEnvironment = environment.adjustSystem(molecules, cell)
-                system['adjustedMolecules'], system['adjustedCell'], system['adjustedEnvironment'] = adjustedMolecules, adjustedCell, adjustedEnvironment
-                system['adjustedSupercellFactor'] = int(len(adjustedMolecules) / len(molecules))
+                molecules, cell, environment = environment.adjustSystem(molecules, cell)
+                system['adjustedSystem'] = {'molecules': molecules, 'cell': cell, 'environment': environment,
+                                            'supercellFactor': int(len(molecules) / len(system['molecules']))}
             else:
                 logger.debug('Adjusted data was found in system, proceeding with it')
-                adjustedMolecules, adjustedCell, adjustedEnvironment = system['adjustedMolecules'], system['adjustedCell'], system['adjustedEnvironment']
-            molecules, cell, environment = adjustedMolecules, adjustedCell, adjustedEnvironment
+                adjSystem = system['adjustedSystem']
+                molecules, cell, environment = adjSystem['molecules'], adjSystem['cell'], adjSystem['environment']
         if 'noEnvironment' in self.targetProperties:
             logger.debug('"noEnvironment" option was found in targetProperties, proceeding without environment')
             structure, disassembler = self.structureType.assemble(molecules, cell, vacuumSize=self.vacuumSize)
@@ -340,13 +339,9 @@ class VASP_Interface:
         structure = self.structureType(atomTypes, positions, cell=cell)
         newSystem = disassembler.disassemble(structure)
         if 'adjustedStructure' in self.targetProperties:
-            newSystem['adjustedMolecules'] = newSystem['molecules']
-            newSystem['adjustedCell'] = newSystem['cell']
-            newSystem['adjustedEnvironment'] = newSystem['environment']
-            del newSystem['molecules']
-            del newSystem['cell']
-            del newSystem['environment']
-        system.update(**newSystem)
+            system['adjustedSystem'].update(newSystem)
+        else:
+            system.update(**newSystem)
 
     def readPressureTensor(self, content, index=-1):
         target = []
