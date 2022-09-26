@@ -197,6 +197,7 @@ class Interface:
                 indices = np.flatnonzero(coordinates > lowerBound)
             self._inds.append(ind)
             self._indices.append(indices)
+        self._indices = np.concatenate(self._indices)
 
     def getThickness(self):
         """
@@ -342,6 +343,12 @@ class Interface:
         """
         atomTypes, coordinates, assembledCell = self.assemble(atomTypes=[], coordinates=[], cell=None)
         return EnvironmentUtility.structureType(atomTypes, coordinates, assembledCell)
+
+    def getFixedIndices(self):
+        """
+        Get indices of atoms in substrate positions of which are fixed.
+        """
+        return self._indices
 
     def adjustSystem(self, molecules, cell):
         """
