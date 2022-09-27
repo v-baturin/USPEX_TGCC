@@ -16,6 +16,8 @@ from pathlib import Path
 from .KPoints import KPoints, BadKPoints
 
 logger = logging.getLogger(__name__)
+EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
+
 
 class QE_Interface:
     '''
@@ -51,7 +53,7 @@ class QE_Interface:
         :param kwargs:
         '''
 
-        self.options = Path.cwd()/f'Specific/qEspresso_options_{tag}' if not options else options
+        self.options = Path.cwd()/f'Specific/qEspresso_options_{tag}' if not options else Path(options)
         with open(options) as fp:
             data, card_lines = read_fortran_namelist(fp)
         if 'system' not in data:
@@ -129,8 +131,13 @@ class QE_Interface:
         if aseStructure:
             if 'structure' in self.targetProperties:
                 self.readStructure(system, aseStructure)
-            if 'enthalpy' in self.targetProperties:
-                system['enthalpy'] = aseStructure.get_calculator().results['energy']
+            if 'enthalpy' in self.targetProperties or 'environmentEnthalpy' in self.targetProperties:
+                enthalpy = float(aseStructure.get_calculator().results['energy']) + \
+                           aseStructure.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+                if 'enthalpy' in self.targetProperties:
+                    system['enthalpy'] = enthalpy
+                elif 'environmentEnthalpy' in self.targetProperties:
+                    system['environmentEnthalpy'] = enthalpy
             if 'forces' in self.targetProperties:
                 system['forces'] = np.copy(aseStructure.get_calculator().results['forces'])
         if 'stressTensor' in self.targetProperties:
