@@ -23,7 +23,7 @@ class QE_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         qe = QE_Interface(tag='1',
                           options=SPECIFICPATH/'qEspresso_options_1',
-                          pseudopotentials={'C' : SPECIFICPATH/'C.pbe-van_bm.upf'},
+                          pseudopotentials={'C': SPECIFICPATH/'C.pbe-van_bm.upf'},
                           kresol=0.16)
         radialDistributionUtility = RadialDistributionUtility(symbols=['C'])
 
