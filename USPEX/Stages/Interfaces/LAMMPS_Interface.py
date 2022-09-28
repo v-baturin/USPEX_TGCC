@@ -100,11 +100,11 @@ class LAMMPS_Interface:
         else:
             if 'noEnvironment' in self.targetProperties:
                 logger.debug('"noEnvironment" option was found in targetProperties, proceeding without environment')
-                structure, disassembler = self.structureType.assemble(molecules, cell, vacuumSize=self.vacuumSize)
+                structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell, vacuumSize=self.vacuumSize)
                 fixedIndices = []
             else:
                 logger.debug('Assembling the structure')
-                structure, disassembler = self.structureType.assemble(molecules, cell, environment,
+                structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell, environment,
                                                                       vacuumSize=self.vacuumSize)
                 fixedIndices = disassembler.envIndices[environment.getFixedIndices()] if environment is not None else []
             system['disassembler'] = disassembler
