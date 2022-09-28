@@ -1,5 +1,6 @@
 from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
+from ..Atomistic.EnvironmentUtility import EnvironmentUtility
 from .read_molecule import read_molecule
 from .AtomisticRepresentation import AtomisticRepresentation
 
@@ -48,10 +49,8 @@ def compileParams(main: dict) -> dict:
         if 'symbols' not in target['radialDistributionUtility']:
             target['radialDistributionUtility']['symbols'] = sorted(elementalSymbols)
         if 'environmentUtility' in target:
-            for environment in target['environmentUtility']['environments']:
-                file = environment.pop('file')
-                pbc = environment.pop('pbc')
-                environment['structure'] = AtomisticRepresentation.readAtomicStructureRaw(file, pbc)
-
+            for environmentDesciption in target['environmentUtility']['environments']:
+                if 'build' in environmentDesciption and environmentDesciption['build']:
+                    environmentDesciption.update(EnvironmentUtility.build(environmentDesciption))
 
     return main

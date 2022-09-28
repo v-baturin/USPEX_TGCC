@@ -8,6 +8,7 @@ import numpy as np
 import spglib
 from copy import copy
 from scipy.spatial.transform import Rotation
+from scipy.linalg import orthogonal_procrustes
 
 from .Transformation import Transformation
 
@@ -384,7 +385,7 @@ class CellUtility:
                 matrix[ind, ind] = factor
             else:
                 raise RuntimeError(f"Wrong dim {self._dim}.")
-            if np.linalg.det(matrix) == factor:
+            if np.round(np.linalg.det(matrix)) == factor:
                 return matrix
 
     def isGoodCell(self, cell):
@@ -436,7 +437,6 @@ class CellUtility:
         :return: calculated length of system.
         """
         return system['cell'].getLength()
-
 
     def symmetry(self, system: dict):
         """
@@ -559,6 +559,23 @@ class Cell:
             return Cell(np.eye(3), pbc)
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
+
+    def getOrthogonallyTransformedCell(self, targetCell):
+        """
+        Transforms cellVectors closely to the cellVectors of the targetCell 
+        within orthogonal transformation. 
+
+        :param targetCell: targen cell to be aligned with.
+
+        :return: **Cell** object with adjusted parameters.
+        """
+        
+        cellVectors = self.getCellVectors()
+        targetCellVectors = targetCell.getCellVectors()
+        transformationMatrix, _ = orthogonal_procrustes(cellVectors, targetCellVectors)
+        newCellVectors = (transformationMatrix.T @ cellVectors.T).T
+        newCell = type(self)(newCellVectors, pbc=self.getPBC())
+        return newCell
 
     def getAlignedCell(self, axis):
         """
@@ -933,6 +950,17 @@ class Cell:
             return matrix
         else:
             return np.eye(3)
+
+    def isClose(self, other, tol=5e-2): 
+        """
+        Checks if cell vectors of the given cell are close to ones of the other cell
+
+        :param other: unit cell to compare with.
+
+        :return: True or False.
+        """
+        decompositionMatrix = self.decomposeCell(other)
+        return np.isclose(np.linalg.norm(decompositionMatrix, axis=1).mean(), 1.0, atol=tol)
 
     def randomTransformation(self):
         """

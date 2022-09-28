@@ -105,8 +105,6 @@ class RandSymPyXtal:
                 cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons))
                 operations = dict(zip(symbols, operations))
                 system = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                molecules = system['molecules']
-                cell = system['cell']
                 self.environmentUtility.putEnvironment(system)
                 atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)

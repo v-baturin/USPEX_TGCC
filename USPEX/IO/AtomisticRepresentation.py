@@ -232,7 +232,7 @@ class AtomisticRepresentation(object):
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
         isVarComp = not ut.compositionSpace.isFixedComposition
         dim = ut.cellUtility.getDim()
-        hasEnv = ut.environmentUtility.hasEnvironment()
+        hasEnv = len(ut.environmentUtility.getEnvironments()) > 0
 
 
         # ---------------------------------------------------------------------------

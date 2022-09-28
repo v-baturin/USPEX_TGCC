@@ -39,7 +39,7 @@ def newResFolderName(path: str) -> str:
 class OutputRepresentation(object):
     PARAMETERS_FILENAME = 'parameters.uspex'
 
-    def __init__(self, optimizerInstance, path: str = os.getcwd(), **params):
+    def __init__(self, optimizerInstance, path: str = './', **params):
         self.RES_FOLDER = newResFolderName(path)
         self.OUTPUT_FILE = os.path.join(self.RES_FOLDER, 'OUTPUT.txt')
         self.stages = params['stages']

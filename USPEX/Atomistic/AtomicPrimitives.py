@@ -274,6 +274,7 @@ class AtomicDisassembler:
         coordinates = []
         indices = []
         lowerBound = 0
+
         for molecule in molecules:
             atomTypes.extend(molecule.getAtomTypes())
             coordinates.extend(molecule.getCartesianCoordinates())
@@ -282,9 +283,7 @@ class AtomicDisassembler:
             lowerBound += size
         if environment is not None:
             coordinates = list(np.asarray(coordinates, dtype=float) + environment.calculateOffset(coordinates, cell.getPBC()))
-            assembledCell = environment.getStructure().getCell()
-            atomTypes.extend(environment.getStructure().getAtomTypes())
-            coordinates.extend(environment.getStructure().getCartesianCoordinates())
+            atomTypes, coordinates, assembledCell = environment.assemble(atomTypes, coordinates, cell)
         else:
             assembledCell = cell
         if vacuumSize > 0:
