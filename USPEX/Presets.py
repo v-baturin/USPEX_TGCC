@@ -13,17 +13,27 @@ if not exists(FILENAME):
         'presetFitness': {
             'enthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'enthalpy')),
+            'energyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
+                                                                        'simpleMoleculeUtility.composition'), 'energy')),
+            'refinedEnergy': ('divide', ('minus', 'energy', 'environmentEnergy'), 'systemSupercellFactor'),
             'enthalpyCS': ('simpleHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'enthalpy')),
-            'refinedEnergy': ('minus', 'energy', 'environmentEnergy'),
             'refinedEnergyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'refinedEnergy')),
-            'refinedEnthalpy': ('minus', 'enthalpy', 'environmentEnthalpy'),
+            'refinedEnthalpy': ('divide', ('minus', 'enthalpy', 'environmentEnthalpy'), 'systemSupercellFactor'),
             'refinedEnthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                          'simpleMoleculeUtility.composition'), 'refinedEnthalpy')),
             'normRefinedEnthalpy': ('divide', 'refinedEnthalpy', 'cellUtility.area'),
             'normRefinedAbsCompCH': ('convexHullHeight', ('getAbsoluteCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'normRefinedEnthalpy')),
+
+            'refinedInterfaceEnergy': ('minus', ('minus', 'energy', 'lowerEnvironmentEnergy'), 'upperEnvironmentEnergy'),
+            'refinedInterfaceEnergyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
+                                                                              'simpleMoleculeUtility.composition'), 'refinedInterfaceEnergy')),
+
+            'refinedAdjustedEnergy': ('divide', ('minus', 'adjustedEnergy', 'environmentEnergy'), 'adjustedSupercellFactor'),
+            'refinedAdjustedEnergyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
+                                                                              'simpleMoleculeUtility.composition'), 'refinedAdjustedEnergy')),
         },
 
         'presetOutput': {

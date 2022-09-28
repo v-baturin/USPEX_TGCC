@@ -1,10 +1,8 @@
 from .Atomistic.Element import Element
 from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
-
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-
 from .GlobalOptimizer import GlobalOptimizer
 from .Fitness import Fitness
 GlobalOptimizer.setFitnessType(Fitness)
@@ -13,6 +11,7 @@ GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.EnvironmentUtility import EnvironmentUtility
 EnvironmentUtility.setRepresentation(AtomisticRepresentation)
+EnvironmentUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from .Atomistic.CellUtility import CellUtility
 from .Atomistic.BondHardnessUtility import BondHardnessUtility

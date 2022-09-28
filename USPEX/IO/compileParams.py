@@ -1,5 +1,6 @@
 from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
+from ..Atomistic.EnvironmentUtility import EnvironmentUtility
 from .read_molecule import read_molecule
 
 
@@ -46,5 +47,9 @@ def compileParams(main: dict) -> dict:
             target['radialDistributionUtility'] = {}
         if 'symbols' not in target['radialDistributionUtility']:
             target['radialDistributionUtility']['symbols'] = sorted(elementalSymbols)
+        if 'environmentUtility' in target:
+            for environmentDesciption in target['environmentUtility']['environments']:
+                if 'build' in environmentDesciption and environmentDesciption['build']:
+                    environmentDesciption.update(EnvironmentUtility.build(environmentDesciption))
 
     return main

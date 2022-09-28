@@ -168,8 +168,6 @@ class RandSym:
                 cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons))
                 for i in range(self.attemptsRotation):
                     system = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                    molecules = system['molecules']
-                    cell = system['cell']
                     self.environmentUtility.putEnvironment(system)
                     atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
