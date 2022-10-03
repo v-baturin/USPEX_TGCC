@@ -4,7 +4,6 @@ USPEX.Atomistic.EnvironmentUtility
 """
 
 import numpy as np
-from copy import copy
 import logging
 
 from pymatgen.analysis.interfaces.zsl import ZSLGenerator
@@ -80,12 +79,13 @@ class Substrate:
             return Substrate(finalStructure, indices, self)
 
         @staticmethod
-        def build(file, pbc, plane, slabThickness, **kwargs):
+        def build(file, pbc, build=False, plane=None, slabThickness=None, **kwargs):
             """
             Builds the environment objects for a given description.
             """
-            initStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file)
-            structure = constructSurfaceSlab(initStructure, pbc, plane, slabThickness)
+            structure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file, pbc)
+            if build:
+                structure = constructSurfaceSlab(structure, pbc, plane, slabThickness)
             environment = dict(
                 structure=structure,
             )
@@ -497,8 +497,8 @@ class EnvironmentUtility:
         cls.atomicDisassemblerType = atomicDisassemblerType
 
     @classmethod
-    def build(cls, description):
-        return EnvironmentUtility.supportedEnvironments.get(description['type']).Assembler.build(**description)
+    def build(cls, type, **description):
+        return EnvironmentUtility.supportedEnvironments.get(type).Assembler.build(**description)
 
     def __init__(self, environments: list = None):
         """
