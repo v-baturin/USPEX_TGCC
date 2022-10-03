@@ -49,9 +49,9 @@ GlobalOptimizer.registerTarget('Atomistic',
                       seeds=Seeds)
 
 from .Stages.Executor import Executor
-from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
-ABINIT_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-Executor.registerInterface('abinit', ABINIT_Interface)
+# from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
+# ABINIT_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+# Executor.registerInterface('abinit', ABINIT_Interface)
 from .Stages.Interfaces.GULP_Interface import GULP_Interface
 GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 Executor.registerInterface('gulp', GULP_Interface)
