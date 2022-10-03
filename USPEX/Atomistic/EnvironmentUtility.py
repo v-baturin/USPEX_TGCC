@@ -28,12 +28,74 @@ class Substrate:
     Class representing part of structure which is not being altered via variation operators.
     I.e. it acts as environment for individual.
     """
+
+    class Assembler:
+
+        def __init__(self, structure, bufferThickness: float = None, gap: float = None,
+                     maxMisfitStrain: float = None, maxEnvironmentArea: float = None, **kwargs):
+            self._structure = structure
+            self._thickness = bufferThickness  # comes from input
+            self._gap = gap if gap else DEFAULT_SUBSTRATE_GAP
+            self.maxEnvironmentArea = maxEnvironmentArea if maxEnvironmentArea else DEFAULT_MAX_ENVIRONMENT_AREA
+            self.maxMisfitStrain = maxMisfitStrain if maxMisfitStrain else DEFAULT_MAX_MISFIT_STRAIN
+            antiPBC = self._structure.getCell().getAntiPBC()
+            assert sum(antiPBC) == 1
+            self._axis = np.flatnonzero(antiPBC)[0]
+
+        def _calculateOffset(self, coordinates, sysPBC):
+            """
+            Calculate or retrieve vector to be added to each molecule when assemble whole structure.
+            If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
+            in nonperiodic direction.
+
+            :param molecules: list of molecules for which the offset is being calculated.
+            :param cell: TODO
+
+            :return: offset vector.
+            """
+            cell = self._structure.getCell()
+            frac_coords = cell.cartesianToFractional(np.asarray(coordinates, dtype=float))
+            offsetVector = np.zeros(3)
+            for idx in range(3):
+                curr_axis = cell.getCellVectors()[idx]
+                if idx == self._axis:
+                    fracEnvCoordinates = cell.cartesianToFractional(self._structure.getCartesianCoordinates())
+                    offsetVector += curr_axis * (self._gap / np.linalg.norm(curr_axis)
+                                                 + fracEnvCoordinates[:, idx].max() - frac_coords[:, idx].min())
+                elif not sysPBC[idx]:
+                    offsetVector += curr_axis * (0.5 - 0.5 * (frac_coords[:, idx].min() + frac_coords[:, idx].max()))
+            return offsetVector
+
+        def assemble(self, molecules, cell, structure=None, **kwargs):
+            structure = structure if structure is not None else self._structure
+            disassembler = EnvironmentUtility.atomicDisassemblerType
+            offset = self._calculateOffset(disassembler.assemble(molecules, cell)[0].getCartesianCoordinates(),
+                                           cell.getPBC())
+            finalStructure = EnvironmentUtility.structureType(structure.getAtomTypes(),
+                                                              structure.getCartesianCoordinates() - offset,
+                                                              structure.getCell())
+            coordinates = finalStructure.getCartesianCoordinates()[:, self._axis]
+            upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
+            indices = np.flatnonzero(coordinates < upperBound)
+            return Substrate(finalStructure, indices, self)
+
+        @staticmethod
+        def build(file, pbc, plane, slabThickness, **kwargs):
+            """
+            Builds the environment objects for a given description.
+            """
+            initStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file)
+            structure = constructSurfaceSlab(initStructure, pbc, plane, slabThickness)
+            environment = dict(
+                structure=structure,
+            )
+            return environment
+
     processingStyles = {
         'onlyEnvironment': 'getStructure'
     }
 
-    def __init__(self, structure, bufferThickness: float = None, offsetVector = None, gap: float = None,
-                 maxMisfitStrain: float = None, maxEnvironmentArea: float = None, **kwargs): # TODO: add tiling (maybe)
+    def __init__(self, structure, indices, assembler):
         """
         :param structure: atomic structure associated with this environment.
         :param gap: a gap between the film and substrate
@@ -41,74 +103,12 @@ class Substrate:
             If not provided such vector will be calculated on demand.
         """
         self._structure = structure
-        self._thickness = bufferThickness  # comes from input
-        self._offsetVector = offsetVector
-        self._gap = gap if gap else DEFAULT_SUBSTRATE_GAP
-        self._maxEnvironmentArea = maxEnvironmentArea if maxEnvironmentArea else DEFAULT_MAX_ENVIRONMENT_AREA
-        self._maxMisfitStrain = maxMisfitStrain if maxMisfitStrain else DEFAULT_MAX_MISFIT_STRAIN
-        antiPBC = self._structure.getCell().getAntiPBC()
-        assert sum(antiPBC) == 1
-        self._ind = np.flatnonzero(antiPBC)[0]
-        coordinates = self._structure.getCartesianCoordinates()[:, self._ind]
-        upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
-        self._indices = np.flatnonzero(coordinates < upperBound)
+        self._indices = indices
+        self._assembler = assembler
 
-    def getThickness(self):
-        """
-        Get thickness of the substrate.
-        """
-        return self._thickness
-
-    def calculateOffset(self, coordinates, sysPBC):
-        """
-        Calculate or retrieve vector to be added to each molecule when assemble whole structure.
-        If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
-        in nonperiodic direction.
-
-        :param molecules: list of molecules for which the offset is being calculated.
-        :param cell: TODO
-
-        :return: offset vector.
-        """
-        if self._offsetVector is not None:
-            offsetVector = np.asarray(self._offsetVector, dtype=float)
-        else:
-            cell = self._structure.getCell()
-            frac_coords = cell.cartesianToFractional(np.asarray(coordinates, dtype=float))
-            offsetVector = np.zeros(3)
-            for idx in range(3):
-                curr_axis = cell.getCellVectors()[idx]
-                if idx == self._ind:
-                    fracEnvCoordinates = cell.cartesianToFractional(self._structure.getCartesianCoordinates())
-                    offsetVector += curr_axis * (self._gap / np.linalg.norm(curr_axis)
-                                   + fracEnvCoordinates[:, idx].max() - frac_coords[:, idx].min())
-                elif not sysPBC[idx]:
-                    offsetVector += curr_axis * (0.5 - 0.5 * (frac_coords[:, idx].min() + frac_coords[:, idx].max()))
-        return offsetVector
-
-    def getUpdatedEnvironment(self, atomTypes, coordinates, cell, envStructure):
-        environment = dict(
-            structure = envStructure,
-            bufferThickness = self._thickness, 
-            offsetVector = np.min(coordinates, axis=0),
-            gap = self._gap, 
-            maxEnvironmentArea = self._maxEnvironmentArea,
-            maxMisfitStrain = self._maxMisfitStrain
-        )
-        return Substrate(**environment)
+    def getUpdatedEnvironment(self, envStructure):
+        return Substrate(envStructure, self._indices, self._assembler)
         
-    def assemble(self, atomTypes, coordinates, cell):
-        """
-        Assembles the system with environment
-
-        :return: atomTypes, coordinates, assembledCell
-        """
-        structure = self.getStructure()
-        assembledCell = structure.getCell()
-        atomTypes.extend(structure.getAtomTypes())
-        coordinates.extend(structure.getCartesianCoordinates())
-        return atomTypes, coordinates, assembledCell
-
     def getStructure(self):
         """
         Retrieve atomic structure associated with environment.
@@ -127,33 +127,14 @@ class Substrate:
         """
         Adjusts the cells of the environment and the structure to fit each other
         """
-        envStructure = self.getStructure()
-        axis = self._ind
-        maxEnvironmentArea = self._maxEnvironmentArea
-        maxMisfitStrain = self._maxMisfitStrain
-        newMolecules, newCell, newEnvStructure = adjustSystem(molecules, cell, envStructure, axis, maxEnvironmentArea, maxMisfitStrain)
-        newEnvironmentDict = dict(
-            structure = newEnvStructure, 
-            bufferThickness = self._thickness,
-            offsetVector = self._offsetVector,
-            gap = self._gap,
-            maxMisfitStrain = self._maxMisfitStrain,
-            maxEnvironmentArea = self._maxEnvironmentArea
-        )
-        newEnvironment = Substrate(**newEnvironmentDict)
+        antiPBC = self._structure.getCell().getAntiPBC()
+        assert sum(antiPBC) == 1
+        axis = np.flatnonzero(antiPBC)[0]
+        maxEnvironmentArea = self._assembler.maxEnvironmentArea
+        maxMisfitStrain = self._assembler.maxMisfitStrain
+        newMolecules, newCell, newEnvStructure = adjustSystem(molecules, cell, self._structure, axis, maxEnvironmentArea, maxMisfitStrain)
+        newEnvironment = self._assembler.assemble(molecules, cell, structure=newEnvStructure)
         return newMolecules, newCell, newEnvironment
-
-    @staticmethod
-    def build(file, pbc, plane, slabThickness, **kwargs):
-        """
-        Builds the environment objects for a given description.
-        """
-        initStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file, pbc=(1,1,1))
-        structure = constructSurfaceSlab(initStructure, pbc, plane, slabThickness)
-        environment = dict(
-            structure=structure,
-        )
-        return environment
 
 
 class Interface:
@@ -161,13 +142,149 @@ class Interface:
     Class representing part of structure which is not being altered via variation operators.
     I.e. it acts as environment for individual.
     """
+
+    class Assembler:
+
+        def __init__(self, lowerStructure, upperStructure, bufferThickness: float = None, gap: float = None,
+                     maxMisfitStrain: float = None, maxEnvironmentArea: float = None, **kwargs):
+            """
+            :param structures: atomic structures associated with this environment.
+            :param gap: a gap between the film and substrate
+            :param offsetVector: vector to be added to molecules centers when assemble whole structure.
+                If not provided such vector will be calculated on demand.
+            """
+            self._lowerStructure = lowerStructure
+            self._upperStructure = upperStructure
+            self._structures = (lowerStructure, upperStructure)
+            self._thickness = bufferThickness  # comes from input
+            self._gap = gap if gap else DEFAULT_SUBSTRATE_GAP
+            self.maxEnvironmentArea = maxEnvironmentArea if maxEnvironmentArea else DEFAULT_MAX_ENVIRONMENT_AREA
+            self.maxMisfitStrain = maxMisfitStrain if maxMisfitStrain else DEFAULT_MAX_MISFIT_STRAIN
+            antiPBC = lowerStructure.getCell().getAntiPBC()
+            assert sum(antiPBC) == 1
+            lowerAxis = np.flatnonzero(antiPBC)[0]
+            antiPBC = upperStructure.getCell().getAntiPBC()
+            assert sum(antiPBC) == 1
+            upperAxis = np.flatnonzero(antiPBC)[0]
+            assert lowerAxis == upperAxis
+            self._axis = lowerAxis
+
+        def forkWithNewStructures(self, lowerStructure, upperStructure):
+            return type(self)(lowerStructure, upperStructure,
+                              self._thickness, self._gap, self.maxMisfitStrain, self.maxEnvironmentArea)
+
+        def _calculateUpperOffset(self, coords, sysPBC=None):
+            """
+            Calculate the internal offset vector of the upper part of the interface
+            w.r.t. the lower part.
+
+            :param molecules:
+            :param syscell:
+
+            """
+            cell = self._lowerStructure.getCell()
+            internalOffsetVector = np.zeros(3)
+            thickness = coords[:, self._axis].max() - coords[:, self._axis].min()
+            for idx in range(3):
+                curr_axis = cell.getCellVectors()[idx]
+                if idx == self._axis:
+                    fracLowerEnvCoordinates = cell.cartesianToFractional(self._lowerStructure.getCartesianCoordinates())
+                    fracUpperEnvCoordinates = cell.cartesianToFractional(self._upperStructure.getCartesianCoordinates())
+                    lowerEnvShift = fracLowerEnvCoordinates[:, idx].max()
+                    upperEnvShift = fracUpperEnvCoordinates[:, idx].min()
+                    internalOffsetVector += curr_axis * ((self._gap * 2.0 + thickness) / np.linalg.norm(
+                        curr_axis) + lowerEnvShift - upperEnvShift)
+            return internalOffsetVector
+
+        def _calculateLowerOffset(self, frac_coords, sysPBC=None):
+            """
+            Calculate or retrieve vector to be added to each molecule when assemble whole structure.
+            If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
+            in nonperiodic direction.
+
+            :param molecules:
+            :param cell:
+
+            :return: offset vector.
+            """
+            cell = self._lowerStructure.getCell()
+            offsetVector = np.zeros(3)
+            for idx in range(3):
+                curr_axis = cell.getCellVectors()[idx]
+                if idx == self._axis:
+                    fracEnvCoordinates = cell.cartesianToFractional(self._lowerStructure.getCartesianCoordinates())
+                    offsetVector += curr_axis * (self._gap / np.linalg.norm(curr_axis)
+                                                 + fracEnvCoordinates[:, idx].max() - frac_coords[:, idx].min())
+                elif not sysPBC[idx]:
+                    offsetVector += curr_axis * (0.5 - 0.5 * (frac_coords[:, idx].min() + frac_coords[:, idx].max()))
+            return offsetVector
+
+        def assemble(self, molecules, cell, lowerStructure=None, upperStructure=None, **kwargs):
+            """
+            Assembles the system with environment
+
+            :return: atomTypes, coordinates, assembledCell
+            """
+            lowerStructure = lowerStructure if lowerStructure is not None else self._structures[0]
+            upperStructure = upperStructure if upperStructure is not None else self._structures[1]
+            structure, disassembler = EnvironmentUtility.atomicDisassemblerType.assemble(molecules, cell)
+            lowerOffset = self._calculateLowerOffset(structure.getFractionalCoordinates(), cell.getPBC())
+            upperOffset = self._calculateUpperOffset(structure.getCartesianCoordinates(), cell.getPBC()) - lowerOffset
+            lowerStructure = EnvironmentUtility.structureType(lowerStructure.getAtomTypes(),
+                                                              lowerStructure.getCartesianCoordinates() - lowerOffset,
+                                                              lowerStructure.getCell())
+            upperStructure = EnvironmentUtility.structureType(upperStructure.getAtomTypes(),
+                                                              upperStructure.getCartesianCoordinates() + upperOffset,
+                                                              upperStructure.getCell())
+            coordinates = lowerStructure.getCartesianCoordinates()[:, self._axis]
+            upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
+            lowerIndices = np.flatnonzero(coordinates < upperBound)
+            coordinates = upperStructure.getCartesianCoordinates()[:, self._axis]
+            lowerBound = coordinates.min() + self._thickness if self._thickness is not None else coordinates.max()
+            upperIndices = np.flatnonzero(coordinates > lowerBound)
+            indices = np.concatenate((lowerIndices, upperIndices))
+            return Interface(lowerStructure, upperStructure, indices, self)
+
+        @staticmethod
+        def build(lowerFile, upperFile, pbc, slabThickness, adjust=False, sigma=None, plane=None, rotAxis=None,
+                    lowerPlane=None, upperPlane=None, maxMisfitStrain=None, maxEnvironmentArea=None, **kwagrs):
+            """
+            Builds the environment objects for a given description.
+            """
+            if lowerFile == upperFile and sigma is not None:
+                logger.debug(f'Proceeding with Grain Boundary mode')
+                initStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(lowerFile, pbc=(1,1,1))
+                lowerStructure, upperStructure = constructGrainsSlabs(initStructure, pbc, sigma, plane, rotAxis, slabThickness)
+                logger.debug('Grains are successfully created')
+            else:
+                logger.debug(f'Proceeding with Heterostructure mode')
+                initLowerStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(lowerFile, pbc=(1,1,1))
+                initUpperStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(upperFile, pbc=(1,1,1))
+                lowerStructure = constructSurfaceSlab(initLowerStructure, pbc, lowerPlane, slabThickness)
+                upperStructure = constructSurfaceSlab(initUpperStructure, pbc, upperPlane, slabThickness)
+                logger.debug('Surface Slabs are successfully created')
+            if adjust:
+                logger.debug(f'Auto-adjustment of interfacial slabs was enabled')
+                antiPBC = tuple((~np.asarray(pbc, dtype=bool)).tolist())
+                nonPBCAxis = np.flatnonzero(antiPBC)[0]
+                maxMisfitStrain = maxMisfitStrain if maxMisfitStrain else DEFAULT_MAX_MISFIT_STRAIN
+                maxEnvironmentArea = maxEnvironmentArea if maxEnvironmentArea else DEFAULT_MAX_ENVIRONMENT_AREA
+                lowerStructure, upperStructure, _ = adjustStructures(lowerStructure, upperStructure, axis=nonPBCAxis,
+                                                                        maxMisfitStrain=maxMisfitStrain,
+                                                                        maxSubstrateArea=maxEnvironmentArea)
+                logger.debug(f'Interfacial slabs are successfully adjusted')
+            environment = dict(
+                lowerStructure=lowerStructure,
+                upperStructure=upperStructure,
+            )
+            return environment
+
     processingStyles = {
         'onlyLowerEnvironment': 'getLowerStructure',
         'onlyUpperEnvironment': 'getUpperStructure'
     }
 
-    def __init__(self, lowerStructure, upperStructure, bufferThickness: float = None, offsetVector = None, internalOffsetVector = None, gap: float = None,
-                 maxMisfitStrain: float = None, maxEnvironmentArea: float = None, **kwargs):
+    def __init__(self, lowerStructure, upperStructure, indices, assembler):
         """
         :param structures: atomic structures associated with this environment.
         :param gap: a gap between the film and substrate
@@ -175,139 +292,18 @@ class Interface:
             If not provided such vector will be calculated on demand.
         """
         self._structures = (lowerStructure, upperStructure)
-        self._offsetVector = offsetVector
-        self._internalOffsetVector = internalOffsetVector
-        self._thickness = bufferThickness  # comes from input
-        self._gap = gap if gap else DEFAULT_SUBSTRATE_GAP
-        self._maxEnvironmentArea = maxEnvironmentArea if maxEnvironmentArea else DEFAULT_MAX_ENVIRONMENT_AREA
-        self._maxMisfitStrain = maxMisfitStrain if maxMisfitStrain else DEFAULT_MAX_MISFIT_STRAIN
-        self._inds = []
-        self._indices = []
-        for i, structure in enumerate(self._structures):
-            antiPBC = structure.getCell().getAntiPBC()
-            assert sum(antiPBC) == 1
-            ind = np.flatnonzero(antiPBC)[0]
-            coordinates = structure.getCartesianCoordinates()[:, ind]
-            if i == 0:
-                upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
-                indices = np.flatnonzero(coordinates < upperBound)
-            elif i == 1:
-                lowerBound = coordinates.min() + self._thickness if self._thickness is not None else coordinates.max()
-                indices = np.flatnonzero(coordinates > lowerBound)
-            self._inds.append(ind)
-            self._indices.append(indices)
-        self._indices = np.concatenate(self._indices)
+        self._indices = indices
+        self._assembler = assembler
 
-    def getThickness(self):
-        """
-        Get thickness of the substrate.
-        """
-        return self._thickness
 
-    def _calculateInternalOffset(self, molecules=None, sysPBC=None):
-        """
-        Calculate the internal offset vector of the upper part of the interface 
-        w.r.t. the lower part. 
-
-        :param molecules: 
-        :param syscell: 
-
-        """
-        if self._internalOffsetVector is not None:
-            internalOffsetVector = np.asarray(self._internalOffsetVector, dtype=float)
-        else:
-            lowerStructure, ind = self._structures[0], self._inds[0]
-            upperStructure = self._structures[1]
-            cell = lowerStructure.getCell()
-            internalOffsetVector = np.zeros(3)
-            if molecules is None and sysPBC is None:
-                thickness = self._thickness if self._thickness else self._gap * 2.0
-            else:
-                coords = EnvironmentUtility.structureType.assemble(molecules, cell)[0].getCartesianCoordinates()
-                thickness = coords[:, ind].max() - coords[:, ind].min()
-            for idx in range(3):
-                curr_axis = cell.getCellVectors()[idx]
-                if idx == ind:
-                    fracLowerEnvCoordinates = cell.cartesianToFractional(lowerStructure.getCartesianCoordinates())
-                    fracUpperEnvCoordinates = cell.cartesianToFractional(upperStructure.getCartesianCoordinates())
-                    lowerEnvShift = fracLowerEnvCoordinates[:, idx].max()
-                    upperEnvShift = fracUpperEnvCoordinates[:, idx].min()
-                    internalOffsetVector += curr_axis * ((self._gap * 2.0 + thickness) / np.linalg.norm(curr_axis) + lowerEnvShift - upperEnvShift)
-        return internalOffsetVector
-
-    def calculateOffset(self, molecules, sysPBC=None):
-        """
-        Calculate or retrieve vector to be added to each molecule when assemble whole structure.
-        If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
-        in nonperiodic direction.
-
-        :param molecules: 
-        :param cell: 
-
-        :return: offset vector.
-        """
-        if self._offsetVector is not None:
-            offsetVector = np.asarray(self._offsetVector, dtype=float)
-        else:
-            structure, ind = self._structures[0], self._inds[0]
-            cell = structure.getCell()
-            frac_coords = EnvironmentUtility.structureType.assemble(molecules, cell)[0].getFractionalCoordinates()
-            offsetVector = np.zeros(3)
-            for idx in range(3):
-                curr_axis = cell.getCellVectors()[idx]
-                if idx == ind:
-                    fracEnvCoordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())
-                    offsetVector += curr_axis * (self._gap / np.linalg.norm(curr_axis)
-                                   + fracEnvCoordinates[:, idx].max() - frac_coords[:, idx].min())
-                elif not sysPBC[idx]:
-                    offsetVector += curr_axis * (0.5 - 0.5 * (frac_coords[:, idx].min() + frac_coords[:, idx].max()))
-        self._internalOffsetVector = self._calculateInternalOffset(molecules, sysPBC)
-        return offsetVector
-
-    def assemble(self, atomTypes, coordinates, cell):
-        """
-        Assembles the system with environment
-
-        :return: atomTypes, coordinates, assembledCell
-        """
-        for i, structure in enumerate(self._structures):
-            atomTypes.extend(structure.getAtomTypes())
-            tmpCoords = structure.getCartesianCoordinates()
-            if i == 1:
-                tmpCoords = list(np.asarray(tmpCoords, dtype = float) + self._internalOffsetVector)
-            coordinates.extend(tmpCoords)
-        assembledCell = self._structures[0].getCell()
-        structure = EnvironmentUtility.structureType(atomTypes, coordinates, assembledCell)
-        assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize=DEFAULT_VACUUM)
-        coordinates = assembledCell.center(structure.getCartesianCoordinates())
-        return atomTypes, coordinates, assembledCell
-
-    def getUpdatedEnvironment(self, atomTypes, coordinates, cell, envStructure):
+    def getUpdatedEnvironment(self, envStructure):
         envAtomTypes = envStructure.getAtomTypes()
         envCoordinates = envStructure.getCartesianCoordinates()
         envCell = envStructure.getCell()
-        offsetVector = np.zeros(3)
-        internalOffsetVector = np.zeros(3)
-        ind = self._inds[0]
-        for idx in range(3):
-            if idx == ind:
-                offsetVector[idx] = coordinates[:, idx].min()
-                internalOffsetVector[idx] = coordinates[:, idx].max()
-        lowerEnvIndices = list(range(len(self.getLowerStructure())))
-        upperEnvIndices = list(range(len(self.getLowerStructure()), len(self.getLowerStructure()) + len(self.getUpperStructure())))
-        lowerEnvStructure = EnvironmentUtility.structureType(envAtomTypes[lowerEnvIndices], envCoordinates[lowerEnvIndices], envCell)
-        upperEnvStructure = EnvironmentUtility.structureType(envAtomTypes[upperEnvIndices], envCoordinates[upperEnvIndices] - internalOffsetVector, envCell)
-        environment = dict(
-            lowerStructure = lowerEnvStructure,
-            upperStructure = upperEnvStructure,
-            bufferThickness = self._thickness, 
-            offsetVector = offsetVector,
-            internalOffsetVector = internalOffsetVector, 
-            gap = self._gap, 
-            maxEnvironmentArea = self._maxEnvironmentArea,
-            maxMisfitStrain = self._maxMisfitStrain
-        )
-        return Interface(**environment)
+        N = len(self._structures[0])
+        lowerEnvStructure = EnvironmentUtility.structureType(envAtomTypes[:N], envCoordinates[:N], envCell)
+        upperEnvStructure = EnvironmentUtility.structureType(envAtomTypes[N:], envCoordinates[N:], envCell)
+        return Interface(lowerEnvStructure, upperEnvStructure, self._indices, self._assembler)
 
     def getLowerStructure(self):
         """
@@ -339,7 +335,15 @@ class Interface:
 
         :return: atomic structure.
         """
-        atomTypes, coordinates, assembledCell = self.assemble(atomTypes=[], coordinates=[], cell=None)
+        atomTypes = []
+        coordinates = []
+        for i, structure in enumerate(self._structures):
+            atomTypes.extend(structure.getAtomTypes())
+            coordinates.extend(structure.getCartesianCoordinates())
+        assembledCell = self._structures[0].getCell()
+        structure = EnvironmentUtility.structureType(atomTypes, coordinates, assembledCell)
+        assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize=DEFAULT_VACUUM)
+        coordinates = assembledCell.center(structure.getCartesianCoordinates())
         return EnvironmentUtility.structureType(atomTypes, coordinates, assembledCell)
 
     def getFixedIndices(self):
@@ -352,12 +356,13 @@ class Interface:
         """
         Adjusts the cells of the environment and the structure to fit each other
         """
-        maxMisfitStrain = self._maxMisfitStrain
-        maxEnvironmentArea = self._maxEnvironmentArea
+        maxMisfitStrain = self._assembler.maxMisfitStrain
+        maxEnvironmentArea = self._assembler.maxEnvironmentArea
         lowerEnvStructure, upperEnvStructure = self._structures
-        lowerAxis, upperAxis = self._inds
         lowerCell = lowerEnvStructure.getCell()
         upperCell = upperEnvStructure.getCell()
+        axis = np.flatnonzero(lowerCell.getAntiPBC())[0]
+
         logger.debug('Starting adjustment of the Interface')
 
         envCellsAreClose = lowerCell.isClose(upperCell)
@@ -365,7 +370,7 @@ class Interface:
 
         # Stage 1. We adjust initial molecules and cell of our system to the lower part of the environment
         newMolecules, newCell, newLowerEnvStructure, supercellMatrices = adjustSystem(molecules, cell,
-                                                                                      lowerEnvStructure, lowerAxis,
+                                                                                      lowerEnvStructure, axis,
                                                                                       firstStageMaxArea,
                                                                                       maxMisfitStrain,
                                                                                       returnSupercellMatrices=True)
@@ -380,7 +385,7 @@ class Interface:
         else:
             # Stage 2. We adjuct the molecules and cell from the previous stage to fit the upper part of the environment
             newMolecules, newCell, newUpperEnvStructure, supercellMatrices = adjustSystem(newMolecules, newCell,
-                                                                                          upperEnvStructure, upperAxis,
+                                                                                          upperEnvStructure, axis,
                                                                                           maxEnvironmentArea,
                                                                                           maxMisfitStrain,
                                                                                           returnSupercellMatrices=True)
@@ -396,86 +401,49 @@ class Interface:
         assert len(newLowerEnvStructure) % len(lowerEnvStructure) == 0
         assert len(newUpperEnvStructure) % len(upperEnvStructure) == 0
 
-        newEnvironmentDict = dict(
-            lowerStructure=newLowerEnvStructure,
-            upperStructure=newUpperEnvStructure,
-            bufferThickness=self._thickness,
-            offsetVector=self._offsetVector,
-            internalOffsetVector=self._internalOffsetVector,
-            gap=self._gap,
-            maxEnvironmentArea=self._maxEnvironmentArea,
-            maxMisfitStrain=self._maxMisfitStrain
-        )
-
-        newEnvironment = Interface(**newEnvironmentDict)
+        newEnvironment = self._assembler.assemble(molecules, cell,
+                                                  lowerEnvStructure=newLowerEnvStructure,
+                                                  upperStructure=newUpperEnvStructure)
         return newMolecules, newCell, newEnvironment
-
-    @staticmethod
-    def build(lowerFile, upperFile, pbc, slabThickness, adjust=False, sigma=None, plane=None, rotAxis=None, 
-                lowerPlane=None, upperPlane=None, maxMisfitStrain=None, maxEnvironmentArea=None, **kwagrs):
-        """
-        Builds the environment objects for a given description.
-        """
-        if lowerFile == upperFile and sigma is not None:
-            logger.debug(f'Proceeding with Grain Boundary mode')
-            initStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(lowerFile, pbc=(1,1,1))
-            lowerStructure, upperStructure = constructGrainsSlabs(initStructure, pbc, sigma, plane, rotAxis, slabThickness)
-            logger.debug('Grains are successfully created')
-        else:
-            logger.debug(f'Proceeding with Heterostructure mode')
-            initLowerStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(lowerFile, pbc=(1,1,1))
-            initUpperStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(upperFile, pbc=(1,1,1))
-            lowerStructure = constructSurfaceSlab(initLowerStructure, pbc, lowerPlane, slabThickness)
-            upperStructure = constructSurfaceSlab(initUpperStructure, pbc, upperPlane, slabThickness)
-            logger.debug('Surface Slabs are successfully created')
-        if adjust:
-            logger.debug(f'Auto-adjustment of interfacial slabs was enabled')
-            antiPBC = tuple((~np.asarray(pbc, dtype=bool)).tolist())
-            nonPBCAxis = np.flatnonzero(antiPBC)[0]
-            maxMisfitStrain = maxMisfitStrain if maxMisfitStrain else DEFAULT_MAX_MISFIT_STRAIN
-            maxEnvironmentArea = maxEnvironmentArea if maxEnvironmentArea else DEFAULT_MAX_ENVIRONMENT_AREA
-            lowerStructure, upperStructure, _ = adjustStructures(lowerStructure, upperStructure, axis=nonPBCAxis, 
-                                                                    maxMisfitStrain=maxMisfitStrain,
-                                                                    maxSubstrateArea=maxEnvironmentArea)
-            logger.debug(f'Interfacial slabs are successfully adjusted')
-        environment = dict(
-            lowerStructure=lowerStructure,
-            upperStructure=upperStructure,
-        )
-        return environment
 
 
 class Bulk:
+
+    class Assembler:
+
+        def __init__(self, structure, isFixed: bool = True, **kwargs):
+            self._structure = structure
+            self.isFixed = isFixed
+            if self.isFixed:
+                self._indices = np.arange(len(structure))
+            else:
+                self._indices = np.array([], dtype=int)
+
+        def assemble(self, molecules, cell, **kwargs):
+            return Bulk(self._structure, self._indices, self)
+
+        @staticmethod
+        def build(file, **kwargs):
+            """
+            Builds the environment objects for a given description.
+            """
+            structure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file)
+            environment = dict(
+                structure=structure,
+            )
+            return environment
 
     processingStyles = {
         'onlyEnvironment': 'getStructure'
     }
 
-    def __init__(self, structure, isFixed: bool = True, **kwargs):
+    def __init__(self, structure, indices, assembler):
         self._structure = structure
-        self.isFixed = isFixed
-        if self.isFixed:
-            self._indices = np.arange(len(structure))
-        else:
-            self._indices = np.array([], dtype=int)
+        self._indices = indices
+        self._assembler = assembler
 
-    def calculateOffset(self, molecules, syscell=None):
-        return np.array([0.0, 0.0, 0.0])
-
-    def assemble(self, atomTypes, coordinates, cell):
-        """
-        Assembles the system with environment
-
-        :return: atomTypes, coordinates, assembledCell
-        """
-        structure = self.getStructure()
-        assembledCell = structure.getCell()
-        atomTypes.extend(structure.getAtomTypes())
-        coordinates.extend(structure.getCartesianCoordinates())
-        return atomTypes, coordinates, assembledCell
-
-    def getUpdatedEnvironment(self, atomTypes, coordinates, cell, envStructure):
-        return Bulk(envStructure, self.isFixed)
+    def getUpdatedEnvironment(self, envStructure):
+        return Bulk(envStructure, self._indices, self)
 
     def getStructure(self):
         """
@@ -490,17 +458,6 @@ class Bulk:
         Get indices of atoms in substrate positions of which are fixed.
         """
         return self._indices
-
-    @staticmethod
-    def build(file, **kwargs):
-        """
-        Builds the environment objects for a given description.
-        """
-        structure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file)
-        environment = dict(
-            structure=structure,
-        )
-        return environment
 
 
 class EnvironmentUtility:
@@ -541,7 +498,7 @@ class EnvironmentUtility:
 
     @classmethod
     def build(cls, description):
-        return EnvironmentUtility.supportedEnvironments.get(description['type']).build(**description)
+        return EnvironmentUtility.supportedEnvironments.get(description['type']).Assembler.build(**description)
 
     def __init__(self, environments: list = None):
         """
@@ -549,11 +506,11 @@ class EnvironmentUtility:
         """
         if environments is None:
             environments = []
-        self._environments = [EnvironmentUtility.supportedEnvironments.get(environment['type'])(**environment)
-                              for environment in environments]
+        self._environmentAssemblers = [self.supportedEnvironments.get(environment['type']).Assembler(**environment)
+                                       for environment in environments]
 
     def getEnvironments(self):
-        return self._environments
+        return self._environmentAssemblers
 
     def putEnvironment(self, system, environment=None):
         """
@@ -564,8 +521,9 @@ class EnvironmentUtility:
         """
         if environment is not None:
             system['environment'] = environment
-        elif self._environments:
-            system['environment'] = copy(np.random.choice(self._environments))
+        elif self._environmentAssemblers:
+            assembler = np.random.choice(self._environmentAssemblers)
+            system['environment'] = assembler.assemble(**system)
 
     @classmethod
     def initEnvironment(cls, structure, type, relaxable, fixed, pbc):

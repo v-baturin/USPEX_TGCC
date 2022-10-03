@@ -282,8 +282,10 @@ class AtomicDisassembler:
             indices.append(list(range(lowerBound, lowerBound + size)))
             lowerBound += size
         if environment is not None:
-            coordinates = list(np.asarray(coordinates, dtype=float) + environment.calculateOffset(coordinates, cell.getPBC()))
-            atomTypes, coordinates, assembledCell = environment.assemble(atomTypes, coordinates, cell)
+            envStructure = environment.getStructure()
+            atomTypes.extend(envStructure.getAtomTypes())
+            coordinates.extend(envStructure.getCartesianCoordinates())
+            assembledCell = envStructure.getCell()
         else:
             assembledCell = cell
         if vacuumSize > 0:
@@ -317,16 +319,13 @@ class AtomicDisassembler:
         assembledCell = atomicStructure.getCell()
         cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(syscoords, vacuumSize=1.0)
         system = dict()
-        envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
         if self.environment is not None:
-            system['environment'] = self.environment.getUpdatedEnvironment(sysAtomTypes, syscoords, cell, envStructure)
-            offsetVector = system['environment'].calculateOffset(None, None)
-        else:
-            offsetVector = 0
+            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
+            system['environment'] = self.environment.getUpdatedEnvironment(envStructure)
         molecules = []
         indices = self.indices if self.indices is not None else np.arange(len(coordinates)).reshape((-1, 1))
         for inds in indices:
-            molecules.append(AtomicStructure(atomTypes[inds], coordinates[inds] - offsetVector))
+            molecules.append(AtomicStructure(atomTypes[inds], coordinates[inds]))
         system.update({'molecules': molecules, 'cell': cell})
         return system
 

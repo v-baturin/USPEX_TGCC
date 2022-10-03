@@ -1,12 +1,8 @@
 from .Atomistic.Element import Element
 from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
-
-from .Atomistic.EnvironmentUtility import EnvironmentUtility
-
 from .IO.AtomisticRepresentation import AtomisticRepresentation
-AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler, EnvironmentUtility)
-
+AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .GlobalOptimizer import GlobalOptimizer
 from .Fitness import Fitness
 GlobalOptimizer.setFitnessType(Fitness)

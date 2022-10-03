@@ -310,7 +310,7 @@ class RadialDistributionUtility(object):
         molIndices = [revertIndices[inds] for inds in disassembler.indices]
         envIndices = revertIndices[disassembler.envIndices]
         if 'environment' in system:
-            fp_pbc = disassembler.environment.getStructure().getCell().getPBC()
+            fp_pbc = disassembler.environment.getStructure().getCell().getPBC() # TODO is this correct?
         else:
             fp_pbc = structure.getCell().getPBC()
         lat = cell.getCellVectors()

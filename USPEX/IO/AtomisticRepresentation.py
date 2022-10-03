@@ -80,15 +80,13 @@ class AtomisticRepresentation(object):
     atomType = None
     cellType = None
     atomicDisassemblerType = None
-    environmentUtilityType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType, environmentUtilityType):
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
-        cls.environmentUtilityType = environmentUtilityType
 
     def __init__(self, RES_FOLDER: str, columns, toDraw, presentConvexHull: bool,
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
@@ -194,7 +192,7 @@ class AtomisticRepresentation(object):
         return cls.readAtomicStructures(filename)[0]
 
     @classmethod
-    def readAtomicStructures(cls, filename) -> list:
+    def readAtomicStructures(cls, filename, environmentUtility=None) -> list:
         filename = Path(filename)
         if filename.suffix == '.uspex':
             with open(filename) as f:
@@ -207,7 +205,7 @@ class AtomisticRepresentation(object):
                 if 'molecules' in d:
                     d['molecules'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
                 if 'environment' in d:
-                    d['environment'] = cls.environmentUtilityType.initEnvironment(structure, **d.pop('environment'))
+                    d['environment'] = environmentUtility.initEnvironment(structure, **d.pop('environment'))
                 systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
         else:
             systems = [cls.atomicDisassemblerType().disassemble(s) for s in cls.readAtomicStructuresRaw(filename)]
