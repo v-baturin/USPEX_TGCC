@@ -176,11 +176,23 @@ class AtomisticRepresentation(object):
         structures = []
         labels = []
         descriptions = []
-        for system in systems:
+        printUSPEX = False
+        for i, system in enumerate(systems):
             structure, disassembler = cls.atomicDisassemblerType.assemble(**system)
             structures.append(structure)
             labels.append(f"EA{system['ID']}")
+            d = {'filename': os.path.basename(filename), 'index': i, 'molecules': []}
+            for indices in disassembler.indices:
+                if len(indices) > 1:
+                    d['molecules'].append(' '.join(f'{ind}' for ind in indices))
+                    printUSPEX = True
+            if 'environment' in system:
+                printUSPEX = True
+            descriptions.append(d)
         cls.writeAtomicStructuresRaw(filename, structures, labels)
+        if printUSPEX:
+            with open(f'{filename}.uspex', 'wt') as f:
+                f.write(yaml.safe_dump(descriptions))
 
     @classmethod
     def readAtomicStructureRaw(cls, filename, pbc=(1, 1, 1)):
