@@ -41,38 +41,23 @@ class Substrate:
             assert sum(antiPBC) == 1
             self._axis = np.flatnonzero(antiPBC)[0]
 
-        def _calculateOffset(self, coordinates, sysPBC):
-            """
-            Calculate or retrieve vector to be added to each molecule when assemble whole structure.
-            If such vector is not predefined for this environment it will be calculated basing on minimal atomic coordinates
-            in nonperiodic direction.
-
-            :param molecules: list of molecules for which the offset is being calculated.
-            :param cell: TODO
-
-            :return: offset vector.
-            """
-            cell = self._structure.getCell()
-            frac_coords = cell.cartesianToFractional(np.asarray(coordinates, dtype=float))
-            offsetVector = np.zeros(3)
-            for idx in range(3):
-                curr_axis = cell.getCellVectors()[idx]
-                if idx == self._axis:
-                    fracEnvCoordinates = cell.cartesianToFractional(self._structure.getCartesianCoordinates())
-                    offsetVector += curr_axis * (self._gap / np.linalg.norm(curr_axis)
-                                                 + fracEnvCoordinates[:, idx].max() - frac_coords[:, idx].min())
-                elif not sysPBC[idx]:
-                    offsetVector += curr_axis * (0.5 - 0.5 * (frac_coords[:, idx].min() + frac_coords[:, idx].max()))
-            return offsetVector
-
         def assemble(self, molecules, cell, structure=None, **kwargs):
             structure = structure if structure is not None else self._structure
-            disassembler = EnvironmentUtility.atomicDisassemblerType
-            offset = self._calculateOffset(disassembler.assemble(molecules, cell)[0].getCartesianCoordinates(),
-                                           cell.getPBC())
-            finalStructure = EnvironmentUtility.structureType(structure.getAtomTypes(),
-                                                              structure.getCartesianCoordinates() - offset,
-                                                              structure.getCell())
+            sysStructure, disassembler = EnvironmentUtility.atomicDisassemblerType.assemble(molecules, cell)
+            fracCoordinates = structure.getCell().cartesianToFractional(sysStructure.getCartesianCoordinates())
+            envCell = structure.getCell()
+            envCoordinates = structure.getCartesianCoordinates()
+            fracEnvCoordinates = envCell.cartesianToFractional(envCoordinates)
+            offset = np.zeros(3)
+            for idx in range(3):
+                currAxis = envCell.getCellVectors()[idx]
+                if idx == self._axis:
+                    offset += currAxis * (self._gap / np.linalg.norm(currAxis)
+                                          + fracEnvCoordinates[:, idx].max() - fracCoordinates[:, idx].min())
+                elif not cell.getPBC()[idx]:
+                    offset += currAxis * (1 - (fracCoordinates[:, idx].min() + fracCoordinates[:, idx].max())) / 2
+
+            finalStructure = EnvironmentUtility.structureType(structure.getAtomTypes(), envCoordinates - offset, envCell)
             coordinates = finalStructure.getCartesianCoordinates()[:, self._axis]
             upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
             indices = np.flatnonzero(coordinates < upperBound)
