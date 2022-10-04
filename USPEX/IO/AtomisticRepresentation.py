@@ -101,13 +101,13 @@ class AtomisticRepresentation(object):
 
     def presentSystems(self, systems: dict, optimizer, numStages):
         fitness = optimizer.optType
-        io_gatheredPOSCARS = io.StringIO('')
-        io_gatheredPOSCARS_unrelaxed = io.StringIO('')
+        systems_gatheredPOSCARS = []
+        systems_gatheredPOSCARS_unrelaxed = []
         table_Individuals = self.getNewSystemsTable()
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            self.writeAtomicStructure(io_gatheredPOSCARS_unrelaxed, system[0])
+            systems_gatheredPOSCARS.append(system[0])
             content_origin += f"{ID} {system[0]['howCome']} {system[0]['parent']}\n"
 
             if len(system) > 1:
@@ -115,18 +115,16 @@ class AtomisticRepresentation(object):
 
             if len(system) == numStages + 1:
                 table_Individuals.update(ID, optimizer.pool.allSystems[ID], optimizer.fitness)
-                self.writeAtomicStructure(io_gatheredPOSCARS, system[numStages])
+                systems_gatheredPOSCARS_unrelaxed.append(system[numStages])
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
-        with open(os.path.join(self.RES_FOLDER, 'gatheredPOSCARS_unrelaxed'), 'w') as f:
-            io_gatheredPOSCARS_unrelaxed.seek(0)
-            shutil.copyfileobj(io_gatheredPOSCARS_unrelaxed, f)
+        self.writeAtomicStructures(os.path.join(self.RES_FOLDER, 'gatheredPOSCARS_unrelaxed'),
+                                   systems_gatheredPOSCARS_unrelaxed)
+        self.writeAtomicStructures(os.path.join(self.RES_FOLDER, 'gatheredPOSCARS'),
+                                   systems_gatheredPOSCARS)
         with open(os.path.join(self.RES_FOLDER, 'Individuals'), 'w') as f:
             f.write(table_Individuals.table.get_string() + '\n')
-        with open(os.path.join(self.RES_FOLDER, 'gatheredPOSCARS'), 'w') as f:
-            io_gatheredPOSCARS.seek(0)
-            shutil.copyfileobj(io_gatheredPOSCARS, f)
         with open(os.path.join(self.RES_FOLDER, 'origin'), 'w') as f:
             f.write(content_origin)
         with open(os.path.join(self.RES_FOLDER, 'enthalpies_complete.csv'), 'w') as f:
@@ -161,12 +159,28 @@ class AtomisticRepresentation(object):
         write_vasp(filename, atoms, label=label, sort=True, direct=True, vasp5=True, long_format=False)
 
     @classmethod
-    def writeAtomicStructure(cls, filename, system: dict, disassemblerFileDescriptor=None):
-        structure, disassembler = cls.atomicDisassemblerType.assemble(**system)
-        cls.writeAtomicStructureRaw(filename, structure, f"EA{system['ID']}")
-        if disassemblerFileDescriptor is not None:
-            indices = " ".join(f"[{' '.join(f'{i}' for i in inds)}]" for inds in disassembler.indices)
-            disassemblerFileDescriptor.write("{indices: [" + indices + "]}")
+    def writeAtomicStructuresRaw(cls, filename, structures, labels):
+        content = io.StringIO('')
+        for structure, label in zip(structures, labels):
+            cls.writeAtomicStructureRaw(content, structure, label)
+        content.seek(0)
+        with open(filename, "wt") as f:
+            shutil.copyfileobj(content, f)
+
+    @classmethod
+    def writeAtomicStructure(cls, filename, system: dict):
+        cls.writeAtomicStructures(filename, [system])
+
+    @classmethod
+    def writeAtomicStructures(cls, filename, systems: list):
+        structures = []
+        labels = []
+        descriptions = []
+        for system in systems:
+            structure, disassembler = cls.atomicDisassemblerType.assemble(**system)
+            structures.append(structure)
+            labels.append(f"EA{system['ID']}")
+        cls.writeAtomicStructuresRaw(filename, structures, labels)
 
     @classmethod
     def readAtomicStructureRaw(cls, filename, pbc=(1, 1, 1)):
@@ -423,9 +437,9 @@ class AtomisticRepresentation(object):
         content_convexHull = ''
         table_goodStructures = self.getNewSystemsTable(isRank=True)
         table_extendedConvexHull = self.getNewSystemsTable( isRank=True)
-        io_BESTgatheredPOSCARS = io.StringIO('')
-        io_goodStructuresPOSCARS = io.StringIO('')
-        io_extendedConvexHullPOSCARS = io.StringIO('')
+        systems__BESTgatheredPOSCARS = []
+        systems_goodStructuresPOSCARS = []
+        systems_extendedConvexHullPOSCARS = []
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
@@ -444,10 +458,8 @@ class AtomisticRepresentation(object):
         for opt in optimizers:
             pool = opt.pool
             for ID in opt.best:
-                AtomisticRepresentation.writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
-        with open(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), 'w') as fp:
-            io_BESTgatheredPOSCARS.seek(0)
-            shutil.copyfileobj(io_BESTgatheredPOSCARS, fp)
+                systems__BESTgatheredPOSCARS.append(pool.allSystems[ID])
+        self.writeAtomicStructures(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), systems__BESTgatheredPOSCARS)
 
         compositionSpace = optimizer.target.utilities.compositionSpace
         csSize = len(compositionSpace.blocks)
@@ -458,13 +470,11 @@ class AtomisticRepresentation(object):
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
-                    AtomisticRepresentation.writeAtomicStructure(io_goodStructuresPOSCARS, system)
+                    systems_goodStructuresPOSCARS.append(system)
             with open(pj(self.RES_FOLDER, 'goodStructures'), 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
 
-            with open(pj(self.RES_FOLDER, 'goodStructures_POSCARS'), 'w') as fp:
-                io_goodStructuresPOSCARS.seek(0)
-                shutil.copyfileobj(io_goodStructuresPOSCARS, fp)
+            self.writeAtomicStructures(pj(self.RES_FOLDER, 'goodStructures_POSCARS'), systems_goodStructuresPOSCARS)
         else:
             goodStructresFolder = pj(self.RES_FOLDER, 'goodStructures')
             os.makedirs(goodStructresFolder, exist_ok=True)
@@ -475,18 +485,17 @@ class AtomisticRepresentation(object):
                     numBlocks = tuple(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']))
                     if numBlocks not in goodStructures:
                         goodStructures[numBlocks] = self.getNewSystemsTable(isRank=True)
-                        goodStructuresPOSCARS[numBlocks] = io.StringIO('')
+                        goodStructuresPOSCARS[numBlocks] = []
                     goodStructures[numBlocks].update(system['ID'], system, optimizer.fitness, rank=rank)
-                    AtomisticRepresentation.writeAtomicStructure(goodStructuresPOSCARS[numBlocks], system)
+                    goodStructuresPOSCARS[numBlocks].append(system)
 
             for comp, table_gs in goodStructures.items():
                 with open(pj(goodStructresFolder, f'{"_".join(str(x) for x in comp)}'), 'w') as fp:
                     fp.write(table_gs.table.get_string() + '\n')
 
-            for comp, io_gs_POSCARS in goodStructuresPOSCARS.items():
-                with open(pj(goodStructresFolder, f'{"_".join(str(x) for x in comp)}.POSCARS'), 'w') as fp:
-                    io_gs_POSCARS.seek(0)
-                    shutil.copyfileobj(io_gs_POSCARS, fp)
+            for comp, systems_gs_POSCARS in goodStructuresPOSCARS.items():
+                self.writeAtomicStructures(pj(goodStructresFolder, f'{"_".join(str(x) for x in comp)}.POSCARS'),
+                                           systems_gs_POSCARS)
 
         if self.presentConvexHull:
             convexHull = []
@@ -517,10 +526,9 @@ class AtomisticRepresentation(object):
 
             for front in fronts:
                 for system in front:
-                    AtomisticRepresentation.writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
-            with open(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'), 'w') as fp:
-                io_extendedConvexHullPOSCARS.seek(0)
-                shutil.copyfileobj(io_extendedConvexHullPOSCARS, fp)
+                    systems_extendedConvexHullPOSCARS.append(system)
+            self.writeAtomicStructures(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'),
+                                       systems_extendedConvexHullPOSCARS)
 
             if csSize == 2:
                 self._drawExtendedConvexHull2(compositionSpace, convexHull, extendedConvexHull)
