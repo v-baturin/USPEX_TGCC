@@ -91,6 +91,15 @@ class Substrate:
         self._indices = indices
         self._assembler = assembler
 
+    @staticmethod
+    def fromIndices(structure, all, fixed, pbc):
+        all = np.asarray(all, dtype=int)
+        fixed = np.asarray(fixed, dtype=int)
+        envStructure = EnvironmentUtility.structureType(structure.getAtomTypes()[all],
+                                          structure.getCartesianCoordinates()[all],
+                                          EnvironmentUtility.cellType(structure.getCell().getCellVectors(), pbc=pbc))
+        return Substrate(envStructure, fixed, None)
+
     def getUpdatedEnvironment(self, envStructure):
         return Substrate(envStructure, self._indices, self._assembler)
         
@@ -153,10 +162,6 @@ class Interface:
             upperAxis = np.flatnonzero(antiPBC)[0]
             assert lowerAxis == upperAxis
             self._axis = lowerAxis
-
-        def forkWithNewStructures(self, lowerStructure, upperStructure):
-            return type(self)(lowerStructure, upperStructure,
-                              self._thickness, self._gap, self.maxMisfitStrain, self.maxEnvironmentArea)
 
         def _calculateUpperOffset(self, coords, sysPBC=None):
             """
@@ -280,6 +285,19 @@ class Interface:
         self._indices = indices
         self._assembler = assembler
 
+    @staticmethod
+    def fromIndices(structure, lowerSlab, upperSlab, fixed, pbc):
+        lowerSlab = np.asarray(lowerSlab, dtype=int)
+        upperSlab = np.asarray(upperSlab, dtype=int)
+        fixed = np.asarray(fixed, dtype=int)
+        cell = EnvironmentUtility.cellType(structure.getCell().getCellVectors(), pbc=pbc)
+        lowerEnvStructure = EnvironmentUtility.structureType(structure.getAtomTypes()[lowerSlab],
+                                                             structure.getCartesianCoordinates()[lowerSlab],
+                                                             cell)
+        upperEnvStructure = EnvironmentUtility.structureType(structure.getAtomTypes()[upperSlab],
+                                                             structure.getCartesianCoordinates()[upperSlab],
+                                                             cell)
+        return Interface(lowerEnvStructure, upperEnvStructure, fixed, None)
 
     def getUpdatedEnvironment(self, envStructure):
         envAtomTypes = envStructure.getAtomTypes()
@@ -427,6 +445,15 @@ class Bulk:
         self._indices = indices
         self._assembler = assembler
 
+    @staticmethod
+    def fromIndices(structure, all, fixed, pbc):
+        all = np.asarray(all, dtype=int)
+        fixed = np.asarray(fixed, dtype=int)
+        envStructure = EnvironmentUtility.structureType(structure.getAtomTypes()[all],
+                                          structure.getCartesianCoordinates()[all],
+                                          EnvironmentUtility.cellType(structure.getCell().getCellVectors(), pbc=pbc))
+        return Bulk(envStructure, fixed, None)
+
     def getUpdatedEnvironment(self, envStructure):
         return Bulk(envStructure, self._indices, self)
 
@@ -509,10 +536,6 @@ class EnvironmentUtility:
         elif self._environmentAssemblers:
             assembler = np.random.choice(self._environmentAssemblers)
             system['environment'] = assembler.assemble(**system)
-
-    @classmethod
-    def initEnvironment(cls, structure, type, relaxable, fixed, pbc):
-        pass
 
 
 # TODO create a unittest for all environment types

@@ -205,7 +205,9 @@ class AtomisticRepresentation(object):
                 if 'molecules' in d:
                     d['molecules'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
                 if 'environment' in d:
-                    d['environment'] = environmentUtility.initEnvironment(structure, **d.pop('environment'))
+                    environment = d.pop('environment')
+                    environmentType = environmentUtility.supportedEnvironments.get(environment.pop('type'))
+                    d['environment'] = environmentType.fromIndices(**environment)
                 systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
         else:
             systems = [cls.atomicDisassemblerType().disassemble(s) for s in cls.readAtomicStructuresRaw(filename)]
