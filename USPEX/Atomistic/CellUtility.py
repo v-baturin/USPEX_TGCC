@@ -21,6 +21,25 @@ class CellUtility:
     Utility for working with unit cells of atomic structures.
     """
 
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        """
+        Register types used by this utility.
+
+        :param structureType: type representing atomic structure.
+        :param atomType: type representing chemical element.
+        :param cellType: type representing unit cell.
+        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
+        """
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
                  thickness=None, supercellDegree = None, symTolerance=None, debug = False):
         """
@@ -429,7 +448,7 @@ class CellUtility:
         """
         cell = system['cell']
         molecules = system['molecules']
-        structure, disassembler = type(molecules[0]).assemble(molecules, cell)
+        structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell)
         lattice = cell.getCellVectors()
         coordinates = structure.getFractionalCoordinates()
         numbers = [el.z for el in structure.getAtomTypes()]

@@ -235,10 +235,34 @@ class AtomicStructure:
         newStructure = AtomicStructure(newAtomTypes, newCoordinates, newCell)
         return newStructure
 
+
+class AtomicDisassembler:
+    """
+    This class describes how to assemble AtomicStructure from molecules and environment
+    and then disassemble it back into molecules and environment. 
+    """
+
+
+    def __init__(self, molecules=None, environment=None, pbc=(1,1,1)):
+        """
+
+        :param indices:
+        :param environment:
+
+        """
+        self.indices = molecules
+        self.environment = environment
+        self.pbc = pbc
+        if self.environment is not None:
+            molIndices = set(np.concatenate(self.indices)) if self.indices else set()
+            allIndices = list(range(len(molIndices) + len(self.environment.getStructure())))
+            self.envIndices = np.asarray(list(set(allIndices).difference(molIndices)), dtype=int)
+        else:
+            self.envIndices = np.empty(0, dtype=int)
+
     @staticmethod
     def assemble(molecules, cell, environment=None, vacuumSize=0, **kwargs): # lots of work with calcs
         """
-        TODO move to AtomicDisassembler class.
 
         :param molecules:
         :param cell:
@@ -258,8 +282,10 @@ class AtomicStructure:
             indices.append(list(range(lowerBound, lowerBound + size)))
             lowerBound += size
         if environment is not None:
-            coordinates = list(np.asarray(coordinates, dtype = float) + environment.calculateOffset(molecules, cell))
-            atomTypes, coordinates, assembledCell = environment.assemble(atomTypes, coordinates, cell)
+            envStructure = environment.getStructure()
+            atomTypes.extend(envStructure.getAtomTypes())
+            coordinates.extend(envStructure.getCartesianCoordinates())
+            assembledCell = envStructure.getCell()
         else:
             assembledCell = cell
         if vacuumSize > 0:
@@ -267,43 +293,7 @@ class AtomicStructure:
             assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
             coordinates = assembledCell.center(structure.getCartesianCoordinates())
         return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
-                AtomicDisassembler(indices, environment, cell))  # cell of molecules
-
-
-class AtomicDisassembler:
-    """
-    This class describes how to assemble AtomicStructure from molecules and environment
-    and then disassemble it back into molecules and environment. 
-    """
-
-
-    def __init__(self, indices, environment, cell):
-        """
-
-        :param indices:
-        :param environment:
-
-        """
-        self.indices = [np.asarray(inds, dtype=int) for inds in indices]
-        self.environment = environment
-        self.cell = cell
-        if self.environment is not None:
-            molIndices = set(np.concatenate(self.indices))
-            allIndices = list(range(len(molIndices) + len(self.environment.getStructure())))
-            self.envIndices = np.asarray(list(set(allIndices).difference(molIndices)), dtype=int)
-        else:
-            self.envIndices = np.empty(0, dtype=int)
-
-
-    @staticmethod
-    def createFlatDisassembler(N, cell):
-        """
-        Helper constructor. Creates disassembler for structure of given size, which decomposes it into individual atoms.
-
-        :param N: size of structure for which disaasembler is required.
-
-        """
-        return AtomicDisassembler([[i] for i in range(N)], environment=None, cell=cell)
+                AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
 
     def disassemble(self, atomicStructure):
         """
@@ -315,26 +305,27 @@ class AtomicDisassembler:
         """
         atomTypes = atomicStructure.getAtomTypes()
         coordinates = atomicStructure.getCartesianCoordinates()
-        syscoords = []
-        sysAtomTypes = []
-        for indices in self.indices:
-            syscoords.extend(coordinates[indices])
-            sysAtomTypes.extend(atomTypes[indices])
-        syscoords = np.array(syscoords)
-        sysAtomTypes = np.asarray(sysAtomTypes)
-        assembledCell = atomicStructure.getCell()
-        cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.cell.getPBC()).getEnvelopeCell(syscoords,
-                                                                                                           vacuumSize=1.0)
-        system = dict()
-        envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
-        if self.environment is not None:
-            system['environment'] = self.environment.getUpdatedEnvironment(sysAtomTypes, syscoords, cell, envStructure)
-            offsetVector = system['environment'].calculateOffset(None)
+        if self.indices is None:
+            syscoords = coordinates
+            sysAtomTypes = atomTypes
         else:
-            offsetVector = 0
+            syscoords = []
+            sysAtomTypes = []
+            for indices in self.indices:
+                syscoords.extend(coordinates[indices])
+                sysAtomTypes.extend(atomTypes[indices])
+            syscoords = np.array(syscoords)
+            sysAtomTypes = np.asarray(sysAtomTypes)
+        assembledCell = atomicStructure.getCell()
+        cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(syscoords, vacuumSize=1.0)
+        system = dict()
+        if self.environment is not None:
+            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
+            system['environment'] = self.environment.getUpdatedEnvironment(envStructure)
         molecules = []
-        for indices in self.indices:
-            molecules.append(AtomicStructure(atomTypes[indices], coordinates[indices] - offsetVector))
+        indices = self.indices if self.indices is not None else np.arange(len(coordinates)).reshape((-1, 1))
+        for inds in indices:
+            molecules.append(AtomicStructure(atomTypes[inds], coordinates[inds]))
         system.update({'molecules': molecules, 'cell': cell})
         return system
 

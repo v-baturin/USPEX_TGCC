@@ -37,8 +37,7 @@ class GULP_CalculatorTest(unittest.TestCase):
         radialDistributionUtility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'])
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
+            system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
             system['externalPressure'] = 100
             system['ID'] = ID
             os.mkdir(WORKPATH)
@@ -54,8 +53,7 @@ class GULP_CalculatorTest(unittest.TestCase):
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             gulp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
+            systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
 
@@ -69,11 +67,10 @@ class GULP_InterfaceTest(unittest.TestCase):
                                    targetProperties=['structure', 'enthalpy', 'stressTensor', 'strains'])
         # with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
-        with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-            system = AtomisticRepresentation.readAtomicStructure(f)
+        system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
         system['assembledCell'] = system['cell']
         system['ID'] = 0
-        system['disassembler'] = AtomisticRepresentation.atomicDisassemblerType.createFlatDisassembler(len(system['molecules']), cell=system['cell'])
+        system['disassembler'] = AtomisticRepresentation.atomicDisassemblerType()
 
         interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'gulp_test'))
         self.assertTrue(np.isclose(system['enthalpy'], -645.80329121))

@@ -13,7 +13,9 @@ from .Atomistic.EnvironmentUtility import EnvironmentUtility
 EnvironmentUtility.setRepresentation(AtomisticRepresentation)
 EnvironmentUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
+RadialDistributionUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.CellUtility import CellUtility
+CellUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.BondHardnessUtility import BondHardnessUtility
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
@@ -22,7 +24,9 @@ from .Atomistic.IonDistances import IonDistances
 from .Atomistic.Bonds import Bonds
 from .Atomistic.Constraints import Constraints
 from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
+PowderSpectrumAnalyzer.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
+SingleCrystalSpectrumAnalyzer.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym

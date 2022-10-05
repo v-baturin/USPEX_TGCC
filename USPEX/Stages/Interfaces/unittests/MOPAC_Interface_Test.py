@@ -29,11 +29,10 @@ class MOPAC_CalculatorTest(unittest.TestCase):
         radialDistributionUtility = RadialDistributionUtility(symbols=['Si', 'O'])
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
-                system['externalPressure'] = 0
-                system['ID'] = ID
-                system['cell'] = type(system['cell'])(system['cell'].getCellVectors(), (False, False, False))
+            system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
+            system['externalPressure'] = 0
+            system['ID'] = ID
+            system['cell'] = type(system['cell'])(system['cell'].getCellVectors(), (False, False, False))
             os.mkdir(WORKPATH)
             mopac.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -47,8 +46,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             mopac.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
-                systemRef['cell'] = type(systemRef['cell'])(systemRef['cell'].getCellVectors(), (False, False, False))
+            systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
+            systemRef['cell'] = type(systemRef['cell'])(systemRef['cell'].getCellVectors(), (False, False, False))
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 

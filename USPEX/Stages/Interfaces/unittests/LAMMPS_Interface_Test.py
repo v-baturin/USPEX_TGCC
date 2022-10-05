@@ -27,8 +27,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
         radialDistributionUtility = RadialDistributionUtility(symbols=['C'])
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
+            system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
             system['externalPressure'] = 100
             system['ID'] = ID
             os.mkdir(WORKPATH)
@@ -44,8 +43,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             lammps.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
+            systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
 
@@ -56,10 +54,9 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         # Only output will be parsed and properties checked
         interface = LAMMPS_Interface(tag='0', perturbate=False,
                                   libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'), specorder=['C'])
-        with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-            system = AtomisticRepresentation.readAtomicStructure(f)
+        system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
         system['ID'] = 0
-        s, d = type(system['molecules'][0]).assemble(**system)
+        s, d = AtomisticRepresentation.atomicDisassemblerType.assemble(**system)
         system['disassembler'] = d
         system['atomTypes'] = s.getAtomTypes()
         system['assembledCell'] = system['cell']

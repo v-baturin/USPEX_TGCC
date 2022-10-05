@@ -36,7 +36,7 @@ class Constraints:
         goodStructure = np.all(atomDistances >= minDistMatrix) \
                         and self.compositionSpace.isGoodComposition(composition) # and self.cellUtility.isGoodCell(cell)
         if goodStructure:
-            structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+            structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**system)
             # goodStructure = goodStructure and self.bonds.isConnected(structure)
             cell = structure.getRectifiedCell()
             coordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())

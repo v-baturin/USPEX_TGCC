@@ -49,7 +49,6 @@ def compileParams(main: dict) -> dict:
             target['radialDistributionUtility']['symbols'] = sorted(elementalSymbols)
         if 'environmentUtility' in target:
             for environmentDesciption in target['environmentUtility']['environments']:
-                if 'build' in environmentDesciption and environmentDesciption['build']:
-                    environmentDesciption.update(EnvironmentUtility.build(environmentDesciption))
+                environmentDesciption.update(EnvironmentUtility.build(**environmentDesciption))
 
     return main

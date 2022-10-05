@@ -159,7 +159,7 @@ class SimpleMoleculeUtility(object):
         #     if not inMolecule: return False
         # return True
 
-        structure, disassembler = self.structureType.assemble(molecules, cell, environment)
+        structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell, environment)
         actualDistances = structure.getAllDistances()
         constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
         for inds, molecule in zip(disassembler.indices, molecules):

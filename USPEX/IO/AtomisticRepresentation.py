@@ -10,6 +10,8 @@ from itertools import combinations
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
 from os.path import join as pj
+from pathlib import Path
+import yaml
 from prettytable import PrettyTable
 import matplotlib.pyplot as plt
 
@@ -99,13 +101,13 @@ class AtomisticRepresentation(object):
 
     def presentSystems(self, systems: dict, optimizer, numStages):
         fitness = optimizer.optType
-        io_gatheredPOSCARS = io.StringIO('')
-        io_gatheredPOSCARS_unrelaxed = io.StringIO('')
+        systems_gatheredPOSCARS = []
+        systems_gatheredPOSCARS_unrelaxed = []
         table_Individuals = self.getNewSystemsTable()
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            self.writeAtomicStructure(io_gatheredPOSCARS_unrelaxed, system[0])
+            systems_gatheredPOSCARS.append(system[0])
             content_origin += f"{ID} {system[0]['howCome']} {system[0]['parent']}\n"
 
             if len(system) > 1:
@@ -113,18 +115,16 @@ class AtomisticRepresentation(object):
 
             if len(system) == numStages + 1:
                 table_Individuals.update(ID, optimizer.pool.allSystems[ID], optimizer.fitness)
-                self.writeAtomicStructure(io_gatheredPOSCARS, system[numStages])
+                systems_gatheredPOSCARS_unrelaxed.append(system[numStages])
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
-        with open(os.path.join(self.RES_FOLDER, 'gatheredPOSCARS_unrelaxed'), 'w') as f:
-            io_gatheredPOSCARS_unrelaxed.seek(0)
-            shutil.copyfileobj(io_gatheredPOSCARS_unrelaxed, f)
+        self.writeAtomicStructures(os.path.join(self.RES_FOLDER, 'gatheredPOSCARS_unrelaxed'),
+                                   systems_gatheredPOSCARS_unrelaxed)
+        self.writeAtomicStructures(os.path.join(self.RES_FOLDER, 'gatheredPOSCARS'),
+                                   systems_gatheredPOSCARS)
         with open(os.path.join(self.RES_FOLDER, 'Individuals'), 'w') as f:
             f.write(table_Individuals.table.get_string() + '\n')
-        with open(os.path.join(self.RES_FOLDER, 'gatheredPOSCARS'), 'w') as f:
-            io_gatheredPOSCARS.seek(0)
-            shutil.copyfileobj(io_gatheredPOSCARS, f)
         with open(os.path.join(self.RES_FOLDER, 'origin'), 'w') as f:
             f.write(content_origin)
         with open(os.path.join(self.RES_FOLDER, 'enthalpies_complete.csv'), 'w') as f:
@@ -151,31 +151,104 @@ class AtomisticRepresentation(object):
 
 
     @classmethod
-    def writeAtomicStructure(cls, fileDescriptor, system: dict):
-        structure, disassembler = cls.structureType.assemble(**system)
+    def writePOSCAR(cls, filename, structure, label):
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell().getEnvelopeCell(coordinates, 10)
         coordinates = cell.center(coordinates)
         atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
-        write_vasp(fileDescriptor, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+        write_vasp(filename, atoms, label=label, sort=True, direct=True, vasp5=True, long_format=False)
 
     @classmethod
-    def readAtomicStructureRaw(cls, fileDescriptor, pbc=(1,1,1)) -> dict:
-        atoms = read_vasp(fileDescriptor)
+    def writePOSCARS(cls, filename, structures, labels):
+        content = io.StringIO('')
+        for structure, label in zip(structures, labels):
+            cls.writePOSCAR(content, structure, label)
+        content.seek(0)
+        with open(filename, "wt") as f:
+            shutil.copyfileobj(content, f)
+
+    @classmethod
+    def writeAtomicStructure(cls, filename, system: dict):
+        cls.writeAtomicStructures(filename, [system])
+
+    @classmethod
+    def writeAtomicStructures(cls, filename, systems: list):
+        structures = []
+        labels = []
+        descriptions = []
+        printUSPEX = False
+        for i, system in enumerate(systems):
+            structure, disassembler = cls.atomicDisassemblerType.assemble(**system)
+            atomTypes = structure.getAtomTypes()
+            coordinates = structure.getCartesianCoordinates()
+            sortIndices = np.argsort(atomTypes)
+            reversedIndices = np.argsort(sortIndices)
+            structure = cls.structureType(atomTypes[sortIndices], coordinates[sortIndices], structure.getCell())
+            structures.append(structure)
+            labels.append(f"EA{system['ID']}")
+            d = {'filename': os.path.basename(filename), 'index': i, 'molecules': []}
+            pbc = system['cell'].getPBC()
+            if pbc != (1, 1, 1):
+                d['pbc'] = pbc
+                printUSPEX = True
+            for indices in disassembler.indices:
+                if len(indices) > 1:
+                    d['molecules'].append(' '.join(f'{ind}' for ind in reversedIndices[indices]))
+                    printUSPEX = True
+            if 'environment' in system:
+                printUSPEX = True
+            descriptions.append(d)
+        cls.writePOSCARS(filename, structures, labels)
+        if printUSPEX:
+            with open(f'{filename}.uspex', 'wt') as f:
+                f.write(yaml.safe_dump(descriptions))
+
+    @classmethod
+    def readPOSCAR(cls, filename, pbc=(1, 1, 1)):
+        atoms = read_vasp(filename)
         atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
         cell = cls.cellType(atoms.get_cell().array, pbc)
         coordinates = atoms.get_positions()
-        # cell = cls.cellType(atoms.get_cell().array, pbc).getEnvelopeCell(coordinates)
-        # coordinates = cell.center(coordinates)
-        return cls.structureType(atomTypes, coordinates, cell = cell)
+        return cls.structureType(atomTypes, coordinates, cell)
 
     @classmethod
-    def readAtomicStructure(cls, fileDescriptor, disassembler = None, pbc=(1,1,1)) -> dict:
-        atoms = read_vasp(fileDescriptor)
-        cell = cls.cellType(atoms.get_cell().array, pbc)
-        disassembler = cls.atomicDisassemblerType.createFlatDisassembler(len(atoms), cell=cell) if disassembler is None else disassembler
-        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
-        return disassembler.disassemble(cls.structureType(atomTypes, atoms.get_positions(), cell = cell))
+    def readPOSCARS(cls, filename):
+        all_systems = []
+        with open(filename, 'rt') as f:
+            while True:
+                try:
+                    all_systems.append(AtomisticRepresentation.readPOSCAR(f))
+                except Exception:
+                    break
+        return all_systems
+
+    @classmethod
+    def readAtomicStructure(cls, filename, environmentUtility=None) -> dict:
+        return cls.readAtomicStructures(filename, environmentUtility)[0]
+
+    @classmethod
+    def readAtomicStructures(cls, filename, environmentUtility=None) -> list:
+        filename = Path(filename)
+        directory = os.path.dirname(filename)
+        if filename.suffix == '.uspex':
+            with open(filename) as f:
+                descriptions = yaml.safe_load(f.read())
+            files = {name: cls.readPOSCARS(os.path.join(directory, name))
+                     for name in np.unique([s['filename'] for s in descriptions])}
+            systems = []
+            for d in descriptions:
+                d = copy(d)
+                structure = files[d.pop('filename')][d.pop('index')]
+                if 'molecules' in d:
+                    d['molecules'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
+                if 'environment' in d:
+                    environment = d.pop('environment')
+                    environmentType = environmentUtility.supportedEnvironments.get(environment.pop('type'))
+                    d['environment'] = environmentType.fromIndices(**environment)
+                systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
+        else:
+            systems = [cls.atomicDisassemblerType().disassemble(s) for s in cls.readPOSCARS(filename)]
+        return systems
 
     @classmethod
     def getZmatrixRepresentation(cls, molecule, utility) -> str:
@@ -387,9 +460,9 @@ class AtomisticRepresentation(object):
         content_convexHull = ''
         table_goodStructures = self.getNewSystemsTable(isRank=True)
         table_extendedConvexHull = self.getNewSystemsTable( isRank=True)
-        io_BESTgatheredPOSCARS = io.StringIO('')
-        io_goodStructuresPOSCARS = io.StringIO('')
-        io_extendedConvexHullPOSCARS = io.StringIO('')
+        systems__BESTgatheredPOSCARS = []
+        systems_goodStructuresPOSCARS = []
+        systems_extendedConvexHullPOSCARS = []
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
@@ -408,10 +481,8 @@ class AtomisticRepresentation(object):
         for opt in optimizers:
             pool = opt.pool
             for ID in opt.best:
-                AtomisticRepresentation.writeAtomicStructure(io_BESTgatheredPOSCARS, pool.allSystems[ID])
-        with open(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), 'w') as fp:
-            io_BESTgatheredPOSCARS.seek(0)
-            shutil.copyfileobj(io_BESTgatheredPOSCARS, fp)
+                systems__BESTgatheredPOSCARS.append(pool.allSystems[ID])
+        self.writeAtomicStructures(pj(self.RES_FOLDER, 'BESTgatheredPOSCARS'), systems__BESTgatheredPOSCARS)
 
         compositionSpace = optimizer.target.utilities.compositionSpace
         csSize = len(compositionSpace.blocks)
@@ -422,13 +493,11 @@ class AtomisticRepresentation(object):
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
-                    AtomisticRepresentation.writeAtomicStructure(io_goodStructuresPOSCARS, system)
+                    systems_goodStructuresPOSCARS.append(system)
             with open(pj(self.RES_FOLDER, 'goodStructures'), 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
 
-            with open(pj(self.RES_FOLDER, 'goodStructures_POSCARS'), 'w') as fp:
-                io_goodStructuresPOSCARS.seek(0)
-                shutil.copyfileobj(io_goodStructuresPOSCARS, fp)
+            self.writeAtomicStructures(pj(self.RES_FOLDER, 'goodStructures_POSCARS'), systems_goodStructuresPOSCARS)
         else:
             goodStructresFolder = pj(self.RES_FOLDER, 'goodStructures')
             os.makedirs(goodStructresFolder, exist_ok=True)
@@ -439,18 +508,17 @@ class AtomisticRepresentation(object):
                     numBlocks = tuple(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']))
                     if numBlocks not in goodStructures:
                         goodStructures[numBlocks] = self.getNewSystemsTable(isRank=True)
-                        goodStructuresPOSCARS[numBlocks] = io.StringIO('')
+                        goodStructuresPOSCARS[numBlocks] = []
                     goodStructures[numBlocks].update(system['ID'], system, optimizer.fitness, rank=rank)
-                    AtomisticRepresentation.writeAtomicStructure(goodStructuresPOSCARS[numBlocks], system)
+                    goodStructuresPOSCARS[numBlocks].append(system)
 
             for comp, table_gs in goodStructures.items():
                 with open(pj(goodStructresFolder, f'{"_".join(str(x) for x in comp)}'), 'w') as fp:
                     fp.write(table_gs.table.get_string() + '\n')
 
-            for comp, io_gs_POSCARS in goodStructuresPOSCARS.items():
-                with open(pj(goodStructresFolder, f'{"_".join(str(x) for x in comp)}.POSCARS'), 'w') as fp:
-                    io_gs_POSCARS.seek(0)
-                    shutil.copyfileobj(io_gs_POSCARS, fp)
+            for comp, systems_gs_POSCARS in goodStructuresPOSCARS.items():
+                self.writeAtomicStructures(pj(goodStructresFolder, f'{"_".join(str(x) for x in comp)}.POSCARS'),
+                                           systems_gs_POSCARS)
 
         if self.presentConvexHull:
             convexHull = []
@@ -481,10 +549,9 @@ class AtomisticRepresentation(object):
 
             for front in fronts:
                 for system in front:
-                    AtomisticRepresentation.writeAtomicStructure(io_extendedConvexHullPOSCARS, system)
-            with open(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'), 'w') as fp:
-                io_extendedConvexHullPOSCARS.seek(0)
-                shutil.copyfileobj(io_extendedConvexHullPOSCARS, fp)
+                    systems_extendedConvexHullPOSCARS.append(system)
+            self.writeAtomicStructures(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'),
+                                       systems_extendedConvexHullPOSCARS)
 
             if csSize == 2:
                 self._drawExtendedConvexHull2(compositionSpace, convexHull, extendedConvexHull)

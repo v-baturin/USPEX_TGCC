@@ -59,7 +59,7 @@ class MOPAC_Interface:
         :param isFullRelaxation:
         """
 
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=0)
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system, vacuumSize=0)
         system['disassembler'] = disassembler
         cell = structure.getCell()
         system['assembledCell'] = cell

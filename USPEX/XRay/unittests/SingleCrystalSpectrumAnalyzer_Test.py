@@ -19,8 +19,7 @@ PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 
 class SpectrumAnalyzer_Test(unittest.TestCase):
     def setUp(self):
-        with open(pj(PATH_WITH_TESTS, 'Mg4O12Si4.vasp'), 'rt') as f:
-            self.system = AtomisticRepresentation.readAtomicStructure(f)
+        self.system = AtomisticRepresentation.readAtomicStructure(pj(PATH_WITH_TESTS, 'Mg4O12Si4.vasp'))
         self.system['ID'] = 1
 
     def test(self):

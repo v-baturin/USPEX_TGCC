@@ -74,7 +74,7 @@ class GULP_Interface:
 
         """
 
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system, vacuumSize=self.vacuumSize)
         system['disassembler'] = disassembler
         cell = structure.getCell()
         system['assembledCell'] = cell

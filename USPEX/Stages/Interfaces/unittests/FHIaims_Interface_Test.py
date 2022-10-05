@@ -39,10 +39,9 @@ class VASP_CalculatorTest2(unittest.TestCase):
 
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
-                system['ID'] = ID
-                system['externalPressure'] = 0.0001
+            system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
+            system['ID'] = ID
+            system['externalPressure'] = 0.0001
             os.mkdir(WORKPATH)
             aims.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -56,7 +55,6 @@ class VASP_CalculatorTest2(unittest.TestCase):
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
             aims.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
+            systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
