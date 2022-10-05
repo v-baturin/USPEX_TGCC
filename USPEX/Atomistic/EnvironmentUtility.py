@@ -68,7 +68,7 @@ class Substrate:
             """
             Builds the environment objects for a given description.
             """
-            structure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file, pbc)
+            structure = EnvironmentUtility.structureRepresentation.readPOSCAR(file, pbc)
             if build:
                 structure = constructSurfaceSlab(structure, pbc, plane, slabThickness)
             environment = dict(
@@ -243,13 +243,13 @@ class Interface:
             """
             if lowerFile == upperFile and sigma is not None:
                 logger.debug(f'Proceeding with Grain Boundary mode')
-                initStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(lowerFile, pbc=(1,1,1))
+                initStructure = EnvironmentUtility.structureRepresentation.readPOSCAR(lowerFile, pbc=(1, 1, 1))
                 lowerStructure, upperStructure = constructGrainsSlabs(initStructure, pbc, sigma, plane, rotAxis, slabThickness)
                 logger.debug('Grains are successfully created')
             else:
                 logger.debug(f'Proceeding with Heterostructure mode')
-                initLowerStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(lowerFile, pbc=(1,1,1))
-                initUpperStructure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(upperFile, pbc=(1,1,1))
+                initLowerStructure = EnvironmentUtility.structureRepresentation.readPOSCAR(lowerFile, pbc=(1, 1, 1))
+                initUpperStructure = EnvironmentUtility.structureRepresentation.readPOSCAR(upperFile, pbc=(1, 1, 1))
                 lowerStructure = constructSurfaceSlab(initLowerStructure, pbc, lowerPlane, slabThickness)
                 upperStructure = constructSurfaceSlab(initUpperStructure, pbc, upperPlane, slabThickness)
                 logger.debug('Surface Slabs are successfully created')
@@ -430,7 +430,7 @@ class Bulk:
             """
             Builds the environment objects for a given description.
             """
-            structure = EnvironmentUtility.structureRepresentation.readAtomicStructureRaw(file)
+            structure = EnvironmentUtility.structureRepresentation.readPOSCAR(file)
             environment = dict(
                 structure=structure,
             )

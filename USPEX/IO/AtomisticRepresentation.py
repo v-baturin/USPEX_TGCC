@@ -151,7 +151,7 @@ class AtomisticRepresentation(object):
 
 
     @classmethod
-    def writeAtomicStructureRaw(cls, filename, structure, label):
+    def writePOSCAR(cls, filename, structure, label):
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell().getEnvelopeCell(coordinates, 10)
         coordinates = cell.center(coordinates)
@@ -159,10 +159,10 @@ class AtomisticRepresentation(object):
         write_vasp(filename, atoms, label=label, sort=True, direct=True, vasp5=True, long_format=False)
 
     @classmethod
-    def writeAtomicStructuresRaw(cls, filename, structures, labels):
+    def writePOSCARS(cls, filename, structures, labels):
         content = io.StringIO('')
         for structure, label in zip(structures, labels):
-            cls.writeAtomicStructureRaw(content, structure, label)
+            cls.writePOSCAR(content, structure, label)
         content.seek(0)
         with open(filename, "wt") as f:
             shutil.copyfileobj(content, f)
@@ -179,23 +179,32 @@ class AtomisticRepresentation(object):
         printUSPEX = False
         for i, system in enumerate(systems):
             structure, disassembler = cls.atomicDisassemblerType.assemble(**system)
+            atomTypes = structure.getAtomTypes()
+            coordinates = structure.getCartesianCoordinates()
+            sortIndices = np.argsort(atomTypes)
+            reversedIndices = np.argsort(sortIndices)
+            structure = cls.structureType(atomTypes[sortIndices], coordinates[sortIndices], structure.getCell())
             structures.append(structure)
             labels.append(f"EA{system['ID']}")
             d = {'filename': os.path.basename(filename), 'index': i, 'molecules': []}
+            pbc = system['cell'].getPBC()
+            if pbc != (1, 1, 1):
+                d['pbc'] = pbc
+                printUSPEX = True
             for indices in disassembler.indices:
                 if len(indices) > 1:
-                    d['molecules'].append(' '.join(f'{ind}' for ind in indices))
+                    d['molecules'].append(' '.join(f'{ind}' for ind in reversedIndices[indices]))
                     printUSPEX = True
             if 'environment' in system:
                 printUSPEX = True
             descriptions.append(d)
-        cls.writeAtomicStructuresRaw(filename, structures, labels)
+        cls.writePOSCARS(filename, structures, labels)
         if printUSPEX:
             with open(f'{filename}.uspex', 'wt') as f:
                 f.write(yaml.safe_dump(descriptions))
 
     @classmethod
-    def readAtomicStructureRaw(cls, filename, pbc=(1, 1, 1)):
+    def readPOSCAR(cls, filename, pbc=(1, 1, 1)):
         atoms = read_vasp(filename)
         atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
         cell = cls.cellType(atoms.get_cell().array, pbc)
@@ -203,27 +212,29 @@ class AtomisticRepresentation(object):
         return cls.structureType(atomTypes, coordinates, cell)
 
     @classmethod
-    def readAtomicStructuresRaw(cls, filename):
+    def readPOSCARS(cls, filename):
         all_systems = []
         with open(filename, 'rt') as f:
             while True:
                 try:
-                    all_systems.append(AtomisticRepresentation.readAtomicStructureRaw(f))
+                    all_systems.append(AtomisticRepresentation.readPOSCAR(f))
                 except Exception:
                     break
         return all_systems
 
     @classmethod
-    def readAtomicStructure(cls, filename, pbc=(1, 1, 1)) -> dict:
-        return cls.readAtomicStructures(filename)[0]
+    def readAtomicStructure(cls, filename, environmentUtility=None) -> dict:
+        return cls.readAtomicStructures(filename, environmentUtility)[0]
 
     @classmethod
     def readAtomicStructures(cls, filename, environmentUtility=None) -> list:
         filename = Path(filename)
+        directory = os.path.dirname(filename)
         if filename.suffix == '.uspex':
             with open(filename) as f:
                 descriptions = yaml.safe_load(f.read())
-            files = {name: cls.readAtomicStructuresRaw(name) for name in np.unique([s['filename'] for s in descriptions])}
+            files = {name: cls.readPOSCARS(os.path.join(directory, name))
+                     for name in np.unique([s['filename'] for s in descriptions])}
             systems = []
             for d in descriptions:
                 d = copy(d)
@@ -236,7 +247,7 @@ class AtomisticRepresentation(object):
                     d['environment'] = environmentType.fromIndices(**environment)
                 systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
         else:
-            systems = [cls.atomicDisassemblerType().disassemble(s) for s in cls.readAtomicStructuresRaw(filename)]
+            systems = [cls.atomicDisassemblerType().disassemble(s) for s in cls.readPOSCARS(filename)]
         return systems
 
     @classmethod
