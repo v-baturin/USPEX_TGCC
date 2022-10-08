@@ -6,26 +6,18 @@ USPEX.Stages.LAMMPS_Interface
 
 """
 import logging
-import os
-import shutil
-
 import numpy as np
-from ase.io import read
-from ase import Atoms
-from typing import List
+import shutil
+import os
 from os.path import join as pj
-logger = logging.getLogger(__name__)
+from typing import List
 
 from .ASEInterfaceAdapter import ASEInterfaceAdapter
 
+logger = logging.getLogger(__name__)
 
 REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp', 'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
-BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3
-ENTHALPY_STYLES = ['enthalpy', 'adjustedEnthalpy', 'environmentEnthalpy', 'lowerEnvironmentEnthalpy', 'upperEnvironmentEnthalpy']
-ENERGY_STYLES = ['energy', 'adjustedEnergy', 'environmentEnergy', 'lowerEnvironmentEnergy', 'upperEnvironmentEnergy']
-STRESS_TENSOR_STYLES = ['stressTensor', 'environmentStressTensor', 'lowerEnvironmentStressTensor', 'upperEnvironmentStressTensor']
 
-# TODO Rewoerk styles to make a combination via structure and variable
 
 class LAMMPS_Interface:
     """
@@ -74,7 +66,7 @@ class LAMMPS_Interface:
 
         assert all([os.path.exists(lib) for lib in libs])
 
-        self.aseAdapter = ASEInterfaceAdapter()
+        self.aseAdapter = ASEInterfaceAdapter(self.atomType, self.cellType, self.structureType)
         self.failedSystems = []
         self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
@@ -170,25 +162,23 @@ class LAMMPS_Interface:
         return lammps_completed and tolerance_achieved        
 
     def readOutput(self, system, calcFolder : str):
+        gsp = self.atomicDisassemblerType.getStyledProperty
+
         aseData = self.aseAdapter.readLAMMPS(calcFolder, self.targetProperties, self.specorder,
                                              **system.pop(f'tmp_{self.tag}'))
-
         if 'structure' in self.targetProperties:
             self.atomicDisassemblerType.updateSystemWithStyle(system, aseData.pop('structure'), self.environmentStyle)
 
         properties = self.readProperties(calcFolder)
-
-        for enthalpyStyle in ENTHALPY_STYLES:
-            if enthalpyStyle in self.targetProperties:
-                system[enthalpyStyle] = properties['Enthalpy']
-        for energyStyle in ENERGY_STYLES:
-            if energyStyle in self.targetProperties:
-                system[energyStyle] = properties['TotEng']
-        for stressTensorStyle in STRESS_TENSOR_STYLES:
-            if stressTensorStyle in self.targetProperties:
-                system[stressTensorStyle] = properties['StressTensor']
+        if 'enthalpy' in self.targetProperties:
+            system[gsp('enthalpy', self.environmentStyle)] = properties['Enthalpy']
+        if 'energy' in self.targetProperties:
+            system[gsp('energy', self.environmentStyle)] = properties['TotEng']
+        if 'stressTensor' in self.targetProperties:
+            system[gsp('stressTensor', self.environmentStyle)] = properties['StressTensor']
 
         # TODO move to constraints
+        # BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3
         # if abs(properties['TotEng']) / len(aseStructure) > BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD:
         #     logger.error(f"System {system['ID']} seems to has wrong energy: {properties['TotEng']}. It will be discarded.")
         #     system['isBad'] = True

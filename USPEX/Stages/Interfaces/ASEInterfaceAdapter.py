@@ -6,12 +6,6 @@ from ase.atoms import Atoms
 from ase.constraints import FixAtoms
 
 
-EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
-ENTHALPY_STYLES = ['enthalpy', 'adjustedEnthalpy', 'environmentEnthalpy', 'lowerEnvironmentEnthalpy', 'upperEnvironmentEnthalpy']
-ENERGY_STYLES = ['energy', 'adjustedEnergy', 'environmentEnergy', 'lowerEnvironmentEnergy', 'upperEnvironmentEnergy']
-STRESS_TENSOR_STYLES = ['stressTensor', 'environmentStressTensor', 'lowerEnvironmentStressTensor', 'upperEnvironmentStressTensor']
-
-
 class ASEInterfaceAdapter:
 
     # VASP output files
@@ -64,8 +58,11 @@ class ASEInterfaceAdapter:
             cell = self.cellType(atoms.get_cell().array, pbc)
             structure = self.structureType(atomTypes, positions, cell=cell)
             data['structure'] = structure
-        if 'energy' in targetProperties or 'enthalpy' in targetProperties:
+        if 'energy' in targetProperties :
             data['energy'] = float(results['energy'])
+        if 'enthalpy' in targetProperties:
+            data['energy'] = float(results['energy'])
+            data['volume'] = atoms.get_volume()
         if 'forces' in targetProperties:
             data['forces'] = np.copy(results['forces'])
         return data

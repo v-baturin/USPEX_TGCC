@@ -6,12 +6,8 @@ USPEX.Stages.VASP_Interface
 
 import logging
 import numpy as np
-import os
 import shutil
-from ase.io.vasp import read_vasp_out, read_vasp_xml, write_vasp
-from ase.io import ParseError as aseParseError
-from ase.atoms import Atoms
-from ase.constraints import FixAtoms
+import os
 from os.path import join as pj
 from typing import List
 
@@ -19,10 +15,8 @@ from .KPoints import KPoints, BadKPoints
 from .ASEInterfaceAdapter import ASEInterfaceAdapter
 
 logger = logging.getLogger(__name__)
+
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
-ENTHALPY_STYLES = ['enthalpy', 'adjustedEnthalpy', 'environmentEnthalpy', 'lowerEnvironmentEnthalpy', 'upperEnvironmentEnthalpy']
-ENERGY_STYLES = ['energy', 'adjustedEnergy', 'environmentEnergy', 'lowerEnvironmentEnergy', 'upperEnvironmentEnergy']
-STRESS_TENSOR_STYLES = ['stressTensor', 'environmentStressTensor', 'lowerEnvironmentStressTensor', 'upperEnvironmentStressTensor']
 
 
 def split_up_data(data:List[str], out_size:int):
@@ -262,32 +256,31 @@ class VASP_Interface:
     ############reading part
 
     def readOutput(self, system, calcFolder : str):
-        aseData = self.aseAdapter.readVASP(calcFolder, self.targetProperties, **system.pop(f'tmp_{self.tag}'))
+        gsp = self.atomicDisassemblerType.getStyledProperty
 
+        aseData = self.aseAdapter.readVASP(calcFolder, self.targetProperties, **system.pop(f'tmp_{self.tag}'))
         if 'structure' in self.targetProperties:
             self.atomicDisassemblerType.updateSystemWithStyle(system, aseData.pop('structure'), self.environmentStyle)
-
-        # for enthalpyStyle in ENERGY_STYLES:
-        #     if enthalpyStyle in targetProperties:
-        #         data[enthalpyStyle] = float(results['energy']) + \
-        #                                 atoms.get_volume() * data['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-        # for energyStyle in ENERGY_STYLES:
-        #     if energyStyle in targetProperties:
-        #         data[energyStyle] = float(results['energy'])
+        if 'enthalpy' in self.targetProperties:
+            enthalpy = aseData['energy'] + aseData['volume'] * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+            system[gsp('enthalpy', self.environmentStyle)] = enthalpy
+        if 'energy' in self.targetProperties:
+            system[gsp('energy', self.environmentStyle)] = aseData['energy']
+        if 'forces' in self.targetProperties:
+            system[gsp('forces', self.environmentStyle)] = aseData['forces']
 
         with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
             content = fp.readlines()
-        for stressTensorStyle in STRESS_TENSOR_STYLES:
-            if stressTensorStyle in self.targetProperties:
-                system[stressTensorStyle] = self.readPressureTensor(content)
+        if 'stressTensor' in self.targetProperties:
+            system[gsp('stressTensor', self.environmentStyle)] = self.readPressureTensor(content)
         if 'dielectricTensor' in self.targetProperties:
-            system['dielectricTensor'] = self.readDielectricProperties(content)
+            system[gsp('dielectricTensor', self.environmentStyle)] = self.readDielectricProperties(content)
         if 'dipoleMoment' in self.targetProperties:
-            system['dipoleMoment'] = self.readDipoleMoment(content)
+            system[gsp('dipoleMoment', self.environmentStyle)] = self.readDipoleMoment(content)
         if 'energyFermi' in self.targetProperties:
-            system['energyFermi'] = self.readFermi(content)
+            system[gsp('energyFermi', self.environmentStyle)] = self.readFermi(content)
         if 'elasticConstants' in self.targetProperties:
-            system['elasticMatrix'] = self.readElasticMatrix(content)
+            system[gsp('elasticMatrix', self.environmentStyle)] = self.readElasticMatrix(content)
 
     def readPressureTensor(self, content, index=-1):
         target = []

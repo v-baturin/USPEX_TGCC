@@ -265,6 +265,10 @@ class AtomicDisassembler:
             self.envIndices = np.empty(0, dtype=int)
 
     @staticmethod
+    def getStyledProperty(property, style):
+        return property if style is None else f'{style}{property}'
+
+    @staticmethod
     def assemble(molecules, cell, environment=None, vacuumSize=0, **kwargs): # lots of work with calcs
         """
 
@@ -316,7 +320,6 @@ class AtomicDisassembler:
                 fixedIndices = disassembler.envIndices[environment.getFixedIndices()]
         system['disassembler'] = disassembler
         return structure, fixedIndices
-
 
     def disassemble(self, atomicStructure):
         """
