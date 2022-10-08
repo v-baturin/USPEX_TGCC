@@ -16,6 +16,7 @@ from os.path import join as pj
 from typing import List
 
 from .KPoints import KPoints, BadKPoints
+from .ASEInterfaceAdapter import ASEInterfaceAdapter
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
@@ -61,7 +62,7 @@ class VASP_Interface:
     contcar_file = 'CONTCAR'
     xml_file = 'vasprun.xml'
 
-    # working output files
+    # working input files
     incar_file = 'INCAR'
     kpoints_file = 'KPOINTS'
     poscar_file = 'POSCAR'
@@ -74,8 +75,15 @@ class VASP_Interface:
     cellType = None
     atomicDisassemblerType = None
 
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
+
     def __init__(self, tag: str, kresol: float, incar: str = None, potcarsPath: str = None, perturbate: bool = True,
-                 vacuumSize = 10, targetProperties: list = None, adjustEnvironment: bool = False, **kwargs):
+                 vacuumSize = 10, targetProperties: list = None, environmentStyle=None, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -85,6 +93,7 @@ class VASP_Interface:
         :param step: int of current step
         '''
 
+        self.tag = tag
         if incar is not None:
             self.incar = incar
         else:
@@ -97,14 +106,14 @@ class VASP_Interface:
         else:
             self.potcarsPath = pj(os.getcwd(), 'Specific')
 
+        self.aseAdapter = ASEInterfaceAdapter(self.atomType, self.cellType, self.structureType)
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
 
         self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
         self.perturbate = perturbate
-        self.adjustEnvironment = adjustEnvironment
-
+        self.environmentStyle = environmentStyle
 
     def prepareLocalCalculation(self, system, calcFolder: str):
         '''
@@ -114,60 +123,14 @@ class VASP_Interface:
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
-        molecules, cell = system['molecules'], system['cell']
-        environment = system.get('environment')
-        if self.adjustEnvironment:
-            logger.debug('"adjustEnvironment" option was enabled , building the adjusted system')
-            if 'adjustedSystem' not in system:
-                logger.debug(f'cellVectors: {cell.getCellVectors()} (film), {environment.getStructure().getCell().getCellVectors()} (substrate)')
-                molecules, cell, environment = environment.adjustSystem(molecules, cell)
-                system['adjustedSystem'] = {'molecules': molecules, 'cell': cell, 'environment': environment,
-                                            'supercellFactor': int(len(molecules) / len(system['molecules']))}
-            else:
-                logger.debug('Adjusted data was found in system, proceeding with it')
-                adjSystem = system['adjustedSystem']
-                molecules, cell, environment = adjSystem['molecules'], adjSystem['cell'], adjSystem['environment']
-        processingStyles = environment.processingStyles if environment is not None else {}
-        for onlyEnvironment, getStructure in processingStyles.items():
-            if onlyEnvironment in self.targetProperties:
-                envStructure = getattr(environment, getStructure)()
-                coordinates = envStructure.getCartesianCoordinates()
-                cell = envStructure.getRectifiedCell().getEnvelopeCell(coordinates, self.vacuumSize)
-                coordinates = cell.center(coordinates)
-                structure = type(envStructure)(envStructure.getAtomTypes(), coordinates, cell)
-                fixedIndices = environment.getFixedIndices()
-                break
-        else:
-            if 'noEnvironment' in self.targetProperties:
-                logger.debug('"noEnvironment" option was found in targetProperties, proceeding without environment')
-                structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell, vacuumSize=self.vacuumSize)
-                fixedIndices = []
-            else:
-                logger.debug('Assembling the structure')
-                structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell, environment,
-                                                                      vacuumSize=self.vacuumSize)
-                fixedIndices = disassembler.envIndices[environment.getFixedIndices()] if environment is not None else []
-            system['disassembler'] = disassembler
-
-        cell = structure.getCell()
-        system['assembledCell'] = cell
-        coordinates = structure.getCartesianCoordinates()
-
+        structure, fixedIndices = self.atomicDisassemblerType.assembleWithStyle(system, self.environmentStyle,
+                                                                                self.vacuumSize)
         if self.perturbate:
-            # TODO don't perturbate fixed atoms
-            coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
-
-        atomTypes = structure.getAtomTypes()
-        system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])
-        atoms = Atoms([el.short_name for el in atomTypes], coordinates, cell=cell.getCellVectors())
-        if fixedIndices:
-            atoms.set_constraint(FixAtoms(indices=fixedIndices))
+            structure = structure.getPerturbatedStructure(fixedIndices)
 
         ############################# POSCAR ##################################
 
-
-        with open(pj(calcFolder, self.poscar_file), 'wt') as f:
-            write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
+        system[f'tmp_{self.tag}'] = self.aseAdapter.writeVASP(structure, fixedIndices, f"EA{system['ID']}", calcFolder)
 
         ############################## INCAR ##################################
         shutil.copy2(self.incar, pj(calcFolder, self.incar_file))
@@ -179,18 +142,19 @@ class VASP_Interface:
             with open(pj(calcFolder, self.incar_file), 'a') as myfile:
                 myfile.write('ISYM=0\n')
 
-
         ############################# POTCAR ##################################
+
         if os.path.exists(pj(calcFolder, 'POTCAR')):
             os.remove(pj(calcFolder, 'POTCAR'))
 
-        for atomType in np.unique(atoms.symbols):
-            potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType}')
+        for atomType in np.unique(structure.getAtomTypes()):
+            potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType.short_Name}')
             os.system(f'cat {potcarPath} >>  {calcFolder}/POTCAR ')
 
         ############################# KPOINTS #################################
+
         try:
-            kPoints = self.kPoints.build(cell)
+            kPoints = self.kPoints.build(structure.getCell())
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
@@ -255,9 +219,6 @@ class VASP_Interface:
         #     [nothing, nothing] = unix('cat INCAR_LDAUPart >> INCAR');
         # end
 
-
-############reading part
-
     def isConverged(self, calcFolder : str):
         '''
         :param SYSTEM:
@@ -298,23 +259,22 @@ class VASP_Interface:
             self.failedSystems.append(calcFolder)
             return False
 
+    ############reading part
+
     def readOutput(self, system, calcFolder : str):
-        try:
-            aseStructure = read_vasp_out(pj(calcFolder, self.outcar_file))
-        except (KeyError, aseParseError):
-            aseStructure = list(read_vasp_xml(pj(calcFolder, self.xml_file)))[-1]
-        if aseStructure:
-            if 'structure' in self.targetProperties:
-                self.readStructure(system, aseStructure)
-        for enthalpyStyle in ENERGY_STYLES:
-            if enthalpyStyle in self.targetProperties:
-                system[enthalpyStyle] = float(aseStructure.get_calculator().results['energy']) + \
-                           aseStructure.get_volume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-        for energyStyle in ENERGY_STYLES:
-            if energyStyle in self.targetProperties:
-                system[energyStyle] = float(aseStructure.get_calculator().results['energy'])
-        if 'forces' in self.targetProperties:
-                system['forces'] = np.copy(aseStructure.get_calculator().results['forces'])
+        aseData = self.aseAdapter.readVASP(calcFolder, self.targetProperties, **system.pop(f'tmp_{self.tag}'))
+
+        if 'structure' in self.targetProperties:
+            self.atomicDisassemblerType.updateSystemWithStyle(system, aseData.pop('structure'), self.environmentStyle)
+
+        # for enthalpyStyle in ENERGY_STYLES:
+        #     if enthalpyStyle in targetProperties:
+        #         data[enthalpyStyle] = float(results['energy']) + \
+        #                                 atoms.get_volume() * data['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+        # for energyStyle in ENERGY_STYLES:
+        #     if energyStyle in targetProperties:
+        #         data[energyStyle] = float(results['energy'])
+
         with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
             content = fp.readlines()
         for stressTensorStyle in STRESS_TENSOR_STYLES:
@@ -328,25 +288,6 @@ class VASP_Interface:
             system['energyFermi'] = self.readFermi(content)
         if 'elasticConstants' in self.targetProperties:
             system['elasticMatrix'] = self.readElasticMatrix(content)
-
-    def readStructure(self, system, aseStructure):
-        assembledCell = system.pop('assembledCell')
-        disassembler = system.pop('disassembler')
-        symbolsOrder = system.pop('symbolsOrder')
-        tmp_positions = aseStructure.get_positions()
-        positions = np.empty(tmp_positions.shape, dtype=float)
-        tmp_symbols = aseStructure.get_chemical_symbols()
-        atomTypes = np.empty(len(tmp_symbols), dtype=self.atomType)
-        for i, symbol, position in zip(symbolsOrder, tmp_symbols, tmp_positions):
-            positions[i] = position
-            atomTypes[i] = self.atomType(symbol)
-        cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC())
-        structure = self.structureType(atomTypes, positions, cell=cell)
-        newSystem = disassembler.disassemble(structure)
-        if 'adjustedStructure' in self.targetProperties:
-            system['adjustedSystem'].update(**newSystem)
-        else:
-            system.update(**newSystem)
 
     def readPressureTensor(self, content, index=-1):
         target = []
@@ -460,11 +401,3 @@ class VASP_Interface:
                 for j, row in enumerate(content[i + 3: i + 9]):
                     elasticMatrix[j, :] = np.array(row.split()[1: 7], dtype=float)
         return elasticMatrix
-
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType

@@ -235,6 +235,10 @@ class AtomicStructure:
         newStructure = AtomicStructure(newAtomTypes, newCoordinates, newCell)
         return newStructure
 
+    def getPerturbatedStructure(self, fixedIndices):
+        # TODO don't perturbate fixed atoms
+        coordinates = self._coordinates + 0.1 * (np.random.rand(len(self._coordinates), 3) - 0.5)
+        return AtomicStructure(self._atomTypes, coordinates, self._cell)
 
 class AtomicDisassembler:
     """
@@ -295,6 +299,25 @@ class AtomicDisassembler:
         return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
                 AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
 
+    @staticmethod
+    def assembleWithStyle(system, style, vacuumSize):
+        if style == 'noEnvironment':
+            structure, disassembler = AtomicDisassembler.assemble(system['molecules'], system['cell'],
+                                                                  vacuumSize=vacuumSize)
+            fixedIndices = []
+        else:
+            molecules, cell, environment = system['environment'].adjustSystem(system)
+            if style in environment.processingStyles:
+                structure, disassembler = getattr(environment, environment.processingStyles[style])(vacuumSize), None
+                fixedIndices = environment.getFixedIndices()
+            else:
+                structure, disassembler = AtomicDisassembler.assemble(molecules, cell, environment,
+                                                                      vacuumSize=vacuumSize)
+                fixedIndices = disassembler.envIndices[environment.getFixedIndices()]
+        system['disassembler'] = disassembler
+        return structure, fixedIndices
+
+
     def disassemble(self, atomicStructure):
         """
         Decomposes given structure into molecules and environment.
@@ -328,6 +351,10 @@ class AtomicDisassembler:
             molecules.append(AtomicStructure(atomTypes[inds], coordinates[inds]))
         system.update({'molecules': molecules, 'cell': cell})
         return system
+
+    @staticmethod
+    def udateSystemWithStyle(system, atomicStructure, style):
+        disassembler = system.pop('disassembler')
 
     def decomposeDisplacements(self, displacements, structure):
         """
