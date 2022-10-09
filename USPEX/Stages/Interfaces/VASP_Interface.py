@@ -117,14 +117,17 @@ class VASP_Interface:
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
-        structure, fixedIndices = self.atomicDisassemblerType.assembleWithStyle(system, self.environmentStyle,
-                                                                                self.vacuumSize)
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
+                                                                       style=self.environmentStyle,
+                                                                       vacuumSize=self.vacuumSize)
         if self.perturbate:
-            structure = structure.getPerturbatedStructure(fixedIndices)
+            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
 
         ############################# POSCAR ##################################
 
-        system[f'tmp_{self.tag}'] = self.aseAdapter.writeVASP(structure, fixedIndices, f"EA{system['ID']}", calcFolder)
+        system[f'tmp_{self.tag}'] = self.aseAdapter.writeVASP(structure, disassembler.fixedIndices,
+                                                              f"EA{system['ID']}", calcFolder)
+        system[f'tmp_{self.tag}']['disassembler'] = disassembler
 
         ############################## INCAR ##################################
         shutil.copy2(self.incar, pj(calcFolder, self.incar_file))
@@ -256,31 +259,33 @@ class VASP_Interface:
     ############reading part
 
     def readOutput(self, system, calcFolder : str):
-        gsp = self.atomicDisassemblerType.getStyledProperty
+        gpp = self.atomicDisassemblerType.getPrefixedProperty
+        usp = self.atomicDisassemblerType.updateSystemWithPrefix
 
+        disassembler = system[f'tmp_{self.tag}'].pop('disassembler')
         aseData = self.aseAdapter.readVASP(calcFolder, self.targetProperties, **system.pop(f'tmp_{self.tag}'))
         if 'structure' in self.targetProperties:
-            self.atomicDisassemblerType.updateSystemWithStyle(system, aseData.pop('structure'), self.environmentStyle)
+            usp(system, disassembler.disassemble(aseData.pop('structure')), self.environmentStyle)
         if 'enthalpy' in self.targetProperties:
             enthalpy = aseData['energy'] + aseData['volume'] * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-            system[gsp('enthalpy', self.environmentStyle)] = enthalpy
+            system[gpp('enthalpy', self.environmentStyle)] = enthalpy
         if 'energy' in self.targetProperties:
-            system[gsp('energy', self.environmentStyle)] = aseData['energy']
+            system[gpp('energy', self.environmentStyle)] = aseData['energy']
         if 'forces' in self.targetProperties:
-            system[gsp('forces', self.environmentStyle)] = aseData['forces']
+            system[gpp('forces', self.environmentStyle)] = aseData['forces']
 
         with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
             content = fp.readlines()
         if 'stressTensor' in self.targetProperties:
-            system[gsp('stressTensor', self.environmentStyle)] = self.readPressureTensor(content)
+            system[gpp('stressTensor', self.environmentStyle)] = self.readPressureTensor(content)
         if 'dielectricTensor' in self.targetProperties:
-            system[gsp('dielectricTensor', self.environmentStyle)] = self.readDielectricProperties(content)
+            system[gpp('dielectricTensor', self.environmentStyle)] = self.readDielectricProperties(content)
         if 'dipoleMoment' in self.targetProperties:
-            system[gsp('dipoleMoment', self.environmentStyle)] = self.readDipoleMoment(content)
+            system[gpp('dipoleMoment', self.environmentStyle)] = self.readDipoleMoment(content)
         if 'energyFermi' in self.targetProperties:
-            system[gsp('energyFermi', self.environmentStyle)] = self.readFermi(content)
+            system[gpp('energyFermi', self.environmentStyle)] = self.readFermi(content)
         if 'elasticConstants' in self.targetProperties:
-            system[gsp('elasticMatrix', self.environmentStyle)] = self.readElasticMatrix(content)
+            system[gpp('elasticMatrix', self.environmentStyle)] = self.readElasticMatrix(content)
 
     def readPressureTensor(self, content, index=-1):
         target = []

@@ -94,11 +94,11 @@ class Substrate:
     @staticmethod
     def fromIndices(structure, all, fixed, pbc):
         all = np.asarray(all, dtype=int)
-        fixed = np.asarray(fixed, dtype=int)
+        fixed = np.where(np.in1d(all, fixed))[0]
         envStructure = EnvironmentUtility.structureType(structure.getAtomTypes()[all],
                                           structure.getCartesianCoordinates()[all],
                                           EnvironmentUtility.cellType(structure.getCell().getCellVectors(), pbc=pbc))
-        return Substrate(envStructure, fixed, None)
+        return Substrate(envStructure, fixed, None), all
 
     def getUpdatedEnvironment(self, envStructure):
         return Substrate(envStructure, self._indices, self._assembler)
@@ -287,9 +287,10 @@ class Interface:
 
     @staticmethod
     def fromIndices(structure, lowerSlab, upperSlab, fixed, pbc):
+        all = np.asarray(lowerSlab + upperSlab, dtype=int)
         lowerSlab = np.asarray(lowerSlab, dtype=int)
         upperSlab = np.asarray(upperSlab, dtype=int)
-        fixed = np.asarray(fixed, dtype=int)
+        fixed = np.where(np.in1d(all, fixed))[0]
         cell = EnvironmentUtility.cellType(structure.getCell().getCellVectors(), pbc=pbc)
         lowerEnvStructure = EnvironmentUtility.structureType(structure.getAtomTypes()[lowerSlab],
                                                              structure.getCartesianCoordinates()[lowerSlab],
@@ -297,7 +298,7 @@ class Interface:
         upperEnvStructure = EnvironmentUtility.structureType(structure.getAtomTypes()[upperSlab],
                                                              structure.getCartesianCoordinates()[upperSlab],
                                                              cell)
-        return Interface(lowerEnvStructure, upperEnvStructure, fixed, None)
+        return Interface(lowerEnvStructure, upperEnvStructure, fixed, None), all
 
     def getUpdatedEnvironment(self, envStructure):
         envAtomTypes = envStructure.getAtomTypes()
@@ -448,11 +449,11 @@ class Bulk:
     @staticmethod
     def fromIndices(structure, all, fixed, pbc):
         all = np.asarray(all, dtype=int)
-        fixed = np.asarray(fixed, dtype=int)
+        fixed = np.where(np.in1d(all, fixed))[0]
         envStructure = EnvironmentUtility.structureType(structure.getAtomTypes()[all],
                                           structure.getCartesianCoordinates()[all],
                                           EnvironmentUtility.cellType(structure.getCell().getCellVectors(), pbc=pbc))
-        return Bulk(envStructure, fixed, None)
+        return Bulk(envStructure, fixed, None), all
 
     def getUpdatedEnvironment(self, envStructure):
         return Bulk(envStructure, self._indices, self)

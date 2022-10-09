@@ -246,8 +246,7 @@ class AtomicDisassembler:
     and then disassemble it back into molecules and environment. 
     """
 
-
-    def __init__(self, molecules=None, environment=None, pbc=(1,1,1)):
+    def __init__(self, molecules, environment=None, pbc=(1, 1, 1)):
         """
 
         :param indices:
@@ -257,19 +256,28 @@ class AtomicDisassembler:
         self.indices = molecules
         self.environment = environment
         self.pbc = pbc
+        self.sysIndices = np.concatenate(self.indices)
         if self.environment is not None:
-            molIndices = set(np.concatenate(self.indices)) if self.indices else set()
-            allIndices = list(range(len(molIndices) + len(self.environment.getStructure())))
-            self.envIndices = np.asarray(list(set(allIndices).difference(molIndices)), dtype=int)
+            allIndices = list(range(len(self.sysIndices) + len(self.environment.getStructure())))
+            self.envIndices = np.asarray(list(set(allIndices).difference(set(self.sysIndices))), dtype=int)
+            self.fixedIndices = self.envIndices[environment.getFixedIndices()]
         else:
             self.envIndices = np.empty(0, dtype=int)
+            self.fixedIndices = np.empty(0, dtype=int)
 
     @staticmethod
-    def getStyledProperty(property, style):
-        return property if style is None else f'{style}{property}'
+    def getPrefixedProperty(property, prefix):
+        return property if prefix is None else f'{prefix}.{property}'
 
     @staticmethod
-    def assemble(molecules, cell, environment=None, vacuumSize=0, **kwargs): # lots of work with calcs
+    def udateSystemWithPrefix(system, data, prefix):
+        if prefix is None:
+            system.update(**data)
+        else:
+            system[f'{prefix}.system'] = data
+
+    @staticmethod
+    def assemble(molecules, cell, environment=None, vacuumSize=0, style=None, **kwargs):
         """
 
         :param molecules:
@@ -278,86 +286,57 @@ class AtomicDisassembler:
         :param kwargs:
 
         """
-        atomTypes = []
-        coordinates = []
-        indices = []
-        lowerBound = 0
-
-        for molecule in molecules:
-            atomTypes.extend(molecule.getAtomTypes())
-            coordinates.extend(molecule.getCartesianCoordinates())
-            size = len(molecule)
-            indices.append(list(range(lowerBound, lowerBound + size)))
-            lowerBound += size
-        if environment is not None:
-            envStructure = environment.getStructure()
-            atomTypes.extend(envStructure.getAtomTypes())
-            coordinates.extend(envStructure.getCartesianCoordinates())
-            assembledCell = envStructure.getCell()
-        else:
-            assembledCell = cell
-        if vacuumSize > 0:
-            structure = AtomicStructure(atomTypes, coordinates, assembledCell)
-            assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
-            coordinates = assembledCell.center(structure.getCartesianCoordinates())
-        return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
-                AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
-
-    @staticmethod
-    def assembleWithStyle(system, style, vacuumSize):
-        if style == 'noEnvironment':
-            structure, disassembler = AtomicDisassembler.assemble(system['molecules'], system['cell'],
-                                                                  vacuumSize=vacuumSize)
-            fixedIndices = []
-        else:
-            molecules, cell, environment = system['environment'].adjustSystem(system)
-            if style in environment.processingStyles:
-                structure, disassembler = getattr(environment, environment.processingStyles[style])(vacuumSize), None
-                fixedIndices = environment.getFixedIndices()
+        if style is None or style == 'noEnvironment':
+            environment = None if style == 'noEnvironment' else environment
+            atomTypes = []
+            coordinates = []
+            indices = []
+            lowerBound = 0
+            for molecule in molecules:
+                atomTypes.extend(molecule.getAtomTypes())
+                coordinates.extend(molecule.getCartesianCoordinates())
+                size = len(molecule)
+                indices.append(list(range(lowerBound, lowerBound + size)))
+                lowerBound += size
+            if environment is not None:
+                envStructure = environment.getStructure()
+                atomTypes.extend(envStructure.getAtomTypes())
+                coordinates.extend(envStructure.getCartesianCoordinates())
+                assembledCell = envStructure.getCell()
             else:
-                structure, disassembler = AtomicDisassembler.assemble(molecules, cell, environment,
-                                                                      vacuumSize=vacuumSize)
-                fixedIndices = disassembler.envIndices[environment.getFixedIndices()]
-        system['disassembler'] = disassembler
-        return structure, fixedIndices
+                assembledCell = cell
+            if vacuumSize > 0:
+                structure = AtomicStructure(atomTypes, coordinates, assembledCell)
+                assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
+                coordinates = assembledCell.center(structure.getCartesianCoordinates())
+            return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
+                    AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
+        elif style in environment.processingStyles:
+            # TODO do we ever need to disassemble such structures
+            return getattr(environment, environment.processingStyles[style])(vacuumSize), None
+        else:
+            raise ValueError(f"Style {style} is not valid.")
 
-    def disassemble(self, atomicStructure):
+    def disassemble(self, structure):
         """
         Decomposes given structure into molecules and environment.
 
-        :param atomicStructure: structure to decompose.
+        :param structure: structure to decompose.
 
         :return: {'molecules': <list of molecules>, 'cell': <Cell object>, 'environment': <optional environment object>}
         """
-        atomTypes = atomicStructure.getAtomTypes()
-        coordinates = atomicStructure.getCartesianCoordinates()
-        if self.indices is None:
-            syscoords = coordinates
-            sysAtomTypes = atomTypes
-        else:
-            syscoords = []
-            sysAtomTypes = []
-            for indices in self.indices:
-                syscoords.extend(coordinates[indices])
-                sysAtomTypes.extend(atomTypes[indices])
-            syscoords = np.array(syscoords)
-            sysAtomTypes = np.asarray(sysAtomTypes)
-        assembledCell = atomicStructure.getCell()
-        cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(syscoords, vacuumSize=1.0)
-        system = dict()
+        atomTypes = structure.getAtomTypes()
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getCell()
+        system = dict(
+            molecules=[AtomicStructure(atomTypes[inds], coordinates[inds]) for inds in self.indices],
+            cell=type(cell)(cell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(coordinates[self.sysIndices],
+                                                                                 vacuumSize=1.0)
+        )
         if self.environment is not None:
-            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
+            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], cell)
             system['environment'] = self.environment.getUpdatedEnvironment(envStructure)
-        molecules = []
-        indices = self.indices if self.indices is not None else np.arange(len(coordinates)).reshape((-1, 1))
-        for inds in indices:
-            molecules.append(AtomicStructure(atomTypes[inds], coordinates[inds]))
-        system.update({'molecules': molecules, 'cell': cell})
         return system
-
-    @staticmethod
-    def udateSystemWithStyle(system, atomicStructure, style):
-        disassembler = system.pop('disassembler')
 
     def decomposeDisplacements(self, displacements, structure):
         """
