@@ -13,6 +13,7 @@ from os.path import join as pj
 from typing import List
 
 from .ASEInterfaceAdapter import ASEInterfaceAdapter
+from ...Presets import udateSystemWithPrefix as usp
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class LAMMPS_Interface:
         cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, tag: str, lammps_in: str, libs: List[str], specorder: List[str], perturbate:bool = True,
-                 vacuumSize: float = 10.0, targetProperties: list = None, environmentStyle=None, **kwargs):
+                 vacuumSize: float = 10.0, targetProperties: list = None, environmentStyle=None, inStyle=None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -72,6 +73,7 @@ class LAMMPS_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
         self.perturbate = perturbate
         self.environmentStyle = environmentStyle
+        self.inStyle = inStyle
 
     def prepareLocalCalculation(self, system, calcFolder : str):
         """
@@ -81,6 +83,7 @@ class LAMMPS_Interface:
 
         structure, disassembler = self.atomicDisassemblerType.assemble(**system,
                                                                        style=self.environmentStyle,
+                                                                       inStyle=self.inStyle,
                                                                        vacuumSize=self.vacuumSize)
 
         if self.perturbate:
@@ -168,22 +171,19 @@ class LAMMPS_Interface:
         return lammps_completed and tolerance_achieved        
 
     def readOutput(self, system, calcFolder : str):
-        gpp = self.atomicDisassemblerType.getPrefixedProperty
-        usp = self.atomicDisassemblerType.updateSystemWithPrefix
-
         disassembler = system[f'tmp_{self.tag}'].pop('disassembler')
         aseData = self.aseAdapter.readLAMMPS(calcFolder, self.targetProperties, self.specorder,
                                              **system.pop(f'tmp_{self.tag}'))
         if 'structure' in self.targetProperties:
-            usp(system, disassembler.disassemble(aseData.pop('structure')), self.environmentStyle)
+            usp(system, disassembler.disassemble(aseData.pop('structure')), 'system', self.environmentStyle)
 
         properties = self.readProperties(calcFolder)
         if 'enthalpy' in self.targetProperties:
-            system[gpp('enthalpy', self.environmentStyle)] = properties['Enthalpy']
+            usp(system, properties['Enthalpy'], 'enthalpy', self.environmentStyle)
         if 'energy' in self.targetProperties:
-            system[gpp('energy', self.environmentStyle)] = properties['TotEng']
+            usp(system, properties['TotEng'], 'energy', self.environmentStyle)
         if 'stressTensor' in self.targetProperties:
-            system[gpp('stressTensor', self.environmentStyle)] = properties['StressTensor']
+            usp(system, properties['StressTensor'], 'stressTensor', self.environmentStyle)
 
         # TODO move to constraints
         # BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3

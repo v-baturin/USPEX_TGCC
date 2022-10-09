@@ -266,18 +266,7 @@ class AtomicDisassembler:
             self.fixedIndices = np.empty(0, dtype=int)
 
     @staticmethod
-    def getPrefixedProperty(property, prefix):
-        return property if prefix is None else f'{prefix}.{property}'
-
-    @staticmethod
-    def udateSystemWithPrefix(system, data, prefix):
-        if prefix is None:
-            system.update(**data)
-        else:
-            system[f'{prefix}.system'] = data
-
-    @staticmethod
-    def assemble(molecules, cell, environment=None, vacuumSize=0, style=None, **kwargs):
+    def assemble(molecules, cell, environment=None, vacuumSize=0, style=None, inStyle=None, **kwargs):
         """
 
         :param molecules:
@@ -286,36 +275,43 @@ class AtomicDisassembler:
         :param kwargs:
 
         """
-        if style is None or style == 'noEnvironment':
-            environment = None if style == 'noEnvironment' else environment
-            atomTypes = []
-            coordinates = []
-            indices = []
-            lowerBound = 0
-            for molecule in molecules:
-                atomTypes.extend(molecule.getAtomTypes())
-                coordinates.extend(molecule.getCartesianCoordinates())
-                size = len(molecule)
-                indices.append(list(range(lowerBound, lowerBound + size)))
-                lowerBound += size
-            if environment is not None:
-                envStructure = environment.getStructure()
-                atomTypes.extend(envStructure.getAtomTypes())
-                coordinates.extend(envStructure.getCartesianCoordinates())
-                assembledCell = envStructure.getCell()
-            else:
-                assembledCell = cell
-            if vacuumSize > 0:
-                structure = AtomicStructure(atomTypes, coordinates, assembledCell)
-                assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
-                coordinates = assembledCell.center(structure.getCartesianCoordinates())
-            return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
-                    AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
+        if f'{inStyle}.system' in kwargs:
+            system = kwargs[f'{inStyle}.system']
+            molecules, cell = system['molecules'], system['cell']
+            environment = system['environment'] if 'environment' in system else None
+        if style == 'noEnvironment':
+            environment = None
+        elif style == 'adjust':
+            molecules, cell, environment = environment.adjustSystem(molecules, cell)
         elif style in environment.processingStyles:
-            # TODO do we ever need to disassemble such structures
+            # TODO do we ever need to disassemble such structures?
             return getattr(environment, environment.processingStyles[style])(vacuumSize), None
         else:
             raise ValueError(f"Style {style} is not valid.")
+        atomTypes = []
+        coordinates = []
+        indices = []
+        lowerBound = 0
+        for molecule in molecules:
+            atomTypes.extend(molecule.getAtomTypes())
+            coordinates.extend(molecule.getCartesianCoordinates())
+            size = len(molecule)
+            indices.append(list(range(lowerBound, lowerBound + size)))
+            lowerBound += size
+        if environment is not None:
+            envStructure = environment.getStructure()
+            atomTypes.extend(envStructure.getAtomTypes())
+            coordinates.extend(envStructure.getCartesianCoordinates())
+            assembledCell = envStructure.getCell()
+        else:
+            assembledCell = cell
+        if vacuumSize > 0:
+            structure = AtomicStructure(atomTypes, coordinates, assembledCell)
+            assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
+            coordinates = assembledCell.center(structure.getCartesianCoordinates())
+        return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
+                AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
+
 
     def disassemble(self, structure):
         """

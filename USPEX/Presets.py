@@ -4,6 +4,13 @@ from os import makedirs
 from .IO.InputParser import read
 
 
+def udateSystemWithPrefix(system, data, property, prefix):
+    if prefix is None and property == 'system':
+        system.update(data)
+    else:
+        system[f'{prefix}.{property}'] = data
+
+
 FILENAME = join(expanduser('~'), '.config/uspex/presets.uspex')
 makedirs(dirname(FILENAME), exist_ok=True)
 

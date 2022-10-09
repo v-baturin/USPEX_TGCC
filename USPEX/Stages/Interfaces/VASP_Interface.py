@@ -13,6 +13,7 @@ from typing import List
 
 from .KPoints import KPoints, BadKPoints
 from .ASEInterfaceAdapter import ASEInterfaceAdapter
+from ...Presets import udateSystemWithPrefix as usp
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ class VASP_Interface:
         cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, tag: str, kresol: float, incar: str = None, potcarsPath: str = None, perturbate: bool = True,
-                 vacuumSize = 10, targetProperties: list = None, environmentStyle=None, **kwargs):
+                 vacuumSize = 10, targetProperties: list = None, environmentStyle=None, inStyle=None, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -108,6 +109,7 @@ class VASP_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
         self.perturbate = perturbate
         self.environmentStyle = environmentStyle
+        self.inStyle = inStyle
 
     def prepareLocalCalculation(self, system, calcFolder: str):
         '''
@@ -119,6 +121,7 @@ class VASP_Interface:
 
         structure, disassembler = self.atomicDisassemblerType.assemble(**system,
                                                                        style=self.environmentStyle,
+                                                                       inStyle=self.inStyle,
                                                                        vacuumSize=self.vacuumSize)
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
@@ -259,33 +262,30 @@ class VASP_Interface:
     ############reading part
 
     def readOutput(self, system, calcFolder : str):
-        gpp = self.atomicDisassemblerType.getPrefixedProperty
-        usp = self.atomicDisassemblerType.updateSystemWithPrefix
-
         disassembler = system[f'tmp_{self.tag}'].pop('disassembler')
         aseData = self.aseAdapter.readVASP(calcFolder, self.targetProperties, **system.pop(f'tmp_{self.tag}'))
         if 'structure' in self.targetProperties:
-            usp(system, disassembler.disassemble(aseData.pop('structure')), self.environmentStyle)
+            usp(system, disassembler.disassemble(aseData.pop('structure')), 'system', self.environmentStyle)
         if 'enthalpy' in self.targetProperties:
             enthalpy = aseData['energy'] + aseData['volume'] * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-            system[gpp('enthalpy', self.environmentStyle)] = enthalpy
+            usp(system, enthalpy, 'enthalpy', self.environmentStyle)
         if 'energy' in self.targetProperties:
-            system[gpp('energy', self.environmentStyle)] = aseData['energy']
+            usp(system, aseData['energy'], 'energy', self.environmentStyle)
         if 'forces' in self.targetProperties:
-            system[gpp('forces', self.environmentStyle)] = aseData['forces']
+            usp(system, aseData['forces'], 'forces', self.environmentStyle)
 
         with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
             content = fp.readlines()
         if 'stressTensor' in self.targetProperties:
-            system[gpp('stressTensor', self.environmentStyle)] = self.readPressureTensor(content)
+            usp(system, self.readPressureTensor(content), 'stressTensor', self.environmentStyle)
         if 'dielectricTensor' in self.targetProperties:
-            system[gpp('dielectricTensor', self.environmentStyle)] = self.readDielectricProperties(content)
+            usp(system, self.readDielectricProperties(content), 'dielectricTensor', self.environmentStyle)
         if 'dipoleMoment' in self.targetProperties:
-            system[gpp('dipoleMoment', self.environmentStyle)] = self.readDipoleMoment(content)
+            usp(system, self.readDipoleMoment(content), 'dipoleMoment', self.environmentStyle)
         if 'energyFermi' in self.targetProperties:
-            system[gpp('energyFermi', self.environmentStyle)] = self.readFermi(content)
+            usp(system, self.readFermi(content), 'energyFermi', self.environmentStyle)
         if 'elasticConstants' in self.targetProperties:
-            system[gpp('elasticMatrix', self.environmentStyle)] = self.readElasticMatrix(content)
+            usp(system, self.readElasticMatrix(content), 'elasticMatrix', self.environmentStyle)
 
     def readPressureTensor(self, content, index=-1):
         target = []
