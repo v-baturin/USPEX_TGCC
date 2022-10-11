@@ -39,6 +39,7 @@ class MLIP_CalculatorTest2(unittest.TestCase):
             system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
             system['externalPressure'] = 100
             system['ID'] = ID
+            system['tmp_1'] = {}
             os.mkdir(WORKPATH)
             mlip.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
