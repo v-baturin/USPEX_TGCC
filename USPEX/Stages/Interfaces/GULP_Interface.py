@@ -31,6 +31,13 @@ class GULP_Interface:
     cellType = None
     atomicDisassemblerType = None
 
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
+
     def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: List[str] = None,
                  moleculeSpecifics: dict = None, perturbate: bool = True, fixCell: bool = False, vacuumSize = 10,
                  environmentStyle=None, inStyle=None, targetProperties: list = None, **kwargs):
@@ -391,10 +398,3 @@ class GULP_Interface:
             if line.lower().startswith('* Version'):
                 number = line[12:17]
         return number
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType

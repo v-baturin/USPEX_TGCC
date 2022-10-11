@@ -13,6 +13,8 @@ import re
 import numpy as np
 
 from .KPoints import KPoints, BadKPoints
+from ...Presets import udateSystemWithPrefix as usp
+
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
@@ -41,7 +43,15 @@ class PWmat_Interface:
     cellType = None
     atomicDisassemblerType = None
 
-    def __init__(self, tag, etot_input, potcars, kresol, vacuumSize = 10, targetProperties: list = None, **kwargs):
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
+
+    def __init__(self, tag, etot_input, potcars, kresol, vacuumSize = 10, perturbate: bool = True,
+                 environmentStyle=None, inStyle=None, targetProperties: list = None, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -54,12 +64,17 @@ class PWmat_Interface:
         assert isinstance(etot_input, str) and os.path.exists(etot_input)
         assert isinstance(potcars, list) and np.all([os.path.exists(potcar) for potcar in potcars])
 
+        self.tag = tag
+        self.tmp = f'tmp_{tag}'
         self.etot_input = etot_input
         self.potcars = potcars
 
+        self.perturbate = perturbate
         self.kPoints = KPoints(kresol)
         self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.environmentStyle = environmentStyle
+        self.inStyle = inStyle
         self.failedSystems = []
 
 
@@ -68,14 +83,20 @@ class PWmat_Interface:
         :param system: our system
         :return:
         '''
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system, vacuumSize=self.vacuumSize)
-        system['disassembler'] = disassembler
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
+                                                                       style=self.environmentStyle,
+                                                                       inStyle=self.inStyle,
+                                                                       vacuumSize=self.vacuumSize)
+        system[self.tmp]['disassembler'] = disassembler
+
+        if self.perturbate:
+            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+
         cell = structure.getCell()
-        system['assembledCell'] = cell
-        coordinates = structure.getCartesianCoordinates()
+        system[self.tmp]['pbc'] = cell.getPBC()
+
         atomTypes = structure.getAtomTypes()
         atomSymbols = [el.short_name for el in atomTypes]
-
 
         ############################# POTCAR ##################################
         try:
@@ -145,7 +166,7 @@ class PWmat_Interface:
             fp.write(' POSITION\n')
 
             coord_form = '  %d %14.8f %14.8f %14.8f 1 1 1\n'
-            coords = cell.cartesianToFractional(coordinates)
+            coords = structure.getFractionalCoordinates()
             for i in range(totalatom):
                 coord = (atomTypes[i].z,) + tuple(coords[i])
                 fp.write(coord_form % coord)
@@ -199,8 +220,7 @@ class PWmat_Interface:
             os.system('cp %s %s' % (os.path.join(calcFolder, 'atom.config'), os.path.join(calcFolder, 'final.config')))
         with open(os.path.join(calcFolder , self.FINAL_CONFIG), 'r') as fp:
             content = fp.readlines()
-        assembledCell = system.pop('assembledCell')
-        disassembler = system.pop('disassembler')
+        pbc = system[self.tmp].pop('pbc')
         atoms = int(content[0].split()[0])
         lat = []
         coor = []
@@ -215,19 +235,21 @@ class PWmat_Interface:
                     temp = content[n + 1 + i].split()
                     atomTypes.append(self.atomType(int(temp[0])))
                     coor += [[float(temp[1]), float(temp[2]), float(temp[3])]]
-        cell = self.cellType(lat, assembledCell.getPBC())
+        cell = self.cellType(lat, pbc)
+        structure = self.structureType(atomTypes, coor, cell=cell)
 
         if 'structure' in self.targetProperties:
-            system.update(disassembler.disassemble(self.structureType(atomTypes, coor, cell=cell)))
+            usp(system, system[self.tmp].pop('disassembler').disassemble(structure), 'system', self.environmentStyle)
         if 'enthalpy' in self.targetProperties:
             with open(os.path.join(calcFolder , self.REPORT), 'r') as fp:
                 content = fp.readlines()
-            system['enthalpy'] = self.readEnergy(content) + \
+            enthalpy = self.readEnergy(content) + \
                                  cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+            usp(system, enthalpy, 'enthalpy', self.environmentStyle)
         if 'stressTensor' in self.targetProperties:
-            with open(os.path.join(calcFolder , self.MOVEMENT), 'r') as fp:
+            with open(os.path.join(calcFolder, self.MOVEMENT), 'r') as fp:
                 content = fp.readlines()
-            system['pressureTensor'] = self.readPressureTensor(content)
+            usp(system, self.readPressureTensor(content), 'stressTensor', self.environmentStyle)
 
     def readPressureTensor(self, content, index=-1):
         '''
@@ -322,10 +344,3 @@ class PWmat_Interface:
                 if 'E_Fermi' in line:
                     energyFermi = float(line.split()[1])
             return energyFermi
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType

@@ -34,15 +34,16 @@ class PWmat_InterfaceTest(unittest.TestCase):
         cls.knownSystemEnergy = -858.0749767374361
 
         params = {'tag': 's0', 'kresol': 0.05, 'etot_input': '{}/Specific/etot.input_1'.format(HOMEPATH),
-                  'potcars': ['{}/Specific/Si.SG15.PBE.UPF'.format(HOMEPATH)]}
+                  'potcars': ['{}/Specific/Si.SG15.PBE.UPF'.format(HOMEPATH)], 'perturbate': False}
 
         cls.vcEmpty = PWmat_Interface(**params)
         cls.testSystem = AtomisticRepresentation.readAtomicStructure(os.path.join(HOMEPATH, 'Si4System.vasp'))
         cls.testSystem['ID'] = 0
         cls.testSystem['externalPressure'] = 0.00001
+        cls.testSystem['tmp_s0'] = {}
 
         cls.CALC_FOLDER = os.path.join(HOMEPATH, CALC_FOLDER_TEMPLATE.format(0, 's0'))
-        cls.REFERENCE_FOLDER = os.path.join(HOMEPATH, 'PWmatReference/PWmat/')
+        cls.REFERENCE_FOLDER = os.path.join(HOMEPATH, 'PWmatReference/')
         print(cls.CALC_FOLDER)
     @classmethod
     def tearDownClass(cls):
