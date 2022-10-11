@@ -40,6 +40,7 @@ class GULP_CalculatorTest(unittest.TestCase):
             system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
             system['externalPressure'] = 100
             system['ID'] = ID
+            system['tmp_0'] = {}
             os.mkdir(WORKPATH)
             gulp.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")

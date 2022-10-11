@@ -43,6 +43,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
             system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
             system['ID'] = ID
             system['externalPressure'] = 0.0001
+            system['tmp_0'] = {}
             os.mkdir(WORKPATH)
             vasp.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")

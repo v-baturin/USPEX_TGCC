@@ -31,6 +31,7 @@ class QE_CalculatorTest2(unittest.TestCase):
             system = AtomisticRepresentation.readAtomicStructure(GATHEREDPATH/f'input/system{ID}.vasp')
             system['ID'] = ID
             system['externalPressure'] = 0.0001
+            system['tmp_0'] = {}
             WORKPATH.mkdir(exist_ok=True)
             qe.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
