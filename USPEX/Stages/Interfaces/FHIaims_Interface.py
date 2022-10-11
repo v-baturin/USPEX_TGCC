@@ -11,6 +11,7 @@ import numpy as np
 from os.path import join as pj
 
 from .KPoints import KPoints, BadKPoints
+from ...Presets import udateSystemWithPrefix as usp
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,18 @@ class FHIaims_Interface:
 
     out_geometry_file = 'geometry.in.next_step'
 
-    def __init__(self, tag: str, kresol: float = None, control: str = None, perturbate: bool = True, fixCell: bool = False,
-                 targetProperties: list = None, **kwargs):
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
 
+    def __init__(self, tag: str, kresol: float = None, control: str = None, perturbate: bool = True, fixCell: bool = False,
+                 environmentStyle=None, inStyle=None, targetProperties: list = None, **kwargs):
+
+        self.tag = tag
+        self.tmp = f'tmp_{tag}'
         if control is None:
             control = pj(os.getcwd(), f'Specific/aims_control_{tag}')
 
@@ -45,16 +55,20 @@ class FHIaims_Interface:
         self.perturbate = perturbate
         self.fixCell = fixCell
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.environmentStyle = environmentStyle
+        self.inStyle = inStyle
 
     def prepareLocalCalculation(self, system, calcFolder : str):
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system, vacuumSize=0)
-        system['disassembler'] = disassembler
-        atomTypes = structure.getAtomTypes()
-        system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])
-        cell = structure.getCell()
-        system['assembledCell'] = cell
-        coordinates = structure.getCartesianCoordinates()
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
+                                                                       style=self.environmentStyle,
+                                                                       inStyle=self.inStyle)
+        system[self.tmp]['disassembler'] = disassembler
 
+        if self.perturbate:
+            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+
+        cell = structure.getCell()
+        system[self.tmp]['pbc'] = cell.getPBC()
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
@@ -85,7 +99,7 @@ class FHIaims_Interface:
 
             fixedIndices = disassembler.envIndices[
                 system['environment'].getFixedIndices()] if 'environment' in system else []
-            for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), coordinates)):
+            for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
                 fp.write('atom  {1:15.8f} {2:15.8f} {3:15.8f} {0:2s}\n'.format(symbol.short_name, *coord))
                 if i in fixedIndices:
                     fp.write('constrain_relaxation .true.\n')
@@ -120,18 +134,17 @@ class FHIaims_Interface:
                 shutil.copy(pj(calcFolder, self.geometry_file), geometry_file)
             with open(geometry_file,'r') as f:
                 content = f.read()
-            self.readStructure(system, content)
-
+            structure = self.readStructure(content, system[self.tmp].pop('pbc'))
+            usp(system, system[self.tmp].pop('disassembler').disassemble(structure), 'system', self.environmentStyle)
         if 'enthalpy' in self.targetProperties:
             with open(pj(calcFolder, self.outputFile), 'r') as f:
                 content = f.readlines()
-
             for line in content:
                 if 'Total energy corrected' in line:
-                    system['enthalpy'] = float(line.split()[5])
+                    usp(system, float(line.split()[5]), 'enthalpy', self.environmentStyle)
                     break
 
-    def readStructure(self, system, content):
+    def readStructure(self, content, pbc):
         content_list = content.split('\n')
 
         lattice = []
@@ -162,14 +175,5 @@ class FHIaims_Interface:
             lat = np.diag(coor.max(axis=0) - coor.min(axis=0) + 10)
             coor += np.diag(lat * 0.5)
 
-        assembledCell = system.pop('assembledCell')
-        disassembler = system.pop('disassembler')
-        cell = self.cellType(lat, assembledCell.getPBC())
-        system.update(disassembler.disassemble(self.structureType(atomTypes, coor, cell=cell)))
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
+        cell = self.cellType(lat, pbc)
+        return self.structureType(atomTypes, coor, cell=cell)

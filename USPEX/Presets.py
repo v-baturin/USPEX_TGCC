@@ -4,6 +4,16 @@ from os import makedirs
 from .IO.InputParser import read
 
 
+def udateSystemWithPrefix(system, data, property, prefix):
+    if prefix is None:
+        if property == 'system':
+            system.update(data)
+        else:
+            system[property] = data
+    else:
+        system[f'{prefix}.{property}'] = data
+
+
 FILENAME = join(expanduser('~'), '.config/uspex/presets.uspex')
 makedirs(dirname(FILENAME), exist_ok=True)
 
@@ -15,25 +25,25 @@ if not exists(FILENAME):
                                                                         'simpleMoleculeUtility.composition'), 'enthalpy')),
             'energyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'energy')),
-            'refinedEnergy': ('divide', ('minus', 'energy', 'environmentEnergy'), 'systemSupercellFactor'),
             'enthalpyCS': ('simpleHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'enthalpy')),
+            'refinedEnergy': ('divide', ('minus', 'energy', 'onlyEnvironment.energy'), 'supercellFactor'),
             'refinedEnergyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'refinedEnergy')),
-            'refinedEnthalpy': ('divide', ('minus', 'enthalpy', 'environmentEnthalpy'), 'systemSupercellFactor'),
+            'refinedEnthalpy': ('divide', ('minus', 'enthalpy', 'onlyEnvironment.enthalpy'), 'supercellFactor'),
             'refinedEnthalpyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                          'simpleMoleculeUtility.composition'), 'refinedEnthalpy')),
             'normRefinedEnthalpy': ('divide', 'refinedEnthalpy', 'cellUtility.area'),
             'normRefinedAbsCompCH': ('convexHullHeight', ('getAbsoluteCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                         'simpleMoleculeUtility.composition'), 'normRefinedEnthalpy')),
 
-            'refinedInterfaceEnergy': ('minus', ('minus', 'energy', 'lowerEnvironmentEnergy'), 'upperEnvironmentEnergy'),
+            'refinedInterfaceEnergy': ('minus', ('minus', 'energy', 'onlyLowerEnvironment.energy'), 'onlyUpperEnvironment.Energy'),
             'refinedInterfaceEnergyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                                               'simpleMoleculeUtility.composition'), 'refinedInterfaceEnergy')),
 
-            'refinedAdjustedEnergy': ('divide', ('minus', 'adjustedEnergy', 'environmentEnergy'), 'adjustedSupercellFactor'),
-            'refinedAdjustedEnergyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
-                                                                              'simpleMoleculeUtility.composition'), 'refinedAdjustedEnergy')),
+            'refinedSurfaceEnergy': ('divide', ('minus', 'energy', 'onlyEnvironment.energy'), 'supercellFactor'),
+            'refinedSurfaceEnergyCCH': ('convexHullHeight', ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
+                                                                              'simpleMoleculeUtility.composition'), 'refinedSurfaceEnergy')),
         },
 
         'presetOutput': {

@@ -40,6 +40,7 @@ class GULP_CalculatorTest(unittest.TestCase):
             system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
             system['externalPressure'] = 100
             system['ID'] = ID
+            system['tmp_0'] = {}
             os.mkdir(WORKPATH)
             gulp.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -68,9 +69,12 @@ class GULP_InterfaceTest(unittest.TestCase):
         # with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
         system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
-        system['assembledCell'] = system['cell']
+        molecules = np.arange(len(system['molecules'])).reshape((-1, 1))
+        system['tmp_1'] = dict(
+            pbc=system['cell'].getPBC(),
+            disassembler=AtomisticRepresentation.atomicDisassemblerType(molecules)
+        )
         system['ID'] = 0
-        system['disassembler'] = AtomisticRepresentation.atomicDisassemblerType()
 
         interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'gulp_test'))
         self.assertTrue(np.isclose(system['enthalpy'], -645.80329121))

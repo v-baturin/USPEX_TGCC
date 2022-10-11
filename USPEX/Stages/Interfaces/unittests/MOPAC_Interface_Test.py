@@ -25,13 +25,14 @@ class MOPAC_CalculatorTest(unittest.TestCase):
 
 
     def test_life(self):
-        mopac = MOPAC_Interface(tag='0', mop_input=pj(SPECIFICPATH, 'mop_1'))
+        mopac = MOPAC_Interface(tag='0', mop_input=pj(SPECIFICPATH, 'mop_1'), perturbate=False)
         radialDistributionUtility = RadialDistributionUtility(symbols=['Si', 'O'])
 
         for ID in range(10):
             system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
             system['externalPressure'] = 0
             system['ID'] = ID
+            system['tmp_0'] = {}
             system['cell'] = type(system['cell'])(system['cell'].getCellVectors(), (False, False, False))
             os.mkdir(WORKPATH)
             mopac.prepareLocalCalculation(system, WORKPATH)
