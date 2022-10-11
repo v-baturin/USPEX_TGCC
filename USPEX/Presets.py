@@ -5,8 +5,11 @@ from .IO.InputParser import read
 
 
 def udateSystemWithPrefix(system, data, property, prefix):
-    if prefix is None and property == 'system':
-        system.update(data)
+    if prefix is None:
+        if property == 'system':
+            system.update(data)
+        else:
+            system[property] = data
     else:
         system[f'{prefix}.{property}'] = data
 

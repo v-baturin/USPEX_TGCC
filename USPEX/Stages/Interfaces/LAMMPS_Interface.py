@@ -12,7 +12,6 @@ import os
 from os.path import join as pj
 from typing import List
 
-from .ASEInterfaceAdapter import ASEInterfaceAdapter
 from ...Presets import udateSystemWithPrefix as usp
 
 logger = logging.getLogger(__name__)
@@ -36,17 +35,14 @@ class LAMMPS_Interface:
     dump_file = 'lammps.dump'
     
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
+
     atomicDisassemblerType = None
+    aseAdapterType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
+    def registerTypes(cls, atomicDisassemblerType, aseAdapterType):
         cls.atomicDisassemblerType = atomicDisassemblerType
+        cls.aseAdapterType = aseAdapterType
 
     def __init__(self, tag: str, lammps_in: str, libs: List[str], specorder: List[str], perturbate:bool = True,
                  vacuumSize: float = 10.0, targetProperties: list = None, environmentStyle=None, inStyle=None, **kwargs):
@@ -58,6 +54,7 @@ class LAMMPS_Interface:
         """
 
         self.tag = tag
+        self.tmp = f'tmp_{tag}'
         self.lammps_in = lammps_in
         self.specorder = specorder
         assert os.path.exists(self.lammps_in)
@@ -67,7 +64,7 @@ class LAMMPS_Interface:
 
         assert all([os.path.exists(lib) for lib in libs])
 
-        self.aseAdapter = ASEInterfaceAdapter(self.atomType, self.cellType, self.structureType)
+        self.adapter = self.aseAdapterType()
         self.failedSystems = []
         self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
@@ -85,13 +82,13 @@ class LAMMPS_Interface:
                                                                        style=self.environmentStyle,
                                                                        inStyle=self.inStyle,
                                                                        vacuumSize=self.vacuumSize)
+        system[self.tmp]['disassembler'] = disassembler
 
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
 
-        system[f'tmp_{self.tag}'] = self.aseAdapter.writeLAMMPS(structure, disassembler.fixedIndices,
-                                                                f"EA{system['ID']}", self.specorder, calcFolder)
-        system[f'tmp_{self.tag}']['disassembler'] = disassembler
+        system[self.tmp]['ase'] = self.adapter.write(structure, disassembler.fixedIndices,
+                                                     f"EA{system['ID']}", self.specorder, calcFolder)
 
         with open(self.lammps_in, 'r') as f:
             content = f.readlines()
@@ -171,11 +168,11 @@ class LAMMPS_Interface:
         return lammps_completed and tolerance_achieved        
 
     def readOutput(self, system, calcFolder : str):
-        disassembler = system[f'tmp_{self.tag}'].pop('disassembler')
-        aseData = self.aseAdapter.readLAMMPS(calcFolder, self.targetProperties, self.specorder,
-                                             **system.pop(f'tmp_{self.tag}'))
+        aseData = self.adapter.read(calcFolder, self.targetProperties, self.specorder,
+                                    **system[self.tmp].pop('ase'))
         if 'structure' in self.targetProperties:
-            usp(system, disassembler.disassemble(aseData.pop('structure')), 'system', self.environmentStyle)
+            usp(system, system[self.tmp].pop('disassembler').disassemble(aseData.pop('structure')),
+                'system', self.environmentStyle)
 
         properties = self.readProperties(calcFolder)
         if 'enthalpy' in self.targetProperties:

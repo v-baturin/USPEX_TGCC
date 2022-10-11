@@ -12,12 +12,9 @@ from os.path import join as pj
 from typing import List
 
 from .KPoints import KPoints, BadKPoints
-from .ASEInterfaceAdapter import ASEInterfaceAdapter
 from ...Presets import udateSystemWithPrefix as usp
 
 logger = logging.getLogger(__name__)
-
-EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
 
 
 def split_up_data(data:List[str], out_size:int):
@@ -65,17 +62,14 @@ class VASP_Interface:
 
 
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
+
     atomicDisassemblerType = None
+    aseAdapterType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
+    def registerTypes(cls, atomicDisassemblerType, aseAdapterType):
         cls.atomicDisassemblerType = atomicDisassemblerType
+        cls.aseAdapterType = aseAdapterType
 
     def __init__(self, tag: str, kresol: float, incar: str = None, potcarsPath: str = None, perturbate: bool = True,
                  vacuumSize = 10, targetProperties: list = None, environmentStyle=None, inStyle=None, **kwargs):
@@ -89,6 +83,7 @@ class VASP_Interface:
         '''
 
         self.tag = tag
+        self.tmp = f'tmp_{tag}'
         if incar is not None:
             self.incar = incar
         else:
@@ -101,7 +96,7 @@ class VASP_Interface:
         else:
             self.potcarsPath = pj(os.getcwd(), 'Specific')
 
-        self.aseAdapter = ASEInterfaceAdapter(self.atomType, self.cellType, self.structureType)
+        self.adapter = self.aseAdapterType()
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
 
@@ -123,14 +118,15 @@ class VASP_Interface:
                                                                        style=self.environmentStyle,
                                                                        inStyle=self.inStyle,
                                                                        vacuumSize=self.vacuumSize)
+        system[self.tmp]['disassembler'] = disassembler
+
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
 
         ############################# POSCAR ##################################
 
-        system[f'tmp_{self.tag}'] = self.aseAdapter.writeVASP(structure, disassembler.fixedIndices,
-                                                              f"EA{system['ID']}", calcFolder)
-        system[f'tmp_{self.tag}']['disassembler'] = disassembler
+        system[self.tmp]['ase'] = self.adapter.write(structure, disassembler.fixedIndices,
+                                                     f"EA{system['ID']}", calcFolder)
 
         ############################## INCAR ##################################
         shutil.copy2(self.incar, pj(calcFolder, self.incar_file))
@@ -262,17 +258,17 @@ class VASP_Interface:
     ############reading part
 
     def readOutput(self, system, calcFolder : str):
-        disassembler = system[f'tmp_{self.tag}'].pop('disassembler')
-        aseData = self.aseAdapter.readVASP(calcFolder, self.targetProperties, **system.pop(f'tmp_{self.tag}'))
+        aseData = self.adapter.read(calcFolder, self.targetProperties, **system[self.tmp].pop('ase'))
         if 'structure' in self.targetProperties:
-            usp(system, disassembler.disassemble(aseData.pop('structure')), 'system', self.environmentStyle)
+            usp(system, system[self.tmp].pop('disassembler').disassemble(aseData.pop('structure')),
+                'system', self.environmentStyle)
         if 'enthalpy' in self.targetProperties:
-            enthalpy = aseData['energy'] + aseData['volume'] * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+            enthalpy = aseData['results'].getEnthalpy(system['externalPressure'])
             usp(system, enthalpy, 'enthalpy', self.environmentStyle)
         if 'energy' in self.targetProperties:
-            usp(system, aseData['energy'], 'energy', self.environmentStyle)
+            usp(system, aseData['results']['energy'], 'energy', self.environmentStyle)
         if 'forces' in self.targetProperties:
-            usp(system, aseData['forces'], 'forces', self.environmentStyle)
+            usp(system, aseData['results']['forces'], 'forces', self.environmentStyle)
 
         with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
             content = fp.readlines()

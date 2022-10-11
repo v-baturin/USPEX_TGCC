@@ -150,7 +150,9 @@ class GenerationController(object):
                 system.update(processedSystems[i + 1])
             else:
                 try:
+                    system[f'tmp_{stage.tag}'] = {}
                     await stage.run(system)
+                    del system[f'tmp_{stage.tag}']
                 except Exception as ex:
                     logger.warning(f'system {ID} error in relaxation:')
                     logger.exception(ex)
