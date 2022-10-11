@@ -111,6 +111,7 @@ class GULP_Interface:
         # else:
 
         cell = structure.getCell()
+        system[self.tmp]['pbc'] = cell.getPBC()
         lattice = type(cell)(cell.getCellVectors(), (1, 1, 1)).getCellParameters()
 
         content_to_write = ''
@@ -146,7 +147,7 @@ class GULP_Interface:
         #         content_to_write += '%4s %12.6f %12.6f %12.6f   core %12.6f\n' % tuple_to_format
         # else:
 
-        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getFractionalCoordinates)):
+        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getFractionalCoordinates())):
             tuple_to_format = tuple([symbol.short_name] + coord.tolist())
             if cell.dim == 2:
                 if i in disassembler.fixedIndices:

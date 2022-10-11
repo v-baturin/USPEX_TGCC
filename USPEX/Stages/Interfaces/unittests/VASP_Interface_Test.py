@@ -43,7 +43,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
             system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
             system['ID'] = ID
             system['externalPressure'] = 0.0001
-            system['tmp_0'] = {}
+            system['tmp_1'] = {}
             os.mkdir(WORKPATH)
             vasp.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -91,6 +91,7 @@ class VASP_interface_elastic_Test(unittest.TestCase):
         wd = pj(HOMEPATH, 'vaspElastic')
         self.interface = VASP_Interface(tag='5', incar=pj(wd, 'Specific', 'INCAR_5'), potcarsPath=pj(wd, 'Specific'),
                                         kresol=0.06, targetProperties=['elasticConstants'])
-        system = {}
-        self.interface.readOutput(system, calcFolder=pj(wd, 'output'))
-        self.assertTrue(np.allclose(system['elasticMatrix'], elasticMatrix_ref))
+        with open(pj(wd, 'output', 'OUTCAR'), 'r') as f:
+            content = f.readlines()
+        elasticMatrix = self.interface.readElasticMatrix(content)
+        self.assertTrue(np.allclose(elasticMatrix, elasticMatrix_ref))

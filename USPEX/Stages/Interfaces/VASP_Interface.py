@@ -143,8 +143,8 @@ class VASP_Interface:
         if os.path.exists(pj(calcFolder, 'POTCAR')):
             os.remove(pj(calcFolder, 'POTCAR'))
 
-        for atomType in np.unique(structure.getAtomTypes()):
-            potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType.short_Name}')
+        for atomType in (lambda a, i: a[np.argsort(i)])(*np.unique(structure.getAtomTypes(), return_index=True)):
+            potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType.short_name}')
             os.system(f'cat {potcarPath} >>  {calcFolder}/POTCAR ')
 
         ############################# KPOINTS #################################
@@ -258,7 +258,7 @@ class VASP_Interface:
     ############reading part
 
     def readOutput(self, system, calcFolder : str):
-        aseData = self.adapter.read(calcFolder, self.targetProperties, **system[self.tmp].pop('ase'))
+        aseData = self.adapter.read(calcFolder, **system[self.tmp].pop('ase'))
         if 'structure' in self.targetProperties:
             usp(system, system[self.tmp].pop('disassembler').disassemble(aseData.pop('structure')),
                 'system', self.environmentStyle)
