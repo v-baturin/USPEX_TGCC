@@ -24,6 +24,7 @@ class QE_CalculatorTest2(unittest.TestCase):
         qe = QE_Interface(tag='1',
                           options=SPECIFICPATH/'qEspresso_options_1',
                           pseudopotentials={'C': SPECIFICPATH/'C.pbe-van_bm.upf'},
+                          perturbate=False,
                           kresol=0.16)
         radialDistributionUtility = RadialDistributionUtility(symbols=['C'])
 
@@ -31,7 +32,7 @@ class QE_CalculatorTest2(unittest.TestCase):
             system = AtomisticRepresentation.readAtomicStructure(GATHEREDPATH/f'input/system{ID}.vasp')
             system['ID'] = ID
             system['externalPressure'] = 0.0001
-            system['tmp_0'] = {}
+            system['tmp_1'] = {}
             WORKPATH.mkdir(exist_ok=True)
             qe.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"

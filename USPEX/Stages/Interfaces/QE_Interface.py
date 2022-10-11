@@ -101,8 +101,7 @@ class QE_Interface:
             kPoints = [1, 1, 1]
 
         system[self.tmp]['ase'] = self.adapter.write(structure, disassembler.fixedIndices,
-                                                     kPoints, self.pseudopotentials,
-                                                     f"EA{system['ID']}", calcFolder)
+                                                     kPoints, self.pseudopotentials, calcFolder)
 
     def isConverged(self, calcFolder: str):
         calcFolder = Path(calcFolder)
@@ -117,7 +116,7 @@ class QE_Interface:
 
     def readOutput(self, system: dict, calcFolder: str):
         calcFolder = Path(calcFolder)
-        aseData = self.adapter.read(calcFolder, self.targetProperties, **system[self.tmp].pop('ase'))
+        aseData = self.adapter.read(calcFolder, **system[self.tmp].pop('ase'))
         if 'structure' in self.targetProperties:
             usp(system, system[self.tmp].pop('disassembler').disassemble(aseData.pop('structure')),
                 'system', self.environmentStyle)

@@ -57,10 +57,11 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
                                   libs=[pj(SPECIFICPATH, 'SiC.tersoff')], lammps_in=pj(SPECIFICPATH, 'lammps.in_1'), specorder=['C'])
         system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
         system['ID'] = 0
-        s, d = AtomisticRepresentation.atomicDisassemblerType.assemble(**system)
-        system['disassembler'] = d
-        system['atomTypes'] = s.getAtomTypes()
-        system['assembledCell'] = system['cell']
+        molecules = np.arange(len(system['molecules'])).reshape((-1, 1))
+        system['tmp_0'] = dict(
+            ase={'pbc': system['cell'].getPBC()},
+            disassembler=AtomisticRepresentation.atomicDisassemblerType(molecules)
+        )
 
         interface.readOutput(system=system, calcFolder=pj(GATHEREDPATH, f'output/CalcFold{ID}'))
         self.assertTrue(np.isclose(system['enthalpy'], -102.64364))

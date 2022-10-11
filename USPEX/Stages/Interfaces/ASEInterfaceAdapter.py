@@ -120,15 +120,17 @@ class ASEInterfaceAdapter:
                           cell=cell.getCellVectors())
             if fixedIndices:
                 atoms.set_constraint(FixAtoms(indices=fixedIndices))
-            write_espresso_in(calcFolder/self.inputFile,
-                              atoms=atoms, input_data=self.data,
-                              pseudopotentials={s: p.name for s, p in pseudopotentials.items()},
-                              kpts=kPoints,
-                              crystal_coordinates=True)
+            with open(calcFolder/self.inputFile, 'wt') as f:
+                write_espresso_in(f,
+                                  atoms=atoms, input_data=self.data,
+                                  pseudopotentials={s: p.name for s, p in pseudopotentials.items()},
+                                  kpts=kPoints,
+                                  crystal_coordinates=True)
             return {'pbc': cell.getPBC()}
 
         def read(self, calcFolder, pbc):
-            atoms = next(read_espresso_out(pj(calcFolder, self.outputFile), index=slice(None, -2, -1)))
+            with open(pj(calcFolder, self.outputFile)) as f:
+                atoms = next(read_espresso_out(f, index=slice(None, -2, -1)))
             atomTypes = np.array([ASEInterfaceAdapter.atomType(s) for s in atoms.get_chemical_symbols()])
             structure = ASEInterfaceAdapter.structureType(atomTypes, atoms.get_positions(),
                                                           cell=ASEInterfaceAdapter.cellType(atoms.get_cell().array, pbc))

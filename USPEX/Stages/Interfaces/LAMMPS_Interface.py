@@ -168,7 +168,7 @@ class LAMMPS_Interface:
         return lammps_completed and tolerance_achieved        
 
     def readOutput(self, system, calcFolder : str):
-        aseData = self.adapter.read(calcFolder, self.targetProperties, self.specorder,
+        aseData = self.adapter.read(calcFolder, self.specorder,
                                     **system[self.tmp].pop('ase'))
         if 'structure' in self.targetProperties:
             usp(system, system[self.tmp].pop('disassembler').disassemble(aseData.pop('structure')),
