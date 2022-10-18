@@ -125,6 +125,10 @@ class USPEXClassic(object):
         """
 
         if self.pool.generations:
+            if self.target.utilities.antiseeds.legacy:
+                self.target.utilities.antiseeds.payPenalties(self.pool.generations[-1]['allSystems'],
+                                                             self.pool.uniqueSystems, self.fingerprintUtility)
+
             population = self.pool.uniqueSystems if self.globalParentsPool else \
                 self.pool.generations[-1]['allSystems'] + self._mostDiverse
             newStructures = self.pool.generations[-1]['newSystems']
@@ -240,7 +244,8 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        self.target.utilities.antiseeds.payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
+        if not self.target.utilities.antiseeds.legacy:
+            self.target.utilities.antiseeds.payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
 
         if self.target.seeds is not None:
             seeds = self.target.seeds()
