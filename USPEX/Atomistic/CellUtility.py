@@ -642,6 +642,7 @@ class Cell:
         """
 
 
+        coordinates = np.asarray(coordinates, dtype=float)
         periodicVecs = self.getCellVectorsPBC()
         nonperiodicVecs = self.getCellVectorsAntiPBC()
 
@@ -1009,6 +1010,7 @@ class Cell:
 
         :return:
         """
+        coordinates = np.asarray(coordinates, dtype=float)
         if affectedDims is None:
             affectedDims = self.getAntiPBC()
         affectedDims = np.array(affectedDims).reshape((1, 3))

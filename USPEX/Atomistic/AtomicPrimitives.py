@@ -267,9 +267,9 @@ class AtomicDisassembler:
             atomTypes.extend(envStructure.getAtomTypes())
             coordinates.extend(envStructure.getCartesianCoordinates())
             cell = envStructure.getCell()
-        coordinates = np.asarray(coordinates, dtype=float)
-        cell = cell.getEnvelopeCell(coordinates, vacuumSize, intrinsic=True)
-        coordinates = cell.center(coordinates)
+        if vacuumSize > 0:
+            cell = cell.getEnvelopeCell(coordinates, vacuumSize, intrinsic=True)
+            coordinates = cell.center(coordinates)
         return AtomicStructure(atomTypes, coordinates, cell), AtomicDisassembler(indices, environment, pbc)
 
     def disassemble(self, structure):
