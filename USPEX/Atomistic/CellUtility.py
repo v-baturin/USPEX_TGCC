@@ -325,21 +325,21 @@ class CellUtility:
                 cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
                 factor = np.sqrt((fraction * cell1.getArea() + (1 - fraction) * cell2.getArea()) / cell.getArea())
                 thickness = fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()
-                cellParameters = (a * factor, b * factor, None, alpha, None, None)
+                cellParameters = (a * factor, b * factor, alpha, self._axis)
             elif self._dim == 1:
                 a, = cellParameters
                 cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
                 factor = (fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()) / cell.getLength()
                 thickness = np.sqrt(fraction * cell1.getArea() + (1 - fraction) * cell2.getArea())
-                cellParameters = (a * factor, None, None, None, None, None)
+                cellParameters = (a * factor, self._axis)
             elif self._dim == 0:
                 thickness = np.power(fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume(), 1.0 / 3.0)
-                cellParameters = (None, None, None, None, None, None)
+                cellParameters = ()
             else:
                 raise RuntimeError(f"Wrong dim {self._dim}.")
             if self._thickness is not None and thickness > self._thickness:
                 thickness = self._thickness
-            cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis).getEnvelopeCell(vacuumSize=thickness)
+            cell = Cell.initFromCellParameters(self._pbc, *cellParameters).getEnvelopeCell(vacuumSize=thickness)
         elif self._supercellDegree is not None:
             if self._dim == 3:
                 factor1 = cell1.getVolume() / self._cell.getVolume()
@@ -508,7 +508,7 @@ class Cell:
             axis, = cellVectors
             a = np.linalg.norm(axis)
             axis /= a
-            return Cell.initFromCellParameters(pbc, a, axis = axis)
+            return Cell.initFromCellParameters(pbc, a, axis)
         elif dim == 0:
             return Cell(np.eye(3), pbc)
         else:
@@ -626,7 +626,7 @@ class Cell:
         else:
             raise RuntimeError(f"Wrong dim {self.dim}.")
 
-    def getIntrisicCell(self, coordinates):
+    def getIntrinsicCell(self, coordinates):
         """
         :return: **Cell** object depending on dimensionality.
 
@@ -680,7 +680,7 @@ class Cell:
 
         :return:  new cell object, corresponding to
         """
-        cell = self.getIntrisicCell(coordinates) if intrinsic and coordinates is not None else self
+        cell = self.getIntrinsicCell(coordinates) if intrinsic and coordinates is not None else self
         newCellVectors = []
         for vector, isPeriodic in zip(cell.getCellVectors(), self._pbc):
             if isPeriodic:
@@ -820,7 +820,18 @@ class Cell:
             raise RuntimeError(f"Wrong dim {self.dim}.")
 
     def __eq__(self, other):
-        return np.allclose(self.getCellParameters(), other.getCellParameters())
+        if self.dim == 0 or self.dim == 3:
+            return np.allclose(self.getCellParameters(), other.getCellParameters())
+        elif self.dim == 1:
+            a1, axis1 = self.getCellParameters()
+            a2, axis2 = other.getCellParameters()
+            return np.allclose(a1 * axis1, a2 * axis2)
+        elif self.dim == 2:
+            a1, b1, alpha1, axis1 = self.getCellParameters()
+            a2, b2, alpha2, axis2 = other.getCellParameters()
+            return np.allclose([a1, b1, alpha1, *axis1], [a2, b2, alpha2, *axis2])
+        else:
+            raise RuntimeError(f"Wrong dim {self.dim}.")
 
     def getVolume(self):
         """
