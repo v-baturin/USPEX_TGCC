@@ -107,7 +107,7 @@ class AtomisticRepresentation(object):
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            systems_gatheredPOSCARS.append(system[0])
+            systems_gatheredPOSCARS_unrelaxed.append(system[0])
             content_origin += f"{ID} {system[0]['howCome']} {system[0]['parent']}\n"
 
             if len(system) > 1:
@@ -115,7 +115,7 @@ class AtomisticRepresentation(object):
 
             if len(system) == numStages + 1:
                 table_Individuals.update(ID, optimizer.pool.allSystems[ID], optimizer.fitness)
-                systems_gatheredPOSCARS_unrelaxed.append(system[numStages])
+                systems_gatheredPOSCARS.append(system[numStages])
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
 
@@ -152,6 +152,7 @@ class AtomisticRepresentation(object):
 
     @classmethod
     def writePOSCAR(cls, filename, structure, label):
+        structure = structure.getTrigonalizedCellStructure()
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell().getEnvelopeCell(coordinates, 10)
         coordinates = cell.center(coordinates)
@@ -178,7 +179,7 @@ class AtomisticRepresentation(object):
         descriptions = []
         printUSPEX = False
         for i, system in enumerate(systems):
-            structure, disassembler = cls.atomicDisassemblerType.assemble(**system)
+            structure, disassembler = cls.atomicDisassemblerType.assemble(**system, vacuumSize=10.0)
             atomTypes = structure.getAtomTypes()
             coordinates = structure.getCartesianCoordinates()
             sortIndices = np.argsort(atomTypes)
@@ -186,15 +187,18 @@ class AtomisticRepresentation(object):
             structure = cls.structureType(atomTypes[sortIndices], coordinates[sortIndices], structure.getCell())
             structures.append(structure)
             labels.append(f"EA{system['ID']}")
-            d = {'filename': os.path.basename(filename), 'index': i, 'molecules': []}
+            d = {'filename': os.path.basename(filename), 'index': i}
             pbc = system['cell'].getPBC()
             if pbc != (1, 1, 1):
-                d['pbc'] = pbc
+                d['pbc'] = list(pbc)
                 printUSPEX = True
+            molecules = []
             for indices in disassembler.indices:
                 if len(indices) > 1:
                     d['molecules'].append(' '.join(f'{ind}' for ind in reversedIndices[indices]))
                     printUSPEX = True
+            if molecules:
+                d['molecules'] = molecules
             if 'environment' in system:
                 printUSPEX = True
             descriptions.append(d)

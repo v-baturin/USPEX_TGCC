@@ -142,12 +142,11 @@ class AtomicStructure:
         """
         return np.mean(self.getFractionalCoordinates(), axis=0)
 
-    def getPrincipalAxes(self):
-        """
-        :return: 3x3 matrix of principal axes, main axes of inertia tensor (with all atom masses set to be equal).
-        """
-        coordinates = self._coordinates - self._coordinates.mean(axis=0)
-        return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
+    def getTrigonalizedCellStructure(self):
+        if self._cell is None:
+            raise RuntimeError("Cell is not defined.")
+        else:
+            return self._cell.getTrigonalizeTransform().transform(self)
 
     def getRectifiedCell(self):
         """
@@ -164,43 +163,7 @@ class AtomicStructure:
             3d: Returns original Cell
         """
 
-        cell = self.getCell()
-        cellVectors = cell.getCellVectors()
-        pbc = np.array(cell.getPBC(), dtype=bool) if cell is not None else np.array([False] * 3)
-        dim = sum(pbc)
-
-        whichPeriodic = np.where(pbc)[0]
-        periodicVecs = cellVectors[pbc]
-        nonperiodicVecs = cellVectors[~pbc]
-
-        if dim == 0:
-            vectors = self.getPrincipalAxes()[1].T
-        elif dim == 1:
-            periodicUnit = periodicVecs[0] / np.linalg.norm(periodicVecs[0])
-            orthogPancake = self._coordinates - \
-                               np.dot(self._coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
-            val, vectors = AtomicStructure(self._atomTypes, orthogPancake).getPrincipalAxes()
-            vectors = vectors.T
-            if val[0] < 1e-5:  # Check if inertia tensor has a singular matrix
-                if np.dot(vectors[0], periodicUnit) == 1:
-                    vectors[0] = vectors[1]
-                vectors[0] -= np.dot(vectors[0], periodicUnit) * periodicUnit
-                vectors[0] /= np.linalg.norm(vectors[0])
-                vectors[1] = np.cross(periodicUnit, vectors[0])
-            vectors[-1] = periodicVecs[0] # any 2D shape has a maximum inertia moment corresponding to orth direction
-            vectors = np.roll(vectors, whichPeriodic[0] - 2, axis=0)
-        elif dim == 2:
-            normalvector = np.cross(periodicVecs[0], periodicVecs[1])
-            normalvector *= np.sign(np.dot(normalvector, nonperiodicVecs[0]))
-            vectors = cellVectors
-            vectors[~pbc] = normalvector
-        elif dim == 3:
-            return cell
-        else:
-            raise ValueError(f'Incorrect dim: {dim}')
-
-        newCell = type(cell)(vectors, pbc)
-        return newCell
+        return self.getCell().getIntrinsicCell(self.getCartesianCoordinates())
 
     def makeSupercell(self, matrix):
         """
@@ -288,6 +251,7 @@ class AtomicDisassembler:
             return getattr(environment, environment.processingStyles[style])(vacuumSize), None
         elif style is not None:
             raise ValueError(f"Style {style} is not valid.")
+        pbc = cell.getPBC()
         atomTypes = []
         coordinates = []
         indices = []
@@ -302,16 +266,11 @@ class AtomicDisassembler:
             envStructure = environment.getStructure()
             atomTypes.extend(envStructure.getAtomTypes())
             coordinates.extend(envStructure.getCartesianCoordinates())
-            assembledCell = envStructure.getCell()
-        else:
-            assembledCell = cell
-        if vacuumSize > 0:
-            structure = AtomicStructure(atomTypes, coordinates, assembledCell)
-            assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
-            coordinates = assembledCell.center(structure.getCartesianCoordinates())
-        return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
-                AtomicDisassembler(indices, environment, cell.getPBC()))  # cell of molecules
-
+            cell = envStructure.getCell()
+        coordinates = np.asarray(coordinates, dtype=float)
+        cell = cell.getEnvelopeCell(coordinates, vacuumSize, intrinsic=True)
+        coordinates = cell.center(coordinates)
+        return AtomicStructure(atomTypes, coordinates, cell), AtomicDisassembler(indices, environment, pbc)
 
     def disassemble(self, structure):
         """

@@ -515,7 +515,7 @@ class Cell:
             raise RuntimeError(f"Wrong pbc {pbc}.")
 
     @staticmethod
-    def initFromCellParameters(pbc, a=None, b=None, c=None, alpha=None, beta=None, gamma=None, axis=None):
+    def initFromCellParameters(pbc, *args, a=None, b=None, c=None, alpha=None, beta=None, gamma=None, axis=None):
         """
         Alternative constructor using cell parameters.
 
@@ -531,8 +531,24 @@ class Cell:
         :return: **Cell** object with appropriate parameters.
         """
         dim = sum(pbc)
+        if len(args) > 0:
+            if dim == 3:
+                assert len(args) == 6
+                assert a is None and b is None and c is None and alpha is None and beta is None and gamma is None
+                a, b, c, alpha, beta, gamma = args
+            elif dim == 2:
+                assert len(args) == 4
+                assert axis is None and a is None and b is None and alpha is None
+                a, b, alpha, axis = args
+            elif dim == 1:
+                assert len(args) == 2
+                assert axis is None and a is None
+                a, axis = args
+            else:
+                raise RuntimeError(f"Wrong pbc {pbc}.")
         if dim == 3:
-            assert axis is None and a is not None and b is not None and c is not None and alpha is not None and beta is not None and gamma is not None
+            assert axis is None and a is not None and b is not None and c is not None and\
+                   alpha is not None and beta is not None and gamma is not None
             alpha, beta, gamma = np.pi / 180 * np.asarray((alpha, beta, gamma), dtype=float)
             va = np.array([a, 0, 0])
             vb = np.array([b * np.cos(gamma), b * np.sin(gamma), 0])
@@ -542,7 +558,8 @@ class Cell:
             vc = c * np.array([cx, cy, cz])
             return Cell(np.vstack((va, vb, vc)), pbc)
         elif dim == 2:
-            assert axis is not None and a is not None and b is not None and c is None and alpha is not None and beta is None and gamma is None
+            assert axis is not None and a is not None and b is not None and c is None and \
+                   alpha is not None and beta is None and gamma is None
             alpha= np.pi / 180 * alpha
             axis = np.asarray(axis, dtype=float)
             axis /= np.linalg.norm(axis)
@@ -550,12 +567,14 @@ class Cell:
             vb = np.array([b * np.cos(alpha), b * np.sin(alpha), 0])
             return Cell.initFromCellVectors(pbc, np.vstack((va, vb))).getAlignedCell(axis)
         elif dim == 1:
-            assert axis is not None and a is not None and b is None and c is None and alpha is None and beta is None and gamma is None
+            assert axis is not None and a is not None and b is None and c is None and \
+                   alpha is None and beta is None and gamma is None
             cellVectors = np.eye(3)
             cellVectors[np.nonzero(pbc)] *= a
             return Cell(cellVectors, pbc).getAlignedCell(axis)
         elif dim == 0:
-            assert axis is None and a is None and b is None and c is None and alpha is None and beta is None and gamma is None
+            assert axis is None and a is None and b is None and c is None and \
+                   alpha is None and beta is None and gamma is None
             return Cell(np.eye(3), pbc)
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
@@ -607,15 +626,63 @@ class Cell:
         else:
             raise RuntimeError(f"Wrong dim {self.dim}.")
 
-    def getEnvelopeCell(self, coordinates=None, vacuumSize: float=0.0):
+    def getIntrisicCell(self, coordinates):
+        """
+        :return: **Cell** object depending on dimensionality.
+
+            0d: Cell made of unit principal eigenvectors
+
+            1d: Keep periodic vector from original cell, The other two are perpendicular to it,
+            directed along principal directions of
+            a structure, flatten along periodic vector
+
+            2d: Keep periodic vectors from original cell. The third is a unity vector perpendicular to those two.
+
+            3d: Returns original Cell
+        """
+
+
+        periodicVecs = self.getCellVectorsPBC()
+        nonperiodicVecs = self.getCellVectorsAntiPBC()
+
+        if self.dim == 0:
+            vectors = self.getPrincipalAxes(coordinates)[1].T
+        elif self.dim == 1:
+            periodicUnit = periodicVecs[0] / np.linalg.norm(periodicVecs[0])
+            orthogPancake = coordinates - np.dot(coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
+            val, vectors = self.getPrincipalAxes(orthogPancake)
+            vectors = vectors.T
+            if val[0] < 1e-5:  # Check if inertia tensor has a singular matrix
+                if np.dot(vectors[0], periodicUnit) == 1:
+                    vectors[0] = vectors[1]
+                vectors[0] -= np.dot(vectors[0], periodicUnit) * periodicUnit
+                vectors[0] /= np.linalg.norm(vectors[0])
+                vectors[1] = np.cross(periodicUnit, vectors[0])
+            vectors[-1] = periodicVecs[0] # any 2D shape has a maximum inertia moment corresponding to orth direction
+            vectors = np.roll(vectors, np.where(self._pbc)[0][0] - 2, axis=0)
+        elif self.dim == 2:
+            normalvector = np.cross(periodicVecs[0], periodicVecs[1])
+            normalvector *= np.sign(np.dot(normalvector, nonperiodicVecs[0]))
+            vectors = self._cellVectors
+            vectors[self._antipbc] = normalvector
+        elif self.dim == 3:
+            return copy(self)
+        else:
+            raise ValueError(f'Incorrect dim: {self.dim}')
+
+        newCell = Cell(vectors, self._pbc)
+        return newCell
+
+    def getEnvelopeCell(self, coordinates=None, vacuumSize: float=0.0, intrinsic=False):
         """
         :param coordinates: cartesian atomic coordinates
         :param vacuumSize: vacuum distance added along cell vector
 
         :return:  new cell object, corresponding to
         """
+        cell = self.getIntrisicCell(coordinates) if intrinsic and coordinates is not None else self
         newCellVectors = []
-        for vector, isPeriodic in zip(self._cellVectors, self._pbc):
+        for vector, isPeriodic in zip(cell.getCellVectors(), self._pbc):
             if isPeriodic:
                 newCellVectors.append(vector)
             else:
@@ -736,13 +803,17 @@ class Cell:
             return a, b, c, alpha, beta, gamma
         elif self.dim == 2:
             cellVectors = self.getCellVectorsPBC()
+            axis, = self.getCellVectorsAntiPBC()
+            axis /= np.linalg.norm(axis)
             a = np.linalg.norm(cellVectors[0, :])
             b = np.linalg.norm(cellVectors[1, :])
             alpha = 180 / np.pi * np.arccos(np.dot(cellVectors[0, :], cellVectors[1, :]) / (a * b))
-            return a, b, alpha
+            return a, b, alpha, axis
         elif self.dim == 1:
-            a = np.linalg.norm(self.getCellVectorsPBC()[0])
-            return a,
+            axis, = self.getCellVectorsPBC()
+            a = np.linalg.norm(axis)
+            axis /= a
+            return a, axis
         elif self.dim == 0:
             return ()
         else:
@@ -962,6 +1033,14 @@ class Cell:
         decompositionMatrix = self.decomposeCell(other)
         return np.isclose(np.linalg.norm(decompositionMatrix, axis=1).mean(), 1.0, atol=tol)
 
+    def getTrigonalizeTransform(self):
+        normCellVectors = self._cellVectors
+        normCellVectors /= np.linalg.norm(normCellVectors, axis=1).reshape((-1, 1))
+        normCellParameters = Cell(normCellVectors, self._pbc).getCellParameters()
+        standardCellVectors = Cell.initFromCellParameters(self._pbc, *normCellParameters).getCellVectors()
+        matrix = np.linalg.solve(standardCellVectors, normCellVectors)
+        return Transformation.fromMatrix(matrix, np.array([0.0, 0.0, 0.0]))
+
     def randomTransformation(self):
         """
         Creates transformation object which respects unit cell. I.e. origin is moved only in periodic directions.
@@ -1027,3 +1106,11 @@ class Cell:
 
         return [Transformation.fromRotVector([0.,0.,0.], finalCoordinates - initialCoordinates)
                 for finalCoordinates in fittedCoordinates]
+    @staticmethod
+    def getPrincipalAxes(coordinates):
+        """
+        :return: 3x3 matrix of principal axes, main axes of inertia tensor (with all atom masses set to be equal).
+        """
+        coordinates = np.asarray(coordinates, dtype=float)
+        coordinates = coordinates - coordinates.mean(axis=0)
+        return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
