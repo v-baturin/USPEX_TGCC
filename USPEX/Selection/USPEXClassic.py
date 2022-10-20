@@ -129,7 +129,7 @@ class USPEXClassic(object):
                 self.target.utilities.antiseeds.payPenalties(self.pool.generations[-1]['allSystems'],
                                                              self.pool.uniqueSystems, self.fingerprintUtility)
 
-            population = self.pool.uniqueSystems if self.globalParentsPool else \
+            population = list(self.pool.uniqueSystems) if self.globalParentsPool else \
                 self.pool.generations[-1]['allSystems'] + self._mostDiverse
             newStructures = self.pool.generations[-1]['newSystems']
             fitness = self.pool.generations[-1]['fitness']
