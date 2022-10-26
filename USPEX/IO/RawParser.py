@@ -40,7 +40,7 @@ true = lexeme(string('True')).result(True)
 false = lexeme(string('False')).result(False)
 null = lexeme(string('None')).result(None)
 quote = string('"') | string("'")
-literal = lexeme(regex(r'[a-zA-Z][-_a-zA-Z0-9.]*'))
+literal = lexeme(regex(r'(?!True)(?!False)(?!None)[a-zA-Z][-_a-zA-Z0-9.]*'))
 
 def number_float():
     return lexeme(
