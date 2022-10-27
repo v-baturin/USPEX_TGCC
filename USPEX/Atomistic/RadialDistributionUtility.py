@@ -6,16 +6,13 @@ USPEX.Atomistic.RadialDistributionUtility
 """
 
 import numpy as np
-from copy import copy
 from typing import Dict, Tuple
 from collections.abc import Mapping
 from collections import Counter
 
-import pandas as pd
 from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
-from pandas import DataFrame, Series, isna, concat
 
 
 RMAX_DEFAULT = 10.0
@@ -99,29 +96,44 @@ class ComplexFingerprint:
     Class representing radial distribution fingerprint.
     """
     def __init__(self, values, weights, symbols):
-        self.values = DataFrame(data=values).T
-        self.weights = Series(weights)
-        self.weights[:] /= self.weights.sum()
-        self.weights = self.weights.to_frame()
+        self.values = {}
+        for s, v in values.items():
+            self.values[s] = np.asarray(v, dtype=float)
+        norm = sum(sum(w) for w in weights.values())
+        self.weights = {}
+        for s, w in weights.items():
+            self.weights[s] = np.asarray(w, dtype=float) / norm
         self.symbols = symbols
 
     @staticmethod
     def fromAtomicFingerprints(symbols, atomTypes, atomFings, tolerance):
         fing = {}
         atomsCounter = Counter()
-        weightsCounter = Counter()
+        weightsCounter = {}
         for atomType, aFing in zip(atomTypes, atomFings):
             symbol = atomType.short_name
-            row = np.hstack(Series(aFing.value, index=symbols) * np.sqrt(Series(aFing.weights, index=symbols)))
-            for (refSymbol, count), f in fing.items():
-                if symbol == refSymbol \
-                        and ComplexFingerprint.cosineDistance(f, row) < tolerance:
-                    break
+            row = np.hstack([aFing[s] * np.sqrt(aFing.weights[s] if s in aFing.weights else 0) for s in symbols])
+            for refSymbol, fings in fing.items():
+                for count, f in enumerate(fings):
+                    if symbol == refSymbol \
+                            and ComplexFingerprint.cosineDistance(f.reshape((1, -1)), row.reshape((1, -1))) < tolerance:
+                        break
+                else:
+                    continue
+                break
             else:
                 atomsCounter[symbol] += 1
                 count = atomsCounter[symbol]
-                fing[(symbol, count)] = row
-            weightsCounter[(symbol, count)] += 1
+                if symbol not in fing:
+                    fing[symbol] = []
+                fing[symbol].append(row)
+                assert len(fing[symbol]) == count
+                if symbol not in weightsCounter:
+                    weightsCounter[symbol] = []
+                weightsCounter[symbol].append(1)
+                assert len(weightsCounter[symbol]) == count
+                count -= 1
+            weightsCounter[symbol][count] += 1
         return ComplexFingerprint(fing, weightsCounter, symbols)
 
     @staticmethod
@@ -129,26 +141,21 @@ class ComplexFingerprint:
         """
         Calculation of cosine distances using eq.(6b) from JCP-2009.
         """
-        if len(fing1.shape) == 1:
-            fing1 = fing1.reshape((1, -1))
-        if len(fing2.shape) == 1:
-            fing2 = fing2.reshape((1, -1))
-        norm1 = np.linalg.norm(fing1, axis=1)
-        norm2 = np.linalg.norm(fing2, axis=1)
-        return (1 - np.dot(fing1, fing2.T) / (norm1.reshape((-1, 1)) * norm2.reshape((1, -1)))) / 2
+        norm1 = np.linalg.norm(fing1, axis=1).reshape((-1, 1))
+        norm2 = np.linalg.norm(fing2, axis=1).reshape((1, -1))
+        return (1 - np.dot(fing1, fing2.T) / (norm1 * norm2)) / 2
 
     @staticmethod
     def dist(fingerprint1, fingerprint2):
         assert set(fingerprint1.symbols) == set(fingerprint2.symbols)
-        index1 = fingerprint1.values.index.levels[0]
-        index2 = fingerprint2.values.index.levels[0]
+        index1 = fingerprint1.values.keys()
+        index2 = fingerprint2.values.keys()
         dist = 0
         for symbol in fingerprint1.symbols:
             if symbol in index1 and symbol in index2:
-                distMatrix = ComplexFingerprint.cosineDistance(fingerprint1.values.loc[symbol].to_numpy(),
-                                                               fingerprint2.values.loc[symbol].to_numpy())
-                dist += ((distMatrix.min(axis=0)*fingerprint2.weights.loc[symbol].T.to_numpy()).sum() +
-                         (distMatrix.min(axis=1)*fingerprint1.weights.loc[symbol].T.to_numpy()).sum()) / 2
+                distMatrix = ComplexFingerprint.cosineDistance(fingerprint1.values[symbol], fingerprint2.values[symbol])
+                dist += ((distMatrix.min(axis=0)*fingerprint2.weights[symbol]).sum() +
+                         (distMatrix.min(axis=1)*fingerprint1.weights[symbol]).sum()) / 2
             elif symbol in index1 or symbol in index2:
                 dist += 0.5
         return dist
