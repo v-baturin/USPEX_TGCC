@@ -26,15 +26,15 @@ presetFitness[('aging', 'values')] = ('plus', 'values', ('multiply', ('minus', (
 
 class Fitness:
 
-    def __init__(self, uniqueSystems, extraData, utilities):
+    def __init__(self, uniqueSystems, utilities, extraData=None):
         self.uniqueSystems = uniqueSystems
         self.extraData = extraData if extraData is not None else []
         self.utilities = utilities
         self._storedFitnesses = {}
 
     @staticmethod
-    def calculate(uniqueSystems, extraData, optType, utilities):
-        fitness = Fitness(uniqueSystems, extraData, utilities)
+    def calculate(uniqueSystems, optType, utilities, extraData=None):
+        fitness = Fitness(uniqueSystems, utilities, extraData)
         fitness.calcFitness(optType)
         return fitness
 

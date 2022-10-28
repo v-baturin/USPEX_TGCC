@@ -77,7 +77,7 @@ class GlobalOptimizer(object):
         self.target = Target(self.knownTargetTypes[target['type']], **target)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = extraData
-        self.fitness = self.Fitness(self.pool.uniqueSystems, self.extraData, self.target.utilities)
+        self.fitness = self.Fitness(self.pool.uniqueSystems, self.target.utilities, self.extraData)
         self.selectionConfig = selection
         self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target,
                                                                             self.fingerprintUtility, **selection)
@@ -119,8 +119,8 @@ class GlobalOptimizer(object):
         """
         self._cleanDuplicates(population)
         self.pool.update(population)
-        self.fitness = self.Fitness.calculate(self.pool.uniqueSystems, self.extraData, self.optType,
-                                              self.target.utilities)
+        self.fitness = self.Fitness.calculate(self.pool.uniqueSystems, self.optType,
+                                              self.target.utilities, self.extraData)
         self.pool.updateFitness(self.fitness)
         allFitnesses = self.fitness.getAllFitnesses(self.optType)
         for VO in self.target.variationOperators:
