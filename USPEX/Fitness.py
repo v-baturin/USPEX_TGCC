@@ -49,15 +49,12 @@ class Fitness:
         return fitness[ID] if ID in fitness else None
 
     def getFitnessDirect(self, optType, system: dict):
-        optType = optType.split('.')
-        if len(optType) == 1:
-            optType, = optType
-            value = system[optType] if optType in system else None
-        elif len(optType) == 2:
-            utility, optType = optType
-            value = getattr(getattr(self.utilities, utility), optType)(system)
+        if optType in system:
+            value = system[optType]
         else:
-            raise RuntimeError(f"Too complex fitness {'.'.join(optType)}.")
+            utility, suffix, *extra = optType.split('.')
+            assert not extra, f"Too complex property {optType}."
+            value = getattr(getattr(self.utilities, utility), suffix)(system)
         return value
 
     def calcFitness(self, optType):
@@ -73,6 +70,8 @@ class Fitness:
                 else:
                     funcName = funcName.split('.')
                     arguments = [self.calcFitness(param) for param in funcParams]
+                    size = min(len(arg) for arg in arguments)
+                    arguments = [arg[:size] for arg in arguments]
                     if len(funcName) == 1:
                         funcName, = funcName
                         self._storedFitnesses[optType] = getattr(self, funcName)(*arguments)
@@ -82,17 +81,8 @@ class Fitness:
                     else:
                         raise RuntimeError(f"Too complex fitness {'.'.join(optType)}.")
             elif isinstance(optType, str):
-                value = []
-                for x in self.uniqueSystems:
-                    if optType in x:
-                        value.append(x[optType])
-                    else:
-                        utility, suffix, *extra = optType.split('.')
-                        assert not extra, f"Too complex property {optType}."
-                        value.append(getattr(getattr(self.utilities, utility), suffix)(x))
-                for x in self.extraData:
-                    assert optType in x, f'Missing property {optType} in extra data.'
-                    value.append(x[optType])
+                value = [self.getFitnessDirect(optType, system) for system in self.uniqueSystems] + \
+                        [system[optType] for system in self.extraData if optType in system]
                 # unfortunately simple np.asarray spoils dictionaries
                 if value and isinstance(value[0], Mapping):
                     valueArray = np.empty((len(value,)), dtype=type(value[0]))
