@@ -70,8 +70,10 @@ class Fitness:
                 else:
                     funcName = funcName.split('.')
                     arguments = [self.calcFitness(param) for param in funcParams]
-                    size = min(len(arg) for arg in arguments)
-                    arguments = [arg[:size] for arg in arguments]
+                    size = min(len(arg) for arg in arguments if hasattr(arg, '__len__'))
+                    for i, arg in enumerate(arguments):
+                        if hasattr(arg, '__len__'):
+                            arguments[i] = arg[:size]
                     if len(funcName) == 1:
                         funcName, = funcName
                         self._storedFitnesses[optType] = getattr(self, funcName)(*arguments)
