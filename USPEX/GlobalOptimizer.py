@@ -62,7 +62,8 @@ class GlobalOptimizer(object):
         cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
                                                 mutations=mutations, creations=creations, seeds=seeds)
 
-    def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None, **kwargs):
+    def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None,
+                 extraData=None, **kwargs):
         """
         Initializes the class.
 
@@ -75,16 +76,16 @@ class GlobalOptimizer(object):
         self.pool = SystemPool()
         self.target = Target(self.knownTargetTypes[target['type']], **target)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
-        self.fitness = self.Fitness(self.pool.uniqueSystems, self.target.utilities)
+        self.extraData = extraData
+        self.fitness = self.Fitness(self.pool.uniqueSystems, self.target.utilities, self.extraData)
         self.selectionConfig = selection
         self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target,
-                                                                           self.fingerprintUtility ,**selection)
+                                                                            self.fingerprintUtility, **selection)
 
         self.optType = optType
         self.stopFitness = stopFitness
         if stopSystems is not None and self.target.seeds is not None:
-            Seeds = type(self.target.seeds)
-            seeds = Seeds(self.target.utilities, generations = [0], seedsFolders=[stopSystems])
+            seeds = type(self.target.seeds)(self.target.utilities, generations=[0], seedsFolders=[stopSystems])
             self.stopSystems = seeds()
         else:
             self.stopSystems = None
@@ -118,7 +119,8 @@ class GlobalOptimizer(object):
         """
         self._cleanDuplicates(population)
         self.pool.update(population)
-        self.fitness = self.Fitness.calculate(self.pool.uniqueSystems, self.optType, self.target.utilities)
+        self.fitness = self.Fitness.calculate(self.pool.uniqueSystems, self.optType,
+                                              self.target.utilities, self.extraData)
         self.pool.updateFitness(self.fitness)
         allFitnesses = self.fitness.getAllFitnesses(self.optType)
         for VO in self.target.variationOperators:

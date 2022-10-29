@@ -64,7 +64,10 @@ class SystemsTable(object):
         for column, columnName in self.columns:
             value = fitness.getFitnessByID(column, originalID)
             if value is None:
-                value = fitness.getFitnessDirect(column, system)
+                try:
+                    value = fitness.getFitnessDirect(column, system)
+                except Exception:
+                    pass
             if isinstance(value, float):
                 value = f'{value: 6.3f}'
             elif isinstance(value, Mapping):
@@ -562,9 +565,9 @@ class AtomisticRepresentation(object):
                                        systems_extendedConvexHullPOSCARS)
 
             if csSize == 2:
-                self._drawExtendedConvexHull2(compositionSpace, convexHull, extendedConvexHull)
+                self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
             elif csSize == 3:
-                self._drawExtendedConvexHull3(compositionSpace, convexHull, extendedConvexHull)
+                self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
 
         self._drawProperties(optimizer.pool.uniqueSystems, optimizer.fitness)
 
