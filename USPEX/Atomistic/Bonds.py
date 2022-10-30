@@ -97,15 +97,18 @@ class Bonds:
         else:
             self.goodBonds = None
 
-    def isConnected(self, SYSTEM):
-        strongBonds, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoffType='RcovTimes', cutoffParameter=2)
+    def isConnected(self, SYSTEM, checkConnectivityCutoffFactor=2):
+        """
+        checks if SYSTEM is connected, with bonds graph based on thresholds based on atom valence radii
+        Rcutoff(type_i, type_j) = checkConnectivityCutoffFactor * (Rval(type_i) + Rval(type_j))
+        @param SYSTEM: AtomicStructure instance
+        @param checkConnectivityCutoffFactor: int, float
+        @return: bool
+        """
+        cutoff = self._buildCutoff(SYSTEM, cutoffType='RcovTimes', cutoffParameter=checkConnectivityCutoffFactor)
+        strongBonds, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
         pbc = SYSTEM.getCell().getPBC()
         # TODO: Make cutoffparameter an input parameter
-        # try:
-        #     self.getMinimalGraphBonds(structure)
-        #     res = True
-        # except:
-        #     res = False
         return self._howmanyConnectedComponents(len(SYSTEM), strongBonds + weakBonds, pbc) == 1
 
     def _buildCutoff(self, SYSTEM, cutoffType='Rmax', cutoffParameter=None):
@@ -140,23 +143,23 @@ class Bonds:
         return cutoff
 
     def getAllBondsInCutoff(self, SYSTEM, cutoff):
-        # """
-        # Gets all bonds in SYSTEM, whose lengths do not exceed cut-off
-        # Cut-off (cutoff) parameter is passed to ase.ase.neighborlist.primitive_neighbor_list, hence its format
-        # @param SYSTEM: AtomicStructure instance
-        # @param float or dict
-        #         Cutoff for neighbor search. It can be:
-        #
-        #             * A single float: This is a global cutoff for all elements.
-        #             * A dictionary: This specifies cutoff values for element
-        #               pairs. Specification accepts element numbers of symbols.
-        #               Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
-        #             * A list/array with a per atom value: This specifies the radius of
-        #               an atomic sphere for each atoms. If spheres overlap, atoms are
-        #               within each others neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
-        #               for an example on how to get such a list.
-        # @return: strongBonds: List, weakBonds: List (separated according to goodBonds-based criteria)
-        # """
+        """
+        Gets all bonds in SYSTEM, whose lengths do not exceed cut-off
+        Cut-off (cutoff) parameter is passed to ase.ase.neighborlist.primitive_neighbor_list, hence its format
+        @param SYSTEM: AtomicStructure instance
+        @param float or dict
+                Cutoff for neighbor search. It can be:
+
+                    * A single float: This is a global cutoff for all elements.
+                    * A dictionary: This specifies cutoff values for element
+                      pairs. Specification accepts element numbers of symbols.
+                      Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
+                    * A list/array with a per atom value: This specifies the radius of
+                      an atomic sphere for each atoms. If spheres overlap, atoms are
+                      within each others neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
+                      for an example on how to get such a list.
+        @return: strongBonds: List, weakBonds: List (separated according to goodBonds-based criteria)
+        """
 
         structure = Atoms(symbols=[s.short_name for s in SYSTEM.getAtomTypes()],
                           positions=SYSTEM.getCartesianCoordinates(),
@@ -165,7 +168,7 @@ class Bonds:
 
 
 
-        # 1. Calculate bonds within upper bound to max_bond.
+        # 1. Calculate bonds within cutoff.
         bonds = []
         i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=structure.pbc,
                                                                     cell=structure.get_cell(complete=True),
@@ -175,7 +178,6 @@ class Bonds:
 
         for i, j, dist, vec, dir in zip(i_init, j_init, dists, vecs, dirs):
             # TODO Why we had this less 0.5A and not more than 5A (usually)
-            # if np.abs(dist - tmp_Rval) > cutoff or dist < 0.5:
             if dist < self.lowerBond or j < i:
                 continue
             bonds.append(Bond(atom1=structure[i], atom2=structure[j], dir2=dir))
@@ -183,7 +185,7 @@ class Bonds:
         tmp_bonds = sorted(bonds, key=lambda x: x.delta)
 
         # 2. Group similar bonds and distribute them between strong and weak bonds
-        # according to goodBonds-based criterion
+        #    according to goodBonds-based criterion
         strongBonds = []
         weakBonds = []
 
@@ -217,8 +219,8 @@ class Bonds:
         '''
         Calculates bond graph minimal for the structure to be 3D connected.
 
-        :param SYSTEM:
-        :return:
+        :param SYSTEM: AtomicStructure instance
+        :return: bond graph
         '''
 
         N_atom = len(SYSTEM)
@@ -230,7 +232,6 @@ class Bonds:
 
         # 2. check 3D connectivity, if not satisfied, add more bonds of increasing lengths,
         #    until connectivity is acheived
-
         N_components = self._howmanyConnectedComponents(N_atom, bondIn, pbc=pbc)
 
         while N_components > 1:
