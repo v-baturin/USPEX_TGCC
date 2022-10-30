@@ -115,14 +115,14 @@ class Bonds:
             1. 'Rmax' (default), cutoff Parameter is a simple bond threshold (default: MAX_BOND)
             2. 'RcovTimes' covalent radii times given factor (default: 1)
             3. 'RcovPlus' covalent radii plus increments (default: 0)
-            4. 'RcovPlusGoodBonds' covalent radii plus goodBonds-based increments (default)
+            4. 'StrongBondsOnly' covalent radii plus goodBonds-based increments (default)
         @param SYSTEM: AtomicStructure instance
         @param cutoffFactor: float or int
         @param cutoffRadius: float or int
         @return:
         """
         defaultParameters = {'Rmax': self.maxBond, 'RcovTimes': 1, 'RcovPlus': 0}
-        if cutoffParameter is None and cutoffType != 'RcovPlusGoodBonds':
+        if cutoffParameter is None and cutoffType != 'StrongBondsOnly':
             cutoffParameter = defaultParameters[cutoffType]
 
         goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
@@ -142,7 +142,7 @@ class Bonds:
                 cutoff = {key: val * cutoffParameter for key, val in covalentLengths.items()}
             elif cutoffType == 'RcovPlus':
                 cutoff = {key: val + cutoffParameter for key, val in covalentLengths.items()}
-            elif cutoffType == 'RcovPlusGoodBonds':
+            elif cutoffType == 'StrongBondsOnly':
                 cutoff = {key: val + strongBondThresholds[key] for key, val in covalentLengths.items()}
             else:
                 raise ValueError('Unsupported cutoffType')
