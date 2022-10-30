@@ -105,49 +105,44 @@ class Bonds:
         @param checkConnectivityCutoffFactor: int, float
         @return: bool
         """
-        cutoff = self._buildCutoff(SYSTEM, cutoffType='RcovTimes', cutoffParameter=checkConnectivityCutoffFactor)
+        cutoff = self._buildCutoffDict(SYSTEM, cutoffType='RcovTimes', cutoffParameter=checkConnectivityCutoffFactor)
         strongBonds, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
         pbc = SYSTEM.getCell().getPBC()
         # TODO: Make cutoffparameter an input parameter
         return self._howmanyConnectedComponents(len(SYSTEM), strongBonds + weakBonds, pbc) == 1
 
-    def _buildCutoff(self, SYSTEM, cutoffType='Rmax', cutoffParameter=None):
+    def _buildCutoffDict(self, SYSTEM, cutoffType='RcovPlus', cutoffParameter=None):
         """
-                Gets all bonds in SYSTEM, whose lengths do not exceed
-                cutoffs of one of the following types:
-                    1. 'Rmax' (default), cutoff Parameter is a simple bond threshold (default: MAX_BOND)
-                    2. 'RcovTimes' covalent radii times given factor (default: 1)
-                    3. 'RcovPlus' covalent radii plus increments (default: 0)
-                @param SYSTEM: AtomicStructure instance
-                @param cutoffFactor: float or int
-                @param cutoffRadius: float or int
-                @return:
-                """
-        defaultParameters = {'Rmax': self.maxBond, 'RcovTimes': 1, 'RcovPlus': 0}
+        Builds dictionary of cutoffs compatible with ase.neighborlist.primitive_neighbor_list. Each dict item
+        corresponds to a pair of elements with values of threshold bond distances
+        Cutoffs are build as:
+            1. 'RcovTimes' covalent radii times given factor (default: 1)
+            2. 'RcovPlus' covalent radii plus increment (default: 0)
+        @param SYSTEM: AtomicStructure instance
+        @param cutoffParameter: float or int, factor or increment depending on cutoffType
+        @return: dict of cutoffs consistent with  cutoff dict parameter
+        """
+        defaultParameters = {'RcovTimes': 1, 'RcovPlus': 0}
         if cutoffParameter is None:
             cutoffParameter = defaultParameters[cutoffType]
 
-        if cutoffType == 'Rmax':
-            cutoff = cutoffParameter
+        covalentLengths = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).covalent_radius +
+                                                                      Element(s1.short_name).covalent_radius
+                           for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
+        if cutoffType == 'RcovTimes':
+            cutoff = {key: val * cutoffParameter for key, val in covalentLengths.items()}
+        elif cutoffType == 'RcovPlus':
+            cutoff = {key: val + cutoffParameter for key, val in covalentLengths.items()}
         else:
-            covalentLengths = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).covalent_radius +
-                                                                          Element(s1.short_name).covalent_radius
-                               for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
-            if cutoffType == 'RcovTimes':
-                cutoff = {key: val * cutoffParameter for key, val in covalentLengths.items()}
-            elif cutoffType == 'RcovPlus':
-                cutoff = {key: val + cutoffParameter for key, val in covalentLengths.items()}
-            else:
-                raise ValueError('Unsupported cutoffType')
-            cutoff = {tuple(key) * (3 - len(key)): val for key, val in cutoff.items()}
-        return cutoff
+            raise ValueError('Unsupported cutoffType')
+        return {tuple(key) * (3 - len(key)): val for key, val in cutoff.items()}
 
     def getAllBondsInCutoff(self, SYSTEM, cutoff):
         """
         Gets all bonds in SYSTEM, whose lengths do not exceed cut-off
-        Cut-off (cutoff) parameter is passed to ase.ase.neighborlist.primitive_neighbor_list, hence its format
+        Cut-off parameter is passed to ase.neighborlist.primitive_neighbor_list, hence its format
         @param SYSTEM: AtomicStructure instance
-        @param float or dict
+        @param cutoff: float or dict or list or array
                 Cutoff for neighbor search. It can be:
 
                     * A single float: This is a global cutoff for all elements.
@@ -155,10 +150,10 @@ class Bonds:
                       pairs. Specification accepts element numbers of symbols.
                       Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
                     * A list/array with a per atom value: This specifies the radius of
-                      an atomic sphere for each atoms. If spheres overlap, atoms are
-                      within each others neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
+                      an atomic sphere for each atom. If spheres overlap, atoms are
+                      within each other's neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
                       for an example on how to get such a list.
-        @return: strongBonds: List, weakBonds: List (separated according to goodBonds-based criteria)
+        @return: (strongBonds: List, weakBonds: List) (separated according to goodBonds-based criteria)
         """
 
         structure = Atoms(symbols=[s.short_name for s in SYSTEM.getAtomTypes()],
