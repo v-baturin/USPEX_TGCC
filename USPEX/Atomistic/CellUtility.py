@@ -1030,7 +1030,7 @@ class Cell:
         if self._pbc == other.getPBC():
             matrix = np.eye(3)
             inds = np.nonzero(self._pbc)
-            matrix[inds] = np.linalg.solve(self.getCellVectors().T,other.getCellVectors().T).T[inds]
+            matrix[inds] = np.linalg.solve(self.getCellVectors().T, other.getCellVectors().T).T[inds]
             return matrix
         else:
             return np.eye(3)
@@ -1047,7 +1047,7 @@ class Cell:
         return np.isclose(np.linalg.norm(decompositionMatrix, axis=1).mean(), 1.0, atol=tol)
 
     def getTrigonalizeTransform(self):
-        normCellVectors = self._cellVectors
+        normCellVectors = copy(self._cellVectors)
         normCellVectors /= np.linalg.norm(normCellVectors, axis=1).reshape((-1, 1))
         normCellParameters = Cell(normCellVectors, self._pbc).getCellParameters()
         standardCellVectors = Cell.initFromCellParameters(self._pbc, *normCellParameters).getCellVectors()

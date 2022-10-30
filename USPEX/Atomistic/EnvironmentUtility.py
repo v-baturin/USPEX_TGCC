@@ -44,9 +44,10 @@ class Substrate:
         def assemble(self, molecules, cell, structure=None, **kwargs):
             structure = structure if structure is not None else self._structure
             sysStructure, disassembler = EnvironmentUtility.atomicDisassemblerType.assemble(molecules, cell)
-            fracCoordinates = structure.getCell().cartesianToFractional(sysStructure.getCartesianCoordinates())
-            envCell = structure.getCell()
-            envCoordinates = structure.getCartesianCoordinates()
+            intermediateStructure = structure.makeSupercell(structure.getCell().decomposeCell(sysStructure.getCell()))
+            envCell = intermediateStructure.getCell()
+            fracCoordinates = envCell.cartesianToFractional(sysStructure.getCartesianCoordinates())
+            envCoordinates = intermediateStructure.getCartesianCoordinates()
             fracEnvCoordinates = envCell.cartesianToFractional(envCoordinates)
             offset = np.zeros(3)
             for idx in range(3):
@@ -57,7 +58,8 @@ class Substrate:
                 elif not cell.getPBC()[idx]:
                     offset += currAxis * (1 - (fracCoordinates[:, idx].min() + fracCoordinates[:, idx].max())) / 2
 
-            finalStructure = EnvironmentUtility.structureType(structure.getAtomTypes(), envCoordinates - offset, envCell)
+            finalStructure = EnvironmentUtility.structureType(intermediateStructure.getAtomTypes(),
+                                                              envCoordinates - offset, envCell)
             coordinates = finalStructure.getCartesianCoordinates()[:, self._axis]
             upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
             indices = np.flatnonzero(coordinates < upperBound)
