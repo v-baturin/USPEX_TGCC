@@ -462,13 +462,17 @@ class RadialDistributionUtility(object):
         for s in self.symbols:
             if s not in weights:
                 weights[s] = 0
-        for i in revertIndices:
+        newAtomTypes = []
+        for i, atomType in zip(revertIndices, atomTypes):
+            if np.allclose(atom_fing[i], 0):
+                continue
             value = {s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)}
             for s in self.symbols:
                 if s not in value:
                     value[s] = np.zeros(N_Bins, dtype=float)
             f = Fingerprint(value=value, weights=weights, delta=self.delta)
             atomFings.append(f)
+            newAtomTypes.append(atomType)
 
         order = np.fromiter((atomFing.order for atomFing in atomFings), dtype=float)
         molOrder = np.fromiter((order[np.asarray(inds)].sum()/len(inds) for inds in disassembler.indices), dtype=float)
@@ -479,7 +483,7 @@ class RadialDistributionUtility(object):
                                   delta=self.delta)
         s_order = fingerprint.order
 
-        complexFingerprint = ComplexFingerprint.fromAtomicFingerprints(self.symbols, atomTypes, atomFings,
+        complexFingerprint = ComplexFingerprint.fromAtomicFingerprints(self.symbols, newAtomTypes, atomFings,
                                                                        self.tolerance)
 
         sQE = 0.0
@@ -488,7 +492,7 @@ class RadialDistributionUtility(object):
         for i in range(numIons.shape[0]):
             if numIons[i] > 1:
                 tmp = 0
-                indices = np.flatnonzero(inverse == i)
+                indices = np.flatnonzero(newAtomTypes == numIons[i])
                 comb = list(combinations(indices, 2))
                 for j1, j2 in comb:
                     tmp_fing1 = atomFings[j1]
@@ -503,7 +507,8 @@ class RadialDistributionUtility(object):
 
                     tmp += (1 - dist) * np.log(1 - dist)
 
-                sQE += weight[i] * tmp / len(comb)
+                if len(comb) > 0:
+                    sQE += weight[i] * tmp / len(comb)
 
         system['radialDistribitionUtility.order'] = molOrder
         system['radialDistribitionUtility.averageOrder'] = a_order
