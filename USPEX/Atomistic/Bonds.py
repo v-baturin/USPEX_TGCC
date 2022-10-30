@@ -106,7 +106,7 @@ class Bonds:
         #     res = True
         # except:
         #     res = False
-        return self._howmanyConnectedComponents(len(SYSTEM), strongBonds + weakBonds, pbc)
+        return self._howmanyConnectedComponents(len(SYSTEM), strongBonds + weakBonds, pbc) == 1
 
     def getAllBondsInCutoff(self, SYSTEM, cutoffType='Rmax', cutoffParameter=None):
         """
@@ -186,8 +186,7 @@ class Bonds:
                     bonds_remain.append(b)
             tmp_bonds = bonds_remain
             a, b = bonds_one_type[0].symbols
-            strongBondThreshold = -0.37 * np.log(goodBonds[frozenset((a, b))])
-            if min([bond.delta for bond in bonds_one_type]) < strongBondThreshold:
+            if min([bond.delta for bond in bonds_one_type]) < strongBondThresholds[frozenset((a, b))]:
                 strongBonds.append(bonds_one_type)  # Add by group
             else:
                 weakBonds.append(bonds_one_type)
