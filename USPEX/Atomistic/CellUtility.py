@@ -610,6 +610,8 @@ class Cell:
         :raises RuntimeError: if used on 0D or 3D structure.
         :return: Cell with lattice vectors with non-periodic (for 2D) or periodic (1D) aligned along axis.
         """
+        if axis is None:
+            return self
         if (self.dim == 2) or (self.dim == 1):
             assert np.linalg.norm(axis) >= 1e-7
             a = self.getCellVectorsAntiPBC()[0] if self.dim == 2 else self.getCellVectorsPBC()[0]
