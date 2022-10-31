@@ -492,7 +492,7 @@ class RadialDistributionUtility(object):
         for i in range(numIons.shape[0]):
             if numIons[i] > 1:
                 tmp = 0
-                indices = np.flatnonzero(newAtomTypes == numIons[i])
+                indices = np.flatnonzero(np.equal(newAtomTypes, uniqueSimbols[i]))
                 comb = list(combinations(indices, 2))
                 for j1, j2 in comb:
                     tmp_fing1 = atomFings[j1]
@@ -689,7 +689,7 @@ def _make_matrices(coor: np.ndarray, molIndices: list, envIndices,
         tmp_dist = np.delete(tmp_dist, to_delete[1], axis=1)
         tmp_type = np.delete(tmp_type, to_delete[1], axis=0)
 
-        if tmp_dist.shape[1] > 0:  # sometimes you can meet an isolated atom
+        if tmp_dist.shape[1] > 0 and i not in envIndices:  # sometimes you can meet an isolated atom
             tmp2 = np.zeros((tmp_dist.shape[1], 4))
             tmp2[:, 0] = i
             tmp2[:, 1] = types[i]
