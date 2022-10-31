@@ -116,6 +116,10 @@ class RandSym:
         distCoeff = 1.0
 
         while True:
+            envAssembler = np.random.choice(self.environmentUtility.assemblers) if self.environmentUtility.assemblers\
+                else None
+            envCell = envAssembler.getCell() if envAssembler is not None else None
+
             endTime = time()
             failedTime = endTime - startTime
             if failedDist > MAX_RANDOM_FAILED_DIST or failedTime > MAX_RANDOM_TIME:
@@ -156,7 +160,8 @@ class RandSym:
                     estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
                                                                                               self.conditions.externalPressure)
                 if sum(self.splitInto) > 3:  # split cell
-                    lat = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons)).getCellParameters()
+                    lat = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons),
+                                                         baseCell=envCell).getCellParameters()
                     lat, candidate = splitBigCell(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, lat,
                                                   np.random.choice(self.splitInto), numIons, nsym, self.sym_coef)
                 else:
@@ -165,12 +170,11 @@ class RandSym:
                                                     estimatedVolume, self.sym_coef)
                 name, cell, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
-                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons))
+                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons), baseCell=envCell)
                 for i in range(self.attemptsRotation):
                     offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                    if self.environmentUtility.assemblers:
-                        offspring['environment'] = np.random.choice(self.environmentUtility.assemblers).assemble(
-                            **offspring)
+                    if envAssembler is not None:
+                        offspring['environment'] = envAssembler.assemble(**offspring)
                     atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                     if disassembler.environment is not None:

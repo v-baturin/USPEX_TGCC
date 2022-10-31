@@ -88,16 +88,12 @@ class CellUtility:
                 assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
                 assert axis is not None and cellVolume is None
-            else:
-                assert axis is not None
         elif self._dim == 1:
             assert thickness is not None
             if cellVectors is not None:
                 assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
                 assert axis is not None and cellVolume is None
-            else:
-                assert axis is not None
         elif self._dim == 0:
             assert cellVectors is None and cellParameters is None and cellVolume is None and axis is None
         else:
@@ -198,7 +194,7 @@ class CellUtility:
         """
         return self._volume
 
-    def adjustCell(self, cellVectors, estimatedVolume, numAtoms):
+    def adjustCell(self, cellVectors, estimatedVolume, numAtoms, baseCell=None):
         """
         Adjust given unit cell according calculation parameters, provided volume and number of atoms.
         If cell in calculation is fixed returns the fixed cell.
@@ -212,9 +208,19 @@ class CellUtility:
         :return: **Cell** object with adjusted parameters.
         """
 
+        baseCell = baseCell if self._cell is None else self._cell
         if self._dim == 1 or self._dim == 2:
-            cellVectors = Cell(cellVectors, self._pbc).getAlignedCell(self._axis).getCellVectors()
-        if self._cell is None:
+            if self._axis is None:
+                if self._dim == 1:
+                    axis = baseCell.getCellVectorsPBC()[0]
+                    axis /= np.linalg.norm(axis)
+                else:
+                    axis = baseCell.getCellVectorsAntiPBC()[0]
+                    axis /= np.linalg.norm(axis)
+            else:
+                axis = self._axis
+            cellVectors = Cell(cellVectors, self._pbc).getAlignedCell(axis).getCellVectors()
+        if baseCell is None:
             cell = Cell(cellVectors, self._pbc)
             d = np.power(estimatedVolume / numAtoms, 1.0 / 3.0)
             if self._dim == 3:
@@ -244,20 +250,20 @@ class CellUtility:
         elif self._supercellDegree is not None:
             cell = Cell(cellVectors, self._pbc)
             if self._dim == 3:
-                factor = cell.getVolume() / self._cell.getVolume()
+                factor = cell.getVolume() / baseCell.getVolume()
             elif self._dim == 2:
-                factor = cell.getArea() / self._cell.getArea()
+                factor = cell.getArea() / baseCell.getArea()
             elif self._dim == 1:
-                factor = cell.getLength() / self._cell.getLength()
+                factor = cell.getLength() / baseCell.getLength()
             else:
                 raise RuntimeError(f"Wrong dim {self._dim}.")
             reconstruction = self.getRandomSupercell(int(np.round(factor)))
-            cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
+            cell = Cell(reconstruction.dot(baseCell.getCellVectors()), self._pbc)
         else:
-            cell = self.getCell()
+            cell = copy(baseCell)
         return cell
 
-    def getRandomCell(self, estimatedVolume, numAtoms):
+    def getRandomCell(self, estimatedVolume, numAtoms, baseCell=None):
         """
         For given volume and number of atoms creates random unit cell with appropriate size and periodic boundary conditions.
 
@@ -266,7 +272,8 @@ class CellUtility:
 
         :return: **Cell** object with appropriate parameters.
         """
-        if self._cell is None:
+        baseCell = baseCell if self._cell is None else self._cell
+        if baseCell is None:
             r2d = 180 / np.pi
             if self._dim == 3:
                 a, b, c = np.random.random(3) + 0.5
@@ -287,14 +294,14 @@ class CellUtility:
                 cell = Cell.initFromCellParameters(self._pbc)
             else:
                 raise RuntimeError(f"Wrong pbc {self._pbc}.")
-            cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms)
+            cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms, baseCell)
             if self._thickness is not None:
                 cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
         elif self._supercellDegree is not None:
             reconstruction = self.getRandomSupercell()
-            cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
+            cell = Cell(reconstruction.dot(baseCell.getCellVectors()), self._pbc)
         else:
-            cell = self.getCell()
+            cell = copy(baseCell)
         return cell
 
     def getHybridCell(self, cell1, cell2, fraction):

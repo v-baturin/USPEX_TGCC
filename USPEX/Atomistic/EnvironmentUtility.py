@@ -41,6 +41,9 @@ class Substrate:
             assert sum(antiPBC) == 1
             self._axis = np.flatnonzero(antiPBC)[0]
 
+        def getCell(self):
+            return self._structure.getCell()
+
         def assemble(self, molecules, cell, structure=None, **kwargs):
             structure = structure if structure is not None else self._structure
             sysStructure, disassembler = EnvironmentUtility.atomicDisassemblerType.assemble(molecules, cell)
@@ -164,6 +167,9 @@ class Interface:
             upperAxis = np.flatnonzero(antiPBC)[0]
             assert lowerAxis == upperAxis
             self._axis = lowerAxis
+
+        def getCell(self):
+            return None
 
         def _calculateUpperOffset(self, coords, sysPBC=None):
             """
@@ -424,6 +430,9 @@ class Bulk:
                 self._indices = np.arange(len(structure))
             else:
                 self._indices = np.array([], dtype=int)
+
+        def getCell(self):
+            return self._structure.getCell()
 
         def assemble(self, molecules, cell, **kwargs):
             return Bulk(self._structure, self._indices, self)

@@ -68,6 +68,10 @@ class RandSymPyXtal:
         startTime = time()
         failCounter = 0
         while True:
+            envAssembler = np.random.choice(self.environmentUtility.assemblers) if self.environmentUtility.assemblers\
+                else None
+            envCell = envAssembler.getCell() if envAssembler is not None else None
+
             endTime = time()
             failedTime = endTime - startTime
             if failCounter > MAX_PYXTAL_ATTEMPTS or failedTime > MAX_RANDOM_TIME:
@@ -77,7 +81,7 @@ class RandSymPyXtal:
             logger.debug(f"Trying {nsym} symmetry")
 
             #randcell is an auxiliary cell object to get required info from
-            randcell = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons))
+            randcell = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons), baseCell=envCell)
             if dim == 3 or dim == 0:
                 lat = None
             elif dim == 2:
@@ -102,12 +106,11 @@ class RandSymPyXtal:
 
             if structurePyxtal.valid:
                 tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
-                cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons))
+                cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons), baseCell=envCell)
                 operations = dict(zip(symbols, operations))
                 offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                if self.environmentUtility.assemblers:
-                    offspring['environment'] = np.random.choice(self.environmentUtility.assemblers).assemble(
-                        **offspring)
+                if envAssembler is not None:
+                    offspring['environment'] = envAssembler.assemble(**offspring)
                 atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if disassembler.environment is not None:

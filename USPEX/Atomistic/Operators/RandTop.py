@@ -42,6 +42,9 @@ class RandTop:
 
     def __call__(self, *args, **kwargs):
         composition = self.compositionSpace.randomComposition()
+        envAssembler = np.random.choice(self.environmentUtility.assemblers) if self.environmentUtility.assemblers \
+            else None
+        envCell = envAssembler.getCell() if envAssembler is not None else None
 
         symbols = list(composition.keys())
         numIons = list(composition[symbol] for symbol in symbols)
@@ -100,7 +103,8 @@ class RandTop:
                                         elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
                                         estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
                                                                                                                   self.conditions.externalPressure)
-                                    cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber)
+                                    cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber,
+                                                                       baseCell=envCell)
                                     operations = dict(zip(symbols, operations))
                                     all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                     attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
@@ -116,9 +120,8 @@ class RandTop:
                                         if len(molecules) != totalAtomNumber:
                                             continue
                                         elif self.environmentUtility.assemblers:
-                                            offspring['environment'] = np.random.choice(
-                                                self.environmentUtility.assemblers).assemble(
-                                                **offspring)
+                                            if envAssembler is not None:
+                                                offspring['environment'] = envAssembler.assemble(**offspring)
                                         atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                                         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                                         if disassembler.environment is not None:
