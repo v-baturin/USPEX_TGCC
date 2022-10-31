@@ -127,7 +127,7 @@ class Bonds:
             cutoffParameter = defaultParameters[cutoffType]
 
         covalentLengths = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).covalent_radius +
-                                                                      Element(s1.short_name).covalent_radius
+                                                                      Element(s2.short_name).covalent_radius
                            for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
         if cutoffType == 'RcovTimes':
             cutoff = {key: val * cutoffParameter for key, val in covalentLengths.items()}
