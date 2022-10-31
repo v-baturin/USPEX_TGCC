@@ -167,18 +167,20 @@ class RandSym:
                 operations = dict(zip(symbols, operations))
                 cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons))
                 for i in range(self.attemptsRotation):
-                    system = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                    self.environmentUtility.putEnvironment(system)
-                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
+                    offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                    if self.environmentUtility.assemblers:
+                        offspring['environment'] = np.random.choice(self.environmentUtility.assemblers).assemble(
+                            **offspring)
+                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                     if disassembler.environment is not None:
                         inds = disassembler.envIndices
                         atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                     if np.all(atomDistances >= distCoeff * minDistMatrix):
-                        self.conditions.putConditions(system)
-                        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**system)
+                        self.conditions.putConditions(offspring)
+                        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring)
                         if self.bonds.isConnected(structure):
-                            return (system,)
+                            return offspring,
             except Exception as e:
                 logger.debug(e, exc_info=True)
 

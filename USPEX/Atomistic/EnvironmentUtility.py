@@ -519,26 +519,8 @@ class EnvironmentUtility:
         """
 
         """
-        if environments is None:
-            environments = []
-        self._environmentAssemblers = [self.supportedEnvironments.get(environment['type']).Assembler(**environment)
-                                       for environment in environments]
-
-    def getEnvironments(self):
-        return self._environmentAssemblers
-
-    def putEnvironment(self, system, environment=None):
-        """
-        Put environment in dictionary representing system.
-
-        :param system: system dictionary.
-
-        """
-        if environment is not None:
-            system['environment'] = environment
-        elif self._environmentAssemblers:
-            assembler = np.random.choice(self._environmentAssemblers)
-            system['environment'] = assembler.assemble(**system)
+        self.assemblers = [self.supportedEnvironments.get(environment['type']).Assembler(**environment)
+                           for environment in (environments if environments is not None else [])]
 
 
 # TODO create a unittest for all environment types

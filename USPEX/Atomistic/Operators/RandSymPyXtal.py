@@ -104,18 +104,20 @@ class RandSymPyXtal:
                 tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
                 cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons))
                 operations = dict(zip(symbols, operations))
-                system = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                self.environmentUtility.putEnvironment(system)
-                atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
+                offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                if self.environmentUtility.assemblers:
+                    offspring['environment'] = np.random.choice(self.environmentUtility.assemblers).assemble(
+                        **offspring)
+                atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                 minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                 if disassembler.environment is not None:
                     inds = disassembler.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
-                    self.conditions.putConditions(system)
-                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**system)
+                    self.conditions.putConditions(offspring)
+                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring)
                     if self.bonds.isConnected(structure):
-                        return (system,)
+                        return offspring,
 
             failCounter += 1
 
