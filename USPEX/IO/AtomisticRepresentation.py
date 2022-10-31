@@ -280,7 +280,7 @@ class AtomisticRepresentation(object):
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
         isVarComp = not ut.compositionSpace.isFixedComposition
         dim = ut.cellUtility.getDim()
-        hasEnv = len(ut.environmentUtility.getEnvironments()) > 0
+        hasEnv = len(ut.environmentUtility.assemblers) > 0
 
 
         # ---------------------------------------------------------------------------
@@ -528,7 +528,7 @@ class AtomisticRepresentation(object):
                     fp.write(table_gs.table.get_string() + '\n')
 
             for comp, systems_gs_POSCARS in goodStructuresPOSCARS.items():
-                self.writeAtomicStructures(pj(goodStructresFolder, f'{"_".join(str(x) for x in comp)}.POSCARS'),
+                self.writeAtomicStructures(pj(goodStructresFolder, f'{"_".join(str(x) for x in comp)}_POSCARS'),
                                            systems_gs_POSCARS)
 
         if self.presentConvexHull:

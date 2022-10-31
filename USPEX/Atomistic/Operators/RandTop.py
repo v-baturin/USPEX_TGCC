@@ -42,6 +42,9 @@ class RandTop:
 
     def __call__(self, *args, **kwargs):
         composition = self.compositionSpace.randomComposition()
+        envAssembler = np.random.choice(self.environmentUtility.assemblers) if self.environmentUtility.assemblers \
+            else None
+        envCell = envAssembler.getCell() if envAssembler is not None else None
 
         symbols = list(composition.keys())
         numIons = list(composition[symbol] for symbol in symbols)
@@ -100,23 +103,26 @@ class RandTop:
                                         elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
                                         estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
                                                                                                                   self.conditions.externalPressure)
-                                    cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber)
+                                    cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber,
+                                                                       baseCell=envCell)
                                     operations = dict(zip(symbols, operations))
                                     all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                     attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
 
                                     for i in range(attemptsRotation):
                                         try:
-                                            system = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                                            offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
                                         except ValueError as e:
                                             logger.debug(e, exc_info=True)
                                             raise RuntimeError("RandTop failed.")
-                                        molecules = system['molecules']
-                                        cell = system['cell']
+                                        molecules = offspring['molecules']
+                                        cell = offspring['cell']
                                         if len(molecules) != totalAtomNumber:
                                             continue
-                                        self.environmentUtility.putEnvironment(system)
-                                        atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
+                                        elif self.environmentUtility.assemblers:
+                                            if envAssembler is not None:
+                                                offspring['environment'] = envAssembler.assemble(**offspring)
+                                        atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                                         minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                                         if disassembler.environment is not None:
                                             inds = disassembler.envIndices
@@ -131,11 +137,11 @@ class RandTop:
                                                     break
                                             else:
                                                 self.arxiv[name].append(all_coordinates)
-                                                self.conditions.putConditions(system)
+                                                self.conditions.putConditions(offspring)
                                                 structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(
-                                                    **system)
+                                                    **offspring)
                                                 if self.bonds.isConnected(structure):
-                                                    return (system,)
+                                                    return offspring,
         raise RuntimeError("RandTop failed.")
 
 

@@ -47,8 +47,12 @@ class Heredity:
         composition2 = self.simpleMoleculeUtility.composition(system2)
         order2 = self.radialDistributionUtility.order(system2)
 
+        parentEnv = np.random.choice((system1, system2)) \
+            if 'environment' in system1 and 'environment' in system2 else None
+
         for i in range(self.attempts):
-            outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell()
+            outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell() \
+                if parentEnv is None else parentEnv['cell']
             if self.cellUtility.isGoodCell(outputCell):
                 axis = np.random.randint(3)
                 if self.nslabs is None:
@@ -118,18 +122,19 @@ class Heredity:
                 moleculeTypes = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in molecules]
                 composition = Counter(dict(zip(*np.unique(moleculeTypes, return_counts=True))))
                 if composition == desiredComposition:
-                    system = {'molecules': molecules, 'cell': outputCell}
-                    self.environmentUtility.putEnvironment(system)
-                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
+                    offspring = {'molecules': molecules, 'cell': outputCell}
+                    if parentEnv is not None:
+                        offspring['environment'] = parentEnv['environment']
+                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                     minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
                     if disassembler.environment is not None:
                         inds = disassembler.envIndices
                         atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                     if np.all(atomDistances >= minDistMatrix):
-                        self.conditions.putConditions(system)
-                        # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
+                        self.conditions.putConditions(offspring)
+                        # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
                         # if self.bonds.isConnected(structure):
-                        return (system,)
+                        return offspring,
 
 
         raise RuntimeError("Heredity failed.")

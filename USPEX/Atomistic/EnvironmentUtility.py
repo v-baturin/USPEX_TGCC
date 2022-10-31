@@ -41,12 +41,16 @@ class Substrate:
             assert sum(antiPBC) == 1
             self._axis = np.flatnonzero(antiPBC)[0]
 
+        def getCell(self):
+            return self._structure.getCell()
+
         def assemble(self, molecules, cell, structure=None, **kwargs):
             structure = structure if structure is not None else self._structure
             sysStructure, disassembler = EnvironmentUtility.atomicDisassemblerType.assemble(molecules, cell)
-            fracCoordinates = structure.getCell().cartesianToFractional(sysStructure.getCartesianCoordinates())
-            envCell = structure.getCell()
-            envCoordinates = structure.getCartesianCoordinates()
+            intermediateStructure = structure.makeSupercell(structure.getCell().decomposeCell(sysStructure.getCell()))
+            envCell = intermediateStructure.getCell()
+            fracCoordinates = envCell.cartesianToFractional(sysStructure.getCartesianCoordinates())
+            envCoordinates = intermediateStructure.getCartesianCoordinates()
             fracEnvCoordinates = envCell.cartesianToFractional(envCoordinates)
             offset = np.zeros(3)
             for idx in range(3):
@@ -57,7 +61,8 @@ class Substrate:
                 elif not cell.getPBC()[idx]:
                     offset += currAxis * (1 - (fracCoordinates[:, idx].min() + fracCoordinates[:, idx].max())) / 2
 
-            finalStructure = EnvironmentUtility.structureType(structure.getAtomTypes(), envCoordinates - offset, envCell)
+            finalStructure = EnvironmentUtility.structureType(intermediateStructure.getAtomTypes(),
+                                                              envCoordinates - offset, envCell)
             coordinates = finalStructure.getCartesianCoordinates()[:, self._axis]
             upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
             indices = np.flatnonzero(coordinates < upperBound)
@@ -162,6 +167,9 @@ class Interface:
             upperAxis = np.flatnonzero(antiPBC)[0]
             assert lowerAxis == upperAxis
             self._axis = lowerAxis
+
+        def getCell(self):
+            return None
 
         def _calculateUpperOffset(self, coords, sysPBC=None):
             """
@@ -423,6 +431,9 @@ class Bulk:
             else:
                 self._indices = np.array([], dtype=int)
 
+        def getCell(self):
+            return self._structure.getCell()
+
         def assemble(self, molecules, cell, **kwargs):
             return Bulk(self._structure, self._indices, self)
 
@@ -517,26 +528,8 @@ class EnvironmentUtility:
         """
 
         """
-        if environments is None:
-            environments = []
-        self._environmentAssemblers = [self.supportedEnvironments.get(environment['type']).Assembler(**environment)
-                                       for environment in environments]
-
-    def getEnvironments(self):
-        return self._environmentAssemblers
-
-    def putEnvironment(self, system, environment=None):
-        """
-        Put environment in dictionary representing system.
-
-        :param system: system dictionary.
-
-        """
-        if environment is not None:
-            system['environment'] = environment
-        elif self._environmentAssemblers:
-            assembler = np.random.choice(self._environmentAssemblers)
-            system['environment'] = assembler.assemble(**system)
+        self.assemblers = [self.supportedEnvironments.get(environment['type']).Assembler(**environment)
+                           for environment in (environments if environments is not None else [])]
 
 
 # TODO create a unittest for all environment types
