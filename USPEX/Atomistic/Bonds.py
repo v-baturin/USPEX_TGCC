@@ -97,15 +97,20 @@ class Bonds:
         else:
             self.goodBonds = None
 
-    def isConnected(self, SYSTEM, checkConnectivityCutoffFactor=2):
+    def isConnected(self, SYSTEM, cutoffType='manual', cutoffParameter=None):
         """
         checks if SYSTEM is connected, with bonds graph based on thresholds based on atom valence radii
         Rcutoff(type_i, type_j) = checkConnectivityCutoffFactor * (Rval(type_i) + Rval(type_j))
+
         @param SYSTEM: AtomicStructure instance
-        @param checkConnectivityCutoffFactor: int, float
+        @param cutoffType: str
+        @param cutoffParameter: int, float, None
         @return: bool
         """
-        cutoff = self._buildCutoffDict(SYSTEM, cutoffType='RcovTimes', cutoffParameter=checkConnectivityCutoffFactor)
+        if cutoffType == 'manual':
+            return cutoffParameter
+        else:
+            cutoff = self._buildCutoffDict(SYSTEM, cutoffType=cutoffType, cutoffParameter=cutoffParameter)
         strongBonds, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
         pbc = SYSTEM.getCell().getPBC()
         # TODO: Make cutoffparameter an input parameter
