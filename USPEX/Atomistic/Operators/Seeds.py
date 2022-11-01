@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 import os
-import toml
 
 from ase.io.vasp import read_vasp
 from time import time
