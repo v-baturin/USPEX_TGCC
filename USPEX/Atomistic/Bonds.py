@@ -108,7 +108,9 @@ class Bonds:
         @return: bool
         """
         if cutoffType == 'manual':
-            return cutoffParameter
+            cutoff = cutoffParameter
+        elif cutoffType == 'off':
+            return True
         else:
             cutoff = self._buildCutoffDict(SYSTEM, cutoffType=cutoffType, cutoffParameter=cutoffParameter)
         strongBonds, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
