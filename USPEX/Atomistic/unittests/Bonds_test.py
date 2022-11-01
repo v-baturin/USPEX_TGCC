@@ -844,5 +844,21 @@ class test_BondHardness(unittest.TestCase):
         self.assertTrue(bonds.isConnected(system, cutoffType='RcovTimes', cutoffParameter=1.5))
         self.assertTrue(bonds.isConnected(system, cutoffType='strongBonds'))
 
+    def test_vanderWaalsCutoff(self):
+        bonds = Bonds()
+        tmp = read_vasp(pj(CURRENT_DIR, 'P11H3_badstruct.POSCARS'))
+        cell = Cell(tmp.get_cell().array, (0, 0, 0))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell=cell)
+        self.assertFalse(bonds.isConnected(system, cutoffType='vdw'))
+
+        tmp = read_vasp(pj(CURRENT_DIR, 'graphite2.POSCAR'))
+        cell3d = Cell(tmp.get_cell().array, (1, 1, 1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell3d.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell=cell3d)
+        self.assertTrue(bonds.isConnected(system, cutoffType='vdw'))
+
 
 
