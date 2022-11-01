@@ -111,6 +111,19 @@ class Bonds:
         # TODO: Make cutoffparameter an input parameter
         return self._howmanyConnectedComponents(len(SYSTEM), strongBonds + weakBonds, pbc) == 1
 
+    def _strongBondsMaxDelta(self, SYSTEM):
+        """
+        A bond ij is considered strong if
+        |r_ij| - (Rcov(Type_i) + Rcov(Type_j)) <= goodBondsDelta(Type_i,Type_j))
+        @param SYSTEM:
+        @return:
+        """
+        goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
+                     for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} \
+            if self.goodBonds is None else self.goodBonds
+
+        return {key: - 0.37 * np.log(val) for key, val in goodBonds.items()}
+
     def _buildCutoffDict(self, SYSTEM, cutoffType='RcovPlus', cutoffParameter=None):
         """
         Builds dictionary of cutoffs compatible with ase.neighborlist.primitive_neighbor_list. Each dict item
@@ -183,14 +196,7 @@ class Bonds:
         #    according to goodBonds-based criterion
         strongBonds = []
         weakBonds = []
-
-        goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
-                     for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} \
-            if self.goodBonds is None else self.goodBonds
-
-        strongBondThresholds = {key: - 0.37 * np.log(goodBonds[key])
-                                for key in goodBonds.keys()}
-
+        strongBondMaxDelta = self._strongBondsMaxDelta(SYSTEM)
         while tmp_bonds:
             bond = tmp_bonds.pop(0)
             bonds_one_type = [bond]
@@ -203,7 +209,7 @@ class Bonds:
                     bonds_remain.append(b)
             tmp_bonds = bonds_remain
             a, b = bonds_one_type[0].symbols
-            if min([bond.delta for bond in bonds_one_type]) < strongBondThresholds[frozenset((a, b))]:
+            if min([bond.delta for bond in bonds_one_type]) < strongBondMaxDelta[frozenset((a, b))]:
                 strongBonds.append(bonds_one_type)  # Add by group
             else:
                 weakBonds.append(bonds_one_type)
