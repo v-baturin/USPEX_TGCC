@@ -182,7 +182,7 @@ class AtomicStructure:
         atomTypes = copy(self._atomTypes)
         coordinates = copy(self._coordinates)
         cell = copy(self._cell)
-        matrix = np.asarray(matrix, dtype=np.int16)
+        matrix = np.asarray(np.round(matrix), dtype=np.int16)
         if matrix.ndim == 1:
             matrix = np.array(matrix * np.eye(3), dtype=np.int16)
 

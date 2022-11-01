@@ -26,14 +26,15 @@ presetFitness[('aging', 'values')] = ('plus', 'values', ('multiply', ('minus', (
 
 class Fitness:
 
-    def __init__(self, uniqueSystems, utilities):
+    def __init__(self, uniqueSystems, utilities, extraData=None):
         self.uniqueSystems = uniqueSystems
+        self.extraData = extraData if extraData is not None else []
         self.utilities = utilities
         self._storedFitnesses = {}
 
     @staticmethod
-    def calculate(uniqueSystems, optType, utilities):
-        fitness = Fitness(uniqueSystems, utilities)
+    def calculate(uniqueSystems, optType, utilities, extraData=None):
+        fitness = Fitness(uniqueSystems, utilities, extraData)
         fitness.calcFitness(optType)
         return fitness
 
@@ -48,15 +49,12 @@ class Fitness:
         return fitness[ID] if ID in fitness else None
 
     def getFitnessDirect(self, optType, system: dict):
-        optType = optType.split('.')
-        if len(optType) == 1:
-            optType, = optType
-            value = system[optType] if optType in system else None
-        elif len(optType) == 2:
-            utility, optType = optType
-            value = getattr(getattr(self.utilities, utility), optType)(system)
+        if optType in system:
+            value = system[optType]
         else:
-            raise RuntimeError(f"Too complex fitness {'.'.join(optType)}.")
+            utility, suffix, *extra = optType.split('.')
+            assert not extra, f"Too complex property {optType}."
+            value = getattr(getattr(self.utilities, utility), suffix)(system)
         return value
 
     def calcFitness(self, optType):
@@ -72,6 +70,10 @@ class Fitness:
                 else:
                     funcName = funcName.split('.')
                     arguments = [self.calcFitness(param) for param in funcParams]
+                    size = min(len(arg) for arg in arguments if hasattr(arg, '__len__'))
+                    for i, arg in enumerate(arguments):
+                        if hasattr(arg, '__len__'):
+                            arguments[i] = arg[:size]
                     if len(funcName) == 1:
                         funcName, = funcName
                         self._storedFitnesses[optType] = getattr(self, funcName)(*arguments)
@@ -81,16 +83,8 @@ class Fitness:
                     else:
                         raise RuntimeError(f"Too complex fitness {'.'.join(optType)}.")
             elif isinstance(optType, str):
-                optType = optType.split('.')
-                if len(optType) == 1:
-                    optType, = optType
-                    value = [x[optType] for x in self.uniqueSystems]
-                elif len(optType) == 2:
-                    utility, optType = optType
-                    value = [getattr(getattr(self.utilities, utility), optType)(x) for x in self.uniqueSystems]
-                    optType = '.'.join((utility, optType))
-                else:
-                    raise RuntimeError(f"Too complex fitness {'.'.join(optType)}.")
+                value = [self.getFitnessDirect(optType, system) for system in self.uniqueSystems] + \
+                        [system[optType] for system in self.extraData if optType in system]
                 # unfortunately simple np.asarray spoils dictionaries
                 if value and isinstance(value[0], Mapping):
                     valueArray = np.empty((len(value,)), dtype=type(value[0]))

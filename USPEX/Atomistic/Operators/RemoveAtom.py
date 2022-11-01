@@ -20,7 +20,6 @@ class RemoveAtom:
         ID = system['ID']
         molecules = system['molecules']
         cell = system['cell']
-        environment = system['environment'] if 'environment' in system else None
         if 'tagsAddRemove' not in system:
             system['tagsAddRemove'] = [[] for _ in range(len(molecules))]
         tagsAddRemove = system['tagsAddRemove']
@@ -55,7 +54,8 @@ class RemoveAtom:
                     tuple(np.meshgrid(inds, inds))]
             composition = self.simpleMoleculeUtility.composition(offspring)
             if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-                self.environmentUtility.putEnvironment(offspring, environment)
+                if 'environment' in system:
+                    offspring['environment'] = system['environment']
                 self.conditions.putConditions(offspring)
                 tagsAddRemove[molInd].append('removed')
                 offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)
