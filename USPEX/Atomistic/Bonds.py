@@ -131,21 +131,26 @@ class Bonds:
         Cutoffs are build as:
             1. 'RcovTimes' covalent radii times given factor (default: 1)
             2. 'RcovPlus' covalent radii plus increment (default: 0)
+            3. 'strongBonds' cutoff based on classic USPEX checkConnectivity
         @param SYSTEM: AtomicStructure instance
         @param cutoffParameter: float or int, factor or increment depending on cutoffType
         @return: dict of cutoffs consistent with  cutoff dict parameter
         """
-        defaultParameters = {'RcovTimes': 1, 'RcovPlus': 0}
-        if cutoffParameter is None:
+        cutoffType = cutoffType.casefold()
+        defaultParameters = {'rcovtimes': 1, 'rcovplus': 0}
+        if cutoffParameter is None and cutoffType in defaultParameters.keys():
             cutoffParameter = defaultParameters[cutoffType]
 
         covalentLengths = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).covalent_radius +
                                                                       Element(s2.short_name).covalent_radius
                            for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
-        if cutoffType == 'RcovTimes':
+        if cutoffType == 'rcovtimes':
             cutoff = {key: val * cutoffParameter for key, val in covalentLengths.items()}
-        elif cutoffType == 'RcovPlus':
+        elif cutoffType == 'rcovplus':
             cutoff = {key: val + cutoffParameter for key, val in covalentLengths.items()}
+        elif 'strong' in cutoffType:
+            strongMaxDelta = self._strongBondsMaxDelta(SYSTEM)
+            cutoff = {key: val + strongMaxDelta[key] for key, val in covalentLengths.items()}
         else:
             raise ValueError('Unsupported cutoffType')
         return {tuple(key) * (3 - len(key)): val for key, val in cutoff.items()}
