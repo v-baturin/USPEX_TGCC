@@ -87,7 +87,7 @@ class Bond(object):
 class Bonds:
 
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
-                 cutoff: Union[str, Dict, float] = 'vdw'):
+                 cutoff: Union[str, Dict, float, int] = 'vdw'):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
         self.maxBond = maxBond if maxBond is not None else MAX_BOND
         self.lowerBond = lowerBond if lowerBond is not None else LOWER_BOND
@@ -105,8 +105,7 @@ class Bonds:
         Rcutoff(type_i, type_j) = checkConnectivityCutoffFactor * (Rval(type_i) + Rval(type_j))
 
         @param SYSTEM: AtomicStructure instance
-        @param cutoffType: str
-        @param cutoffParameter: int, float, None
+        @param cutoff: str, dict, float, int
         @return: bool
         """
         cutoff = self.buildCutoffDict(SYSTEM, cutoff)
