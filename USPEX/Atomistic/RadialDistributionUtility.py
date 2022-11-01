@@ -463,8 +463,10 @@ class RadialDistributionUtility(object):
             if s not in weights:
                 weights[s] = 0
         newAtomTypes = []
+        order = []
         for i, atomType in zip(revertIndices, atomTypes):
             if np.allclose(atom_fing[i], 0):
+                order.append(0.0)
                 continue
             value = {s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)}
             for s in self.symbols:
@@ -473,8 +475,9 @@ class RadialDistributionUtility(object):
             f = Fingerprint(value=value, weights=weights, delta=self.delta)
             atomFings.append(f)
             newAtomTypes.append(atomType)
+            order.append(f.order)
 
-        order = np.fromiter((atomFing.order for atomFing in atomFings), dtype=float)
+        order = np.asarray(order)
         molOrder = np.fromiter((order[np.asarray(inds)].sum()/len(inds) for inds in disassembler.indices), dtype=float)
         a_order = np.mean(order[np.isfinite(order)]) if np.any(np.isfinite(order)) else np.nan
 

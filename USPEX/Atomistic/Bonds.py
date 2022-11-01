@@ -17,7 +17,6 @@ from scipy.sparse.csgraph import connected_components
 
 from ..Atomistic.Element import Element
 
-
 SAME_BOND_THRESHOLD = 0.05  # (Angstroms) same bond within this distance.
 MAX_BOND = 5.0  # (Angstroms) maximum distance deviation for bonds search.
 LOWER_BOND = 0.5  # (Angstroms) lower bound for the distance of atoms in a bond.
@@ -98,50 +97,100 @@ class Bonds:
         else:
             self.goodBonds = None
 
-    def isConnected(self, structure):
-        try:
-            self.getMinimalGraphBonds(structure)
-            res = True
-        except:
-            res = False
-        return res
+    def isConnected(self, SYSTEM, checkConnectivityCutoffFactor=2):
+        """
+        checks if SYSTEM is connected, with bonds graph based on thresholds based on atom valence radii
+        Rcutoff(type_i, type_j) = checkConnectivityCutoffFactor * (Rval(type_i) + Rval(type_j))
+        @param SYSTEM: AtomicStructure instance
+        @param checkConnectivityCutoffFactor: int, float
+        @return: bool
+        """
+        cutoff = self._buildCutoffDict(SYSTEM, cutoffType='RcovTimes', cutoffParameter=checkConnectivityCutoffFactor)
+        strongBonds, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
+        pbc = SYSTEM.getCell().getPBC()
+        # TODO: Make cutoffparameter an input parameter
+        return self._howmanyConnectedComponents(len(SYSTEM), strongBonds + weakBonds, pbc) == 1
 
-    def getMinimalGraphBonds(self, SYSTEM) -> list:
-        '''
-        Calculates bond graph minimal for the structure to be 3D connected.
+    def _buildCutoffDict(self, SYSTEM, cutoffType='RcovPlus', cutoffParameter=None):
+        """
+        Builds dictionary of cutoffs compatible with ase.neighborlist.primitive_neighbor_list. Each dict item
+        corresponds to a pair of elements with values of threshold bond distances
+        Cutoffs are build as:
+            1. 'RcovTimes' covalent radii times given factor (default: 1)
+            2. 'RcovPlus' covalent radii plus increment (default: 0)
+        @param SYSTEM: AtomicStructure instance
+        @param cutoffParameter: float or int, factor or increment depending on cutoffType
+        @return: dict of cutoffs consistent with  cutoff dict parameter
+        """
+        defaultParameters = {'RcovTimes': 1, 'RcovPlus': 0}
+        if cutoffParameter is None:
+            cutoffParameter = defaultParameters[cutoffType]
 
-        :param SYSTEM:
-        :return:
-        '''
+        covalentLengths = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).covalent_radius +
+                                                                      Element(s2.short_name).covalent_radius
+                           for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
+        if cutoffType == 'RcovTimes':
+            cutoff = {key: val * cutoffParameter for key, val in covalentLengths.items()}
+        elif cutoffType == 'RcovPlus':
+            cutoff = {key: val + cutoffParameter for key, val in covalentLengths.items()}
+        else:
+            raise ValueError('Unsupported cutoffType')
+        return {tuple(key) * (3 - len(key)): val for key, val in cutoff.items()}
 
-        N_atom = len(SYSTEM)
-        goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
-                     for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}\
-            if self.goodBonds is None else self.goodBonds
+    def getAllBondsInCutoff(self, SYSTEM, cutoff):
+        """
+        Gets all bonds in SYSTEM, whose lengths do not exceed cut-off
+        Cut-off parameter is passed to ase.neighborlist.primitive_neighbor_list, hence its format
+        @param SYSTEM: AtomicStructure instance
+        @param cutoff: float or dict or list or array
+                Cutoff for neighbor search. It can be:
+
+                    * A single float: This is a global cutoff for all elements.
+                    * A dictionary: This specifies cutoff values for element
+                      pairs. Specification accepts element numbers of symbols.
+                      Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
+                    * A list/array with a per atom value: This specifies the radius of
+                      an atomic sphere for each atom. If spheres overlap, atoms are
+                      within each other's neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
+                      for an example on how to get such a list.
+        @return: (strongBonds: List, weakBonds: List) (separated according to goodBonds-based criteria)
+        """
+
         structure = Atoms(symbols=[s.short_name for s in SYSTEM.getAtomTypes()],
                           positions=SYSTEM.getCartesianCoordinates(),
                           cell=SYSTEM.getCell().getCellVectors(),
                           pbc=SYSTEM.getCell().getPBC())
 
-        # 1) Calculate bonds within upper bound to max_bond.
-        # 2) Group bonds by using same_bond criterion.
+
+
+        # 1. Calculate bonds within cutoff.
         bonds = []
         i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=structure.pbc,
                                                                     cell=structure.get_cell(complete=True),
                                                                     positions=structure.get_scaled_positions(),
-                                                                    cutoff=self.maxBond, numbers=structure.numbers,
+                                                                    cutoff=cutoff, numbers=structure.numbers,
                                                                     use_scaled_positions=True)
 
         for i, j, dist, vec, dir in zip(i_init, j_init, dists, vecs, dirs):
             # TODO Why we had this less 0.5A and not more than 5A (usually)
-            # if np.abs(dist - tmp_Rval) > cutoff or dist < 0.5:
             if dist < self.lowerBond or j < i:
                 continue
             bonds.append(Bond(atom1=structure[i], atom2=structure[j], dir2=dir))
 
         tmp_bonds = sorted(bonds, key=lambda x: x.delta)
 
-        bond_total = []
+        # 2. Group similar bonds and distribute them between strong and weak bonds
+        #    according to goodBonds-based criterion
+        strongBonds = []
+        weakBonds = []
+
+        goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
+                     for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} \
+            if self.goodBonds is None else self.goodBonds
+
+        strongBondThresholds = {key: - 0.37 * np.log(goodBonds[key])
+                                for key in goodBonds.keys()}
+
         while tmp_bonds:
             bond = tmp_bonds.pop(0)
             bonds_one_type = [bond]
@@ -153,57 +202,53 @@ class Bonds:
                 else:
                     bonds_remain.append(b)
             tmp_bonds = bonds_remain
-            bond_total.append(bonds_one_type)
-
-        # 3) Add bonds by group.
-        bond_in = []
-        bond_left = []
-
-        # delete short bonds
-        for bond_group in bond_total:
-            a, b = bond_group[0].symbols
-            small_bond = -0.37 * np.log(goodBonds[frozenset((a, b))])
-            if min([bond.delta for bond in bond_group]) < small_bond:
-                bond_in.append(bond_group)  # Add by group
+            a, b = bonds_one_type[0].symbols
+            if min([bond.delta for bond in bonds_one_type]) < strongBondThresholds[frozenset((a, b))]:
+                strongBonds.append(bonds_one_type)  # Add by group
             else:
-                bond_left.append(bond_group)
-        # del bond_group[0]
+                weakBonds.append(bonds_one_type)
 
-        # 5, check 3D connectivity, if not satisfied, add more bonds
-        #   but we only include those bonds which could increase connectivity
-        # ---Looks like we have to include all bonds before the connectivity changes
-        #   otherwise, we won't add them
+        return strongBonds, weakBonds
 
-        N_components = self._connectedComponents(N_atom, bond_in, pbc=structure.pbc)
-        # List = connectList(chain(*bond_in))
+    def getMinimalGraphBonds(self, SYSTEM) -> list:
+        '''
+        Calculates bond graph minimal for the structure to be 3D connected.
+
+        :param SYSTEM: AtomicStructure instance
+        :return: bond graph
+        '''
+
+        N_atom = len(SYSTEM)
+        pbc = SYSTEM.getCell().getPBC()
+
+        # 1. getting bonds that are shorter than cutoff (self.maxBond)
+        cutoff = self.maxBond
+        bondIn, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
+
+        # 2. check 3D connectivity, if not satisfied, add more bonds of increasing lengths,
+        #    until connectivity is acheived
+        N_components = self._howmanyConnectedComponents(N_atom, bondIn, pbc=pbc)
 
         while N_components > 1:
-            # disp('The stuture is not fully connected, adding more bonds');
-            bond_tmp = bond_in + [bond_left.pop(0)]
-            # List_new = connectList(chain(*bond_tmp))
-            N_components_new = self._connectedComponents(N_atom, bond_tmp, pbc=structure.pbc)
-            # if len(List_new) > len(List) or len(List) == 1: # increase connectivity accept
+            bond_tmp = bondIn + [weakBonds.pop(0)] # The stuture is not fully connected, adding more bonds
+            N_components_new = self._howmanyConnectedComponents(N_atom, bond_tmp, pbc=pbc)
             if N_components_new < N_components:
-                # disp('The connectivity is increased, accept adding more bonds');
-                # List = List_new
-                N_components = N_components_new
-                bond_in = bond_tmp
-                # else
-                # disp('The connectivity is not increased, reject adding more bonds');
+                N_components = N_components_new # Connectivity increased, accept adding more bonds
+                bondIn = bond_tmp
 
-        # 6, Remove double count of bond like [i,i] pair;
-        for i, bonds_tmp in enumerate(bond_in):
+        # 3. Remove double count of bond like [i,i] pair;
+        for i, bonds_tmp in enumerate(bondIn):
             indicies = []
             for j, bond in enumerate(bonds_tmp):
                 a, b = bond.indicies
                 if a == b:
                     indicies.append(j)
             for j in sorted(indicies[::2], reverse=True):
-                del bond_in[i][j]
+                del bondIn[i][j]
 
-        return bond_in
+        return bondIn
 
-    def _connectedComponents(self, N, bonds, pbc):
+    def _howmanyConnectedComponents(self, N, bonds, pbc):
         """
         Calculate number of connected components.
         :param N: number of atoms
@@ -211,6 +256,7 @@ class Bonds:
         :param pbc: pbc
         :return: Number of connected components
         """
+        pbc = np.array(pbc, dtype=bool)
 
         supercell_size = 2
 
@@ -248,10 +294,9 @@ def defaultGoodBonds(symbols: List[str]) -> Dict[Tuple[str, str], float]:
     goodBond = lambda symbol: Element(symbol).good_bonds
 
     gB_dict = {}
-    for s1,s2 in combinations_with_replacement(symbols, r=2):
-        gB_dict[(s1,s2)] = np.power(goodBond(s1) * goodBond(s2), 0.5)
+    for s1, s2 in combinations_with_replacement(symbols, r=2):
+        gB_dict[(s1, s2)] = np.power(goodBond(s1) * goodBond(s2), 0.5)
     return gB_dict
-
 
     # numSpecies = len(symbols)
     # gB = np.zeros(numSpecies, dtype=float)
