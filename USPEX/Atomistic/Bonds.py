@@ -59,7 +59,7 @@ class Bond(object):
 
     @property
     def vector(self):
-        return self._atom2.position - self._atom1.position + np.dot(self._dir2-self._dir1, self._cell)
+        return self._atom2.position - self._atom1.position + np.dot(self._dir2 - self._dir1, self._cell)
 
     @property
     def distance(self) -> float:
@@ -137,6 +137,7 @@ class Bonds:
             1. 'RcovTimes' covalent radii times given factor (default: 1)
             2. 'RcovPlus' covalent radii plus increment (default: 0)
             3. 'strongBonds' cutoff based on classic USPEX checkConnectivity
+            4. 'RvdW' cutoff as sum of van der Waals radii
         @param SYSTEM: AtomicStructure instance
         @param cutoffParameter: float or int, factor or increment depending on cutoffType
         @return: dict of cutoffs consistent with  cutoff dict parameter
@@ -156,6 +157,10 @@ class Bonds:
         elif 'strong' in cutoffType:
             strongMaxDelta = self._strongBondsMaxDelta(SYSTEM)
             cutoff = {key: val + strongMaxDelta[key] for key, val in covalentLengths.items()}
+        elif 'vdw' in cutoffType:
+            cutoff = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).vanderWaals_radius +
+                                                                 Element(s2.short_name).vanderWaals_radius
+                      for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
         else:
             raise ValueError('Unsupported cutoffType')
         return {tuple(key) * (3 - len(key)): val for key, val in cutoff.items()}
@@ -183,8 +188,6 @@ class Bonds:
                           positions=SYSTEM.getCartesianCoordinates(),
                           cell=SYSTEM.getCell().getCellVectors(),
                           pbc=SYSTEM.getCell().getPBC())
-
-
 
         # 1. Calculate bonds within cutoff.
         bonds = []
@@ -246,10 +249,10 @@ class Bonds:
         N_components = self._howmanyConnectedComponents(N_atom, bondIn, pbc=pbc)
 
         while N_components > 1:
-            bond_tmp = bondIn + [weakBonds.pop(0)] # The stuture is not fully connected, adding more bonds
+            bond_tmp = bondIn + [weakBonds.pop(0)]  # The stuture is not fully connected, adding more bonds
             N_components_new = self._howmanyConnectedComponents(N_atom, bond_tmp, pbc=pbc)
             if N_components_new < N_components:
-                N_components = N_components_new # Connectivity increased, accept adding more bonds
+                N_components = N_components_new  # Connectivity increased, accept adding more bonds
                 bondIn = bond_tmp
 
         # 3. Remove double count of bond like [i,i] pair;
