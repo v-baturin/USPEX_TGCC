@@ -816,8 +816,8 @@ class test_BondHardness(unittest.TestCase):
                                  cell.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell)
         bonds = Bonds()
-        self.assertTrue(bonds.isConnected(system, checkConnectivityCutoffFactor=2))
-        self.assertFalse(bonds.isConnected(system, checkConnectivityCutoffFactor=1.5))
+        self.assertTrue(bonds.isConnected(system, cutoffType='RcovTimes', cutoffParameter=2))
+        self.assertFalse(bonds.isConnected(system, cutoffType='RcovTimes', cutoffParameter=1.5))
 
     def test_CheckConnectivity_graphite(self):
         tmp = read_vasp(pj(CURRENT_DIR, 'graphite2.POSCAR'))
@@ -826,20 +826,20 @@ class test_BondHardness(unittest.TestCase):
                                  cell3d.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell3d)
         bonds = Bonds()
-        self.assertFalse(bonds.isConnected(system, checkConnectivityCutoffFactor=2))
-        self.assertTrue(bonds.isConnected(system, checkConnectivityCutoffFactor=2.6))
+        self.assertFalse(bonds.isConnected(system, cutoffType='RcovTimes', cutoffParameter=2))
+        self.assertTrue(bonds.isConnected(system, cutoffType='RcovTimes', cutoffParameter=2.6))
 
         tmp = read_vasp(pj(CURRENT_DIR, 'graphite_1layer.vasp'))
         cell3d = Cell(tmp.get_cell().array, (1, 1, 1))
         system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
                                  cell3d.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell3d)
-        self.assertFalse(bonds.isConnected(system, checkConnectivityCutoffFactor=1.5))
+        self.assertFalse(bonds.isConnected(system, cutoffType='RcovTimes', cutoffParameter=1.5))
         cell2d = Cell(tmp.get_cell().array, (1, 1, 0))
         system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
                                  cell3d.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell2d)
-        self.assertTrue(bonds.isConnected(system, checkConnectivityCutoffFactor=1.5))
+        self.assertTrue(bonds.isConnected(system, cutoffType='RcovTimes', cutoffParameter=1.5))
 
 
 
