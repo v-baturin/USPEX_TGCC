@@ -9,7 +9,7 @@ Objects and methods for handling chemical bonds
 """
 
 import numpy as np
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 from ase.atoms import Atom, Atoms
 from ase.neighborlist import primitive_neighbor_list
 from itertools import chain, combinations_with_replacement
@@ -86,7 +86,8 @@ class Bond(object):
 
 class Bonds:
 
-    def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None):
+    def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
+                 cutoff: Union[str, Dict, float] = 'vdw'):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
         self.maxBond = maxBond if maxBond is not None else MAX_BOND
         self.lowerBond = lowerBond if lowerBond is not None else LOWER_BOND
@@ -96,8 +97,9 @@ class Bonds:
                 self.goodBonds[frozenset(key)] = value
         else:
             self.goodBonds = None
+        self.cutoff = cutoff
 
-    def isConnected(self, SYSTEM, cutoffType='manual', cutoffParameter=None):
+    def isConnected(self, SYSTEM, cutoff=None):
         """
         checks if SYSTEM is connected, with bonds graph based on thresholds based on atom valence radii
         Rcutoff(type_i, type_j) = checkConnectivityCutoffFactor * (Rval(type_i) + Rval(type_j))
@@ -107,12 +109,7 @@ class Bonds:
         @param cutoffParameter: int, float, None
         @return: bool
         """
-        if cutoffType == 'manual':
-            cutoff = cutoffParameter
-        elif cutoffType == 'off':
-            return True
-        else:
-            cutoff = self._buildCutoffDict(SYSTEM, cutoffType=cutoffType, cutoffParameter=cutoffParameter)
+        cutoff = self.buildCutoffDict(SYSTEM, cutoff)
         strongBonds, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
         pbc = SYSTEM.getCell().getPBC()
         # TODO: Make cutoffparameter an input parameter
@@ -131,35 +128,31 @@ class Bonds:
 
         return {key: - 0.37 * np.log(val) for key, val in goodBonds.items()}
 
-    def _buildCutoffDict(self, SYSTEM, cutoffType='RcovPlus', cutoffParameter=None):
+    def buildCutoffDict(self, SYSTEM, cutoff=None):
         """
         Builds dictionary of cutoffs compatible with ase.neighborlist.primitive_neighbor_list. Each dict item
         corresponds to a pair of elements with values of threshold bond distances
         Cutoffs are build as:
-            1. 'RcovTimes' covalent radii times given factor (default: 1)
-            2. 'RcovPlus' covalent radii plus increment (default: 0)
-            3. 'strongBonds' cutoff based on classic USPEX checkConnectivity
-            4. 'RvdW' cutoff as sum of van der Waals radii
+            1. 'strong' cutoff based on classic USPEX checkConnectivity
+            2. 'vdw' cutoff as sum of van der Waals radii
         @param SYSTEM: AtomicStructure instance
         @param cutoffParameter: float or int, factor or increment depending on cutoffType
         @return: dict of cutoffs consistent with  cutoff dict parameter
         """
-        cutoffType = cutoffType.casefold()
-        defaultParameters = {'rcovtimes': 1, 'rcovplus': 0}
-        if cutoffParameter is None and cutoffType in defaultParameters.keys():
-            cutoffParameter = defaultParameters[cutoffType]
+        if cutoff == None:
+            cutoff = self.cutoff
+
+        if isinstance(cutoff, (dict, float, int)):
+            return cutoff
 
         covalentLengths = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).covalent_radius +
                                                                       Element(s2.short_name).covalent_radius
                            for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
-        if cutoffType == 'rcovtimes':
-            cutoff = {key: val * cutoffParameter for key, val in covalentLengths.items()}
-        elif cutoffType == 'rcovplus':
-            cutoff = {key: val + cutoffParameter for key, val in covalentLengths.items()}
-        elif 'strong' in cutoffType:
+
+        if cutoff == 'strong':
             strongMaxDelta = self._strongBondsMaxDelta(SYSTEM)
             cutoff = {key: val + strongMaxDelta[key] for key, val in covalentLengths.items()}
-        elif 'vdw' in cutoffType:
+        elif cutoff == 'vdw':
             cutoff = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).vanderWaals_radius +
                                                                  Element(s2.short_name).vanderWaals_radius
                       for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
