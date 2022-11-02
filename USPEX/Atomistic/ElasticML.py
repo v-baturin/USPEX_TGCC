@@ -229,6 +229,8 @@ class ElasticML:
         output = self.model(atom_features, nbr_features, nbr_features_idx, [all_nums])
 
         E, nu = (self.MEAN + self.STD*output)[0].data
+        E = float(E)
+        nu = float(nu)
         V0 = crystal.volume / len(crystal.sites)
 
         system['elasticML.youngsModulus'] = E

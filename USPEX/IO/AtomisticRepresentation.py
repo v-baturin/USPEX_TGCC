@@ -6,7 +6,7 @@ import numpy as np
 from copy import copy
 from collections import Counter
 from collections.abc import Mapping
-from itertools import combinations
+from itertools import combinations, chain
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
 from os.path import join as pj
@@ -16,7 +16,7 @@ from prettytable import PrettyTable
 import matplotlib.pyplot as plt
 
 from .formatters import createHeader_wrap
-from ..Presets import presetOutput
+from ..Presets import presetFitness
 
 matplotlib.use('Agg')
 
@@ -40,6 +40,22 @@ Rev. Mineral. Geochem. 71, 271-298\
 '''
 
 EXTENDED_CONVEX_HULL_ENERGY_RANGE = 0.5
+
+
+presetLabels = {
+    'enthalpy': 'Enthalpy (eV)',
+    'enthalpyCCH': 'Enthalpy above CH (eV/block)',
+    'enthalpyCS': 'Enthalpy above the best for composition(eV/block)',
+    'simpleMoleculeUtility.composition': 'Composition',
+    'cellUtility.volume': 'Volume (A^3)',
+    'cellUtility.area': 'Area (A^2)',
+    'cellUtility.length': 'Period (A)',
+    'cellUtility.symmetry': 'SYMMETRY (N)',
+    'radialDistributionUtility.structureOrder': 'Structure order',
+    'radialDistributionUtility.averageOrder': 'Average order',
+    'radialDistributionUtility.quasientropy': 'Quasientropy',
+    'elasticML.vickersHardness': 'ML Vickers Hardness (GPa)',
+}
 
 
 class SystemsTable(object):
@@ -103,7 +119,6 @@ class AtomisticRepresentation(object):
         return SystemsTable(self.columns, isRank)
 
     def presentSystems(self, systems: dict, optimizer, numStages):
-        fitness = optimizer.optType
         systems_gatheredPOSCARS = []
         systems_gatheredPOSCARS_unrelaxed = []
         table_Individuals = self.getNewSystemsTable()
@@ -666,22 +681,60 @@ class AtomisticRepresentation(object):
         pass
 
     @staticmethod
-    def applyPresetOutputParameters(optimizer, output):
+    def applyPresetOutputParameters(optimizer):
+        columns = AtomisticRepresentation._extract(optimizer.optType)
+        if len(columns) > 1:
+            presentPareto = columns
+        else:
+            presentPareto = None
+        if 'enthalpyCCH' in columns or 'enthalpyCS' in columns:
+            columns = ['enthalpy'] + columns
+        columns = ['simpleMoleculeUtility.composition'] + columns
         dim = optimizer.target.utilities.cellUtility.getDim()
         if dim == 3:
-            prefix = 'Crystal'
+            columns += ['cellUtility.volume', 'cellUtility.symmetry']
         elif dim == 2:
-            prefix = 'Nano2D'
+            columns.append('cellUtility.area')
         elif dim == 1:
-            prefix = 'Nano1D'
+            columns.append('cellUtility.length')
         elif dim == 0:
-            prefix = 'Nano0D'
+            pass
         else:
             raise RuntimeError(f'Wrong dim {dim}.')
-        if optimizer.target.utilities.compositionSpace.isFixedComposition:
-            suffix = 'FixComp'
+        columns += ['radialDistributionUtility.structureOrder',
+                    'radialDistributionUtility.averageOrder',
+                    'radialDistributionUtility.quasientropy']
+        if 'enthalpy' in columns:
+            toDraw = [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                      ('stat', 'enthalpy', 'per_atom', '', '')]
+            if 'enthalpyCCH' not in columns:
+                toDraw.append(('dep', 'enthalpy', 'raw', 'ID', 'raw'))
+            if 'cellUtility.volume' in columns:
+                toDraw.append(('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'))
         else:
-            suffix = 'VarComp'
-        default = copy(presetOutput[prefix + suffix])
-        default.update(output)
-        return default
+            toDraw = []
+        presentConvexHull = 'enthalpyCCH' in columns
+        for i, column in enumerate(columns):
+            columns[i] = (column, presetLabels[column])
+        if presentPareto is not None:
+            for i, column in enumerate(presentPareto):
+                presentPareto[i] = (column, presetLabels[column])
+        return dict(
+            columns=columns,
+            toDraw=toDraw,
+            presentConvexHull=presentConvexHull,
+            presentPareto=presentPareto
+        )
+
+    @staticmethod
+    def _extract(optType):
+        if optType != 'enthalpyCCH' and optType != 'enthalpyCS' and optType in presetFitness:
+            optType = presetFitness[optType]
+        if isinstance(optType, str):
+            return [optType]
+        if isinstance(optType, tuple):
+            func, *arguments = optType
+            return list(set(chain(*[AtomisticRepresentation._extract(arg) for arg in arguments])))
+        else:
+            return []
+
