@@ -63,7 +63,7 @@ class GlobalOptimizer(object):
                                                 mutations=mutations, creations=creations, seeds=seeds)
 
     def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None,
-                 extraData=None, **kwargs):
+                 extraData=(), **kwargs):
         """
         Initializes the class.
 
@@ -76,7 +76,7 @@ class GlobalOptimizer(object):
         self.pool = SystemPool()
         self.target = Target(self.knownTargetTypes[target['type']], **target)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
-        self.extraData = extraData
+        self.extraData = list(extraData)
         self.fitness = self.Fitness(self.pool.uniqueSystems, self.target.utilities, self.extraData)
         self.selectionConfig = selection
         self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target,

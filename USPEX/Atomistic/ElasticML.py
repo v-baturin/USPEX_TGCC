@@ -194,13 +194,13 @@ class ElasticML:
     disassemblerType = None
 
     @classmethod
-    def registerTypes(cls, atomicDisassemblerType):
+    def registerTypes(cls, disassemblerType):
         """
         Register types used by this utility.
 
         :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
         """
-        cls.atomicDisassemblerType = atomicDisassemblerType
+        cls.disassemblerType = disassemblerType
 
     def __init__(self):
         with open(self.MODELNAME, "rb") as f:
@@ -214,7 +214,7 @@ class ElasticML:
         structure, disassembler = self.disassemblerType.assemble(**system)
         cell = structure.getCell()
         assert cell.getPBC() == (1, 1, 1), "Model works only for 3D crystals."
-        crystal = Structure(species=structure.getAtomTypes(),
+        crystal = Structure(species=[el.short_name for el in structure.getAtomTypes()],
                             coords=structure.getCartesianCoordinates(),
                             lattice=cell.getCellVectors())
 
