@@ -810,36 +810,69 @@ class test_BondHardness(unittest.TestCase):
         self.assertTrue('pop from empty' in str(context.exception))
 
     def test_CheckConnectivity_cluster(self):
+        from itertools import combinations_with_replacement
         tmp = read_vasp(pj(CURRENT_DIR, 'P11H3_badstruct.POSCARS'))
         cell = Cell(tmp.get_cell().array, (0, 0, 0))
         system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
                                  cell.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell)
+        covalentLengths = {(s1.short_name, s2.short_name): Element(s1.short_name).covalent_radius +
+                                                                      Element(s2.short_name).covalent_radius
+                           for s1, s2 in combinations_with_replacement(system.getAtomTypes(), 2)}
         bonds = Bonds()
-        self.assertTrue(bonds.isConnected(system, checkConnectivityCutoffFactor=2))
-        self.assertFalse(bonds.isConnected(system, checkConnectivityCutoffFactor=1.5))
+        x = 2
+        self.assertTrue(bonds.isConnected(system, cutoff={k: x*v for k,v in covalentLengths.items()}))
+        x = 1.5
+        self.assertFalse(bonds.isConnected(system, cutoff={k: x*v for k,v in covalentLengths.items()}))
 
     def test_CheckConnectivity_graphite(self):
+        from itertools import combinations_with_replacement
         tmp = read_vasp(pj(CURRENT_DIR, 'graphite2.POSCAR'))
         cell3d = Cell(tmp.get_cell().array, (1, 1, 1))
         system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
                                  cell3d.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell3d)
+        covalentLengths = {(s1.short_name, s2.short_name): Element(s1.short_name).covalent_radius +
+                                                           Element(s2.short_name).covalent_radius
+                           for s1, s2 in combinations_with_replacement(system.getAtomTypes(), 2)}
         bonds = Bonds()
-        self.assertFalse(bonds.isConnected(system, checkConnectivityCutoffFactor=2))
-        self.assertTrue(bonds.isConnected(system, checkConnectivityCutoffFactor=2.6))
+        x = 2
+        self.assertFalse(bonds.isConnected(system, cutoff={k: x*v for k, v in covalentLengths.items()}))
+        self.assertFalse(bonds.isConnected(system, cutoff='strong'))
+        x = 2.6
+        self.assertTrue(bonds.isConnected(system, cutoff={k: x*v for k, v in covalentLengths.items()}))
 
         tmp = read_vasp(pj(CURRENT_DIR, 'graphite_1layer.vasp'))
         cell3d = Cell(tmp.get_cell().array, (1, 1, 1))
         system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
                                  cell3d.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell3d)
-        self.assertFalse(bonds.isConnected(system, checkConnectivityCutoffFactor=1.5))
+        x = 1.5
+        self.assertFalse(bonds.isConnected(system, cutoff={k: x*v for k, v in covalentLengths.items()}))
+        self.assertFalse(bonds.isConnected(system, cutoff='strong'))
         cell2d = Cell(tmp.get_cell().array, (1, 1, 0))
         system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
                                  cell3d.fractionalToCartesian(tmp.get_scaled_positions()),
                                  cell=cell2d)
-        self.assertTrue(bonds.isConnected(system, checkConnectivityCutoffFactor=1.5))
+        x = 1.5
+        self.assertTrue(bonds.isConnected(system, cutoff={k: x*v for k, v in covalentLengths.items()}))
+        self.assertTrue(bonds.isConnected(system, cutoff='strong'))
+
+    def test_vanderWaalsCutoff(self):
+        bonds = Bonds()
+        tmp = read_vasp(pj(CURRENT_DIR, 'P11H3_badstruct.POSCARS'))
+        cell = Cell(tmp.get_cell().array, (0, 0, 0))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell=cell)
+        self.assertFalse(bonds.isConnected(system))
+
+        tmp = read_vasp(pj(CURRENT_DIR, 'graphite2.POSCAR'))
+        cell3d = Cell(tmp.get_cell().array, (1, 1, 1))
+        system = AtomicStructure(symbolsToElements(tmp.get_chemical_symbols()),
+                                 cell3d.fractionalToCartesian(tmp.get_scaled_positions()),
+                                 cell=cell3d)
+        self.assertTrue(bonds.isConnected(system))
 
 
 

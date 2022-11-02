@@ -9,7 +9,7 @@ Objects and methods for handling chemical bonds
 """
 
 import numpy as np
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 from ase.atoms import Atom, Atoms
 from ase.neighborlist import primitive_neighbor_list
 from itertools import chain, combinations_with_replacement
@@ -59,7 +59,7 @@ class Bond(object):
 
     @property
     def vector(self):
-        return self._atom2.position - self._atom1.position + np.dot(self._dir2-self._dir1, self._cell)
+        return self._atom2.position - self._atom1.position + np.dot(self._dir2 - self._dir1, self._cell)
 
     @property
     def distance(self) -> float:
@@ -86,7 +86,8 @@ class Bond(object):
 
 class Bonds:
 
-    def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None):
+    def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
+                 cutoff: Union[str, Dict, float, int] = 'vdw'):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
         self.maxBond = maxBond if maxBond is not None else MAX_BOND
         self.lowerBond = lowerBond if lowerBond is not None else LOWER_BOND
@@ -96,43 +97,64 @@ class Bonds:
                 self.goodBonds[frozenset(key)] = value
         else:
             self.goodBonds = None
+        self.cutoff = cutoff
 
-    def isConnected(self, SYSTEM, checkConnectivityCutoffFactor=2):
+    def isConnected(self, SYSTEM, cutoff=None):
         """
         checks if SYSTEM is connected, with bonds graph based on thresholds based on atom valence radii
         Rcutoff(type_i, type_j) = checkConnectivityCutoffFactor * (Rval(type_i) + Rval(type_j))
+
         @param SYSTEM: AtomicStructure instance
-        @param checkConnectivityCutoffFactor: int, float
+        @param cutoff: str, dict, float, int
         @return: bool
         """
-        cutoff = self._buildCutoffDict(SYSTEM, cutoffType='RcovTimes', cutoffParameter=checkConnectivityCutoffFactor)
+        cutoff = self.buildCutoffDict(SYSTEM, cutoff)
         strongBonds, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
         pbc = SYSTEM.getCell().getPBC()
         # TODO: Make cutoffparameter an input parameter
         return self._howmanyConnectedComponents(len(SYSTEM), strongBonds + weakBonds, pbc) == 1
 
-    def _buildCutoffDict(self, SYSTEM, cutoffType='RcovPlus', cutoffParameter=None):
+    def _strongBondsMaxDelta(self, SYSTEM):
+        """
+        A bond ij is considered strong if
+        |r_ij| - (Rcov(Type_i) + Rcov(Type_j)) <= goodBondsDelta(Type_i,Type_j))
+        @param SYSTEM:
+        @return:
+        """
+        goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
+                     for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} \
+            if self.goodBonds is None else self.goodBonds
+
+        return {key: - 0.37 * np.log(val) for key, val in goodBonds.items()}
+
+    def buildCutoffDict(self, SYSTEM, cutoff=None):
         """
         Builds dictionary of cutoffs compatible with ase.neighborlist.primitive_neighbor_list. Each dict item
         corresponds to a pair of elements with values of threshold bond distances
         Cutoffs are build as:
-            1. 'RcovTimes' covalent radii times given factor (default: 1)
-            2. 'RcovPlus' covalent radii plus increment (default: 0)
+            1. 'strong' cutoff based on classic USPEX checkConnectivity
+            2. 'vdw' cutoff as sum of van der Waals radii
         @param SYSTEM: AtomicStructure instance
         @param cutoffParameter: float or int, factor or increment depending on cutoffType
         @return: dict of cutoffs consistent with  cutoff dict parameter
         """
-        defaultParameters = {'RcovTimes': 1, 'RcovPlus': 0}
-        if cutoffParameter is None:
-            cutoffParameter = defaultParameters[cutoffType]
+        if cutoff == None:
+            cutoff = self.cutoff
+
+        if isinstance(cutoff, (dict, float, int)):
+            return cutoff
 
         covalentLengths = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).covalent_radius +
                                                                       Element(s2.short_name).covalent_radius
                            for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
-        if cutoffType == 'RcovTimes':
-            cutoff = {key: val * cutoffParameter for key, val in covalentLengths.items()}
-        elif cutoffType == 'RcovPlus':
-            cutoff = {key: val + cutoffParameter for key, val in covalentLengths.items()}
+
+        if cutoff == 'strong':
+            strongMaxDelta = self._strongBondsMaxDelta(SYSTEM)
+            cutoff = {key: val + strongMaxDelta[key] for key, val in covalentLengths.items()}
+        elif cutoff == 'vdw':
+            cutoff = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).vanderWaals_radius +
+                                                                 Element(s2.short_name).vanderWaals_radius
+                      for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
         else:
             raise ValueError('Unsupported cutoffType')
         return {tuple(key) * (3 - len(key)): val for key, val in cutoff.items()}
@@ -161,8 +183,6 @@ class Bonds:
                           cell=SYSTEM.getCell().getCellVectors(),
                           pbc=SYSTEM.getCell().getPBC())
 
-
-
         # 1. Calculate bonds within cutoff.
         bonds = []
         i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=structure.pbc,
@@ -183,14 +203,7 @@ class Bonds:
         #    according to goodBonds-based criterion
         strongBonds = []
         weakBonds = []
-
-        goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
-                     for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} \
-            if self.goodBonds is None else self.goodBonds
-
-        strongBondThresholds = {key: - 0.37 * np.log(goodBonds[key])
-                                for key in goodBonds.keys()}
-
+        strongBondMaxDelta = self._strongBondsMaxDelta(SYSTEM)
         while tmp_bonds:
             bond = tmp_bonds.pop(0)
             bonds_one_type = [bond]
@@ -203,7 +216,7 @@ class Bonds:
                     bonds_remain.append(b)
             tmp_bonds = bonds_remain
             a, b = bonds_one_type[0].symbols
-            if min([bond.delta for bond in bonds_one_type]) < strongBondThresholds[frozenset((a, b))]:
+            if min([bond.delta for bond in bonds_one_type]) < strongBondMaxDelta[frozenset((a, b))]:
                 strongBonds.append(bonds_one_type)  # Add by group
             else:
                 weakBonds.append(bonds_one_type)
@@ -230,10 +243,10 @@ class Bonds:
         N_components = self._howmanyConnectedComponents(N_atom, bondIn, pbc=pbc)
 
         while N_components > 1:
-            bond_tmp = bondIn + [weakBonds.pop(0)] # The stuture is not fully connected, adding more bonds
+            bond_tmp = bondIn + [weakBonds.pop(0)]  # The stuture is not fully connected, adding more bonds
             N_components_new = self._howmanyConnectedComponents(N_atom, bond_tmp, pbc=pbc)
             if N_components_new < N_components:
-                N_components = N_components_new # Connectivity increased, accept adding more bonds
+                N_components = N_components_new  # Connectivity increased, accept adding more bonds
                 bondIn = bond_tmp
 
         # 3. Remove double count of bond like [i,i] pair;
