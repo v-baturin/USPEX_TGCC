@@ -54,7 +54,13 @@ presetLabels = {
     'radialDistributionUtility.structureOrder': 'Structure order',
     'radialDistributionUtility.averageOrder': 'Average order',
     'radialDistributionUtility.quasientropy': 'Quasientropy',
+    'elasticML.youngsModulus': 'ML Youngs Modulus (Gpa)',
+    'elasticML.bulkModulus': 'ML Bulk Modulus (GPa)',
+    'elasticML.shearModulus': 'ML Shear Modulus (GPa)',
+    'elasticML.poissonsRatio': 'ML Poissons Ratio',
+    'elasticML.pughsRatio': 'ML Pughs Ratio',
     'elasticML.vickersHardness': 'ML Vickers Hardness (GPa)',
+    'elasticML.fractureToughness': 'ML Fracture Toughness (MPa*m^1/2)'
 }
 
 

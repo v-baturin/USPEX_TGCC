@@ -237,7 +237,7 @@ class ElasticML:
         system['elasticML.poissonsRatio'] = nu
         system['elasticML.bulkModulus'] = E/(3*(1-2*nu))
         system['elasticML.shearModulus'] = E/(2*(1+nu))
-        system['elasticML.pughsModulus'] = 3*(1-2*nu)/(2*(1+nu))
+        system['elasticML.pughsRatio'] = 3*(1-2*nu)/(2*(1+nu))
         system['elasticML.vickersHardness'] = 0.096*E*(1 - 8.5*nu + 19.5*nu**2)/(1 - 7.5*nu + 12.2*nu**2 + 19.6*nu**3)
         system['elasticML.fractureToughness'] = (10**-2)*(8840**-0.5)*(V0**(1/6)) * \
                                                 (E*(1-13.7*nu+48.6*nu**2)/(1-15.2*nu+70.2*nu**2-81.5*nu**3))**1.5
@@ -263,10 +263,10 @@ class ElasticML:
             self._predictValues(system)
         return system['elasticML.shearModulus']
 
-    def pughsModulus(self, system):
-        if not 'elasticML.pughsModulus' in system:
+    def pughsRatio(self, system):
+        if not 'elasticML.pughsRatio' in system:
             self._predictValues(system)
-        return system['elasticML.pughsModulus']
+        return system['elasticML.pughsRatio']
 
     def vickersHardness(self, system):
         if not 'elasticML.vickersHardness' in system:
