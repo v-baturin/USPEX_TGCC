@@ -194,13 +194,13 @@ class ElasticML:
     disassemblerType = None
 
     @classmethod
-    def registerTypes(cls, atomicDisassemblerType):
+    def registerTypes(cls, disassemblerType):
         """
         Register types used by this utility.
 
         :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
         """
-        cls.atomicDisassemblerType = atomicDisassemblerType
+        cls.disassemblerType = disassemblerType
 
     def __init__(self):
         with open(self.MODELNAME, "rb") as f:
@@ -214,7 +214,7 @@ class ElasticML:
         structure, disassembler = self.disassemblerType.assemble(**system)
         cell = structure.getCell()
         assert cell.getPBC() == (1, 1, 1), "Model works only for 3D crystals."
-        crystal = Structure(species=structure.getAtomTypes(),
+        crystal = Structure(species=[el.short_name for el in structure.getAtomTypes()],
                             coords=structure.getCartesianCoordinates(),
                             lattice=cell.getCellVectors())
 
@@ -229,13 +229,15 @@ class ElasticML:
         output = self.model(atom_features, nbr_features, nbr_features_idx, [all_nums])
 
         E, nu = (self.MEAN + self.STD*output)[0].data
+        E = float(E)
+        nu = float(nu)
         V0 = crystal.volume / len(crystal.sites)
 
         system['elasticML.youngsModulus'] = E
         system['elasticML.poissonsRatio'] = nu
         system['elasticML.bulkModulus'] = E/(3*(1-2*nu))
         system['elasticML.shearModulus'] = E/(2*(1+nu))
-        system['elasticML.pughsModulus'] = 3*(1-2*nu)/(2*(1+nu))
+        system['elasticML.pughsRatio'] = 3*(1-2*nu)/(2*(1+nu))
         system['elasticML.vickersHardness'] = 0.096*E*(1 - 8.5*nu + 19.5*nu**2)/(1 - 7.5*nu + 12.2*nu**2 + 19.6*nu**3)
         system['elasticML.fractureToughness'] = (10**-2)*(8840**-0.5)*(V0**(1/6)) * \
                                                 (E*(1-13.7*nu+48.6*nu**2)/(1-15.2*nu+70.2*nu**2-81.5*nu**3))**1.5
@@ -261,10 +263,10 @@ class ElasticML:
             self._predictValues(system)
         return system['elasticML.shearModulus']
 
-    def pughsModulus(self, system):
-        if not 'elasticML.pughsModulus' in system:
+    def pughsRatio(self, system):
+        if not 'elasticML.pughsRatio' in system:
             self._predictValues(system)
-        return system['elasticML.pughsModulus']
+        return system['elasticML.pughsRatio']
 
     def vickersHardness(self, system):
         if not 'elasticML.vickersHardness' in system:

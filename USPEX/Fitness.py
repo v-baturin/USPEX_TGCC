@@ -12,7 +12,6 @@ import numpy as np
 from copy import copy
 from collections.abc import Mapping
 from sklearn.decomposition import PCA
-from pandas import DataFrame
 
 from .ConvexHull import ConvexHull
 from .paretoRanking import paretoRanking
@@ -20,8 +19,6 @@ from .Presets import presetFitness
 
 
 logger = logging.getLogger(__name__)
-presetFitness[('aging', 'values')] = ('plus', 'values', ('multiply', ('minus', ('mean', 'values'), ('min', 'values')),
-                                                         'antiseeds.corrections'))
 
 
 class Fitness:
@@ -100,6 +97,7 @@ class Fitness:
 
     @staticmethod
     def applyPresets(optType):
+        optType_ref = optType
         if optType in presetFitness:
             optType = presetFitness[optType]
         elif isinstance(optType, tuple):
@@ -111,6 +109,8 @@ class Fitness:
                     for param, templateParam in zip(funcParams, templateParams):
                         optType = Fitness._substituteParams(optType, templateParam, param)
                     break
+        if optType != optType_ref:
+            optType = Fitness.applyPresets(optType)
         return optType
 
     @staticmethod

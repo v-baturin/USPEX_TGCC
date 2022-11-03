@@ -62,7 +62,7 @@ class OutputRepresentation(object):
                 raise RuntimeError('Unknown engine type in output initialization.')
             if optimizerInstance.target.name == 'Atomistic':
                 from .AtomisticRepresentation import AtomisticRepresentation
-                output.update(AtomisticRepresentation.applyPresetOutputParameters(optimizerInstance, output))
+                output = dict(AtomisticRepresentation.applyPresetOutputParameters(optimizerInstance), **output)
                 self.targetRepresentation = AtomisticRepresentation(self.RES_FOLDER, **output)
             else:
                 raise RuntimeError('Unknown target type in output initialization.')

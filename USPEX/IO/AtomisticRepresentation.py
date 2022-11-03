@@ -6,7 +6,7 @@ import numpy as np
 from copy import copy
 from collections import Counter
 from collections.abc import Mapping
-from itertools import combinations
+from itertools import combinations, chain
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
 from os.path import join as pj
@@ -16,7 +16,7 @@ from prettytable import PrettyTable
 import matplotlib.pyplot as plt
 
 from .formatters import createHeader_wrap
-from ..Presets import presetOutput
+from ..Presets import presetFitness
 
 matplotlib.use('Agg')
 
@@ -40,6 +40,28 @@ Rev. Mineral. Geochem. 71, 271-298\
 '''
 
 EXTENDED_CONVEX_HULL_ENERGY_RANGE = 0.5
+
+
+presetLabels = {
+    'enthalpy': 'Enthalpy (eV)',
+    'enthalpyCCH': 'Enthalpy above CH (eV/block)',
+    'enthalpyCS': 'Enthalpy above the best for composition(eV/block)',
+    'simpleMoleculeUtility.composition': 'Composition',
+    'cellUtility.volume': 'Volume (A^3)',
+    'cellUtility.area': 'Area (A^2)',
+    'cellUtility.length': 'Period (A)',
+    'cellUtility.symmetry': 'SYMMETRY (N)',
+    'radialDistributionUtility.structureOrder': 'Structure order',
+    'radialDistributionUtility.averageOrder': 'Average order',
+    'radialDistributionUtility.quasientropy': 'Quasientropy',
+    'elasticML.youngsModulus': 'ML Youngs Modulus (Gpa)',
+    'elasticML.bulkModulus': 'ML Bulk Modulus (GPa)',
+    'elasticML.shearModulus': 'ML Shear Modulus (GPa)',
+    'elasticML.poissonsRatio': 'ML Poissons Ratio',
+    'elasticML.pughsRatio': 'ML Pughs Ratio',
+    'elasticML.vickersHardness': 'ML Vickers Hardness (GPa)',
+    'elasticML.fractureToughness': 'ML Fracture Toughness (MPa*m^1/2)'
+}
 
 
 class SystemsTable(object):
@@ -91,19 +113,19 @@ class AtomisticRepresentation(object):
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, RES_FOLDER: str, columns, toDraw, presentConvexHull: bool,
+    def __init__(self, RES_FOLDER: str, columns, toDraw, presentConvexHull: bool, presentPareto,
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = RES_FOLDER
         self.columns = columns
         self.toDraw = toDraw
         self.presentConvexHull = presentConvexHull
+        self.presentPareto = presentPareto
         self.rangeECH = rangeECH
 
     def getNewSystemsTable(self, isRank=False):
         return SystemsTable(self.columns, isRank)
 
     def presentSystems(self, systems: dict, optimizer, numStages):
-        fitness = optimizer.optType
         systems_gatheredPOSCARS = []
         systems_gatheredPOSCARS_unrelaxed = []
         table_Individuals = self.getNewSystemsTable()
@@ -141,7 +163,7 @@ class AtomisticRepresentation(object):
                 enths.append([system['enthalpy'] for system in system_stages[1:]])
         if enths:
             enths = np.asarray(enths, dtype=float)
-            plt.clf()
+            plt.figure()
             Nplots = enths.shape[1] - 1
             Nrows = np.ceil(np.sqrt(Nplots)).astype(int)
             Ncolumns = np.ceil(Nplots/Nrows).astype(int)
@@ -151,6 +173,7 @@ class AtomisticRepresentation(object):
                 plt.ylabel(f'E{i+2}')
                 plt.xlabel(f'E{i+1}')
             plt.savefig(pj(self.RES_FOLDER, 'E_series.svg'))
+            plt.close()
 
 
     @classmethod
@@ -550,15 +573,15 @@ class AtomisticRepresentation(object):
 
             allFitnesses = {system['ID']: optimizer.pool.generations[-1]['fitness'].getFitnessByID(fitness, originalID(system))
                             for system in extendedConvexHull}
-            fronts = optimizer.fitness.sort(extendedConvexHull, allFitnesses)
+            frontsECH = optimizer.fitness.sort(extendedConvexHull, allFitnesses)
 
-            for rank, front in enumerate(fronts):
+            for rank, front in enumerate(frontsECH):
                 for system in front:
                     table_extendedConvexHull.update(system['ID'], system, optimizer.fitness, rank=rank)
             with open(pj(self.RES_FOLDER, 'extended_convex_hull'), 'w') as fp:
                 fp.write(table_extendedConvexHull.table.get_string())
 
-            for front in fronts:
+            for front in frontsECH:
                 for system in front:
                     systems_extendedConvexHullPOSCARS.append(system)
             self.writeAtomicStructures(pj(self.RES_FOLDER, 'extended_convex_hull_POSCARS'),
@@ -568,6 +591,9 @@ class AtomisticRepresentation(object):
                 self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
             elif csSize == 3:
                 self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
+
+        if self.presentPareto is not None and len(self.presentPareto) == 2:
+            self._drawParetoFronts2(fronts, optimizer)
 
         self._drawProperties(optimizer.pool.uniqueSystems, optimizer.fitness)
 
@@ -589,11 +615,12 @@ class AtomisticRepresentation(object):
                         X.append(valueX)
                     elif typeX == 'per_atom':
                         X.append(valueX/len(system['molecules']))
-                plt.clf()
+                plt.figure()
                 plt.plot(X,Y,'go')
                 plt.ylabel(f'{propertyY}({typeY})')
                 plt.xlabel(f'{propertyX}({typeX})')
                 plt.savefig(pj(self.RES_FOLDER, f'{propertyY}({typeY})_vs_{propertyX}({typeX}).svg'))
+                plt.close()
             elif type == 'stat':
                 Y = []
                 for system in uniqueSystems:
@@ -603,9 +630,10 @@ class AtomisticRepresentation(object):
                             Y.append(value)
                         elif typeY == 'per_atom':
                             Y.append(value/len(system['molecules']))
-                plt.clf()
+                plt.figure()
                 plt.hist(Y, len(Y)//10+1, facecolor='g', alpha=0.75)
                 plt.savefig(pj(self.RES_FOLDER, f'{propertyY}({typeY})_statistics.svg'))
+                plt.close()
 
     def _drawExtendedConvexHull2(self, compositionSpace, convexHull, extendedConvexHull):
         if convexHull:
@@ -651,7 +679,7 @@ class AtomisticRepresentation(object):
                 X.append(numBlocks[1])
                 Y.append(Enthalpy)
             np.savetxt(pj(self.RES_FOLDER, 'ExtendedConvexHull.csv'), np.stack((X,Y), axis=-1), fmt='%6.3f', delimiter=',')
-            plt.clf()
+            plt.figure()
             plt.plot(X,Y,'go')
             plt.plot(Xch,Ych,'b-o')
             plt.ylabel('Enthalpy of formation (eV/atom)')
@@ -660,28 +688,87 @@ class AtomisticRepresentation(object):
                 components.append(''.join(f'{symbol}{mult}' for symbol,mult in zip(compositionSpace.symbols, block)))
             plt.xlabel(f'Composition ratio: {components[1]}/({components[0]}+{components[1]})')
             plt.savefig(pj(self.RES_FOLDER, 'ExtendedConvexHull.svg'))
+            plt.close()
 
 
     def _drawExtendedConvexHull3(self, compositionSpace, convexHull, extendedConvexHull):
         pass
+    def _drawParetoFronts2(self, fronts, optimizer):
+        (xProp, xLabel), (yProp, yLabel) = self.presentPareto
+        plt.figure()
+        for front, c in zip(fronts, ['k', 'b', 'r', 'm', 'c']):
+            values = np.asarray([(optimizer.fitness.getFitnessByID(xProp, system['ID']),
+                                  optimizer.fitness.getFitnessByID(yProp, system['ID'])) for system in front],
+                                dtype=float)
+            values = values[np.argsort(values[:, 0])]
+            plt.plot(*values.T, f'{c}-o')
+        if len(fronts) > 5:
+            for front in fronts[5:]:
+                values = np.asarray([(optimizer.fitness.getFitnessByID(xProp, system['ID']),
+                                      optimizer.fitness.getFitnessByID(yProp, system['ID'])) for system in front],
+                                    dtype=float)
+                values = values[np.argsort(values[:, 0])]
+                plt.plot(*values.T, 'go')
+        plt.xlabel(xLabel)
+        plt.ylabel(yLabel)
+        plt.savefig(pj(self.RES_FOLDER, f'Pareto_{xProp}_{yProp}.svg'))
+        plt.close()
 
     @staticmethod
-    def applyPresetOutputParameters(optimizer, output):
+    def applyPresetOutputParameters(optimizer):
+        columns = AtomisticRepresentation._extract(optimizer.optType)
+        if len(columns) > 1:
+            presentPareto = columns
+        else:
+            presentPareto = None
+        if 'enthalpyCCH' in columns or 'enthalpyCS' in columns:
+            columns = ['enthalpy'] + columns
+        columns = ['simpleMoleculeUtility.composition'] + columns
         dim = optimizer.target.utilities.cellUtility.getDim()
         if dim == 3:
-            prefix = 'Crystal'
+            columns += ['cellUtility.volume', 'cellUtility.symmetry']
         elif dim == 2:
-            prefix = 'Nano2D'
+            columns.append('cellUtility.area')
         elif dim == 1:
-            prefix = 'Nano1D'
+            columns.append('cellUtility.length')
         elif dim == 0:
-            prefix = 'Nano0D'
+            pass
         else:
             raise RuntimeError(f'Wrong dim {dim}.')
-        if optimizer.target.utilities.compositionSpace.isFixedComposition:
-            suffix = 'FixComp'
+        columns += ['radialDistributionUtility.structureOrder',
+                    'radialDistributionUtility.averageOrder',
+                    'radialDistributionUtility.quasientropy']
+        if 'enthalpy' in columns:
+            toDraw = [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
+                      ('stat', 'enthalpy', 'per_atom', '', '')]
+            if 'enthalpyCCH' not in columns:
+                toDraw.append(('dep', 'enthalpy', 'raw', 'ID', 'raw'))
+            if 'cellUtility.volume' in columns:
+                toDraw.append(('dep', 'enthalpy', 'per_atom', 'cellUtility.volume', 'per_atom'))
         else:
-            suffix = 'VarComp'
-        default = copy(presetOutput[prefix + suffix])
-        default.update(output)
-        return default
+            toDraw = []
+        presentConvexHull = 'enthalpyCCH' in columns
+        for i, column in enumerate(columns):
+            columns[i] = (column, presetLabels[column])
+        if presentPareto is not None:
+            for i, column in enumerate(presentPareto):
+                presentPareto[i] = (column, presetLabels[column])
+        return dict(
+            columns=columns,
+            toDraw=toDraw,
+            presentConvexHull=presentConvexHull,
+            presentPareto=presentPareto
+        )
+
+    @staticmethod
+    def _extract(optType):
+        if optType != 'enthalpyCCH' and optType != 'enthalpyCS' and optType in presetFitness:
+            optType = presetFitness[optType]
+        if isinstance(optType, str):
+            return [optType]
+        if isinstance(optType, tuple):
+            func, *arguments = optType
+            return list(set(chain(*[AtomisticRepresentation._extract(arg) for arg in arguments])))
+        else:
+            return []
+
