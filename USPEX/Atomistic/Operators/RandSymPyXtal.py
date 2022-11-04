@@ -10,7 +10,7 @@ from pyxtal import pyxtal
 
 MAX_PYXTAL_TIME = 30
 MAX_RANDOM_TIME = 300
-MAX_PYXTAL_ATTEMPTS = 20
+MAX_PYXTAL_ATTEMPTS = 200
 LOCAL_VACUUM = 0.2
 
 class RandSymPyXtal:

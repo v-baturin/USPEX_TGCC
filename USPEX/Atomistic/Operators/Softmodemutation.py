@@ -68,7 +68,7 @@ class Softmodemutation:
                 if disassembler1.environment is not None:
                     inds = disassembler1.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                if np.all(atomDistances >= minDistMatrix):
+                if np.all(atomDistances >= minDistMatrix) and self.bonds.isConnected(offspring1):
                     self.conditions.putConditions(offspring1)
                     # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring1)
                     # if self.bonds.isConnected(structure):
@@ -81,7 +81,7 @@ class Softmodemutation:
                 if disassembler2.environment is not None:
                     inds = disassembler2.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                if np.all(atomDistances >= minDistMatrix):
+                if np.all(atomDistances >= minDistMatrix) and self.bonds.isConnected(offspring2):
                     self.conditions.putConditions(offspring2)
                     # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring2)
                     # if self.bonds.isConnected(structure):
