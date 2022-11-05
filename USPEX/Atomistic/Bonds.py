@@ -99,42 +99,42 @@ class Bonds:
             self.goodBonds = None
         self.cutoff = cutoff
 
-    def isConnected(self, SYSTEM, cutoff=None):
+    def isConnected(self, structure, cutoff=None):
         """
-        checks if SYSTEM is connected, with bonds graph based on thresholds based on atom valence radii
+        checks if structure is connected, with bonds graph based on thresholds based on atom valence radii
         Rcutoff(type_i, type_j) = checkConnectivityCutoffFactor * (Rval(type_i) + Rval(type_j))
 
-        @param SYSTEM: AtomicStructure instance
+        @param structure: AtomicStructure instance
         @param cutoff: str, dict, float, int
         @return: bool
         """
-        cutoff = self.buildCutoffDict(SYSTEM, cutoff)
-        strongBonds, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
-        pbc = SYSTEM.getCell().getPBC()
+        cutoff = self.buildCutoffDict(structure, cutoff)
+        strongBonds, weakBonds = self.getAllBondsInCutoff(structure, cutoff)
+        pbc = structure.getCell().getPBC()
         # TODO: Make cutoffparameter an input parameter
-        return self._howmanyConnectedComponents(len(SYSTEM), strongBonds + weakBonds, pbc) == 1
+        return self._howmanyConnectedComponents(len(structure), strongBonds + weakBonds, pbc) == 1
 
-    def _strongBondsMaxDelta(self, SYSTEM):
+    def _strongBondsMaxDelta(self, structure):
         """
         A bond ij is considered strong if
         |r_ij| - (Rcov(Type_i) + Rcov(Type_j)) <= goodBondsDelta(Type_i,Type_j))
-        @param SYSTEM:
+        @param structure: AtomicStructure instance
         @return:
         """
         goodBonds = {frozenset((s1.short_name, s2.short_name)): np.power(s1.good_bonds * s2.good_bonds, 0.5)
-                     for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)} \
+                     for s1, s2 in combinations_with_replacement(structure.getAtomTypes(), 2)} \
             if self.goodBonds is None else self.goodBonds
 
         return {key: - 0.37 * np.log(val) for key, val in goodBonds.items()}
 
-    def buildCutoffDict(self, SYSTEM, cutoff=None):
+    def buildCutoffDict(self, structure, cutoff=None):
         """
         Builds dictionary of cutoffs compatible with ase.neighborlist.primitive_neighbor_list. Each dict item
         corresponds to a pair of elements with values of threshold bond distances
         Cutoffs are build as:
             1. 'strong' cutoff based on classic USPEX checkConnectivity
             2. 'vdw' cutoff as sum of van der Waals radii
-        @param SYSTEM: AtomicStructure instance
+        @param structure: AtomicStructure instance
         @param cutoffParameter: float or int, factor or increment depending on cutoffType
         @return: dict of cutoffs consistent with  cutoff dict parameter
         """
@@ -146,24 +146,24 @@ class Bonds:
 
         covalentLengths = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).covalent_radius +
                                                                       Element(s2.short_name).covalent_radius
-                           for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
+                           for s1, s2 in combinations_with_replacement(structure.getAtomTypes(), 2)}
 
         if cutoff == 'strong':
-            strongMaxDelta = self._strongBondsMaxDelta(SYSTEM)
+            strongMaxDelta = self._strongBondsMaxDelta(structure)
             cutoff = {key: val + strongMaxDelta[key] for key, val in covalentLengths.items()}
         elif cutoff == 'vdw':
             cutoff = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).vanderWaals_radius +
                                                                  Element(s2.short_name).vanderWaals_radius
-                      for s1, s2 in combinations_with_replacement(SYSTEM.getAtomTypes(), 2)}
+                      for s1, s2 in combinations_with_replacement(structure.getAtomTypes(), 2)}
         else:
             raise ValueError('Unsupported cutoffType')
         return {tuple(key) * (3 - len(key)): val for key, val in cutoff.items()}
 
-    def getAllBondsInCutoff(self, SYSTEM, cutoff):
+    def getAllBondsInCutoff(self, structure, cutoff):
         """
-        Gets all bonds in SYSTEM, whose lengths do not exceed cut-off
+        Gets all bonds in structure, whose lengths do not exceed cut-off
         Cut-off parameter is passed to ase.neighborlist.primitive_neighbor_list, hence its format
-        @param SYSTEM: AtomicStructure instance
+        @param structure: AtomicStructure instance
         @param cutoff: float or dict or list or array
                 Cutoff for neighbor search. It can be:
 
@@ -178,24 +178,24 @@ class Bonds:
         @return: (strongBonds: List, weakBonds: List) (separated according to goodBonds-based criteria)
         """
 
-        structure = Atoms(symbols=[s.short_name for s in SYSTEM.getAtomTypes()],
-                          positions=SYSTEM.getCartesianCoordinates(),
-                          cell=SYSTEM.getCell().getCellVectors(),
-                          pbc=SYSTEM.getCell().getPBC())
+        atoms = Atoms(symbols=[s.short_name for s in structure.getAtomTypes()],
+                          positions=structure.getCartesianCoordinates(),
+                          cell=structure.getCell().getCellVectors(),
+                          pbc=structure.getCell().getPBC())
 
         # 1. Calculate bonds within cutoff.
         bonds = []
-        i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=structure.pbc,
-                                                                    cell=structure.get_cell(complete=True),
-                                                                    positions=structure.get_scaled_positions(),
-                                                                    cutoff=cutoff, numbers=structure.numbers,
+        i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=atoms.pbc,
+                                                                    cell=atoms.get_cell(complete=True),
+                                                                    positions=atoms.get_scaled_positions(),
+                                                                    cutoff=cutoff, numbers=atoms.numbers,
                                                                     use_scaled_positions=True)
 
         for i, j, dist, vec, dir in zip(i_init, j_init, dists, vecs, dirs):
             # TODO Why we had this less 0.5A and not more than 5A (usually)
             if dist < self.lowerBond or j < i:
                 continue
-            bonds.append(Bond(atom1=structure[i], atom2=structure[j], dir2=dir))
+            bonds.append(Bond(atom1=atoms[i], atom2=atoms[j], dir2=dir))
 
         tmp_bonds = sorted(bonds, key=lambda x: x.delta)
 
@@ -203,7 +203,7 @@ class Bonds:
         #    according to goodBonds-based criterion
         strongBonds = []
         weakBonds = []
-        strongBondMaxDelta = self._strongBondsMaxDelta(SYSTEM)
+        strongBondMaxDelta = self._strongBondsMaxDelta(structure)
         while tmp_bonds:
             bond = tmp_bonds.pop(0)
             bonds_one_type = [bond]
@@ -223,20 +223,20 @@ class Bonds:
 
         return strongBonds, weakBonds
 
-    def getMinimalGraphBonds(self, SYSTEM) -> list:
+    def getMinimalGraphBonds(self, structure) -> list:
         '''
         Calculates bond graph minimal for the structure to be 3D connected.
 
-        :param SYSTEM: AtomicStructure instance
+        :param structure: AtomicStructure instance
         :return: bond graph
         '''
 
-        N_atom = len(SYSTEM)
-        pbc = SYSTEM.getCell().getPBC()
+        N_atom = len(structure)
+        pbc = structure.getCell().getPBC()
 
         # 1. getting bonds that are shorter than cutoff (self.maxBond)
         cutoff = self.maxBond
-        bondIn, weakBonds = self.getAllBondsInCutoff(SYSTEM, cutoff)
+        bondIn, weakBonds = self.getAllBondsInCutoff(structure, cutoff)
 
         # 2. check 3D connectivity, if not satisfied, add more bonds of increasing lengths,
         #    until connectivity is acheived
