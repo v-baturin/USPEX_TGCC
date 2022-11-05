@@ -178,24 +178,24 @@ class Bonds:
         @return: (strongBonds: List, weakBonds: List) (separated according to goodBonds-based criteria)
         """
 
-        structure = Atoms(symbols=[s.short_name for s in structure.getAtomTypes()],
+        atoms = Atoms(symbols=[s.short_name for s in structure.getAtomTypes()],
                           positions=structure.getCartesianCoordinates(),
                           cell=structure.getCell().getCellVectors(),
                           pbc=structure.getCell().getPBC())
 
         # 1. Calculate bonds within cutoff.
         bonds = []
-        i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=structure.pbc,
-                                                                    cell=structure.get_cell(complete=True),
-                                                                    positions=structure.get_scaled_positions(),
-                                                                    cutoff=cutoff, numbers=structure.numbers,
+        i_init, j_init, dists, vecs, dirs = primitive_neighbor_list(quantities='ijdDS', pbc=atoms.pbc,
+                                                                    cell=atoms.get_cell(complete=True),
+                                                                    positions=atoms.get_scaled_positions(),
+                                                                    cutoff=cutoff, numbers=atoms.numbers,
                                                                     use_scaled_positions=True)
 
         for i, j, dist, vec, dir in zip(i_init, j_init, dists, vecs, dirs):
             # TODO Why we had this less 0.5A and not more than 5A (usually)
             if dist < self.lowerBond or j < i:
                 continue
-            bonds.append(Bond(atom1=structure[i], atom2=structure[j], dir2=dir))
+            bonds.append(Bond(atom1=atoms[i], atom2=atoms[j], dir2=dir))
 
         tmp_bonds = sorted(bonds, key=lambda x: x.delta)
 
