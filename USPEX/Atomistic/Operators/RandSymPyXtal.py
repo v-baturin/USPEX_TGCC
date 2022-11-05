@@ -10,7 +10,7 @@ from pyxtal import pyxtal
 
 MAX_PYXTAL_TIME = 30
 MAX_RANDOM_TIME = 300
-MAX_PYXTAL_ATTEMPTS = 200
+MAX_PYXTAL_ATTEMPTS = 10000
 LOCAL_VACUUM = 0.2
 
 class RandSymPyXtal:
@@ -101,7 +101,8 @@ class RandSymPyXtal:
                 structurePyxtal.from_random(dim, nsym, symbols, numIons, lattice=lat)
             except Exception as e:
                 signal.alarm(0)
-                raise RuntimeError("RandSymPyXtal failed.") from e
+                logger.debug(e)
+                continue
             signal.alarm(0)
 
             if structurePyxtal.valid:
