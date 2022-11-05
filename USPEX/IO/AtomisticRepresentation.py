@@ -221,7 +221,7 @@ class AtomisticRepresentation(object):
             molecules = []
             for indices in disassembler.indices:
                 if len(indices) > 1:
-                    d['molecules'].append(' '.join(f'{ind}' for ind in reversedIndices[indices]))
+                    molecules.append(' '.join(f'{ind}' for ind in reversedIndices[indices]))
                     printUSPEX = True
             if molecules:
                 d['molecules'] = molecules

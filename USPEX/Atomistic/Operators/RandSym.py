@@ -96,21 +96,22 @@ class RandSym:
         badSymmetryCounter = 0
         startTime = time()
         centerMinDistMatrix = np.zeros((len(symbols), len(symbols)))
+        cellType = self.simpleMoleculeUtility.cellType
         radii = []
         for s in symbols:
             molecule = self.simpleMoleculeUtility.molecules[s]
             if len(molecule) == 1:
-                atomRaduis = self.ionDistances.volumeEstimator.calcAtomVolume(s, self.conditions.externalPressure) ** (1.0 / 3.0)
-                radii.append(0.22 * atomRaduis)
+                raduis = self.ionDistances.volumeEstimator.calcAtomVolume(s, self.conditions.externalPressure)**(1.0/3.0)
+                radii.append(0.22 * raduis)
             else:
-                molecule = Transformation.fromRotVector([0.,0.,0.],
-                                                        -molecule.getCenterOfMassCartesianCoordinates()).transform(molecule)
-                values, vectors = molecule.getPrincipalAxes()
+                coordinates = molecule.getCartesianCoordinates() - molecule.getCenterOfMassCartesianCoordinates()
+                values, vectors = cellType.getPrincipalAxes(coordinates)
                 short_direction = vectors[np.argmin(values)]
-                height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.getCartesianCoordinates()]
+                height_map = [np.abs(np.dot(pos, short_direction)) for pos in coordinates]
                 ind = np.argmin(height_map)
-                atomRaduis = self.ionDistances.volumeEstimator.calcAtomVolume(molecule.getAtomTypes()[ind], self.conditions.externalPressure) ** (1.0 / 3.0)
-                radii.append(0.45 * atomRaduis + height_map[ind])
+                raduis = self.ionDistances.volumeEstimator.calcAtomVolume(molecule.getAtomTypes()[ind],
+                                                                          self.conditions.externalPressure)**(1.0/3.0)
+                radii.append(0.45 * raduis + height_map[ind])
         for i, j in combinations_with_replacement(range(len(radii)), 2):
             centerMinDistMatrix[i, j] = centerMinDistMatrix[j, i] = (radii[i] + radii[j])
         distCoeff = 1.0
