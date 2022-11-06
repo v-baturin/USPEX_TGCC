@@ -17,6 +17,7 @@ RadialDistributionUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDi
 from .Atomistic.CellUtility import CellUtility
 CellUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.BondHardnessUtility import BondHardnessUtility
+BondHardnessUtility.registerTypes(Element)
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.Conditions import Conditions

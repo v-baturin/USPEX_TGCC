@@ -4,7 +4,6 @@ logger = logging.getLogger(__name__)
 import numpy as np
 
 from ..Transformation import Transformation
-from ...Atomistic.softmodes.calcSoftModes import calcSoftModes
 
 
 _MIN_VALID_FREQUENCY = 5.0e-4
@@ -15,6 +14,7 @@ class Softmodemutation:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
         self.bonds = utilities.bonds
+        self.bondHardnessUtility = utilities.bondHardnessUtility
         self.environmentUtility = utilities.environmentUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
@@ -36,7 +36,7 @@ class Softmodemutation:
                 except Exception as e:
                     logger.debug(e)
                     raise RuntimeError("Softmutation failed.")
-                frequencies, eigenVectors = calcSoftModes(structure, bonds)
+                frequencies, eigenVectors = self.bondHardnessUtility.calcSoftModes(structure, bonds)
                 self.knownSystems[ID] = (frequencies, eigenVectors)
             while len(frequencies) > 0:
                 freq = frequencies.pop(0)
