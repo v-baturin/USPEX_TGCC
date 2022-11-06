@@ -217,7 +217,7 @@ class AtomisticRepresentation(object):
             d = {'filename': os.path.basename(filename), 'index': i}
             pbc = system['cell'].getPBC()
             if pbc != (1, 1, 1):
-                d['pbc'] = list(pbc)
+                d['pbc'] = ' '.join(f'{c}' for c in pbc)
                 printUSPEX = True
             molecules = []
             for indices in disassembler.indices:
@@ -270,8 +270,12 @@ class AtomisticRepresentation(object):
             for d in descriptions:
                 d = copy(d)
                 structure = files[d.pop('filename')][d.pop('index')]
+                if 'pbc' in d:
+                    d['pbc'] = tuple(d.pop('pbc').split(' '))
                 if 'molecules' in d:
                     d['molecules'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
+                else:
+                    d['molecules'] = []
                 if 'environment' in d:
                     environment = d.pop('environment')
                     environmentType = environmentUtility.supportedEnvironments.get(environment.pop('type'))
