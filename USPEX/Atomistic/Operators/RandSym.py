@@ -64,7 +64,6 @@ class RandSym:
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.nsymN = nsymN
@@ -101,7 +100,7 @@ class RandSym:
         for s in symbols:
             molecule = self.simpleMoleculeUtility.molecules[s]
             if len(molecule) == 1:
-                raduis = self.ionDistances.volumeEstimator.calcAtomVolume(s, self.conditions.externalPressure)**(1.0/3.0)
+                raduis = self.bondUtility.volumeEstimator.calcAtomVolume(s, self.conditions.externalPressure)**(1.0/3.0)
                 radii.append(0.22 * raduis)
             else:
                 coordinates = molecule.getCartesianCoordinates() - molecule.getCenterOfMassCartesianCoordinates()
@@ -109,7 +108,7 @@ class RandSym:
                 short_direction = vectors[np.argmin(values)]
                 height_map = [np.abs(np.dot(pos, short_direction)) for pos in coordinates]
                 ind = np.argmin(height_map)
-                raduis = self.ionDistances.volumeEstimator.calcAtomVolume(molecule.getAtomTypes()[ind],
+                raduis = self.bondUtility.volumeEstimator.calcAtomVolume(molecule.getAtomTypes()[ind],
                                                                           self.conditions.externalPressure)**(1.0/3.0)
                 radii.append(0.45 * raduis + height_map[ind])
         for i, j in combinations_with_replacement(range(len(radii)), 2):
@@ -158,7 +157,7 @@ class RandSym:
                 estimatedVolume = self.cellUtility.getCellVolume()
                 if estimatedVolume is None:
                     elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-                    estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
+                    estimatedVolume = self.bondUtility.volumeEstimator.calcCompositionVolume(elementalComposition,
                                                                                               self.conditions.externalPressure)
                 if sum(self.splitInto) > 3:  # split cell
                     lat = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons),
@@ -177,7 +176,7 @@ class RandSym:
                     if envAssembler is not None:
                         offspring['environment'] = envAssembler.assemble(**offspring)
                     atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                    minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                     if disassembler.environment is not None:
                         inds = disassembler.envIndices
                         atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]

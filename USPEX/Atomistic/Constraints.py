@@ -15,7 +15,6 @@ class Constraints:
         self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
         self.bondUtiity = utilities.bondUtility
         self.conditions = utilities.conditions
 
@@ -26,7 +25,7 @@ class Constraints:
         :param system: system to be checked and fixed
         """
         atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
-        minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+        minDistMatrix = self.bondUtiity.getDistances(atomSymbols, self.conditions.externalPressure)
         if disassembler.environment is not None:
             inds = disassembler.envIndices
             atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]

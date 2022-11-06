@@ -8,7 +8,6 @@ class AddAtom:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
-        self.ionDistances = utilities.ionDistances
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
@@ -91,7 +90,7 @@ class AddAtom:
             offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
             offspring['molecules'][0:0] = molecules
             atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+            minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
             if disassembler.environment is not None:
                 inds = disassembler.envIndices
                 atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[

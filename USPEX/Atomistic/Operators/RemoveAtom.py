@@ -7,7 +7,6 @@ class RemoveAtom:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
-        self.ionDistances = utilities.ionDistances
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
@@ -46,7 +45,7 @@ class RemoveAtom:
             offspring['molecules'][0:0] = molecules
             del offspring['molecules'][molInd]
             atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+            minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
             if disassembler.environment is not None:
                 inds = disassembler.envIndices
                 atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[

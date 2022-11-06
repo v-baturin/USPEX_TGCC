@@ -58,7 +58,7 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
                     'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O']},
-                    'ionDistances': {'volumeType': 0}
+                    'bondUtility': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
@@ -127,7 +127,7 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['mol_h2o'],
                                          'blocks': [[4]]},
                     'radialDistributionUtility': {'symbols': ['H', 'O']},
-                    'ionDistances': {'volumeType': 0.5}
+                    'bondUtility': {'volumeType': 0.5}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
@@ -177,7 +177,7 @@ class CompileParams_Test(unittest.TestCase):
                                          'blocks': [[8,24]],
                                          'range': [[1,1]]},
                     'radialDistributionUtility': {'symbols': ['Cl', 'Na']},
-                    'ionDistances': {'volumeType': 0}
+                    'bondUtility': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',

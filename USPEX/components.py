@@ -19,7 +19,6 @@ CellUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.Conditions import Conditions
-from .Atomistic.IonDistances import IonDistances
 from .Atomistic.BondUtility import BondUtility
 BondUtility.registerTypes(Element)
 from .Atomistic.ElasticML import ElasticML
@@ -43,7 +42,7 @@ from .Atomistic.Operators.Seeds import Seeds
 Seeds.registerTypes(AtomisticRepresentation)
 GlobalOptimizer.registerTarget('Atomistic',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
-                                 SimpleMoleculeUtility, Conditions, IonDistances, BondUtility, Constraints, ElasticML,
+                                 SimpleMoleculeUtility, Conditions, BondUtility, Constraints, ElasticML,
                                  PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, ],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],

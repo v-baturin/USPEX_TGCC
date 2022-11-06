@@ -12,7 +12,6 @@ _MIN_VALID_FREQUENCY = 5.0e-4
 class Softmodemutation:
     def __init__(self, utilities, degree: float = None):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
         self.bondUtility = utilities.bondUtility
         self.environmentUtility = utilities.environmentUtility
         self.conditions = utilities.conditions
@@ -63,7 +62,7 @@ class Softmodemutation:
                 if 'environment' in system:
                     offspring1['environment'] = system['environment']
                 atomSymbols, atomDistances, disassembler1 = self.simpleMoleculeUtility.getMinDistances(**offspring1)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                 if disassembler1.environment is not None:
                     inds = disassembler1.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
@@ -76,7 +75,7 @@ class Softmodemutation:
                 if 'environment' in system:
                     offspring2['environment'] = system['environment']
                 atomSymbols, atomDistances, disassembler2 = self.simpleMoleculeUtility.getMinDistances(**offspring2)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                 if disassembler2.environment is not None:
                     inds = disassembler2.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]

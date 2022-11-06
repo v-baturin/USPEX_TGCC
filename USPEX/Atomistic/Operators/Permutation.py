@@ -14,7 +14,6 @@ class Permutation:
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
@@ -52,7 +51,7 @@ class Permutation:
                     if 'environment' in system:
                         offspring['environment'] = system['environment']
                     atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                    minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                     if disassembler.environment is not None:
                         inds = disassembler.envIndices
                         atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]

@@ -19,7 +19,7 @@ from scipy.spatial.distance import cdist
 from scipy.stats import gmean
 from itertools import chain
 
-from ..Atomistic.Element import Element
+from .VolumeEstimator import VolumeEstimator
 
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class Bond(object):
 
     @property
     def delta(self):
-        R_val = lambda symbol: Element(symbol).covalent_radius
+        R_val = lambda symbol: BondUtility.atomType(symbol).covalent_radius
         return self.distance - R_val(self._atom1.symbol) - R_val(self._atom2.symbol)
 
     @property
@@ -114,7 +114,7 @@ class BondUtility:
         cls.atomType = atomType
 
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
-                 cutoff: Union[str, Dict, float, int] = 'vdw'):
+                 cutoff: Union[str, Dict, float, int] = 'vdw', volumeType=0, ionDistances=None):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
         self.maxBond = maxBond if maxBond is not None else MAX_BOND
         self.lowerBond = lowerBond if lowerBond is not None else LOWER_BOND
@@ -125,6 +125,15 @@ class BondUtility:
         else:
             self.goodBonds = None
         self.cutoff = cutoff
+        self.volumeEstimator = VolumeEstimator(volumeType)
+
+        self._distances = {}
+        ionDistances = ionDistances if ionDistances is not None else {}
+        for key, value in ionDistances.items():
+            assert isinstance(key, str)
+            assert np.isfinite(value)
+            s1, s2 = key.split(' ')
+            self._distances[(s1, s2)] = value
 
     def isConnected(self, structure, cutoff=None):
         """
@@ -171,16 +180,16 @@ class BondUtility:
         if isinstance(cutoff, (dict, float, int)):
             return cutoff
 
-        covalentLengths = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).covalent_radius +
-                                                                      Element(s2.short_name).covalent_radius
+        covalentLengths = {frozenset((s1.short_name, s2.short_name)): self.atomType(s1.short_name).covalent_radius +
+                                                                      self.atomType(s2.short_name).covalent_radius
                            for s1, s2 in combinations_with_replacement(structure.getAtomTypes(), 2)}
 
         if cutoff == 'strong':
             strongMaxDelta = self._strongBondsMaxDelta(structure)
             cutoff = {key: val + strongMaxDelta[key] for key, val in covalentLengths.items()}
         elif cutoff == 'vdw':
-            cutoff = {frozenset((s1.short_name, s2.short_name)): Element(s1.short_name).vanderWaals_radius +
-                                                                 Element(s2.short_name).vanderWaals_radius
+            cutoff = {frozenset((s1.short_name, s2.short_name)): self.atomType(s1.short_name).vanderWaals_radius +
+                                                                 self.atomType(s2.short_name).vanderWaals_radius
                       for s1, s2 in combinations_with_replacement(structure.getAtomTypes(), 2)}
         else:
             raise ValueError('Unsupported cutoffType')
@@ -503,6 +512,39 @@ class BondUtility:
         order = np.exp(-(cdist(vertices, vertices) - base) / 0.23)
         order = np.delete(np.triu(order, 1), 0, 1) + np.delete(np.tril(order, -1), len(vertices) - 1, 1)
         return order.sum(axis=1) / order.max(axis=1)
+
+    def getDistances(self, symbols, pressure):
+        """
+        For given array of symbols generates matrix of minimal distances.
+        If minimal distance for pair of symbols is not predefined calculates it using volumeUtility.
+
+        :param symbols: N array of symbols
+        :param pressure: external pressure.
+
+        :return: N*N array of minimal distances.
+        """
+        symbols = [symbol.short_name for symbol in symbols]
+        uniqueSimbols = np.unique(symbols)
+        minDistMatrix = {}
+        radii = {symbol: self.volumeEstimator.calcAtomVolume(symbol, pressure) ** (1.0 / 3.0)
+                 for symbol in uniqueSimbols}
+        for s1, s2 in combinations_with_replacement(uniqueSimbols, 2):
+            if (s1, s2) in self._distances:
+                minDistMatrix[(s2, s1)] = minDistMatrix[(s1, s2)] = self._distances[(s1, s2)]
+            elif (s2, s1) in self._distances:
+                minDistMatrix[(s1, s2)] = minDistMatrix[(s2, s1)] = self._distances[(s2, s1)]
+            elif self.volumeEstimator.volumeType == 0:
+                minDistMatrix[(s1, s2)] = minDistMatrix[(s2, s1)] = min(0.22 * (radii[s1] + radii[s2]), 1.2)
+            else:
+                minDistMatrix[(s1, s2)] = minDistMatrix[(s2, s1)] = 0.45 * (radii[s1] + radii[s2])
+
+        N = len(symbols)
+        mDM = np.zeros((N, N), dtype=float)
+        for i, j in combinations_with_replacement(range(N), 2):
+            s1 = symbols[i]
+            s2 = symbols[j]
+            mDM[i, j] = mDM[j, i] = minDistMatrix[(s1, s2)]
+        return mDM
 
 
 def _AddDynMatSelf(D, a, H, Cos, phase):
