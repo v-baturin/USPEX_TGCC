@@ -9,10 +9,9 @@ class AddAtom:
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
-        self.bondHardnessUtility = utilities.bondHardnessUtility
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("AddAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
@@ -29,7 +28,7 @@ class AddAtom:
         species = np.unique(atomTypes)
         coordinates = structure.getCartesianCoordinates()
 
-        coordinationNumbers = self.bondHardnessUtility.calcCoordinationNumbers(structure)
+        coordinationNumbers = self.bondUtility.calcCoordinationNumbers(structure)
         deltaCNs = np.empty(atomTypes.shape, dtype=float)
         for atomType in species:
             inds = (atomTypes == atomType).nonzero()

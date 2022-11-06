@@ -65,7 +65,7 @@ class RandSym:
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.nsymN = nsymN
         if nsym is None:
@@ -184,7 +184,7 @@ class RandSym:
                     if np.all(atomDistances >= distCoeff * minDistMatrix):
                         self.conditions.putConditions(offspring)
                         structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring)
-                        if self.bonds.isConnected(structure):
+                        if self.bondUtility.isConnected(structure):
                             return offspring,
             except Exception as e:
                 logger.debug(e, exc_info=True)

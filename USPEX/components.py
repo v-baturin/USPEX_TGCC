@@ -16,13 +16,12 @@ from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 RadialDistributionUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.CellUtility import CellUtility
 CellUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-from .Atomistic.BondHardnessUtility import BondHardnessUtility
-BondHardnessUtility.registerTypes(Element)
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.Conditions import Conditions
 from .Atomistic.IonDistances import IonDistances
-from .Atomistic.Bonds import Bonds
+from .Atomistic.BondUtility import BondUtility
+BondUtility.registerTypes(Element)
 from .Atomistic.ElasticML import ElasticML
 ElasticML.registerTypes(AtomicDisassembler)
 from .Atomistic.Constraints import Constraints
@@ -44,8 +43,8 @@ from .Atomistic.Operators.Seeds import Seeds
 Seeds.registerTypes(AtomisticRepresentation)
 GlobalOptimizer.registerTarget('Atomistic',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
-                                 SimpleMoleculeUtility, Conditions, IonDistances, Bonds, Constraints, ElasticML,
-                                 BondHardnessUtility, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,],
+                                 SimpleMoleculeUtility, Conditions, IonDistances, BondUtility, Constraints, ElasticML,
+                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, ],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal],

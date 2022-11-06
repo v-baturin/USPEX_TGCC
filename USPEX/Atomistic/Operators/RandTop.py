@@ -32,7 +32,7 @@ class RandTop:
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.supercells = supercells
         self.maxSupersize = maxSupersize
@@ -140,7 +140,7 @@ class RandTop:
                                                 self.conditions.putConditions(offspring)
                                                 structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(
                                                     **offspring)
-                                                if self.bonds.isConnected(structure):
+                                                if self.bondUtility.isConnected(structure):
                                                     return offspring,
         raise RuntimeError("RandTop failed.")
 

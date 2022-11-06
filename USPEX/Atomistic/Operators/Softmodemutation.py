@@ -13,8 +13,7 @@ class Softmodemutation:
     def __init__(self, utilities, degree: float = None):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
-        self.bondHardnessUtility = utilities.bondHardnessUtility
+        self.bondUtility = utilities.bondUtility
         self.environmentUtility = utilities.environmentUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
@@ -32,11 +31,11 @@ class Softmodemutation:
                 frequencies, eigenVectors = self.knownSystems[ID]
             else:
                 try:
-                    bonds = self.bonds.getMinimalGraphBonds(structure)
+                    bonds = self.bondUtility.getMinimalGraphBonds(structure)
                 except Exception as e:
                     logger.debug(e)
                     raise RuntimeError("Softmutation failed.")
-                frequencies, eigenVectors = self.bondHardnessUtility.calcSoftModes(structure, bonds)
+                frequencies, eigenVectors = self.bondUtility.calcSoftModes(structure, bonds)
                 self.knownSystems[ID] = (frequencies, eigenVectors)
             while len(frequencies) > 0:
                 freq = frequencies.pop(0)
@@ -71,7 +70,7 @@ class Softmodemutation:
                 if np.all(atomDistances >= minDistMatrix):
                     self.conditions.putConditions(offspring1)
                     structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring1)
-                    if self.bonds.isConnected(structure):
+                    if self.bondUtility.isConnected(structure):
                         offsprings += (offspring1,)
                 offspring2 = {'molecules': molecules2, 'cell': cell}
                 if 'environment' in system:
@@ -84,7 +83,7 @@ class Softmodemutation:
                 if np.all(atomDistances >= minDistMatrix):
                     self.conditions.putConditions(offspring2)
                     structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring2)
-                    if self.bonds.isConnected(structure):
+                    if self.bondUtility.isConnected(structure):
                         offsprings += (offspring2,)
                 if offsprings:
                     return offsprings

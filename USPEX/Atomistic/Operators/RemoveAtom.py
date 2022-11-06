@@ -8,10 +8,9 @@ class RemoveAtom:
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
-        self.bondHardnessUtility = utilities.bondHardnessUtility
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("RemoveAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
@@ -27,7 +26,7 @@ class RemoveAtom:
         atomTypes = structure.getAtomTypes()
         species = np.unique(atomTypes)
 
-        coordinationNumbers = self.bondHardnessUtility.calcCoordinationNumbers(structure)
+        coordinationNumbers = self.bondUtility.calcCoordinationNumbers(structure)
         deltaCNs = np.empty(atomTypes.shape, dtype=float)
         for atomType in species:
             inds = (atomTypes == atomType).nonzero()

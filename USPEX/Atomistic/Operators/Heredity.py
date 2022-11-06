@@ -20,7 +20,7 @@ class Heredity:
         self.radialDistributionUtility = utilities.radialDistributionUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.nslabs = nslabs
         self.attempts = attempts
