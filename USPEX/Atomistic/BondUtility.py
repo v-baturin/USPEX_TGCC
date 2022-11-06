@@ -100,9 +100,10 @@ class Bond(object):
 class BondUtility:
 
     atomType = None
+    disassemblerType = None
 
     @classmethod
-    def registerTypes(cls, atomType):
+    def registerTypes(cls, atomType, disassemblerType):
         """
         Register types used by this utility.
 
@@ -112,6 +113,7 @@ class BondUtility:
         :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
         """
         cls.atomType = atomType
+        cls.disassemblerType = disassemblerType
 
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
                  cutoff: Union[str, Dict, float, int] = 'vdw', volumeType=0, ionDistances=None):
@@ -502,6 +504,13 @@ class BondUtility:
         freq, eigvector = list(freq[IX]), list(np.real(eigvector[:, IX]).T)
 
         return freq, eigvector
+
+    def hardness(self, system):
+        if 'bondUtility.hardness' not in system:
+            structure, disassembler = self.disassemblerType.assembe(**system)
+            bonds = self.getMinimalGraphBonds(structure)
+            system['bondUtility.hardness'] = self.calcHardness(structure, bonds)
+        return system['bondUtility.hardness']
 
     @staticmethod
     def calcCoordinationNumbers(structure):

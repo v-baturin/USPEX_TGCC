@@ -20,7 +20,7 @@ from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.Conditions import Conditions
 from .Atomistic.BondUtility import BondUtility
-BondUtility.registerTypes(Element)
+BondUtility.registerTypes(Element, AtomicDisassembler)
 from .Atomistic.ElasticML import ElasticML
 ElasticML.registerTypes(AtomicDisassembler)
 from .Atomistic.Constraints import Constraints

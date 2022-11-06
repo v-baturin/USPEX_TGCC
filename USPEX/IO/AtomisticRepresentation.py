@@ -52,6 +52,7 @@ presetLabels = {
     'cellUtility.area': 'Area (A^2)',
     'cellUtility.length': 'Period (A)',
     'cellUtility.symmetry': 'SYMMETRY (N)',
+    'bondUtility.hardness': 'Hardness',
     'radialDistributionUtility.structureOrder': 'Structure order',
     'radialDistributionUtility.averageOrder': 'Average order',
     'radialDistributionUtility.quasientropy': 'Quasientropy',
