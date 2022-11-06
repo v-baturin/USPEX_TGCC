@@ -47,6 +47,7 @@ presetLabels = {
     'enthalpyCCH': 'Enthalpy above CH (eV/block)',
     'enthalpyCS': 'Enthalpy above the best for composition(eV/block)',
     'simpleMoleculeUtility.composition': 'Composition',
+    'simpleMoleculeUtility.density': 'Density (g/cm^3)',
     'cellUtility.volume': 'Volume (A^3)',
     'cellUtility.area': 'Area (A^2)',
     'cellUtility.length': 'Period (A)',

@@ -9,6 +9,9 @@ from collections import Counter
 from .Transformation import Transformation
 
 
+DENSITY_CONST = 1.660539
+
+
 class SimpleMoleculeUtility(object):
     """
     Utility providing methods for work with simple molecules.
@@ -102,7 +105,7 @@ class SimpleMoleculeUtility(object):
             system['simpleMoleculeUtility.moleculeTypes'] = moleculeTypes
         return system['simpleMoleculeUtility.moleculeTypes']
 
-    def composition(self, system : dict):
+    def composition(self, system: dict):
         """
         For using in **Fitness** infrastructure
 
@@ -114,6 +117,14 @@ class SimpleMoleculeUtility(object):
             composition = Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
             system['simpleMoleculeUtility.composition'] = composition
         return system['simpleMoleculeUtility.composition']
+
+    def density(self, system):
+        cell = system['cell']
+        if cell.dim == 3:
+            mass = sum(e.mass*v for e, v in self.getElementalComposition(self.composition(system)).items())
+            return mass/cell.getVolume()*DENSITY_CONST
+        else:
+            return None
 
     def getElementalComposition(self, composition):
         """
