@@ -47,8 +47,6 @@ extensions = [
     Extension("USPEX.Atomistic.Slab", ["USPEX/Atomistic/Slab.py"]),
     Extension("USPEX.Atomistic.Transformation", ["USPEX/Atomistic/Transformation.py"]),
     Extension("USPEX.Atomistic.VolumeEstimator", ["USPEX/Atomistic/VolumeEstimator.py"]),
-    Extension("USPEX.Atomistic.softmodes.calcHardness", ["USPEX/Atomistic/softmodes/calcHardness.py"]),
-    Extension("USPEX.Atomistic.softmodes.calcSoftModes", ["USPEX/Atomistic/softmodes/calcSoftModes.py"]),
     Extension("USPEX.Atomistic.Operators.Heredity", ["USPEX/Atomistic/Operators/Heredity.py"]),
     Extension("USPEX.Atomistic.Operators.Permutation", ["USPEX/Atomistic/Operators/Permutation.py"]),
     Extension("USPEX.Atomistic.Operators.RandSym", ["USPEX/Atomistic/Operators/RandSym.py"]),
