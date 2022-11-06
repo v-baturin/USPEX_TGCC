@@ -271,7 +271,7 @@ class AtomisticRepresentation(object):
                 d = copy(d)
                 structure = files[d.pop('filename')][d.pop('index')]
                 if 'pbc' in d:
-                    d['pbc'] = tuple(d.pop('pbc').split(' '))
+                    d['pbc'] = tuple(int(c) for c in d.pop('pbc').split(' '))
                 if 'molecules' in d:
                     d['molecules'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
                 else:
