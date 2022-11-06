@@ -19,8 +19,7 @@ class Heredity:
         self.compositionSpace = utilities.compositionSpace
         self.radialDistributionUtility = utilities.radialDistributionUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.nslabs = nslabs
         self.attempts = attempts
@@ -126,7 +125,7 @@ class Heredity:
                     if parentEnv is not None:
                         offspring['environment'] = parentEnv['environment']
                     atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                    minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                     if disassembler.environment is not None:
                         inds = disassembler.envIndices
                         atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]

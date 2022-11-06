@@ -34,7 +34,7 @@ class Seeds(object):
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.environmentUtility = utilities.environmentUtility
-        self.ionDistances = utilities.ionDistances
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
 
         self.generations = generations if generations is not None else []
@@ -67,7 +67,7 @@ class Seeds(object):
                     systems = self.systemRepresentationClass.readAtomicStructures(filename, self.environmentUtility)
                     for system in systems:
                         atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
-                        minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                        minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                         if disassembler.environment is not None:
                             inds = disassembler.envIndices
                             atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]

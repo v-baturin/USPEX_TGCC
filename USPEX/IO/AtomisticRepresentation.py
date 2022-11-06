@@ -52,6 +52,7 @@ presetLabels = {
     'cellUtility.area': 'Area (A^2)',
     'cellUtility.length': 'Period (A)',
     'cellUtility.symmetry': 'SYMMETRY (N)',
+    'bondUtility.hardness': 'Hardness',
     'radialDistributionUtility.structureOrder': 'Structure order',
     'radialDistributionUtility.averageOrder': 'Average order',
     'radialDistributionUtility.quasientropy': 'Quasientropy',
@@ -348,7 +349,7 @@ class AtomisticRepresentation(object):
                 comp = Counter()
                 for s, b in zip(symbols, block):
                     comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
-                volume = ut.ionDistances.volumeEstimator.calcCompositionVolume(comp, ut.conditions.externalPressure)
+                volume = ut.bondUtility.volumeEstimator.calcCompositionVolume(comp, ut.conditions.externalPressure)
                 rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
 
         rows.append('')
@@ -394,7 +395,7 @@ class AtomisticRepresentation(object):
         for symbol in ut.compositionSpace.symbols:
             symbols.update(ut.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
         symbols = sorted(symbols)
-        minDistMatrix = ut.ionDistances.getDistances(symbols, ut.conditions.externalPressure)
+        minDistMatrix = ut.bondUtility.getDistances(symbols, ut.conditions.externalPressure)
 
         row = '    There are %1d types of atoms in the system:' % len(symbols)
         for symbol in symbols:

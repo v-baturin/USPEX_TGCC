@@ -26,13 +26,13 @@ def compileParams(main: dict) -> dict:
                 elementalSymbols.add(symbol)
             if molecules:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
-        if 'ionDistances' not in target:
-            target['ionDistances'] = {}
-        if 'volumeType' not in target['ionDistances']:
+        if 'bondUtility' not in target:
+            target['bondUtility'] = {}
+        if 'volumeType' not in target['bondUtility']:
             if molecules:
-                target['ionDistances']['volumeType'] = 0.5
+                target['bondUtility']['volumeType'] = 0.5
             else:
-                target['ionDistances']['volumeType'] = 0
+                target['bondUtility']['volumeType'] = 0
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
         selection = optimizer['selection']

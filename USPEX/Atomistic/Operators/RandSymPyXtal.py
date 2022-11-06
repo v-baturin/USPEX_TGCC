@@ -19,8 +19,7 @@ class RandSymPyXtal:
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("RandSymPyXtal does not currently work in molecular regime.")
@@ -52,7 +51,7 @@ class RandSymPyXtal:
         estimatedVolume = self.cellUtility.getCellVolume()
         if estimatedVolume is None:
             elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-            estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
+            estimatedVolume = self.bondUtility.volumeEstimator.calcCompositionVolume(elementalComposition,
                                                                                       self.conditions.externalPressure)
 
         if np.sum(numIons) == 0:
@@ -113,14 +112,14 @@ class RandSymPyXtal:
                 if envAssembler is not None:
                     offspring['environment'] = envAssembler.assemble(**offspring)
                 atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                 if disassembler.environment is not None:
                     inds = disassembler.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
                     self.conditions.putConditions(offspring)
                     structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring)
-                    if self.bonds.isConnected(structure):
+                    if self.bondUtility.isConnected(structure):
                         return offspring,
 
             failCounter += 1
