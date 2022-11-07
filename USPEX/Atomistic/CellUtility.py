@@ -208,7 +208,10 @@ class CellUtility:
         :return: **Cell** object with adjusted parameters.
         """
 
-        baseCell = baseCell.getEnvelopeCell(vacuumSize=self._thickness) if self._cell is None else self._cell
+        if self._cell is not None:
+            baseCell = self._cell
+        elif baseCell is not None:
+            baseCell = baseCell.getEnvelopeCell(vacuumSize=self._thickness)
         if self._dim == 1 or self._dim == 2:
             if self._axis is None:
                 if self._dim == 1:
@@ -272,7 +275,10 @@ class CellUtility:
 
         :return: **Cell** object with appropriate parameters.
         """
-        baseCell = baseCell.getEnvelopeCell(vacuumSize=self._thickness) if self._cell is None else self._cell
+        if self._cell is not None:
+            baseCell = self._cell
+        elif baseCell is not None:
+            baseCell = baseCell.getEnvelopeCell(vacuumSize=self._thickness)
         if baseCell is None:
             r2d = 180 / np.pi
             if self._dim == 3:
