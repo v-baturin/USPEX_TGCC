@@ -144,6 +144,8 @@ class MOPAC_Interface:
                     e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
                     usp(system, float(e.group(1)), 'enthalpy', self.environmentStyle)
                     break
+            else:
+                raise RuntimeError('Can not read enthalpy.')
 
     def readStructure(self, content, pbc):
 
