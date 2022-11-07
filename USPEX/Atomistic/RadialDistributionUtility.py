@@ -95,46 +95,22 @@ class ComplexFingerprint:
     """
     Class representing radial distribution fingerprint.
     """
-    def __init__(self, values, weights, symbols):
+    def __init__(self, values, symbols):
         self.values = {}
         for s, v in values.items():
             self.values[s] = np.asarray(v, dtype=float)
-        norm = sum(sum(w) for w in weights.values())
-        self.weights = {}
-        for s, w in weights.items():
-            self.weights[s] = np.asarray(w, dtype=float) / norm
         self.symbols = symbols
 
     @staticmethod
-    def fromAtomicFingerprints(symbols, atomTypes, atomFings, tolerance):
+    def fromAtomicFingerprints(symbols, atomTypes, atomFings):
         fing = {}
-        atomsCounter = Counter()
-        weightsCounter = {}
         for atomType, aFing in zip(atomTypes, atomFings):
             symbol = atomType.short_name
             row = np.hstack([aFing[s] * np.sqrt(aFing.weights[s] if s in aFing.weights else 0) for s in symbols])
-            for refSymbol, fings in fing.items():
-                for count, f in enumerate(fings):
-                    if symbol == refSymbol \
-                            and ComplexFingerprint.cosineDistance(f.reshape((1, -1)), row.reshape((1, -1))) < tolerance:
-                        break
-                else:
-                    continue
-                break
-            else:
-                atomsCounter[symbol] += 1
-                count = atomsCounter[symbol]
-                if symbol not in fing:
-                    fing[symbol] = []
-                fing[symbol].append(row)
-                assert len(fing[symbol]) == count
-                if symbol not in weightsCounter:
-                    weightsCounter[symbol] = []
-                weightsCounter[symbol].append(1)
-                assert len(weightsCounter[symbol]) == count
-                count -= 1
-            weightsCounter[symbol][count] += 1
-        return ComplexFingerprint(fing, weightsCounter, symbols)
+            if symbol not in fing:
+                fing[symbol] = []
+            fing[symbol].append(row)
+        return ComplexFingerprint(fing, symbols)
 
     @staticmethod
     def cosineDistance(fing1, fing2):
@@ -154,8 +130,8 @@ class ComplexFingerprint:
         for symbol in fingerprint1.symbols:
             if symbol in index1 and symbol in index2:
                 distMatrix = ComplexFingerprint.cosineDistance(fingerprint1.values[symbol], fingerprint2.values[symbol])
-                dist += ((distMatrix.min(axis=0)*fingerprint2.weights[symbol]).sum() +
-                         (distMatrix.min(axis=1)*fingerprint1.weights[symbol]).sum()) / 2
+                dist += (distMatrix.min(axis=0).sum() +
+                         distMatrix.min(axis=1).sum()) / 2
             elif symbol in index1 or symbol in index2:
                 dist += 0.5
         return dist
@@ -486,8 +462,7 @@ class RadialDistributionUtility(object):
                                   delta=self.delta)
         s_order = fingerprint.order
 
-        complexFingerprint = ComplexFingerprint.fromAtomicFingerprints(self.symbols, newAtomTypes, atomFings,
-                                                                       self.tolerance)
+        complexFingerprint = ComplexFingerprint.fromAtomicFingerprints(self.symbols, newAtomTypes, atomFings)
 
         sQE = 0.0
         weight = numIons / np.sum(numIons)
