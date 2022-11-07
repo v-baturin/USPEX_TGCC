@@ -724,7 +724,7 @@ class AtomisticRepresentation(object):
     def applyPresetOutputParameters(optimizer):
         columns = AtomisticRepresentation._extract(optimizer.optType)
         if len(columns) > 1:
-            presentPareto = columns
+            presentPareto = list(set(columns))
         else:
             presentPareto = None
         if 'enthalpyCCH' in columns or 'enthalpyCS' in columns:
@@ -744,6 +744,7 @@ class AtomisticRepresentation(object):
         columns += ['radialDistributionUtility.structureOrder',
                     'radialDistributionUtility.averageOrder',
                     'radialDistributionUtility.quasientropy']
+        columns = list(set(columns))
         if 'enthalpy' in columns:
             toDraw = [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
                       ('stat', 'enthalpy', 'per_atom', '', '')]

@@ -286,10 +286,10 @@ class CellUtility:
             elif self._dim == 2:
                 a, b = np.random.random(2) + 0.5
                 alpha = (np.random.random() * 4 + 1) * 30
-                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
+                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha, self._axis)
             elif self._dim == 1:
                 a = np.random.random() + 0.5
-                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
+                cell = Cell.initFromCellParameters(self._pbc, a, self._axis)
             elif self._dim == 0:
                 cell = Cell.initFromCellParameters(self._pbc)
             else:
@@ -329,13 +329,13 @@ class CellUtility:
                 cellParameters[0:3] *= factor
             elif self._dim == 2:
                 a, b, alpha = cellParameters
-                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
+                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha, self._axis)
                 factor = np.sqrt((fraction * cell1.getArea() + (1 - fraction) * cell2.getArea()) / cell.getArea())
                 thickness = fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()
                 cellParameters = (a * factor, b * factor, alpha, self._axis)
             elif self._dim == 1:
                 a, = cellParameters
-                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
+                cell = Cell.initFromCellParameters(self._pbc, a, self._axis)
                 factor = (fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()) / cell.getLength()
                 thickness = np.sqrt(fraction * cell1.getArea() + (1 - fraction) * cell2.getArea())
                 cellParameters = (a * factor, self._axis)
