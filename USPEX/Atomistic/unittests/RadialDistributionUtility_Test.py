@@ -32,5 +32,5 @@ class RadialDistributionUtility_Test(unittest.TestCase):
 
     def test_distance(self):
         self.assertAlmostEqual(self.utility.dist(self.systemRDU1, self.systemRDU2), 0, places=3)
-        self.assertAlmostEqual(self.utility.dist(self.systemRDU2, self.systemRDU3), 0.206466, places=3)
-        self.assertAlmostEqual(self.utility.dist(self.systemRDU1, self.systemRDU3), 0.206466, places=3)
+        self.assertAlmostEqual(self.utility.dist(self.systemRDU2, self.systemRDU3), 5.78101, places=3)
+        self.assertAlmostEqual(self.utility.dist(self.systemRDU1, self.systemRDU3), 5.78101, places=3)
