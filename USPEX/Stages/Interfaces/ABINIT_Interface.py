@@ -10,7 +10,6 @@ import logging
 import os
 import shutil
 import numpy as np
-from abipy import abilab
 from os.path import join as pj
 from typing import List
 
@@ -299,6 +298,7 @@ class ABINIT_Interface:
                    'Your ABINIT executable needs to be compiled with NETCDF support in order to be used with USPEX.')
             raise IOError(msg)
 
+        from abipy import abilab
         gsr = abilab.abiopen(pj(calcFolder, self.gsr_file_name))
         if 'structure' in self.targetProperties:
             structure = self.readStructure(gsr, system[self.tmp].pop('pbc'))
