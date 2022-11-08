@@ -729,21 +729,30 @@ class AtomisticRepresentation(object):
             presentPareto = None
         if 'enthalpyCCH' in columns or 'enthalpyCS' in columns:
             columns = ['enthalpy'] + columns
-        columns = ['simpleMoleculeUtility.composition'] + columns
+        if not 'simpleMoleculeUtility.composition' in columns:
+            columns = ['simpleMoleculeUtility.composition'] + columns
         dim = optimizer.target.utilities.cellUtility.getDim()
         if dim == 3:
-            columns += ['cellUtility.volume', 'cellUtility.symmetry']
+            if not 'cellUtility.volume' in columns:
+                columns.append('cellUtility.volume')
+            if not 'cellUtility.symmetry' in columns:
+                columns.append('cellUtility.symmetry')
         elif dim == 2:
-            columns.append('cellUtility.area')
+            if not 'cellUtility.area' in columns:
+                columns.append('cellUtility.area')
         elif dim == 1:
-            columns.append('cellUtility.length')
+            if not 'cellUtility.length' in columns:
+                columns.append('cellUtility.length')
         elif dim == 0:
             pass
         else:
             raise RuntimeError(f'Wrong dim {dim}.')
-        columns += ['radialDistributionUtility.structureOrder',
-                    'radialDistributionUtility.averageOrder',
-                    'radialDistributionUtility.quasientropy']
+        if not 'radialDistributionUtility.structureOrder' in columns:
+            columns.append('radialDistributionUtility.structureOrder')
+        if not 'radialDistributionUtility.averageOrder' in columns:
+            columns.append('radialDistributionUtility.averageOrder')
+        if not 'radialDistributionUtility.quasientropy' in columns:
+            columns.append('radialDistributionUtility.quasientropy')
         if 'enthalpy' in columns:
             toDraw = [('dep', 'enthalpy', 'per_atom', 'ID', 'raw'),
                       ('stat', 'enthalpy', 'per_atom', '', '')]

@@ -26,6 +26,9 @@ def compileParams(main: dict) -> dict:
                 elementalSymbols.add(symbol)
             if molecules:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
+        selection = optimizer['selection']
+        if len(target['compositionSpace']['blocks']) > 1:
+            selection['globalParentsPool'] = True
         if 'bondUtility' not in target:
             target['bondUtility'] = {}
         if 'volumeType' not in target['bondUtility']:
@@ -35,7 +38,6 @@ def compileParams(main: dict) -> dict:
                 target['bondUtility']['volumeType'] = 0
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
-        selection = optimizer['selection']
         if 'optType' not in selection:
             selection['optType'] = optimizer['optType']
         if 'powderSpectrumAnalyzer' in target:

@@ -47,12 +47,13 @@ class ASEInterfaceAdapter:
 
         def write(self, structure, fixedIndices, label, calcFolder):
             cell = structure.getCell()
-            symbols = [el.short_name for el in structure.getAtomTypes()]
-            atoms = Atoms(symbols, structure.getCartesianCoordinates(), cell=cell.getCellVectors())
-            if fixedIndices:
+            symbols = np.asarray([el.short_name for el in structure.getAtomTypes()])
+            order = np.argsort(symbols)
+            atoms = Atoms(symbols[order], structure.getCartesianCoordinates()[order], cell=cell.getCellVectors())
+            if len(fixedIndices) > 0:
                 atoms.set_constraint(FixAtoms(indices=fixedIndices))
-            write_vasp(pj(calcFolder, self.poscar_file), atoms, label=label, sort=True, direct=True, vasp5=True, long_format=False)
-            return {'pbc': cell.getPBC(), 'symbolsOrder': np.argsort(symbols)}
+            write_vasp(pj(calcFolder, self.poscar_file), atoms, label=label, direct=True, vasp5=True, long_format=False)
+            return {'pbc': cell.getPBC(), 'symbolsOrder': order}
 
         def read(self, calcFolder, pbc, symbolsOrder):
             try:
@@ -118,7 +119,7 @@ class ASEInterfaceAdapter:
             atoms = Atoms(symbols=[el.short_name for el in structure.getAtomTypes()],
                           positions=structure.getCartesianCoordinates(),
                           cell=cell.getCellVectors())
-            if fixedIndices:
+            if len(fixedIndices) > 0:
                 atoms.set_constraint(FixAtoms(indices=fixedIndices))
             with open(calcFolder/self.inputFile, 'wt') as f:
                 write_espresso_in(f,

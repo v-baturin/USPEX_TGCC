@@ -11,7 +11,7 @@ class Antiseeds:
     Such penalties applied not only to some system itself but to all its neighbours with gaussian distribution.
     """
 
-    def __init__(self, max=ANTISEEDS_MAX, sigma=ANTISEEDS_SIGMA, legacy=False, **kwargs):
+    def __init__(self, max=ANTISEEDS_MAX, sigma=ANTISEEDS_SIGMA, legacy=True, **kwargs):
         """
         :param max: height of gaussian distribution.
         :param sigma: width of gaussian distribution.
