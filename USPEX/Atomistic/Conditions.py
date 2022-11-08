@@ -9,7 +9,7 @@ class Conditions:
     Class describing conditions such as external pressure.
     """
 
-    def __init__(self, externalPressure = 0.0001):
+    def __init__(self, externalPressure = 0.0):
         """
 
         :type externalPressure: float
