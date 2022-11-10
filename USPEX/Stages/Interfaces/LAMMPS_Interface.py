@@ -44,8 +44,9 @@ class LAMMPS_Interface:
         cls.atomicDisassemblerType = atomicDisassemblerType
         cls.aseAdapterType = aseAdapterType
 
-    def __init__(self, tag: str, lammps_in: str, libs: List[str], specorder: List[str], perturbate:bool = True,
-                 vacuumSize: float = 10.0, targetProperties: list = None, environmentStyle=None, inStyle=None, **kwargs):
+    def __init__(self, tag: str, specorder: List[str], lammps_in: str = None, libs: List[str] = None,
+                 vacuumSize: float = 10.0, targetProperties: list = None, environmentStyle=None, inStyle=None,
+                 perturbate:bool = True, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -55,14 +56,13 @@ class LAMMPS_Interface:
 
         self.tag = tag
         self.tmp = f'tmp_{tag}'
-        self.lammps_in = lammps_in
+        self.lammps_in = pj(os.getcwd(), f'Specific/lammps.in_{tag}') if lammps_in is None else lammps_in
         self.specorder = specorder
         assert os.path.exists(self.lammps_in)
 
         if libs is not None:
-            self.libs = libs
-
-        assert all([os.path.exists(lib) for lib in libs])
+            assert all([os.path.exists(lib) for lib in libs])
+        self.libs = libs
 
         self.adapter = self.aseAdapterType()
         self.failedSystems = []
