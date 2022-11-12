@@ -679,8 +679,8 @@ class Cell:
         elif self.dim == 2:
             normalvector = np.cross(periodicVecs[0], periodicVecs[1])
             normalvector *= np.sign(np.dot(normalvector, nonperiodicVecs[0]))
-            vectors = self._cellVectors
-            vectors[self._antipbc] = normalvector
+            vectors = copy(self._cellVectors)
+            vectors[np.flatnonzero(self._antipbc)] = normalvector
         elif self.dim == 3:
             return copy(self)
         else:
