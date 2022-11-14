@@ -28,6 +28,7 @@ class Slab:
             outputAxis = outputCell.getCellVectorsAntiPBC()
             outputAxis /= np.linalg.norm(outputAxis)
             assert np.allclose(inputAxis, outputAxis)
+        centerShift = (outputCell.getCellVectors() - inputCell.getCellVectors()).sum(axis=0)/2
         inputCell = transformation.transformCell(inputCell)
         slabs = tuple(([],[],[]) for i in gaugesOfSlabs)
         coordinateBounds = np.cumsum(gaugesOfSlabs)/np.sum(gaugesOfSlabs)
@@ -52,7 +53,7 @@ class Slab:
                 coordinates = inputCell.cartesianToFractional(centerOfMassCoordinates)
                 coordinates = inputCell.getWrapedFractionalCoordinates(coordinates)
                 inds = np.nonzero(outputCell.getAntiPBC())
-                coordinates[inds] = outputCell.cartesianToFractional(centerOfMassCoordinates)[inds]
+                coordinates[inds] = outputCell.cartesianToFractional(centerOfMassCoordinates + centerShift)[inds]
                 coordinate = coordinates[axis]
                 for j, upperBoundCoordinate in enumerate(coordinateBounds):
                     if coordinate <= upperBoundCoordinate:
