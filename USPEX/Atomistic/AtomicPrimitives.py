@@ -283,13 +283,15 @@ class AtomicDisassembler:
         atomTypes = structure.getAtomTypes()
         coordinates = structure.getCartesianCoordinates()
         cell = structure.getCell()
+        sysCoordinates = coordinates[self.sysIndices]
+        sysCell = type(cell)(cell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(sysCoordinates, vacuumSize=1.0)
+        offset = np.mean(sysCell.center(sysCoordinates) - sysCoordinates, axis=0)
         system = dict(
-            molecules=[AtomicStructure(atomTypes[inds], coordinates[inds]) for inds in self.indices],
-            cell=type(cell)(cell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(coordinates[self.sysIndices],
-                                                                                 vacuumSize=1.0)
+            molecules=[AtomicStructure(atomTypes[inds], coordinates[inds] + offset) for inds in self.indices],
+            cell=sysCell
         )
         if self.environment is not None:
-            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], cell)
+            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices] + offset, cell)
             system['environment'] = self.environment.getUpdatedEnvironment(envStructure)
         return system
 

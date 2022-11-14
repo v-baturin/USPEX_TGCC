@@ -155,14 +155,16 @@ class GULP_Interface:
         # else:
 
         for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getFractionalCoordinates())):
-            tuple_to_format = tuple([symbol.short_name] + coord.tolist())
+            tuple_to_format = (symbol.short_name, ) +\
+                              tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
+                                                               precision=6) for c in coord)
             if cell.dim == 2:
                 if i in disassembler.fixedIndices:
-                    content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 1 1 1\n' % tuple_to_format
+                    content_to_write += '%4s %12s %12s %12s 1 1 0 1 1 1\n' % tuple_to_format
                 else:
-                    content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 0 0 0\n' % tuple_to_format
+                    content_to_write += '%4s %12s %12s %12s 1 1 0 0 0 0\n' % tuple_to_format
             else:
-                content_to_write += '%4s %12.6f %12.6f %12.6f\n' % tuple_to_format
+                content_to_write += '%4s %12s %12s %12s\n' % tuple_to_format
 
         # Write part:
         total_content = self.goptions + '\n' + content_to_write + self.ginput + '\n'
