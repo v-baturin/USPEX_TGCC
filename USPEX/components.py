@@ -32,6 +32,7 @@ from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
 from .Atomistic.Operators.RandSymPyXtal import RandSymPyXtal
+from .Atomistic.Operators.RandSymClusters import RandSymClusters
 from .Atomistic.Operators.Softmodemutation import Softmodemutation
 from .Atomistic.Operators.Permutation import Permutation
 from .Atomistic.Operators.Transmutation import Transmutation
@@ -46,7 +47,7 @@ GlobalOptimizer.registerTarget('Atomistic',
                                  PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, ],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
-                      creations=[RandTop, RandSym, RandSymPyXtal],
+                      creations=[RandTop, RandSym, RandSymPyXtal, RandSymClusters],
                       seeds=Seeds)
 
 from .Stages.Executor import Executor
