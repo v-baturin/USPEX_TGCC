@@ -1,5 +1,3 @@
-__author__ = 'etikhonov' # cleanup by vbaturin
-
 import numpy as np
 
 def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
