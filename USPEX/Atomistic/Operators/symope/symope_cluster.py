@@ -94,8 +94,8 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                                                                                                              nsym)
                 errorS = 1
                 with open('error_cluster_symmetry', 'w') as f: f.write(status)
-                import sys
-                sys.exit(status)
+                # import sys
+                # sys.exit(status)
         n60 = 0
         numIons1 = numIons
         while 1:
@@ -1345,7 +1345,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
         errorS = 1
 
     AbsoluteCoord = np.dot(candidate, newLattice)
-    b, a = type(rand_cell).PrincipleAxis(AbsoluteCoord)  # find the principle rotation axis
+    b, a = type(rand_cell).getPrincipalAxes(AbsoluteCoord)  # find the principle rotation axis
 
     if 'E' in nsym:
         AbsoluteCoord = np.dot(AbsoluteCoord, a)  # maximal moment of inertia - for Z axis, minimum - for X
