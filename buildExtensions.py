@@ -68,6 +68,7 @@ extensions = [
     Extension("USPEX.Atomistic.Operators.symope.spaceGroups", ["USPEX/Atomistic/Operators/symope/spaceGroups.py"]),
     Extension("USPEX.Atomistic.Operators.symope.splitBigCell", ["USPEX/Atomistic/Operators/symope/splitBigCell.py"]),
     Extension("USPEX.Atomistic.Operators.symope.symope_crystal", ["USPEX/Atomistic/Operators/symope/symope_crystal.py"]),
+    Extension("USPEX.Atomistic.Operators.symope.symope_cluster", ["USPEX/Atomistic/Operators/symope/symope_cluster.py"]),
     Extension("USPEX.Atomistic.Operators.symope.unitCellFromPrimitive", ["USPEX/Atomistic/Operators/symope/unitCellFromPrimitive.py"]),
     Extension("USPEX.Atomistic.Operators.symope.Write_Stokes_input", ["USPEX/Atomistic/Operators/symope/Write_Stokes_input.py"]),
 
