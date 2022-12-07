@@ -1,4 +1,4 @@
-__author__ = 'etikhonov, vbaturin'
+__author__ = 'etikhonov' # cleanup by vbaturin
 
 import numpy as np
 
@@ -29,13 +29,13 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                   [0.0, 0.0, -1.0]])  # inversion
     C2x = np.array([[-1.0, 0.0, 0.0],
                     [0.0, 1.0, 0.0],
-                    [0.0, 0.0, 1.0]])  # two fold axes along YOZ
+                    [0.0, 0.0, 1.0]])  # twofold axes along YOZ
     C2y = np.array([[1.0, 0.0, 0.0],
                     [0.0, -1.0, 0.0],
-                    [0.0, 0.0, 1.0]])  # two fold axes along XOZ
+                    [0.0, 0.0, 1.0]])  # twofold axes along XOZ
     C2z = np.array([[1.0, 0.0, 0.0],
                     [0.0, 1.0, 0.0],
-                    [0.0, 0.0, -1.0]])  # two fold axes along XOY
+                    [0.0, 0.0, -1.0]])  # twofold axes along XOY
     Hz = np.array([[1.0, 0.0, 0.0],
                    [0.0, 1.0, 0.0],
                    [0.0, 0.0, -1.0]])  # reflection in the mirror plane XOY
@@ -93,9 +93,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 status = 'Impossible to build the cluster with {0} atoms that has symmetry group {1}'.format(numIons,
                                                                                                              nsym)
                 errorS = 1
-                with open('error_cluster_symmetry', 'w') as f: f.write(status)
-                # import sys
-                # sys.exit(status)
+                with open('error_cluster_symmetry', 'w') as f: f.write(status + '\n')
         n60 = 0
         numIons1 = numIons
         while 1:
@@ -285,9 +283,9 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 else:
                     candidate = np.vstack((candidate, cand))
     elif 'S' in nsym or 's' in nsym:  # S2n group - 2n rotoreflection (combination rotation+reflection)
-        newLattice = np.array([[np.sqrt(lattice[0][0] * lattice[1][1]), 0.0, 0.0],
-                               [0.0, np.sqrt(lattice[0][0] * lattice[1][1]), 0.0],
-                               [0.0, 0.0, lattice[2][2]]])
+        newLattice = np.array([[np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0, 0.0],
+                               [0.0, np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0],
+                               [0.0, 0.0, lattice[2, 2]]])
         candidate = []
         rotRank = int(nsym[1:])  # should be EVEN (=2n), odd is equivalent to Cnh
         while 1:
@@ -330,7 +328,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                     cand = np.vstack((cand, nextAtom))
                 if tooClose:
                     numIons -= 1
-                    cand = np.array([[0.0, 0.0, tmp[0][2]]])
+                    cand = np.array([[0.0, 0.0, tmp[0, 2]]])
                 else:
                     numIons -= rotRank
             if len(candidate) == 0:
@@ -443,25 +441,25 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 tmp = np.random.random() - 0.5
                 while abs(tmp) < 0.05:
                     tmp = np.random.random() - 0.5
-                candidate = np.vstack((candidate, np.array([[0.0, 0.0, tmp]])))
-                candidate = np.vstack((candidate, np.array([[0.0, 0.0, -tmp]])))
-                candidate = np.vstack((candidate, np.array([[0.0, tmp, 0.0]])))
-                candidate = np.vstack((candidate, np.array([[0.0, -tmp, 0.0]])))
-                candidate = np.vstack((candidate, np.array([[tmp, 0.0, 0.0]])))
-                candidate = np.vstack((candidate, np.array([[-tmp, 0.0, 0.0]])))
+                candidate = np.vstack((candidate, np.array([[0.0, 0.0, tmp],
+                                                            [0.0, 0.0, -tmp],
+                                                            [0.0, tmp, 0.0],
+                                                            [0.0, -tmp, 0.0],
+                                                            [tmp, 0.0, 0.0],
+                                                            [-tmp, 0.0, 0.0]])))
             for i in range(1, y + 1):  # 8 atoms per go - atoms on the main cube diagonals
                 tmp = np.random.random() - 0.5
                 while abs(tmp) < 0.05 or \
                         (ellipse_mode and (np.linalg.norm(np.array([[tmp, tmp, tmp, ]])) > 0.5)):
                     tmp = np.random.random() - 0.5
-                candidate = np.vstack((candidate, np.array([[tmp, tmp, tmp]])))
-                candidate = np.vstack((candidate, np.array([[tmp, tmp, -tmp]])))
-                candidate = np.vstack((candidate, np.array([[tmp, -tmp, tmp]])))
-                candidate = np.vstack((candidate, np.array([[tmp, -tmp, -tmp]])))
-                candidate = np.vstack((candidate, np.array([[-tmp, tmp, tmp]])))
-                candidate = np.vstack((candidate, np.array([[-tmp, tmp, -tmp]])))
-                candidate = np.vstack((candidate, np.array([[-tmp, -tmp, tmp]])))
-                candidate = np.vstack((candidate, np.array([[-tmp, -tmp, -tmp]])))
+                candidate = np.vstack((candidate, np.array([[tmp, tmp, tmp],
+                                                            [tmp, tmp, -tmp],
+                                                            [tmp, -tmp, tmp],
+                                                            [tmp, -tmp, -tmp],
+                                                            [-tmp, tmp, tmp],
+                                                            [-tmp, tmp, -tmp],
+                                                            [-tmp, -tmp, tmp],
+                                                            [-tmp, -tmp, -tmp]])))
     # TODO: Continue spellcheck from there
     elif 'T' in nsym or 't' in nsym:  # Tetrahedral (T, Td) symmetries
         # easiest way to implement T - include tetrahonal into the cube with O in the center and XYZ parallel to the edges
@@ -490,7 +488,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 tmp = np.random.random((1, 3)) - 0.5
             if ('Td' in nsym or 'td' in nsym) and (n12 % 2 == 1) and (n == n12):  # Td (full tetrahedral) symmetry
                 # do only 12 poins :) (by generating a point on mirror plane)
-                tmp[0][0] = tmp[0][1]
+                tmp[0, 0] = tmp[0, 1]
             cand = tmp.copy()
             # 2-fold rotations around X, Y, Z (O is in the cube center, Z goes up)
             nextAtom = np.dot(tmp, np.array([[-1.0, 0.0, 0.0],
@@ -571,9 +569,9 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                     candidate = np.array([[tmp, tmp, tmp]])
                 else:
                     candidate = np.vstack((candidate, np.array([[tmp, tmp, tmp]])))
-                candidate = np.vstack((candidate, np.array([[tmp, -tmp, -tmp]])))
-                candidate = np.vstack((candidate, np.array([[-tmp, -tmp, tmp]])))
-                candidate = np.vstack((candidate, np.array([[-tmp, tmp, -tmp]])))
+                candidate = np.vstack((candidate, np.array([[tmp, -tmp, -tmp],
+                                                            [-tmp, -tmp, tmp],
+                                                            [-tmp, tmp, -tmp]])))
             for i in range(1, y + 1):  # 6 atoms per go - atoms on the XYZ axes
                 tmp = np.random.random() - 0.5
                 while abs(tmp) < 0.05:
@@ -582,17 +580,17 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                     candidate = np.array([[0.0, 0.0, tmp]])
                 else:
                     candidate = np.vstack((candidate, np.array([[0.0, 0.0, tmp]])))
-                candidate = np.vstack((candidate, np.array([[0.0, 0.0, -tmp]])))
-                candidate = np.vstack((candidate, np.array([[0.0, tmp, 0.0]])))
-                candidate = np.vstack((candidate, np.array([[0.0, -tmp, 0.0]])))
-                candidate = np.vstack((candidate, np.array([[tmp, 0.0, 0.0]])))
-                candidate = np.vstack((candidate, np.array([[-tmp, 0.0, 0.0]])))
+                candidate = np.vstack((candidate, np.array([[0.0, 0.0, -tmp],
+                                                            [0.0, tmp, 0.0],
+                                                            [0.0, -tmp, 0.0],
+                                                            [tmp, 0.0, 0.0],
+                                                            [-tmp, 0.0, 0.0]])))
     elif 'Cv' in nsym or 'cv' in nsym:  # Cnv group - Cn axis and n vertical mirror planes
         rotRank = int(nsym[2:])  # ceil(rand(1)*nsym);
         if rotRank > 2:
-            newLattice = np.array([[np.sqrt(lattice[0][0] * lattice[1][1]), 0.0, 0.0],
-                                   [0.0, np.sqrt(lattice[0][0] * lattice[1][1]), 0.0],
-                                   [0.0, 0.0, lattice[2][2]]])
+            newLattice = np.array([[np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0, 0.0],
+                                   [0.0, np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0],
+                                   [0.0, 0.0, lattice[2, 2]]])
         candidate = []
         while 1:
             if numIons == 1:
@@ -616,7 +614,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                     while ellipse_mode and np.linalg.norm(tmp) > 0.5:
                         tmp = np.random.random((1, 3)) - 0.5
                     r = np.linalg.norm(tmp)
-                    tmp = np.array([[np.sqrt(r ** 2 - tmp[0][2] ** 2), 0.0, tmp[0][2]]])  # mirror plan ZOX
+                    tmp = np.array([[np.sqrt(r ** 2 - tmp[0, 2] ** 2), 0.0, tmp[0, 2]]])  # mirror plan ZOX
                     cand = tmp.copy()
                     for i in range(1, rotRank - 1 + 1):
                         angle = 2 * i * np.pi / rotRank
@@ -633,10 +631,10 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 while ellipse_mode and np.linalg.norm(tmp) > 0.5:
                     tmp = np.random.random((1, 3)) - 0.5
                 cand = tmp.copy()
-                if (tmp[0][0] * newLattice[0][0]) ** 2 + (tmp[0][1] * newLattice[1][1]) ** 2 < minDistance ** 2:  # too
+                if (tmp[0, 0] * newLattice[0, 0]) ** 2 + (tmp[0, 1] * newLattice[1, 1]) ** 2 < minDistance ** 2:  # too
                     #  close to the main axis
                     numIons -= 1
-                    cand = np.array([[0.0, 0.0, tmp[0][2]]])
+                    cand = np.array([[0.0, 0.0, tmp[0, 2]]])
                 else:
                     tooClose = 0
                     for i in range(1, rotRank + 1):  # check if atom is too close to some mirror plane
@@ -683,9 +681,9 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
     elif 'Ch' in nsym or 'ch' in nsym:  # Cnh group - Cn axis and horisontal mirror plane
         rotRank = int(nsym[2:])  # ceil(rand(1)*nsym);
         if rotRank > 2:
-            newLattice = np.array([[np.sqrt(lattice[0][0] * lattice[1][1]), 0.0, 0.0],
-                                   [0.0, np.sqrt(lattice[0][0] * lattice[1][1]), 0.0],
-                                   [0.0, 0.0, lattice[2][2]]])
+            newLattice = np.array([[np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0, 0.0],
+                                   [0.0, np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0],
+                                   [0.0, 0.0, lattice[2, 2]]])
         candidate = []
         while 1:
             if numIons == 1:
@@ -698,16 +696,16 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
             if numIons < 2 * rotRank:
                 if numIons < rotRank:  # put atoms on axis
                     cand = np.array([[0.0, 0.0, np.random.random() - 0.5]])
-                    while abs(cand[0][2]) < 0.01:
+                    while abs(cand[0, 2]) < 0.01:
                         cand = np.array([[0.0, 0.0, np.random.random() - 0.5]])
                     cand = np.vstack((cand, np.dot(cand, Hz)))
                     numIons -= 2
                 else:  # put atoms in mirror plane XOY
                     tmp = np.random.random((1, 3)) - 0.5
                     # we work in the space [-0,5:0.5;-0,5:0.5;-0,5:0.5] and then add (0.5,0.5,0.5)
-                    while ellipse_mode and np.linalg.norm(np.array((tmp[0][0], tmp[0][1]))) > 0.5:
+                    while ellipse_mode and np.linalg.norm(np.array((tmp[0, 0], tmp[0, 1]))) > 0.5:
                         tmp = tmp = np.random.random((1, 3)) - 0.5
-                    tmp[0][2] = 0
+                    tmp[0, 2] = 0
                     cand = tmp.copy()
                     for i in range(1, rotRank - 1 + 1):
                         angle = 2 * i * np.pi / rotRank
@@ -723,14 +721,14 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 # we work in the space [-0,5:0.5;-0,5:0.5;-0,5:0.5] and then add (0.5,0.5,0.5)
                 while ellipse_mode and np.linalg.norm(tmp) > 0.5:
                     tmp = np.random.random((1, 3)) - 0.5
-                if ((tmp[0][0] * newLattice[0][0]) ** 2 + (tmp[0][1] * newLattice[1][1]) ** 2 < minDistance ** 2) and \
+                if ((tmp[0, 0] * newLattice[0, 0]) ** 2 + (tmp[0, 1] * newLattice[1, 1]) ** 2 < minDistance ** 2) and \
                         (rotRank > 1):  # too close to the main axis
                     numIons -= 2
-                    cand = np.array([[0.0, 0.0, tmp[0][2]], [0.0, 0.0, -tmp[0][2]]])
+                    cand = np.array([[0.0, 0.0, tmp[0, 2]], [0.0, 0.0, -tmp[0, 2]]])
                 else:
-                    if abs(np.dot(tmp[0][2], newLattice[2][2])) < minDistance / 2.0:
+                    if abs(np.dot(tmp[0, 2], newLattice[2, 2])) < minDistance / 2.0:
                         tooClose = 1
-                        tmp[0][2] = 0
+                        tmp[0, 2] = 0
                     else:
                         tooClose = 0
                     cand = tmp.copy()
@@ -760,9 +758,9 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
     elif 'Dh' in nsym or 'dh' in nsym:  # dihedral symmetry with horisontal mirror plane XOY
         rotRank = int(nsym[2:])  # ceil(rand(1)*nsym);
         if rotRank > 2:
-            newLattice = np.array([[np.sqrt(lattice[0][0] * lattice[1][1]), 0.0, 0.0],
-                                   [0.0, np.sqrt(lattice[0][0] * lattice[1][1]), 0.0],
-                                   [0.0, 0.0, lattice[2][2]]])
+            newLattice = np.array([[np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0, 0.0],
+                                   [0.0, np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0],
+                                   [0.0, 0.0, lattice[2, 2]]])
         candidate = []
         while 1:
             if numIons == 1:
@@ -778,9 +776,9 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                     # (TODO: ALTERNATE OR CHOOSE METHOD RANDOMLY!)
                     tmp = np.random.random((1, 3)) - 0.5  # we work in the space [-0,5:0.5;-0,5:0.5;-0,5:0.5]
                     # and then add (0.5,0.5,0.5)
-                    while ellipse_mode and np.linalg.norm(np.array((tmp[0][0], tmp[0][1]))) > 0.5:
+                    while ellipse_mode and np.linalg.norm(np.array((tmp[0, 0], tmp[0, 1]))) > 0.5:
                         tmp = np.random.random((1, 3)) - 0.5
-                    tmp[0][2] = 0
+                    tmp[0, 2] = 0
                     cand = tmp.copy()
                     for i in range(1, rotRank - 1 + 1):
                         angle = 2 * i * np.pi / rotRank
@@ -823,15 +821,15 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 # and then add (0.5,0.5,0.5)
                 while ellipse_mode and np.linalg.norm(tmp) > 0.5:
                     tmp = np.random.random((1, 3)) - 0.5
-                if ((tmp[0][0] * newLattice[0][0]) ** 2 + (tmp[0][1] * newLattice[1][1]) ** 2 < minDistance ** 2) and \
+                if ((tmp[0, 0] * newLattice[0, 0]) ** 2 + (tmp[0, 1] * newLattice[1, 1]) ** 2 < minDistance ** 2) and \
                         (rotRank > 1):  # too close to the main axis
                     numIons = numIons - 2
-                    cand = np.array([[0.0, 0.0, tmp[0][2]],
-                                     [0.0, 0.0, -tmp[0][2]]])
+                    cand = np.array([[0.0, 0.0, tmp[0, 2]],
+                                     [0.0, 0.0, -tmp[0, 2]]])
                 else:
-                    if abs(tmp[0][2] * newLattice[2][2]) < minDistance / 2.0:
+                    if abs(tmp[0, 2] * newLattice[2, 2]) < minDistance / 2.0:
                         tooClose1 = 1
-                        tmp[0][2] = 0
+                        tmp[0, 2] = 0
                     else:
                         tooClose1 = 0
                     tooClose2 = 0
@@ -891,9 +889,9 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
         # dihedral symmetry with vertical mirror planes (Dnd, Dnv)
         rotRank = int(nsym[2:])  # ceil(rand(1)*nsym);
         if rotRank > 1:
-            newLattice = np.array([[np.sqrt(lattice[0][0] * lattice[1][1]), 0.0, 0.0],
-                                   [0.0, np.sqrt(lattice[0][0] * lattice[1][1]), 0.0],
-                                   [0.0, 0.0, lattice[2][2]]])
+            newLattice = np.array([[np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0, 0.0],
+                                   [0.0, np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0],
+                                   [0.0, 0.0, lattice[2, 2]]])
         candidate = []
         while 1:
             if numIons == 1:
@@ -937,10 +935,10 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 # and then add (0.5,0.5,0.5)
                 while ellipse_mode and np.linalg.norm(tmp) > 0.5:
                     tmp = np.random.random((1, 3)) - 0.5
-                if (tmp[0][0] * newLattice[0][0]) ** 2 + (tmp[0][1] * newLattice[1][1]) ** 2 < minDistance ** 2:
+                if (tmp[0, 0] * newLattice[0, 0]) ** 2 + (tmp[0, 1] * newLattice[1, 1]) ** 2 < minDistance ** 2:
                     # too close to the main axis
                     numIons -= 1
-                    cand = np.array([[0, 0, tmp[0][2]]])
+                    cand = np.array([[0, 0, tmp[0, 2]]])
                 else:
                     cand = tmp.copy()
                     tooClose1 = 0
@@ -1033,9 +1031,9 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
     elif 'D' in nsym or 'd' in nsym:  # dihedral symmetry
         rotRank = int(nsym[-1:])  # ceil(rand(1)*nsym);
         if rotRank > 2:
-            newLattice = np.array([[np.sqrt(lattice[0][0] * lattice[1][1]), 0.0, 0.0],
-                                   [0.0, np.sqrt(lattice[0][0] * lattice[1][1]), 0.0],
-                                   [0.0, 0.0, lattice[2][2]]])
+            newLattice = np.array([[np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0, 0.0],
+                                   [0.0, np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0],
+                                   [0.0, 0.0, lattice[2, 2]]])
         candidate = []
         while 1:
             if numIons == 1:
@@ -1070,10 +1068,10 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 # and then add (0.5,0.5,0.5)
                 while ellipse_mode and np.linalg.norm(tmp) > 0.5:
                     tmp = np.random.random((1, 3)) - 0.5
-                if (tmp[0][0] * newLattice[0][0]) ** 2 + (tmp[0][1] * newLattice[1][1]) ** 2 < minDistance ** 2:  #
+                if (tmp[0, 0] * newLattice[0, 0]) ** 2 + (tmp[0, 1] * newLattice[1, 1]) ** 2 < minDistance ** 2:  #
                     # too close to the main axis
                     numIons -= 1
-                    cand = np.array([[0, 0, tmp[0][2]]])
+                    cand = np.array([[0, 0, tmp[0, 2]]])
                 else:
                     cand = tmp.copy()
                     tooClose = 0
@@ -1153,11 +1151,11 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 else:  # do only 24 poins, different way :)  (by generating a point on mirror plane containing some face diagonal)
                     w = np.random.randint(1, 4)
                     if w == 1:
-                        tmp[0][0] = tmp[0][1]
+                        tmp[0, 0] = tmp[0, 1]
                     elif w == 2:
-                        tmp[0][0] = tmp[0][2]
+                        tmp[0, 0] = tmp[0, 2]
                     else:
-                        tmp[0][2] = tmp[0][1]
+                        tmp[0, 2] = tmp[0, 1]
             cand = tmp.copy()
             # rotations around X, Y, Z (O is in the cube center, Z goes up)
             for i in range(1, 3 + 1):
@@ -1300,9 +1298,9 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
         rotRank = int(nsym[1:])  # ceil(rand(1)*nsym);
         if rotRank > 2:
             # newLattice = [sqrt(lattice(1,1)*lattice(2,2)) 0 0; 0 sqrt(lattice(1,1)*lattice(2,2)) 0; 0 0 lattice(3,3)]
-            newLattice = np.array([[np.sqrt(lattice[0][0] * lattice[1][1]), 0.0, 0.0],
-                                   [0.0, np.sqrt(lattice[0][0] * lattice[1][1]), 0.0],
-                                   [0.0, 0.0, lattice[2][2]]])
+            newLattice = np.array([[np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0, 0.0],
+                                   [0.0, np.sqrt(lattice[0, 0] * lattice[1, 1]), 0.0],
+                                   [0.0, 0.0, lattice[2, 2]]])
         candidate = []
         while 1:
             if numIons < rotRank:  # put the rest of the atoms on the axis
@@ -1317,10 +1315,10 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
                 # and then add (0.5,0.5,0.5)
                 while ellipse_mode and np.linalg.norm(tmp) > 0.5:
                     tmp = np.random.random((1, 3)) - 0.5
-                if (tmp[0][0] * newLattice[0][0]) ** 2 + (tmp[0][1] * newLattice[1][1]) ** 2 < minDistance ** 2:
+                if (tmp[0, 0] * newLattice[0, 0]) ** 2 + (tmp[0, 1] * newLattice[1, 1]) ** 2 < minDistance ** 2:
                     # too close to the main axis
                     numIons -= 1
-                    cand = np.array([[0.0, 0.0, tmp[0][2]]])
+                    cand = np.array([[0.0, 0.0, tmp[0, 2]]])
                 else:
                     cand = tmp.copy()
                     for i in range(1, rotRank - 1 + 1):
@@ -1399,11 +1397,11 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
 """
 """
 
-if __name__ == "__main__":
-    nsym = 'Th'
-    numIons = 36
-    lat = np.diag((4.9714, 4.9714, 4.9714))
-    minDistMatrix = 1.09
-    # minDistMatrix = np.array(np.mtrx('0.8 0.6; 0.6 0.8'))
-    candidate, lat, errorS = symope_cluster(nsym, numIons, lat, minDistMatrix)
-    print(candidate)
+# if __name__ == "__main__":
+#     nsym = 'Th'
+#     numIons = 36
+#     lat = np.diag((4.9714, 4.9714, 4.9714))
+#     minDistMatrix = 1.09
+#     # minDistMatrix = np.array(np.mtrx('0.8 0.6; 0.6 0.8'))
+#     candidate, lat, errorS = symope_cluster(nsym, numIons, lat, minDistMatrix)
+#     print(candidate)
