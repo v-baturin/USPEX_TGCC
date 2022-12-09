@@ -5,8 +5,8 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
     Creates structure using symmetry operator nsym\n
     :param nsym: symmetry group
     :param numIonsFull: total number of ions in cluster
-    :param lattice: cell
-    :param minDistMatrix: IonDistances from INPUT.txt
+    :param rand_cell: orthorombic cell (should respect the volume estimated by composition)
+    :param minDistMatrix: matrix of minimal distances based on ionic radii
     :return candidate: generated structure...
     :return newLattice: ...and its lattice
     :return errorS: error status (0 - no errors)
@@ -88,8 +88,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
             numIons -= 1
         if numIons < 60 and numIons % 12 != 0 and numIons != 20 and numIons != 30 and numIons != 32:
             if numIons < 40 or numIons == 58 or numIons == 46:
-                status = 'Impossible to build the cluster with {0} atoms that has symmetry group {1}'.format(numIons,
-                                                                                                             nsym)
+                status = f'Impossible to build the cluster with {numIons} atoms that has symmetry group {nsym}'
                 errorS = 1
                 with open('error_cluster_symmetry', 'w') as f: f.write(status + '\n')
         n60 = 0
@@ -1123,7 +1122,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
         candidate = []
         if numIons != 1 and numIons != 6 and numIons != 7 and numIons != 8 and numIons != 9 and numIons < 12:
             status = 'Impossible to build the cluster with {0} atoms that has symmetry group {1}'.format(numIons, nsym)
-            with open('error_cluster_symmetry', 'w') as f: f.write(status)
+            with open('error_cluster_symmetry', 'a') as f: f.write(status)
             errorS = 1
         if numIons % 2 == 1:  # put in the center
             candidate = np.array([0.0, 0.0, 0.0])
@@ -1337,7 +1336,8 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
             if numIons == 0:
                 break
 
-    if len(candidate) == 0:
+    if len(candidate) == 0 and errorS == 0:
+        status = 'Empty structure generated'
         errorS = 1
 
     AbsoluteCoord = np.dot(candidate, newLattice)
@@ -1389,7 +1389,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
     if errorS == 0:
         return candidate, newLattice
     else:
-        raise RuntimeError("Symope failed.")
+        raise RuntimeError(status)
 
 
 """
