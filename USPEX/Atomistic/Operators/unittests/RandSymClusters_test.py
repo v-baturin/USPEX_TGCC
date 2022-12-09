@@ -9,7 +9,7 @@ from ....components import Cell, CellUtility, SimpleMoleculeUtility, BondUtility
     AtomicDisassembler, AtomisticRepresentation
 from USPEX.Atomistic.VolumeEstimator import VolumeEstimator
 from USPEX.Atomistic.Operators.symope.symope_cluster import symope_cluster
-from USPEX.Atomistic.Operators.RandSymClusters import determineOperations
+from USPEX.Atomistic.Operators.RandSym import determineOperations
 
 
 class RandSymClusters_Test(unittest.TestCase):
