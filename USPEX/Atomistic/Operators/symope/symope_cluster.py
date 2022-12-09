@@ -90,7 +90,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
             if numIons < 40 or numIons == 58 or numIons == 46:
                 status = f'Impossible to build the cluster with {numIons} atoms that has symmetry group {nsym}'
                 errorS = 1
-                with open('error_cluster_symmetry', 'w') as f: f.write(status + '\n')
+                with open('error_cluster_symmetry', 'a') as f: f.write(status + '\n')
         n60 = 0
         numIons1 = numIons
         while 1:
@@ -341,7 +341,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
         candidate = []
         if numIons != 1 and numIons != 6 and numIons != 7 and numIons != 8 and numIons != 9 and numIons < 12:
             status = 'Impossible to build the cluster with {0} atoms that has symmetry group {1}'.format(numIons, nsym)
-            with open('error_cluster_symmetry', 'w') as f: f.write(status)
+            with open('error_cluster_symmetry', 'a') as f: f.write(status)
             errorS = 1
         if numIons % 2 == 1:  # put in the center
             candidate = np.array([0.0, 0.0, 0.0])
@@ -464,7 +464,7 @@ def symope_cluster(minDistMatrix, nsym, numIonsFull, rand_cell):
         candidate = []
         if numIons != 1 and numIons < 4:
             status = 'Impossible to build the cluster with {0} atoms that has symmetry group {1}'.format(numIons, nsym)
-            with open('error_cluster_symmetry', 'w') as f: f.write(status)
+            with open('error_cluster_symmetry', 'a') as f: f.write(status)
             errorS = 1
         if numIons % 2 == 1:  # put in the center
             candidate = np.array([0.0, 0.0, 0.0])
