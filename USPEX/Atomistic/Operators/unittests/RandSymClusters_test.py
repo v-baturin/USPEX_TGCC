@@ -3,6 +3,7 @@ import unittest
 from time import time
 import numpy as np
 from collections import Counter
+from os.path import join as pj
 
 from ....components import Cell, CellUtility, SimpleMoleculeUtility, BondUtility, Element, Conditions,\
     AtomicDisassembler, AtomisticRepresentation
@@ -20,7 +21,7 @@ class RandSymClusters_Test(unittest.TestCase):
         self.volumeType = 0
         self.MAX_RANDOM_FAILED_DIST = 10000
         self.MAX_RANDOM_TIME = np.inf
-        self.MAX_TRIES = 150
+        self.MAX_ATTEMPTS = 150
         self.MINAT = 35
         self.MAXAT = 120
         self.ATTEMPTS_ROTATION = 1
@@ -32,7 +33,7 @@ class RandSymClusters_Test(unittest.TestCase):
 
     def test_symope_cluster(self, outfolder=None):
         if outfolder is not None:
-            os.makedirs(outfolder)
+            os.makedirs(outfolder, exist_ok=True)
         centerMinDistMatrix = np.array([[1.09800171]])
         symbols = ['Mo']
         successN = 0
@@ -40,7 +41,7 @@ class RandSymClusters_Test(unittest.TestCase):
             n_at = self.MINAT
             success = False
             tries = 0
-            while not success and tries <= self.MAX_TRIES and n_at <= self.MAXAT:
+            while not success and tries <= self.MAX_ATTEMPTS and n_at <= self.MAXAT:
                 tries += 1
                 numIons = [n_at]
                 elementalComposition = Counter({Element('Mo'): n_at})
@@ -74,8 +75,8 @@ class RandSymClusters_Test(unittest.TestCase):
                             print(msg)
                             raise RuntimeError("RandSym_clusters failed.")
 
-                    if badSymmetryCounter > self.MAX_TRIES:
-                        print(f"Failed to generate cluster of {n_at} atoms with {sym} symmetry after {self.MAX_TRIES} tries")
+                    if badSymmetryCounter > self.MAX_ATTEMPTS:
+                        print(f"Failed to generate cluster of {n_at} atoms with {sym} symmetry after {self.MAX_ATTEMPTS} tries")
                         n_at += 1
                         break
                     else:
@@ -104,7 +105,8 @@ class RandSymClusters_Test(unittest.TestCase):
                                 print(f"Structure with {n_at} attoms generated with symmetry {sym}")
                                 successN += 1
                                 success = True
-                                # AtomisticRepresentation.writePOSCAR(f'/mnt/512G/work_data/symope_test/sym_poscars/POSCAR_{sym}', structure, label='EA1')
+                                if outfolder is not None:
+                                    AtomisticRepresentation.writePOSCAR(pj(outfolder, f'POSCAR_{sym}'), structure, label='EA1')
                                 break
                             else:
                                 raise RuntimeError('non-connected structure')
