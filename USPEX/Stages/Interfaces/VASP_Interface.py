@@ -258,17 +258,23 @@ class VASP_Interface:
     ############reading part
 
     def readOutput(self, system, calcFolder : str):
-        aseData = self.adapter.read(calcFolder, **system[self.tmp].pop('ase'))
+        trajectory = self.adapter.read(calcFolder, **system[self.tmp].pop('ase'))
+        structure = trajectory[-1]['structure']
+        results = trajectory[-1]['results']
+        disassembler = system[self.tmp].pop('disassembler')
         if 'structure' in self.targetProperties:
-            usp(system, system[self.tmp].pop('disassembler').disassemble(aseData.pop('structure')),
+            usp(system, disassembler.disassemble(structure),
                 'system', self.environmentStyle)
         if 'enthalpy' in self.targetProperties:
-            enthalpy = aseData['results'].getEnthalpy(system['externalPressure'])
+            enthalpy = results.getEnthalpy(system['externalPressure'])
             usp(system, enthalpy, 'enthalpy', self.environmentStyle)
         if 'energy' in self.targetProperties:
-            usp(system, aseData['results']['energy'], 'energy', self.environmentStyle)
+            usp(system, results['energy'], 'energy', self.environmentStyle)
         if 'forces' in self.targetProperties:
-            usp(system, aseData['results']['forces'], 'forces', self.environmentStyle)
+            usp(system, results['forces'], 'forces', self.environmentStyle)
+        if 'trajectory' in self.targetProperties:
+            usp(system, trajectory, 'trajectory', self.environmentStyle)
+            usp(system, disassembler, 'trajectoryDisassembler', self.environmentStyle)
 
         with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
             content = fp.readlines()

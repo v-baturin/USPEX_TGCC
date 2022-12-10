@@ -1,0 +1,29 @@
+----------------------------------------------------------------
+Begin PBS Prologue Fri Nov  4 17:37:08 MSK 2022 1667572628
+Job ID:           14264880.mgmt-arkuda.skoltech.ru
+Username: a.maltsev
+Group:            oganov-lab
+Node(s):        htc-a1c01s11:ppn=8	
+End PBS Prologue Fri Nov  4 17:37:08 MSK 2022 1667572628
+----------------------------------------------------------------
+Note: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
+Note: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
+Note: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
+Note: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG IEEE_DENORMALNote: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
+
+Note: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
+Note: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
+Note: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
+----------------------------------------------------------------
+Begin PBS Epilogue Fri Nov  4 18:06:45 MSK 2022 1667574405
+Job ID:           14264880.mgmt-arkuda.skoltech.ru
+Exit Code:      0
+Username: a.maltsev
+Group:            oganov-lab
+Job Name: HEA_MD
+Session:  26865
+Limits:           nodes=1:ppn=8,walltime=48:00:00,neednodes=1:ppn=8,pmem=5000mb
+Resources:        cput=03:55:57,vmem=4365828kb,walltime=00:29:32,mem=463304kb,energy_used=0
+Queue:            batch
+End PBS Epilogue Fri Nov  4 18:06:45 MSK 2022 1667574405
+----------------------------------------------------------------

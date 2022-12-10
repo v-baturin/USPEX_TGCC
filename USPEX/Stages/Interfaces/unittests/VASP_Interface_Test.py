@@ -95,3 +95,22 @@ class VASP_interface_elastic_Test(unittest.TestCase):
             content = f.readlines()
         elasticMatrix = self.interface.readElasticMatrix(content)
         self.assertTrue(np.allclose(elasticMatrix, elasticMatrix_ref))
+
+class VASP_interface_MD_Test(unittest.TestCase):
+
+    def test1(self):
+        wd = pj(HOMEPATH, 'AIMD_AlB2')
+        self.interface = VASP_Interface(tag='1', incar=pj(wd, 'INCAR'), potcarsPath=wd,
+                                        kresol=0.06, targetProperties=['trajectory'])
+        system = dict(
+            tmp_1=dict(
+                ase={'pbc': (1, 1, 1), 'symbolsOrder': [0, 1, 2]},
+                disassembler=None
+            )
+        )
+        self.interface.readOutput(system, wd)
+        self.assertGreater(len(system['trajectory']), 1)
+        for data in system['trajectory']:
+            self.assertTrue(len(data['structure']) == 3)
+            self.assertTrue('energy' in data['results'].results)
+            self.assertTrue('forces' in data['results'].results)
