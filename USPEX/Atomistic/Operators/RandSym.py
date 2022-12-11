@@ -9,6 +9,7 @@ from itertools import combinations_with_replacement
 
 from .symope.splitBigCell import splitBigCell
 from .symope.symope_crystal import symope_crystal
+from .symope.symope_cluster import symope_cluster
 from time import time
 
 from ..Transformation import Transformation
@@ -58,7 +59,7 @@ def determineOperations(lat, numIons, candidate):
 
 
 class RandSym:
-    def __init__(self, utilities, nsymN=False, nsym=None, sym_coef=0.4, splitInto=[1],
+    def __init__(self, utilities, nsym=None, sym_coef=0.4, splitInto=[1],
                  attemptsRotation: int = ATTEMPTS_ROTATION, debug = False):
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
@@ -66,11 +67,18 @@ class RandSym:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
-        self.nsymN = nsymN
         if nsym is None:
-            self.nsym = list(range(2, 231))
+            if utilities.cellUtility.getDim() == 0:
+                self.nsym = (
+                            'E C2 D2 C4 C3 C6 T S2 Ch1 Cv2 S4 S6 Ch3 Th Ch2 Dh2 Ch4 D3 Ch6 O D4 Cv3 D6 Td Cv4 Dd3 Cv6 Oh ' + \
+                            'Dd2 Dh3 Dh4 Dh6 Oh C5 S5 S10 Cv5 Ch5 D5 Dd5 Dh5 I Ih').split()
+            else:
+                self.nsym = list(range(2, 231))
         elif isinstance(nsym, str):
-            self.nsym = list(parseIntSet(nsym))
+            if utilities.cellUtility.getDim() == 0:
+                self.nsym = nsym.split()
+            else:
+                self.nsym = list(parseIntSet(nsym))
         elif isinstance(nsym, list):
             self.nsym = nsym
         else:
@@ -165,8 +173,14 @@ class RandSym:
                     lat, candidate = splitBigCell(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, lat,
                                                   np.random.choice(self.splitInto), numIons, nsym, self.sym_coef)
                 else:
-
-                    candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,
+                    if self.cellUtility.getDim() == 0:
+                        randcell = np.random.random(3)
+                        randcell *= (estimatedVolume / np.prod(randcell)) ** (1 / 3)
+                        rand_orthog_cell = self.cellUtility.cellType.initFromCellVectors((1, 1, 1), np.diag(randcell))
+                        candidate, lat = symope_cluster(distCoeff * centerMinDistMatrix, nsym,
+                                                        numIons_tmp, rand_orthog_cell)
+                    else:
+                        candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,
                                                     estimatedVolume, self.sym_coef)
                 name, cell, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
