@@ -173,7 +173,7 @@ class RandSym:
                     lat, candidate = splitBigCell(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, lat,
                                                   np.random.choice(self.splitInto), numIons, nsym, self.sym_coef)
                 else:
-                    if self.utilities.cellUtility.getDim() == 0:
+                    if self.cellUtility.getDim() == 0:
                         randcell = np.random.random(3)
                         randcell *= (estimatedVolume / np.prod(randcell)) ** (1 / 3)
                         rand_orthog_cell = self.cellUtility.cellType.initFromCellVectors((1, 1, 1), np.diag(randcell))
