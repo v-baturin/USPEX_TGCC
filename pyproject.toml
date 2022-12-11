@@ -5,7 +5,7 @@ author-email=""
 home-page="https://uspex-team.org"
 dist-name="USPEX"
 requires-python=">=3.8"
-requires = ["ase", "pymatgen", "abipy", "asyncssh", "pandas", "sklearn", "prettytable", "parsec", "pyxtal", "torch"]
+requires = ["ase", "pymatgen", "abipy", "asyncssh", "pandas", "scikit-learn", "prettytable", "parsec", "pyxtal", "torch"]
 
 [tool.flit.scripts]
 uspex="USPEX.main:main"
