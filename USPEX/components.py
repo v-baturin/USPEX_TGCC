@@ -59,10 +59,10 @@ from .Stages.Interfaces.GULP_Interface import GULP_Interface
 GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 Executor.registerInterface('gulp', GULP_Interface)
 from .Stages.Interfaces.LAMMPS_Interface import LAMMPS_Interface
-LAMMPS_Interface.registerTypes(AtomicDisassembler, ASEInterfaceAdapter.LAMMPS)
+LAMMPS_Interface.registerTypes(AtomisticRepresentation, AtomicDisassembler, ASEInterfaceAdapter.LAMMPS)
 Executor.registerInterface('lammps', LAMMPS_Interface)
 from .Stages.Interfaces.MLIP_Interface import MLIP_Interface
-MLIP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+MLIP_Interface.registerTypes(AtomisticRepresentation, AtomicDisassembler)
 Executor.registerInterface('mlip', MLIP_Interface)
 from .Stages.Interfaces.PWmat_Interface import PWmat_Interface
 PWmat_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)

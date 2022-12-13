@@ -66,3 +66,20 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         interface.readOutput(system=system, calcFolder=pj(GATHEREDPATH, f'output/CalcFold{ID}'))
         self.assertTrue(np.isclose(system['enthalpy'], -102.64364))
 
+
+class LAMMPS_MLIP_Test(unittest.TestCase):
+
+    def test_sample(self):
+        interface = LAMMPS_Interface(tag='0', lammps_in=pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE', 'lammps.in'),
+                                     specorder=['Li', 'B', 'H'], targetProperties=['MLIPsample'])
+        system = dict(
+            tmp_0=dict(
+                ase={'pbc': (1, 1, 1)},
+                disassembler=None
+            )
+        )
+
+        interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE'))
+        self.assertEqual(len(system['MLIPsample']), 1805)
+        for system in system['MLIPsample']:
+            self.assertEqual(len(system['structure']), 104)

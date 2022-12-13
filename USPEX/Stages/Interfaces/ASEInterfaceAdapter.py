@@ -1,6 +1,6 @@
 import numpy as np
 from os.path import join as pj
-from ase.io.vasp import read_vasp_out, read_vasp_xml, write_vasp
+from ase.io.vasp import iread_vasp_out, read_vasp_xml, write_vasp
 from ase.io.espresso import read_fortran_namelist, read_espresso_out, write_espresso_in
 from ase.io import ParseError, read
 from ase.atoms import Atoms
@@ -57,22 +57,26 @@ class ASEInterfaceAdapter:
 
         def read(self, calcFolder, pbc, symbolsOrder):
             try:
-                atoms = read_vasp_out(pj(calcFolder, self.outcar_file))
+                with open(pj(calcFolder, self.outcar_file)) as f:
+                    trajectoryAtoms = list(iread_vasp_out(f, None))
             except (KeyError, ParseError):
-                atoms = list(read_vasp_xml(pj(calcFolder, self.xml_file)))[-1]
-
-            size = len(atoms)
-            positions = np.empty((size, 3), dtype=float)
-            atomTypes = np.empty(size, dtype=ASEInterfaceAdapter.atomType)
-            for i, symbol, position in zip(symbolsOrder, atoms.get_chemical_symbols(), atoms.get_positions()):
-                positions[i] = position
-                atomTypes[i] = ASEInterfaceAdapter.atomType(symbol)
-            cell = ASEInterfaceAdapter.cellType(atoms.get_cell().array, pbc)
-            structure = ASEInterfaceAdapter.structureType(atomTypes, positions, cell=cell)
-            return dict(
-                structure=structure,
-                results=ASEInterfaceAdapter.Results(atoms)
-            )
+                with open(pj(calcFolder, self.xml_file)) as f:
+                    trajectoryAtoms = list(read_vasp_xml(f))
+            trajectory = []
+            for atoms in trajectoryAtoms:
+                size = len(atoms)
+                positions = np.empty((size, 3), dtype=float)
+                atomTypes = np.empty(size, dtype=ASEInterfaceAdapter.atomType)
+                for i, symbol, position in zip(symbolsOrder, atoms.get_chemical_symbols(), atoms.get_positions()):
+                    positions[i] = position
+                    atomTypes[i] = ASEInterfaceAdapter.atomType(symbol)
+                cell = ASEInterfaceAdapter.cellType(atoms.get_cell().array, pbc)
+                structure = ASEInterfaceAdapter.structureType(atomTypes, positions, cell=cell)
+                trajectory.append(dict(
+                    structure=structure,
+                    results=ASEInterfaceAdapter.Results(atoms)
+                ))
+            return trajectory
 
     class LAMMPS:
 

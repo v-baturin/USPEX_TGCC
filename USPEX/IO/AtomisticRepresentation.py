@@ -177,6 +177,116 @@ class AtomisticRepresentation(object):
             plt.savefig(pj(self.RES_FOLDER, 'E_series.svg'))
             plt.close()
 
+    @classmethod
+    def readMLIPcfg(cls, file, specorder=None):
+        lat = np.zeros((3, 3))
+        types = None
+        pos = None
+        energy = None
+        forces = None
+        stresses = None
+        size = -1
+        mode = -1
+        line = file.readline()
+        while line:
+            line = line.upper()
+            line = line.strip()
+            if mode == 0:
+                if line.startswith('SIZE'):
+                    line = file.readline()
+                    size = int(line.strip())
+                    types = np.zeros(size, dtype=int).tolist()
+                    pos = np.zeros((size, 3))
+                elif line.startswith('SUPERCELL'):
+                    line = file.readline()
+                    vals = line.strip().split()
+                    lat[0, :] = vals[0:3]
+                    line = file.readline()
+                    vals = line.strip().split()
+                    lat[1, :] = vals[0:3]
+                    line = file.readline()
+                    vals = line.strip().split()
+                    lat[2, :] = vals[0:3]
+                elif line.startswith('ATOMDATA'):
+                    if line.endswith('FZ'):
+                        forces = np.zeros((size, 3))
+                    for i in range(size):
+                        line = file.readline()
+                        vals = line.strip().split()
+                        types[i] = int(vals[1])
+                        pos[i, :] = vals[2:5]
+                        if forces is not None:
+                            forces[i, :] = vals[5:8]
+                elif line.startswith('ENERGY'):
+                    line = file.readline()
+                    energy = float(line.strip())
+                elif line.startswith('PLUSSTRESS'):
+                    line = file.readline()
+                    vals = line.strip().split()
+                    stresses = np.zeros(6)
+                    stresses[:] = vals[0:6]
+            if line.startswith('BEGIN_CFG'):
+                mode = 0
+            elif line.startswith('END_CFG'):
+                break
+            line = file.readline()
+
+        cell = cls.cellType(lat, (1, 1, 1))
+        if specorder is not None:
+            types = [specorder[n-1] for n in types]
+        return dict(
+            structure=cls.structureType([cls.atomType(n) for n in types], pos, cell=cell),
+            energy=energy,
+            forces=forces,
+            stresses=stresses
+        )
+
+    @classmethod
+    def readMLIPsample(cls, filename, specorder):
+        all_systems = []
+        with open(filename, 'r') as f:
+            while True:
+                try:
+                    all_systems.append(cls.readMLIPcfg(f, specorder))
+                except Exception:
+                    break
+        return all_systems
+
+    @staticmethod
+    def saveMLIPcfg(filename, structure, system):
+        with open(filename, 'w') as f:
+            atstr1 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z           fx          fy          fz\n'
+            atstr2 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z\n'
+            size = len(structure)
+            f.write('BEGIN_CFG\n')
+            f.write('Size\n')
+            f.write(f'   {size}\n')
+            f.write('SuperCell\n')
+            for i in range(3):
+                lat = structure.getCell().getCellVectors()
+                f.write(' %13f %13f %13f\n' % (lat[i, 0], lat[i, 1], lat[i, 2]))
+            if 'forces' in system:
+                f.write(atstr1)
+            else:
+                f.write(atstr2)
+            atomTypes = structure.getAtomTypes()
+            positions = structure.getCartesianCoordinates()
+            for i in range(size):
+                if 'forces' in system:
+                    f.write('         %4d %4d %13f %13f %13f %11.8e %11.8e %11.8e\n' %
+                            (i + 1, atomTypes[i].z, positions[i, 0], positions[i, 1], positions[i, 2],
+                             system['forces'][i, 0], system['forces'][i, 1], system['forces'][i, 2]))
+                else:
+                    f.write('         %4d %4d %13f %13f %13f\n' %
+                            (i + 1, atomTypes[i].z, positions[i, 0], positions[i, 1], positions[i, 2]))
+            if 'energy' in system:
+                f.write(' Energy\n   %20f\n' % system['energy'])
+            if 'stresses' in system:
+                f.write(' PlusStress:  xx           yy           zz           yz           xz           xy\n')
+                f.write('         %11f %11f %11f %11f %11f %11f\n' %
+                        (system['stresses'][0], system['stresses'][1], system['stresses'][2],
+                         system['stresses'][3], system['stresses'][4], system['stresses'][5]))
+            f.write('END_CFG\n')
 
     @classmethod
     def writePOSCAR(cls, filename, structure, label):
