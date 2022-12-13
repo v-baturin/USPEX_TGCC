@@ -235,7 +235,7 @@ class AtomisticRepresentation(object):
         if specorder is not None:
             types = [specorder[n-1] for n in types]
         return dict(
-            structure=cls.structureType([cls.atomType(int(n)) for n in types], pos, cell=cell),
+            structure=cls.structureType([cls.atomType(n) for n in types], pos, cell=cell),
             energy=energy,
             forces=forces,
             stresses=stresses

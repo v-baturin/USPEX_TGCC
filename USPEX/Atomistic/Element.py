@@ -9,6 +9,7 @@ Class for Element
 """
 
 from typing import List, Union, Optional
+import numpy as np
 
 
 class _Atom:
@@ -176,7 +177,7 @@ class Element(object):
         :param input: can be shortname, fullname of atomic number.
 
         """
-        if isinstance(input, int):
+        if isinstance(input, np.integer):
             if max(self.all_z()) < input <= 0:
                 raise ValueError
             pos = [x.z for x in _ELEMENTS_LIST].index(input)
