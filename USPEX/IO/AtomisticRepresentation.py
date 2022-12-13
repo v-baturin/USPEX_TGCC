@@ -195,7 +195,7 @@ class AtomisticRepresentation(object):
                 if line.startswith('SIZE'):
                     line = file.readline()
                     size = int(line.strip())
-                    types = np.zeros(size, dtype=int)
+                    types = np.zeros(size, dtype=int).tolist()
                     pos = np.zeros((size, 3))
                 elif line.startswith('SUPERCELL'):
                     line = file.readline()
