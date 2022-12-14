@@ -87,6 +87,9 @@ Executor.registerTaskManager('SBATCH', SBATCH)
 from .Stages.TaskManagers.SHELL import SHELL
 Executor.registerTaskManager('SHELL', SHELL)
 
+from .Stages.PopulationProcessor import PopulationProcessor
+
 from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 GenerationController.registerStage('execute', Executor)
+GenerationController.registerStage('populationProcessor', PopulationProcessor)

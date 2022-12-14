@@ -10,11 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class PopulationProcessor:
-    def __init__(self, tag, stages, inputKey, numParallelCalcs, checkCallback=None):
+    def __init__(self, tag, stages, inputKey, numParallelCalcs, systems=None, checkCallback=None):
         self.tag = tag
         self.stages = stages
         self.inputKey = inputKey
         self.numParallelCalcs = numParallelCalcs
+        self.systems = systems
         self.checkCallback = checkCallback
 
     async def run(self, system):
@@ -30,6 +31,8 @@ class PopulationProcessor:
         if ID not in populationDump:
             populationDump[ID] = [deepcopy(system)]
         processedSystems = populationDump[ID]
+        if self.systems is not None:
+            self.systems[ID] = processedSystems[0:1]
         for i, stage in enumerate(self.stages):
             if i + 1 < len(processedSystems):
                 system.update(processedSystems[i + 1])
@@ -48,9 +51,10 @@ class PopulationProcessor:
                     system['isBad'] = True
                     break
                 processedSystems.append(deepcopy(system))
+            if self.systems is not None:
+                self.systems[ID].append(processedSystems[i+1])
             populationDump.save()
         sem.release()
-        return processedSystems[:]
 
 
 class PopulationDump:
