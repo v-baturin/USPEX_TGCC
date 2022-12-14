@@ -82,7 +82,6 @@ setup(
             "components.py",
             "main.py",
             "GenerationController.py",
-            "LifeState.py",
             "Presets.py",
             "Atomistic/__init__.py",
             "Atomistic/model_hf73kd992kz.pt",
