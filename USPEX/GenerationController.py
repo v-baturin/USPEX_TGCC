@@ -6,7 +6,6 @@ from shutil import copyfile
 from copy import copy, deepcopy
 from enum import Enum
 
-from .LifeState import LifeState
 from .IO.OutputRepresentation import OutputRepresentation
 from .IO.InputParser import read
 from .IO.compileParams import compileParams
@@ -45,9 +44,7 @@ class GenerationController(object):
                  optimizer, outputRepresentation, outputRefreshDelay):
         self.numGenerations = numGenerations
         self.stopCrit = stopCrit
-        self.numParallelCalcs = numParallelCalcs
         self.optimizer = optimizer
-        self.stages = stages
         self.outputRepresentation = outputRepresentation
         self.outputRefreshDelay = outputRefreshDelay
         self.doPresentSystems = True
@@ -55,11 +52,13 @@ class GenerationController(object):
         self.numberStableGenerations = 0
         self.state = ControllerState.createPopulation
         self.population = None
-
         self.populations = []
         self.optimizers = []
         self.systems = {}
-
+        self.populationProcessor = self.knownStages['populationProcessor'](tag='stages', stages=stages,
+                                                                           inputKey='population',
+                                                                           numParallelCalcs=numParallelCalcs,
+                                                                           systems=self.systems)
         self.save()
 
     @staticmethod
@@ -107,11 +106,9 @@ class GenerationController(object):
                 self.state = ControllerState.processPopulation
                 self.save()
             if self.state is ControllerState.processPopulation:
-                lifeState = LifeState.load(self.population)
-                sem = asyncio.Semaphore(self.numParallelCalcs)
                 self.doPresentSystems = True
                 task = asyncio.ensure_future(self.presentSystems())
-                await asyncio.gather(*(self.life(lifeState, system, sem) for system in self.population))
+                await self.populationProcessor.run(dict(ID='USPEX', population=self.population))
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.populations.append(copy(self.population))
@@ -136,38 +133,6 @@ class GenerationController(object):
         with open('USPEX_IS_DONE', 'wt') as f:
             f.write('')
         logger.info('Calculation finished.')
-
-    async def life(self, state, system, sem):
-        await sem.acquire()
-        ID = system['ID']
-        system['isBad'] = False
-        if ID not in state.systems:
-            state.systems[ID] = [copy(system)]
-        processedSystems = state.systems[ID]
-        self.systems[ID] = [deepcopy(system)]
-        for i, stage in enumerate(self.stages):
-            if i + 1 < len(processedSystems):
-                system.update(processedSystems[i + 1])
-            else:
-                try:
-                    system[f'tmp_{stage.tag}'] = {}
-                    await stage.run(system)
-                    del system[f'tmp_{stage.tag}']
-                except Exception as ex:
-                    logger.warning(f'system {ID} error in relaxation:')
-                    logger.exception(ex)
-                    system['isBad'] = True
-                    break
-                if not self.optimizer.target.constraints.systemCheckAndFix(system):
-                    logger.info(f'system {ID} violates constraints')
-                    system['isBad'] = True
-                    break
-                processedSystems.append(copy(system))
-            self.systems[ID].append(deepcopy(system))
-
-            state.save()
-
-        sem.release()
 
     async def presentSystems(self):
         while self.doPresentSystems:
