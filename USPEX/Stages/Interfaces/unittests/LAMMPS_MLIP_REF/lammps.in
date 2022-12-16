@@ -1,0 +1,51 @@
+# ---------- Initialize Simulation --------------------- 
+units 		metal 
+boundary 	p p p 
+box tilt large
+# ---------- Create Atoms --------------------- 
+read_data STRUC
+#change_box all triclinic
+# ---------- Define Interatomic Potential --------------------- 
+pair_style mlip mlip.ini
+pair_coeff * * 
+neighbor 1.5 bin 
+
+timestep 0.5E-3
+
+thermo 		100
+thermo_style custom step enthalpy etotal ke pe temp pxx pyy pzz pxy pxz pyz
+dump 		2 all custom 1000 md.lammpstrj id type x y z
+
+#-----------------initial minimisation----------------
+min_style cg
+min_modify dmax 0.2
+minimize	1.0e-5 1.0e-5 100000 10000
+
+
+#-----------msd parameters----------------
+compute 2 all msd com yes
+compute 3 all vacf
+compute 4 all temp
+fix 5 all ave/time 100 5 1000 c_4 c_2[4] c_3[4] file out.msd
+
+#------------------heating---------------
+fix		1 all npt temp 1 1000 0.1 iso 0.0 0.0 100
+run		100000
+unfix		1
+
+#------------------keep temperature---------------
+fix		1 all npt temp 1000 1000 0.1 iso 0.0 0.0 100
+run		10000000
+unfix		1
+
+
+
+
+
+
+
+
+#save data:
+write_data 	S300K.dat
+write_restart 	S300K.restdump lammps_uspex_dump all custom 1 lammps.dump id type x y z vx vy vz fx fy fz
+run 0

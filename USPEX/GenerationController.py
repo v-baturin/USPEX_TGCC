@@ -116,7 +116,7 @@ class GenerationController(object):
                 self.state = ControllerState.updateOptimizer
                 self.save()
             if self.state is ControllerState.updateOptimizer:
-                self.optimizer.update(self.population)
+                await self.optimizer.update(self.population)
                 self.optimizers.append(copy(self.optimizer))
                 self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.runControllerLogic

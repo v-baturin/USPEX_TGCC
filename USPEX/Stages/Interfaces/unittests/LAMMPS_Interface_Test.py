@@ -69,9 +69,29 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
 
 class LAMMPS_MLIP_Test(unittest.TestCase):
 
+    def setUp(self) -> None:
+        self.interface = LAMMPS_Interface(tag='0', lammps_in=pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE', 'lammps.in'),
+                                          mlip_in=pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE', 'mlip.ini'),
+                                          mlip=pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE', 'p.mtp'),
+                                          specorder=['Li', 'B', 'H'], targetProperties=['mlip.sample'], perturbate=False)
+
+    def test_init(self):
+        system = AtomisticRepresentation.readAtomicStructure(pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE', 'Li_B_H_POSCAR'))
+        system['ID'] = 0
+        system['tmp_0'] = {}
+        calcFolder = pj(HOMEPATH, 'LAMMPS_MLIP_INIT')
+        os.mkdir(calcFolder)
+        self.interface.prepareLocalCalculation(system=system, calcFolder=calcFolder)
+        refFolder = pj(HOMEPATH, 'LAMMPS_MLIP_REF')
+        dcmp = filecmp.dircmp(refFolder, calcFolder)
+        match = not dcmp.diff_files
+        for common_dir in dcmp.common_dirs:
+            match = match and not dcmp.subdirs[common_dir].diff_files
+        self.assertTrue(match)
+        shutil.rmtree(calcFolder)
+
+
     def test_sample(self):
-        interface = LAMMPS_Interface(tag='0', lammps_in=pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE', 'lammps.in'),
-                                     specorder=['Li', 'B', 'H'], targetProperties=['MLIPsample'])
         system = dict(
             tmp_0=dict(
                 ase={'pbc': (1, 1, 1)},
@@ -79,7 +99,7 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
             )
         )
 
-        interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE'))
-        self.assertEqual(len(system['MLIPsample']), 1805)
-        for system in system['MLIPsample']:
+        self.interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE'))
+        self.assertEqual(len(system['mlip.sample']), 1805)
+        for system in system['mlip.sample']:
             self.assertEqual(len(system['structure']), 104)

@@ -33,7 +33,10 @@ class LAMMPS_Interface:
     log_file = 'log.lammps'
     data_file = 'STRUC'
     dump_file = 'lammps.dump'
-    mlip_sample = 'sampled.cfg'
+    mlip_ini = 'mlip.ini'
+    mlip_in = None
+    mlip_sample = None
+    mlip_mtp = 'default.mtp'
     
     DEFAULT_SLEEP_TIME = 30
 
@@ -47,9 +50,9 @@ class LAMMPS_Interface:
         cls.atomicDisassemblerType = atomicDisassemblerType
         cls.aseAdapterType = aseAdapterType
 
-    def __init__(self, tag: str, specorder: List[str], lammps_in: str = None, libs: List[str] = None,
-                 vacuumSize: float = 10.0, targetProperties: list = None, environmentStyle=None, inStyle=None,
-                 perturbate:bool = True, **kwargs):
+    def __init__(self, tag: str, specorder: List[str], lammps_in: str = None, mlip_in: str = None, mlip: str = None,
+                 libs: List[str] = None, vacuumSize: float = 10.0, targetProperties: list = None, environmentStyle=None,
+                 inStyle=None, perturbate:bool = True, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -60,12 +63,31 @@ class LAMMPS_Interface:
         self.tag = tag
         self.tmp = f'tmp_{tag}'
         self.lammps_in = pj(os.getcwd(), f'Specific/lammps.in_{tag}') if lammps_in is None else lammps_in
+
+        self.mlip = mlip
+        if self.mlip is not None:
+            self.mlip_in = pj(os.getcwd(), f'Specific/mlip.ini_{tag}') if mlip_in is None else mlip_in
+
+            with open(self.mlip_in, 'r') as f:
+                content = f.readlines()
+
+            for line in content:
+                if 'sample:save_sampled_to' in line:
+                    self.mlip_sample = line.split()[1]
+
+            for line in content:
+                if 'mlip:load_from' in line:
+                    self.mlip_mtp = line.split()[1]
+                    break
+            else:
+                raise RuntimeError('Bad mlip.ini: load_from not specified.')
+
         self.specorder = specorder
         assert os.path.exists(self.lammps_in)
 
         if libs is not None:
             assert all([os.path.exists(lib) for lib in libs])
-        self.libs = libs
+        self.libs = [] if libs is None else libs
 
         self.adapter = self.aseAdapterType()
         self.failedSystems = []
@@ -135,7 +157,10 @@ class LAMMPS_Interface:
 
         for lib in self.libs:
             shutil.copy2(lib, calcFolder)
-                
+
+        if self.mlip is not None:
+            shutil.copy2(self.mlip, pj(calcFolder, self.mlip_mtp))
+            shutil.copy2(self.mlip_in, pj(calcFolder, self.mlip_ini))
 
     def isConverged(self, calcFolder : str):
         lammps_completed = False
@@ -193,10 +218,10 @@ class LAMMPS_Interface:
             stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
             usp(system, stressTensor, 'stressTensor', self.environmentStyle)
 
-        if 'MLIPsample' in self.targetProperties:
+        if 'mlip.sample' in self.targetProperties:
             sample = self.atomisticRepresentationType.readMLIPsample(pj(calcFolder, self.mlip_sample), self.specorder)
-            usp(system, sample, 'MLIPsample', self.environmentStyle)
-            usp(system, disassembler, 'MLIPdisassembler', self.environmentStyle)
+            usp(system, sample, 'mlip.sample', self.environmentStyle)
+            usp(system, disassembler, 'mlip.disassembler', self.environmentStyle)
 
         # TODO move to constraints
         # BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3
