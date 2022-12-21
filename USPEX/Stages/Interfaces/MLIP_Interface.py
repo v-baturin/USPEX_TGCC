@@ -9,7 +9,7 @@ import logging
 import os
 import shutil
 import numpy as np
-from os.path import join as pj
+from os.path import join as pj, basename as bn
 
 from ...Presets import udateSystemWithPrefix as usp
 
@@ -26,12 +26,13 @@ class MLIP_Interface:
 
 
     inputFile, outputFile, errorFile = 'input', 'output', 'error'
+    argsFile = 'args'
 
     # working input files
-    in_cfg_file = 'for_relax.cfg'
+    in_cfg_file = 'input.cfg'
 
     # working output files
-    out_cfg_file = 'relaxed.cfg_0'
+    out_cfg_file = 'output.cfg'
     out_sampled_file = 'sampled.cfg_0'
 
     DEFAULT_SLEEP_TIME = 10
@@ -43,46 +44,59 @@ class MLIP_Interface:
         cls.atomisticRepresentation = atomisticRepresentation
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, tag: str, input: str = None, potential: str = None, vacuumSize = 10,
-                 environmentStyle=None, inStyle=None, targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str, mode: str, potential: str, specorder, args: str = None, trainingSet: str = None,
+                 targetProperties: list = None, **kwargs):
 
         self.tag = tag
         self.tmp = f'tmp_{tag}'
-        if input is not None:
-            self.input = input
+        self.mode = mode
+        self.potential = potential
+        self.specorder = specorder
+        self.trainingSet = trainingSet
+        if self.mode == 'select_add':
+            assert self.trainingSet is not None
+        argsFile = f'Specific/mlip_args_{tag}' if args is None else args
+        with open(pj(os.getcwd(), argsFile)) as f:
+            self.args = f.read()
+        if targetProperties is not None:
+            self.targetProperties = targetProperties
+        elif self.mode == 'train':
+            self.targetProperties = ['potential', 'trainingSet']
+        elif self.mode == 'select_add':
+            self.targetProperties = ['sample']
         else:
-            self.input = pj(os.getcwd(), f'Specific/input_{tag}.ini')
-
-        if potential is not None:
-            self.potential = potential
-        else:
-            self.potential = pj(os.getcwd(), 'Specific/potential.mtp')
-        self.vacuumSize = vacuumSize
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
-        self.environmentStyle = environmentStyle
-        self.inStyle = inStyle
+            self.targetProperties = []
 
     def prepareLocalCalculation(self, system, calcFolder: str):
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle,
-                                                                       vacuumSize=self.vacuumSize)
-        system[self.tmp]['disassembler'] = disassembler
-        cell = structure.getCell()
-        system['pbc'] = cell.getPBC()
 
         # create empty input file
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
-        # cfg file
-        self.atomisticRepresentation.saveMLIPcfg(pj(calcFolder, self.in_cfg_file), structure, system)
+        if 'mlip.sample' in system:
+            sample = system['mlip.sample']
+        elif 'population' in system:
+            sample = []
+            for individual in system['population']:
+                sample.extend(individual['mlip.sample'])
+        else:
+            raise RuntimeError('No mlip sample in system.')
+        self.atomisticRepresentation.saveMLIPsample(pj(calcFolder, self.in_cfg_file), self.specorder, sample)
 
-        # input file
-        shutil.copy2(self.input, calcFolder)
-
-        # potential file
         shutil.copy2(self.potential, calcFolder)
+
+        if self.mode == 'train':
+            args = f'train {bn(self.potential)} {self.in_cfg_file} {self.args}'
+        elif self.mode == 'select_add':
+            args = f'select_add {bn(self.potential)} {bn(self.trainingSet)}' \
+                   f' {self.in_cfg_file} {self.out_cfg_file} {self.args}'
+            shutil.copy2(self.trainingSet, calcFolder)
+        else:
+            raise RuntimeError(f'Mode {self.mode} unsupported.')
+
+        with open(pj(calcFolder, self.argsFile), 'wt') as f:
+            f.write(args)
+
 
     def isConverged(self, calcFolder: str):
         if os.path.isfile(pj(calcFolder, self.out_cfg_file)):
@@ -90,37 +104,39 @@ class MLIP_Interface:
                 content = f.read()
             if content:
                 return True
-            # if the structure ended up unrelaxed because of extrapolation
-            elif os.path.isfile(pj(calcFolder, self.out_sampled_file)):
-                with open(pj(calcFolder, self.errorFile)) as stderr:
-                    content = stderr.read()
-                if not content:
-                    return True
+            # # if the structure ended up unrelaxed because of extrapolation
+            # elif os.path.isfile(pj(calcFolder, self.out_sampled_file)):
+            #     with open(pj(calcFolder, self.errorFile)) as stderr:
+            #         content = stderr.read()
+            #     if not content:
+            #         return True
         return False
 
     def readOutput(self, system, calcFolder: str):
-        with open(pj(calcFolder, self.out_cfg_file)) as f:
-            data = self.atomisticRepresentation.readMLIPcfg(f, )
-        if 'structure' in self.targetProperties:
-            usp(system, system[self.tmp].pop('disassembler').disassemble(data['structure']), 'system', self.environmentStyle)
-        if 'enthalpy' in self.targetProperties:
-            enthalpy = data['energy'] + \
-                       data['structure'].getCell().getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-            usp(system, enthalpy, 'enthalpy', self.environmentStyle)
-        if 'stressTensor' in self.targetProperties:
-            stress_tensor = np.zeros((3, 3))
-            stress_tensor[0, 0] = data['stresses'][0]
-            stress_tensor[1, 1] = data['stresses'][1]
-            stress_tensor[2, 2] = data['stresses'][2]
-            stress_tensor[1, 2] = data['stresses'][3]
-            stress_tensor[2, 1] = data['stresses'][3]
-            stress_tensor[0, 2] = data['stresses'][4]
-            stress_tensor[2, 0] = data['stresses'][4]
-            stress_tensor[0, 1] = data['stresses'][5]
-            stress_tensor[1, 0] = data['stresses'][5]
-            system['stressTensor'] = stress_tensor
-            usp(system, stress_tensor, 'stressTensor', self.environmentStyle)
+        if 'sample' in self.targetProperties:
+            with open(pj(calcFolder, self.out_cfg_file)) as f:
+                sample = self.atomisticRepresentation.readMLIPsample(f, self.specorder)
+            system['mlip.sample'] = sample
+        if 'potential' in self.targetProperties:
+            shutil.copy2(pj(calcFolder, bn(self.potential)), self.potential)
+        if 'trainingSet' in self.targetProperties:
+            with open(pj(calcFolder, self.in_cfg_file), 'r') as f:
+                content = f.read()
+            with open(self.trainingSet, 'a') as f:
+                f.write(content)
 
+        # if 'stressTensor' in self.targetProperties:
+        #     stress_tensor = np.zeros((3, 3))
+        #     stress_tensor[0, 0] = data['stresses'][0]
+        #     stress_tensor[1, 1] = data['stresses'][1]
+        #     stress_tensor[2, 2] = data['stresses'][2]
+        #     stress_tensor[1, 2] = data['stresses'][3]
+        #     stress_tensor[2, 1] = data['stresses'][3]
+        #     stress_tensor[0, 2] = data['stresses'][4]
+        #     stress_tensor[2, 0] = data['stresses'][4]
+        #     stress_tensor[0, 1] = data['stresses'][5]
+        #     stress_tensor[1, 0] = data['stresses'][5]
+        #
         # else:
         #     ID = system['ID']
         #     logger.info(f'structure {ID} led to extrapolation and will be discarded.')

@@ -253,40 +253,48 @@ class AtomisticRepresentation(object):
         return all_systems
 
     @staticmethod
-    def saveMLIPcfg(filename, structure, system):
-        with open(filename, 'w') as f:
-            atstr1 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z           fx          fy          fz\n'
-            atstr2 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z\n'
-            size = len(structure)
-            f.write('BEGIN_CFG\n')
-            f.write('Size\n')
-            f.write(f'   {size}\n')
-            f.write('SuperCell\n')
-            for i in range(3):
-                lat = structure.getCell().getCellVectors()
-                f.write(' %13f %13f %13f\n' % (lat[i, 0], lat[i, 1], lat[i, 2]))
-            if 'forces' in system:
-                f.write(atstr1)
+    def saveMLIPcfg(f, specorder, structure, forces=None, energy=None, stresses=None):
+        atstr1 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z           fx          fy          fz\n'
+        atstr2 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z\n'
+        size = len(structure)
+        f.write('BEGIN_CFG\n')
+        f.write('Size\n')
+        f.write(f'   {size}\n')
+        f.write('SuperCell\n')
+        for i in range(3):
+            lat = structure.getCell().getCellVectors()
+            f.write(' %13f %13f %13f\n' % (lat[i, 0], lat[i, 1], lat[i, 2]))
+        if forces is not None:
+            f.write(atstr1)
+        else:
+            f.write(atstr2)
+        atomTypes =  [specorder.index(el.short_name) for el in structure.getAtomTypes()]
+        positions = structure.getCartesianCoordinates()
+        for i in range(size):
+            if forces is not None:
+                f.write('         %4d %4d %13f %13f %13f %11.8e %11.8e %11.8e\n' %
+                        (i + 1, atomTypes[i], positions[i, 0], positions[i, 1], positions[i, 2],
+                         forces[i, 0], forces[i, 1], forces[i, 2]))
             else:
-                f.write(atstr2)
-            atomTypes = structure.getAtomTypes()
-            positions = structure.getCartesianCoordinates()
-            for i in range(size):
-                if 'forces' in system:
-                    f.write('         %4d %4d %13f %13f %13f %11.8e %11.8e %11.8e\n' %
-                            (i + 1, atomTypes[i].z, positions[i, 0], positions[i, 1], positions[i, 2],
-                             system['forces'][i, 0], system['forces'][i, 1], system['forces'][i, 2]))
-                else:
-                    f.write('         %4d %4d %13f %13f %13f\n' %
-                            (i + 1, atomTypes[i].z, positions[i, 0], positions[i, 1], positions[i, 2]))
-            if 'energy' in system:
-                f.write(' Energy\n   %20f\n' % system['energy'])
-            if 'stresses' in system:
-                f.write(' PlusStress:  xx           yy           zz           yz           xz           xy\n')
-                f.write('         %11f %11f %11f %11f %11f %11f\n' %
-                        (system['stresses'][0], system['stresses'][1], system['stresses'][2],
-                         system['stresses'][3], system['stresses'][4], system['stresses'][5]))
-            f.write('END_CFG\n')
+                f.write('         %4d %4d %13f %13f %13f\n' %
+                        (i + 1, atomTypes[i].z, positions[i, 0], positions[i, 1], positions[i, 2]))
+        if energy is not None:
+            f.write(' Energy\n   %20f\n' % energy)
+        if stresses is not None:
+            f.write(' PlusStress:  xx           yy           zz           yz           xz           xy\n')
+            f.write('         %11f %11f %11f %11f %11f %11f\n' %
+                    (stresses[0], stresses[1], stresses[2],
+                     stresses[3], stresses[4], stresses[5]))
+        f.write('END_CFG\n')
+
+    @classmethod
+    def saveMLIPsample(cls, filename, specorder, sample):
+        content = io.StringIO('')
+        for system in sample:
+            cls.saveMLIPcfg(content, specorder, **system)
+        content.seek(0)
+        with open(filename, "wt") as f:
+            shutil.copyfileobj(content, f)
 
     @classmethod
     def writePOSCAR(cls, filename, structure, label):
