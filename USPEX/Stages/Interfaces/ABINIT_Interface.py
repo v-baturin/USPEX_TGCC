@@ -212,6 +212,7 @@ class ABINIT_Interface:
             for pos in cell.cartesianToFractional(coordinates):
                 f.write('%18.14f %18.14f %18.14f\n' % tuple(pos))
 
+        return []
 
         ############################# LDAU #################################
         ####################################################################

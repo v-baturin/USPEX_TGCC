@@ -215,6 +215,8 @@ class VASP_Interface:
         #     [nothing, nothing] = unix('cat INCAR_LDAUPart >> INCAR');
         # end
 
+        return []
+
     def isConverged(self, calcFolder : str):
         '''
         :param SYSTEM:

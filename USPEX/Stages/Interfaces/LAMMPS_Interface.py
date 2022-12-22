@@ -162,6 +162,8 @@ class LAMMPS_Interface:
             shutil.copy2(self.mlip, pj(calcFolder, self.mlip_mtp))
             shutil.copy2(self.mlip_in, pj(calcFolder, self.mlip_ini))
 
+        return []
+
     def isConverged(self, calcFolder : str):
         lammps_completed = False
         tolerance_achieved = False

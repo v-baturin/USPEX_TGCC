@@ -94,9 +94,7 @@ class MLIP_Interface:
         else:
             raise RuntimeError(f'Mode {self.mode} unsupported.')
 
-        with open(pj(calcFolder, self.argsFile), 'wt') as f:
-            f.write(args)
-
+        return args
 
     def isConverged(self, calcFolder: str):
         if os.path.isfile(pj(calcFolder, self.out_cfg_file)):
