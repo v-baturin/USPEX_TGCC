@@ -74,7 +74,7 @@ class ModelOptimizer(object):
         cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
                                                 mutations=mutations, creations=creations, seeds=seeds)
 
-    def __init__(self, target: dict, model: dict, popSize: int, initialPopSize: int, fractions: dict **kwargs):
+    def __init__(self, target: dict, model: dict, popSize: int, initialPopSize: int, fractions: dict, **kwargs):
         """
         Initializes the class.
 

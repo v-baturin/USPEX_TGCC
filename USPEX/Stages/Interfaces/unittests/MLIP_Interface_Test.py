@@ -77,7 +77,7 @@ class MLIP_train_Test(unittest.TestCase):
         calcFolder = pj(HOMEPATH, 'MLIP_INIT')
         os.mkdir(calcFolder)
         args = self.interface.prepareLocalCalculation(system=system, calcFolder=calcFolder)
-        self.assertEqual(args, 'train 24g.mtp input.cfg ')
+        self.assertEqual(args, 'train 24g.mtp input.cfg --weight_scaling=2 --weight_scaling_forces=1')
         self.assertTrue(not filecmp.dircmp(pj(HOMEPATH, 'MLIP_REF'), calcFolder).diff_files)
         shutil.rmtree(calcFolder)
 
