@@ -74,7 +74,7 @@ class ModelOptimizer(object):
         cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
                                                 mutations=mutations, creations=creations, seeds=seeds)
 
-    def __init__(self, target: dict, model: dict, **kwargs):
+    def __init__(self, target: dict, model: dict, popSize: int, initialPopSize: int, fractions: dict **kwargs):
         """
         Initializes the class.
 
@@ -86,8 +86,12 @@ class ModelOptimizer(object):
 
         self.target = Target(self.knownTargetTypes[target['type']], **target)
         self.model = self.knownModelTypes[model['type']](**model)
+        self.popSize = popSize
+        self.initialPopSize = initialPopSize
+        self.fractions = fractions
         self.update = self.model.update
         self._isGoalReached = False
+        self.firstCall = True
 
     def __copy__(self):
         other = ModelOptimizer.__new__(ModelOptimizer)
@@ -96,7 +100,31 @@ class ModelOptimizer(object):
         return other
 
     def createPopulation(self):
-        pass
+        popSize = self.initialPopSize if self.firstCall else self.popSize
+        self.firstCall = False
+        population = []
+        for creation in self.target.creations:
+            howCome = type(creation).__name__
+            howMany = popSize * self.fractions[howCome]
+            howMany = 0 if howMany < 0 else howMany
+            if hasattr(creation, 'prepare'):
+                creation.prepare()
+            for i in range(2 * howMany):
+                if howMany <= 0:
+                    break
+                try:
+                    offsprings = creation()
+                    for offspring in offsprings:
+                        offspring['howCome'] = howCome
+                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator.")
+                    population.extend(offsprings)
+                    howMany -= len(offsprings)
+                except RuntimeError as e:
+                    logger.debug(e, exc_info=True)
+                except Exception as e:
+                    logger.error(e, exc_info=True)
+            if hasattr(creation, 'standby'):
+                creation.standby()
 
     @property
     def isStable(self):
