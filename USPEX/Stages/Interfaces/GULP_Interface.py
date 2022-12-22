@@ -180,7 +180,7 @@ class GULP_Interface:
 
         logger.debug('GULP calculator prepared calculation.')
 
-        return []
+        return ''
 
     def isConverged(self, calcFolder : str):
         """

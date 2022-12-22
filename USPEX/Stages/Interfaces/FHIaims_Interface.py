@@ -104,7 +104,7 @@ class FHIaims_Interface:
                 if i in fixedIndices:
                     fp.write('constrain_relaxation .true.\n')
 
-        return []
+        return ''
 
     def isConverged(self, calcFolder : str):
         if not os.path.exists(pj(calcFolder, self.outputFile)):

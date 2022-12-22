@@ -177,7 +177,7 @@ class PWmat_Interface:
                 fp.write('%g  %g  %g\n' % (0., system.externalPressure, 0.))
                 fp.write('%g  %g  %g\n' % (0., 0., system.externalPressure))
             '''
-        return []
+        return ''
 
 ############reading part
     def isConverged(self, calcFolder : str):

@@ -113,7 +113,7 @@ class MOPAC_Interface:
             f.write(total_content)
 
         logger.debug('MOPAC calculator prepared calculation.')
-        return []
+        return ''
 
     def isConverged(self, calcFolder: str):
         """

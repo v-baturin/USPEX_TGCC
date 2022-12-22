@@ -103,7 +103,7 @@ class QE_Interface:
         system[self.tmp]['ase'] = self.adapter.write(structure, disassembler.fixedIndices,
                                                      kPoints, self.pseudopotentials, calcFolder)
 
-        return []
+        return ''
 
     def isConverged(self, calcFolder: str):
         calcFolder = Path(calcFolder)
