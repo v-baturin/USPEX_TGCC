@@ -1,6 +1,7 @@
 import unittest
 import asyncio
 import os
+from copy import copy
 
 
 from ..PopulationProcessor import PopulationProcessor
@@ -12,7 +13,9 @@ class Stage1:
         self.tag = tag
 
     async def run(self, system):
-        system[f'result_{self.tag}'] = f'{self.tag}_Hello!'
+        results = copy(system)
+        results[f'result_{self.tag}'] = f'{self.tag}_Hello!'
+        return results
 
 
 class Stage2:
@@ -21,7 +24,9 @@ class Stage2:
         self.tag = tag
 
     async def run(self, system):
-        system[f'result_{self.tag}'] = f'{self.tag}_Buy!'
+        results = copy(system)
+        results[f'result_{self.tag}'] = f'{self.tag}_Buy!'
+        return results
 
 
 class PopulationProcessor_Test(unittest.TestCase):
@@ -30,14 +35,14 @@ class PopulationProcessor_Test(unittest.TestCase):
         stages = [Stage1('1'), Stage1('2'), Stage1('3')]
         population = [{'ID': i} for i in range(20)]
         populationProcessor1 = PopulationProcessor(tag='stages', stages=stages, inputKey='population', numParallelCalcs=10)
-        asyncio.get_event_loop().run_until_complete(populationProcessor1.run(dict(ID='USPEX', population=population)))
+        population = asyncio.get_event_loop().run_until_complete(populationProcessor1.run(dict(ID='USPEX', population=population)))['population']
         for system in population:
             self.assertEqual(system['result_1'], '1_Hello!')
             self.assertEqual(system['result_2'], '2_Hello!')
             self.assertEqual(system['result_3'], '3_Hello!')
         stages = [Stage2('1'), Stage2('2'), Stage2('3'), Stage2('4'), Stage2('5'), Stage2('6')]
         populationProcessor2 = PopulationProcessor(tag='stages', stages=stages, inputKey='population', numParallelCalcs=10)
-        asyncio.get_event_loop().run_until_complete(populationProcessor2.run(dict(ID='USPEX', population=population)))
+        population = asyncio.get_event_loop().run_until_complete(populationProcessor2.run(dict(ID='USPEX', population=population)))['population']
         for system in population:
             self.assertEqual(system['result_1'], '1_Hello!')
             self.assertEqual(system['result_2'], '2_Hello!')
