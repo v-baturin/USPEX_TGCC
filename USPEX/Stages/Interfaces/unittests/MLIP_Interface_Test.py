@@ -14,10 +14,7 @@ import filecmp
 
 from os.path import join as pj
 
-
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from USPEX.components import AtomisticRepresentation
-from ..MLIP_Interface import MLIP_Interface
+from ....components import AtomisticRepresentation, MLIP_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -70,10 +67,9 @@ class MLIP_train_Test(unittest.TestCase):
     def test_init(self):
         system = dict(
             ID=0,
-            tmp_0={}
+            trajectory = AtomisticRepresentation.readMLIPsample(pj(SPECIFICPATH, 'configurations.cfg'),
+                                                                specorder=['Mo', 'S'])
         )
-        system['mlip.sample'] = AtomisticRepresentation.readMLIPsample(pj(SPECIFICPATH, 'configurations.cfg'),
-                                                                       specorder=['Mo', 'S'])
         calcFolder = pj(HOMEPATH, 'MLIP_INIT')
         os.mkdir(calcFolder)
         args = self.interface.prepareLocalCalculation(system=system, calcFolder=calcFolder)
@@ -84,11 +80,10 @@ class MLIP_train_Test(unittest.TestCase):
 
     def test_sample(self):
         system = dict(
-            tmp_0={}
         )
 
         calcFolder=pj(HOMEPATH, 'MLIP_REF')
-        self.interface.readOutput(system=system, calcFolder=calcFolder)
+        results = self.interface.readOutput(system=system, calcFolder=calcFolder)
         self.assertTrue(filecmp.cmp(pj(self.trainFolder, 'ts.cfg'), pj(calcFolder, 'input.cfg')))
 
     def tearDown(self) -> None:

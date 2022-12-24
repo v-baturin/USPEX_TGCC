@@ -11,12 +11,12 @@ import os
 import shutil
 import unittest
 import filecmp
+import numpy as np
 
 from os.path import join as pj
 
 
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from USPEX.components import AtomisticRepresentation, ABINIT_Interface
+from ....components import AtomisticRepresentation, ABINIT_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -36,16 +36,18 @@ else:
 
         def test_life(self):
             abinit = ABINIT_Interface(tag='0', in_file=pj(SPECIFICPATH, 'abinit.in_1'), kresol=0.13,
-                                      pp_files=[pj(SPECIFICPATH, 'H.psp8'), pj(SPECIFICPATH, 'Eu.psp8')],
-                                      perturbate=False)
-            radialDistributionUtility = RadialDistributionUtility(symbols=['Eu', 'H'])
+                                      pp_files=[pj(SPECIFICPATH, 'H.psp8'), pj(SPECIFICPATH, 'Eu.psp8')])
 
 
             for ID in range(10):
-                system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
-                system['ID'] = ID
-                system['externalPressure'] = 130.0
-                system['tmp_0'] = {}
+                structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))
+                system = dict(
+                    ID=ID,
+                    structure=structure,
+                    disassembler=AtomisticRepresentation.atomicDisassemblerType(
+                        np.arange(len(structure)).reshape((-1, 1))),
+                    externalPressure=130.0
+                )
                 os.mkdir(WORKPATH)
                 abinit.prepareLocalCalculation(system, WORKPATH)
                 folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -57,7 +59,12 @@ else:
                 self.assertTrue(match)
                 folder = pj(GATHEREDPATH, 'output')
                 shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-                abinit.readOutput(system, WORKPATH)
+                results = abinit.readOutput(system, WORKPATH)
                 shutil.rmtree(WORKPATH)
-                systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
-                self.assertTrue(radialDistributionUtility.equal(system, systemRef))
+                structureRef = AtomisticRepresentation.readPOSCAR(pj(folder, f"system{system['ID']}.vasp"), (1, 1, 1))
+                cell = results['structure'].getCell()
+                cellRef = structureRef.getCell()
+                self.assertTrue(np.allclose(cell.getCellVectors(),
+                                            cellRef.getCellVectors()))
+                # self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(results['structure'].getCartesianCoordinates()),
+                #                             cellRef.getWrapedCartesianCoordinates(structureRef.getCartesianCoordinates())))

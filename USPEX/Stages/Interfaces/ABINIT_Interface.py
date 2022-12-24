@@ -42,17 +42,15 @@ class ABINIT_Interface:
     structureType = None
     atomType = None
     cellType = None
-    atomicDisassemblerType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, structureType, atomType, cellType):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, tag: str, kresol: float,  in_file: str = None, pp_files: List[str] = None, perturbate: bool = True,
-                 vacuumSize=10, targetProperties: list = None, environmentStyle=None, inStyle=None, **kwargs):
+    def __init__(self, tag: str, kresol: float,  in_file: str = None, pp_files: List[str] = None,
+                 targetProperties: list = None, **kwargs):
         """
         Initializes the class.
 
@@ -67,7 +65,6 @@ class ABINIT_Interface:
         """
 
         self.tag = tag
-        self.tmp = f'tmp_{tag}'
         if in_file is None:
             in_file = pj(os.getcwd(), f'./Specific/abinit.in_{tag}')
 
@@ -81,28 +78,17 @@ class ABINIT_Interface:
 
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
-        self.perturbate = perturbate
-        self.environmentStyle = environmentStyle
-        self.inStyle = inStyle
 
     def prepareLocalCalculation(self, system, calcFolder : str):
         """
         :param system: our system
         :return:
         """
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle,
-                                                                       vacuumSize=self.vacuumSize)
-        system[self.tmp]['disassembler'] = disassembler
-
-        if self.perturbate:
-            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+        structure = system['structure']
 
         cell = structure.getCell()
-        system[self.tmp]['pbc'] = cell.getPBC()
+        system['pbc'] = cell.getPBC()
         coordinates = structure.getCartesianCoordinates()
         atomTypes = structure.getAtomTypes()
 
@@ -294,6 +280,7 @@ class ABINIT_Interface:
         return True
 
     def readOutput(self, system, calcFolder: str):
+        results = {}
         if not os.path.isfile(pj(calcFolder, self.gsr_file_name)):
             msg = (f'file {self.gsr_file_name:s} not found in {os.path.basename(calcFolder):s}.'
                    'Your ABINIT executable needs to be compiled with NETCDF support in order to be used with USPEX.')
@@ -302,16 +289,16 @@ class ABINIT_Interface:
         from abipy import abilab
         gsr = abilab.abiopen(pj(calcFolder, self.gsr_file_name))
         if 'structure' in self.targetProperties:
-            structure = self.readStructure(gsr, system[self.tmp].pop('pbc'))
-            usp(system, system[self.tmp].pop('disassembler').disassemble(structure), 'system', self.environmentStyle)
+            results['structure'] = self.readStructure(gsr, system.pop('pbc'))
         if 'enthalpy' in self.targetProperties:
-            enthalpy = float(gsr.energy) + np.linalg.det(gsr.structure.lattice.matrix) * system['externalPressure'] * \
-                                 EV_PER_CUBIC_ANGSTREM_PER_GPA
-            usp(system, enthalpy, 'enthalpy', self.environmentStyle)
+            results['enthalpy'] = float(gsr.energy) + \
+                                  np.linalg.det(gsr.structure.lattice.matrix) * system['externalPressure'] * \
+                                  EV_PER_CUBIC_ANGSTREM_PER_GPA
         if 'forces' in self.targetProperties:
-            usp(system, np.copy(gsr.cart_forces), 'forces', self.environmentStyle)
+            results['forces'] = np.copy(gsr.cart_forces)
         if 'stressTensor' in self.targetProperties:
-            usp(system, np.copy(gsr.cart_stress_tensor), 'stressTensor', self.environmentStyle)
+            results['stressTensor'] = np.copy(gsr.cart_stress_tensor)
+        return results
 
     def readStructure(self, gsr, pbc):
         tmp_positions = gsr.structure.cart_coords

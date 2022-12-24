@@ -32,8 +32,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
     Checking correct parsing properties
     """
     def test_life(self):
-        vasp = VASP_Interface(tag='1', perturbate=False,
-                              incar=pj(SPECIFICPATH, 'INCAR_1'), potcarsPath=SPECIFICPATH, kresol=0.13)
+        vasp = VASP_Interface(tag='1', incar=pj(SPECIFICPATH, 'INCAR_1'), potcarsPath=SPECIFICPATH, kresol=0.13)
 
 
         for ID in range(10):

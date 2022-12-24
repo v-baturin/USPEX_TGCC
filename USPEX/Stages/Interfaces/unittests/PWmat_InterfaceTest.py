@@ -14,9 +14,7 @@ import shutil
 import unittest
 import numpy as np
 
-
-from USPEX.components import AtomisticRepresentation
-from ..PWmat_Interface import  PWmat_Interface
+from ....components import AtomisticRepresentation, PWmat_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -34,17 +32,21 @@ class PWmat_InterfaceTest(unittest.TestCase):
         cls.knownSystemEnergy = -858.0749767374361
 
         params = {'tag': 's0', 'kresol': 0.05, 'etot_input': '{}/Specific/etot.input_1'.format(HOMEPATH),
-                  'potcars': ['{}/Specific/Si.SG15.PBE.UPF'.format(HOMEPATH)], 'perturbate': False}
+                  'potcars': ['{}/Specific/Si.SG15.PBE.UPF'.format(HOMEPATH)]}
 
         cls.vcEmpty = PWmat_Interface(**params)
-        cls.testSystem = AtomisticRepresentation.readAtomicStructure(os.path.join(HOMEPATH, 'Si4System.vasp'))
-        cls.testSystem['ID'] = 0
-        cls.testSystem['externalPressure'] = 0.00001
-        cls.testSystem['tmp_s0'] = {}
+        structure = AtomisticRepresentation.readPOSCAR(os.path.join(HOMEPATH, 'Si4System.vasp'), (1, 1, 1))
+        cls.testSystem = dict(
+            ID=0,
+            structure=structure,
+            disassembler=AtomisticRepresentation.atomicDisassemblerType(
+                np.arange(len(structure)).reshape((-1, 1))),
+            externalPressure=0.00001
+        )
 
         cls.CALC_FOLDER = os.path.join(HOMEPATH, CALC_FOLDER_TEMPLATE.format(0, 's0'))
         cls.REFERENCE_FOLDER = os.path.join(HOMEPATH, 'PWmatReference/')
-        print(cls.CALC_FOLDER)
+
     @classmethod
     def tearDownClass(cls):
         for f in os.listdir(HOMEPATH):
@@ -94,10 +96,10 @@ class PWmat_InterfaceTest(unittest.TestCase):
         shutil.copy(os.path.join(self.REFERENCE_FOLDER, 'IN.RELAXOPT'), self.CALC_FOLDER)
 
         self.assertTrue(self.vcEmpty.isConverged(self.CALC_FOLDER))
-        self.vcEmpty.readOutput(self.testSystem, self.CALC_FOLDER)
+        results = self.vcEmpty.readOutput(self.testSystem, self.CALC_FOLDER)
         #self.vcEmpty.clean(self.testSystem)
 
-        structure, disassembler = AtomisticRepresentation.atomicDisassemblerType.assemble(**self.testSystem)
+        structure = results['structure']
         self.assertTrue(np.allclose(self.POSITIONS_FINAL, structure.getCartesianCoordinates(), atol=1.0e-3))
         self.assertTrue(np.allclose(self.LATTICE_FINAL, structure.getCell().getCellVectors(), atol=1.0e-3))
-        self.assertAlmostEqual(self.knownSystemEnergy, self.testSystem['enthalpy'], delta=1.0e-3)
+        self.assertAlmostEqual(self.knownSystemEnergy, results['enthalpy'], delta=1.0e-3)

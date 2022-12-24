@@ -41,17 +41,14 @@ class PWmat_Interface:
     structureType = None
     atomType = None
     cellType = None
-    atomicDisassemblerType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, structureType, atomType, cellType):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, tag, etot_input, potcars, kresol, vacuumSize = 10, perturbate: bool = True,
-                 environmentStyle=None, inStyle=None, targetProperties: list = None, **kwargs):
+    def __init__(self, tag, etot_input, potcars, kresol, targetProperties: list = None, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -65,16 +62,11 @@ class PWmat_Interface:
         assert isinstance(potcars, list) and np.all([os.path.exists(potcar) for potcar in potcars])
 
         self.tag = tag
-        self.tmp = f'tmp_{tag}'
         self.etot_input = etot_input
         self.potcars = potcars
 
-        self.perturbate = perturbate
         self.kPoints = KPoints(kresol)
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
-        self.environmentStyle = environmentStyle
-        self.inStyle = inStyle
         self.failedSystems = []
 
 
@@ -83,17 +75,10 @@ class PWmat_Interface:
         :param system: our system
         :return:
         '''
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle,
-                                                                       vacuumSize=self.vacuumSize)
-        system[self.tmp]['disassembler'] = disassembler
-
-        if self.perturbate:
-            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+        structure = system['structure']
 
         cell = structure.getCell()
-        system[self.tmp]['pbc'] = cell.getPBC()
+        system['pbc'] = cell.getPBC()
 
         atomTypes = structure.getAtomTypes()
         atomSymbols = [el.short_name for el in atomTypes]
@@ -222,7 +207,7 @@ class PWmat_Interface:
             os.system('cp %s %s' % (os.path.join(calcFolder, 'atom.config'), os.path.join(calcFolder, 'final.config')))
         with open(os.path.join(calcFolder , self.FINAL_CONFIG), 'r') as fp:
             content = fp.readlines()
-        pbc = system[self.tmp].pop('pbc')
+        pbc = system.pop('pbc')
         atoms = int(content[0].split()[0])
         lat = []
         coor = []
@@ -240,18 +225,19 @@ class PWmat_Interface:
         cell = self.cellType(lat, pbc)
         structure = self.structureType(atomTypes, coor, cell=cell)
 
+        results = {}
         if 'structure' in self.targetProperties:
-            usp(system, system[self.tmp].pop('disassembler').disassemble(structure), 'system', self.environmentStyle)
+            results['structure'] = structure
         if 'enthalpy' in self.targetProperties:
             with open(os.path.join(calcFolder , self.REPORT), 'r') as fp:
                 content = fp.readlines()
-            enthalpy = self.readEnergy(content) + \
+            results['enthalpy'] = self.readEnergy(content) + \
                                  cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
-            usp(system, enthalpy, 'enthalpy', self.environmentStyle)
         if 'stressTensor' in self.targetProperties:
             with open(os.path.join(calcFolder, self.MOVEMENT), 'r') as fp:
                 content = fp.readlines()
-            usp(system, self.readPressureTensor(content), 'stressTensor', self.environmentStyle)
+            results['stressTensor'] = self.readPressureTensor(content)
+        return results
 
     def readPressureTensor(self, content, index=-1):
         '''

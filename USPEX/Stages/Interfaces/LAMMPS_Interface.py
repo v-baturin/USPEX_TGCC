@@ -41,18 +41,15 @@ class LAMMPS_Interface:
     DEFAULT_SLEEP_TIME = 30
 
     atomisticRepresentationType = None
-    atomicDisassemblerType = None
     aseAdapterType = None
 
     @classmethod
-    def registerTypes(cls, atomisticRepresentationType, atomicDisassemblerType, aseAdapterType):
+    def registerTypes(cls, atomisticRepresentationType, aseAdapterType):
         cls.atomisticRepresentationType = atomisticRepresentationType
-        cls.atomicDisassemblerType = atomicDisassemblerType
         cls.aseAdapterType = aseAdapterType
 
     def __init__(self, tag: str, specorder: List[str], lammps_in: str = None, mlip_in: str = None, mlip: str = None,
-                 libs: List[str] = None, vacuumSize: float = 10.0, targetProperties: list = None, environmentStyle=None,
-                 inStyle=None, perturbate:bool = True, **kwargs):
+                 libs: List[str] = None, targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -61,7 +58,6 @@ class LAMMPS_Interface:
         """
 
         self.tag = tag
-        self.tmp = f'tmp_{tag}'
         self.lammps_in = pj(os.getcwd(), f'Specific/lammps.in_{tag}') if lammps_in is None else lammps_in
 
         self.mlip = mlip
@@ -91,11 +87,7 @@ class LAMMPS_Interface:
 
         self.adapter = self.aseAdapterType()
         self.failedSystems = []
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
-        self.perturbate = perturbate
-        self.environmentStyle = environmentStyle
-        self.inStyle = inStyle
 
     def prepareLocalCalculation(self, system, calcFolder : str):
         """
@@ -103,17 +95,10 @@ class LAMMPS_Interface:
         :param calcFolder:
         """
 
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle,
-                                                                       vacuumSize=self.vacuumSize)
-        system[self.tmp]['disassembler'] = disassembler
+        structure = system['structure']
 
-        if self.perturbate:
-            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
-
-        system[self.tmp]['ase'] = self.adapter.write(structure, disassembler.fixedIndices,
-                                                     f"EA{system['ID']}", self.specorder, calcFolder)
+        system['ase'] = self.adapter.write(structure, system['disassembler'].fixedIndices,
+                                           f"EA{system['ID']}", self.specorder, calcFolder)
 
         with open(self.lammps_in, 'r') as f:
             content = f.readlines()
@@ -198,18 +183,17 @@ class LAMMPS_Interface:
         return lammps_completed and tolerance_achieved        
 
     def readOutput(self, system, calcFolder : str):
-        disassembler = system[self.tmp].pop('disassembler')
+        results = {}
         if 'structure' in self.targetProperties:
             aseData = self.adapter.read(calcFolder, self.specorder,
-                                        **system[self.tmp].pop('ase'))
-            usp(system, disassembler.disassemble(aseData.pop('structure')),
-                'system', self.environmentStyle)
+                                        **system.pop('ase'))
+            results['structure'] = aseData['structure']
 
         properties = self.readProperties(calcFolder)
         if 'enthalpy' in self.targetProperties:
-            usp(system, properties['Enthalpy'], 'enthalpy', self.environmentStyle)
+            results['enthalpy'] = properties['Enthalpy']
         if 'energy' in self.targetProperties:
-            usp(system, properties['TotEng'], 'energy', self.environmentStyle)
+            results['energy'] = properties['TotEng']
         if 'stressTensor' in self.targetProperties:
             stressTensor = np.zeros((3, 3))
             stressTensor[0][0] = properties['Pxx']
@@ -218,18 +202,19 @@ class LAMMPS_Interface:
             stressTensor[0][1] = stressTensor[1][0] = properties['Pxy']
             stressTensor[0][2] = stressTensor[2][0] = properties['Pxz']
             stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
-            usp(system, stressTensor, 'stressTensor', self.environmentStyle)
+            results['stressTensor'] = stressTensor
 
-        if 'mlip.sample' in self.targetProperties:
+        if 'trajectory' in self.targetProperties:
             sample = self.atomisticRepresentationType.readMLIPsample(pj(calcFolder, self.mlip_sample), self.specorder)
-            usp(system, sample, 'mlip.sample', self.environmentStyle)
-            usp(system, disassembler, 'mlip.disassembler', self.environmentStyle)
+            results['trajectory'] = sample
+            results['trajectoryDisassembler'] = system['disassembler']
 
         # TODO move to constraints
         # BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3
         # if abs(properties['TotEng']) / len(aseStructure) > BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD:
         #     logger.error(f"System {system['ID']} seems to has wrong energy: {properties['TotEng']}. It will be discarded.")
         #     system['isBad'] = True
+        return results
 
     def readProperties(self, calcFolder: str):
         if os.path.exists(pj(calcFolder, self.outputFile)):

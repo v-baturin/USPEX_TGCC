@@ -31,8 +31,7 @@ class GULP_CalculatorTest(unittest.TestCase):
 
     def test_life(self):
 
-        gulp = GULP_Interface(tag='0', perturbate=False,
-                              goptions=pj(SPECIFICPATH, 'goptions'), ginput=pj(SPECIFICPATH, 'ginput_1'))
+        gulp = GULP_Interface(tag='0', goptions=pj(SPECIFICPATH, 'goptions'), ginput=pj(SPECIFICPATH, 'ginput_1'))
 
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))

@@ -73,12 +73,12 @@ class MLIP_Interface:
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
-        if 'mlip.sample' in system:
-            sample = system['mlip.sample']
+        if 'trajectory' in system:
+            sample = system['trajectory']
         elif 'population' in system:
             sample = []
             for individual in system['population']:
-                sample.extend(individual['mlip.sample'])
+                sample.extend(individual['trajectory'])
         else:
             raise RuntimeError('No mlip sample in system.')
         self.atomisticRepresentation.saveMLIPsample(pj(calcFolder, self.in_cfg_file), self.specorder, sample)
@@ -111,10 +111,11 @@ class MLIP_Interface:
         return False
 
     def readOutput(self, system, calcFolder: str):
+        results = {}
         if 'sample' in self.targetProperties:
             with open(pj(calcFolder, self.out_cfg_file)) as f:
                 sample = self.atomisticRepresentation.readMLIPsample(f, self.specorder)
-            system['mlip.sample'] = sample
+            system['sample'] = sample
         if 'potential' in self.targetProperties:
             shutil.copy2(pj(calcFolder, bn(self.potential)), self.potential)
         if 'trainingSet' in self.targetProperties:
@@ -140,3 +141,4 @@ class MLIP_Interface:
         #     logger.info(f'structure {ID} led to extrapolation and will be discarded.')
         #     # system['structure'].set_cell(np.identity(3) * system['structure'].minVectorLength * 0.9)
         #     system['enthalpy'] = 1000
+        return results
