@@ -85,7 +85,7 @@ class GenerationController(object):
                 if 'stageType' in stage:
                     stages.append(GenerationController.knownStages[stage.pop('stageType')](**stage))
                 else:
-                    stages.append(GenerationController.knownStages['execute'](**stage))
+                    stages.append(GenerationController.knownStages['atomistic'](**stage))
             outputRepresentation = OutputRepresentation(optimizer, **params)
             controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
                                               outputRepresentation, outputRefreshDelay)

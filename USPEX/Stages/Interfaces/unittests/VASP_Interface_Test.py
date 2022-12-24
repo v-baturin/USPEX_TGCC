@@ -18,8 +18,7 @@ from os.path import join as pj
 
 import numpy as np
 
-from ..VASP_Interface import VASP_Interface
-from ....components import AtomisticRepresentation, RadialDistributionUtility
+from ....components import AtomisticRepresentation, VASP_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +34,6 @@ class VASP_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         vasp = VASP_Interface(tag='1', perturbate=False,
                               incar=pj(SPECIFICPATH, 'INCAR_1'), potcarsPath=SPECIFICPATH, kresol=0.13)
-        radialDistributionUtility = RadialDistributionUtility(symbols=['Ca', 'F'])
 
 
         for ID in range(10):

@@ -56,7 +56,7 @@ from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
 ABINIT_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 Executor.registerInterface('abinit', ABINIT_Interface)
 from .Stages.Interfaces.GULP_Interface import GULP_Interface
-GULP_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+GULP_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('gulp', GULP_Interface)
 from .Stages.Interfaces.LAMMPS_Interface import LAMMPS_Interface
 LAMMPS_Interface.registerTypes(AtomisticRepresentation, AtomicDisassembler, ASEInterfaceAdapter.LAMMPS)
