@@ -97,6 +97,7 @@ setup(
             "Stages/__init__.py",
             "Stages/Connector.py",
             "Stages/Executor.py",
+            "Stages/AtomisticStage.py",
             "Stages/PopulationProcessor.py",
             "Stages/Interfaces/__init__.py",
             "Stages/Interfaces/ABINIT_Interface.py",
