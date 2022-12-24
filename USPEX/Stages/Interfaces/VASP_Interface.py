@@ -63,16 +63,14 @@ class VASP_Interface:
 
     DEFAULT_SLEEP_TIME = 30
 
-    atomicDisassemblerType = None
     aseAdapterType = None
 
     @classmethod
-    def registerTypes(cls, atomicDisassemblerType, aseAdapterType):
-        cls.atomicDisassemblerType = atomicDisassemblerType
+    def registerTypes(cls, aseAdapterType):
         cls.aseAdapterType = aseAdapterType
 
-    def __init__(self, tag: str, kresol: float, incar: str = None, potcarsPath: str = None, perturbate: bool = True,
-                 vacuumSize = 10, targetProperties: list = None, environmentStyle=None, inStyle=None, **kwargs):
+    def __init__(self, tag: str, kresol: float, incar: str = None, potcarsPath: str = None,
+                 targetProperties: list = None, **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -82,8 +80,6 @@ class VASP_Interface:
         :param step: int of current step
         '''
 
-        self.tag = tag
-        self.tmp = f'tmp_{tag}'
         if incar is not None:
             self.incar = incar
         else:
@@ -100,11 +96,7 @@ class VASP_Interface:
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
 
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
-        self.perturbate = perturbate
-        self.environmentStyle = environmentStyle
-        self.inStyle = inStyle
 
     def prepareLocalCalculation(self, system, calcFolder: str):
         '''
@@ -114,19 +106,12 @@ class VASP_Interface:
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle,
-                                                                       vacuumSize=self.vacuumSize)
-        system[self.tmp]['disassembler'] = disassembler
-
-        if self.perturbate:
-            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+        structure = system['structure']
 
         ############################# POSCAR ##################################
 
-        system[self.tmp]['ase'] = self.adapter.write(structure, disassembler.fixedIndices,
-                                                     f"EA{system['ID']}", calcFolder)
+        system['ase'] = self.adapter.write(structure, system['disassembler'].fixedIndices, f"EA{system['ID']}",
+                                           calcFolder)
 
         ############################## INCAR ##################################
         shutil.copy2(self.incar, pj(calcFolder, self.incar_file))
@@ -260,36 +245,34 @@ class VASP_Interface:
     ############reading part
 
     def readOutput(self, system, calcFolder : str):
-        trajectory = self.adapter.read(calcFolder, **system[self.tmp].pop('ase'))
-        structure = trajectory[-1]['structure']
-        results = trajectory[-1]['results']
-        disassembler = system[self.tmp].pop('disassembler')
+        trajectory = self.adapter.read(calcFolder, **system.pop('ase'))
+        aseResults = trajectory[-1]['results']
+        results = {}
         if 'structure' in self.targetProperties:
-            usp(system, disassembler.disassemble(structure),
-                'system', self.environmentStyle)
+            results['structure'] = trajectory[-1]['structure']
         if 'enthalpy' in self.targetProperties:
-            enthalpy = results.getEnthalpy(system['externalPressure'])
-            usp(system, enthalpy, 'enthalpy', self.environmentStyle)
+            results['enthalpy'] = aseResults.getEnthalpy(system['externalPressure'])
         if 'energy' in self.targetProperties:
-            usp(system, results['energy'], 'energy', self.environmentStyle)
+            results['energy'] = aseResults['energy']
         if 'forces' in self.targetProperties:
-            usp(system, results['forces'], 'forces', self.environmentStyle)
+            results['forces'] = aseResults['forces']
         if 'trajectory' in self.targetProperties:
-            usp(system, trajectory, 'trajectory', self.environmentStyle)
-            usp(system, disassembler, 'trajectoryDisassembler', self.environmentStyle)
+            results['trajectory'] = trajectory
+            results['trajectoryDisassembler'] = system['disassembler']
 
         with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
             content = fp.readlines()
         if 'stressTensor' in self.targetProperties:
-            usp(system, self.readPressureTensor(content), 'stressTensor', self.environmentStyle)
+            results['stressTensor'] = self.readPressureTensor(content)
         if 'dielectricTensor' in self.targetProperties:
-            usp(system, self.readDielectricProperties(content), 'dielectricTensor', self.environmentStyle)
+            results['dielectricTensor'] = self.readDielectricProperties(content)
         if 'dipoleMoment' in self.targetProperties:
-            usp(system, self.readDipoleMoment(content), 'dipoleMoment', self.environmentStyle)
+            results['dipoleMoment'] = self.readDipoleMoment(content)
         if 'energyFermi' in self.targetProperties:
-            usp(system, self.readFermi(content), 'energyFermi', self.environmentStyle)
+            results['energyFermi'] = self.readFermi(content)
         if 'elasticConstants' in self.targetProperties:
-            usp(system, self.readElasticMatrix(content), 'elasticMatrix', self.environmentStyle)
+            results['elasticConstants'] = self.readElasticMatrix(content)
+        return results
 
     def readPressureTensor(self, content, index=-1):
         target = []

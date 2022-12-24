@@ -70,7 +70,7 @@ from .Stages.Interfaces.QE_Interface import QE_Interface
 QE_Interface.registerTypes(AtomicDisassembler, ASEInterfaceAdapter.QE)
 Executor.registerInterface('qe', QE_Interface)
 from .Stages.Interfaces.VASP_Interface import VASP_Interface
-VASP_Interface.registerTypes(AtomicDisassembler, ASEInterfaceAdapter.VASP)
+VASP_Interface.registerTypes(ASEInterfaceAdapter.VASP)
 Executor.registerInterface('vasp', VASP_Interface)
 from .Stages.Interfaces.MOPAC_Interface import MOPAC_Interface
 MOPAC_Interface.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
@@ -89,9 +89,12 @@ Executor.registerTaskManager('SHELL', SHELL)
 from .ModelOptimizer import ModelOptimizer, External
 External.setExecutorType(Executor)
 ModelOptimizer.registerModel(External)
+from .Stages.AtomisticStage import AtomisticStage
+AtomisticStage.registerTypes(Executor, AtomicDisassembler)
 from .Stages.PopulationProcessor import PopulationProcessor
 from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 GenerationController.registerOptimizer(ModelOptimizer)
 GenerationController.registerStage('execute', Executor)
+GenerationController.registerStage('atomistic', AtomisticStage)
 GenerationController.registerStage('populationProcessor', PopulationProcessor)

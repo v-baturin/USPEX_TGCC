@@ -108,7 +108,8 @@ class GenerationController(object):
             if self.state is ControllerState.processPopulation:
                 self.doPresentSystems = True
                 task = asyncio.ensure_future(self.presentSystems())
-                await self.populationProcessor.run(dict(ID='USPEX', population=self.population))
+                system = await self.populationProcessor.run(dict(ID='USPEX', population=self.population))
+                self.population = system['population']
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.populations.append(copy(self.population))

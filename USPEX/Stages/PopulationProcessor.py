@@ -3,7 +3,7 @@ import asyncio
 import pickle as pcl
 import os
 from shutil import copyfile
-from copy import deepcopy
+from copy import deepcopy, copy
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,10 @@ class PopulationProcessor:
         population = system[self.inputKey]
         populationDump = PopulationDump.load(system['ID'], self.tag, population)
         sem = asyncio.Semaphore(self.numParallelCalcs)
-        return await asyncio.gather(*(self.life(system, populationDump, sem) for system in population))
+        population = await asyncio.gather(*(self.life(system, populationDump, sem) for system in population))
+        system = copy(system)
+        system[self.inputKey] = population
+        return system
 
     async def life(self, system, populationDump, sem):
         await sem.acquire()
@@ -38,9 +41,7 @@ class PopulationProcessor:
                 system.update(processedSystems[i + 1])
             else:
                 try:
-                    system[f'tmp_{stage.tag}'] = {}
-                    await stage.run(system)
-                    del system[f'tmp_{stage.tag}']
+                    system = await stage.run(system)
                 except Exception as ex:
                     logger.warning(f'system {ID} error in relaxation:')
                     logger.exception(ex)
@@ -55,6 +56,7 @@ class PopulationProcessor:
                 self.systems[ID].append(processedSystems[i+1])
             populationDump.save()
         sem.release()
+        return system
 
 
 class PopulationDump:

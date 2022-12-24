@@ -109,7 +109,7 @@ class Executor(object):
 
             if self._interface.isConverged(calcFolder):
                 logger.debug('System converged. Proceeding update.')
-                self._interface.readOutput(system, calcFolder)
+                results = self._interface.readOutput(system, calcFolder)
                 logger.info(f'system {ID} with tag {tag} relaxation successful.')
                 if not self.keepFolders:
                     shutil.rmtree(calcFolder, ignore_errors=True)
@@ -117,6 +117,7 @@ class Executor(object):
         else:
             raise RuntimeError(f'Task failed {self._ATTEMPTS} times')
         self._gatherSystems(system, tag, ioType='output')
+        return results
 
     def _gatherSystems(self, system, tag : str, ioType : str):
         if self.gather:
