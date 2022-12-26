@@ -10,9 +10,16 @@ logger = logging.getLogger(__name__)
 
 
 class PopulationProcessor:
+
+    stages = None
+
+    @classmethod
+    def setStages(cls, stagesType):
+        cls.stages = stagesType
+
     def __init__(self, tag, stages, inputKey, numParallelCalcs, systems=None, checkCallback=None):
         self.tag = tag
-        self.stages = stages
+        self.stages = [self.stages.createStage(**stage) for stage in stages]
         self.inputKey = inputKey
         self.numParallelCalcs = numParallelCalcs
         self.systems = systems

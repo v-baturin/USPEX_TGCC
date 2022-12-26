@@ -95,6 +95,9 @@ from .Stages.PopulationProcessor import PopulationProcessor
 from .GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 GenerationController.registerOptimizer(ModelOptimizer)
-GenerationController.registerStage('execute', Executor)
-GenerationController.registerStage('atomistic', AtomisticStage)
-GenerationController.registerStage('populationProcessor', PopulationProcessor)
+from .Stages import Stages
+Stages.registerStage('execute', Executor)
+Stages.registerStage('atomistic', AtomisticStage)
+Stages.registerStage('populationProcessor', PopulationProcessor)
+GenerationController.setPopulationProcessor(PopulationProcessor)
+PopulationProcessor.setStages(Stages)

@@ -9,6 +9,8 @@ def compileParams(main: dict) -> dict:
     for i, stage in enumerate(stages):
         if 'tag' not in stage:
             stages[i]['tag'] = str(i+1)
+        if 'stageType' not in stage:
+            stage['stageType'] = 'atomistic'
 
     if 'optimizer' in main and 'target' in main['optimizer']:
         optimizer = main['optimizer']
