@@ -8,6 +8,8 @@ import numpy as np
 import os
 import pandas
 import time
+import signal
+
 
 from sympy.combinatorics.partitions import Partition, RGS_rank
 
@@ -22,6 +24,7 @@ with open(f'{HOMEPATH}/idealnets.json', 'rt') as f:
 MAX_SUPERSIZE = 4
 ATTEMPTS_ROTATION = 50
 ATTEMPTS_POINT_GROUP = 10
+MAX_RANDOM_TIME = 300
 
 
 class RandTop:
@@ -38,6 +41,7 @@ class RandTop:
         self.attemptsRotation = attemptsRotation
         self.attemptsPointGroup = attemptsPointGroup
         self.arxiv = {}
+        signal.signal(signal.SIGALRM, signal_handler)
 
     def __call__(self, *args, **kwargs):
         composition = self.compositionSpace.randomComposition()
@@ -55,92 +59,100 @@ class RandTop:
         totalAtomNumber = int(np.sum(numberOfAtoms))
         appropriateNets = TOPOLOGICAL_NETS[totalAtomNumber % TOPOLOGICAL_NETS['totalAtomNumber'] == 0]
         compstart = time.perf_counter()
-        for name, params in appropriateNets.sample(min(appropriateNets.shape[0], 100)).iterrows():
-            compend = time.perf_counter()
-            if compend - compstart > 60:
-                break
-            supersize = totalAtomNumber // params['totalAtomNumber']
-            if supersize > self.maxSupersize:
-                continue
-            net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
-            logger.debug(f'Trying {name} topology with {params["groupName"]} symmetry')
-            supercells = decompose3(supersize) if self.supercells is None \
-                else [supercell for supercell in self.supercells if np.prod(supercell) == supersize]
-            for supercell in randomPermutation(supercells):
-                logger.debug(f'Trying {supercell} supercell')
-                topstart = time.perf_counter()
-                for flavour in randomPermutation(net.flavours(tuple(supercell))):
-                    topend = time.perf_counter()
-                    if topend - topstart > 15:
-                        break
-                    if len(flavour.sites) >= len(numberOfAtoms):
-                        atomPermutations = list(itertools.permutations(enumerate(numberOfAtoms)))
-                        for nodePartition in randomPartitionSampler(len(flavour.multiplicities), len(numberOfAtoms), 50):
-                            logger.debug(f'Trying {nodePartition} partition')
-                            for atoms3 in randomPermutation(atomPermutations):
-                                permutationAtoms, numberOfAtomsPermutated = zip(*atoms3)
-                                numberOfNodes = [np.sum(flavour.multiplicities[np.asarray(nodeTypeGroup, dtype=int)])
-                                                 for nodeTypeGroup in nodePartition]
-                                if np.all(np.asarray(numberOfNodes) == np.asarray(numberOfAtomsPermutated)):
-                                    coordinates = []
-                                    operations = []
-                                    for atomNumber in np.argsort(permutationAtoms):
-                                        nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=np.int)
-                                        coordinates.append(flavour.group(flavour.sites[nodeIndices]))
-                                        operations.append([flavour.operations[ind] for ind in nodeIndices])
-                                    cell = np.asarray(params['cell']) * np.asarray(supercell)
+        signal.alarm(MAX_RANDOM_TIME)
+        try:
+            for name, params in appropriateNets.sample(min(appropriateNets.shape[0], 100)).iterrows():
+                compend = time.perf_counter()
+                if compend - compstart > 60:
+                    break
+                supersize = totalAtomNumber // params['totalAtomNumber']
+                if supersize > self.maxSupersize:
+                    continue
+                net = SymmetricStructure(name, Group.getGroupFromSymbol(params['groupName']), params['nods'])
+                logger.debug(f'Trying {name} topology with {params["groupName"]} symmetry')
+                supercells = decompose3(supersize) if self.supercells is None \
+                    else [supercell for supercell in self.supercells if np.prod(supercell) == supersize]
+                for supercell in randomPermutation(supercells):
+                    logger.debug(f'Trying {supercell} supercell')
+                    topstart = time.perf_counter()
+                    for flavour in randomPermutation(net.flavours(tuple(supercell))):
+                        topend = time.perf_counter()
+                        if topend - topstart > 15:
+                            break
+                        if len(flavour.sites) >= len(numberOfAtoms):
+                            atomPermutations = list(itertools.permutations(enumerate(numberOfAtoms)))
+                            for nodePartition in randomPartitionSampler(len(flavour.multiplicities), len(numberOfAtoms),
+                                                                        50):
+                                logger.debug(f'Trying {nodePartition} partition')
+                                for atoms3 in randomPermutation(atomPermutations):
+                                    permutationAtoms, numberOfAtomsPermutated = zip(*atoms3)
+                                    numberOfNodes = [
+                                        np.sum(flavour.multiplicities[np.asarray(nodeTypeGroup, dtype=int)])
+                                        for nodeTypeGroup in nodePartition]
+                                    if np.all(np.asarray(numberOfNodes) == np.asarray(numberOfAtomsPermutated)):
+                                        coordinates = []
+                                        operations = []
+                                        for atomNumber in np.argsort(permutationAtoms):
+                                            nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=np.int)
+                                            coordinates.append(flavour.group(flavour.sites[nodeIndices]))
+                                            operations.append([flavour.operations[ind] for ind in nodeIndices])
+                                        cell = np.asarray(params['cell']) * np.asarray(supercell)
 
-                                    # zeroInds are indices of zero elements of numIons.
-                                    # Here we reconstruct numIons consistent arrays by inserting empty arrays
-                                    # at zeroInds sites of arrays created with generateStructureWithRandomTopology.
-                                    for ind in zeroInds:
-                                        coordinates.insert(ind, [])
-                                        operations.insert(ind, [])
+                                        # zeroInds are indices of zero elements of numIons.
+                                        # Here we reconstruct numIons consistent arrays by inserting empty arrays
+                                        # at zeroInds sites of arrays created with generateStructureWithRandomTopology.
+                                        for ind in zeroInds:
+                                            coordinates.insert(ind, [])
+                                            operations.insert(ind, [])
 
-                                    estimatedVolume = self.cellUtility.getCellVolume()
-                                    if estimatedVolume is None:
-                                        elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-                                        estimatedVolume = self.bondUtility.volumeEstimator.calcCompositionVolume(elementalComposition,
-                                                                                                                  self.conditions.externalPressure)
-                                    cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber,
-                                                                       baseCell=envCell)
-                                    operations = dict(zip(symbols, operations))
-                                    all_coordinates = np.vstack([*itertools.chain(*coordinates)])
-                                    attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
+                                        estimatedVolume = self.cellUtility.getCellVolume()
+                                        if estimatedVolume is None:
+                                            elementalComposition = self.simpleMoleculeUtility.getElementalComposition(
+                                                composition)
+                                            estimatedVolume = self.bondUtility.volumeEstimator.calcCompositionVolume(
+                                                elementalComposition,
+                                                self.conditions.externalPressure)
+                                        cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber,
+                                                                           baseCell=envCell)
+                                        operations = dict(zip(symbols, operations))
+                                        all_coordinates = np.vstack([*itertools.chain(*coordinates)])
+                                        attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
 
-                                    for i in range(attemptsRotation):
-                                        try:
+                                        for i in range(attemptsRotation):
                                             offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                                        except ValueError as e:
-                                            logger.debug(e, exc_info=True)
-                                            raise RuntimeError("RandTop failed.")
-                                        molecules = offspring['molecules']
-                                        cell = offspring['cell']
-                                        if len(molecules) != totalAtomNumber:
-                                            continue
-                                        elif self.environmentUtility.assemblers:
-                                            if envAssembler is not None:
-                                                offspring['environment'] = envAssembler.assemble(**offspring)
-                                        atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                                        minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                                        if disassembler.environment is not None:
-                                            inds = disassembler.envIndices
-                                            atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
-                                                tuple(np.meshgrid(inds, inds))]
-                                        if np.all(atomDistances >= minDistMatrix):
-                                            if name not in self.arxiv:
-                                                self.arxiv[name] = []
-                                            for arxivCoordinates in self.arxiv[name]:
-                                                if (all_coordinates.shape == arxivCoordinates.shape) and \
-                                                        np.allclose(all_coordinates, arxivCoordinates):
-                                                    break
-                                            else:
-                                                self.arxiv[name].append(all_coordinates)
-                                                self.conditions.putConditions(offspring)
-                                                structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(
-                                                    **offspring)
-                                                if self.bondUtility.isConnected(structure):
-                                                    return offspring,
+                                            molecules = offspring['molecules']
+                                            cell = offspring['cell']
+                                            if len(molecules) != totalAtomNumber:
+                                                continue
+                                            elif self.environmentUtility.assemblers:
+                                                if envAssembler is not None:
+                                                    offspring['environment'] = envAssembler.assemble(**offspring)
+                                            atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(
+                                                **offspring)
+                                            minDistMatrix = self.bondUtility.getDistances(atomSymbols,
+                                                                                          self.conditions.externalPressure)
+                                            if disassembler.environment is not None:
+                                                inds = disassembler.envIndices
+                                                atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
+                                                    tuple(np.meshgrid(inds, inds))]
+                                            if np.all(atomDistances >= minDistMatrix):
+                                                if name not in self.arxiv:
+                                                    self.arxiv[name] = []
+                                                for arxivCoordinates in self.arxiv[name]:
+                                                    if (all_coordinates.shape == arxivCoordinates.shape) and \
+                                                            np.allclose(all_coordinates, arxivCoordinates):
+                                                        break
+                                                else:
+                                                    self.arxiv[name].append(all_coordinates)
+                                                    self.conditions.putConditions(offspring)
+                                                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(
+                                                        **offspring)
+                                                    if self.bondUtility.isConnected(structure):
+                                                        signal.alarm(0)
+                                                        return offspring,
+        except Exception as e:
+            logger.debug(e, exc_info=True)
+        signal.alarm(0)
         raise RuntimeError("RandTop failed.")
 
 
@@ -187,3 +199,6 @@ def decompose3(m123):
                     m3 = m23//m2
                     decompositions.append((m1,m2,m3))
     return decompositions
+
+def signal_handler(signum, frame):
+    raise Exception("Timed out!")
