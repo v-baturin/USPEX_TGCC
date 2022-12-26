@@ -77,10 +77,10 @@ class CompileParams_Test(unittest.TestCase):
                 }
             },
             'stages': [
-                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1'},
-                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '2'},
-                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '3'},
-                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '4'}],
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1'},
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '2'},
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '3'},
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '4'}],
             'numParallelCalcs': 20,
             'numGenerations': 60,
             'stopCrit': 30
