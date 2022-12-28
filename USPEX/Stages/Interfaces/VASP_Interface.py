@@ -253,12 +253,14 @@ class VASP_Interface:
         if 'enthalpy' in self.targetProperties:
             results['enthalpy'] = aseResults.getEnthalpy(system['externalPressure'])
         if 'energy' in self.targetProperties:
-            results['energy'] = aseResults['energy']
+            results['energy'] = aseResults.results['energy']
         if 'forces' in self.targetProperties:
-            results['forces'] = aseResults['forces']
+            results['forces'] = aseResults.results['forces']
         if 'trajectory' in self.targetProperties:
+            for subsystem in trajectory:
+                subsystem['disassembler'] = system['disassembler']
+                subsystem['externalPressure'] = system['externalPressure']
             results['trajectory'] = trajectory
-            results['trajectoryDisassembler'] = system['disassembler']
 
         with open(pj(calcFolder, self.outcar_file), 'rt') as fp:
             content = fp.readlines()

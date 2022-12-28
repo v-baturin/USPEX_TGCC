@@ -48,7 +48,6 @@ GlobalOptimizer.registerTarget('Atomistic',
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal],
                       seeds=Seeds)
-
 from .Stages.Executor import Executor
 from .Stages.Interfaces.ASEInterfaceAdapter import ASEInterfaceAdapter
 ASEInterfaceAdapter.registerTypes(AtomicStructure, Element, Cell)
@@ -89,6 +88,14 @@ Executor.registerTaskManager('SHELL', SHELL)
 from .ModelOptimizer import ModelOptimizer, External
 External.setExecutorType(Executor)
 ModelOptimizer.registerModel(External)
+ModelOptimizer.registerTarget('Atomistic',
+                      utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
+                                 SimpleMoleculeUtility, Conditions, BondUtility, Constraints, ElasticML,
+                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, ],
+                      hybridizations=[Heredity],
+                      mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
+                      creations=[RandTop, RandSym, RandSymPyXtal],
+                      seeds=Seeds)
 from .Stages.AtomisticStage import AtomisticStage
 AtomisticStage.registerTypes(Executor, AtomicDisassembler)
 from .Stages.PopulationProcessor import PopulationProcessor

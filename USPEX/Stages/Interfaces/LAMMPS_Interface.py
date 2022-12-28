@@ -180,7 +180,7 @@ class LAMMPS_Interface:
             logger.error('LAMMPS minimization tolerance criteria is not achieved.')
             shutil.copy(output,  pj(calcFolder, 'ERROR-'+self.outputFile))
             self.failedSystems.append(calcFolder)
-        return lammps_completed and tolerance_achieved        
+        return True        
 
     def readOutput(self, system, calcFolder : str):
         results = {}
@@ -189,25 +189,27 @@ class LAMMPS_Interface:
                                         **system.pop('ase'))
             results['structure'] = aseData['structure']
 
-        properties = self.readProperties(calcFolder)
-        if 'enthalpy' in self.targetProperties:
-            results['enthalpy'] = properties['Enthalpy']
-        if 'energy' in self.targetProperties:
-            results['energy'] = properties['TotEng']
-        if 'stressTensor' in self.targetProperties:
-            stressTensor = np.zeros((3, 3))
-            stressTensor[0][0] = properties['Pxx']
-            stressTensor[1][1] = properties['Pyy']
-            stressTensor[2][2] = properties['Pzz']
-            stressTensor[0][1] = stressTensor[1][0] = properties['Pxy']
-            stressTensor[0][2] = stressTensor[2][0] = properties['Pxz']
-            stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
-            results['stressTensor'] = stressTensor
+        #properties = self.readProperties(calcFolder)
+        #if 'enthalpy' in self.targetProperties:
+        #    results['enthalpy'] = properties['Enthalpy']
+        #if 'energy' in self.targetProperties:
+        #    results['energy'] = properties['TotEng']
+        #if 'stressTensor' in self.targetProperties:
+        #    stressTensor = np.zeros((3, 3))
+        #    stressTensor[0][0] = properties['Pxx']
+        #    stressTensor[1][1] = properties['Pyy']
+        #    stressTensor[2][2] = properties['Pzz']
+        #    stressTensor[0][1] = stressTensor[1][0] = properties['Pxy']
+        #    stressTensor[0][2] = stressTensor[2][0] = properties['Pxz']
+        #    stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
+        #    results['stressTensor'] = stressTensor
 
         if 'trajectory' in self.targetProperties:
             sample = self.atomisticRepresentationType.readMLIPsample(pj(calcFolder, self.mlip_sample), self.specorder)
+            for subsystem in sample:
+                subsystem['disassembler'] = system['disassembler']
+                subsystem['externalPressure'] = system['externalPressure']
             results['trajectory'] = sample
-            results['trajectoryDisassembler'] = system['disassembler']
 
         # TODO move to constraints
         # BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3

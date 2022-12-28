@@ -108,13 +108,12 @@ class MLIP_Interface:
             #         content = stderr.read()
             #     if not content:
             #         return True
-        return False
+        return self.mode == 'train'
 
     def readOutput(self, system, calcFolder: str):
         results = {}
         if 'sample' in self.targetProperties:
-            with open(pj(calcFolder, self.out_cfg_file)) as f:
-                sample = self.atomisticRepresentation.readMLIPsample(f, self.specorder)
+            sample = self.atomisticRepresentation.readMLIPsample(pj(calcFolder, self.out_cfg_file), self.specorder)
             system['sample'] = sample
         if 'potential' in self.targetProperties:
             shutil.copy2(pj(calcFolder, bn(self.potential)), self.potential)

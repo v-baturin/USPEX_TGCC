@@ -253,7 +253,7 @@ class AtomisticRepresentation(object):
         return all_systems
 
     @staticmethod
-    def saveMLIPcfg(f, specorder, structure, forces=None, energy=None, stresses=None):
+    def saveMLIPcfg(f, specorder, structure, forces=None, energy=None, stresses=None, **kwargs):
         atstr1 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z           fx          fy          fz\n'
         atstr2 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z\n'
         size = len(structure)
@@ -277,7 +277,7 @@ class AtomisticRepresentation(object):
                          forces[i, 0], forces[i, 1], forces[i, 2]))
             else:
                 f.write('         %4d %4d %13f %13f %13f\n' %
-                        (i + 1, atomTypes[i].z, positions[i, 0], positions[i, 1], positions[i, 2]))
+                        (i + 1, atomTypes[i], positions[i, 0], positions[i, 1], positions[i, 2]))
         if energy is not None:
             f.write(' Energy\n   %20f\n' % energy)
         if stresses is not None:

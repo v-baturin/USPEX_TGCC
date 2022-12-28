@@ -11,7 +11,9 @@ import logging
 from copy import copy
 from typing import List
 
+from .SystemPool import SystemPool
 from .Target import Target, TargetType
+
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +26,12 @@ class External:
     def setExecutorType(cls, executorType):
         cls.executorType = executorType
 
-    def __init__(self, interface):
+    def __init__(self, interface, **kwargs):
         self.executor = self.executorType(**interface)
         self.isStable = False
 
     async def update(self, population):
-        system = dict(population=population)
+        system = dict(ID='model', population=[individual for individual in population if not individual['isBad']])
         await self.executor.run(system)
         self.isStable = system['isStable']
 
@@ -85,6 +87,7 @@ class ModelOptimizer(object):
         """
 
         self.target = Target(self.knownTargetTypes[target['type']], **target)
+        self.pool = SystemPool()
         self.model = self.knownModelTypes[model['type']](**model)
         self.popSize = popSize
         self.initialPopSize = initialPopSize
@@ -104,8 +107,10 @@ class ModelOptimizer(object):
         self.firstCall = False
         population = []
         for creation in self.target.creations:
-            howCome = type(creation).__name__
-            howMany = popSize * self.fractions[howCome]
+            howCome = type(creation).__name__[0:1].lower() + type(creation).__name__[1:]
+            if howCome not in self.fractions:
+                continue
+            howMany = int(round(popSize * self.fractions[howCome]))
             howMany = 0 if howMany < 0 else howMany
             if hasattr(creation, 'prepare'):
                 creation.prepare()
@@ -115,6 +120,7 @@ class ModelOptimizer(object):
                 try:
                     offsprings = creation()
                     for offspring in offsprings:
+                        self.pool.assignID(offspring)
                         offspring['howCome'] = howCome
                         logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator.")
                     population.extend(offsprings)
@@ -125,6 +131,7 @@ class ModelOptimizer(object):
                     logger.error(e, exc_info=True)
             if hasattr(creation, 'standby'):
                 creation.standby()
+        return population
 
     @property
     def isStable(self):

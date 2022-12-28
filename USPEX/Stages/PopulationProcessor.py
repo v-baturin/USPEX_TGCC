@@ -17,7 +17,7 @@ class PopulationProcessor:
     def setStages(cls, stagesType):
         cls.stages = stagesType
 
-    def __init__(self, tag, stages, inputKey, numParallelCalcs, systems=None, checkCallback=None):
+    def __init__(self, tag, stages, inputKey, numParallelCalcs, systems=None, checkCallback=None, **kwargs):
         self.tag = tag
         self.stages = [self.stages.createStage(**stage) for stage in stages]
         self.inputKey = inputKey
@@ -27,6 +27,9 @@ class PopulationProcessor:
 
     async def run(self, system):
         population = system[self.inputKey]
+        for i, subsystem in enumerate(population):
+            if 'ID' not in subsystem:
+                subsystem['ID'] = f'{system["ID"]}_{i}'
         populationDump = PopulationDump.load(system['ID'], self.tag, population)
         sem = asyncio.Semaphore(self.numParallelCalcs)
         population = await asyncio.gather(*(self.life(system, populationDump, sem) for system in population))
