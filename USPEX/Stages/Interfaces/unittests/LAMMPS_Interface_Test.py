@@ -68,6 +68,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
             disassembler=AtomisticRepresentation.atomicDisassemblerType(
                 np.arange(len(structure)).reshape((-1, 1))),
             ase={'pbc': (1, 1, 1)},
+            externalPressure=0.0
         )
         results = interface.readOutput(system=system, calcFolder=pj(GATHEREDPATH, f'output/CalcFold{ID}'))
         self.assertTrue(np.isclose(results['enthalpy'], -102.64364))
@@ -104,7 +105,8 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
     def test_sample(self):
         system = dict(
             ase={'pbc': (1, 1, 1)},
-            disassembler=None
+            disassembler=None,
+            externalPressure=0.0
         )
 
         results = self.interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'LAMMPS_MLIP_SAMPLE'))

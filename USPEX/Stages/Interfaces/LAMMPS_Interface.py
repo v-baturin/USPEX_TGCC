@@ -184,25 +184,43 @@ class LAMMPS_Interface:
 
     def readOutput(self, system, calcFolder : str):
         results = {}
+        aseData = self.adapter.read(calcFolder, self.specorder,
+                                    **system.pop('ase'))
+        properties = self.readProperties(calcFolder)
         if 'structure' in self.targetProperties:
-            aseData = self.adapter.read(calcFolder, self.specorder,
-                                        **system.pop('ase'))
             results['structure'] = aseData['structure']
+        if 'enthalpy' in self.targetProperties:
+            if properties is not None:
+                results['enthalpy'] = properties['Enthalpy']
+            elif aseData is not None:
+                results['enthalpy'] = aseData['results'].getEnthalpy(system['externalPressure'])
+            else:
+                raise RuntimeError("Bad lammps output.")
+        if 'energy' in self.targetProperties:
+            if properties is not None:
+                results['energy'] = properties['TotEng']
+            elif aseData is not None:
+                results['energy'] = aseData['results'].results['energy']
+            else:
+                raise RuntimeError("Bad lammps output.")
+        if 'forces' in self.targetProperties:
+            if aseData is not None:
+                results['forces'] = aseData['results'].results['forces']
+            else:
+                raise RuntimeError("Bad lammps output.")
 
-        #properties = self.readProperties(calcFolder)
-        #if 'enthalpy' in self.targetProperties:
-        #    results['enthalpy'] = properties['Enthalpy']
-        #if 'energy' in self.targetProperties:
-        #    results['energy'] = properties['TotEng']
-        #if 'stressTensor' in self.targetProperties:
-        #    stressTensor = np.zeros((3, 3))
-        #    stressTensor[0][0] = properties['Pxx']
-        #    stressTensor[1][1] = properties['Pyy']
-        #    stressTensor[2][2] = properties['Pzz']
-        #    stressTensor[0][1] = stressTensor[1][0] = properties['Pxy']
-        #    stressTensor[0][2] = stressTensor[2][0] = properties['Pxz']
-        #    stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
-        #    results['stressTensor'] = stressTensor
+        if 'stressTensor' in self.targetProperties:
+            if properties is not None:
+                stressTensor = np.zeros((3, 3))
+                stressTensor[0][0] = properties['Pxx']
+                stressTensor[1][1] = properties['Pyy']
+                stressTensor[2][2] = properties['Pzz']
+                stressTensor[0][1] = stressTensor[1][0] = properties['Pxy']
+                stressTensor[0][2] = stressTensor[2][0] = properties['Pxz']
+                stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
+                results['stressTensor'] = stressTensor
+            else:
+                raise RuntimeError("Bad lammps output.")
 
         if 'trajectory' in self.targetProperties:
             sample = self.atomisticRepresentationType.readMLIPsample(pj(calcFolder, self.mlip_sample), self.specorder)
@@ -227,18 +245,21 @@ class LAMMPS_Interface:
             raise FileNotFoundError('Cannot find either {self.outputFile} or {self.log_file}.')
         with open(output, 'r') as f:
             content = f.readlines()
-        for i, line in enumerate(content):
-            if "Step" in line:
-                properties_list = line.split()
-                properties = dict().fromkeys(properties_list)
-            if "Loop" in line:
-                end_ind = i-1
-        templine = content[end_ind].split()
-        for j, item in enumerate(templine):
-            if properties_list[j] == "Step":
-                properties[properties_list[j]] = int(item)
-            else:
-                properties[properties_list[j]] = float(item)
+        try:
+            for i, line in enumerate(content):
+                if "Step" in line:
+                    properties_list = line.split()
+                    properties = dict().fromkeys(properties_list)
+                if "Loop" in line:
+                    end_ind = i-1
+            templine = content[end_ind].split()
+            for j, item in enumerate(templine):
+                if properties_list[j] == "Step":
+                    properties[properties_list[j]] = int(item)
+                else:
+                    properties[properties_list[j]] = float(item)
+        except Exception:
+            properties = None
         return properties
 
 

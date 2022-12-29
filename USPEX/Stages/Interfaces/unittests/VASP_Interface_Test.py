@@ -108,7 +108,8 @@ class VASP_interface_MD_Test(unittest.TestCase):
                                         kresol=0.06, targetProperties=['trajectory'])
         system = dict(
             ase={'pbc': (1, 1, 1), 'symbolsOrder': [0, 1, 2]},
-            disassembler=None
+            disassembler=None,
+            externalPressure=0.0
         )
         results = self.interface.readOutput(system, wd)
         self.assertGreater(len(results['trajectory']), 1)
