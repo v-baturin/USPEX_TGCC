@@ -117,9 +117,10 @@ class MLIP_Interface:
             system['sample'] = sample
         if 'potential' in self.targetProperties:
             shutil.copy2(pj(calcFolder, bn(self.potential)), self.potential)
+        with open(pj(calcFolder, self.in_cfg_file), 'r') as f:
+            content = f.read()
+        results['isStable'] = len(content) == 0
         if 'trainingSet' in self.targetProperties:
-            with open(pj(calcFolder, self.in_cfg_file), 'r') as f:
-                content = f.read()
             with open(self.trainingSet, 'a') as f:
                 f.write(content)
 
