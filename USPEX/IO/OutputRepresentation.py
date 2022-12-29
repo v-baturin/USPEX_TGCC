@@ -66,90 +66,97 @@ class OutputRepresentation(object):
                 self.targetRepresentation = AtomisticRepresentation(self.RES_FOLDER, **output)
             else:
                 raise RuntimeError('Unknown target type in output initialization.')
+        elif type(optimizerInstance).__name__ == 'ModelOptimizer':
+            self.selectionRepresentation = None
+            self.targetRepresentation = None
         else:
             raise RuntimeError('Unknown optimizer type in output initialization.')
         os.makedirs(self.RES_FOLDER, exist_ok=True)
         write(pj(self.RES_FOLDER, self.PARAMETERS_FILENAME), params)
 
     def presentSystems(self, systems: dict, optimizer):
-        return self.targetRepresentation.presentSystems(systems, optimizer, len(self.stages))
+        if self.targetRepresentation is not None:
+            return self.targetRepresentation.presentSystems(systems, optimizer, len(self.stages))
+        else:
+            return None
 
     def presentOutput(self, populations, optimizers, optimizer, printDate=True, final=False):
-        os.makedirs(os.path.dirname(self.OUTPUT_FILE), exist_ok=True)
+        if self.selectionRepresentation is not None and self.targetRepresentation is not None:
+            os.makedirs(os.path.dirname(self.OUTPUT_FILE), exist_ok=True)
 
-        # Print the header to the log so it's clear that we execute USPEX:
-        output = createHeader('Evolutionary Algorithm Code for Structure Prediction')
+            # Print the header to the log so it's clear that we execute USPEX:
+            output = createHeader('Evolutionary Algorithm Code for Structure Prediction')
 
-        # Date:
-        if printDate:
-            output += createHeader_wrap([f'Output written {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'], 'center')
-            output.append('')
+            # Date:
+            if printDate:
+                output += createHeader_wrap([f'Output written {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'], 'center')
+                output.append('')
 
-        # Cite:
-        text = [
-            'Please cite the following suggested papers',
-            'when you publish the results obtained from USPEX:',
-        ]
-        output += createHeader_wrap(text)
+            # Cite:
+            text = [
+                'Please cite the following suggested papers',
+                'when you publish the results obtained from USPEX:',
+            ]
+            output += createHeader_wrap(text)
 
-        output += createHeader_wrap([text.rstrip() for text in GENERAL_PAPERS.split('\n')], 'left')
+            output += createHeader_wrap([text.rstrip() for text in GENERAL_PAPERS.split('\n')], 'left')
 
-        formatted_rows = createHeader_wrap(['Block for generations controller'], 'center')
-        formatted_rows.append('')
-        formatted_rows.append(f'    Number of Generations  :    {self.numGenerations}')
-        formatted_rows.append(f'    Halting criteria       :    {self.stopCrit}')
-        formatted_rows.append('')
+            formatted_rows = createHeader_wrap(['Block for generations controller'], 'center')
+            formatted_rows.append('')
+            formatted_rows.append(f'    Number of Generations  :    {self.numGenerations}')
+            formatted_rows.append(f'    Halting criteria       :    {self.stopCrit}')
+            formatted_rows.append('')
 
-        output += formatted_rows
+            output += formatted_rows
 
-        output += self.selectionRepresentation.getParametersBlock(optimizer.createPopulation)
-        output += self.targetRepresentation.getParametersBlock(optimizer.target)
+            output += self.selectionRepresentation.getParametersBlock(optimizer.createPopulation)
+            output += self.targetRepresentation.getParametersBlock(optimizer.target)
 
-        output += createHeader_wrap(['Ab initio calculations'], 'center')
+            output += createHeader_wrap(['Ab initio calculations'], 'center')
 
-        row = '\n'
-        row += f'* There are {len(self.stages)} local relaxation steps for each individual structure: *\n'
-        row += '   Step/Tag     Abinitio Code   K-resolution\n'
-        for stage in self.stages:
-            kresol = stage['kresol'] if 'kresol' in stage else None
-            row += f"{stage['tag']:12}    {stage['type']:12}    {kresol}\n"
-        row += '\n'
-        row += '%d parallel calculations are performed simultaneously.\n' % self.numParallelCalcs
-        row += 'For submission details of each stage see parameters.txt.'
-        row += '\n'
-        output.append(row)
-
-
-
-        output += createHeader_wrap(['Generations block'], 'center')
-
-        for generation, (population, opt) in enumerate(zip_longest(populations, optimizers)):
-            opt = optimizer if opt is None else opt
-            output.append(' Generation {0:4d}'.format(generation))
-            output += self.selectionRepresentation.getPopulationCreationBlock(population, opt, self.targetRepresentation)
-            output.append('    Optimization results')
-            table = self.targetRepresentation.getNewSystemsTable()
-            for system in population:
-                table.update(system['ID'], system, optimizer.fitness)
-            output.append(table.table.get_string())
-            output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
-            output.append('')
+            row = '\n'
+            row += f'* There are {len(self.stages)} local relaxation steps for each individual structure: *\n'
+            row += '   Step/Tag     Abinitio Code   K-resolution\n'
+            for stage in self.stages:
+                kresol = stage['kresol'] if 'kresol' in stage else None
+                row += f"{stage['tag']:12}    {stage['type']:12}    {kresol}\n"
+            row += '\n'
+            row += '%d parallel calculations are performed simultaneously.\n' % self.numParallelCalcs
+            row += 'For submission details of each stage see parameters.txt.'
+            row += '\n'
+            output.append(row)
 
 
-        if final:
-            table = self.targetRepresentation.getNewSystemsTable()
-            for ID in optimizer.best:
-                table.update(ID, optimizer.pool.allSystems[ID], optimizer.fitness)
-            output += createHeader_wrap(['Calculation results'], 'center')
-            output.append(table.table.get_string())
 
-        # ---------------------------------------------------------------------------
-        # Write everything to the file:
-        with open(self.OUTPUT_FILE, 'w') as f:
-            for i in output:
-                f.write(i + '\n')
+            output += createHeader_wrap(['Generations block'], 'center')
 
-        if populations:
-            self.selectionRepresentation.presentFractions(populations)
-        if optimizers:
-            self.targetRepresentation.presentOptimizer(optimizers, optimizer)
+            for generation, (population, opt) in enumerate(zip_longest(populations, optimizers)):
+                opt = optimizer if opt is None else opt
+                output.append(' Generation {0:4d}'.format(generation))
+                output += self.selectionRepresentation.getPopulationCreationBlock(population, opt, self.targetRepresentation)
+                output.append('    Optimization results')
+                table = self.targetRepresentation.getNewSystemsTable()
+                for system in population:
+                    table.update(system['ID'], system, optimizer.fitness)
+                output.append(table.table.get_string())
+                output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
+                output.append('')
+
+
+            if final:
+                table = self.targetRepresentation.getNewSystemsTable()
+                for ID in optimizer.best:
+                    table.update(ID, optimizer.pool.allSystems[ID], optimizer.fitness)
+                output += createHeader_wrap(['Calculation results'], 'center')
+                output.append(table.table.get_string())
+
+            # ---------------------------------------------------------------------------
+            # Write everything to the file:
+            with open(self.OUTPUT_FILE, 'w') as f:
+                for i in output:
+                    f.write(i + '\n')
+
+            if populations:
+                self.selectionRepresentation.presentFractions(populations)
+            if optimizers:
+                self.targetRepresentation.presentOptimizer(optimizers, optimizer)
