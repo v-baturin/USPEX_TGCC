@@ -32,7 +32,7 @@ class External:
 
     async def update(self, population):
         system = dict(ID='model', population=[individual for individual in population if not individual['isBad']])
-        await self.executor.run(system)
+        system = await self.executor.run(system)
         self.isStable = system['isStable']
 
 
