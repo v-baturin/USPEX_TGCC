@@ -28,7 +28,7 @@ class GenerationController(object):
     DUMP_FILENAME = "controller.dump"
     DUMP_FILENAME_BACKUP = "controller.dump.back"
     knownOptimizers = {}
-    knownStages = {}
+    populationProcessorType = None
 
     @classmethod
     def registerOptimizer(cls, optimizerType: type):
@@ -36,9 +36,8 @@ class GenerationController(object):
         cls.knownOptimizers[optimizerType.__name__] = optimizerType
 
     @classmethod
-    def registerStage(cls, name, stageType: type):
-        assert name not in cls.knownStages
-        cls.knownStages[name] = stageType
+    def setPopulationProcessor(cls, populationProcessorType):
+        cls.populationProcessorType = populationProcessorType
 
     def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages : list,
                  optimizer, outputRepresentation, outputRefreshDelay):
@@ -55,10 +54,10 @@ class GenerationController(object):
         self.populations = []
         self.optimizers = []
         self.systems = {}
-        self.populationProcessor = self.knownStages['populationProcessor'](tag='stages', stages=stages,
-                                                                           inputKey='population',
-                                                                           numParallelCalcs=numParallelCalcs,
-                                                                           systems=self.systems)
+        self.populationProcessor = self.populationProcessorType(tag='stages', stages=stages,
+                                                                inputKey='population',
+                                                                numParallelCalcs=numParallelCalcs,
+                                                                systems=self.systems)
         self.save()
 
     @staticmethod
@@ -80,12 +79,7 @@ class GenerationController(object):
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
             else:
                 RuntimeError(f"Unknown optimizer type: {optimizer['type']}.")
-            stages = []
-            for stage in params['stages']:
-                if 'stageType' in stage:
-                    stages.append(GenerationController.knownStages[stage.pop('stageType')](**stage))
-                else:
-                    stages.append(GenerationController.knownStages['execute'](**stage))
+            stages = params['stages']
             outputRepresentation = OutputRepresentation(optimizer, **params)
             controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
                                               outputRepresentation, outputRefreshDelay)
@@ -108,7 +102,8 @@ class GenerationController(object):
             if self.state is ControllerState.processPopulation:
                 self.doPresentSystems = True
                 task = asyncio.ensure_future(self.presentSystems())
-                await self.populationProcessor.run(dict(ID='USPEX', population=self.population))
+                system = await self.populationProcessor.run(dict(ID='USPEX', population=self.population))
+                self.population = system['population']
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.populations.append(copy(self.population))
@@ -116,7 +111,7 @@ class GenerationController(object):
                 self.state = ControllerState.updateOptimizer
                 self.save()
             if self.state is ControllerState.updateOptimizer:
-                self.optimizer.update(self.population)
+                await self.optimizer.update(self.population)
                 self.optimizers.append(copy(self.optimizer))
                 self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.runControllerLogic

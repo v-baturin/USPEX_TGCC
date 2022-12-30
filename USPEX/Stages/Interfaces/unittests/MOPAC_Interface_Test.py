@@ -7,13 +7,7 @@ import filecmp
 
 from os.path import join as pj
 
-
-from ase import Atoms
-from ase.io import write
-
-# from ..MOPAC_Interface import MOPAC_Interface
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from USPEX.components import AtomisticRepresentation, MOPAC_Interface, CellUtility, Cell
+from USPEX.components import AtomisticRepresentation, MOPAC_Interface
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
 SPECIFICPATH = pj(HOMEPATH, 'mopacSpecific')
@@ -25,15 +19,17 @@ class MOPAC_CalculatorTest(unittest.TestCase):
 
 
     def test_life(self):
-        mopac = MOPAC_Interface(tag='0', mop_input=pj(SPECIFICPATH, 'mop_1'), perturbate=False)
-        radialDistributionUtility = RadialDistributionUtility(symbols=['Si', 'O'])
+        mopac = MOPAC_Interface(tag='0', mop_input=pj(SPECIFICPATH, 'mop_1'))
 
         for ID in range(10):
-            system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
-            system['externalPressure'] = 0
-            system['ID'] = ID
-            system['tmp_0'] = {}
-            system['cell'] = type(system['cell'])(system['cell'].getCellVectors(), (False, False, False))
+            structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (0, 0, 0))
+            system = dict(
+                ID=ID,
+                structure=structure,
+                disassembler=AtomisticRepresentation.atomicDisassemblerType(
+                    np.arange(len(structure)).reshape((-1, 1))),
+                externalPressure=0.0
+            )
             os.mkdir(WORKPATH)
             mopac.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -45,9 +41,9 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             shutil.rmtree(WORKPATH)
             folder = pj(GATHEREDPATH, 'output')
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-            mopac.readOutput(system, WORKPATH)
+            results = mopac.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
-            systemRef['cell'] = type(systemRef['cell'])(systemRef['cell'].getCellVectors(), (False, False, False))
-            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
+            structureRef = AtomisticRepresentation.readPOSCAR(pj(folder, f"system{system['ID']}.vasp"), (0, 0, 0))
+            self.assertTrue(np.allclose(results['structure'].getCartesianCoordinates(),
+                                        structureRef.getCartesianCoordinates()))
 

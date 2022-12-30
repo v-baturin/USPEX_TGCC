@@ -28,17 +28,14 @@ class MOPAC_Interface:
     structureType = None
     atomType = None
     cellType = None
-    atomicDisassemblerType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, structureType, atomType, cellType):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, tag: str, mop_input: str = None, perturbate: bool = True,
-                 environmentStyle=None, inStyle=None, targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str, mop_input: str = None, targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -47,7 +44,6 @@ class MOPAC_Interface:
         """
 
         self.tag = tag
-        self.tmp = f'tmp_{tag}'
         if mop_input is None:
             mop_input = pj(os.getcwd(), f'Specific/mop_{tag}')
         assert os.path.exists(mop_input)
@@ -59,10 +55,7 @@ class MOPAC_Interface:
         #     self.moleculeSpecifics = moleculeSpecifics
         # else:
         #     self.moleculeSpecifics = {}
-        self.perturbate = perturbate
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
-        self.environmentStyle = environmentStyle
-        self.inStyle = inStyle
 
         logger.debug('MOPAC calculator created.')
 
@@ -72,17 +65,10 @@ class MOPAC_Interface:
         :param system:
         :param isFullRelaxation:
         """
-
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle)
-        system[self.tmp]['disassembler'] = disassembler
-
-        if self.perturbate:
-            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+        structure = system['structure']
 
         cell = structure.getCell()
-        system[self.tmp]['pbc'] = cell.getPBC()
+        system['pbc'] = cell.getPBC()
 
         # files_to_delete = ['output', 'optimized.structure']
         # for f in files_to_delete:
@@ -95,7 +81,7 @@ class MOPAC_Interface:
             tuple_to_format = (symbol.short_name, ) +\
                               tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
                                                                precision=6) for c in coord)
-            if i in disassembler.fixedIndices:
+            if i in system['disassembler'].fixedIndices:
                 content_to_write += '%4s %12s 0 %12s 0 %12s 0\n' % tuple_to_format
             else:
                 content_to_write += '%4s %12s 1 %12s 1 %12s 1\n' % tuple_to_format
@@ -113,6 +99,7 @@ class MOPAC_Interface:
             f.write(total_content)
 
         logger.debug('MOPAC calculator prepared calculation.')
+        return ''
 
     def isConverged(self, calcFolder: str):
         """
@@ -136,18 +123,19 @@ class MOPAC_Interface:
         with open(pj(calcFolder, self.arcFile), 'rt') as arc_fid:
             content = arc_fid.readlines()
 
+        results = {}
         if 'structure' in self.targetProperties:
-            structure = self.readStructure(content, system[self.tmp].pop('pbc'))
-            usp(system, system[self.tmp].pop('disassembler').disassemble(structure), 'system', self.environmentStyle)
+            results['structure'] = self.readStructure(content, system.pop('pbc'))
 
         if 'enthalpy' in self.targetProperties:
             for line in content:
                 if 'TOTAL ENERGY' in line:
                     e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
-                    usp(system, float(e.group(1)), 'enthalpy', self.environmentStyle)
+                    results['enthalpy'] = float(e.group(1))
                     break
             else:
                 raise RuntimeError('Can not read enthalpy.')
+        return results
 
     def readStructure(self, content, pbc):
 

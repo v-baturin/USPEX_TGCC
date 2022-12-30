@@ -110,7 +110,7 @@ class GlobalOptimizer(object):
         other._isGoalReached = self._isGoalReached
         return other
 
-    def update(self, population: list):
+    async def update(self, population: list):
         """
         Updates state of optimized structures.
 

@@ -18,9 +18,7 @@ from os.path import join as pj
 
 import numpy as np
 
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ..VASP_Interface import VASP_Interface
-from USPEX.components import AtomisticRepresentation
+from ....components import AtomisticRepresentation, VASP_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -34,16 +32,17 @@ class VASP_CalculatorTest2(unittest.TestCase):
     Checking correct parsing properties
     """
     def test_life(self):
-        vasp = VASP_Interface(tag='1', perturbate=False,
-                              incar=pj(SPECIFICPATH, 'INCAR_1'), potcarsPath=SPECIFICPATH, kresol=0.13)
-        radialDistributionUtility = RadialDistributionUtility(symbols=['Ca', 'F'])
+        vasp = VASP_Interface(tag='1', incar=pj(SPECIFICPATH, 'INCAR_1'), potcarsPath=SPECIFICPATH, kresol=0.13)
 
 
         for ID in range(10):
-            system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
-            system['ID'] = ID
-            system['externalPressure'] = 0.0001
-            system['tmp_1'] = {}
+            structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))
+            system = dict(
+                ID=ID,
+                structure=structure,
+                disassembler=AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))),
+                externalPressure=0.0001
+            )
             os.mkdir(WORKPATH)
             vasp.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -55,10 +54,15 @@ class VASP_CalculatorTest2(unittest.TestCase):
             self.assertTrue(match)
             folder = pj(GATHEREDPATH, 'output')
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-            vasp.readOutput(system, WORKPATH)
+            results = vasp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
-            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
+            structureRef = AtomisticRepresentation.readPOSCAR(pj(folder, f"system{system['ID']}.vasp"), (1, 1, 1))
+            cell = results['structure'].getCell()
+            cellRef = structureRef.getCell()
+            self.assertTrue(np.allclose(cell.getCellVectors(),
+                                        cellRef.getCellVectors()))
+            self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(results['structure'].getCartesianCoordinates()),
+                                        cellRef.getWrapedCartesianCoordinates(structureRef.getCartesianCoordinates())))
 
 
 class VASP_interfaceTest(unittest.TestCase):
@@ -103,14 +107,13 @@ class VASP_interface_MD_Test(unittest.TestCase):
         self.interface = VASP_Interface(tag='1', incar=pj(wd, 'INCAR'), potcarsPath=wd,
                                         kresol=0.06, targetProperties=['trajectory'])
         system = dict(
-            tmp_1=dict(
-                ase={'pbc': (1, 1, 1), 'symbolsOrder': [0, 1, 2]},
-                disassembler=None
-            )
+            ase={'pbc': (1, 1, 1), 'symbolsOrder': [0, 1, 2]},
+            disassembler=None,
+            externalPressure=0.0
         )
-        self.interface.readOutput(system, wd)
-        self.assertGreater(len(system['trajectory']), 1)
-        for data in system['trajectory']:
+        results = self.interface.readOutput(system, wd)
+        self.assertGreater(len(results['trajectory']), 1)
+        for data in results['trajectory']:
             self.assertTrue(len(data['structure']) == 3)
             self.assertTrue('energy' in data['results'].results)
             self.assertTrue('forces' in data['results'].results)

@@ -28,23 +28,17 @@ class QE_Interface:
 
     DEFAULT_SLEEP_TIME = 30
 
-    atomicDisassemblerType = None
     aseAdapterType = None
 
     @classmethod
-    def registerTypes(cls, atomicDisassemblerType, aseAdapterType):
-        cls.atomicDisassemblerType = atomicDisassemblerType
+    def registerTypes(cls, aseAdapterType):
         cls.aseAdapterType = aseAdapterType
 
     def __init__(self, tag: str,
                  kresol: float,
                  options: str = None,
                  pseudopotentials: dict = None,
-                 perturbate:bool = True,
-                 vacuumSize: float = 10.0,      # Angtrom
                  targetProperties: list = None,
-                 environmentStyle=None,
-                 inStyle=None,
                  **kwargs):
         '''
 
@@ -58,7 +52,6 @@ class QE_Interface:
         '''
 
         self.tag = tag
-        self.tmp = f'tmp_{tag}'
         self.options = Path.cwd()/f'Specific/qEspresso_options_{tag}' if not options else Path(options)
 
         self.pseudopotentials = {s:Path(p) for s,p in pseudopotentials.items()}
@@ -69,23 +62,12 @@ class QE_Interface:
         self.kPoints = KPoints(kresol)
 
         self.adapter = self.aseAdapterType(self.options)
-        self.perturbate = perturbate
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
-
-        self.environmentStyle = environmentStyle
-        self.inStyle = inStyle
 
     def prepareLocalCalculation(self, system: dict, calcFolder: str):
         calcFolder = Path(calcFolder)
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle,
-                                                                       vacuumSize=self.vacuumSize)
-        system[self.tmp]['disassembler'] = disassembler
 
-        if self.perturbate:
-            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+        structure = system['structure']
 
         # Copying pseudopotentials to calc folder
         for s, pseudo in self.pseudopotentials.items():
@@ -100,8 +82,10 @@ class QE_Interface:
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
             kPoints = [1, 1, 1]
 
-        system[self.tmp]['ase'] = self.adapter.write(structure, disassembler.fixedIndices,
-                                                     kPoints, self.pseudopotentials, calcFolder)
+        system['ase'] = self.adapter.write(structure, system['disassembler'].fixedIndices,
+                                           kPoints, self.pseudopotentials, calcFolder)
+
+        return ''
 
     def isConverged(self, calcFolder: str):
         calcFolder = Path(calcFolder)
@@ -116,22 +100,22 @@ class QE_Interface:
 
     def readOutput(self, system: dict, calcFolder: str):
         calcFolder = Path(calcFolder)
-        aseData = self.adapter.read(calcFolder, **system[self.tmp].pop('ase'))
+        aseData = self.adapter.read(calcFolder, **system.pop('ase'))
+        results = {}
         if 'structure' in self.targetProperties:
-            usp(system, system[self.tmp].pop('disassembler').disassemble(aseData.pop('structure')),
-                'system', self.environmentStyle)
+            results['structure'] = aseData['structure']
         if 'enthalpy' in self.targetProperties:
-            enthalpy = aseData['results'].getEnthalpy(system['externalPressure'])
-            usp(system, enthalpy, 'enthalpy', self.environmentStyle)
+            results['enthalpy'] = aseData['results'].getEnthalpy(system['externalPressure'])
         if 'energy' in self.targetProperties:
-            usp(system, aseData['results']['energy'], 'energy', self.environmentStyle)
+            results['energy'] = aseData['results']['energy']
         if 'forces' in self.targetProperties:
-            usp(system, aseData['results']['forces'], 'forces', self.environmentStyle)
+            results['forces'] = aseData['results']['forces']
 
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
         if 'stressTensor' in self.targetProperties:
-            usp(system, self.readStressTensor(content), 'stressTensor', self.environmentStyle)
+            results['stressTensor'] = self.readStressTensor(content)
+        return results
 
     def readStressTensor(self, content):
         stressTensor = np.zeros((3, 3), dtype=float)

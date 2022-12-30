@@ -1,5 +1,5 @@
 import numpy as np
-from os.path import join as pj
+from os.path import join as pj, exists as ex
 from ase.io.vasp import iread_vasp_out, read_vasp_xml, write_vasp
 from ase.io.espresso import read_fortran_namelist, read_espresso_out, write_espresso_in
 from ase.io import ParseError, read
@@ -98,14 +98,17 @@ class ASEInterfaceAdapter:
             return {'pbc': cell.getPBC()}
 
         def read(self, calcFolder, specorder, pbc):
-            atoms = read(pj(calcFolder, self.dump_file), format='lammps-dump-text')
-            atomTypes = np.array([ASEInterfaceAdapter.atomType(specorder[i - 1]) for i in atoms.get_atomic_numbers()])
-            structure = ASEInterfaceAdapter.structureType(atomTypes, atoms.get_positions(),
-                                                          cell=ASEInterfaceAdapter.cellType(atoms.get_cell().array, pbc))
-            return dict(
-                structure=structure,
-                results=ASEInterfaceAdapter.Results(atoms)
-            )
+            if ex(pj(calcFolder, self.dump_file)):
+                atoms = read(pj(calcFolder, self.dump_file), format='lammps-dump-text')
+                atomTypes = np.array([ASEInterfaceAdapter.atomType(specorder[i - 1]) for i in atoms.get_atomic_numbers()])
+                structure = ASEInterfaceAdapter.structureType(atomTypes, atoms.get_positions(),
+                                                              cell=ASEInterfaceAdapter.cellType(atoms.get_cell().array, pbc))
+                return dict(
+                    structure=structure,
+                    results=ASEInterfaceAdapter.Results(atoms)
+                )
+            else:
+                return None
 
     class QE:
 

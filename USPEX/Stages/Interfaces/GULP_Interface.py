@@ -29,18 +29,15 @@ class GULP_Interface:
     structureType = None
     atomType = None
     cellType = None
-    atomicDisassemblerType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, structureType, atomType, cellType):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: List[str] = None,
-                 moleculeSpecifics: dict = None, perturbate: bool = True, fixCell: bool = False, vacuumSize = 10,
-                 environmentStyle=None, inStyle=None, targetProperties: list = None, **kwargs):
+                 moleculeSpecifics: dict = None, fixCell: bool = False, targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -52,7 +49,6 @@ class GULP_Interface:
         """
 
         self.tag = tag
-        self.tmp = f'tmp_{tag}'
         if ginput is None:
             ginput = pj(os.getcwd(), f'Specific/ginput_{tag}')
 
@@ -75,12 +71,8 @@ class GULP_Interface:
         else:
             self.moleculeSpecifics = {}
 
-        self.perturbate = perturbate
         self.fixCell = fixCell
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
-        self.environmentStyle = environmentStyle
-        self.inStyle = inStyle
 
         logger.debug('GULP calculator created.')
 
@@ -89,14 +81,7 @@ class GULP_Interface:
 
         """
 
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle,
-                                                                       vacuumSize=self.vacuumSize)
-        system[self.tmp]['disassembler'] = disassembler
-
-        if self.perturbate:
-            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+        structure = system['structure']
 
         files_to_delete = ['output', 'optimized.structure']
         for f in files_to_delete:
@@ -118,7 +103,7 @@ class GULP_Interface:
         # else:
 
         cell = structure.getCell()
-        system[self.tmp]['pbc'] = cell.getPBC()
+        system['pbc'] = cell.getPBC()
         lattice = type(cell)(cell.getCellVectors(), (1, 1, 1)).getCellParameters()
 
         content_to_write = ''
@@ -159,7 +144,7 @@ class GULP_Interface:
                               tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
                                                                precision=6) for c in coord)
             if cell.dim == 2:
-                if i in disassembler.fixedIndices:
+                if i in system['disassembler'].fixedIndices:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 1 1 1\n' % tuple_to_format
                 else:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 0 0 0\n' % tuple_to_format
@@ -179,6 +164,8 @@ class GULP_Interface:
                 shutil.copy(lib, calcFolder)
 
         logger.debug('GULP calculator prepared calculation.')
+
+        return ''
 
     def isConverged(self, calcFolder : str):
         """
@@ -219,21 +206,22 @@ class GULP_Interface:
         with open(pj(calcFolder, self.outputFile), 'rt') as f:
             content = f.readlines()
 
+        results = {}
         if 'structure' in self.targetProperties:
-            structure = self.readStructure(content, system[self.tmp].pop('pbc'))
-            usp(system, system[self.tmp].pop('disassembler').disassemble(structure), 'system', self.environmentStyle)
+            results['structure'] = self.readStructure(content, system.pop('pbc'))
         if 'enthalpy' in self.targetProperties:
-            usp(system, self.readEnergy(content), 'enthalpy', self.environmentStyle)
+            results['enthalpy'] = self.readEnergy(content)
         if 'stressTensor' in self.targetProperties:
-            usp(system, self.readStressTensor(content), 'stressTensor', self.environmentStyle)
+            results['stressTensor'] = self.readStressTensor(content)
         if 'strains' in self.targetProperties:
-            usp(system, self.readStrains(content), 'strains', self.environmentStyle)
+            results['strains'] = self.readStrains(content)
         if 'forces' in self.targetProperties:
-            usp(system, self.readForces(content, len(system['molecules'])), 'forces', self.environmentStyle)
+            results['forces'] = self.readForces(content, len(system['molecules']))
         if 'dielectricTensor' in self.targetProperties:
-            usp(system, self.readDielectricProperties(content), 'dielectricTensor', self.environmentStyle)
+            results['dielectricTensor'] = self.readDielectricProperties(content)
         if 'elasticConstants' in self.targetProperties:
-            usp(system, self.readElasticMatrix(content), 'elasticMatrix', self.environmentStyle)
+            results['elasticMatrix'] = self.readElasticMatrix(content)
+        return results
 
     def readStructure(self, content, pbc):
         # This routine is to read crystal structure from GULP output

@@ -9,6 +9,8 @@ def compileParams(main: dict) -> dict:
     for i, stage in enumerate(stages):
         if 'tag' not in stage:
             stages[i]['tag'] = str(i+1)
+        if 'stageType' not in stage:
+            stage['stageType'] = 'atomistic'
 
     if 'optimizer' in main and 'target' in main['optimizer']:
         optimizer = main['optimizer']
@@ -26,9 +28,12 @@ def compileParams(main: dict) -> dict:
                 elementalSymbols.add(symbol)
             if molecules:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
-        selection = optimizer['selection']
-        if len(target['compositionSpace']['blocks']) > 1:
-            selection['globalParentsPool'] = True
+        if 'selection' in optimizer:
+            selection = optimizer['selection']
+            if len(target['compositionSpace']['blocks']) > 1:
+                selection['globalParentsPool'] = True
+            if 'optType' not in selection:
+                selection['optType'] = optimizer['optType']
         if 'bondUtility' not in target:
             target['bondUtility'] = {}
         if 'volumeType' not in target['bondUtility']:
@@ -38,8 +43,6 @@ def compileParams(main: dict) -> dict:
                 target['bondUtility']['volumeType'] = 0
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
-        if 'optType' not in selection:
-            selection['optType'] = optimizer['optType']
         if 'powderSpectrumAnalyzer' in target:
             target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(target['powderSpectrumAnalyzer'])
         if 'singleCrystalSpectrumAnalyzer' in target:

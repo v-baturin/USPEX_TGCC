@@ -17,8 +17,7 @@ import filecmp
 
 from os.path import join as pj
 
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from USPEX.components import AtomisticRepresentation, GULP_Interface
+from ....components import AtomisticRepresentation, GULP_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -32,15 +31,16 @@ class GULP_CalculatorTest(unittest.TestCase):
 
     def test_life(self):
 
-        gulp = GULP_Interface(tag='0', perturbate=False,
-                              goptions=pj(SPECIFICPATH, 'goptions'), ginput=pj(SPECIFICPATH, 'ginput_1'))
-        radialDistributionUtility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'])
+        gulp = GULP_Interface(tag='0', goptions=pj(SPECIFICPATH, 'goptions'), ginput=pj(SPECIFICPATH, 'ginput_1'))
 
         for ID in range(10):
-            system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
-            system['externalPressure'] = 100
-            system['ID'] = ID
-            system['tmp_0'] = {}
+            structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))
+            system = dict(
+                ID=ID,
+                structure=structure,
+                disassembler=AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))),
+                externalPressure=100
+            )
             os.mkdir(WORKPATH)
             gulp.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -52,10 +52,15 @@ class GULP_CalculatorTest(unittest.TestCase):
             self.assertTrue(match)
             folder = pj(GATHEREDPATH, 'output')
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-            gulp.readOutput(system, WORKPATH)
+            results = gulp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
-            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
+            structureRef = AtomisticRepresentation.readPOSCAR(pj(folder, f"system{system['ID']}.vasp"), (1, 1, 1))
+            cell = results['structure'].getCell()
+            cellRef = structureRef.getCell()
+            self.assertTrue(np.allclose(cell.getCellVectors(),
+                                        cellRef.getCellVectors()))
+            # self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(results['structure'].getCartesianCoordinates()),
+            #                             cellRef.getWrapedCartesianCoordinates(structureRef.getCartesianCoordinates())))
 
 
 class GULP_InterfaceTest(unittest.TestCase):
@@ -68,20 +73,21 @@ class GULP_InterfaceTest(unittest.TestCase):
                                    targetProperties=['structure', 'enthalpy', 'stressTensor', 'strains'])
         # with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
-        system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
-        molecules = np.arange(len(system['molecules'])).reshape((-1, 1))
-        system['tmp_1'] = dict(
-            pbc=system['cell'].getPBC(),
-            disassembler=AtomisticRepresentation.atomicDisassemblerType(molecules)
-        )
-        system['ID'] = 0
 
-        interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'gulp_test'))
-        self.assertTrue(np.isclose(system['enthalpy'], -645.80329121))
+        structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))
+        system = dict(
+            ID=ID,
+            structure=structure,
+            disassembler=AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))),
+            externalPressure=100,
+            pbc=(1, 1, 1)
+        )
+        results = interface.readOutput(system=system, calcFolder=pj(HOMEPATH, 'gulp_test'))
+        self.assertTrue(np.isclose(results['enthalpy'], -645.80329121))
         stress_ref = np.array([[-99.960848, 0.394719, -0.211383], [0.394719,  -100.008335,  0.019149], [-0.211383,  0.019149,  -100.271584]])
-        self.assertTrue(np.allclose(system['stressTensor'], stress_ref))
+        self.assertTrue(np.allclose(results['stressTensor'], stress_ref))
         strains_ref = np.array([0.012703, -0.031870, -0.039885, -0.000385, -0.008334, 0.182955])
-        self.assertTrue(np.allclose(system['strains'], strains_ref))
+        self.assertTrue(np.allclose(results['strains'], strains_ref))
 
     def test_read_energy(self):
          with open(pj(HOMEPATH, 'gulp_test', 'output_bad_1st_SCF'), 'rt') as f:

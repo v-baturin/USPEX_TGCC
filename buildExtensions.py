@@ -17,6 +17,7 @@ class build_uspex(build_ext):
 
 extensions = [
     Extension("USPEX.GlobalOptimizer", ["USPEX/GlobalOptimizer.py"]),
+    Extension("USPEX.ModelOptimizer", ["USPEX/ModelOptimizer.py"]),
     Extension("USPEX.Target", ["USPEX/Target.py"]),
     Extension("USPEX.SystemPool", ["USPEX/SystemPool.py"]),
     Extension("USPEX.Fitness", ["USPEX/Fitness.py"]),
@@ -96,6 +97,7 @@ setup(
             "Stages/__init__.py",
             "Stages/Connector.py",
             "Stages/Executor.py",
+            "Stages/AtomisticStage.py",
             "Stages/PopulationProcessor.py",
             "Stages/Interfaces/__init__.py",
             "Stages/Interfaces/ABINIT_Interface.py",

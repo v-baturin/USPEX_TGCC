@@ -88,11 +88,11 @@ class Executor(object):
             else:
                 shutil.rmtree(calcFolder, ignore_errors=True)
                 os.makedirs(calcFolder)
-                self._interface.prepareLocalCalculation(system, calcFolder)
+                args = self._interface.prepareLocalCalculation(system, calcFolder)
                 self._gatherData(calcFolder, ioType='input')
                 await self._connector.sync_l2r(calcFolder)
                 logger.info(f'System {ID} with tag {tag} will be submitted now.')
-                jobID = await self._taskManager.submit(self.commandExecutable, f'USPEX-{ID}S{tag}',
+                jobID = await self._taskManager.submit(f'{self.commandExecutable} {args}', f'USPEX-{ID}S{tag}',
                                                        self._interface.inputFile, self._interface.outputFile,
                                                        self._interface.errorFile, calcFolder)
                 self.submittedTasks[calcFolder] = jobID
@@ -109,7 +109,7 @@ class Executor(object):
 
             if self._interface.isConverged(calcFolder):
                 logger.debug('System converged. Proceeding update.')
-                self._interface.readOutput(system, calcFolder)
+                results = self._interface.readOutput(system, calcFolder)
                 logger.info(f'system {ID} with tag {tag} relaxation successful.')
                 if not self.keepFolders:
                     shutil.rmtree(calcFolder, ignore_errors=True)
@@ -117,6 +117,7 @@ class Executor(object):
         else:
             raise RuntimeError(f'Task failed {self._ATTEMPTS} times')
         self._gatherSystems(system, tag, ioType='output')
+        return results
 
     def _gatherSystems(self, system, tag : str, ioType : str):
         if self.gather:

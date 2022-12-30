@@ -22,7 +22,6 @@ class FHIaims_Interface:
     structureType = None
     atomType = None
     cellType = None
-    atomicDisassemblerType = None
 
     inputFile, outputFile, errorFile = 'input', 'output', 'error'
     control_file = 'control.in'
@@ -31,17 +30,15 @@ class FHIaims_Interface:
     out_geometry_file = 'geometry.in.next_step'
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, structureType, atomType, cellType):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, tag: str, kresol: float = None, control: str = None, perturbate: bool = True, fixCell: bool = False,
-                 environmentStyle=None, inStyle=None, targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str, kresol: float = None, control: str = None, fixCell: bool = False,
+                 targetProperties: list = None, **kwargs):
 
         self.tag = tag
-        self.tmp = f'tmp_{tag}'
         if control is None:
             control = pj(os.getcwd(), f'Specific/aims_control_{tag}')
 
@@ -52,23 +49,14 @@ class FHIaims_Interface:
 
         self.kPoints = KPoints(kresol) if kresol is not None else None
 
-        self.perturbate = perturbate
         self.fixCell = fixCell
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
-        self.environmentStyle = environmentStyle
-        self.inStyle = inStyle
 
     def prepareLocalCalculation(self, system, calcFolder : str):
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle)
-        system[self.tmp]['disassembler'] = disassembler
-
-        if self.perturbate:
-            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+        structure = system['structure']
 
         cell = structure.getCell()
-        system[self.tmp]['pbc'] = cell.getPBC()
+        system['pbc'] = cell.getPBC()
         with open(pj(calcFolder, self.inputFile), 'wt') as f:
             pass
 
@@ -97,12 +85,14 @@ class FHIaims_Interface:
                 if self.fixCell:
                     fp.write('constrain_relaxation .true.\n')
 
-            fixedIndices = disassembler.envIndices[
+            fixedIndices = system['disassembler'].envIndices[
                 system['environment'].getFixedIndices()] if 'environment' in system else []
             for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
                 fp.write('atom  {1:15.8f} {2:15.8f} {3:15.8f} {0:2s}\n'.format(symbol.short_name, *coord))
                 if i in fixedIndices:
                     fp.write('constrain_relaxation .true.\n')
+
+        return ''
 
     def isConverged(self, calcFolder : str):
         if not os.path.exists(pj(calcFolder, self.outputFile)):
@@ -128,21 +118,22 @@ class FHIaims_Interface:
         # and FHI finishes without changing the relaxed structure, thus
         # geometry.in.next_step won't be created.
 
+        results = {}
         if 'structure' in self.targetProperties:
             geometry_file = pj(calcFolder, self.out_geometry_file)
             if not os.path.exists(geometry_file):
                 shutil.copy(pj(calcFolder, self.geometry_file), geometry_file)
             with open(geometry_file,'r') as f:
                 content = f.read()
-            structure = self.readStructure(content, system[self.tmp].pop('pbc'))
-            usp(system, system[self.tmp].pop('disassembler').disassemble(structure), 'system', self.environmentStyle)
+            results['structure'] = self.readStructure(content, system.pop('pbc'))
         if 'enthalpy' in self.targetProperties:
             with open(pj(calcFolder, self.outputFile), 'r') as f:
                 content = f.readlines()
             for line in content:
                 if 'Total energy corrected' in line:
-                    usp(system, float(line.split()[5]), 'enthalpy', self.environmentStyle)
+                    results['enthalpy'] = float(line.split()[5])
                     break
+        return results
 
     def readStructure(self, content, pbc):
         content_list = content.split('\n')

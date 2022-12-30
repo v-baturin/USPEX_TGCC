@@ -3,16 +3,23 @@ import asyncio
 import pickle as pcl
 import os
 from shutil import copyfile
-from copy import deepcopy
+from copy import deepcopy, copy
 
 
 logger = logging.getLogger(__name__)
 
 
 class PopulationProcessor:
-    def __init__(self, tag, stages, inputKey, numParallelCalcs, systems=None, checkCallback=None):
+
+    stages = None
+
+    @classmethod
+    def setStages(cls, stagesType):
+        cls.stages = stagesType
+
+    def __init__(self, tag, stages, inputKey, numParallelCalcs, systems=None, checkCallback=None, **kwargs):
         self.tag = tag
-        self.stages = stages
+        self.stages = [self.stages.createStage(**stage) for stage in stages]
         self.inputKey = inputKey
         self.numParallelCalcs = numParallelCalcs
         self.systems = systems
@@ -20,9 +27,15 @@ class PopulationProcessor:
 
     async def run(self, system):
         population = system[self.inputKey]
+        for i, subsystem in enumerate(population):
+            if 'ID' not in subsystem:
+                subsystem['ID'] = f'{system["ID"]}_{i}'
         populationDump = PopulationDump.load(system['ID'], self.tag, population)
         sem = asyncio.Semaphore(self.numParallelCalcs)
-        return await asyncio.gather(*(self.life(system, populationDump, sem) for system in population))
+        population = await asyncio.gather(*(self.life(system, populationDump, sem) for system in population))
+        system = copy(system)
+        system[self.inputKey] = population
+        return system
 
     async def life(self, system, populationDump, sem):
         await sem.acquire()
@@ -38,9 +51,7 @@ class PopulationProcessor:
                 system.update(processedSystems[i + 1])
             else:
                 try:
-                    system[f'tmp_{stage.tag}'] = {}
-                    await stage.run(system)
-                    del system[f'tmp_{stage.tag}']
+                    system = await stage.run(system)
                 except Exception as ex:
                     logger.warning(f'system {ID} error in relaxation:')
                     logger.exception(ex)
@@ -55,6 +66,7 @@ class PopulationProcessor:
                 self.systems[ID].append(processedSystems[i+1])
             populationDump.save()
         sem.release()
+        return system
 
 
 class PopulationDump:
