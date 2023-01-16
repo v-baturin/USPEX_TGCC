@@ -1081,7 +1081,13 @@ class Cell:
         pbcSum = len(pbcVectorsCart)
         transVec = np.dot(np.random.rand(pbcSum), pbcVectorsCart)
         if pbcSum == 0:
-            rotMatrix = Rotation.random().as_matrix()
+            dir = Rotation.random().as_rotvec()
+            norm = np.linalg.norm(dir)
+            dir /= norm
+            refMatrix = np.eye(3)
+            if norm > np.pi:
+                refMatrix -= 2.0 * np.outer(dir, dir)
+            rotMatrix = refMatrix.dot(Rotation.random().as_matrix())
         elif pbcSum == 1:
             axis = pbcVectorsCart[0]
             rotVec = np.pi * np.random.random() * axis / np.linalg.norm(axis)
