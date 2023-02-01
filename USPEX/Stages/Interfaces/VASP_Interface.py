@@ -128,8 +128,8 @@ class VASP_Interface:
         if os.path.exists(pj(calcFolder, 'POTCAR')):
             os.remove(pj(calcFolder, 'POTCAR'))
 
-        for atomType in (lambda a, i: a[np.argsort(i)])(*np.unique(structure.getAtomTypes(), return_index=True)):
-            potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType.short_name}')
+        for atomType in np.unique([el.short_name for el in structure.getAtomTypes()]):
+            potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType}')
             os.system(f'cat {potcarPath} >>  {calcFolder}/POTCAR ')
 
         ############################# KPOINTS #################################
