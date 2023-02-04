@@ -1147,4 +1147,7 @@ class Cell:
         """
         coordinates = np.asarray(coordinates, dtype=float)
         coordinates = coordinates - coordinates.mean(axis=0)
-        return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
+        val, vectors = np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
+        if np.linalg.det(vectors) < 0:
+            vectors[:, -1] = - vectors[:, -1]
+        return val, vectors
