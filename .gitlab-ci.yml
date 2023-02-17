@@ -17,44 +17,37 @@ cache:
 #  image: $CI_REGISTRY/uspex_python/thirdparty:master
 #  stage: test_phase1
 #  script:
-#    - cd ./USPEX
+#    - cd USPEX
 #    - nosetests -v .
 
-build_extensions:
+build_whl38:
   image: python:3.8
   stage: build_phase1
   script:
-    - pip install cython build
-    - mkdir build
+    - pip install build
     - find ./USPEX -type d -name "*unittests*" | xargs rm -r
-    - python buildExtensions.py build_uspex -b ./BuildExt38
-    - cp -r ./BuildExt38/* build/
-    - cp pyproject.toml build/
-    - cp setup.py build/
-    - cd build
     - python -m build --wheel
-    - cd dist
   artifacts:
     paths:
-      - BuildExt38
-      - build/dist
+      - dist
     expire_in: 1 mos 1 day
 
 test_binaries:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase2
   script:
-    - mkdir unittests
-    - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./unittests/$(dirname {}) && mv {} ./unittests/$(dirname {})'
-    - cp -r ./unittests/* ./BuildExt38/
-    - cd ./BuildExt38/USPEX
+    - mkdir binaries
+    - cd binaries
+    - unzip ../dist/USPEX-*-cp38-cp38-linux_x86_64.whl
+    - cd USPEX
+    - find ../../USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./$(dirname {}) && mv {} ./$(dirname {})'
     - nosetests -v .
 
 test_package:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase3
   script:
-    - pip install build/dist/USPEX-*-cp38-cp38-linux_x86_64.whl
+    - pip install dist/USPEX-*-cp38-cp38-linux_x86_64.whl
     - cd testFolder
     - uspex -r
   artifacts:
@@ -65,7 +58,7 @@ build_documentation:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: build_phase3
   script:
-    - pip install build/dist/USPEX-*-cp38-cp38-linux_x86_64.whl
+    - pip install dist/USPEX-*-cp38-cp38-linux_x86_64.whl
     - sphinx-build -b html sphinx build_docs
   artifacts:
     paths:
@@ -76,35 +69,21 @@ build_whl39:
   image: python:3.9
   stage: build_phase3
   script:
-    - pip install cython build
-    - mkdir build
+    - pip install build
     - find ./USPEX -type d -name "*unittests*" | xargs rm -r
-    - python buildExtensions.py build_uspex -b ./BuildExt39
-    - cp -r ./BuildExt39/* build/
-    - cp pyproject.toml build/
-    - cp setup.py build/
-    - cd build
     - python -m build --wheel
-    - cd dist
   artifacts:
     paths:
-      - build/dist
+      - dist
 
 build_whl310:
   image: python:3.10
   stage: build_phase3
   script:
-    - pip install cython build
-    - mkdir build
+    - pip install build
     - find ./USPEX -type d -name "*unittests*" | xargs rm -r
-    - python buildExtensions.py build_uspex -b ./BuildExt310
-    - cp -r ./BuildExt310/* build/
-    - cp pyproject.toml build/
-    - cp setup.py build/
-    - cd build
     - python -m build --wheel
-    - cd dist
   artifacts:
     paths:
-      - build/dist
+      - dist
 
