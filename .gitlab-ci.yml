@@ -20,7 +20,7 @@ build_extensions:
   image: python:3.8
   stage: build_phase1
   script:
-    - pip install cython build
+    - pip install cython build wheel
     - mkdir unittests
     - mkdir build
     - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./unittests/$(dirname {}) && mv {} ./unittests/$(dirname {})'
