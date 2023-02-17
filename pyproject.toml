@@ -10,3 +10,6 @@ dynamic = ["version"]
 
 [project.scripts]
 uspex="USPEX.main:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "USPEX.__version__"}
