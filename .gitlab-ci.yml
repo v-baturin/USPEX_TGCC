@@ -6,6 +6,9 @@ stages:
   - test_phase3
   - build_phase3
 
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
 test_sources:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase1
@@ -14,12 +17,17 @@ test_sources:
     - nosetests -v .
 
 build_extensions:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
+  image: python:3.8
   stage: build_phase1
   script:
+    - pip install cython flit
     - mkdir unittests
     - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./unittests/$(dirname {}) && mv {} ./unittests/$(dirname {})'
     - python buildExtensions.py build_uspex -b ./BuildExt
+  cache:
+    paths:
+      - .cache/pip
+
   artifacts:
     paths:
       - BuildExt
