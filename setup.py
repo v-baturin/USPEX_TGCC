@@ -1,14 +1,5 @@
 from setuptools import Extension, setup
 from Cython.Build import cythonize
-try:
-    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-    class bdist_wheel(_bdist_wheel):
-        def finalize_options(self):
-            super().finalize_options()
-            self.root_is_pure = False
-except ImportError:
-    bdist_wheel = None
-
 
 extensions = [
     Extension("USPEX.GlobalOptimizer", ["USPEX/GlobalOptimizer.py"]),
@@ -126,8 +117,6 @@ data = [
 
 setup(
     packages=["USPEX"],
-    package_dir={"USPEX": "USPEX/."},
     package_data={"USPEX": data},
     ext_modules=cythonize(extensions, language_level=3),
-    cmdclass={'bdist_wheel': bdist_wheel},
 )
