@@ -40,9 +40,7 @@ test_binaries:
   script:
     - pip install nose
     - pip install ase pymatgen abipy asyncssh pandas scikit-learn prettytable parsec pyxtal torch
-    - mkdir binaries && cd binaries
-    - unzip ../dist/USPEX-*-cp38-cp38-linux_x86_64.whl
-    - cd ../
+    - mkdir binaries && unzip ../dist/USPEX-*-cp38-cp38-linux_x86_64.whl -d binaries
     - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./binaries/$(dirname {}) && mv {} ./binaries/$(dirname {})'
     - cd binaries/USPEX
     - nosetests -v .
