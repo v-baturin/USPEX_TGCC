@@ -9,53 +9,60 @@ stages:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-test_sources:
-  image: $CI_REGISTRY/uspex_python/thirdparty:master
-  stage: test_phase1
-  script:
-    - cd ./USPEX
-    - nosetests -v .
+#test_sources:
+#  image: $CI_REGISTRY/uspex_python/thirdparty:master
+#  stage: test_phase1
+#  script:
+#    - cd ./USPEX
+#    - nosetests -v .
 
 build_extensions:
   image: python:3.8
   stage: build_phase1
   script:
-    - pip install cython flit
+    - pip install cython build
     - mkdir unittests
+    - mkdir build
     - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./unittests/$(dirname {}) && mv {} ./unittests/$(dirname {})'
-    - python buildExtensions.py build_uspex -b ./BuildExt
+    - python buildExtensions.py build_uspex -b ./BuildExt38
+    - cp -r ./BuildExt38/* build/
+    - cp pyproject.toml build/
+    - cp setup.py build/
+    - cd build
+    - python -m build --wheel
+    - cd dist
   cache:
     paths:
       - .cache/pip
-
   artifacts:
     paths:
-      - BuildExt
+      - BuildExt39
       - unittests
+      - build/dist
     expire_in: 1 mos 1 day
 
 test_binaries:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase2
   script:
-    - cp -r ./unittests/* ./BuildExt/
-    - cd ./BuildExt/USPEX
+    - cp -r ./unittests/* ./BuildExt38/
+    - cd ./BuildExt38/USPEX
     - nosetests -v .
 
-build_whl38:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
-  stage: build_phase2
-  script:
-    - mkdir build
-    - cp pyproject.toml build/
-    - cp -r ./BuildExt/* build/
-    - cd build
-    - flit build --format wheel
-    - cd dist
-    - rename  's/py3\-none\-any/cp38\-cp38\-linux_x86_64/' *.whl
-  artifacts:
-    paths:
-      - build/dist
+#build_whl38:
+#  image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
+#  stage: build_phase2
+#  script:
+#    - mkdir build
+#    - cp pyproject.toml build/
+#    - cp -r ./BuildExt/* build/
+#    - cd build
+#    - flit build --format wheel
+#    - cd dist
+#    - rename  's/py3\-none\-any/cp38\-cp38\-linux_x86_64/' *.whl
+#  artifacts:
+#    paths:
+#      - build/dist
 
 test_package:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
