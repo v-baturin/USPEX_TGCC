@@ -29,18 +29,18 @@ build_whl38:
     - python -m build --wheel
   artifacts:
     paths:
-      - dist
+      - dist/USPEX-*-cp38-cp38-linux_x86_64.whl
     expire_in: 1 mos 1 day
 
 test_binaries:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase2
   script:
-    - mkdir binaries
-    - cd binaries
+    - mkdir binaries && cd binaries
     - unzip ../dist/USPEX-*-cp38-cp38-linux_x86_64.whl
-    - cd USPEX
-    - find ../../USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./$(dirname {}) && mv {} ./$(dirname {})'
+    - cd ../
+    - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./binaries/$(dirname {}) && mv {} ./binaries/$(dirname {})'
+    - cd binaries/USPEX
     - nosetests -v .
 
 test_package:
@@ -74,7 +74,7 @@ build_whl39:
     - python -m build --wheel
   artifacts:
     paths:
-      - dist
+      - dist/USPEX-*-cp39-cp39-linux_x86_64.whl
 
 build_whl310:
   image: python:3.10
@@ -85,5 +85,5 @@ build_whl310:
     - python -m build --wheel
   artifacts:
     paths:
-      - dist
+      - dist/USPEX-*-cp310-cp310-linux_x86_64.whl
 
