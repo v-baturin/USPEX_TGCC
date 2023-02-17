@@ -20,7 +20,7 @@ build_extensions:
   image: python:3.8
   stage: build_phase1
   script:
-    - pip install cython build wheel
+    - pip install cython build
     - mkdir unittests
     - mkdir build
     - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./unittests/$(dirname {}) && mv {} ./unittests/$(dirname {})'
@@ -36,7 +36,7 @@ build_extensions:
       - .cache/pip
   artifacts:
     paths:
-      - BuildExt39
+      - BuildExt38
       - unittests
       - build/dist
     expire_in: 1 mos 1 day
