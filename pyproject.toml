@@ -1,11 +1,15 @@
-[tool.flit.metadata]
-module="USPEX"
-author="USPEX-TEAM"
-author-email=""
-home-page="https://uspex-team.org"
-dist-name="USPEX"
-requires-python=">=3.8"
-requires = ["ase", "pymatgen", "abipy", "asyncssh", "pandas", "scikit-learn", "prettytable", "parsec", "pyxtal", "torch"]
+[build-system]
+requires = ["setuptools", "setuptools-scm", "cython"]
+build-backend = "setuptools.build_meta"
 
-[tool.flit.scripts]
+[project]
+name = "USPEX"
+requires-python = ">=3.8"
+dependencies = ["ase", "pymatgen", "abipy", "asyncssh", "pandas", "scikit-learn", "prettytable", "parsec", "pyxtal", "torch"]
+dynamic = ["version"]
+
+[project.scripts]
 uspex="USPEX.main:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "USPEX.__version__"}
