@@ -15,7 +15,7 @@ from sklearn.decomposition import PCA
 
 from .ConvexHull import ConvexHull
 from .paretoRanking import paretoRanking
-from .Presets import presetFitness
+from ..Presets import presetFitness
 
 
 logger = logging.getLogger(__name__)

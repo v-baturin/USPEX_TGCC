@@ -15,10 +15,10 @@ from types import SimpleNamespace
 
 
 from ..Fitness import Fitness
-from ..components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation
-from ..Atomistic.AtomicPrimitives import AtomicStructure
-from ..Atomistic.RadialDistributionUtility import Fingerprint
-from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
+from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation
+from ...Atomistic.AtomicPrimitives import AtomicStructure
+from ...Atomistic.RadialDistributionUtility import Fingerprint
+from ...XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))

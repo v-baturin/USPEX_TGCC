@@ -2,13 +2,13 @@ from setuptools import Extension, setup
 from Cython.Build import cythonize
 
 extensions = [
-    Extension("USPEX.GlobalOptimizer", ["USPEX/GlobalOptimizer.py"]),
-    Extension("USPEX.ModelOptimizer", ["USPEX/ModelOptimizer.py"]),
-    Extension("USPEX.Target", ["USPEX/Target.py"]),
-    Extension("USPEX.SystemPool", ["USPEX/SystemPool.py"]),
-    Extension("USPEX.Fitness", ["USPEX/Fitness.py"]),
-    Extension("USPEX.ConvexHull", ["USPEX/ConvexHull.py"]),
-    Extension("USPEX.paretoRanking", ["USPEX/paretoRanking.py"]),
+    Extension("USPEX.Optimizers.GlobalOptimizer", ["USPEX/Optimizers/GlobalOptimizer.py"]),
+    Extension("USPEX.Optimizers.ModelOptimizer", ["USPEX/Optimizers/ModelOptimizer.py"]),
+    Extension("USPEX.Optimizers.Target", ["USPEX/Optimizers/Target.py"]),
+    Extension("USPEX.Optimizers.SystemPool", ["USPEX/Optimizers/SystemPool.py"]),
+    Extension("USPEX.Fitness.Fitness", ["USPEX/Fitness/Fitness.py"]),
+    Extension("USPEX.Fitness.ConvexHull", ["USPEX/Fitness/ConvexHull.py"]),
+    Extension("USPEX.Fitness.paretoRanking", ["USPEX/Fitness/paretoRanking.py"]),
     Extension("USPEX.Selection.USPEXClassic", ["USPEX/Selection/USPEXClassic.py"]),
     Extension("USPEX.Selection.Antiseeds", ["USPEX/Selection/Antiseeds.py"]),
     Extension("USPEX.SpaceGroups.SpaceGroups3D", ["USPEX/SpaceGroups/SpaceGroups3D.py"]),

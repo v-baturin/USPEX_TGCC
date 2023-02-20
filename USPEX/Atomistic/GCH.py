@@ -2,9 +2,9 @@ import logging
 import numpy as np
 import pandas as pd
 
-from ..ConvexHull import ConvexHull
-from ..Fitness import Fitness
-from ..SystemPool import SystemPool
+from ..Fitness.ConvexHull import ConvexHull
+from ..Fitness.Fitness import Fitness
+from ..Optimizers.SystemPool import SystemPool
 
 logger = logging.getLogger(__name__)
 # To which dimensionality we project our FP and consider
