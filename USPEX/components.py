@@ -3,8 +3,8 @@ from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-from .GlobalOptimizer import GlobalOptimizer
-from .Fitness import Fitness
+from .Optimizers.GlobalOptimizer import GlobalOptimizer
+from .Fitness.Fitness import Fitness
 GlobalOptimizer.setFitnessType(Fitness)
 from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
@@ -85,7 +85,7 @@ from .Stages.TaskManagers.SBATCH import SBATCH
 Executor.registerTaskManager('SBATCH', SBATCH)
 from .Stages.TaskManagers.SHELL import SHELL
 Executor.registerTaskManager('SHELL', SHELL)
-from .ModelOptimizer import ModelOptimizer, External
+from .Optimizers.ModelOptimizer import ModelOptimizer, External
 External.setExecutorType(Executor)
 ModelOptimizer.registerModel(External)
 ModelOptimizer.registerTarget('Atomistic',

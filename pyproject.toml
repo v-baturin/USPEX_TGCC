@@ -13,3 +13,15 @@ uspex="USPEX.main:main"
 
 [tool.setuptools.dynamic]
 version = {attr = "USPEX.__version__"}
+
+[tool.setuptools]
+packages = ['USPEX', 'USPEX.IO', 'USPEX.Stages', 'USPEX.Stages.Interfaces', 'USPEX.Stages.TaskManagers']
+include-package-data = false
+
+[tool.setuptools.package-data]
+"USPEX" = ["XRay/atomic_scattering_params.json","SpaceGroups/decompositions.json",
+    "Atomistic/model_hf73kd992kz.pt", "Atomistic/Operators/idealnets.json",
+    "Atomistic/Operators/symope/spacegroup/data/data_diperiodic.txt",
+    "Atomistic/Operators/symope/spacegroup/data/data_space.txt",
+    "Atomistic/Operators/symope/spacegroup/data/data_space2d.txt",
+    "Atomistic/Operators/symope/spacegroup/data/data_wyckoff.txt"]
