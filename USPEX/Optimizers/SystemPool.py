@@ -60,6 +60,7 @@ class SystemPool(object):
                 logger.debug('add new system %d to list of unique systems' % system['ID'])
                 uniqueIDs.append(system['ID'])
                 newGeneration['newSystems'].append(system)
+                self.allSystems[system['ID']] = system
         self.generations.append(newGeneration)
         self.uniqueSystems = tuple(chain.from_iterable(generation['newSystems'] for generation in self.generations))
 
