@@ -14,7 +14,6 @@ from os.path import join as pj
 from typing import List
 
 from .KPoints import KPoints, BadKPoints
-from ...Presets import udateSystemWithPrefix as usp
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208

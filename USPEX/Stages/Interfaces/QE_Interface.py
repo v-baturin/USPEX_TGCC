@@ -11,7 +11,6 @@ import numpy as np
 from pathlib import Path
 
 from .KPoints import KPoints, BadKPoints
-from ...Presets import udateSystemWithPrefix as usp
 
 logger = logging.getLogger(__name__)
 

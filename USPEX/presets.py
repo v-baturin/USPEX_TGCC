@@ -1,19 +1,3 @@
-from os.path import join, expanduser, exists, dirname
-from os import makedirs
-
-from .IO.InputParser import read
-
-
-def udateSystemWithPrefix(system, data, property, prefix):
-    if prefix is None:
-        if property == 'system':
-            system.update(data)
-        else:
-            system[property] = data
-    else:
-        system[f'{prefix}.{property}'] = data
-
-
 presetFitness = {
     ('aging', 'values'): ('plus', 'values', ('multiply', ('minus', ('mean', 'values'), ('min', 'values')),
                                              'antiseeds.corrections')),
