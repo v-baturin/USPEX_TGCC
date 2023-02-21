@@ -6,9 +6,9 @@ from shutil import copyfile
 from copy import copy, deepcopy
 from enum import Enum
 
-from .IO.OutputRepresentation import OutputRepresentation
-from .IO.InputParser import read
-from .IO.compileParams import compileParams
+from ..IO.OutputRepresentation import OutputRepresentation
+from ..IO.InputParser import read
+from ..IO.compileParams import compileParams
 
 
 logger = logging.getLogger(__name__)

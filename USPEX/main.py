@@ -97,19 +97,15 @@ def main():
 
     # -------------------------------------------------------------------------------
 
-
     if args.uspex_run:
-        _run()
-
-def _run():
-    try:
-        from .components import GenerationController
-        asyncio.get_event_loop().run_until_complete(GenerationController.createController().run())
-    except Exception as ex:
-        logger.exception(ex)
-        exc_info = sys.exc_info()
-        raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
+        try:
+            from .components import GenerationController
+            asyncio.get_event_loop().run_until_complete(GenerationController.createController().run())
+        except Exception as ex:
+            logger.exception(ex)
+            exc_info = sys.exc_info()
+            raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
 
 
 if __name__ == '__main__':
-    _run()
+    main()

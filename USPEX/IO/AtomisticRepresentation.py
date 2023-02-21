@@ -16,7 +16,7 @@ from prettytable import PrettyTable
 import matplotlib.pyplot as plt
 
 from .formatters import createHeader_wrap
-from ..Presets import presetFitness
+from ..presets import presetFitness
 
 matplotlib.use('Agg')
 

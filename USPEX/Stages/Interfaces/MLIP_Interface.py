@@ -11,8 +11,6 @@ import shutil
 import numpy as np
 from os.path import join as pj, basename as bn
 
-from ...Presets import udateSystemWithPrefix as usp
-
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1 / 160.21766208

@@ -99,7 +99,7 @@ ModelOptimizer.registerTarget('Atomistic',
 from .Stages.AtomisticStage import AtomisticStage
 AtomisticStage.registerTypes(Executor, AtomicDisassembler)
 from .Stages.PopulationProcessor import PopulationProcessor
-from .GenerationController import GenerationController
+from .Stages.GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 GenerationController.registerOptimizer(ModelOptimizer)
 from .Stages import Stages
