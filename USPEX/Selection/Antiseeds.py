@@ -2,7 +2,7 @@ import numpy as np
 from itertools import combinations
 
 ANTISEEDS_MAX = 0.005
-ANTISEEDS_SIGMA = 0.1
+ANTISEEDS_SIGMA = 0.001
 
 
 class Antiseeds:
