@@ -483,6 +483,16 @@ class Bulk:
         """
         return self._indices
 
+class Core:
+
+    class Assembler:
+        def __init__(self, structure):
+            # determine active centers + normal vectors self.activeCenters = [(xyz, normal), ...],
+            pass
+
+
+    pass
+
 
 class EnvironmentUtility:
     """
