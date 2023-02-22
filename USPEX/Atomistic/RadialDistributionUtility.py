@@ -19,7 +19,7 @@ RMAX_DEFAULT = 10.0
 SIGMA_DEFAULT = 0.03
 DELTA_DEFAULT = 0.08
 
-TOLERANCE_DEFAULT = 0.2
+TOLERANCE_DEFAULT = 0.008
 
 
 class Fingerprint(Mapping):
@@ -130,8 +130,8 @@ class ComplexFingerprint:
         for symbol in fingerprint1.symbols:
             if symbol in index1 and symbol in index2:
                 distMatrix = ComplexFingerprint.cosineDistance(fingerprint1.values[symbol], fingerprint2.values[symbol])
-                dist += (distMatrix.min(axis=0).sum() +
-                         distMatrix.min(axis=1).sum()) / 2
+                dist += (distMatrix.min(axis=0).mean() +
+                         distMatrix.min(axis=1).mean()) / 2
             elif symbol in index1 or symbol in index2:
                 dist += 0.5
         return dist

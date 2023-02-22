@@ -83,7 +83,7 @@ FunctionFolder/USPEX/3**/EA_3**.m
 class USPEXClassic(object):
 
     def __init__(self, pool, target, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
-                 initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 2.0, debug = False,
+                 initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False,
                  antiseeds: dict = None, globalParentsPool: bool = False, **kwargs):
         """
         :param target: reference to configuration space object
