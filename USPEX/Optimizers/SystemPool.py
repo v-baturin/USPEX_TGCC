@@ -21,27 +21,38 @@ class SystemPool(object):
     """
 
     def __init__(self):
-        self.uniqueSystems = ()
         self.allSystems = {}
         self.generations = []
         self._newID = 0
 
     def __copy__(self):
         other = SystemPool.__new__(SystemPool)
-        other.uniqueSystems = self.uniqueSystems
         other.allSystems = copy(self.allSystems)
         other.generations = copy(self.generations)
         other._newID = self._newID
         return other
 
-    def getUniqueIDs(self):
+    @property
+    def goodSystems(self):
+        return tuple(system for system in self.allSystems.values() if not system['isBad'])
+
+    @property
+    def goodSystemIDs(self):
+        return tuple(ID for ID, system in self.allSystems.items() if not system['isBad'])
+
+    @property
+    def uniqueSystems(self):
+        return tuple(system for system in self.allSystems.values() if 'originalID' not in system and not system['isBad'])
+
+    @property
+    def uniqueSystemIDs(self):
         """
         :return: list of IDs of unique structures.
         """
-        return [system['ID'] for system in self.uniqueSystems]
+        return tuple(ID for ID, system in self.allSystems.items() if 'originalID' not in system and not system['isBad'])
 
     def __hash__(self):
-        return hash(tuple(self.getUniqueIDs()))
+        return hash(self.uniqueSystemIDs)
 
     def update(self, population: list):
         """
@@ -51,28 +62,29 @@ class SystemPool(object):
 
         """
 
-        logger.debug('Updating target: list of unique systems.')
-        uniqueIDs = self.getUniqueIDs()
-        newGeneration = {'allSystems': [], 'newSystems': []}
         for system in population:
-            newGeneration['allSystems'].append(system)
-            if system['ID'] not in uniqueIDs:
-                logger.debug('add new system %d to list of unique systems' % system['ID'])
-                uniqueIDs.append(system['ID'])
-                newGeneration['newSystems'].append(system)
-                self.allSystems[system['ID']] = system
-        self.generations.append(newGeneration)
-        self.uniqueSystems = tuple(chain.from_iterable(generation['newSystems'] for generation in self.generations))
+            self.allSystems[system['ID']] = system
 
-    def updateFitness(self, fitness):
+    def append(self, population, fitness):
         """
         Inserts fitness object into last generation record.
 
         :param fitness: fitness object.
 
         """
-        assert 'fitness' not in self.generations[-1]
-        self.generations[-1]['fitness'] = fitness
+        logger.debug('Updating target: list of unique systems.')
+        IDs = set(system['ID'] for system in population)
+        newIDs = []
+        newGeneration = {'allSystems': [], 'newSystems': [], 'fitness': fitness}
+        for system in population:
+            original = self.allSystems[self.getOriginalID(system['ID'])]
+            if original['ID'] not in newIDs:
+                newGeneration['allSystems'].append(original)
+                newIDs.append(original['ID'])
+                if 'duplicates' not in original or set(original['duplicates']) <= IDs:
+                    logger.debug(f'add new system {system["ID"]} to list of unique systems')
+                    newGeneration['newSystems'].append(original)
+        self.generations.append(newGeneration)
 
     def assignID(self, system):
         """
@@ -83,6 +95,7 @@ class SystemPool(object):
 
         """
         system['ID'] = self._newID
+        system['isBad'] = True
         self._newID += 1
         self.allSystems[system['ID']] = system
 

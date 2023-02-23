@@ -42,6 +42,7 @@ def read_structures_and_energies(symbols, folder : str):
         enthalpy = float(tmp[_e+1])
         DATA.loc[i] = gen, ID, composition, enthalpy
         system['ID'] = ID
+        system['isBad'] = False
         system['enthalpy'] = enthalpy
         system['fingerprint'] = radialDistributionUtility.structureFingerprint(system)
 

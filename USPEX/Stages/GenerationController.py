@@ -107,7 +107,7 @@ class GenerationController(object):
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.populations.append(copy(self.population))
-                self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
+                # self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.updateOptimizer
                 self.save()
             if self.state is ControllerState.updateOptimizer:
