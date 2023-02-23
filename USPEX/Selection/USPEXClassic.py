@@ -134,11 +134,15 @@ class USPEXClassic(object):
             newStructures = self.pool.generations[-1]['newSystems']
             fitness = self.pool.generations[-1]['fitness']
             fronts = fitness.sort(population, fitness.getAllFitnesses(self.optType))
-            sortedPopulation = list(chain.from_iterable(fronts))
+            sortedPopulation = []
+            tournament = []
+            for i, front in enumerate(fronts):
+                sortedPopulation.extend(front)
+                tournament.extend([(len(fronts) - i) ** 2] * len(front))
 
-            howManyProliferate = int(np.ceil(self.bestFrac * len(sortedPopulation)))
+            howManyProliferate = int(np.ceil(self.bestFrac * self.popSize))
             parentsPool = sortedPopulation[:howManyProliferate]
-            tournament = [(i + 1.0) ** 2 for i in reversed(range(howManyProliferate))]
+            tournament = tournament[:howManyProliferate]
             tournament /= np.sum(tournament)
 
             if not self.globalParentsPool:
