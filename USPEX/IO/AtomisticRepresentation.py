@@ -809,7 +809,8 @@ class AtomisticRepresentation(object):
             plt.ylabel('Enthalpy of formation (eV/atom)')
             components = []
             for block in compositionSpace.blocks:
-                components.append(''.join(f'{symbol}{mult}' for symbol,mult in zip(compositionSpace.symbols, block)))
+                components.append(''.join(f'{symbol}{mult if mult != 1 else ""}' \
+                    for symbol, mult in zip(compositionSpace.symbols, block) if mult != 0))
             plt.xlabel(f'Composition ratio: {components[1]}/({components[0]}+{components[1]})')
             plt.savefig(pj(self.RES_FOLDER, 'ExtendedConvexHull.svg'))
             plt.close()
