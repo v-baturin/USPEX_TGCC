@@ -30,8 +30,8 @@ class Constraints:
             inds = disassembler.envIndices
             atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
         composition = self.simpleMoleculeUtility.composition(system)
-        goodStructure = np.all(atomDistances >= minDistMatrix) \
-                        and self.compositionSpace.isGoodComposition(composition) # and self.cellUtility.isGoodCell(cell)
+        goodStructure = np.all(atomDistances >= minDistMatrix)
+        # and self.compositionSpace.isGoodComposition(composition) # and self.cellUtility.isGoodCell(cell)
         if goodStructure:
             structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**system)
             goodStructure = goodStructure and self.bondUtiity.isConnected(structure)
