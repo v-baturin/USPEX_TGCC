@@ -14,6 +14,8 @@ from pymatgen.core.surface import SlabGenerator
 from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
+import alphashape
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_SUBSTRATE_GAP = 2.0
@@ -487,8 +489,32 @@ class Core:
 
     class Assembler:
         def __init__(self, structure):
-            # determine active centers + normal vectors self.activeCenters = [(xyz, normal), ...],
-            pass
+            self.structure = structure
+
+        def assemble(self, alpha, **kwargs):
+            return Core(self.structure, alpha)
+
+    def __init__(self, structure, alpha):
+        self.structure = structure
+        self.alpha = alpha
+
+
+    def _calc_active_sites(self):
+        # determine active centers + normal vectors self.activeCenters = [(xyz, normal), ...],
+        alphaShape = alphashape.alphashape(self.structure.getCartesianCoordinates(), self.alpha)
+        face_normals = np.empty(alphaShape.vertices.shape, dtype=float)
+        face_mountpoints = np.empty(alphaShape.vertices.shape, dtype=float)
+
+        # for triangle, face in zip(alphaShape.triangles, alphaShape.faces):
+        #
+        #     r0 = triangle[1] - triangle[0]
+        #     r1 = triangle[2] - triangle[1]
+
+
+
+
+
+        pass
 
 
     pass
@@ -507,7 +533,8 @@ class EnvironmentUtility:
     supportedEnvironments = {
         'interface': Interface,
         'substrate': Substrate,
-        'bulk': Bulk
+        'bulk': Bulk,
+        'core': Core
     }
    
 
