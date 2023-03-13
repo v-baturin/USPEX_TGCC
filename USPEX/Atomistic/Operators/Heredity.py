@@ -30,8 +30,8 @@ class Heredity:
         self.correlation = 0
 
     def tune(self, population, allFitnesses):
-        fitness = [allFitnesses[s['ID']] for s in population]
-        order = [self.radialDistributionUtility.averageOrder(system) for system in population]
+        fitness = [allFitnesses[s['ID']] for s in population if not s['isBad']]
+        order = [self.radialDistributionUtility.averageOrder(system) for system in population if not system['isBad']]
         self.correlation = np.corrcoef(order, fitness)[0,1]
         if np.isnan(self.correlation):
             self.correlation = 0

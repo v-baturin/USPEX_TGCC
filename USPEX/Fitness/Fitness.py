@@ -244,5 +244,5 @@ class Fitness:
         :rtype: list
         :return: sorted population.
         """
-        uniqueValues, ranking = np.unique([allFitnesses[s['ID']] for s in population], return_inverse=True)
+        uniqueValues, ranking = np.unique([allFitnesses[s['ID']] for s in population if not s['isBad']], return_inverse=True)
         return [[population[ind] for ind in (ranking == rank).nonzero()[0]] for rank in range(len(uniqueValues))]
