@@ -117,11 +117,11 @@ class GlobalOptimizer(object):
         :type population: list
         :param population: list of systems which allows to update our knowledge about target space.
         """
-        self._cleanDuplicates(population)
         self.pool.update(population)
-        self.fitness = self.Fitness.calculate(self.pool.uniqueSystems, self.optType,
+        self.fitness = self.Fitness.calculate(self.pool.goodSystems, self.optType,
                                               self.target.utilities, self.extraData)
-        self.pool.updateFitness(self.fitness)
+        self._markDuplicates(population)
+        self.pool.append(population, self.fitness)
         allFitnesses = self.fitness.getAllFitnesses(self.optType)
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
@@ -149,7 +149,7 @@ class GlobalOptimizer(object):
                     break
             self._isGoalReached = not stopSystems
 
-    def _cleanDuplicates(self, population: list):
+    def _markDuplicates(self, population: list):
         """
         Method for cleaning duplicates.
 
@@ -157,21 +157,33 @@ class GlobalOptimizer(object):
         :param population: list of systems which allows to update our knowledge about target space.
         """
         logger.info('Looking for duplicates.')
-        cleanedPopulation = []
+        population = [system for system in population if not system['isBad']]
+        assert population, 'All systems in population failed relaxation.'
         for system in population:
-            if not system['isBad']:
-                for ref_system in list(self.pool.uniqueSystems) + cleanedPopulation:
-                    if self.fingerprintUtility.equal(system, ref_system):
-                        logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
+            for i, ref_system in enumerate(self.pool.uniqueSystems):
+                if self.fingerprintUtility.equal(system, ref_system) and system['ID'] != ref_system['ID']:
+                    logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
+                    if self.fitness.getFitnessByID(self.optType, system['ID']) < \
+                            self.fitness.getFitnessByID(self.optType, ref_system['ID']):
+                        self.fingerprintUtility.clean(ref_system)
+                        ref_system['originalID'] = system['ID']
+                        if 'duplicates' in ref_system:
+                            system['duplicates'] = ref_system['duplicates']
+                            del ref_system['duplicates']
+                            for ID in system['duplicates']:
+                                self.pool.allSystems[ID]['originalID'] = system['ID']
+                            if ref_system['ID'] not in system['duplicates']:
+                                system['duplicates'].append(ref_system['ID'])
+                        else:
+                            system['duplicates'] = [ref_system['ID']]
+                    else:
                         self.fingerprintUtility.clean(system)
                         system['originalID'] = ref_system['ID']
-                        break
-                else:
-                    cleanedPopulation.append(system)
-
-        assert cleanedPopulation, 'All systems in population failed relaxation.'
-        population[:] = cleanedPopulation
-
+                        if 'duplicates' in ref_system and system['ID'] not in ref_system['duplicates']:
+                            ref_system['duplicates'].append(system['ID'])
+                        else:
+                            ref_system['duplicates'] = [system['ID']]
+                    break
 
     @property
     def isStable(self):
