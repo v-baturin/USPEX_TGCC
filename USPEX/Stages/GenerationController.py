@@ -57,7 +57,8 @@ class GenerationController(object):
         self.populationProcessor = self.populationProcessorType(tag='stages', stages=stages,
                                                                 inputKey='population',
                                                                 numParallelCalcs=numParallelCalcs,
-                                                                systems=self.systems)
+                                                                systems=self.systems,
+                                                                checkCallback=self.optimizer.target.constraints.systemCheckAndFix)
         self.save()
 
     @staticmethod
