@@ -934,7 +934,7 @@ class BondUtility_TestCheckConnectivity(unittest.TestCase):
         self.assertTrue(bonds.isConnected(system, cutoff='strong'))
 
     def test_vanderWaalsCutoff(self):
-        bonds = BondUtility()
+        bonds = BondUtility(cutoff='vdw')
         system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/P11H3_badstruct.POSCARS')
         self.assertFalse(bonds.isConnected(system))
 
