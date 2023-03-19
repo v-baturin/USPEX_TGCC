@@ -120,6 +120,8 @@ class GlobalOptimizer(object):
         self.pool.update(population)
         self.fitness = self.Fitness.calculate(self.pool.goodSystems, self.optType,
                                               self.target.utilities, self.extraData)
+        population = [system for system in population if not system['isBad']]
+        assert population, 'All systems in population failed relaxation.'
         self._markDuplicates(population)
         self.pool.append(population, self.fitness)
         allFitnesses = self.fitness.getAllFitnesses(self.optType)
@@ -157,8 +159,6 @@ class GlobalOptimizer(object):
         :param population: list of systems which allows to update our knowledge about target space.
         """
         logger.info('Looking for duplicates.')
-        population = [system for system in population if not system['isBad']]
-        assert population, 'All systems in population failed relaxation.'
         for system in population:
             for i, ref_system in enumerate(self.pool.uniqueSystems):
                 if self.fingerprintUtility.equal(system, ref_system) and system['ID'] != ref_system['ID']:
