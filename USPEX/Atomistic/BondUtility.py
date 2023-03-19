@@ -116,7 +116,7 @@ class BondUtility:
         cls.disassemblerType = disassemblerType
 
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
-                 cutoff: Union[str, Dict, float, int] = 'vdw', volumeType=0, ionDistances=None):
+                 cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, ionDistances=None):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
         self.maxBond = maxBond if maxBond is not None else MAX_BOND
         self.lowerBond = lowerBond if lowerBond is not None else LOWER_BOND
