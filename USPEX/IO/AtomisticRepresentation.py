@@ -82,11 +82,10 @@ class SystemsTable(object):
 
     def update(self, ID: int, system, fitness, rank=None):
         row = [ID, system['howCome']]
-        originalID = system['originalID'] if 'originalID' in system else ID
         if self.isRank:
             row.insert(1, rank)
         for column, columnName in self.columns:
-            value = fitness.getFitnessByID(column, originalID)
+            value = fitness.getFitnessByID(column, ID)
             if value is None:
                 try:
                     value = fitness.getFitnessDirect(column, system)
@@ -141,7 +140,7 @@ class AtomisticRepresentation(object):
                 content_enthalpies += ','.join([f"{sys['enthalpy']:6.3f}" for sys in system[1:]]) + '\n'
 
             if len(system) == numStages + 1:
-                table_Individuals.update(ID, optimizer.pool.allSystems[ID], optimizer.fitness)
+                table_Individuals.update(ID, system[-1], optimizer.fitness)
                 systems_gatheredPOSCARS.append(system[numStages])
 
         os.makedirs(self.RES_FOLDER, exist_ok=True)
