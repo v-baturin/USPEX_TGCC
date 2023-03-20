@@ -1,6 +1,7 @@
 from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from ..Atomistic.EnvironmentUtility import EnvironmentUtility
+from .AtomisticRepresentation import AtomisticRepresentation
 from .read_molecule import read_molecule
 
 
@@ -56,5 +57,8 @@ def compileParams(main: dict) -> dict:
         if 'environmentUtility' in target:
             for environmentDesciption in target['environmentUtility']['environments']:
                 environmentDesciption.update(EnvironmentUtility.build(**environmentDesciption))
+        if 'adsorbantUtility' in target:
+            for adsorbantDesciption in target['adsorbantUtility']['adsorbants']:
+                adsorbantDesciption.update(AtomisticRepresentation.readAtomicStructure(adsorbantDesciption['file']))
 
     return main

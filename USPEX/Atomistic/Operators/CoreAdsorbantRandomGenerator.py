@@ -15,6 +15,7 @@ class CoreAdsorbantRandomGenerator:
     def __call__(self, *args, **kwargs):
         # Choice of active centers
         # Reorienting adsorbants according to chosen active centers in core
+
         pass
 
 # Code for development purposes ****
