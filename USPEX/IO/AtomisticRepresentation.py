@@ -383,13 +383,11 @@ class AtomisticRepresentation(object):
 
     @classmethod
     def readXYZs(cls, filename):
+        all_atoms = read(filename, index=':', format='xyz')
         all_systems = []
-        with open(filename, 'rt') as f:
-            while True:
-                try:
-                    all_systems.append(AtomisticRepresentation.readXYZ(f))
-                except Exception:
-                    break
+        for atoms in all_atoms:
+            all_systems.append(cls.structureType([cls.atomType(s) for s in atoms.get_chemical_symbols()],
+                                                 atoms.get_positions()))
         return all_systems
 
     @classmethod

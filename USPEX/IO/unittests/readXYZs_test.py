@@ -12,7 +12,6 @@ class ReadXYZs_Test(unittest.TestCase):
     def test_read_xyzs(self):
         structures = AtomisticRepresentation.readXYZs(pj(HOMEPATH, 'several_structures.xyz'))
         self.assertEqual(len(structures), 7)
-
         for structure in structures:
             self.assertEqual(len(structure), 40)
 
