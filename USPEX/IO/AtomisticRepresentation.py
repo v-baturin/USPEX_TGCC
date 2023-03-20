@@ -9,6 +9,7 @@ from collections.abc import Mapping
 from itertools import combinations, chain
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
+from ase.io import read, write
 from os.path import join as pj
 from pathlib import Path
 import yaml
@@ -368,6 +369,25 @@ class AtomisticRepresentation(object):
             while True:
                 try:
                     all_systems.append(AtomisticRepresentation.readPOSCAR(f))
+                except Exception:
+                    break
+        return all_systems
+
+
+    @classmethod
+    def readXYZ(cls, filename):
+        atoms = read(filename, format='xyz')
+        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
+        coordinates = atoms.get_positions()
+        return cls.structureType(atomTypes, coordinates)
+
+    @classmethod
+    def readXYZs(cls, filename):
+        all_systems = []
+        with open(filename, 'rt') as f:
+            while True:
+                try:
+                    all_systems.append(AtomisticRepresentation.readXYZ(f))
                 except Exception:
                     break
         return all_systems
