@@ -316,6 +316,12 @@ class AtomisticRepresentation(object):
             shutil.copyfileobj(content, f)
 
     @classmethod
+    def writeXYZ(cls, filename, structure, label=''):
+        coordinates = structure.getCartesianCoordinates()
+        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=None)
+        write(filename, atoms, format='xyz', comment=label)
+
+    @classmethod
     def writeAtomicStructure(cls, filename, system: dict):
         cls.writeAtomicStructures(filename, [system])
 
