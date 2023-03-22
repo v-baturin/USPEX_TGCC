@@ -57,7 +57,8 @@ class GenerationController(object):
         self.populationProcessor = self.populationProcessorType(tag='stages', stages=stages,
                                                                 inputKey='population',
                                                                 numParallelCalcs=numParallelCalcs,
-                                                                systems=self.systems)
+                                                                systems=self.systems,
+                                                                checkCallback=self.optimizer.target.constraints.systemCheckAndFix)
         self.save()
 
     @staticmethod
@@ -130,9 +131,14 @@ class GenerationController(object):
         logger.info('Calculation finished.')
 
     async def presentSystems(self):
+        n = self.outputRefreshDelay
         while self.doPresentSystems:
-            await asyncio.sleep(self.outputRefreshDelay)
-            self.outputRepresentation.presentSystems(self.systems, self.optimizer)
+            n -= 1
+            if n < 0:
+                self.outputRepresentation.presentSystems(self.systems, self.optimizer)
+                n = self.outputRefreshDelay
+            await asyncio.sleep(1)
+        self.outputRepresentation.presentSystems(self.systems, self.optimizer)
 
     def save(self):
         if os.path.exists(GenerationController.DUMP_FILENAME):
