@@ -19,15 +19,24 @@ def compileParams(main: dict) -> dict:
         target = optimizer['target']
         symbols = target['compositionSpace']['symbols']
         molecules = {}
+        adsorbants = {}
         elementalSymbols = set()
         for i, symbol in enumerate(symbols):
-            if isinstance(symbol, dict):
+            if not isinstance(symbol, dict):
+                elementalSymbols.add(symbol)
+            elif 'type' in symbol:
+                symbol['structure'] = AtomisticRepresentation.readXYZ(symbol.pop(['filename']))
+                adsorbants[symbol['name']] = symbol
+
+            else:
                 molDct = read_molecule(symbol['filename'])
                 molecules[symbol['name']] = molDct
                 symbols[i] = symbol['name']
                 elementalSymbols |= set(molDct['symbols'])
-            else:
-                elementalSymbols.add(symbol)
+
+            if adsorbants:
+                target['adsorbantUtility'] = {'adsorbants': adsorbants}
+
             if molecules:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
         if 'selection' in optimizer:
@@ -57,8 +66,6 @@ def compileParams(main: dict) -> dict:
         if 'environmentUtility' in target:
             for environmentDesciption in target['environmentUtility']['environments']:
                 environmentDesciption.update(EnvironmentUtility.build(**environmentDesciption))
-        if 'adsorbantUtility' in target:
-            for adsorbantDesciption in target['adsorbantUtility']['adsorbants']:
-                adsorbantDesciption.update(AtomisticRepresentation.readAtomicStructure(adsorbantDesciption['file']))
+
 
     return main
