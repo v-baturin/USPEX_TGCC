@@ -1,5 +1,6 @@
 import logging
 logger = logging.getLogger(__name__)
+import numpy as np
 
 
 class CoreAdsorbantRandomGenerator:
@@ -9,12 +10,18 @@ class CoreAdsorbantRandomGenerator:
         self.adsorbantUtility = utilities.AdsorbantUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
+        self.compositionSpace = utilities.compositionSpace
         if debug:
             logger.setLevel(logging.DEBUG)
 
     def __call__(self, *args, **kwargs):
         # Choice of active centers
         # Reorienting adsorbants according to chosen active centers in core
+        composition = self.compositionSpace.randomComposition()  # {symbol : numbers, ...}
+        np_core = np.random.choice(self.environmentUtility.assemblers)
+        for ads_type, ads_no in composition.items():
+            pass
+
 
         pass
 
