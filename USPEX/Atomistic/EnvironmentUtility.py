@@ -485,36 +485,50 @@ class Bulk:
         """
         return self._indices
 
-class Core:
+class NanoparticleCore:
 
     class Assembler:
         def __init__(self, structure):
             self.structure = structure
+            self.links = {}
 
         def assemble(self, alpha, **kwargs):
-            return Core(self.structure, alpha)
+            return NanoparticleCore(self.structure, alpha)
 
-    def __init__(self, structure, alpha):
+        def calc_alphashape_links(self, label, alpha=0.):
+            # determine active centers + normal vectors self.activeCenters = [(xyz, normal), ...],
+            if label not in self.links:
+                alpha_shape = alphashape.alphashape(self.structure.getCartesianCoordinates(), alpha)
+                self.links[label] = {'face_links': [{'mount_point': m, 'orientation': v}
+                                            for m, v in zip(alpha_shape.triangles_center, alpha_shape.face_normals)]}
+
+
+            face_normals = np.empty(alphaShape.vertices.shape, dtype=float)
+            face_mountpoints = np.empty(alphaShape.vertices.shape, dtype=float)
+
+            # for triangle, face in zip(alphaShape.triangles, alphaShape.faces):
+            #
+            #     r0 = triangle[1] - triangle[0]
+            #     r1 = triangle[2] - triangle[1]
+            return {}
+
+        @staticmethod
+        def build(filename, **kwargs):
+            structure = EnvironmentUtility.structureRepresentation.readXYZ(filename)
+            environment = dict(
+                structure=structure,
+            )
+            return environment
+
+
+
+    def __init__(self, structure, links):
         self.structure = structure
-        self.alpha = alpha
-
-
-    def _calc_active_sites(self):
-        # determine active centers + normal vectors self.activeCenters = [(xyz, normal), ...],
-        alphaShape = alphashape.alphashape(self.structure.getCartesianCoordinates(), self.alpha)
-        face_normals = np.empty(alphaShape.vertices.shape, dtype=float)
-        face_mountpoints = np.empty(alphaShape.vertices.shape, dtype=float)
-
-        # for triangle, face in zip(alphaShape.triangles, alphaShape.faces):
-        #
-        #     r0 = triangle[1] - triangle[0]
-        #     r1 = triangle[2] - triangle[1]
 
 
 
 
 
-        pass
 
 
     pass
@@ -534,7 +548,7 @@ class EnvironmentUtility:
         'interface': Interface,
         'substrate': Substrate,
         'bulk': Bulk,
-        'core': Core
+        'nanoparticle_core': NanoparticleCore
     }
    
 
