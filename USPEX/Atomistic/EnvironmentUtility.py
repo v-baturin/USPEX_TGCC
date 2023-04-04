@@ -490,27 +490,39 @@ class NanoparticleCore:
     class Assembler:
         def __init__(self, structure):
             self.structure = structure
-            self.links = {}
+            self.connectors = {}
 
         def assemble(self, alpha, **kwargs):
             return NanoparticleCore(self.structure, alpha)
 
-        def calc_alphashape_links(self, label, alpha=0.):
+        def getConnectors(self, whichConnectors):
+            if whichConnectors in self.connectors:
+                return self.connectors[whichConnectors]
+            elif hasattr(whichConnectors, 'label') and whichConnectors.label in ('FACE', 'EDGE', 'VERTEX'):
+                return self.calc_alphashape_connectors(whichConnectors)
+
+
+        def calc_alphashape_connectors(self, whichConnectors):
             # determine active centers + normal vectors self.activeCenters = [(xyz, normal), ...],
-            if label not in self.links:
-                alpha_shape = alphashape.alphashape(self.structure.getCartesianCoordinates(), alpha)
-                self.links[label] = {'face_links': [{'mount_point': m, 'orientation': v}
-                                            for m, v in zip(alpha_shape.triangles_center, alpha_shape.face_normals)]}
-
-
-            face_normals = np.empty(alphaShape.vertices.shape, dtype=float)
-            face_mountpoints = np.empty(alphaShape.vertices.shape, dtype=float)
-
-            # for triangle, face in zip(alphaShape.triangles, alphaShape.faces):
-            #
-            #     r0 = triangle[1] - triangle[0]
-            #     r1 = triangle[2] - triangle[1]
-            return {}
+            if whichConnectors.connectorParam is None:
+                alpha = 0.
+            else:
+                alpha = whichConnectors.connectorParam
+            alpha_shape = alphashape.alphashape(self.structure.getCartesianCoordinates(), alpha)
+            self.connectors[type(whichConnectors)("FACE", alpha)] =\
+                [{'mount_point': m, 'orientation': v}
+                 for m, v in zip(alpha_shape.triangles_center, alpha_shape.face_normals)]
+            self.connectors[type(whichConnectors)("VERTEX", alpha)] =\
+                [{'mount_point': m, 'orientation': v}
+                 for m, v in zip(alpha_shape.vertices, alpha_shape.vertex_normals)]
+            edge_normals = []
+            for adj_e, adj_f in zip(alpha_shape.face_adjacency_edges, alpha_shape.face_adjacency):
+                origin = 0.5 * (alpha_shape.vertices[adj_e[0]] + alpha_shape.vertices[adj_e[1]])
+                normal = alpha_shape.face_normals[adj_f[0]] + alpha_shape.face_normals[adj_f[1]]
+                normal /= np.linalg.norm(normal)
+                edge_normals.append({'mount_point': origin, 'orientation': normal})
+            self.connectors[type(whichConnectors)("EDGE", alpha)] = edge_normals
+            return self.connectors[whichConnectors]
 
         @staticmethod
         def build(filename, **kwargs):
