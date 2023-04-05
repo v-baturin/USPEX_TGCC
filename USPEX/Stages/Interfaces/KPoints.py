@@ -32,9 +32,10 @@ class KPoints(object):
 
         Kpoints = [int(x) for x in np.ceil(1.0 / (dist * self.Kresol))]
 
-        for i in range(len(pbc)):
-            if pbc[i] == 0:
-                Kpoints[i] = 1
+        if respect_pbc:
+            for i, c in enumerate(pbc):
+                if not c:
+                    Kpoints[i] = 1
 
         # if abs(system.dimension) == 2:  # force Kpoints = 1 in z direction
         #     Kpoints[2] = 1
