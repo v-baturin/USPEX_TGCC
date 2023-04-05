@@ -1,0 +1,40 @@
+{
+    optimizer : {
+        type : GlobalOptimizer
+        target: {
+            type: Atomistic
+            compositionSpace: {symbols: [mol_h2o] blocks: [[4]]}
+            seeds: {generations: [0] seedsFolders: ['./Seeds']}
+
+        }
+        optType: enthalpy
+        selection: {
+            type: USPEXClassic
+            popSize: 30
+            optType: (aging enthalpy)
+            fractions: {
+                heredity: (0.3 0.7 0.5)
+                softmodemutation: (0.2 0.5 0.3)
+                randSym: (0.1 0.5 0.1)
+                randTop: (0.1 0.5 0.1)
+            }
+        }
+    }
+    stages : [glp glp]
+    numParallelCalcs : 10
+    numGenerations : 40
+    stopCrit: 15
+}
+
+#define glp
+{
+    type : gulp
+    commandExecutable : gulp
+    ginput : './Specific/ginput'
+    goptions : './Specific/goptions'
+    libs : ['./Specific/dreiding.lib']
+}
+
+#define mol_h2o
+{filename: 'MOL_H2O'}
+
