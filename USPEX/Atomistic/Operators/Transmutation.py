@@ -37,7 +37,7 @@ class Transmutation:
                 excluded = []
                 for i, s in permutation:
                     excluded.append(i)
-                    position = molecules[i].getCenterOfMassCartesianCoordinates()
+                    position = molecules[i].getCenterOfMassFractionalCoordinates()
                     operation[0:3, 3] = position
                     if s in operations:
                         operations[s].append([[np.copy(operation)]])
