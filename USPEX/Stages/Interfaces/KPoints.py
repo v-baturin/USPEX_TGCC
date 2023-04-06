@@ -18,9 +18,10 @@ class KPoints(object):
         assert isinstance(Kresol, float)
         self.Kresol = Kresol
 
-    def build(self, cell):
+    def build(self, cell, respect_pbc: bool = True):
 
         #angLattice = latConverter(system.lattice)
+        pbc = cell.getPBC()
         cell = type(cell)(cell.getCellVectors(), (1,1,1))
         angLattice = cell.getCellParameters()
 
@@ -30,6 +31,11 @@ class KPoints(object):
         dist[0] = cell.getVolume() / (angLattice[1] * angLattice[2] * np.sin(angLattice[3]*np.pi/180))
 
         Kpoints = [int(x) for x in np.ceil(1.0 / (dist * self.Kresol))]
+
+        if respect_pbc:
+            for i, c in enumerate(pbc):
+                if not c:
+                    Kpoints[i] = 1
 
         # if abs(system.dimension) == 2:  # force Kpoints = 1 in z direction
         #     Kpoints[2] = 1
