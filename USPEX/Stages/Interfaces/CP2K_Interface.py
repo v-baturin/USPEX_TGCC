@@ -38,8 +38,10 @@ class CP2K_Interface:
     pressure_file = 'pressure.uspex'
     fixedIndices_file = 'fixed.uspex'
     atomIndices_file = '_list.uspex'
+    specific_file = 'cp2k_in_'
 
     out_geometry_file = 'USPEX-pos-1.xyz'
+    out_cell_file = 'USPEX-1.cell'
 
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType):
@@ -52,7 +54,7 @@ class CP2K_Interface:
 
         self.tag = tag
         if cp2k_in is None:
-            cp2k_in = pj(os.getcwd(), f'Specific/cp2k_in_{tag}')
+            cp2k_in = pj(os.getcwd(), f'Specific/{self.specific_file}{tag}')
 
         assert os.path.exists(cp2k_in)
 
@@ -154,19 +156,26 @@ class CP2K_Interface:
         cell = structure.getCell()
         pbc = cell.getPBC()
 
-        with open(pj(calcFolder, self.outputFile), 'rt') as f:
-            content = f.read()
-        if ' CELL| Volume' in content:
-            content_list = content.split('\n')
-            for line in content_list:
-                if ' CELL| Vector a' in line:
-                    lattice_a = [float(x) for x in line.split()[4:7]]
-                if ' CELL| Vector b' in line:
-                    lattice_b = [float(x) for x in line.split()[4:7]]
-                if ' CELL| Vector c' in line:
-                    lattice_c = [float(x) for x in line.split()[4:7]]
-            lat = np.array([lattice_a, lattice_b, lattice_c])
-            cell = self.cellType(lat, pbc)
+        if os.path.exists(pj(calcFolder, self.out_cell_file)):
+            with open(pj(calcFolder, self.out_cell_file), 'rt') as f:
+                content_list = f.readlines()
+                lattice = [float(x) for x in content_list[-1].split()[2:11]]
+                lat = np.array([lattice[0:3], lattice[3:6], lattice[6:9]])
+                cell = self.cellType(lat, pbc)
+        else:
+            with open(pj(calcFolder, self.outputFile), 'rt') as f:
+               content = f.read()
+            if ' CELL| Volume' in content:
+                content_list = content.split('\n')
+                for line in content_list:
+                    if ' CELL| Vector a' in line:
+                        lattice_a = [float(x) for x in line.split()[4:7]]
+                    if ' CELL| Vector b' in line:
+                        lattice_b = [float(x) for x in line.split()[4:7]]
+                    if ' CELL| Vector c' in line:
+                        lattice_c = [float(x) for x in line.split()[4:7]]
+                lat = np.array([lattice_a, lattice_b, lattice_c])
+                cell = self.cellType(lat, pbc)
 
         if os.path.exists(pj(calcFolder, self.out_geometry_file)):
             ase_struct = read(pj(calcFolder, self.out_geometry_file), index='-1')
