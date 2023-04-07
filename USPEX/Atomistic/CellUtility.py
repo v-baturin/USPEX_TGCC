@@ -334,13 +334,13 @@ class CellUtility:
                 thickness = 0
                 cellParameters[0:3] *= factor
             elif self._dim == 2:
-                a, b, alpha = cellParameters
+                a, b, alpha, axis = cellParameters
                 cell = Cell.initFromCellParameters(self._pbc, a, b, alpha, self._axis)
                 factor = np.sqrt((fraction * cell1.getArea() + (1 - fraction) * cell2.getArea()) / cell.getArea())
                 thickness = fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()
                 cellParameters = (a * factor, b * factor, alpha, self._axis)
             elif self._dim == 1:
-                a, = cellParameters
+                a, axis = cellParameters
                 cell = Cell.initFromCellParameters(self._pbc, a, self._axis)
                 factor = (fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()) / cell.getLength()
                 thickness = np.sqrt(fraction * cell1.getArea() + (1 - fraction) * cell2.getArea())
