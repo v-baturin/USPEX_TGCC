@@ -33,6 +33,5 @@ stopCrit: 6
 {
     type: nanoparticle_сore
     file: './Au-51-15.xyz'
-    connectors: [{(X, Y): [] }]
 }
  
