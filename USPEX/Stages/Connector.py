@@ -36,20 +36,21 @@ class SSHConnection(asyncssh.SSHClient):
 
 
 class SFTPSession:
-    def __init__(self, conn):
+    def __init__(self, conn, guard):
         self._conn = conn
+        self._guard = guard
         self._sftp = None
 
     async def start(self):
         assert self._sftp is None
-        await self._conn.channelGuard.acquire()
+        await self._guard.acquire()
         self._sftp = await self._conn.start_sftp_client()
 
     async def close(self):
         assert self._sftp is not None
         self._sftp.exit()
         await self._sftp.wait_closed()
-        self._conn.channelGuard.release()
+        self._guard.release()
         self._sftp = None
 
     async def remove(self, path : str):
@@ -259,6 +260,6 @@ class Connector(object):
 
     async def _start_sftp_session(self):
         await self._checkConnection()
-        sftp = SFTPSession(self.conn)
+        sftp = SFTPSession(self.conn, self.channelGuard)
         await sftp.start()
         return sftp
