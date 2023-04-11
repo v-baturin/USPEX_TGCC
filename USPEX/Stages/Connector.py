@@ -42,14 +42,14 @@ class SFTPSession:
 
     async def start(self):
         assert self._sftp is None
-        await self.conn.channelGuard.acquire()
+        await self._conn.channelGuard.acquire()
         self._sftp = await self._conn.start_sftp_client()
 
     async def close(self):
         assert self._sftp is not None
         self._sftp.exit()
         await self._sftp.wait_closed()
-        self.conn.channelGuard.release()
+        self._conn.channelGuard.release()
         self._sftp = None
 
     async def remove(self, path : str):
