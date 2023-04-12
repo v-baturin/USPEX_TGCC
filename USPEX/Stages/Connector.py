@@ -236,19 +236,22 @@ class Connector(object):
 
     async def _checkConnection(self):
         await self._lock.acquire()
-        if self.client is None or not self.client.isValid():
-            self.conn, self.client = await asyncssh.create_connection(SSHConnection, self._domain, **self._kwargs)
-        else:
-            try:
-                await self.channelGuard.acquire()
-                sftp = await self.conn.start_sftp_client()
-                await sftp.getcwd()
-                sftp.exit()
-                await sftp.wait_closed()
-                self.channelGuard.release()
-            except Exception:
-                logger.exception("Exception in checkConnection.")
-                await self._checkConnection()
+        doCheck = True
+        while doCheck:
+            if self.client is None or not self.client.isValid():
+                self.conn, self.client = await asyncssh.create_connection(SSHConnection, self._domain, **self._kwargs)
+            else:
+                try:
+                    await self.channelGuard.acquire()
+                    sftp = await self.conn.start_sftp_client()
+                    await sftp.getcwd()
+                    sftp.exit()
+                    await sftp.wait_closed()
+                    self.channelGuard.release()
+                except Exception:
+                    logger.exception("Exception in checkConnection.")
+                    continue
+            doCheck = False
         self._lock.release()
 
     async def _run(self, *args, **kwargs):
