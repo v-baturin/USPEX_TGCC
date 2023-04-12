@@ -28,7 +28,7 @@ class SSHConnectorClient(asyncssh.SSHClient):
         self._conn = None
         logger.debug('Connection lost')
         if self._callbackIfLost is not None:
-            self._callbackIfLost()
+            asyncio.ensure_future(self._callbackIfLost())
 
     def isValid(self):
         return self._conn is not None
@@ -238,28 +238,25 @@ class Connector(object):
             await sftp.remove(path)
             await sftp.close()
 
-    def _makeConnection(self):
-        self.conn, self.client = await asyncssh.create_connection(lambda: SSHConnectorClient(self._makeConnection),
-                                                                  self._domain, **self._kwargs)
-
     async def _checkConnection(self):
         await self._lock.acquire()
-        doCheck = True
-        while doCheck:
-            if self.client is None or not self.client.isValid():
-                self._makeConnection()
-            else:
-                try:
-                    await self.channelGuard.acquire()
-                    sftp = await self.conn.start_sftp_client()
-                    await sftp.getcwd()
-                    sftp.exit()
-                    await sftp.wait_closed()
-                    self.channelGuard.release()
-                except Exception:
-                    logger.exception("Exception in checkConnection.")
-                    continue
-            doCheck = False
+        if self.client is None or not self.client.isValid():
+            self.conn, self.client = await asyncssh.create_connection(lambda: SSHConnectorClient(self._checkConnection),
+                                                                      self._domain, **self._kwargs)
+        # doCheck = True
+        # while doCheck:
+        #     else:
+        #         try:
+        #             await self.channelGuard.acquire()
+        #             sftp = await self.conn.start_sftp_client()
+        #             await sftp.getcwd()
+        #             sftp.exit()
+        #             await sftp.wait_closed()
+        #             self.channelGuard.release()
+        #         except Exception:
+        #             logger.exception("Exception in checkConnection.")
+        #             continue
+        #     doCheck = False
         self._lock.release()
 
     async def _run(self, *args, **kwargs):
