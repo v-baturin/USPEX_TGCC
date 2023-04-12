@@ -15,10 +15,11 @@ logger = logging.getLogger(__name__)
 asyncssh.set_log_level(logging.WARNING)
 
 
-class SSHConnection(asyncssh.SSHClient):
+class SSHConnectorClient(asyncssh.SSHClient):
 
-    def __init__(self):
+    def __init__(self, callbackIfLost):
         self._conn = None
+        self._callbackIfLost = callbackIfLost
 
     def connection_made(self, connection):
         self._conn = connection
@@ -26,12 +27,15 @@ class SSHConnection(asyncssh.SSHClient):
     def connection_lost(self, exc):
         self._conn = None
         logger.debug('Connection lost')
+        if self._callbackIfLost is not None:
+            self._callbackIfLost()
 
     def isValid(self):
         return self._conn is not None
 
     def __del__(self):
         if self.isValid():
+            self._callbackIfLost = None
             self._conn.close()
 
 
@@ -234,12 +238,16 @@ class Connector(object):
             await sftp.remove(path)
             await sftp.close()
 
+    def _makeConnection(self):
+        self.conn, self.client = await asyncssh.create_connection(lambda: SSHConnectorClient(self._makeConnection),
+                                                                  self._domain, **self._kwargs)
+
     async def _checkConnection(self):
         await self._lock.acquire()
         doCheck = True
         while doCheck:
             if self.client is None or not self.client.isValid():
-                self.conn, self.client = await asyncssh.create_connection(SSHConnection, self._domain, **self._kwargs)
+                self._makeConnection()
             else:
                 try:
                     await self.channelGuard.acquire()
