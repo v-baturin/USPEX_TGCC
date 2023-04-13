@@ -142,6 +142,7 @@ class Connector(object):
         if self._domain is not None:
             sftp = await self._start_sftp_session()
             remote_path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
+            await sftp.makedirs(os.path.dirname(remote_path), exist_ok=True)
             await sftp.put(path, remote_path, recurse=True)
             await self._close_sftp_session(sftp)
 
