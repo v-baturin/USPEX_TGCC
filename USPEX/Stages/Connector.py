@@ -9,142 +9,35 @@ USPEX.Stages.Connector
 import logging
 import asyncio, asyncssh
 import os
+from copy import copy
 
 logger = logging.getLogger(__name__)
 asyncssh.set_log_level(logging.WARNING)
 
 
-class SSHConnection(asyncssh.SSHClient):
-    MAX_CHAN = 10
+class SSHConnectorClient(asyncssh.SSHClient):
 
-    def __init__(self, domain : str, lock = None, maxChannels = MAX_CHAN, **kwargs):
-        self._domain = domain
-        self._kwargs = kwargs
+    def __init__(self, callbackIfLost):
         self._conn = None
-        if lock is None:
-            self._lock = asyncio.Lock()
-        else:
-            self._lock = lock
-        self._maxChannels = maxChannels
-        self.channelGuard = asyncio.Semaphore(maxChannels)
-
-    ############################################
-    # Code responds for serialization
-    def __getstate__(self):
-        state = { }
-        state['_domain'] = self._domain
-        state['_kwargs'] = self._kwargs
-        state['_maxChannels'] = self._maxChannels
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__ = state
-        self._conn = None
-        self._lock = asyncio.Lock()
-        self.channelGuard = asyncio.Semaphore(self._maxChannels)
-    ############################################
+        self._callbackIfLost = callbackIfLost
 
     def connection_made(self, connection):
         self._conn = connection
+        self._conn.set_keepalive(30)
 
     def connection_lost(self, exc):
         self._conn = None
         logger.debug('Connection lost')
+        if self._callbackIfLost is not None:
+            asyncio.ensure_future(self._callbackIfLost())
+
+    def isValid(self):
+        return self._conn is not None
 
     def __del__(self):
-        if self._conn is not None:
+        if self.isValid():
+            self._callbackIfLost = None
             self._conn.close()
-
-    async def checkConnection(self):
-        await self._lock.acquire()
-        if self._conn is None:
-            clientFactory = lambda: SSHConnection(self._domain, lock=self._lock, **self._kwargs)
-            _, connection = await asyncssh.create_connection(clientFactory, self._domain, **self._kwargs)
-            self._lock.release()
-            return connection
-        else:
-            try:
-                await self.channelGuard.acquire()
-                sftp = await self._conn.start_sftp_client()
-                await sftp.getcwd()
-                sftp.exit()
-                await sftp.wait_closed()
-                self.channelGuard.release()
-                self._lock.release()
-                return self
-            except Exception:
-                logger.exception("Exception in checkConnection.")
-                self._lock.release()
-                return await self.checkConnection()
-
-    async def run(self, *args, **kwargs):
-        await self.channelGuard.acquire()
-        remote_result = await self._conn.run(*args, **kwargs)
-        self.channelGuard.release()
-        return remote_result
-
-    async def start_sftp_session(self):
-        await self.channelGuard.acquire()
-        return SFTPSession(self, await self._conn.start_sftp_client())
-
-
-class SFTPSession():
-    def __init__(self, conn, sftp):
-        self.conn = conn
-        self._sftp = sftp
-
-    def __del__(self):
-        if self._sftp is not None:
-            self._sftp.exit()
-            self.conn.channelGuard.release()
-
-    async def remove(self, path : str):
-        '''
-        :param path: path to directory
-        '''
-        if await self._sftp.exists(path):
-            if await self._sftp.isdir(path):
-                for name in await self.listdir(path):
-                    await self.remove(os.path.join(path,name))
-                await self._sftp.rmdir(path)
-            else:
-                await self._sftp.remove(path)
-
-    async def makedirs(self, path : str):
-        '''
-        :param path: path: path to directory
-        :return:
-        '''
-        if not await self._sftp.isdir(path):
-            try:
-                if await self._sftp.exists(path):
-                    await self._sftp.remove(path)
-                await self._sftp.mkdir(path)
-            except asyncssh.sftp.SFTPError:
-                head, tail = os.path.split(path)
-                await self.makedirs(head)
-                if tail != '.':
-                    await self._sftp.mkdir(path)
-
-
-    async def listdir(self, path : str) -> list:
-        '''
-        :param path: path to directory
-        '''
-        res = []
-        for name in await self._sftp.listdir(path):
-            if name != '.' and name != '..':
-                res.append(name)
-        return res
-
-    def __getattr__(self, item):
-        if item == '__setstate__':
-            raise AttributeError
-        if hasattr(self._sftp, item):
-            return getattr(self._sftp, item)
-        else:
-            raise AttributeError
-
 
 
 class Connector(object):
@@ -152,7 +45,9 @@ class Connector(object):
     Class that is a bridge between computer with USPEX and supercomputer for a ab-initio calculations.
     '''
 
-    def __init__(self, domain : str = None, remoteFolder : str = '~/USPEXRemoteFolder', **kwargs):
+    MAX_CHAN = 10
+
+    def __init__(self, domain: str = None, remoteFolder: str = '~/USPEXRemoteFolder', maxChannels=MAX_CHAN, **kwargs):
         '''
         :type domain: str
         :param domain: domain name or IP address of remote server.
@@ -168,12 +63,36 @@ class Connector(object):
         :param remoteFolder: path to working folder on remote server.
         '''
 
+        self._domain = domain
         if domain is None:
-            self.conn = None
             self.remoteFolder = None
         else:
-            self.conn = SSHConnection(domain, **kwargs)
             self.remoteFolder = remoteFolder
+        self._maxChannels = maxChannels
+        self._kwargs = kwargs
+
+        self.conn = None
+        self.client = None
+        self._lock = asyncio.Lock()
+        self.channelGuard = asyncio.Semaphore(self._maxChannels)
+
+    ############################################
+    # Code responds for serialization
+    def __getstate__(self):
+        state = copy(self.__dict__)
+        del state['_lock']
+        del state['channelGuard']
+        del state['conn']
+        del state['client']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.conn = None
+        self.client = None
+        self._lock = asyncio.Lock()
+        self.channelGuard = asyncio.Semaphore(self._maxChannels)
+    ############################################
 
     async def execute(self, execCommand : str, cwd : str = '.', **kwargs):
         '''
@@ -181,14 +100,13 @@ class Connector(object):
         :param execCommand:
         :return: exitcode, error, output
         '''
-        if self.conn is not None:
-            self.conn = await self.conn.checkConnection()
-            sftp = await self.conn.start_sftp_session()
+        if self._domain is not None:
+            sftp = await self._start_sftp_session()
             remote_cwd = os.path.join(self.remoteFolder, cwd).replace('~', await sftp.getcwd())
-            await sftp.makedirs(remote_cwd)
-            del sftp
+            await sftp.makedirs(remote_cwd, exist_ok=True)
+            await self._close_sftp_session(sftp)
             command = f"cd {remote_cwd} && {execCommand}"
-            remote_result = await self.conn.run(command, **kwargs)
+            remote_result = await self._run(command, **kwargs)
             return remote_result.returncode, remote_result.stdout, remote_result.stderr
         else:
             if 'stdin' not in kwargs:
@@ -221,39 +139,77 @@ class Connector(object):
         Local to remote
         :param path: path to directory
         '''
-        if self.conn is not None:
-            self.conn = await self.conn.checkConnection()
-            sftp = await self.conn.start_sftp_session()
-
+        if self._domain is not None:
+            sftp = await self._start_sftp_session()
             remote_path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
-            await sftp.remove(remote_path)
-            await sftp.makedirs(os.path.dirname(remote_path))
-            await sftp.put(path, remote_path, recurse = True)
+            await sftp.makedirs(os.path.dirname(remote_path), exist_ok=True)
+            await sftp.put(path, remote_path, recurse=True)
+            await self._close_sftp_session(sftp)
 
     async def sync_r2l(self, path : str):
         '''
         Remote to local
         :param path: path to directory
         '''
-        if self.conn is not None:
-            self.conn = await self.conn.checkConnection()
-            sftp = await self.conn.start_sftp_session()
-
+        if self._domain is not None:
+            sftp = await self._start_sftp_session()
             remote_path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
-            if not await sftp.isdir(remote_path):
-                await sftp.get(remote_path, path)
-            else:
-                filenames = await sftp.listdir(remote_path)
-                for filename in filenames:
-                    await sftp.get(os.path.join(remote_path, filename), os.path.join(path, filename), recurse = True)
+            local_path = os.path.dirname(path) if os.path.isdir(path) else path
+            await sftp.get(remote_path, local_path, recurse=True)
+            await self._close_sftp_session(sftp)
 
     async def clean(self, path : str):
         '''
         :param path: path to directory
         '''
-        if self.conn is not None:
-            self.conn = await self.conn.checkConnection()
-            sftp = await self.conn.start_sftp_session()
-
+        if self._domain is not None:
+            sftp = await self._start_sftp_session()
             path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
-            await sftp.remove(path)
+            await sftp.rmtree(path, ignore_errors=True)
+            await self._close_sftp_session(sftp)
+
+    async def _checkConnection(self):
+        await self._lock.acquire()
+        if self.client is None or not self.client.isValid():
+            self.conn, self.client = await asyncssh.create_connection(lambda: SSHConnectorClient(self._checkConnection),
+                                                                      self._domain, **self._kwargs)
+        self._lock.release()
+
+    async def _run(self, *args, **kwargs):
+        await self._checkConnection()
+        await self.channelGuard.acquire()
+        for i in range(10):
+            try:
+                remote_result = await self.conn.run(*args, **kwargs)
+            except Exception as e:
+                logger.debug(e)
+                await asyncio.sleep(10)
+                continue
+            break
+        else:
+            self.channelGuard.release()
+            raise RuntimeError('Cant run ssh command')
+        self.channelGuard.release()
+        return remote_result
+
+    async def _start_sftp_session(self):
+        await self._checkConnection()
+        await self.channelGuard.acquire()
+        for i in range(10):
+            try:
+                sftp = await self.conn.start_sftp_client()
+            except Exception as e:
+                logger.debug(e)
+                await asyncio.sleep(10)
+                continue
+            break
+        else:
+            self.channelGuard.release()
+            raise RuntimeError('Cant start sftp session')
+        return sftp
+
+    async def _close_sftp_session(self, sftp):
+        assert sftp is not None
+        sftp.exit()
+        await sftp.wait_closed()
+        self.channelGuard.release()
