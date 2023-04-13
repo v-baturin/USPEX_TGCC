@@ -154,7 +154,8 @@ class Connector(object):
         if self._domain is not None:
             sftp = await self._start_sftp_session()
             remote_path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
-            await sftp.get(remote_path, path, recurse=True)
+            local_path = os.path.dirname(path) if os.path.isdir(path) else path
+            await sftp.get(remote_path, local_path, recurse=True)
             await self._close_sftp_session(sftp)
 
     async def clean(self, path : str):
@@ -172,20 +173,6 @@ class Connector(object):
         if self.client is None or not self.client.isValid():
             self.conn, self.client = await asyncssh.create_connection(lambda: SSHConnectorClient(self._checkConnection),
                                                                       self._domain, **self._kwargs)
-        # doCheck = True
-        # while doCheck:
-        #     else:
-        #         try:
-        #             await self.channelGuard.acquire()
-        #             sftp = await self.conn.start_sftp_client()
-        #             await sftp.getcwd()
-        #             sftp.exit()
-        #             await sftp.wait_closed()
-        #             self.channelGuard.release()
-        #         except Exception:
-        #             logger.exception("Exception in checkConnection.")
-        #             continue
-        #     doCheck = False
         self._lock.release()
 
     async def _run(self, *args, **kwargs):
