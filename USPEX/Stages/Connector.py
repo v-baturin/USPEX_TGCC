@@ -23,6 +23,7 @@ class SSHConnectorClient(asyncssh.SSHClient):
 
     def connection_made(self, connection):
         self._conn = connection
+        self._conn.set_keepalive(30)
 
     def connection_lost(self, exc):
         self._conn = None
@@ -37,72 +38,6 @@ class SSHConnectorClient(asyncssh.SSHClient):
         if self.isValid():
             self._callbackIfLost = None
             self._conn.close()
-
-
-class SFTPSession:
-    def __init__(self, conn, guard):
-        self._conn = conn
-        self._guard = guard
-        self._sftp = None
-
-    async def start(self):
-        assert self._sftp is None
-        await self._guard.acquire()
-        self._sftp = await self._conn.start_sftp_client()
-
-    async def close(self):
-        assert self._sftp is not None
-        self._sftp.exit()
-        await self._sftp.wait_closed()
-        self._guard.release()
-        self._sftp = None
-
-    async def remove(self, path : str):
-        '''
-        :param path: path to directory
-        '''
-        if await self._sftp.exists(path):
-            if await self._sftp.isdir(path):
-                for name in await self.listdir(path):
-                    await self.remove(os.path.join(path,name))
-                await self._sftp.rmdir(path)
-            else:
-                await self._sftp.remove(path)
-
-    async def makedirs(self, path : str):
-        '''
-        :param path: path: path to directory
-        :return:
-        '''
-        if not await self._sftp.isdir(path):
-            try:
-                if await self._sftp.exists(path):
-                    await self._sftp.remove(path)
-                await self._sftp.mkdir(path)
-            except asyncssh.sftp.SFTPError:
-                head, tail = os.path.split(path)
-                await self.makedirs(head)
-                if tail != '.':
-                    await self._sftp.mkdir(path)
-
-    async def listdir(self, path : str) -> list:
-        '''
-        :param path: path to directory
-        '''
-        res = []
-        for name in await self._sftp.listdir(path):
-            if name != '.' and name != '..':
-                res.append(name)
-        return res
-
-    def __getattr__(self, item):
-        if item == '__setstate__':
-            raise AttributeError
-        if hasattr(self._sftp, item):
-            return getattr(self._sftp, item)
-        else:
-            raise AttributeError
-
 
 
 class Connector(object):
@@ -168,8 +103,8 @@ class Connector(object):
         if self._domain is not None:
             sftp = await self._start_sftp_session()
             remote_cwd = os.path.join(self.remoteFolder, cwd).replace('~', await sftp.getcwd())
-            await sftp.makedirs(remote_cwd)
-            await sftp.close()
+            await sftp.makedirs(remote_cwd, exist_ok=True)
+            await self._close_sftp_session(sftp)
             command = f"cd {remote_cwd} && {execCommand}"
             remote_result = await self._run(command, **kwargs)
             return remote_result.returncode, remote_result.stdout, remote_result.stderr
@@ -207,10 +142,8 @@ class Connector(object):
         if self._domain is not None:
             sftp = await self._start_sftp_session()
             remote_path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
-            await sftp.remove(remote_path)
-            await sftp.makedirs(os.path.dirname(remote_path))
-            await sftp.put(path, remote_path, recurse = True)
-            await sftp.close()
+            await sftp.put(path, remote_path, recurse=True)
+            await self._close_sftp_session(sftp)
 
     async def sync_r2l(self, path : str):
         '''
@@ -220,13 +153,8 @@ class Connector(object):
         if self._domain is not None:
             sftp = await self._start_sftp_session()
             remote_path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
-            if not await sftp.isdir(remote_path):
-                await sftp.get(remote_path, path)
-            else:
-                filenames = await sftp.listdir(remote_path)
-                for filename in filenames:
-                    await sftp.get(os.path.join(remote_path, filename), os.path.join(path, filename), recurse = True)
-            await sftp.close()
+            await sftp.get(remote_path, path, recurse=True)
+            await self._close_sftp_session(sftp)
 
     async def clean(self, path : str):
         '''
@@ -235,8 +163,8 @@ class Connector(object):
         if self._domain is not None:
             sftp = await self._start_sftp_session()
             path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
-            await sftp.remove(path)
-            await sftp.close()
+            await sftp.rmtree(path, ignore_errors=True)
+            await self._close_sftp_session(sftp)
 
     async def _checkConnection(self):
         await self._lock.acquire()
@@ -262,12 +190,38 @@ class Connector(object):
     async def _run(self, *args, **kwargs):
         await self._checkConnection()
         await self.channelGuard.acquire()
-        remote_result = await self.conn.run(*args, **kwargs)
+        for i in range(10):
+            try:
+                remote_result = await self.conn.run(*args, **kwargs)
+            except Exception as e:
+                logger.exception(e)
+                await asyncio.sleep(10)
+                continue
+            break
+        else:
+            self.channelGuard.release()
+            raise RuntimeError('Cant start sftp session')
         self.channelGuard.release()
         return remote_result
 
     async def _start_sftp_session(self):
         await self._checkConnection()
-        sftp = SFTPSession(self.conn, self.channelGuard)
-        await sftp.start()
+        await self.channelGuard.acquire()
+        for i in range(10):
+            try:
+                sftp = await self.conn.start_sftp_client()
+            except Exception as e:
+                logger.exception(e)
+                await asyncio.sleep(10)
+                continue
+            break
+        else:
+            self.channelGuard.release()
+            raise RuntimeError('Cant start sftp session')
         return sftp
+
+    async def _close_sftp_session(self, sftp):
+        assert sftp is not None
+        sftp.exit()
+        await sftp.wait_closed()
+        self.channelGuard.release()
