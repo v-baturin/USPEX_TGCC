@@ -83,6 +83,8 @@ from .Stages.TaskManagers.QSUB import QSUB
 Executor.registerTaskManager('QSUB', QSUB)
 from .Stages.TaskManagers.SBATCH import SBATCH
 Executor.registerTaskManager('SBATCH', SBATCH)
+from .Stages.TaskManagers.TGCC import TGCC
+Executor.registerTaskManager('TGCC', TGCC)
 from .Stages.TaskManagers.SHELL import SHELL
 Executor.registerTaskManager('SHELL', SHELL)
 from .Optimizers.ModelOptimizer import ModelOptimizer, External
