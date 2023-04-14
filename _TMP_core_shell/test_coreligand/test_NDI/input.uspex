@@ -1,0 +1,117 @@
+{
+optimizer : {type : GlobalOptimizer
+             target: {type: Atomistic
+                      compositionSpace: {symbols: [X Y] blocks: [[2 2]]}
+                      environmentUtility: {environments: [np_core]}}
+             optType: enthalpy
+             selection: {type: USPEXClassic
+                         popSize: 20
+                         optType: (aging enthalpy)
+                         fractions: {CoreAdsorbantRandomGenerator: (1.0 1.0 1.0)
+                                     }
+                         }
+             }
+stages : [mopac1]
+numParallelCalcs : 20
+numGenerations : 30
+stopCrit: 6
+}
+
+#define mopac1
+{type: mopac, commandExecutable: "MOPAC2016.exe calc.mop"}
+
+#define X1
+{
+type: adsorbant
+filename: ligand_X1.xyz
+mountpoint: (-0.91665000 1.48792000 0.25636000)
+orientation: (-0.88341253 -0.21756933 -0.41502516)
+connection: X}
+
+#define X2
+{
+type: adsorbant
+filename: ligand_X2.xyz
+mountpoint: (-1.10835000 1.46811000 0.12423000)
+orientation: (-0.94402140 -0.29168871 -0.15408209)
+connection: X}
+
+#define X3
+{
+type: adsorbant
+filename: ligand_X3.xyz
+mountpoint: (-0.88584000 1.51989000 0.19494000)
+orientation: (-0.94735558 -0.30143196 -0.10796381)
+connection: X}
+
+#define X4
+{
+type: adsorbant
+filename: ligand_X4.xyz
+mountpoint: (0.16165000 1.99750000 0.64885000)
+orientation: (-0.95040664 -0.25658226 0.17576336)
+connection: X}
+
+#define Y1
+{
+type: adsorbant
+filename: ligand_Y1.xyz
+mountpoint: (-3.18038000 0.61361000 -0.08426000)
+orientation: (0.81373925 0.44984143 0.36806402)
+connection:X}
+
+#define Y2
+{
+type: adsorbant
+filename: ligand_Y2.xyz
+mountpoint: (-3.79202000 0.63479000 -0.18131000)
+orientation: (0.94975994 0.29774402 0.09646017)
+connection:X}
+
+#define Y3
+{
+type: adsorbant
+filename: ligand_Y3.xyz
+mountpoint: (-3.39206000 0.62270000 -0.21308000)
+orientation: (0.91459874 0.37000404 0.16311392)
+connection:X}
+
+#define Y4
+{
+type: adsorbant
+filename: ligand_Y4.xyz
+mountpoint: (-3.48719000 0.72140000 -0.32203000)
+orientation: (0.91525179 0.35835210 0.18411389)
+connection:X}
+
+#define np_core
+{
+    type: nanoparticle_core
+    file: "./core_NDI_no_h.xyz"
+    sites: ({mountpoint:  (3.81224772 -3.54594659 -0.00020716)
+             orientation:  (-0.00001334 -1.00000000 0.00006315)
+             passivate: H
+             connection: X}
+            {mountpoint:  (3.81224012 3.54499898 -0.00021035)
+             orientation:  (-0.00001551 1.00000000 0.00006215)
+             passivate: H
+             connection: X}
+            {mountpoint:  (1.37391481 -0.70374418 -0.00031417)
+             orientation:  (-0.86135725 -0.50799969 0.00000173)
+             passivate: H
+             connection: Y}
+            {mountpoint:  (1.37391295 0.70279083 -0.00031543)
+             orientation:  (-0.86135897 0.50799678 0.00000066)
+             passivate: H
+             connection: Y}
+            {mountpoint:  (6.25056729 0.70279536 -0.00032555)
+             orientation:  (0.86133296 0.50804088 -0.00000242)
+             passivate: H
+             connection: Y}
+            {mountpoint:  (6.25056885 -0.70373788 -0.00032505)
+             orientation:  (0.86133358 -0.50803982 -0.00000212)
+             passivate: H
+             connection: Y})
+}
+
+
