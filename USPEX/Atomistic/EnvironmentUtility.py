@@ -2,6 +2,7 @@
 USPEX.Atomistic.EnvironmentUtility
 ==================================
 """
+import warnings
 
 import numpy as np
 import logging
@@ -13,6 +14,8 @@ from pymatgen.analysis.gb.grain import GrainBoundaryGenerator
 from pymatgen.core.surface import SlabGenerator
 from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+
+from .Transformation import Transformation
 
 import alphashape
 
@@ -488,31 +491,52 @@ class Bulk:
 class NanoparticleCore:
 
     class Assembler:
-        def __init__(self, structure):
+
+        class Site:
+            def __init__(self, mountPoint, orientation):
+                self.mountPoint = mountPoint
+                self.orientation = orientation
+
+            def dock(self, adsorbant, ownAxisAngle=0):
+                rotAroundOrientation = Transformation.fromRotVector(adsorbant.orientation * ownAxisAngle, -adsorbant.mountPoint)
+                adsorbant_structure = rotAroundOrientation.transform(adsorbant)
+                rot_ax = np.cross(adsorbant.orientation, self.orientation)
+                rot_ax /= np.linalg.norm(rot_ax)
+                alpha = np.arccos(adsorbant.orientation @ self.orientation)
+                rotation = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
+                return rotation.transform(adsorbant_structure)
+
+
+
+        def __init__(self, structure, sites=None):
             self.structure = structure
-            self.connectors = {}
+            if sites is None:
+                self.sites = {}
+            else:
+                self.sites = sites
 
         def assemble(self, alpha, **kwargs):
             return NanoparticleCore(self.structure, alpha)
 
-        def getConnectors(self, whichConnectors):
-            if whichConnectors in self.connectors:
-                return self.connectors[whichConnectors]
-            elif hasattr(whichConnectors, 'label') and whichConnectors.label in ('FACE', 'EDGE', 'VERTEX'):
-                return self.calc_alphashape_connectors(whichConnectors)
+        def getSites(self, junctionType):
+            if junctionType in self.sites:
+                return self.sites[junctionType]
+            elif hasattr(junctionType, 'label') and junctionType.label in ('FACE', 'EDGE', 'VERTEX'):
+                return self.calc_alphashape_sites(junctionType)
+            else:
+                logger.warning(f'No sites of type "{junctionType}" on the nanoparticle core')
 
-
-        def calc_alphashape_connectors(self, whichConnectors):
+        def calc_alphashape_sites(self, junctionType):
             # determine active centers + normal vectors self.activeCenters = [(xyz, normal), ...],
-            if whichConnectors.connectorParam is None:
+            if junctionType.juctionParam is None:
                 alpha = 0.
             else:
-                alpha = whichConnectors.connectorParam
+                alpha = junctionType.juctionParam
             alpha_shape = alphashape.alphashape(self.structure.getCartesianCoordinates(), alpha)
-            self.connectors[type(whichConnectors)("FACE", alpha)] =\
+            self.sites[type(junctionType)("FACE", alpha)] =\
                 [{'mount_point': m, 'orientation': v}
                  for m, v in zip(alpha_shape.triangles_center, alpha_shape.face_normals)]
-            self.connectors[type(whichConnectors)("VERTEX", alpha)] =\
+            self.sites[type(junctionType)("VERTEX", alpha)] =\
                 [{'mount_point': m, 'orientation': v}
                  for m, v in zip(alpha_shape.vertices, alpha_shape.vertex_normals)]
             edge_normals = []
@@ -521,8 +545,8 @@ class NanoparticleCore:
                 normal = alpha_shape.face_normals[adj_f[0]] + alpha_shape.face_normals[adj_f[1]]
                 normal /= np.linalg.norm(normal)
                 edge_normals.append({'mount_point': origin, 'orientation': normal})
-            self.connectors[type(whichConnectors)("EDGE", alpha)] = edge_normals
-            return self.connectors[whichConnectors]
+            self.sites[type(junctionType)("EDGE", alpha)] = edge_normals
+            return self.sites[junctionType]
 
         @staticmethod
         def build(filename, **kwargs):
