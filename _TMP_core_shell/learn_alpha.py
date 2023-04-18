@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 
 import alphashape
@@ -8,13 +9,15 @@ from USPEX.Atomistic.Transformation import Transformation
 from USPEX.components import AtomisticRepresentation
 from USPEX.components import AtomicStructure
 
+matplotlib.use('TkAgg')
 core_structure = AtomisticRepresentation.readXYZ('Au-51-15.xyz')
-adsorbant_structure_original = AtomisticRepresentation.readXYZ('benzene.xyz')
+core_coords = core_structure.getCartesianCoordinates()
+adsorbant_structure_original = AtomisticRepresentation.readXYZ('phenyl2.xyz')
 mount_point = np.array([1.21940,  -0.16520,   2.16000])
 orientation = np.array([0.68250,  -0.09240,   1.20870]) - mount_point
 orientation /= np.linalg.norm(orientation)
 
-alpha_shape = alphashape.alphashape(core_structure.getCartesianCoordinates(), 0.1)
+alpha_shape = alphashape.alphashape(core_coords, 0.1)
 
 vert_normals = []
 for v, vertice in enumerate(alpha_shape.vertices):
@@ -115,5 +118,5 @@ for v, vertice in enumerate(alpha_shape.vertices):
     ax.scatter(*rc, facecolors='g', edgecolors='g')
     ax.scatter(*(rc + normal), facecolors='r', edgecolors='r')
     ax.plot(*np.vstack((rc, rc + normal)).T)
-
+matplotlib.use('TkAgg')
 plt.show()
