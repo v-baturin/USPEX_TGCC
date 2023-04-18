@@ -26,16 +26,18 @@ def compileParams(main: dict) -> dict:
                 elementalSymbols.add(symbol)
             elif 'type' in symbol:
                 symbol['structure'] = AtomisticRepresentation.readXYZ(symbol.pop('filename'))
+                if 'junctionTypes' in symbol:
+                    symbol['junctionTypes'] = set(symbol['junctionTypes'])
                 adsorbants[symbol['name']] = symbol
             else:
                 molDct = read_molecule(symbol['filename'])
                 molecules[symbol['name']] = molDct
                 symbols[i] = symbol['name']
                 elementalSymbols |= set(molDct['symbols'])
-            if adsorbants:
-                target['adsorbantUtility'] = {'adsorbants': adsorbants}
-            if molecules:
-                target['simpleMoleculeUtility'] = {'molecules': molecules}
+        if adsorbants:
+            target['adsorbantUtility'] = {'adsorbants': adsorbants}
+        if molecules:
+            target['simpleMoleculeUtility'] = {'molecules': molecules}
         if 'selection' in optimizer:
             selection = optimizer['selection']
             if len(target['compositionSpace']['blocks']) > 1:

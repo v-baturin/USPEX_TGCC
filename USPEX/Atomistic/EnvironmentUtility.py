@@ -493,32 +493,45 @@ class NanoparticleCore:
     class Assembler:
 
         class Site:
-            def __init__(self, mountPoint, orientation):
+            def __init__(self, mountPoint, orientation, junctionTypes=None, passivate=None):
                 self.mountPoint = mountPoint
                 self.orientation = orientation
+                self.junctionTypes = set(junctionTypes) if junctionTypes else junctionTypes
+                self.passivate = passivate
 
             def dock(self, adsorbant, ownAxisAngle=0):
-                rotAroundOrientation = Transformation.fromRotVector(adsorbant.orientation * ownAxisAngle, -adsorbant.mountPoint)
-                adsorbant_structure = rotAroundOrientation.transform(adsorbant)
+                if self.junctionTypes and adsorbant.junctionType:
+                    assert self.junctionTypes & adsorbant.junctionType
+                rotAroundOrientationAxis = Transformation.fromRotVector(adsorbant.orientation * ownAxisAngle, -adsorbant.mountPoint)
+                trotated_structure = rotAroundOrientationAxis.transform(adsorbant.structure)
                 rot_ax = np.cross(adsorbant.orientation, self.orientation)
                 rot_ax /= np.linalg.norm(rot_ax)
                 alpha = np.arccos(adsorbant.orientation @ self.orientation)
                 rotation = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
-                return rotation.transform(adsorbant_structure)
+                return rotation.transform(trotated_structure)
 
 
 
-        def __init__(self, structure, sites=None):
+        def __init__(self, structure, sites=None, **kwargs):
             self.structure = structure
             if sites is None:
-                self.sites = {}
+                self.sites = []
             else:
-                self.sites = sites
+                self.sites = [NanoparticleCore.Assembler.Site(**site) for site in sites]
+                self.sitesByType = {}
+                for site in self.sites:
+                    for junctionType in site.junctionTypes:
+                        if junctionType in self.sitesByType:
+                            self.sitesByType[junctionType].append(site)
+                        else:
+                            self.sitesByType[junctionType] = [site]
+
+
 
         def assemble(self, alpha, **kwargs):
             return NanoparticleCore(self.structure, alpha)
 
-        def getSites(self, junctionType):
+        def getSitesByType(self, junctionType):
             if junctionType in self.sites:
                 return self.sites[junctionType]
             elif hasattr(junctionType, 'label') and junctionType.label in ('FACE', 'EDGE', 'VERTEX'):
