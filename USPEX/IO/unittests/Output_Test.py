@@ -62,8 +62,7 @@ class Output_Test(unittest.TestCase):
                     try:
                         with open(os.path.join(TESTPATH, f"output_data/system{gen * popSize + i}s{j}"), "r") as f:
                             structure = json.load(f)
-                        with open(os.path.join(TESTPATH, f"output_data/system{gen*popSize+i}s{j}.vasp"), "r") as f:
-                            structure.update(AtomisticRepresentation.readAtomicStructure(f))
+                        structure.update(AtomisticRepresentation.readAtomicStructure(os.path.join(TESTPATH, f"output_data/system{gen*popSize+i}s{j}.vasp")))
                         system.append(structure)
                     except FileNotFoundError:
                         break
@@ -75,7 +74,6 @@ class Output_Test(unittest.TestCase):
                 optimizer = GlobalOptimizer(**optimizerConfig)
                 for ID in targetState[1]:
                     system = systems[ID][-1]
-                    optimizer.pool.uniqueSystems += (system,)
                     optimizer.pool.allSystems[ID] = system
                     system['isBad'] = False
                 optimizer.best = set(targetState[0])

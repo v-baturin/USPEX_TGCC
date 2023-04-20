@@ -142,12 +142,11 @@ class AtomicStructure:
         """
         return np.mean(self.getFractionalCoordinates(), axis=0)
 
-    def getPrincipalAxes(self):
-        """
-        :return: 3x3 matrix of principal axes, main axes of inertia tensor (with all atom masses set to be equal).
-        """
-        coordinates = self._coordinates - self._coordinates.mean(axis=0)
-        return np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
+    def getTrigonalizedCellStructure(self):
+        if self._cell is None:
+            raise RuntimeError("Cell is not defined.")
+        else:
+            return self._cell.getTrigonalizeTransform().transform(self)
 
     def getRectifiedCell(self):
         """
@@ -164,43 +163,7 @@ class AtomicStructure:
             3d: Returns original Cell
         """
 
-        cell = self.getCell()
-        cellVectors = cell.getCellVectors()
-        pbc = np.array(cell.getPBC(), dtype=bool) if cell is not None else np.array([False] * 3)
-        dim = sum(pbc)
-
-        whichPeriodic = np.where(pbc)[0]
-        periodicVecs = cellVectors[pbc]
-        nonperiodicVecs = cellVectors[~pbc]
-
-        if dim == 0:
-            vectors = self.getPrincipalAxes()[1].T
-        elif dim == 1:
-            periodicUnit = periodicVecs[0] / np.linalg.norm(periodicVecs[0])
-            orthogPancake = self._coordinates - \
-                               np.dot(self._coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
-            val, vectors = AtomicStructure(self._atomTypes, orthogPancake).getPrincipalAxes()
-            vectors = vectors.T
-            if val[0] < 1e-5:  # Check if inertia tensor has a singular matrix
-                if np.dot(vectors[0], periodicUnit) == 1:
-                    vectors[0] = vectors[1]
-                vectors[0] -= np.dot(vectors[0], periodicUnit) * periodicUnit
-                vectors[0] /= np.linalg.norm(vectors[0])
-                vectors[1] = np.cross(periodicUnit, vectors[0])
-            vectors[-1] = periodicVecs[0] # any 2D shape has a maximum inertia moment corresponding to orth direction
-            vectors = np.roll(vectors, whichPeriodic[0] - 2, axis=0)
-        elif dim == 2:
-            normalvector = np.cross(periodicVecs[0], periodicVecs[1])
-            normalvector *= np.sign(np.dot(normalvector, nonperiodicVecs[0]))
-            vectors = cellVectors
-            vectors[~pbc] = normalvector
-        elif dim == 3:
-            return cell
-        else:
-            raise ValueError(f'Incorrect dim: {dim}')
-
-        newCell = type(cell)(vectors, pbc)
-        return newCell
+        return self.getCell().getIntrinsicCell(self.getCartesianCoordinates())
 
     def makeSupercell(self, matrix):
         """
@@ -219,7 +182,7 @@ class AtomicStructure:
         atomTypes = copy(self._atomTypes)
         coordinates = copy(self._coordinates)
         cell = copy(self._cell)
-        matrix = np.asarray(matrix, dtype=np.int16)
+        matrix = np.asarray(np.round(matrix), dtype=np.int16)
         if matrix.ndim == 1:
             matrix = np.array(matrix * np.eye(3), dtype=np.int16)
 
@@ -235,10 +198,39 @@ class AtomicStructure:
         newStructure = AtomicStructure(newAtomTypes, newCoordinates, newCell)
         return newStructure
 
-    @staticmethod
-    def assemble(molecules, cell, environment=None, vacuumSize=0, **kwargs): # lots of work with calcs
+    def getPerturbatedStructure(self, fixedIndices):
+        # TODO don't perturbate fixed atoms
+        coordinates = self._coordinates + 0.1 * (np.random.rand(len(self._coordinates), 3) - 0.5)
+        return AtomicStructure(self._atomTypes, coordinates, self._cell)
+
+class AtomicDisassembler:
+    """
+    This class describes how to assemble AtomicStructure from molecules and environment
+    and then disassemble it back into molecules and environment. 
+    """
+
+    def __init__(self, molecules, environment=None, pbc=(1, 1, 1)):
         """
-        TODO move to AtomicDisassembler class.
+
+        :param indices:
+        :param environment:
+
+        """
+        self.indices = molecules
+        self.environment = environment
+        self.pbc = pbc
+        self.sysIndices = np.concatenate(self.indices)
+        if self.environment is not None:
+            allIndices = list(range(len(self.sysIndices) + len(self.environment.getStructure())))
+            self.envIndices = np.asarray(list(set(allIndices).difference(set(self.sysIndices))), dtype=int)
+            self.fixedIndices = self.envIndices[environment.getFixedIndices()]
+        else:
+            self.envIndices = np.empty(0, dtype=int)
+            self.fixedIndices = np.empty(0, dtype=int)
+
+    @staticmethod
+    def assemble(molecules, cell, environment=None, vacuumSize=0, style=None, inStyle=None, **kwargs):
+        """
 
         :param molecules:
         :param cell:
@@ -246,6 +238,20 @@ class AtomicStructure:
         :param kwargs:
 
         """
+        if f'{inStyle}.system' in kwargs:
+            system = kwargs[f'{inStyle}.system']
+            molecules, cell = system['molecules'], system['cell']
+            environment = system['environment'] if 'environment' in system else None
+        if style == 'noEnvironment':
+            environment = None
+        elif style == 'adjust':
+            molecules, cell, environment = environment.adjustSystem(molecules, cell)
+        elif environment is not None and style in environment.processingStyles:
+            # TODO do we ever need to disassemble such structures?
+            return getattr(environment, environment.processingStyles[style])(vacuumSize), None
+        elif style is not None:
+            raise ValueError(f"Style {style} is not valid.")
+        pbc = cell.getPBC()
         atomTypes = []
         coordinates = []
         indices = []
@@ -257,86 +263,36 @@ class AtomicStructure:
             indices.append(list(range(lowerBound, lowerBound + size)))
             lowerBound += size
         if environment is not None:
-            coordinates = list(np.asarray(coordinates, dtype = float) + environment.calculateOffset(molecules, cell))
-            assembledCell = environment.getStructure().getCell()
-            atomTypes.extend(environment.getStructure().getAtomTypes())
-            coordinates.extend(environment.getStructure().getCartesianCoordinates())
-        else:
-            assembledCell = cell
+            envStructure = environment.getStructure()
+            atomTypes.extend(envStructure.getAtomTypes())
+            coordinates.extend(envStructure.getCartesianCoordinates())
+            cell = envStructure.getCell()
         if vacuumSize > 0:
-            structure = AtomicStructure(atomTypes, coordinates, assembledCell)
-            assembledCell = structure.getRectifiedCell().getEnvelopeCell(coordinates, vacuumSize)
-            coordinates = assembledCell.center(structure.getCartesianCoordinates())
-        return (AtomicStructure(atomTypes, coordinates, assembledCell),   # cell depending on whether we have env
-                AtomicDisassembler(indices, environment, cell))  # cell of molecules
+            cell = cell.getEnvelopeCell(coordinates, vacuumSize, intrinsic=True)
+            coordinates = cell.center(coordinates)
+        return AtomicStructure(atomTypes, coordinates, cell), AtomicDisassembler(indices, environment, pbc)
 
-
-class AtomicDisassembler:
-    """
-    This class describes how to assemble AtomicStructure from molecules and environment
-    and then disassemble it back into molecules and environment. 
-    """
-
-
-    def __init__(self, indices, environment, cell):
-        """
-
-        :param indices:
-        :param environment:
-
-        """
-        self.indices = [np.asarray(inds, dtype=int) for inds in indices]
-        self.environment = environment
-        self.cell = cell
-        if self.environment is not None:
-            molIndices = set(np.concatenate(self.indices))
-            allIndices = list(range(len(molIndices) + len(self.environment.getStructure())))
-            self.envIndices = np.asarray(list(set(allIndices).difference(molIndices)), dtype=int)
-        else:
-            self.envIndices = np.empty(0, dtype=int)
-
-
-    @staticmethod
-    def createFlatDisassembler(N, cell):
-        """
-        Helper constructor. Creates disassembler for structure of given size, which decomposes it into individual atoms.
-
-        :param N: size of structure for which disaasembler is required.
-
-        """
-        return AtomicDisassembler([[i] for i in range(N)], environment=None, cell=cell)
-
-    def disassemble(self, atomicStructure):
+    def disassemble(self, structure):
         """
         Decomposes given structure into molecules and environment.
 
-        :param atomicStructure: structure to decompose.
+        :param structure: structure to decompose.
 
         :return: {'molecules': <list of molecules>, 'cell': <Cell object>, 'environment': <optional environment object>}
         """
-        atomTypes = atomicStructure.getAtomTypes()
-        coordinates = atomicStructure.getCartesianCoordinates()
-        syscoords = []
-        sysAtomTypes = []
-        for indices in self.indices:
-            syscoords.extend(coordinates[indices])
-            sysAtomTypes.extend(atomTypes[indices])
-        syscoords = np.array(syscoords)
-        sysAtomTypes = np.asarray(sysAtomTypes)
-        assembledCell = atomicStructure.getCell()
-        cell = type(assembledCell)(assembledCell.getCellVectors(), pbc=self.cell.getPBC()).getEnvelopeCell(syscoords,
-                                                                                                           vacuumSize=1.0)
-        system = dict()
-        envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices], assembledCell)
+        atomTypes = structure.getAtomTypes()
+        coordinates = structure.getCartesianCoordinates()
+        cell = structure.getCell()
+        sysCoordinates = coordinates[self.sysIndices]
+        sysCell = type(cell)(cell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(sysCoordinates, vacuumSize=1.0)
+        offset = np.mean(sysCell.center(sysCoordinates) - sysCoordinates, axis=0)
+        system = dict(
+            molecules=[AtomicStructure(atomTypes[inds], coordinates[inds] + offset) for inds in self.indices],
+            cell=sysCell
+        )
         if self.environment is not None:
-            system['environment'] = self.environment.getUpdatedEnvironment(sysAtomTypes, syscoords, cell, envStructure)
-            offsetVector = system['environment'].calculateOffset(None)
-        else:
-            offsetVector = 0
-        molecules = []
-        for indices in self.indices:
-            molecules.append(AtomicStructure(atomTypes[indices], coordinates[indices] - offsetVector))
-        system.update({'molecules': molecules, 'cell': cell})
+            envStructure = AtomicStructure(atomTypes[self.envIndices], coordinates[self.envIndices] + offset, cell)
+            system['environment'] = self.environment.getUpdatedEnvironment(envStructure)
         return system
 
     def decomposeDisplacements(self, displacements, structure):

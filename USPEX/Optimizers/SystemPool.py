@@ -1,0 +1,111 @@
+"""
+USPEX.SystemPool
+=======================
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+"""
+
+
+import logging
+from copy import copy
+from itertools import chain
+
+logger = logging.getLogger(__name__)
+
+
+class SystemPool(object):
+    """
+    This class serves as database of all systems encountered in calculation.
+    The only thing it expects from systems is IDs. It has a method to assign IDs to systems.
+    Except for that systems are arbitrary dictionaries.
+    It subdivide systems into generations. Each call to *update* method creates new generation record.
+    """
+
+    def __init__(self):
+        self.allSystems = {}
+        self.generations = []
+        self._newID = 0
+
+    def __copy__(self):
+        other = SystemPool.__new__(SystemPool)
+        other.allSystems = copy(self.allSystems)
+        other.generations = copy(self.generations)
+        other._newID = self._newID
+        return other
+
+    @property
+    def goodSystems(self):
+        return tuple(system for system in self.allSystems.values() if not system['isBad'])
+
+    @property
+    def goodSystemIDs(self):
+        return tuple(ID for ID, system in self.allSystems.items() if not system['isBad'])
+
+    @property
+    def uniqueSystems(self):
+        return tuple(system for system in self.allSystems.values() if 'originalID' not in system and not system['isBad'])
+
+    @property
+    def uniqueSystemIDs(self):
+        """
+        :return: list of IDs of unique structures.
+        """
+        return tuple(ID for ID, system in self.allSystems.items() if 'originalID' not in system and not system['isBad'])
+
+    def __hash__(self):
+        return hash(self.uniqueSystemIDs)
+
+    def update(self, population: list):
+        """
+        Update information about target space in current search.
+
+        :param population: list of structures.
+
+        """
+
+        for system in population:
+            self.allSystems[system['ID']] = system
+
+    def append(self, population, fitness):
+        """
+        Inserts fitness object into last generation record.
+
+        :param fitness: fitness object.
+
+        """
+        logger.debug('Updating target: list of unique systems.')
+        IDs = set(system['ID'] for system in population)
+        newIDs = []
+        newGeneration = {'allSystems': [], 'newSystems': [], 'fitness': fitness}
+        for system in population:
+            original = self.allSystems[self.getOriginalID(system['ID'])]
+            if original['ID'] not in newIDs:
+                newGeneration['allSystems'].append(original)
+                newIDs.append(original['ID'])
+                if 'duplicates' not in original or set(original['duplicates']) <= IDs:
+                    logger.debug(f'add new system {system["ID"]} to list of unique systems')
+                    newGeneration['newSystems'].append(original)
+        self.generations.append(newGeneration)
+
+    def assignID(self, system):
+        """
+        Assign ID to system.
+
+        :type system:
+        :param system: system to be labeled with ID.
+
+        """
+        system['ID'] = self._newID
+        system['isBad'] = True
+        self._newID += 1
+        self.allSystems[system['ID']] = system
+
+    def getOriginalID(self, ID):
+        """
+        If system is duplicate return ID of original system otherwise return input ID.
+
+        :param ID: ID of some system from this pool.
+
+        :return: ID of original system.
+        """
+        system = self.allSystems[ID]
+        return system['originalID'] if 'originalID' in system else ID

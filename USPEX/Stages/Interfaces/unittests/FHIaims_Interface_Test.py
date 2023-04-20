@@ -13,13 +13,12 @@ import os
 import shutil
 import unittest
 import filecmp
+import numpy as np
 
 from os.path import join as pj
 
 
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ..FHIaims_Interface import FHIaims_Interface
-from USPEX.components import AtomisticRepresentation
+from ....components import AtomisticRepresentation, FHIaims_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -33,16 +32,19 @@ class VASP_CalculatorTest2(unittest.TestCase):
     Checking correct parsing properties
     """
     def test_life(self):
-        aims = FHIaims_Interface(tag='1', perturbate=False,
+        aims = FHIaims_Interface(tag='1',
                               control=pj(SPECIFICPATH, 'aims_control_1'), kresol=0.14)
-        radialDistributionUtility = RadialDistributionUtility(symbols=['P'])
 
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
-                system['ID'] = ID
-                system['externalPressure'] = 0.0001
+            structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))
+            system = dict(
+                ID=ID,
+                structure=structure,
+                disassembler=AtomisticRepresentation.atomicDisassemblerType(
+                    np.arange(len(structure)).reshape((-1, 1))),
+                externalPressure=0.0001
+            )
             os.mkdir(WORKPATH)
             aims.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -54,9 +56,13 @@ class VASP_CalculatorTest2(unittest.TestCase):
             self.assertTrue(match)
             folder = pj(GATHEREDPATH, 'output')
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-            aims.readOutput(system, WORKPATH)
+            results = aims.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
-            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
+            structureRef = AtomisticRepresentation.readPOSCAR(pj(folder, f"system{system['ID']}.vasp"), (1, 1, 1))
+            cell = results['structure'].getCell()
+            cellRef = structureRef.getCell()
+            self.assertTrue(np.allclose(cell.getCellVectors(),
+                                        cellRef.getCellVectors()))
+            self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(results['structure'].getCartesianCoordinates()),
+                                        cellRef.getWrapedCartesianCoordinates(structureRef.getCartesianCoordinates())))
 

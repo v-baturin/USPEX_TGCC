@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 import os
-import toml
 
 from ase.io.vasp import read_vasp
 from time import time
@@ -34,7 +33,8 @@ class Seeds(object):
         self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
+        self.environmentUtility = utilities.environmentUtility
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
 
         self.generations = generations if generations is not None else []
@@ -58,25 +58,25 @@ class Seeds(object):
 
         seeds = []
 
-        for filename in os.listdir(seedsFolder):
-            filename = os.path.join(seedsFolder, filename)
-            if os.path.isfile(filename):
-                with open(filename, "rt") as f:
-                    system = self.systemRepresentationClass.readAtomicStructure(f, pbc=self.cellUtility.getPBC())
-                molecules = system['molecules']
-                cell = system['cell']
-                atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(molecules, cell)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
-                if disassembler.environment is not None:
-                    inds = disassembler.envIndices
-                    atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                composition = self.simpleMoleculeUtility.composition(system)
-                if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-                    self.conditions.putConditions(system)
-                    system['filename'] = filename
-                    seeds.append(system)
-                else:
-                    logger.info(f"Structure created from seed {filename} violates constraints.")
+        filenames = os.listdir(seedsFolder)
+        hasDesciption = np.any(['.uspex' in filename for filename in filenames])
+        for filename in filenames:
+            if ('.uspex' in filename) == hasDesciption:
+                filename = os.path.join(seedsFolder, filename)
+                if os.path.isfile(filename):
+                    systems = self.systemRepresentationClass.readAtomicStructures(filename, self.environmentUtility)
+                    for system in systems:
+                        atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
+                        minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
+                        if disassembler.environment is not None:
+                            inds = disassembler.envIndices
+                            atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
+                        if np.all(atomDistances >= minDistMatrix):
+                            self.conditions.putConditions(system)
+                            system['filename'] = filename
+                            seeds.append(system)
+                        else:
+                            logger.info(f"Structure created from seed {filename} violates constraints.")
 
         self.currentGeneration += 1
         return tuple(seeds)

@@ -12,6 +12,7 @@ import re
 import numpy as np
 from os.path import join as pj
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,10 +27,14 @@ class MOPAC_Interface:
     structureType = None
     atomType = None
     cellType = None
-    atomicDisassemblerType = None
 
-    def __init__(self, tag: str, mop_input: str = None,
-                 targetProperties: list = None, **kwargs):
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+
+    def __init__(self, tag: str, mop_input: str = None, targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -37,6 +42,7 @@ class MOPAC_Interface:
                 * vacuumSize=10
         """
 
+        self.tag = tag
         if mop_input is None:
             mop_input = pj(os.getcwd(), f'Specific/mop_{tag}')
         assert os.path.exists(mop_input)
@@ -58,12 +64,10 @@ class MOPAC_Interface:
         :param system:
         :param isFullRelaxation:
         """
+        structure = system['structure']
 
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=0)
-        system['disassembler'] = disassembler
         cell = structure.getCell()
-        system['assembledCell'] = cell
-        coordinates = structure.getCartesianCoordinates()
+        system['pbc'] = cell.getPBC()
 
         # files_to_delete = ['output', 'optimized.structure']
         # for f in files_to_delete:
@@ -72,13 +76,14 @@ class MOPAC_Interface:
 
         content_to_write = ''
 
-        fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
-        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), coordinates)):
-            tuple_to_format = tuple([symbol.short_name] + coord.tolist())
-            if i in fixedIndices:
-                content_to_write += '%4s %12.6f 0 %12.6f 0 %12.6f 0\n' % tuple_to_format
+        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
+            tuple_to_format = (symbol.short_name, ) +\
+                              tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
+                                                               precision=6) for c in coord)
+            if i in system['disassembler'].fixedIndices:
+                content_to_write += '%4s %12s 0 %12s 0 %12s 0\n' % tuple_to_format
             else:
-                content_to_write += '%4s %12.6f 1 %12.6f 1 %12.6f 1\n' % tuple_to_format
+                content_to_write += '%4s %12s 1 %12s 1 %12s 1\n' % tuple_to_format
 
         for i, dim in enumerate(cell.getPBC()):
             if dim:
@@ -93,6 +98,7 @@ class MOPAC_Interface:
             f.write(total_content)
 
         logger.debug('MOPAC calculator prepared calculation.')
+        return ''
 
     def isConverged(self, calcFolder: str):
         """
@@ -116,24 +122,26 @@ class MOPAC_Interface:
         with open(pj(calcFolder, self.arcFile), 'rt') as arc_fid:
             content = arc_fid.readlines()
 
+        results = {}
         if 'structure' in self.targetProperties:
-            self.readStructure(system, content)
+            results['structure'] = self.readStructure(content, system.pop('pbc'))
+
         if 'enthalpy' in self.targetProperties:
             for line in content:
                 if 'TOTAL ENERGY' in line:
                     e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
-                    system['enthalpy'] = float(e.group(1))
+                    results['enthalpy'] = float(e.group(1))
                     break
+            else:
+                raise RuntimeError('Can not read enthalpy.')
+        return results
 
-    def readStructure(self, system, content):
-
-        assembledCell = system.pop('assembledCell')
-        disassembler = system.pop('disassembler')
+    def readStructure(self, content, pbc):
 
         atomTypes = []
         positions = []
-        lattice_vectors = assembledCell.getCellVectors()
         new_lattice = []
+        cell = None
         for i, line in enumerate(content):
             if 'FINAL GEOMETRY OBTAINED' in line:
                 coords_regex = r'\s*([A-Z][a-z]?)' + r'\s+(-?\d*\.\d+)\s+\S+' * 3
@@ -149,16 +157,5 @@ class MOPAC_Interface:
                             atomTypes.append(self.atomType(sym))
 
                 positions = np.asarray(positions)
-                for i, dim in enumerate(assembledCell.getPBC()):
-                    if dim:
-                        lattice_vectors[i] = np.asarray(new_lattice.pop(0))
-        cell = self.cellType(lattice_vectors, pbc=assembledCell.getPBC())
-        structure = self.structureType(atomTypes, positions, cell=cell)
-        system.update(disassembler.disassemble(structure))
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
+                cell = self.cellType.initFromCellVectors(pbc, new_lattice)
+        return self.structureType(atomTypes, positions, cell=cell)

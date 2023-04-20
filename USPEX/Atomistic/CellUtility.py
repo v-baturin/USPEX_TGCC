@@ -8,6 +8,7 @@ import numpy as np
 import spglib
 from copy import copy
 from scipy.spatial.transform import Rotation
+from scipy.linalg import orthogonal_procrustes
 
 from .Transformation import Transformation
 
@@ -20,6 +21,25 @@ class CellUtility:
     Utility for working with unit cells of atomic structures.
     """
 
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        """
+        Register types used by this utility.
+
+        :param structureType: type representing atomic structure.
+        :param atomType: type representing chemical element.
+        :param cellType: type representing unit cell.
+        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
+        """
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
                  thickness=None, supercellDegree = None, symTolerance=None, debug = False):
         """
@@ -68,16 +88,12 @@ class CellUtility:
                 assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
                 assert axis is not None and cellVolume is None
-            else:
-                assert axis is not None
         elif self._dim == 1:
             assert thickness is not None
             if cellVectors is not None:
                 assert cellParameters is None and axis is None and cellVolume is None
             elif cellParameters is not None:
                 assert axis is not None and cellVolume is None
-            else:
-                assert axis is not None
         elif self._dim == 0:
             assert cellVectors is None and cellParameters is None and cellVolume is None and axis is None
         else:
@@ -178,7 +194,7 @@ class CellUtility:
         """
         return self._volume
 
-    def adjustCell(self, cellVectors, estimatedVolume, numAtoms):
+    def adjustCell(self, cellVectors, estimatedVolume, numAtoms, baseCell=None):
         """
         Adjust given unit cell according calculation parameters, provided volume and number of atoms.
         If cell in calculation is fixed returns the fixed cell.
@@ -192,9 +208,22 @@ class CellUtility:
         :return: **Cell** object with adjusted parameters.
         """
 
+        if self._cell is not None:
+            baseCell = self._cell
+        elif baseCell is not None:
+            baseCell = baseCell.getEnvelopeCell(vacuumSize=self._thickness)
         if self._dim == 1 or self._dim == 2:
-            cellVectors = Cell(cellVectors, self._pbc).getAlignedCell(self._axis).getCellVectors()
-        if self._cell is None:
+            if self._axis is None:
+                if self._dim == 1:
+                    axis = baseCell.getCellVectorsPBC()[0]
+                    axis /= np.linalg.norm(axis)
+                else:
+                    axis = baseCell.getCellVectorsAntiPBC()[0]
+                    axis /= np.linalg.norm(axis)
+            else:
+                axis = self._axis
+            cellVectors = Cell(cellVectors, self._pbc).getAlignedCell(axis).getCellVectors()
+        if baseCell is None:
             cell = Cell(cellVectors, self._pbc)
             d = np.power(estimatedVolume / numAtoms, 1.0 / 3.0)
             if self._dim == 3:
@@ -224,20 +253,20 @@ class CellUtility:
         elif self._supercellDegree is not None:
             cell = Cell(cellVectors, self._pbc)
             if self._dim == 3:
-                factor = cell.getVolume() / self._cell.getVolume()
+                factor = cell.getVolume() / baseCell.getVolume()
             elif self._dim == 2:
-                factor = cell.getArea() / self._cell.getArea()
+                factor = cell.getArea() / baseCell.getArea()
             elif self._dim == 1:
-                factor = cell.getLength() / self._cell.getLength()
+                factor = cell.getLength() / baseCell.getLength()
             else:
                 raise RuntimeError(f"Wrong dim {self._dim}.")
             reconstruction = self.getRandomSupercell(int(np.round(factor)))
-            cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
+            cell = Cell(reconstruction.dot(baseCell.getCellVectors()), self._pbc)
         else:
-            cell = self.getCell()
+            cell = copy(baseCell)
         return cell
 
-    def getRandomCell(self, estimatedVolume, numAtoms):
+    def getRandomCell(self, estimatedVolume, numAtoms, baseCell=None):
         """
         For given volume and number of atoms creates random unit cell with appropriate size and periodic boundary conditions.
 
@@ -246,7 +275,11 @@ class CellUtility:
 
         :return: **Cell** object with appropriate parameters.
         """
-        if self._cell is None:
+        if self._cell is not None:
+            baseCell = self._cell
+        elif baseCell is not None:
+            baseCell = baseCell.getEnvelopeCell(vacuumSize=self._thickness)
+        if baseCell is None:
             r2d = 180 / np.pi
             if self._dim == 3:
                 a, b, c = np.random.random(3) + 0.5
@@ -259,22 +292,22 @@ class CellUtility:
             elif self._dim == 2:
                 a, b = np.random.random(2) + 0.5
                 alpha = (np.random.random() * 4 + 1) * 30
-                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
+                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha, self._axis)
             elif self._dim == 1:
                 a = np.random.random() + 0.5
-                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
+                cell = Cell.initFromCellParameters(self._pbc, a, self._axis)
             elif self._dim == 0:
                 cell = Cell.initFromCellParameters(self._pbc)
             else:
                 raise RuntimeError(f"Wrong pbc {self._pbc}.")
-            cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms)
+            cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms, baseCell)
             if self._thickness is not None:
                 cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
         elif self._supercellDegree is not None:
             reconstruction = self.getRandomSupercell()
-            cell = Cell(reconstruction.dot(self._cell.getCellVectors()), self._pbc)
+            cell = Cell(reconstruction.dot(baseCell.getCellVectors()), self._pbc)
         else:
-            cell = self.getCell()
+            cell = copy(baseCell)
         return cell
 
     def getHybridCell(self, cell1, cell2, fraction):
@@ -301,25 +334,25 @@ class CellUtility:
                 thickness = 0
                 cellParameters[0:3] *= factor
             elif self._dim == 2:
-                a, b, alpha = cellParameters
-                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha=alpha, axis=self._axis)
+                a, b, alpha, axis = cellParameters
+                cell = Cell.initFromCellParameters(self._pbc, a, b, alpha, self._axis)
                 factor = np.sqrt((fraction * cell1.getArea() + (1 - fraction) * cell2.getArea()) / cell.getArea())
                 thickness = fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()
-                cellParameters = (a * factor, b * factor, None, alpha, None, None)
+                cellParameters = (a * factor, b * factor, alpha, self._axis)
             elif self._dim == 1:
-                a, = cellParameters
-                cell = Cell.initFromCellParameters(self._pbc, a, axis=self._axis)
+                a, axis = cellParameters
+                cell = Cell.initFromCellParameters(self._pbc, a, self._axis)
                 factor = (fraction * cell1.getLength() + (1 - fraction) * cell2.getLength()) / cell.getLength()
                 thickness = np.sqrt(fraction * cell1.getArea() + (1 - fraction) * cell2.getArea())
-                cellParameters = (a * factor, None, None, None, None, None)
+                cellParameters = (a * factor, self._axis)
             elif self._dim == 0:
                 thickness = np.power(fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume(), 1.0 / 3.0)
-                cellParameters = (None, None, None, None, None, None)
+                cellParameters = ()
             else:
                 raise RuntimeError(f"Wrong dim {self._dim}.")
             if self._thickness is not None and thickness > self._thickness:
                 thickness = self._thickness
-            cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis).getEnvelopeCell(vacuumSize=thickness)
+            cell = Cell.initFromCellParameters(self._pbc, *cellParameters).getEnvelopeCell(vacuumSize=thickness)
         elif self._supercellDegree is not None:
             if self._dim == 3:
                 factor1 = cell1.getVolume() / self._cell.getVolume()
@@ -365,7 +398,7 @@ class CellUtility:
                 matrix[ind, ind] = factor
             else:
                 raise RuntimeError(f"Wrong dim {self._dim}.")
-            if np.linalg.det(matrix) == factor:
+            if np.round(np.linalg.det(matrix)) == factor:
                 return matrix
 
     def isGoodCell(self, cell):
@@ -418,7 +451,6 @@ class CellUtility:
         """
         return system['cell'].getLength()
 
-
     def symmetry(self, system: dict):
         """
         For using in **Fitness** infrastructure
@@ -429,7 +461,7 @@ class CellUtility:
         """
         cell = system['cell']
         molecules = system['molecules']
-        structure, disassembler = type(molecules[0]).assemble(molecules, cell)
+        structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell)
         lattice = cell.getCellVectors()
         coordinates = structure.getFractionalCoordinates()
         numbers = [el.z for el in structure.getAtomTypes()]
@@ -489,14 +521,14 @@ class Cell:
             axis, = cellVectors
             a = np.linalg.norm(axis)
             axis /= a
-            return Cell.initFromCellParameters(pbc, a, axis = axis)
+            return Cell.initFromCellParameters(pbc, a, axis)
         elif dim == 0:
             return Cell(np.eye(3), pbc)
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
 
     @staticmethod
-    def initFromCellParameters(pbc, a=None, b=None, c=None, alpha=None, beta=None, gamma=None, axis=None):
+    def initFromCellParameters(pbc, *args, a=None, b=None, c=None, alpha=None, beta=None, gamma=None, axis=None):
         """
         Alternative constructor using cell parameters.
 
@@ -512,8 +544,24 @@ class Cell:
         :return: **Cell** object with appropriate parameters.
         """
         dim = sum(pbc)
+        if len(args) > 0:
+            if dim == 3:
+                assert len(args) == 6
+                assert a is None and b is None and c is None and alpha is None and beta is None and gamma is None
+                a, b, c, alpha, beta, gamma = args
+            elif dim == 2:
+                assert len(args) == 4
+                assert axis is None and a is None and b is None and alpha is None
+                a, b, alpha, axis = args
+            elif dim == 1:
+                assert len(args) == 2
+                assert axis is None and a is None
+                a, axis = args
+            else:
+                raise RuntimeError(f"Wrong pbc {pbc}.")
         if dim == 3:
-            assert axis is None and a is not None and b is not None and c is not None and alpha is not None and beta is not None and gamma is not None
+            assert axis is None and a is not None and b is not None and c is not None and\
+                   alpha is not None and beta is not None and gamma is not None
             alpha, beta, gamma = np.pi / 180 * np.asarray((alpha, beta, gamma), dtype=float)
             va = np.array([a, 0, 0])
             vb = np.array([b * np.cos(gamma), b * np.sin(gamma), 0])
@@ -523,7 +571,8 @@ class Cell:
             vc = c * np.array([cx, cy, cz])
             return Cell(np.vstack((va, vb, vc)), pbc)
         elif dim == 2:
-            assert axis is not None and a is not None and b is not None and c is None and alpha is not None and beta is None and gamma is None
+            assert axis is not None and a is not None and b is not None and c is None and \
+                   alpha is not None and beta is None and gamma is None
             alpha= np.pi / 180 * alpha
             axis = np.asarray(axis, dtype=float)
             axis /= np.linalg.norm(axis)
@@ -531,15 +580,34 @@ class Cell:
             vb = np.array([b * np.cos(alpha), b * np.sin(alpha), 0])
             return Cell.initFromCellVectors(pbc, np.vstack((va, vb))).getAlignedCell(axis)
         elif dim == 1:
-            assert axis is not None and a is not None and b is None and c is None and alpha is None and beta is None and gamma is None
+            assert axis is not None and a is not None and b is None and c is None and \
+                   alpha is None and beta is None and gamma is None
             cellVectors = np.eye(3)
             cellVectors[np.nonzero(pbc)] *= a
             return Cell(cellVectors, pbc).getAlignedCell(axis)
         elif dim == 0:
-            assert axis is None and a is None and b is None and c is None and alpha is None and beta is None and gamma is None
+            assert axis is None and a is None and b is None and c is None and \
+                   alpha is None and beta is None and gamma is None
             return Cell(np.eye(3), pbc)
         else:
             raise RuntimeError(f"Wrong pbc {pbc}.")
+
+    def getOrthogonallyTransformedCell(self, targetCell):
+        """
+        Transforms cellVectors closely to the cellVectors of the targetCell 
+        within orthogonal transformation. 
+
+        :param targetCell: targen cell to be aligned with.
+
+        :return: **Cell** object with adjusted parameters.
+        """
+        
+        cellVectors = self.getCellVectors()
+        targetCellVectors = targetCell.getCellVectors()
+        transformationMatrix, _ = orthogonal_procrustes(cellVectors, targetCellVectors)
+        newCellVectors = (transformationMatrix.T @ cellVectors.T).T
+        newCell = type(self)(newCellVectors, pbc=self.getPBC())
+        return newCell
 
     def getAlignedCell(self, axis):
         """
@@ -548,6 +616,8 @@ class Cell:
         :raises RuntimeError: if used on 0D or 3D structure.
         :return: Cell with lattice vectors with non-periodic (for 2D) or periodic (1D) aligned along axis.
         """
+        if axis is None:
+            return self
         if (self.dim == 2) or (self.dim == 1):
             assert np.linalg.norm(axis) >= 1e-7
             a = self.getCellVectorsAntiPBC()[0] if self.dim == 2 else self.getCellVectorsPBC()[0]
@@ -571,15 +641,64 @@ class Cell:
         else:
             raise RuntimeError(f"Wrong dim {self.dim}.")
 
-    def getEnvelopeCell(self, coordinates=None, vacuumSize: float=0.0):
+    def getIntrinsicCell(self, coordinates):
+        """
+        :return: **Cell** object depending on dimensionality.
+
+            0d: Cell made of unit principal eigenvectors
+
+            1d: Keep periodic vector from original cell, The other two are perpendicular to it,
+            directed along principal directions of
+            a structure, flatten along periodic vector
+
+            2d: Keep periodic vectors from original cell. The third is a unity vector perpendicular to those two.
+
+            3d: Returns original Cell
+        """
+
+
+        coordinates = np.asarray(coordinates, dtype=float)
+        periodicVecs = self.getCellVectorsPBC()
+        nonperiodicVecs = self.getCellVectorsAntiPBC()
+
+        if self.dim == 0:
+            vectors = self.getPrincipalAxes(coordinates)[1].T
+        elif self.dim == 1:
+            periodicUnit = periodicVecs[0] / np.linalg.norm(periodicVecs[0])
+            orthogPancake = coordinates - np.dot(coordinates, periodicUnit).reshape(-1, 1) * periodicUnit
+            val, vectors = self.getPrincipalAxes(orthogPancake)
+            vectors = vectors.T
+            if val[0] < 1e-5:  # Check if inertia tensor has a singular matrix
+                if np.dot(vectors[0], periodicUnit) == 1:
+                    vectors[0] = vectors[1]
+                vectors[0] -= np.dot(vectors[0], periodicUnit) * periodicUnit
+                vectors[0] /= np.linalg.norm(vectors[0])
+                vectors[1] = np.cross(periodicUnit, vectors[0])
+            vectors[-1] = periodicVecs[0] # any 2D shape has a maximum inertia moment corresponding to orth direction
+            vectors = np.roll(vectors, np.where(self._pbc)[0][0] - 2, axis=0)
+        elif self.dim == 2:
+            normalvector = np.cross(periodicVecs[0], periodicVecs[1])
+            normalvector *= np.sign(np.dot(normalvector, nonperiodicVecs[0]))
+            vectors = copy(self._cellVectors)
+            vectors[np.flatnonzero(self._antipbc)] = normalvector
+        elif self.dim == 3:
+            return copy(self)
+        else:
+            raise ValueError(f'Incorrect dim: {self.dim}')
+
+        newCell = Cell(vectors, self._pbc)
+        return newCell
+
+    def getEnvelopeCell(self, coordinates=None, vacuumSize: float=0.0, intrinsic=False):
         """
         :param coordinates: cartesian atomic coordinates
         :param vacuumSize: vacuum distance added along cell vector
 
         :return:  new cell object, corresponding to
         """
+        cell = self.getIntrinsicCell(coordinates) if intrinsic and coordinates is not None else self
         newCellVectors = []
-        for vector, isPeriodic in zip(self._cellVectors, self._pbc):
+        for vector, isPeriodic in zip(cell.getCellVectors(), self._pbc):
             if isPeriodic:
                 newCellVectors.append(vector)
             else:
@@ -700,20 +819,35 @@ class Cell:
             return a, b, c, alpha, beta, gamma
         elif self.dim == 2:
             cellVectors = self.getCellVectorsPBC()
+            axis, = self.getCellVectorsAntiPBC()
+            axis /= np.linalg.norm(axis)
             a = np.linalg.norm(cellVectors[0, :])
             b = np.linalg.norm(cellVectors[1, :])
             alpha = 180 / np.pi * np.arccos(np.dot(cellVectors[0, :], cellVectors[1, :]) / (a * b))
-            return a, b, alpha
+            return a, b, alpha, axis
         elif self.dim == 1:
-            a = np.linalg.norm(self.getCellVectorsPBC()[0])
-            return a,
+            axis, = self.getCellVectorsPBC()
+            a = np.linalg.norm(axis)
+            axis /= a
+            return a, axis
         elif self.dim == 0:
             return ()
         else:
             raise RuntimeError(f"Wrong dim {self.dim}.")
 
     def __eq__(self, other):
-        return np.allclose(self.getCellParameters(), other.getCellParameters())
+        if self.dim == 0 or self.dim == 3:
+            return np.allclose(self.getCellParameters(), other.getCellParameters())
+        elif self.dim == 1:
+            a1, axis1 = self.getCellParameters()
+            a2, axis2 = other.getCellParameters()
+            return np.allclose(a1 * axis1, a2 * axis2)
+        elif self.dim == 2:
+            a1, b1, alpha1, axis1 = self.getCellParameters()
+            a2, b2, alpha2, axis2 = other.getCellParameters()
+            return np.allclose([a1, b1, alpha1, *axis1], [a2, b2, alpha2, *axis2])
+        else:
+            raise RuntimeError(f"Wrong dim {self.dim}.")
 
     def getVolume(self):
         """
@@ -891,6 +1025,7 @@ class Cell:
 
         :return:
         """
+        coordinates = np.asarray(coordinates, dtype=float)
         if affectedDims is None:
             affectedDims = self.getAntiPBC()
         affectedDims = np.array(affectedDims).reshape((1, 3))
@@ -910,10 +1045,29 @@ class Cell:
         if self._pbc == other.getPBC():
             matrix = np.eye(3)
             inds = np.nonzero(self._pbc)
-            matrix[inds] = np.linalg.solve(self.getCellVectors().T,other.getCellVectors().T).T[inds]
+            matrix[inds] = np.linalg.solve(self.getCellVectors().T, other.getCellVectors().T).T[inds]
             return matrix
         else:
             return np.eye(3)
+
+    def isClose(self, other, tol=5e-2): 
+        """
+        Checks if cell vectors of the given cell are close to ones of the other cell
+
+        :param other: unit cell to compare with.
+
+        :return: True or False.
+        """
+        decompositionMatrix = self.decomposeCell(other)
+        return np.isclose(np.linalg.norm(decompositionMatrix, axis=1).mean(), 1.0, atol=tol)
+
+    def getTrigonalizeTransform(self):
+        normCellVectors = copy(self._cellVectors)
+        normCellVectors /= np.linalg.norm(normCellVectors, axis=1).reshape((-1, 1))
+        normCellParameters = Cell(normCellVectors, self._pbc).getCellParameters()
+        standardCellVectors = Cell.initFromCellParameters(self._pbc, *normCellParameters).getCellVectors()
+        matrix = np.linalg.solve(standardCellVectors, normCellVectors)
+        return Transformation.fromMatrix(matrix, np.array([0.0, 0.0, 0.0]))
 
     def randomTransformation(self):
         """
@@ -927,7 +1081,13 @@ class Cell:
         pbcSum = len(pbcVectorsCart)
         transVec = np.dot(np.random.rand(pbcSum), pbcVectorsCart)
         if pbcSum == 0:
-            rotMatrix = Rotation.random().as_matrix()
+            dir = Rotation.random().as_rotvec()
+            norm = np.linalg.norm(dir)
+            dir /= norm
+            refMatrix = np.eye(3)
+            if norm > np.pi:
+                refMatrix -= 2.0 * np.outer(dir, dir)
+            rotMatrix = refMatrix.dot(Rotation.random().as_matrix())
         elif pbcSum == 1:
             axis = pbcVectorsCart[0]
             rotVec = np.pi * np.random.random() * axis / np.linalg.norm(axis)
@@ -980,3 +1140,14 @@ class Cell:
 
         return [Transformation.fromRotVector([0.,0.,0.], finalCoordinates - initialCoordinates)
                 for finalCoordinates in fittedCoordinates]
+    @staticmethod
+    def getPrincipalAxes(coordinates):
+        """
+        :return: 3x3 matrix of principal axes, main axes of inertia tensor (with all atom masses set to be equal).
+        """
+        coordinates = np.asarray(coordinates, dtype=float)
+        coordinates = coordinates - coordinates.mean(axis=0)
+        val, vectors = np.linalg.eigh(np.eye(3) * np.sum(coordinates ** 2) - np.dot(coordinates.T, coordinates))
+        if np.linalg.det(vectors) < 0:
+            vectors[:, -1] = - vectors[:, -1]
+        return val, vectors

@@ -7,11 +7,9 @@ class RemoveAtom:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
-        self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
-        self.bondHardnessUtility = utilities.bondHardnessUtility
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("RemoveAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
@@ -20,15 +18,14 @@ class RemoveAtom:
         ID = system['ID']
         molecules = system['molecules']
         cell = system['cell']
-        environment = system['environment'] if 'environment' in system else None
         if 'tagsAddRemove' not in system:
             system['tagsAddRemove'] = [[] for _ in range(len(molecules))]
         tagsAddRemove = system['tagsAddRemove']
-        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)  # ,environment)
+        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)  # ,environment)
         atomTypes = structure.getAtomTypes()
         species = np.unique(atomTypes)
 
-        coordinationNumbers = self.bondHardnessUtility.calcCoordinationNumbers(structure)
+        coordinationNumbers = self.bondUtility.calcCoordinationNumbers(structure)
         deltaCNs = np.empty(atomTypes.shape, dtype=float)
         for atomType in species:
             inds = (atomTypes == atomType).nonzero()
@@ -48,14 +45,15 @@ class RemoveAtom:
             offspring['molecules'][0:0] = molecules
             del offspring['molecules'][molInd]
             atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-            minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+            minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
             if disassembler.environment is not None:
                 inds = disassembler.envIndices
                 atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
                     tuple(np.meshgrid(inds, inds))]
             composition = self.simpleMoleculeUtility.composition(offspring)
             if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-                self.environmentUtility.putEnvironment(offspring, environment)
+                if 'environment' in system:
+                    offspring['environment'] = system['environment']
                 self.conditions.putConditions(offspring)
                 tagsAddRemove[molInd].append('removed')
                 offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)

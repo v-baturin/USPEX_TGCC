@@ -9,8 +9,7 @@ class Transmutation:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
-        self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
         # if self.simpleMoleculeUtility.isTrueMolecular:
@@ -22,8 +21,7 @@ class Transmutation:
     def __call__(self, system, *args, **kwargs):
         molecules = system['molecules']
         cell = system['cell']
-        environment = system['environment'] if 'environment' in system else None
-        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
+        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbolsIn = self.simpleMoleculeUtility.moleculeTypes(system)
             symbolsOut = self.compositionSpace.symbols
@@ -39,7 +37,7 @@ class Transmutation:
                 excluded = []
                 for i, s in permutation:
                     excluded.append(i)
-                    position = molecules[i].getCenterOfMassCartesianCoordinates()
+                    position = cell.cartesianToFractional(molecules[i].getCenterOfMassCartesianCoordinates())
                     operation[0:3, 3] = position
                     if s in operations:
                         operations[s].append([[np.copy(operation)]])
@@ -48,9 +46,10 @@ class Transmutation:
 
                 offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
                 offspring['molecules'][0:0] = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
-                self.environmentUtility.putEnvironment(offspring, environment)
+                if 'environment' in system:
+                    offspring['environment'] = system['environment']
                 atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                 if disassembler.environment is not None:
                     inds = disassembler.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]

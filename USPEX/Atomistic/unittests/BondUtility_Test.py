@@ -1,0 +1,946 @@
+import unittest
+import os
+import numpy as np
+from itertools import combinations_with_replacement
+
+from ...components import AtomisticRepresentation, BondUtility
+
+
+class BondUtility_TestHardness(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+        cls.bondUtility = BondUtility()
+
+    def test_graphite(self):
+        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite.POSCAR')
+
+        bonds = self.bondUtility.getMinimalGraphBonds(graphite)
+        H = self.bondUtility.calcHardness(graphite, bonds)
+        self.assertAlmostEqual(H, 0.231, places=3)
+
+    def test_graphite2(self):
+        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite2.POSCAR')
+        bonds = self.bondUtility.getMinimalGraphBonds(graphite)
+        H = self.bondUtility.calcHardness(graphite, bonds)
+        self.assertAlmostEqual(H, 0.433, places=3)
+
+    def test_graphite2_supercell(self):
+        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite2.POSCAR').makeSupercell(3*np.eye(3))
+        bonds = self.bondUtility.getMinimalGraphBonds(graphite)
+        H = self.bondUtility.calcHardness(graphite, bonds)
+        self.assertAlmostEqual(H, 0.433, places=3)
+
+    def test_graphite_1layer(self):
+        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite_1layer.POSCAR')
+        bonds = self.bondUtility.getMinimalGraphBonds(graphite)
+        H = self.bondUtility.calcHardness(graphite, bonds)
+        self.assertAlmostEqual(H, 1.72, places=1)
+
+    def test_aluminium(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/al.POSCAR')
+        bonds = self.bondUtility.getMinimalGraphBonds(system)
+        H = self.bondUtility.calcHardness(system, bonds)
+        self.assertAlmostEqual(H, 10.562, places=3)
+
+    def test_diamond(self):
+        diamond = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/diamond.POSCAR')
+        bonds = self.bondUtility.getMinimalGraphBonds(diamond)
+        H = self.bondUtility.calcHardness(diamond, bonds)
+        self.assertAlmostEqual(H, 89.656, places=3)
+
+    def test_Mg4Al8O16(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/Mg4Al8O16.POSCAR')
+        bonds = self.bondUtility.getMinimalGraphBonds(system)
+        H = self.bondUtility.calcHardness(system, bonds)
+        self.assertAlmostEqual(H, 6.177, places=3)
+
+    def test_Mg4Al8O16_2(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/Mg4Al8O16_2.POSCAR')
+        bonds = self.bondUtility.getMinimalGraphBonds(system)
+        H = self.bondUtility.calcHardness(system, bonds)
+        self.assertAlmostEqual(H, 19.970, places=0)
+
+
+class BondUtility_TestSoftModes(unittest.TestCase):
+    def setUp(self):
+        self.CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.bondUtility = BondUtility()
+
+    def test_MgAlO_system_1(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/MgAlO_system_1.vasp')
+        bonds = self.bondUtility.getMinimalGraphBonds(system)
+        freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
+
+    def test_MgAlO_system_2(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/MgAlO_system_2.vasp')
+        bonds = self.bondUtility.getMinimalGraphBonds(system)
+        freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
+
+    def test_MgAlO_system_3(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/MgAlO_system_3.vasp')
+        bonds = self.bondUtility.getMinimalGraphBonds(system)
+        freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
+
+    # Carbon systems
+    def test_graphite(self):
+        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite.POSCAR')
+        bonds = self.bondUtility.getMinimalGraphBonds(graphite)
+        freq, eigvector = self.bondUtility.calcSoftModes(graphite, bonds)
+
+        freq_ref = [-3.14018492e-16, -2.07235140e-17, 0.00000000e+00, 0.00000000e+00, 2.74458612e-23, 7.54840750e-17,
+                     1.78390610e-16, 8.28730183e-03, 2.70874463e+00,  2.70874473e+00,  2.70892967e+00,  2.70893071e+00]
+
+        self.assertTrue(np.allclose(freq, freq_ref))
+
+    def test_graphite_supercell(self):
+        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite.POSCAR').makeSupercell(2*np.eye(3))
+        bonds = self.bondUtility.getMinimalGraphBonds(graphite)
+        freq, eigvector = self.bondUtility.calcSoftModes(graphite, bonds)
+
+        # freq_ref = [ -6.88734374e-16 , -5.81698639e-16 , -5.81698639e-16 , -3.31208915e-16,
+        #              -2.44283384e-16 , -2.44283384e-16 , -2.00449320e-16 , -2.00449320e-16,
+        #              -1.84332342e-16 , -1.84332342e-16 , -8.40564574e-17 , -8.40564574e-17,
+        #               0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00,
+        #               0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00,
+        #               0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00,
+        #               0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00 ,  0.00000000e+00,
+        #               2.41937007e-17 ,  2.41937007e-17 ,  1.32307517e-16 ,  1.32307517e-16,
+        #               1.52013694e-16 ,  1.52013694e-16 ,  2.21168035e-16 ,  2.73064983e-16,
+        #               2.73064983e-16 ,  4.19113190e-16 ,  4.19113190e-16 ,  5.46889927e-16,
+        #               4.14365091e-03 ,  4.14365091e-03 ,  4.14365091e-03 ,  4.14365091e-03,
+        #               4.14365091e-03 ,  4.14365091e-03 ,  4.14365091e-03 ,  4.14365091e-03,
+        #               8.28730183e-03 ,  8.28730183e-03 ,  8.28730183e-03 ,  8.28730183e-03,
+        #               9.02942371e-01 ,  9.02942371e-01 ,  9.02942412e-01 ,  9.02942412e-01,
+        #               9.02943911e-01 ,  9.02943911e-01 ,  9.02943911e-01 ,  9.02943911e-01,
+        #               9.02949376e-01 ,  9.02949376e-01 ,  9.02952882e-01 ,  9.02952882e-01,
+        #               1.80584705e+00 ,  1.80584705e+00 ,  1.80584705e+00 ,  1.80584705e+00,
+        #               1.80584812e+00 ,  1.80584812e+00 ,  1.80584939e+00 ,  1.80584939e+00,
+        #               1.80597783e+00 ,  1.80597783e+00 ,  1.80598030e+00 ,  1.80598030e+00,
+        #               2.70874463e+00 ,  2.70874463e+00 ,  2.70874463e+00 ,  2.70874463e+00,
+        #               2.70874473e+00 ,  2.70874473e+00 ,  2.70874473e+00 ,  2.70874473e+00,
+        #               2.70888344e+00 ,  2.70888344e+00 ,  2.70888344e+00 ,  2.70888344e+00,
+        #               2.70888357e+00 ,  2.70888357e+00 ,  2.70888481e+00 ,  2.70888481e+00,
+        #               2.70892967e+00 ,  2.70892967e+00 ,  2.70893071e+00 ,  2.70893071e+00]
+        #
+        # self.assertTrue(np.allclose(freq, freq_ref))
+
+    def test_diamond(self):
+        diamond = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/diamond.POSCAR')
+        bonds = self.bondUtility.getMinimalGraphBonds(diamond)
+        freq, eigvector = self.bondUtility.calcSoftModes(diamond, bonds)
+        freq_ref = [ -2.22044605e-16, -2.22044605e-16, -2.22044605e-16,  1.66088535e+00, 1.66088535e+00,  1.66088535e+00]
+        self.assertTrue(np.allclose(freq, freq_ref))
+
+
+    def test_diamond_supercell(self):
+        diamond = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/diamond.POSCAR').makeSupercell(2*np.eye(3))
+        bonds = self.bondUtility.getMinimalGraphBonds(diamond)
+        freq, eigvector = self.bondUtility.calcSoftModes(diamond, bonds)
+
+        freq_ref = [ -4.81633103e-16,  -2.68342179e-16 , -2.38233999e-16 , -2.38233999e-16,
+                     -2.07559197e-16,  -2.07559197e-16 , -9.21082950e-17 , -9.21082950e-17,
+                     -6.07025264e-17,  -6.07025264e-17 , -3.91132036e-17 ,  1.09576306e-16,
+                      2.17278827e-16,   2.17278827e-16 ,  2.69936911e-16 ,  5.45950670e-16,
+                      5.45950670e-16,   4.15221337e-01 ,  4.15221337e-01 ,  4.15221337e-01,
+                      4.15221337e-01,   8.30442674e-01 ,  8.30442674e-01 ,  8.30442674e-01,
+                      8.30442674e-01,   8.30442674e-01 ,  8.30442674e-01 ,  1.24566401e+00,
+                      1.24566401e+00,   1.24566401e+00 ,  1.24566401e+00 ,  1.66088535e+00,
+                      1.66088535e+00,   1.66088535e+00 ,  1.66088535e+00 ,  1.66088535e+00,
+                      1.66088535e+00,   1.66088535e+00 ,  1.66088535e+00 ,  1.66088535e+00,
+                      1.66088535e+00,   1.66088535e+00 ,  1.66088535e+00 ,  1.66088535e+00,
+                      1.66088535e+00,   1.66088535e+00 ,  1.66088535e+00 ,  1.66088535e+00]
+        self.assertTrue(np.allclose(freq, freq_ref))
+
+    def test_MgO_1(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/MgO_system_1.vasp')
+        bonds = self.bondUtility.getMinimalGraphBonds(system)
+        freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
+
+    def test_MgO_2(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/MgO_system_2.vasp')
+        bonds = self.bondUtility.getMinimalGraphBonds(system)
+        freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
+
+
+class BondUtility_TestGraph(unittest.TestCase):
+    def setUp(self):
+        self.CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.cellType = AtomisticRepresentation.cellType
+        self.structureType = AtomisticRepresentation.structureType
+
+    def test_diamond(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/diamond.POSCAR')
+        bonds = BondUtility(goodBonds={frozenset(('C', 'C')): 0.5})
+        bond_in = bonds.getMinimalGraphBonds(system)
+
+    def test_1(self):
+        scaled_positions = np.array([[0., 0., 0.], [0.33333, 0.66667, 0.], [0., 0., 0.5], [0.66667, 0.33334, 0.5]])
+        cell = self.cellType(np.array([[2.456, 0., 0.], [-1.228, 2.126958, 0.], [0., 0., 6.696]]), (1, 1, 1))
+        system = self.structureType([BondUtility.atomType(s) for s in 4 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
+
+        bonds_ref = []
+        bonds_ref.append((2, 3, -0.10204218, 0, -1., -1., 0.))
+        bonds_ref.append((0, 1, -0.10204198, 0, 0., -1., 0.))
+        bonds_ref.append((0, 1, -0.10202091, 0, 0., 0., 0.))
+        bonds_ref.append((2, 3, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((2, 3, -0.10202071, 0, -1., 0., 0.))
+        bonds_ref.append((0, 1, -0.10202071, 0, -1., -1., 0.))
+        bonds_ref.append((0, 2, 1.828, 1, 0., 0., -1.))
+        bonds_ref.append((0, 2, 1.828, 1, 0., 0., 0.))
+
+        bonds = BondUtility(goodBonds={frozenset(('C', 'C')): 0.5})
+        bonds = bonds.getMinimalGraphBonds(system)
+        count = 0
+        len_bonds = 0
+        for i, bond_group in enumerate(bonds):
+            len_bonds += len(bond_group)
+            for bond in bond_group:
+                bond = (bond.indicies[0], bond.indicies[1], bond.delta, i, *bond.direction)
+                if np.any(np.all(np.isclose(np.asarray(bond), np.asarray(bonds_ref)), axis=1)):
+                    count += 1
+                elif bond[0] == bond[1] and np.any(
+                        np.all(np.isclose(np.abs(np.asarray(bond)), np.abs(np.asarray(bonds_ref))), axis=1)):
+                    count += 1
+
+        self.assertTrue(count == len_bonds == len(bonds_ref))
+
+    def test_2(self):
+        cell = self.cellType(np.array([[4.912, 0., 0.], [-2.456, 4.253916, 0.], [0., 0., 13.392]]), (1, 1, 1))
+        scaled_positions = np.array([[0., 0., 0.],
+                                     [0., 0.5, 0.],
+                                     [0.5, 0., 0.],
+                                     [0.5, 0.5, 0.],
+                                     [0., 0., 0.5],
+                                     [0., 0.5, 0.5],
+                                     [0.5, 0., 0.5],
+                                     [0.5, 0.5, 0.5],
+                                     [0.166665, 0.333335, 0.],
+                                     [0.166665, 0.833335, 0.],
+                                     [0.666665, 0.333335, 0.],
+                                     [0.666665, 0.833335, 0.],
+                                     [0.166665, 0.333335, 0.5],
+                                     [0.166665, 0.833335, 0.5],
+                                     [0.666665, 0.333335, 0.5],
+                                     [0.666665, 0.833335, 0.5],
+                                     [0., 0., 0.25],
+                                     [0., 0.5, 0.25],
+                                     [0.5, 0., 0.25],
+                                     [0.5, 0.5, 0.25],
+                                     [0., 0., 0.75],
+                                     [0., 0.5, 0.75],
+                                     [0.5, 0., 0.75],
+                                     [0.5, 0.5, 0.75],
+                                     [0.333335, 0.16667, 0.25],
+                                     [0.333335, 0.66667, 0.25],
+                                     [0.833335, 0.16667, 0.25],
+                                     [0.833335, 0.66667, 0.25],
+                                     [0.333335, 0.16667, 0.75],
+                                     [0.333335, 0.66667, 0.75],
+                                     [0.833335, 0.16667, 0.75],
+                                     [0.833335, 0.66667, 0.75]])
+
+        system = self.structureType([BondUtility.atomType(s) for s in 32 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
+
+        bonds_ref = []
+
+        bonds_ref.append((23, 28, -0.10204218, 0, 0., 0., 0.))
+        bonds_ref.append((19, 24, -0.10204218, 0, 0., 0., 0.))
+        bonds_ref.append((21, 30, -0.10204218, 0, -1., 0., 0.))
+        bonds_ref.append((17, 26, -0.10204218, 0, -1., 0., 0.))
+        bonds_ref.append((20, 31, -0.10204218, 0, -1., -1., 0.))
+        bonds_ref.append((16, 27, -0.10204218, 0, -1., -1., 0.))
+        bonds_ref.append((22, 29, -0.10204218, 0, 0., -1., 0.))
+        bonds_ref.append((18, 25, -0.10204218, 0, 0., -1., 0.))
+        bonds_ref.append((5, 12, -0.10204198, 0, 0., 0., 0.))
+        bonds_ref.append((1, 8, -0.10204198, 0, 0., 0., 0.))
+        bonds_ref.append((7, 14, -0.10204198, 0, 0., 0., 0.))
+        bonds_ref.append((3, 10, -0.10204198, 0, 0., 0., 0.))
+        bonds_ref.append((0, 9, -0.10204198, 0, 0., -1., 0.))
+        bonds_ref.append((4, 13, -0.10204198, 0, 0., -1., 0.))
+        bonds_ref.append((2, 11, -0.10204198, 0, 0., -1., 0.))
+        bonds_ref.append((6, 15, -0.10204198, 0, 0., -1., 0.))
+        bonds_ref.append((5, 13, -0.10202091, 0, 0., 0., 0.))
+        bonds_ref.append((1, 9, -0.10202091, 0, 0., 0., 0.))
+        bonds_ref.append((0, 8, -0.10202091, 0, 0., 0., 0.))
+        bonds_ref.append((4, 12, -0.10202091, 0, 0., 0., 0.))
+        bonds_ref.append((6, 14, -0.10202091, 0, 0., 0., 0.))
+        bonds_ref.append((3, 11, -0.10202091, 0, 0., 0., 0.))
+        bonds_ref.append((7, 15, -0.10202091, 0, 0., 0., 0.))
+        bonds_ref.append((2, 10, -0.10202091, 0, 0., 0., 0.))
+        bonds_ref.append((16, 26, -0.10202071, 0, -1., 0., 0.))
+        bonds_ref.append((20, 30, -0.10202071, 0, -1., 0., 0.))
+        bonds_ref.append((21, 29, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((17, 25, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((20, 28, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((23, 29, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((23, 31, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((21, 31, -0.10202071, 0, -1, 0., 0.))
+        bonds_ref.append((19, 27, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((19, 25, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((18, 24, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((17, 27, -0.10202071, 0, -1., 0., 0.))
+        bonds_ref.append((16, 24, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((22, 28, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((22, 30, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((18, 26, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((4, 15, -0.10202071, 0, -1., -1., 0.))
+        bonds_ref.append((1, 10, -0.10202071, 0, -1., 0., 0.))
+        bonds_ref.append((5, 14, -0.10202071, 0, -1., 0., 0.))
+        bonds_ref.append((0, 11, -0.10202071, 0, -1., -1., 0.))
+        bonds_ref.append((7, 12, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((3, 8, -0.10202071, 0, 0., 0., 0.))
+        bonds_ref.append((2, 9, -0.10202071, 0, 0., -1., 0.))
+        bonds_ref.append((6, 13, -0.10202071, 0, 0., -1., 0.))
+        bonds_ref.append((0, 20, 1.828, 1, 0., 0., -1.))
+        bonds_ref.append((2, 22, 1.828, 1, 0., 0., -1.))
+        bonds_ref.append((1, 21, 1.828, 1, 0., 0., -1.))
+        bonds_ref.append((3, 23, 1.828, 1, 0., 0., -1.))
+        bonds_ref.append((2, 18, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((3, 19, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((5, 17, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((4, 16, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((1, 17, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((7, 19, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((6, 18, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((0, 16, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((5, 21, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((4, 20, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((7, 23, 1.828, 1, 0., 0., 0.))
+        bonds_ref.append((6, 22, 1.828, 1, 0., 0., 0.))
+
+        bonds = BondUtility(goodBonds={frozenset(('C', 'C')): 0.5})
+        bonds = bonds.getMinimalGraphBonds(system)
+        count = 0
+        len_bonds = 0
+        for i, bond_group in enumerate(bonds):
+            len_bonds += len(bond_group)
+            for bond in bond_group:
+                bond = (bond.indicies[0], bond.indicies[1], bond.delta, i, *bond.direction)
+                if np.any(np.all(np.isclose(np.asarray(bond), np.asarray(bonds_ref)), axis=1)):
+                    count += 1
+                elif bond[0] == bond[1] and np.any(
+                        np.all(np.isclose(np.abs(np.asarray(bond)), np.abs(np.asarray(bonds_ref))), axis=1)):
+                    count += 1
+
+        self.assertTrue(count == len_bonds == len(bonds_ref))
+
+    def test_3(self):
+
+        cell = self.cellType(np.array([[4.608, 0., 0.], [-0.192693, 3.708998, 0.], [-2.197042, -1.825517, 3.724799]]), (1, 1, 1))
+        composition = 4 * ['Mg'] + 8 * ['Al'] + 16 * ['O']
+        scaled_positions = np.array([[0.5, 0.5, 0.5],
+                                     [0.765421, 0.935787, 0.064529],
+                                     [0.797228, 0.670421, 0.211417],
+                                     [0.459366, 0.073058, 0.469905],
+                                     [0.435436, 0.447865, 0.035142],
+                                     [0.985428, 0.042431, 0.553334],
+                                     [0.994441, 0.493963, 0.041761],
+                                     [0.239431, 0.42966, 0.545479],
+                                     [0.7958, 0.043874, 0.81675],
+                                     [0.368644, 0.935433, 0.861867],
+                                     [0.832236, 0.510507, 0.537973],
+                                     [0.23725, 0.932897, 0.114496],
+                                     [0.124872, 0.111734, 0.879196],
+                                     [0.490994, 0.851684, 0.676219],
+                                     [0.897435, 0.22867, 0.38446],
+                                     [0.313464, 0.626413, 0.237408],
+                                     [0.784226, 0.276025, 0.67609],
+                                     [0.714371, 0.285057, 0.030802],
+                                     [0.577479, 0.539617, 0.828825],
+                                     [0.172629, 0.556551, 0.823111],
+                                     [0.719101, 0.791037, 0.478798],
+                                     [0.510604, 0.260065, 0.230066],
+                                     [0.090114, 0.893427, 0.286456],
+                                     [0.081952, 0.691647, 0.515724],
+                                     [0.117971, 0.26263, 0.215085],
+                                     [0.313428, 0.183023, 0.690758],
+                                     [0.903796, 0.748461, 0.862665],
+                                     [0.527341, 0.851466, 0.140968]])
+        system = self.structureType([BondUtility.atomType(s) for s in composition], cell.fractionalToCartesian(scaled_positions),
+                                 cell=cell)
+
+        bonds_ref = []
+        bonds_ref.append((1, 2, -1.44760942668, 0, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 3, -1.28681475083, 1, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 7, -1.27704990771, 2, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 11, -1.2725385111, 2, 0.0, -1.0, 0.0))
+        bonds_ref.append((1, 8, -1.19871107901, 3, 0.0, 1.0, -1.0))
+        bonds_ref.append((0, 10, -1.16728876425, 3, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 5, -1.13848165772, 4, 0.0, 1.0, 0.0))
+        bonds_ref.append((2, 4, -1.1317522119, 4, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 6, -1.1204159385, 4, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 9, -1.00182425136, 5, 0.0, 0.0, -1.0))
+        bonds_ref.append((3, 8, -0.932096984135, 6, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 7, -0.876229939617, 7, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 10, -0.839602928417, 7, 0.0, 0.0, 0.0))
+        bonds_ref.append((6, 8, -0.871359215726, 8, 0.0, 0.0, -1.0))
+        bonds_ref.append((9, 11, -0.853940393304, 8, 0.0, 0.0, 1.0))
+        bonds_ref.append((0, 21, -0.788511752891, 9, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 13, -0.788210917373, 9, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 17, -0.777837109737, 9, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 14, -0.768012081612, 9, 0.0, 1.0, 0.0))
+        bonds_ref.append((3, 16, -0.750445788861, 9, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 5, -0.731018969369, 10, 0.0, 1.0, 0.0))
+        bonds_ref.append((0, 18, -0.711753122594, 11, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 27, -0.711677042871, 11, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 22, -0.706882085184, 11, 1.0, 0.0, 0.0))
+        bonds_ref.append((1, 17, -0.688173022255, 11, 0.0, 1.0, 0.0))
+        bonds_ref.append((1, 26, -0.684349357435, 11, 0.0, 0.0, -1.0))
+        bonds_ref.append((2, 23, -0.684045194711, 11, 1.0, 0.0, 0.0))
+        bonds_ref.append((1, 18, -0.682754389723, 11, 0.0, 0.0, -1.0))
+        bonds_ref.append((2, 20, -0.678665090431, 11, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 15, -0.673550465609, 11, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 27, -0.665782983111, 11, 0.0, 0.0, 0.0))
+        bonds_ref.append((4, 9, -0.700694981581, 12, 0.0, -1.0, -1.0))
+        bonds_ref.append((6, 11, -0.666768437796, 12, 1.0, 0.0, 0.0))
+        bonds_ref.append((7, 9, -0.65552343141, 12, 0.0, 0.0, 0.0))
+        bonds_ref.append((10, 14, -0.690500850555, 13, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 14, -0.687333027131, 13, 0.0, 0.0, 0.0))
+        bonds_ref.append((9, 13, -0.663878550232, 13, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 8, -0.676054572893, 14, 0.0, 1.0, 0.0))
+        bonds_ref.append((0, 4, -0.628525670879, 14, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 6, -0.62616837743, 14, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 22, -0.644078271711, 15, 1.0, 0.0, 0.0))
+        bonds_ref.append((3, 25, -0.632453212082, 15, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 13, -0.622512788433, 15, 0.0, -1.0, 0.0))
+        bonds_ref.append((2, 18, -0.621589367331, 15, 0.0, 0.0, -1.0))
+        bonds_ref.append((3, 22, -0.595536688528, 15, 0.0, -1.0, 0.0))
+        bonds_ref.append((0, 1, -0.634831032401, 16, 0.0, 0.0, 1.0))
+        bonds_ref.append((0, 3, -0.624466639667, 16, 0.0, 1.0, 0.0))
+        bonds_ref.append((7, 24, -0.623353250519, 17, 0.0, 0.0, 0.0))
+        bonds_ref.append((10, 20, -0.618594843637, 17, 0.0, 0.0, 0.0))
+        bonds_ref.append((8, 16, -0.617585073636, 17, 0.0, 0.0, 0.0))
+        bonds_ref.append((7, 23, -0.616917895708, 17, 0.0, 0.0, 0.0))
+        bonds_ref.append((6, 15, -0.613556125549, 17, 1.0, 0.0, 0.0))
+        bonds_ref.append((5, 12, -0.607112735154, 17, 1.0, 0.0, 0.0))
+        bonds_ref.append((8, 13, -0.603835243498, 17, 0.0, -1.0, 0.0))
+        bonds_ref.append((8, 26, -0.594728374133, 17, 0.0, -1.0, 0.0))
+        bonds_ref.append((4, 21, -0.59064128896, 17, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 8, -0.603547105599, 18, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 7, -0.591345955964, 18, 1.0, 0.0, 0.0))
+        bonds_ref.append((5, 9, -0.556799902176, 18, 1.0, -1.0, 0.0))
+        bonds_ref.append((0, 11, -0.598702007691, 19, 0.0, -1.0, 0.0))
+        bonds_ref.append((8, 17, -0.571876980219, 20, 0.0, 0.0, 1.0))
+        bonds_ref.append((7, 25, -0.570000792626, 20, 0.0, 0.0, 0.0))
+        bonds_ref.append((11, 22, -0.558180344557, 20, 0.0, 0.0, 0.0))
+        bonds_ref.append((10, 26, -0.554277228491, 20, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 25, -0.553443968697, 20, 1.0, 0.0, 0.0))
+        bonds_ref.append((4, 15, -0.552121825672, 20, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 20, -0.550321222726, 20, 0.0, -1.0, 0.0))
+        bonds_ref.append((10, 16, -0.545960000984, 20, 0.0, 0.0, 0.0))
+        bonds_ref.append((9, 27, -0.538564250198, 20, 0.0, 0.0, 1.0))
+        bonds_ref.append((11, 27, -0.525527868302, 20, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 20, -0.567749771014, 21, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 15, -0.562048063872, 21, 0.0, -1.0, 0.0))
+        bonds_ref.append((1, 13, -0.518949743762, 21, 0.0, 0.0, -1.0))
+        bonds_ref.append((1, 11, -0.544159934948, 22, 1.0, 0.0, 0.0))
+        bonds_ref.append((3, 10, -0.495788350296, 22, 0.0, 0.0, 0.0))
+        bonds_ref.append((9, 12, -0.520840011966, 23, 0.0, 1.0, 0.0))
+        bonds_ref.append((11, 26, -0.517811819363, 23, -1.0, 0.0, -1.0))
+        bonds_ref.append((4, 25, -0.516941603883, 23, 0.0, 0.0, -1.0))
+        bonds_ref.append((4, 19, -0.515354631641, 23, 0.0, 0.0, -1.0))
+        bonds_ref.append((6, 24, -0.509725417791, 23, 1.0, 0.0, 0.0))
+        bonds_ref.append((4, 27, -0.503248692849, 23, 0.0, 0.0, 0.0))
+        bonds_ref.append((10, 23, -0.502181918244, 23, 1.0, 0.0, 0.0))
+        bonds_ref.append((8, 20, -0.49916925227, 23, 0.0, -1.0, 0.0))
+        bonds_ref.append((6, 16, -0.495153194502, 23, 0.0, 0.0, -1.0))
+        bonds_ref.append((5, 23, -0.494330404329, 23, 1.0, -1.0, 0.0))
+        bonds_ref.append((11, 24, -0.485630801483, 23, 0.0, 1.0, 0.0))
+        bonds_ref.append((9, 25, -0.482119548167, 23, 0.0, 1.0, 0.0))
+        bonds_ref.append((6, 22, -0.48005325087, 23, 1.0, 0.0, 0.0))
+        bonds_ref.append((8, 12, -0.477424147227, 23, 1.0, 0.0, 0.0))
+        bonds_ref.append((7, 10, -0.518319860037, 24, -1.0, 0.0, 0.0))
+        bonds_ref.append((5, 10, -0.49733775904, 24, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 24, -0.507538803586, 25, 0.0, 0.0, 0.0))
+        bonds_ref.append((7, 19, -0.470520168897, 26, 0.0, 0.0, 0.0))
+        bonds_ref.append((7, 18, -0.46954330625, 26, 0.0, 0.0, 0.0))
+        bonds_ref.append((11, 12, -0.468669797124, 26, 0.0, 1.0, -1.0))
+        bonds_ref.append((7, 14, -0.468542369508, 26, -1.0, 0.0, 0.0))
+        bonds_ref.append((9, 23, -0.455688356409, 26, 0.0, 0.0, 0.0))
+        bonds_ref.append((10, 21, -0.447515546401, 26, 0.0, 0.0, 0.0))
+        bonds_ref.append((6, 26, -0.432812560114, 26, 0.0, 0.0, -1.0))
+        bonds_ref.append((6, 17, -0.42948973065, 26, 0.0, 0.0, 0.0))
+        bonds_ref.append((11, 21, -0.428159532259, 26, 0.0, 1.0, 0.0))
+        bonds_ref.append((11, 15, -0.427112198422, 26, 0.0, 0.0, 0.0))
+        bonds_ref.append((11, 19, -0.422055687698, 26, 0.0, 0.0, -1.0))
+        bonds_ref.append((3, 21, -0.455450686828, 27, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 20, -0.443203175746, 27, 0.0, -1.0, 0.0))
+        bonds_ref.append((0, 16, -0.429614440007, 27, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 24, -0.424373270747, 27, 1.0, 1.0, 0.0))
+        bonds_ref.append((3, 27, -0.422696874422, 27, 0.0, -1.0, 0.0))
+        bonds_ref.append((4, 17, -0.415934138808, 28, 0.0, 0.0, 0.0))
+        bonds_ref.append((10, 19, -0.41356600012, 28, 1.0, 0.0, 0.0))
+        bonds_ref.append((5, 16, -0.399006842476, 28, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 22, -0.387824144586, 28, 1.0, -1.0, 0.0))
+        bonds_ref.append((9, 21, -0.383027255037, 28, 0.0, 1.0, 1.0))
+        bonds_ref.append((8, 10, -0.415706385504, 29, 0.0, -1.0, 0.0))
+        bonds_ref.append((4, 7, -0.409900805254, 29, 0.0, 0.0, -1.0))
+        bonds_ref.append((8, 11, -0.393601404544, 29, 1.0, -1.0, 1.0))
+        bonds_ref.append((5, 10, -0.392617038721, 29, 0.0, -1.0, 0.0))
+        bonds_ref.append((4, 11, -0.366136736129, 29, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 9, -0.399492470577, 30, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 4, -0.394978433802, 30, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 26, -0.359897897504, 31, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 18, -0.322095275851, 31, 0.0, 0.0, 0.0))
+        bonds_ref.append((4, 6, -0.358190458814, 32, -1.0, 0.0, 0.0))
+        bonds_ref.append((8, 9, -0.310149580351, 32, 0.0, -1.0, 0.0))
+        bonds_ref.append((4, 18, -0.355737328445, 33, 0.0, 0.0, -1.0))
+        bonds_ref.append((4, 12, -0.349854531446, 33, 0.0, 0.0, -1.0))
+        bonds_ref.append((9, 19, -0.334768513311, 33, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 7, -0.342974995052, 34, 1.0, 1.0, 0.0))
+        bonds_ref.append((3, 9, -0.338816886278, 34, 0.0, -1.0, 0.0))
+        bonds_ref.append((3, 5, -0.336379275084, 34, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 6, -0.312840415727, 34, -1.0, 0.0, 0.0))
+        bonds_ref.append((4, 10, -0.302362976179, 35, 0.0, 0.0, 0.0))
+        bonds_ref.append((4, 5, -0.301450527911, 35, -1.0, 0.0, -1.0))
+        bonds_ref.append((6, 10, -0.272767993165, 35, 0.0, 0.0, -1.0))
+        bonds_ref.append((0, 2, -0.293615837613, 36, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 2, -0.283226454628, 36, 0.0, 1.0, 0.0))
+        bonds_ref.append((1, 10, -0.290455789647, 37, 0.0, 1.0, 0.0))
+        bonds_ref.append((1, 6, -0.282772525587, 37, 0.0, 1.0, 0.0))
+        bonds_ref.append((3, 6, -0.253918442024, 37, -1.0, -1.0, 0.0))
+        bonds_ref.append((2, 7, -0.247323841492, 37, 1.0, 0.0, 0.0))
+        bonds_ref.append((8, 24, -0.279313583623, 38, 1.0, 0.0, 1.0))
+        bonds_ref.append((7, 13, -0.250686313779, 38, 0.0, 0.0, 0.0))
+        bonds_ref.append((6, 12, -0.230543507282, 38, 1.0, 0.0, -1.0))
+        bonds_ref.append((7, 11, -0.238760129419, 39, 0.0, -1.0, 0.0))
+        bonds_ref.append((6, 7, -0.21487523995, 39, 1.0, 0.0, 0.0))
+        bonds_ref.append((4, 9, -0.199330142219, 39, 0.0, 0.0, -1.0))
+        bonds_ref.append((3, 24, -0.234801162724, 40, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 14, -0.200528677719, 40, 0.0, 1.0, 0.0))
+        bonds_ref.append((2, 8, -0.233626978095, 41, 0.0, 0.0, -1.0))
+        bonds_ref.append((3, 5, -0.223540904224, 41, -1.0, 0.0, 0.0))
+        bonds_ref.append((3, 4, -0.195003704025, 41, 0.0, -1.0, 0.0))
+        bonds_ref.append((2, 9, -0.189865167135, 41, 0.0, 0.0, -1.0))
+        bonds_ref.append((9, 17, -0.225046286763, 42, 0.0, 1.0, 1.0))
+        bonds_ref.append((6, 19, -0.219423428713, 42, 1.0, 0.0, -1.0))
+        bonds_ref.append((2, 3, -0.208316970367, 43, 0.0, 1.0, 0.0))
+        bonds_ref.append((1, 7, -0.168784853396, 44, 0.0, 0.0, -1.0))
+        bonds_ref.append((3, 6, -0.154785994033, 44, 0.0, 0.0, 1.0))
+        bonds_ref.append((1, 4, -0.121400853441, 44, 0.0, 1.0, 0.0))
+        bonds_ref.append((2, 11, -0.120019714832, 44, 1.0, 0.0, 0.0))
+        bonds_ref.append((10, 11, -0.1518599357, 45, 1.0, 0.0, 1.0))
+        bonds_ref.append((5, 6, -0.145298256865, 45, 0.0, 0.0, 1.0))
+        bonds_ref.append((9, 10, -0.130480096409, 45, -1.0, 0.0, 0.0))
+        bonds_ref.append((4, 11, -0.120710628739, 45, 0.0, -1.0, 0.0))
+        bonds_ref.append((4, 20, -0.133321861074, 46, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 19, -0.12660288173, 46, 1.0, 0.0, 0.0))
+        bonds_ref.append((6, 18, -0.11532023857, 46, 0.0, 0.0, -1.0))
+        bonds_ref.append((1, 21, -0.132892522168, 47, 0.0, 1.0, 0.0))
+        bonds_ref.append((0, 6, -0.113698522026, 48, 0.0, 0.0, 1.0))
+        bonds_ref.append((3, 9, -0.0940037207948, 48, 0.0, -1.0, -1.0))
+        bonds_ref.append((1, 11, -0.0681270382781, 48, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 3, -0.0877064243356, 49, 0.0, 1.0, -1.0))
+        bonds_ref.append((0, 2, -0.0782044877177, 49, 0.0, 0.0, 1.0))
+        bonds_ref.append((1, 3, -0.0751024496108, 49, 1.0, 1.0, 0.0))
+        bonds_ref.append((7, 22, -0.072928457092, 50, 0.0, -1.0, 0.0))
+        bonds_ref.append((9, 18, -0.072319178444, 50, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 4, -0.05293577234, 51, 0.0, 0.0, 1.0))
+        bonds_ref.append((1, 10, -0.0473278299127, 51, 0.0, 0.0, -1.0))
+        bonds_ref.append((2, 21, -0.052240520432, 52, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 26, -0.0480369959256, 52, 0.0, 0.0, -1.0))
+        bonds_ref.append((2, 14, -0.00536874742255, 52, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 3, -0.0361287600925, 53, 0.0, 1.0, 0.0))
+        bonds_ref.append((2, 3, -0.034756709884, 53, 1.0, 1.0, 0.0))
+        bonds_ref.append((0, 25, 0.00606319748182, 54, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 17, 0.0349857076056, 54, 0.0, 0.0, 1.0))
+        bonds_ref.append((0, 23, 0.0418892912567, 54, 0.0, 0.0, 0.0))
+        bonds_ref.append((6, 23, 0.0250766694094, 55, 1.0, 0.0, 0.0))
+        bonds_ref.append((5, 27, 0.0601893113107, 55, 0.0, -1.0, 0.0))
+        bonds_ref.append((0, 8, 0.0473912427826, 56, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 8, 0.0532279132098, 56, 0.0, 1.0, 0.0))
+        bonds_ref.append((2, 9, 0.0613574630477, 56, 0.0, -1.0, -1.0))
+        bonds_ref.append((2, 8, 0.0663488404393, 56, 0.0, 1.0, -1.0))
+        bonds_ref.append((2, 9, 0.0709199513809, 56, 1.0, 0.0, 0.0))
+        bonds_ref.append((2, 11, 0.0819764261017, 56, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 9, 0.0879175597571, 56, 0.0, -1.0, -1.0))
+        bonds_ref.append((2, 7, 0.0970437898162, 56, 0.0, 0.0, -1.0))
+        bonds_ref.append((6, 11, 0.0524578677246, 57, 1.0, -1.0, 0.0))
+        bonds_ref.append((2, 3, 0.0794242612458, 58, 0.0, 0.0, -1.0))
+        bonds_ref.append((2, 24, 0.099330306626, 59, 1.0, 0.0, 0.0))
+        bonds_ref.append((5, 11, 0.113469100732, 60, 1.0, -1.0, 1.0))
+        bonds_ref.append((5, 6, 0.121191819511, 60, 0.0, -1.0, 0.0))
+        bonds_ref.append((4, 6, 0.137529790686, 60, 0.0, 0.0, 0.0))
+        bonds_ref.append((8, 10, 0.1434035437, 60, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 4, 0.115639234696, 61, 0.0, 0.0, 1.0))
+        bonds_ref.append((3, 7, 0.130559185437, 61, 0.0, -1.0, 0.0))
+        bonds_ref.append((0, 11, 0.13590335867, 61, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 7, 0.164811605116, 61, 1.0, 1.0, 0.0))
+        bonds_ref.append((21, 27, 0.116646443604, 62, 0.0, -1.0, 0.0))
+        bonds_ref.append((18, 25, 0.137425656893, 62, 0.0, 0.0, 0.0))
+        bonds_ref.append((12, 24, 0.165363261895, 62, 0.0, 0.0, 1.0))
+        bonds_ref.append((7, 15, 0.116693423, 63, 0.0, 0.0, 0.0))
+        bonds_ref.append((10, 17, 0.118593465378, 63, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 10, 0.16643001788, 64, 0.0, -1.0, 0.0))
+        bonds_ref.append((0, 5, 0.166694517475, 64, 0.0, 1.0, 0.0))
+        bonds_ref.append((3, 4, 0.206416876926, 64, 0.0, 0.0, 0.0))
+        bonds_ref.append((15, 22, 0.182385896439, 65, 0.0, 0.0, 0.0))
+        bonds_ref.append((13, 25, 0.191325969153, 65, 0.0, 1.0, 0.0))
+        bonds_ref.append((19, 26, 0.192491775834, 65, -1.0, 0.0, 0.0))
+        bonds_ref.append((20, 27, 0.201146430315, 65, 0.0, 0.0, 0.0))
+        bonds_ref.append((15, 24, 0.206490752131, 65, 0.0, 0.0, 0.0))
+        bonds_ref.append((22, 23, 0.210836016509, 65, 0.0, 0.0, 0.0))
+        bonds_ref.append((17, 18, 0.211461430422, 65, 0.0, 0.0, -1.0))
+        bonds_ref.append((22, 24, 0.21800734493, 65, 0.0, 1.0, 0.0))
+        bonds_ref.append((22, 25, 0.225320230858, 65, 0.0, 1.0, 0.0))
+        bonds_ref.append((13, 18, 0.229368597314, 65, 0.0, 0.0, 0.0))
+        bonds_ref.append((4, 8, 0.186073471321, 66, 0.0, 0.0, -1.0))
+        bonds_ref.append((5, 7, 0.188909844539, 66, 1.0, -1.0, 0.0))
+        bonds_ref.append((8, 9, 0.192280317845, 66, 1.0, -1.0, 0.0))
+        bonds_ref.append((4, 5, 0.216861636551, 66, 0.0, 1.0, 0.0))
+        bonds_ref.append((6, 8, 0.222816410262, 66, 0.0, 1.0, -1.0))
+        bonds_ref.append((7, 11, 0.229390612447, 66, 0.0, 0.0, 1.0))
+        bonds_ref.append((2, 15, 0.219577192749, 67, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 20, 0.22212738943, 67, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 14, 0.248480345542, 67, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 14, 0.250967530723, 67, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 23, 0.252458852453, 67, 0.0, -1.0, 0.0))
+        bonds_ref.append((0, 5, 0.232055774106, 68, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 10, 0.268629543682, 68, 0.0, 1.0, 0.0))
+        bonds_ref.append((10, 12, 0.235045025459, 69, 1.0, 1.0, 0.0))
+        bonds_ref.append((8, 18, 0.241370901712, 69, 0.0, -1.0, 0.0))
+        bonds_ref.append((8, 18, 0.268892750487, 69, 0.0, 0.0, 0.0))
+        bonds_ref.append((19, 27, 0.241651157909, 70, 0.0, 0.0, 1.0))
+        bonds_ref.append((18, 26, 0.24638033115, 70, 0.0, 0.0, 0.0))
+        bonds_ref.append((14, 17, 0.252221593662, 70, 0.0, 0.0, 0.0))
+        bonds_ref.append((12, 25, 0.252742511619, 70, 0.0, 0.0, 0.0))
+        bonds_ref.append((16, 26, 0.25425288051, 70, 0.0, 0.0, 0.0))
+        bonds_ref.append((15, 27, 0.255614623616, 70, 0.0, 0.0, 0.0))
+        bonds_ref.append((19, 23, 0.258857890186, 70, 0.0, 0.0, 0.0))
+        bonds_ref.append((14, 24, 0.260119566376, 70, 1.0, 0.0, 0.0))
+        bonds_ref.append((15, 20, 0.275570166731, 70, 0.0, 0.0, 0.0))
+        bonds_ref.append((22, 26, 0.279233307838, 70, -1.0, 0.0, -1.0))
+        bonds_ref.append((12, 26, 0.283521726679, 70, -1.0, -1.0, 0.0))
+        bonds_ref.append((19, 25, 0.284549888798, 70, 0.0, 0.0, 0.0))
+        bonds_ref.append((14, 21, 0.289346696145, 70, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 3, 0.2426793769, 71, 0.0, 0.0, -1.0))
+        bonds_ref.append((0, 2, 0.254611289485, 71, -1.0, 0.0, 0.0))
+        bonds_ref.append((0, 1, 0.270698776612, 71, 0.0, -1.0, 0.0))
+        bonds_ref.append((7, 9, 0.263302839812, 72, 0.0, -1.0, 0.0))
+        bonds_ref.append((10, 11, 0.273145261404, 72, 0.0, -1.0, 0.0))
+        bonds_ref.append((5, 11, 0.306090484619, 72, 1.0, -1.0, 0.0))
+        bonds_ref.append((9, 10, 0.30789073506, 72, 0.0, 1.0, 1.0))
+        bonds_ref.append((2, 25, 0.270755370995, 73, 0.0, 0.0, -1.0))
+        bonds_ref.append((2, 15, 0.271698328924, 73, 1.0, 0.0, 0.0))
+        bonds_ref.append((0, 12, 0.280570852706, 73, 0.0, 0.0, -1.0))
+        bonds_ref.append((1, 17, 0.285610955864, 73, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 12, 0.291751061511, 73, 1.0, 1.0, -1.0))
+        bonds_ref.append((2, 16, 0.30342378783, 73, 0.0, 0.0, -1.0))
+        bonds_ref.append((10, 18, 0.288633489304, 74, 0.0, 0.0, 0.0))
+        bonds_ref.append((8, 25, 0.290727652311, 74, 0.0, 0.0, 0.0))
+        bonds_ref.append((4, 24, 0.321377494891, 74, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 1, 0.29368100953, 75, -1.0, -1.0, 0.0))
+        bonds_ref.append((16, 18, 0.294027297166, 76, 0.0, 0.0, 0.0))
+        bonds_ref.append((14, 22, 0.301774029664, 76, 1.0, -1.0, 0.0))
+        bonds_ref.append((17, 21, 0.305251377272, 76, 0.0, 0.0, 0.0))
+        bonds_ref.append((14, 23, 0.306537426315, 76, 1.0, 0.0, 0.0))
+        bonds_ref.append((18, 27, 0.308046156666, 76, 0.0, 0.0, 1.0))
+        bonds_ref.append((16, 20, 0.311326353238, 76, 0.0, -1.0, 0.0))
+        bonds_ref.append((12, 21, 0.31483294832, 76, 0.0, 0.0, 1.0))
+        bonds_ref.append((14, 16, 0.316971734955, 76, 0.0, 0.0, 0.0))
+        bonds_ref.append((13, 17, 0.321327223705, 76, 0.0, 1.0, 1.0))
+        bonds_ref.append((13, 23, 0.323768603741, 76, 0.0, 0.0, 0.0))
+        bonds_ref.append((15, 19, 0.324400021067, 76, 0.0, 0.0, -1.0))
+        bonds_ref.append((13, 15, 0.325785024091, 76, 0.0, 0.0, 0.0))
+        bonds_ref.append((7, 8, 0.321163192116, 77, -1.0, 0.0, -1.0))
+        bonds_ref.append((6, 10, 0.321891661091, 77, 0.0, 0.0, 0.0))
+        bonds_ref.append((7, 10, 0.330631911597, 77, 0.0, 0.0, 0.0))
+        bonds_ref.append((4, 8, 0.333573662261, 77, -1.0, 0.0, -1.0))
+        bonds_ref.append((4, 10, 0.339796468285, 77, -1.0, 0.0, -1.0))
+        bonds_ref.append((7, 8, 0.340436880536, 77, 0.0, 1.0, 0.0))
+        bonds_ref.append((2, 25, 0.327039892638, 78, 1.0, 1.0, 0.0))
+        bonds_ref.append((0, 22, 0.336061939478, 78, 0.0, -1.0, 0.0))
+        bonds_ref.append((0, 27, 0.365572157337, 78, 0.0, -1.0, 0.0))
+        bonds_ref.append((17, 24, 0.346309578072, 79, 1.0, 0.0, 0.0))
+        bonds_ref.append((20, 26, 0.347924966677, 79, 0.0, 0.0, 0.0))
+        bonds_ref.append((13, 20, 0.352944006614, 79, 0.0, 0.0, 0.0))
+        bonds_ref.append((15, 21, 0.353651885668, 79, 0.0, 0.0, 0.0))
+        bonds_ref.append((20, 23, 0.35370452713, 79, 1.0, 0.0, 0.0))
+        bonds_ref.append((17, 25, 0.362585314391, 79, 0.0, 0.0, -1.0))
+        bonds_ref.append((12, 16, 0.37330887918, 79, -1.0, 0.0, 0.0))
+        bonds_ref.append((16, 19, 0.380501704436, 79, 1.0, 0.0, 0.0))
+        bonds_ref.append((14, 19, 0.38301641981, 79, 1.0, 0.0, 0.0))
+        bonds_ref.append((14, 27, 0.394289153501, 79, 0.0, -1.0, 0.0))
+        bonds_ref.append((9, 26, 0.34935388158, 80, -1.0, 0.0, 0.0))
+        bonds_ref.append((10, 13, 0.379996833399, 80, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 26, 0.380536048774, 80, 0.0, -1.0, 0.0))
+        bonds_ref.append((0, 5, 0.383395035736, 81, -1.0, 0.0, 0.0))
+        bonds_ref.append((1, 23, 0.395571280042, 82, 1.0, 0.0, 0.0))
+        bonds_ref.append((2, 19, 0.417248633785, 82, 0.0, 0.0, -1.0))
+        bonds_ref.append((1, 25, 0.42202916261, 82, 0.0, 1.0, -1.0))
+        bonds_ref.append((1, 16, 0.430559785735, 82, 0.0, 0.0, -1.0))
+        bonds_ref.append((1, 20, 0.431259200904, 82, 0.0, 0.0, -1.0))
+        bonds_ref.append((1, 19, 0.434068234695, 82, 0.0, 0.0, -1.0))
+        bonds_ref.append((0, 22, 0.437563645637, 82, 0.0, 0.0, 0.0))
+        bonds_ref.append((7, 27, 0.399743318837, 83, 0.0, 0.0, 1.0))
+        bonds_ref.append((8, 22, 0.407996453678, 83, 1.0, -1.0, 1.0))
+        bonds_ref.append((8, 14, 0.423083356602, 83, 0.0, 0.0, 1.0))
+        bonds_ref.append((10, 15, 0.428302297895, 83, 0.0, 0.0, 0.0))
+        bonds_ref.append((7, 21, 0.428826416963, 83, 0.0, 0.0, 0.0))
+        bonds_ref.append((10, 27, 0.434024018944, 83, 0.0, -1.0, 0.0))
+        bonds_ref.append((9, 14, 0.437544555055, 83, 0.0, 1.0, 1.0))
+        bonds_ref.append((11, 20, 0.444087305487, 83, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 24, 0.446086905466, 83, 1.0, 0.0, 0.0))
+        bonds_ref.append((23, 25, 0.420420266142, 84, 0.0, 1.0, 0.0))
+        bonds_ref.append((12, 23, 0.440105059816, 84, 0.0, -1.0, 0.0))
+        bonds_ref.append((21, 24, 0.45809136518, 84, 0.0, 0.0, 0.0))
+        bonds_ref.append((23, 24, 0.459654635681, 84, 0.0, 0.0, 0.0))
+        bonds_ref.append((12, 19, 0.463317969095, 84, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 11, 0.434405571665, 85, 1.0, 0.0, 1.0))
+        bonds_ref.append((0, 8, 0.448639198715, 85, -1.0, 0.0, -1.0))
+        bonds_ref.append((2, 10, 0.460868939359, 85, 0.0, 0.0, -1.0))
+        bonds_ref.append((1, 10, 0.461305233393, 85, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 27, 0.448662804763, 86, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 12, 0.452541615187, 86, 1.0, 1.0, 0.0))
+        bonds_ref.append((2, 16, 0.456643123891, 86, 0.0, 1.0, 0.0))
+        bonds_ref.append((3, 19, 0.456669435315, 86, 0.0, -1.0, -1.0))
+        bonds_ref.append((3, 12, 0.459226168915, 86, 0.0, 0.0, -1.0))
+        bonds_ref.append((3, 26, 0.469728322408, 86, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 26, 0.475294298221, 86, -1.0, -1.0, -1.0))
+        bonds_ref.append((3, 14, 0.489620083368, 86, -1.0, 0.0, 0.0))
+        bonds_ref.append((0, 19, 0.491790419578, 86, 0.0, 0.0, 0.0))
+        bonds_ref.append((9, 22, 0.452534687616, 87, 0.0, 0.0, 0.0))
+        bonds_ref.append((7, 17, 0.459692772761, 87, -1.0, 0.0, 0.0))
+        bonds_ref.append((11, 23, 0.460538255189, 87, 0.0, 0.0, -1.0))
+        bonds_ref.append((5, 13, 0.46939201047, 87, 1.0, -1.0, 0.0))
+        bonds_ref.append((6, 14, 0.483699496437, 87, 0.0, 0.0, 0.0))
+        bonds_ref.append((11, 25, 0.485963682206, 87, 0.0, 1.0, 0.0))
+        bonds_ref.append((4, 13, 0.48645327044, 87, 0.0, -1.0, -1.0))
+        bonds_ref.append((6, 9, 0.486553849886, 88, 1.0, -1.0, -1.0))
+        bonds_ref.append((6, 9, 0.487330470094, 88, 1.0, 0.0, -1.0))
+        bonds_ref.append((8, 11, 0.515789812928, 88, 0.0, -1.0, 0.0))
+        bonds_ref.append((4, 7, 0.528869497205, 88, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 6, 0.490822553044, 89, -1.0, 0.0, 0.0))
+        bonds_ref.append((3, 8, 0.495940579228, 89, -1.0, 0.0, -1.0))
+        bonds_ref.append((1, 8, 0.500961538621, 89, 0.0, 0.0, -1.0))
+        bonds_ref.append((1, 5, 0.521673590206, 89, 0.0, 1.0, -1.0))
+        bonds_ref.append((2, 24, 0.505589059136, 90, 1.0, 1.0, 0.0))
+        bonds_ref.append((1, 25, 0.519570627822, 90, 1.0, 1.0, 0.0))
+        bonds_ref.append((1, 16, 0.526762600479, 90, 0.0, 1.0, -1.0))
+        bonds_ref.append((2, 13, 0.531406969257, 90, 0.0, 0.0, -1.0))
+        bonds_ref.append((2, 21, 0.540875485703, 90, 0.0, 1.0, 0.0))
+        bonds_ref.append((1, 23, 0.546788631163, 90, 1.0, 1.0, 0.0))
+        bonds_ref.append((8, 15, 0.507655391348, 91, 0.0, -1.0, 0.0))
+        bonds_ref.append((5, 21, 0.51995545524, 91, 0.0, 0.0, 0.0))
+        bonds_ref.append((11, 15, 0.522667273668, 91, 0.0, 1.0, 0.0))
+        bonds_ref.append((4, 14, 0.531604366357, 91, 0.0, 0.0, 0.0))
+        bonds_ref.append((7, 22, 0.534857499249, 91, 0.0, 0.0, 0.0))
+        bonds_ref.append((10, 24, 0.549937623155, 91, 1.0, 0.0, 0.0))
+        bonds_ref.append((0, 10, 0.54581627494, 92, -1.0, 0.0, 0.0))
+        bonds_ref.append((6, 7, 0.553709995598, 93, 1.0, 0.0, -1.0))
+        bonds_ref.append((5, 11, 0.56176858034, 93, 0.0, -1.0, 0.0))
+        bonds_ref.append((7, 8, 0.563442962229, 93, 0.0, 0.0, 0.0))
+        bonds_ref.append((5, 9, 0.593079718433, 93, 0.0, -1.0, -1.0))
+        bonds_ref.append((4, 8, 0.599859483519, 93, 0.0, 1.0, 0.0))
+        bonds_ref.append((0, 14, 0.560828986611, 94, -1.0, 0.0, 0.0))
+        bonds_ref.append((3, 15, 0.567517495066, 94, 0.0, 0.0, 0.0))
+        bonds_ref.append((1, 16, 0.568046844737, 94, 0.0, 1.0, 0.0))
+        bonds_ref.append((0, 17, 0.584676015003, 94, 0.0, 0.0, 1.0))
+        bonds_ref.append((3, 13, 0.595806341869, 94, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 9, 0.602734053011, 95, 0.0, 0.0, 0.0))
+        bonds_ref.append((2, 5, 0.605007731428, 95, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 5, 0.609192565302, 95, -1.0, 1.0, 0.0))
+        bonds_ref.append((0, 19, 0.622787420684, 96, 1.0, 0.0, 0.0))
+        bonds_ref.append((0, 25, 0.626082569015, 96, 0.0, 1.0, 0.0))
+        bonds_ref.append((2, 17, 0.626712883769, 96, 0.0, 1.0, 0.0))
+        bonds_ref.append((0, 23, 0.628451826295, 96, 1.0, 0.0, 0.0))
+        bonds_ref.append((0, 17, 0.632188206871, 96, 0.0, 0.0, 0.0))
+        bonds_ref.append((3, 12, 0.641849198036, 96, 1.0, 0.0, 0.0))
+        bonds_ref.append((3, 26, 0.647828916852, 96, 0.0, -1.0, 0.0))
+        bonds_ref.append((1, 15, 0.65360017884, 96, 1.0, 0.0, 0.0))
+        bonds_ref.append((2, 3, 0.671189050107, 97, 0.0, 0.0, 0.0))
+        bonds_ref.append((0, 2, 0.692718495389, 97, 0.0, -1.0, 0.0))
+        bonds_ref.append((3, 8, 0.671967709542, 98, 0.0, 1.0, 0.0))
+        bonds_ref.append((0, 9, 0.707539982977, 98, 0.0, -1.0, 0.0))
+        bonds_ref.append((1, 9, 0.712598720789, 98, 1.0, 0.0, -1.0))
+        bonds_ref.append((1, 8, 0.718784077469, 98, 0.0, 1.0, 0.0))
+        bonds_ref.append((0, 7, 0.722987831239, 99, 1.0, 0.0, 0.0))
+        bonds_ref.append((2, 6, 0.750275712322, 99, -1.0, 0.0, 0.0))
+        bonds_ref.append((0, 1, 0.762998361337, 100, 0.0, 0.0, 0.0))
+
+        bonds = BondUtility(goodBonds={frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'Al')): 0.14142136,
+                                       frozenset(('Mg', 'O')): 0.17320508, frozenset(('Al', 'Al')): 0.2,
+                                       frozenset(('Al', 'O')): 0.24494897, frozenset(('O', 'O')): 0.3})
+        bonds = bonds.getMinimalGraphBonds(system)
+        count = 0
+        len_bonds = 0
+        for i, bond_group in enumerate(bonds):
+            len_bonds += len(bond_group)
+            for bond in bond_group:
+                bond = (bond.indicies[0], bond.indicies[1], bond.delta, i, *bond.direction)
+                if np.any(np.all(np.isclose(np.asarray(bond), np.asarray(bonds_ref)), axis=1)):
+                    count += 1
+                elif bond[0] == bond[1] and np.any(
+                        np.all(np.isclose(np.abs(np.asarray(bond)), np.abs(np.asarray(bonds_ref))), axis=1)):
+                    count += 1
+
+        self.assertTrue(count == len_bonds == len(bonds_ref))
+
+    def test_MgAlO_new1(self):
+        symbols = 4 * ['Mg'] + 8 * ['Al'] + 16 * ['O']
+        cell = self.cellType(np.array([[5.33332300000000, 0, 0],
+                              [1.29439479190448, 4.59444298831747, 0],
+                              [-1.33982421702407, -0.0145756339008623, 8.28570550370264]]), (1, 1, 1))
+        scaled_positions = np.array([[0.4273819, 0.4169689, 0.9961479],
+                                     [0.7802706, 0.3254624, 0.3365667],
+                                     [0.1237048, 0.9129726, 0.8229303],
+                                     [0.8074686, 0.8263651, 0.4853215],
+                                     [0.2699683, 0.3808253, 0.3190440],
+                                     [0.9269368, 0.4117413, 0.9967983],
+                                     [0.3049355, 0.8799713, 0.5041435],
+                                     [0.6330099, 0.9161924, 0.8278458],
+                                     [0.9797116, 0.8917419, 0.1600866],
+                                     [0.4855877, 0.8787274, 0.1622838],
+                                     [0.6122549, 0.3801172, 0.6536809],
+                                     [0.1076103, 0.3951207, 0.6668135],
+                                     [0.4818512, 0.03276740, 0.3675936],
+                                     [0.9390580, 0.7740038, 0.9601472],
+                                     [0.06917410, 0.4451103, 0.4584085],
+                                     [0.7063086, 0.2676544, 0.8651624],
+                                     [0.2972952, 0.6237449, 0.1821616],
+                                     [0.6645835, 0.1358166, 0.1410745],
+                                     [0.4247415, 0.1061460, 0.6515346],
+                                     [0.7918194, 0.6575492, 0.6915289],
+                                     [0.4712711, 0.7968283, 0.9534433],
+                                     [0.0385106, 0.9397809, 0.3646387],
+                                     [0.1651310, 0.3010994, 0.8654175],
+                                     [0.5176822, 0.5319250, 0.4542980],
+                                     [0.30412, 0.6500147, 0.6769173],
+                                     [0.9112982, 0.1318755, 0.6224672],
+                                     [0.1501313, 0.1671769, 0.1373762],
+                                     [0.8067350, 0.6081254, 0.1830761]])
+
+        system = self.structureType([BondUtility.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        bonds = BondUtility(goodBonds={frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'Al')): 0.14142136,
+                                       frozenset(('Mg', 'O')): 0.17320508, frozenset(('Al', 'Al')): 0.2,
+                                       frozenset(('Al', 'O')): 0.24494897, frozenset(('O', 'O')): 0.3})
+        bond_in = bonds.getMinimalGraphBonds(system)
+
+        print('1')
+
+    def test_MgO_new1(self):
+        symbols = 4 * ['Mg'] + 4 * ['O']
+        cell = self.cellType(np.array([[4.257976, 0.000000, 0.000000],
+                              [0.000000, 4.257976, 0.000000],
+                              [0.000000, 0.000000, 4.257977]]), (1, 1, 1))
+        scaled_positions = np.array([[0.0, 0.0, 0.0],
+                                     [0.5, 0.5, 0.0],
+                                     [0.0, 0.5, 0.5],
+                                     [0.5, 0.0, 0.5],
+                                     [0.5, 0.0, 0.0],
+                                     [0.0, 0.5, 0.0],
+                                     [0.0, 0.0, 0.5],
+                                     [0.5, 0.5, 0.5]])
+
+        system = self.structureType([BondUtility.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        bonds = BondUtility(goodBonds={frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'O')): 0.17320508,
+                                       frozenset(('O', 'O')): 0.3})
+        bond_in = bonds.getMinimalGraphBonds(system)
+        print('MgO_new1')
+
+    def test_graphite2(self):
+        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite2.POSCAR')
+
+        bonds_ref = []
+        bonds_ref.append((4, 7, -0.09794277, 0, 1., -0., -0.))
+        bonds_ref.append((0, 2, -0.0978511, 0, -0., -0., -0.))
+        bonds_ref.append((5, 6, -0.09781732, 0, -0., -0., -0.))
+        bonds_ref.append((3, 5, -0.0978008, 0, -0., -0., -1.))
+        bonds_ref.append((1, 3, -0.09779524, 0, 1., -0., -0.))
+        bonds_ref.append((2, 7, -0.09766957, 0, -0., -0., -0.))
+        bonds_ref.append((1, 6, -0.0975421, 0, -0., -0., -0.))
+        bonds_ref.append((4, 6, -0.09751356, 0, -0., -0., -0.))
+        bonds_ref.append((0, 1, -0.09750256, 0, -0., -1., -0.))
+        bonds_ref.append((0, 4, -0.09744626, 0, -0., -0., -1.))
+        bonds_ref.append((2, 3, -0.09727435, 0, -0., -0., -0.))
+        bonds_ref.append((5, 7, -0.09721846, 0, -0., 1., -0.))
+        bonds_ref.append((2, 6, 1.79134098, 1, -0., -0., -0.))
+        bonds_ref.append((1, 7, 1.79358847, 1, 1., 1., -0.))
+        bonds_ref.append((0, 5, 1.79558711, 1, -0., -1., -1.))
+        bonds_ref.append((3, 4, 1.80766622, 1, -1., -0., -1.))
+
+        bonds = BondUtility(goodBonds={frozenset(('C', 'C')): 0.5})
+        bonds = bonds.getMinimalGraphBonds(graphite)
+        count = 0
+        len_bonds = 0
+        for i, bond_group in enumerate(bonds):
+            len_bonds += len(bond_group)
+            for bond in bond_group:
+                bond = (bond.indicies[0], bond.indicies[1], bond.delta, i, *bond.direction)
+                if np.any(np.all(np.isclose(np.asarray(bond), np.asarray(bonds_ref)), axis=1)):
+                    count += 1
+                elif bond[0] == bond[1] and np.any(
+                        np.all(np.isclose(np.abs(np.asarray(bond)), np.abs(np.asarray(bonds_ref))), axis=1)):
+                    count += 1
+
+        self.assertTrue(count == len_bonds == len(bonds_ref))
+
+    def test_MoCluster(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/Mo36_vacuum_POSCAR', pbc=(0, 0, 0))
+        bonds = BondUtility(goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+        bond_in = bonds.getMinimalGraphBonds(system)
+
+    def test_Periodic1d(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/Mo3_periodic_POSCARz', pbc=(0, 0, 1))
+        bonds = BondUtility(goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+        bond_in = bonds.getMinimalGraphBonds(system)
+
+    def test_Conflict_dimensions(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/Mo3_periodic_POSCARy', pbc=(0, 0, 1))
+        with self.assertRaises(IndexError) as context:
+            bonds = BondUtility(goodBonds={frozenset(('Mo', 'Mo')): 0.5})
+            bond_in = bonds.getMinimalGraphBonds(system)
+
+        self.assertTrue('pop from empty' in str(context.exception))
+
+class BondUtility_TestCheckConnectivity(unittest.TestCase):
+    def setUp(self):
+        self.CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    def test_cluster(self):
+        bonds = BondUtility()
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/P11H3_badstruct.POSCARS', pbc=(0, 0, 0))
+        covalentLengths = {(s1.short_name, s2.short_name): bonds.atomType(s1.short_name).covalent_radius +
+                                                           bonds.atomType(s2.short_name).covalent_radius
+                           for s1, s2 in combinations_with_replacement(system.getAtomTypes(), 2)}
+        bonds = BondUtility()
+        x = 2
+        self.assertTrue(bonds.isConnected(system, cutoff={k: x * v for k, v in covalentLengths.items()}))
+        x = 1.5
+        self.assertFalse(bonds.isConnected(system, cutoff={k: x * v for k, v in covalentLengths.items()}))
+
+    def test_graphite(self):
+        bonds = BondUtility()
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite2.POSCAR')
+        covalentLengths = {(s1.short_name, s2.short_name): bonds.atomType(s1.short_name).covalent_radius +
+                                                           bonds.atomType(s2.short_name).covalent_radius
+                           for s1, s2 in combinations_with_replacement(system.getAtomTypes(), 2)}
+        bonds = BondUtility()
+        x = 2
+        self.assertFalse(bonds.isConnected(system, cutoff={k: x * v for k, v in covalentLengths.items()}))
+        self.assertFalse(bonds.isConnected(system, cutoff='strong'))
+        x = 2.6
+        self.assertTrue(bonds.isConnected(system, cutoff={k: x * v for k, v in covalentLengths.items()}))
+
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite_1layer.POSCAR')
+        x = 1.5
+        self.assertFalse(bonds.isConnected(system, cutoff={k: x * v for k, v in covalentLengths.items()}))
+        self.assertFalse(bonds.isConnected(system, cutoff='strong'))
+
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite_1layer.POSCAR', pbc=(1, 1, 0))
+        x = 1.5
+        self.assertTrue(bonds.isConnected(system, cutoff={k: x * v for k, v in covalentLengths.items()}))
+        self.assertTrue(bonds.isConnected(system, cutoff='strong'))
+
+    def test_vanderWaalsCutoff(self):
+        bonds = BondUtility(cutoff='vdw')
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/P11H3_badstruct.POSCARS')
+        self.assertFalse(bonds.isConnected(system))
+
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR + '/graphite2.POSCAR')
+        self.assertTrue(bonds.isConnected(system))
+
+
+if __name__ == '__main__':
+    unittest.main()

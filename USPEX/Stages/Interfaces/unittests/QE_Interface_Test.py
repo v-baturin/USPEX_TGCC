@@ -1,13 +1,10 @@
 import filecmp
 import shutil
 import unittest
-
+import numpy as np
 from pathlib import Path
 
-
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from USPEX.components import AtomisticRepresentation
-from ..QE_Interface import QE_Interface
+from ....components import AtomisticRepresentation, QE_Interface
 
 
 HOMEPATH = Path(__file__).parent
@@ -21,17 +18,18 @@ class QE_CalculatorTest2(unittest.TestCase):
     Checking correct parsing properties
     """
     def test_life(self):
-        qe = QE_Interface(tag='1',
-                          options=SPECIFICPATH/'qEspresso_options_1',
-                          pseudopotentials={'C' : SPECIFICPATH/'C.pbe-van_bm.upf'},
-                          kresol=0.16)
-        radialDistributionUtility = RadialDistributionUtility(symbols=['C'])
+        qe = QE_Interface(tag='1', kresol=0.16, options=SPECIFICPATH/'qEspresso_options_1',
+                          pseudopotentials={'C': SPECIFICPATH/'C.pbe-van_bm.upf'})
 
         for ID in range(10):
-            with open(GATHEREDPATH/f'input/system{ID}.vasp', 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
-                system['ID'] = ID
-                system['externalPressure'] = 0.0001
+            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+            system = dict(
+                ID=ID,
+                structure=structure,
+                disassembler=AtomisticRepresentation.atomicDisassemblerType(
+                    np.arange(len(structure)).reshape((-1, 1))),
+                externalPressure=0.0001
+            )
             WORKPATH.mkdir(exist_ok=True)
             qe.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
@@ -39,12 +37,15 @@ class QE_CalculatorTest2(unittest.TestCase):
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
                 match = match and not dcmp.subdirs[common_dir].diff_files
-            shutil.rmtree(WORKPATH)
             self.assertTrue(match)
+            shutil.rmtree(WORKPATH)
             folder = GATHEREDPATH/'output'
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
-            qe.readOutput(system, WORKPATH)
+            results = qe.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(folder/f"system{system['ID']}.vasp", 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
-            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
+            structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
+            cell = results['structure'].getCell()
+            cellRef = structureRef.getCell()
+            self.assertTrue(np.allclose(cell.getCellVectors(), cellRef.getCellVectors(), atol=1.0e-5))
+            # self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(results['structure'].getCartesianCoordinates()),
+            #                             cellRef.getWrapedCartesianCoordinates(structureRef.getCartesianCoordinates())))

@@ -6,16 +6,17 @@ from ..RawParser import parse
 text='''
 {
     optimizer: {
-        type: 'GlobalOptimizer',
+        type: GlobalOptimizer
         target: {
-            type: Crystal,
+            type: Crystal
             conditions: {externalPressure: 100}
-            compositionSpace: {symbols: ['Mg' 'Al' 'O']
+            compositionSpace: {symbols: [Mg Al O]
                                blocks: [[4 8 16]]}
+            radialDistributionUtility: {legacy: False}
 /*            cellUtility: {pbc: (1,1,1)},*/
-            seeds: {generations: [0,2], seedsFolders: [/*'./Seeds/0', */'./Seeds/2']}
-        },
-        optType: 'enthalpy',
+            seeds: {generations: [0,2] seedsFolders: [/*'./Seeds/0', */'./Seeds/2']}
+        }
+        optType: enthalpy
 /*        stopFitness: -655.062,*/
         selection: {
             type: 'USPEXClassic',
@@ -46,6 +47,7 @@ ref_params = {
             'conditions': {'externalPressure': 100},
             'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                'blocks': [[4, 8, 16]]},
+            'radialDistributionUtility': {'legacy': False},
             'seeds': {'generations': [0,2], 'seedsFolders': ['./Seeds/2']}
         },
         'optType': 'enthalpy',

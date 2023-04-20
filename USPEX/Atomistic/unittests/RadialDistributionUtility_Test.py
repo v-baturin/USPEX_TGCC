@@ -11,12 +11,9 @@ PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
 class RadialDistributionUtility_Test(unittest.TestCase):
     def setUp(self):
         self.utility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'])
-        with open(pj(PATH_WITH_TESTS, "systemRDU1.POSCAR"), 'rt') as f:
-            self.systemRDU1 = AtomisticRepresentation.readAtomicStructure(f)
-        with open(pj(PATH_WITH_TESTS, "systemRDU2.POSCAR"), 'rt') as f:
-            self.systemRDU2 = AtomisticRepresentation.readAtomicStructure(f)
-        with open(pj(PATH_WITH_TESTS, "systemRDU3.POSCAR"), 'rt') as f:
-            self.systemRDU3 = AtomisticRepresentation.readAtomicStructure(f)
+        self.systemRDU1 = AtomisticRepresentation.readAtomicStructure(pj(PATH_WITH_TESTS, "systemRDU1.POSCAR"))
+        self.systemRDU2 = AtomisticRepresentation.readAtomicStructure(pj(PATH_WITH_TESTS, "systemRDU2.POSCAR"))
+        self.systemRDU3 = AtomisticRepresentation.readAtomicStructure(pj(PATH_WITH_TESTS, "systemRDU3.POSCAR"))
 
     def test_structureOrder(self):
         self.assertAlmostEqual(self.utility.structureOrder(self.systemRDU1), 0.207, places=3)
@@ -35,5 +32,5 @@ class RadialDistributionUtility_Test(unittest.TestCase):
 
     def test_distance(self):
         self.assertAlmostEqual(self.utility.dist(self.systemRDU1, self.systemRDU2), 0, places=3)
-        self.assertAlmostEqual(self.utility.dist(self.systemRDU2, self.systemRDU3), 0.206466, places=3)
-        self.assertAlmostEqual(self.utility.dist(self.systemRDU1, self.systemRDU3), 0.206466, places=3)
+        self.assertAlmostEqual(self.utility.dist(self.systemRDU2, self.systemRDU3), 0.6124, places=3)
+        self.assertAlmostEqual(self.utility.dist(self.systemRDU1, self.systemRDU3), 0.6124, places=3)

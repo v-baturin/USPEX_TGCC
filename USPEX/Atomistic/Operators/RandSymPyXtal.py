@@ -10,7 +10,7 @@ from pyxtal import pyxtal
 
 MAX_PYXTAL_TIME = 30
 MAX_RANDOM_TIME = 300
-MAX_PYXTAL_ATTEMPTS = 20
+MAX_PYXTAL_ATTEMPTS = 10000
 LOCAL_VACUUM = 0.2
 
 class RandSymPyXtal:
@@ -19,8 +19,7 @@ class RandSymPyXtal:
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("RandSymPyXtal does not currently work in molecular regime.")
@@ -52,7 +51,7 @@ class RandSymPyXtal:
         estimatedVolume = self.cellUtility.getCellVolume()
         if estimatedVolume is None:
             elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-            estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
+            estimatedVolume = self.bondUtility.volumeEstimator.calcCompositionVolume(elementalComposition,
                                                                                       self.conditions.externalPressure)
 
         if np.sum(numIons) == 0:
@@ -68,6 +67,10 @@ class RandSymPyXtal:
         startTime = time()
         failCounter = 0
         while True:
+            envAssembler = np.random.choice(self.environmentUtility.assemblers) if self.environmentUtility.assemblers\
+                else None
+            envCell = envAssembler.getCell() if envAssembler is not None else None
+
             endTime = time()
             failedTime = endTime - startTime
             if failCounter > MAX_PYXTAL_ATTEMPTS or failedTime > MAX_RANDOM_TIME:
@@ -77,7 +80,7 @@ class RandSymPyXtal:
             logger.debug(f"Trying {nsym} symmetry")
 
             #randcell is an auxiliary cell object to get required info from
-            randcell = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons))
+            randcell = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons), baseCell=envCell)
             if dim == 3 or dim == 0:
                 lat = None
             elif dim == 2:
@@ -97,27 +100,27 @@ class RandSymPyXtal:
                 structurePyxtal.from_random(dim, nsym, symbols, numIons, lattice=lat)
             except Exception as e:
                 signal.alarm(0)
-                raise RuntimeError("RandSymPyXtal failed.") from e
+                logger.debug(e)
+                continue
             signal.alarm(0)
 
             if structurePyxtal.valid:
                 tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
-                cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons))
+                cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons), baseCell=envCell)
                 operations = dict(zip(symbols, operations))
-                system = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                molecules = system['molecules']
-                cell = system['cell']
-                self.environmentUtility.putEnvironment(system)
-                atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                if envAssembler is not None:
+                    offspring['environment'] = envAssembler.assemble(**offspring)
+                atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
+                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                 if disassembler.environment is not None:
                     inds = disassembler.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
-                    self.conditions.putConditions(system)
-                    structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
-                    if self.bonds.isConnected(structure):
-                        return (system,)
+                    self.conditions.putConditions(offspring)
+                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring)
+                    if self.bondUtility.isConnected(structure):
+                        return offspring,
 
             failCounter += 1
 

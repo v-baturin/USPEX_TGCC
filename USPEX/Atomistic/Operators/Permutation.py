@@ -14,8 +14,7 @@ class Permutation:
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
         if len(self.compositionSpace.symbols) == 1:
@@ -28,8 +27,7 @@ class Permutation:
     def __call__(self, system, *args, **kwargs):
         molecules = system['molecules']
         cell = system['cell']
-        environment = system['environment'] if 'environment' in system else None
-        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
+        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbols = self.simpleMoleculeUtility.moleculeTypes(system)
 
@@ -50,9 +48,10 @@ class Permutation:
                         offspringMolecules[i2] = (-transformation).transform(molecules[i2])
 
                     offspring = {'molecules': offspringMolecules, 'cell': cell}
-                    self.environmentUtility.putEnvironment(offspring, environment)
+                    if 'environment' in system:
+                        offspring['environment'] = system['environment']
                     atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                    minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                     if disassembler.environment is not None:
                         inds = disassembler.envIndices
                         atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]

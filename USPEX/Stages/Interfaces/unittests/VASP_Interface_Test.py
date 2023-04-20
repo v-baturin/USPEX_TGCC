@@ -19,9 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ..VASP_Interface import VASP_Interface
-from USPEX.components import AtomisticRepresentation
+from ....components import AtomisticRepresentation, VASP_Interface
 
 
 HOMEPATH = Path(__file__).parent
@@ -35,18 +33,20 @@ class VASP_CalculatorTest2(unittest.TestCase):
     Checking correct parsing properties
     """
     def test_life(self):
-        vasp = VASP_Interface(tag='1', perturbate=False,
+        vasp = VASP_Interface(tag='1', 
                               incar=SPECIFICPATH/'INCAR_1',
                               potcarsPath=SPECIFICPATH,
                               kresol=0.13)
-        radialDistributionUtility = RadialDistributionUtility(symbols=['Ca', 'F'])
 
 
         for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
-                system['ID'] = ID
-                system['externalPressure'] = 0.0001
+            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+            system = dict(
+                ID=ID,
+                structure=structure,
+                disassembler=AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))),
+                externalPressure=0.0001
+            )
             os.mkdir(WORKPATH)
             vasp.prepareLocalCalculation(system, WORKPATH)
             folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
@@ -58,11 +58,15 @@ class VASP_CalculatorTest2(unittest.TestCase):
             self.assertTrue(match)
             folder = pj(GATHEREDPATH, 'output')
             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-            vasp.readOutput(system, WORKPATH)
+            results = vasp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
-            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
+            structureRef = AtomisticRepresentation.readPOSCAR(pj(folder, f"system{system['ID']}.vasp"), (1, 1, 1))
+            cell = results['structure'].getCell()
+            cellRef = structureRef.getCell()
+            self.assertTrue(np.allclose(cell.getCellVectors(),
+                                        cellRef.getCellVectors()))
+            self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(results['structure'].getCartesianCoordinates()),
+                                        cellRef.getWrapedCartesianCoordinates(structureRef.getCartesianCoordinates())))
 
 
 class VASP_interfaceTest(unittest.TestCase):
@@ -95,8 +99,30 @@ class VASP_interface_elastic_Test(unittest.TestCase):
                              [ -109.7639,   269.2209,   -870.108,   308.2938,  1504.6799,   -32.696 ],
                              [  -17.9217,    66.3167,     35.496,  -321.5579,    -32.696,  4247.3728]]
         wd = HOMEPATH/'vaspElastic'
-        self.interface = VASP_Interface(tag='5', incar=wd/'Specific'/'INCAR_5', potcarsPath=wd/'Specific',
-                                        kresol=0.06, targetProperties=['elasticConstants'])
-        system = {}
-        self.interface.readOutput(system, calcFolder=wd/'output')
-        self.assertTrue(np.allclose(system['elasticMatrix'], elasticMatrix_ref))
+        self.interface = VASP_Interface(tag='5',
+                                        incar=wd/'Specific'/'INCAR_5',
+                                        potcarsPath=wd/'Specific',
+                                        kresol=0.06,
+                                        targetProperties=['elasticConstants'])
+        with open(pj(wd, 'output', 'OUTCAR'), 'r') as f:
+            content = f.readlines()
+        elasticMatrix = self.interface.readElasticMatrix(content)
+        self.assertTrue(np.allclose(elasticMatrix, elasticMatrix_ref))
+
+class VASP_interface_MD_Test(unittest.TestCase):
+
+    def test1(self):
+        wd = pj(HOMEPATH, 'AIMD_AlB2')
+        self.interface = VASP_Interface(tag='1', incar=pj(wd, 'INCAR'), potcarsPath=wd,
+                                        kresol=0.06, targetProperties=['trajectory'])
+        system = dict(
+            ase={'pbc': (1, 1, 1), 'symbolsOrder': [0, 1, 2]},
+            disassembler=None,
+            externalPressure=0.0
+        )
+        results = self.interface.readOutput(system, wd)
+        self.assertGreater(len(results['trajectory']), 1)
+        for data in results['trajectory']:
+            self.assertTrue(len(data['structure']) == 3)
+            self.assertTrue('energy' in data['results'].results)
+            self.assertTrue('forces' in data['results'].results)

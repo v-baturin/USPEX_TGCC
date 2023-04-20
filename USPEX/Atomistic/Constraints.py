@@ -15,8 +15,7 @@ class Constraints:
         self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtiity = utilities.bondUtility
         self.conditions = utilities.conditions
 
     def systemCheckAndFix(self, system):
@@ -25,19 +24,17 @@ class Constraints:
         If it does, make surtain adjustments, like align the system along required axis.
         :param system: system to be checked and fixed
         """
-        cell = system['cell']
-        molecules = system['molecules']
         atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
-        minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+        minDistMatrix = self.bondUtiity.getDistances(atomSymbols, self.conditions.externalPressure)
         if disassembler.environment is not None:
             inds = disassembler.envIndices
             atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-        composition = self.simpleMoleculeUtility.composition(system)
-        goodStructure = np.all(atomDistances >= minDistMatrix) \
-                        and self.compositionSpace.isGoodComposition(composition) # and self.cellUtility.isGoodCell(cell)
+        goodStructure = np.all(atomDistances >= minDistMatrix) and self.cellUtility.isGoodCell(system['cell'])
+        # composition = self.simpleMoleculeUtility.composition(system)
+        # and self.compositionSpace.isGoodComposition(composition)
         if goodStructure:
-            structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
-            # goodStructure = goodStructure and self.bonds.isConnected(structure)
+            structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**system)
+            goodStructure = goodStructure and self.bondUtiity.isConnected(structure)
             cell = structure.getRectifiedCell()
             coordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())
             if (self.cellUtility.getDim() == 1 or self.cellUtility.getDim() == 2):

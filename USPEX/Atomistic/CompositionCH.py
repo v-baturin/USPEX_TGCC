@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 
-from ..ConvexHull import ConvexHull
-from ..Fitness import Fitness
-from ..SystemPool import SystemPool
+from ..Fitness.ConvexHull import ConvexHull
+from ..Fitness.Fitness import Fitness
+from ..Optimizers.SystemPool import SystemPool
 from .CompositionSpace import CompositionSpace
 
 

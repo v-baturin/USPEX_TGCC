@@ -28,15 +28,8 @@ def read_structures_and_energies(symbols, folder : str):
     with open(pj(folder, 'Individuals'), 'r') as fp:
         info = fp.readlines()[2:]
     DATA = pd.DataFrame(columns=['Generation', 'ID', 'composition', 'enthalpy'], dtype=int)
-    all_systems = []
-    try:
-        with open(pj(folder, 'gatheredPOSCARS'), 'r') as fp:
-            while True:
-                system = AtomisticRepresentation.readAtomicStructure(fp)
-                all_systems.append(system)
-    except:
-        print('Reading of the pathway has finished.')
-    assert len(all_systems)
+    all_systems = AtomisticRepresentation.readAtomicStructures(pj(folder, 'gatheredPOSCARS'))
+    assert all_systems
     radialDistributionUtility = RadialDistributionUtility(symbols=symbols)
 
     populations = []
@@ -49,6 +42,7 @@ def read_structures_and_energies(symbols, folder : str):
         enthalpy = float(tmp[_e+1])
         DATA.loc[i] = gen, ID, composition, enthalpy
         system['ID'] = ID
+        system['isBad'] = False
         system['enthalpy'] = enthalpy
         system['fingerprint'] = radialDistributionUtility.structureFingerprint(system)
 
@@ -56,7 +50,6 @@ def read_structures_and_energies(symbols, folder : str):
         ids = DATA[DATA.Generation == gen]['ID'].astype(int)
         populations.append([system for system in all_systems if system['ID'] in ids])
     return DATA, populations, all_systems
-
 
 
 class GenConvexHull_Si_Test(unittest.TestCase):

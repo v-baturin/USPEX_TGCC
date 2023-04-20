@@ -6,23 +6,20 @@ USPEX.Atomistic.RadialDistributionUtility
 """
 
 import numpy as np
-from copy import copy
 from typing import Dict, Tuple
 from collections.abc import Mapping
 from collections import Counter
 
-import pandas as pd
 from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
-from pandas import DataFrame, Series, isna, concat
 
 
 RMAX_DEFAULT = 10.0
 SIGMA_DEFAULT = 0.03
 DELTA_DEFAULT = 0.08
 
-TOLERANCE_DEFAULT = 0.008
+TOLERANCE_DEFAULT = 0.012
 
 
 class Fingerprint(Mapping):
@@ -98,57 +95,43 @@ class ComplexFingerprint:
     """
     Class representing radial distribution fingerprint.
     """
-    def __init__(self, values, weights, symbols):
-        self.values = DataFrame(data=values).T
-        self.weights = Series(weights)
-        self.weights[:] /= self.weights.sum()
-        self.weights = self.weights.to_frame()
+    def __init__(self, values, symbols):
+        self.values = {}
+        for s, v in values.items():
+            self.values[s] = np.asarray(v, dtype=float)
         self.symbols = symbols
 
     @staticmethod
-    def fromAtomicFingerprints(symbols, atomTypes, atomFings, tolerance):
+    def fromAtomicFingerprints(symbols, atomTypes, atomFings):
         fing = {}
-        atomsCounter = Counter()
-        weightsCounter = Counter()
         for atomType, aFing in zip(atomTypes, atomFings):
             symbol = atomType.short_name
-            row = np.hstack(Series(aFing.value, index=symbols) * np.sqrt(Series(aFing.weights, index=symbols)))
-            for (refSymbol, count), f in fing.items():
-                if symbol == refSymbol \
-                        and ComplexFingerprint.cosineDistance(f, row) < tolerance:
-                    break
-            else:
-                atomsCounter[symbol] += 1
-                count = atomsCounter[symbol]
-                fing[(symbol, count)] = row
-            weightsCounter[(symbol, count)] += 1
-        return ComplexFingerprint(fing, weightsCounter, symbols)
+            row = np.hstack([aFing[s] * np.sqrt(aFing.weights[s] if s in aFing.weights else 0) for s in symbols])
+            if symbol not in fing:
+                fing[symbol] = []
+            fing[symbol].append(row)
+        return ComplexFingerprint(fing, symbols)
 
     @staticmethod
     def cosineDistance(fing1, fing2):
         """
         Calculation of cosine distances using eq.(6b) from JCP-2009.
         """
-        if len(fing1.shape) == 1:
-            fing1 = fing1.reshape((1, -1))
-        if len(fing2.shape) == 1:
-            fing2 = fing2.reshape((1, -1))
-        norm1 = np.linalg.norm(fing1, axis=1)
-        norm2 = np.linalg.norm(fing2, axis=1)
-        return (1 - np.dot(fing1, fing2.T) / (norm1.reshape((-1, 1)) * norm2.reshape((1, -1)))) / 2
+        norm1 = np.linalg.norm(fing1, axis=1).reshape((-1, 1))
+        norm2 = np.linalg.norm(fing2, axis=1).reshape((1, -1))
+        return (1 - np.dot(fing1, fing2.T) / (norm1 * norm2)) / 2
 
     @staticmethod
     def dist(fingerprint1, fingerprint2):
         assert set(fingerprint1.symbols) == set(fingerprint2.symbols)
-        index1 = fingerprint1.values.index.levels[0]
-        index2 = fingerprint2.values.index.levels[0]
+        index1 = fingerprint1.values.keys()
+        index2 = fingerprint2.values.keys()
         dist = 0
         for symbol in fingerprint1.symbols:
             if symbol in index1 and symbol in index2:
-                distMatrix = ComplexFingerprint.cosineDistance(fingerprint1.values.loc[symbol].to_numpy(),
-                                                               fingerprint2.values.loc[symbol].to_numpy())
-                dist += ((distMatrix.min(axis=0)*fingerprint2.weights.loc[symbol].T.to_numpy()).sum() +
-                         (distMatrix.min(axis=1)*fingerprint1.weights.loc[symbol].T.to_numpy()).sum()) / 2
+                distMatrix = ComplexFingerprint.cosineDistance(fingerprint1.values[symbol], fingerprint2.values[symbol])
+                dist += (distMatrix.min(axis=0).mean() +
+                         distMatrix.min(axis=1).mean()) / 2
             elif symbol in index1 or symbol in index2:
                 dist += 0.5
         return dist
@@ -158,6 +141,25 @@ class RadialDistributionUtility(object):
     """
     Utility for working with radial distribution related properties of systems.
     """
+    structureType = None
+    atomType = None
+    cellType = None
+    atomicDisassemblerType = None
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        """
+        Register types used by this utility.
+
+        :param structureType: type representing atomic structure.
+        :param atomType: type representing chemical element.
+        :param cellType: type representing unit cell.
+        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
+        """
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
+        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, symbols, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
                  legacy=False):
@@ -177,7 +179,7 @@ class RadialDistributionUtility(object):
         self.delta = delta
         self.tolerance = tolerance
         self.legacy = legacy
-        self.distances = DataFrame(dtype=float)
+        self.distances = {}
 
     def structureFingerprint(self, system):
         """
@@ -279,9 +281,7 @@ class RadialDistributionUtility(object):
         """
         Calculates fingerprint and related things.
         """
-        molecules = system['molecules']
-        systemFactory = type(molecules[0])
-        structure, disassembler = systemFactory.assemble(**system)
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system)
         atomTypes = structure.getAtomTypes()
         uniqueSimbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
@@ -293,7 +293,7 @@ class RadialDistributionUtility(object):
         molIndices = [revertIndices[inds] for inds in disassembler.indices]
         envIndices = revertIndices[disassembler.envIndices]
         if 'environment' in system:
-            fp_pbc = disassembler.environment.getStructure().getCell().getPBC()
+            fp_pbc = disassembler.environment.getStructure().getCell().getPBC() # TODO is this correct?
         else:
             fp_pbc = structure.getCell().getPBC()
         lat = cell.getCellVectors()
@@ -438,15 +438,22 @@ class RadialDistributionUtility(object):
         for s in self.symbols:
             if s not in weights:
                 weights[s] = 0
-        for i in revertIndices:
+        newAtomTypes = []
+        order = []
+        for i, atomType in zip(revertIndices, atomTypes):
+            if np.allclose(atom_fing[i], 0):
+                order.append(0.0)
+                continue
             value = {s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)}
             for s in self.symbols:
                 if s not in value:
                     value[s] = np.zeros(N_Bins, dtype=float)
             f = Fingerprint(value=value, weights=weights, delta=self.delta)
             atomFings.append(f)
+            newAtomTypes.append(atomType)
+            order.append(f.order)
 
-        order = np.fromiter((atomFing.order for atomFing in atomFings), dtype=float)
+        order = np.asarray(order)
         molOrder = np.fromiter((order[np.asarray(inds)].sum()/len(inds) for inds in disassembler.indices), dtype=float)
         a_order = np.mean(order[np.isfinite(order)]) if np.any(np.isfinite(order)) else np.nan
 
@@ -455,8 +462,7 @@ class RadialDistributionUtility(object):
                                   delta=self.delta)
         s_order = fingerprint.order
 
-        complexFingerprint = ComplexFingerprint.fromAtomicFingerprints(self.symbols, atomTypes, atomFings,
-                                                                       self.tolerance)
+        complexFingerprint = ComplexFingerprint.fromAtomicFingerprints(self.symbols, newAtomTypes, atomFings)
 
         sQE = 0.0
         weight = numIons / np.sum(numIons)
@@ -464,7 +470,7 @@ class RadialDistributionUtility(object):
         for i in range(numIons.shape[0]):
             if numIons[i] > 1:
                 tmp = 0
-                indices = np.flatnonzero(inverse == i)
+                indices = np.flatnonzero(np.equal(newAtomTypes, uniqueSimbols[i]))
                 comb = list(combinations(indices, 2))
                 for j1, j2 in comb:
                     tmp_fing1 = atomFings[j1]
@@ -479,7 +485,8 @@ class RadialDistributionUtility(object):
 
                     tmp += (1 - dist) * np.log(1 - dist)
 
-                sQE += weight[i] * tmp / len(comb)
+                if len(comb) > 0:
+                    sQE += weight[i] * tmp / len(comb)
 
         system['radialDistribitionUtility.order'] = molOrder
         system['radialDistribitionUtility.averageOrder'] = a_order
@@ -499,10 +506,18 @@ class RadialDistributionUtility(object):
 
         :return: distance between systems.
         """
-        if self.legacy:
-            return Fingerprint.cosine_distance(self.structureFingerprint(system1), self.structureFingerprint(system2))
+        pair = frozenset((system1['ID'], system2['ID'])) if 'ID' in system1 and 'ID' in system2 else None
+        if pair not in self.distances:
+            if self.legacy:
+                distance = Fingerprint.cosine_distance(self.structureFingerprint(system1),
+                                                       self.structureFingerprint(system2))
+            else:
+                distance = ComplexFingerprint.dist(self.complexFingerprint(system1), self.complexFingerprint(system2))
+            if pair is not None:
+                self.distances[pair] = distance
         else:
-            return ComplexFingerprint.dist(self.complexFingerprint(system1), self.complexFingerprint(system2))
+            distance = self.distances[pair]
+        return distance
 
     def equal(self, system1, system2, tolerance=None):
         """
@@ -652,7 +667,7 @@ def _make_matrices(coor: np.ndarray, molIndices: list, envIndices,
         tmp_dist = np.delete(tmp_dist, to_delete[1], axis=1)
         tmp_type = np.delete(tmp_type, to_delete[1], axis=0)
 
-        if tmp_dist.shape[1] > 0:  # sometimes you can meet an isolated atom
+        if tmp_dist.shape[1] > 0 and i not in envIndices:  # sometimes you can meet an isolated atom
             tmp2 = np.zeros((tmp_dist.shape[1], 4))
             tmp2[:, 0] = i
             tmp2[:, 1] = types[i]

@@ -9,6 +9,7 @@ from itertools import combinations_with_replacement
 
 from .symope.splitBigCell import splitBigCell
 from .symope.symope_crystal import symope_crystal
+from .symope.symope_cluster import symope_cluster
 from time import time
 
 from ..Transformation import Transformation
@@ -58,20 +59,26 @@ def determineOperations(lat, numIons, candidate):
 
 
 class RandSym:
-    def __init__(self, utilities, nsymN=False, nsym=None, sym_coef=0.4, splitInto=[1],
+    def __init__(self, utilities, nsym=None, sym_coef=0.4, splitInto=[1],
                  attemptsRotation: int = ATTEMPTS_ROTATION, debug = False):
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
-        self.nsymN = nsymN
         if nsym is None:
-            self.nsym = list(range(2, 231))
+            if utilities.cellUtility.getDim() == 0:
+                self.nsym = (
+                            'E C2 D2 C4 C3 C6 T S2 Ch1 Cv2 S4 S6 Ch3 Th Ch2 Dh2 Ch4 D3 Ch6 O D4 Cv3 D6 Td Cv4 Dd3 Cv6 Oh ' + \
+                            'Dd2 Dh3 Dh4 Dh6 Oh C5 S5 S10 Cv5 Ch5 D5 Dd5 Dh5 I Ih').split()
+            else:
+                self.nsym = list(range(2, 231))
         elif isinstance(nsym, str):
-            self.nsym = list(parseIntSet(nsym))
+            if utilities.cellUtility.getDim() == 0:
+                self.nsym = nsym.split()
+            else:
+                self.nsym = list(parseIntSet(nsym))
         elif isinstance(nsym, list):
             self.nsym = nsym
         else:
@@ -96,26 +103,31 @@ class RandSym:
         badSymmetryCounter = 0
         startTime = time()
         centerMinDistMatrix = np.zeros((len(symbols), len(symbols)))
+        cellType = self.simpleMoleculeUtility.cellType
         radii = []
         for s in symbols:
             molecule = self.simpleMoleculeUtility.molecules[s]
             if len(molecule) == 1:
-                atomRaduis = self.ionDistances.volumeEstimator.calcAtomVolume(s, self.conditions.externalPressure) ** (1.0 / 3.0)
-                radii.append(0.22 * atomRaduis)
+                raduis = self.bondUtility.volumeEstimator.calcAtomVolume(s, self.conditions.externalPressure)**(1.0/3.0)
+                radii.append(0.22 * raduis)
             else:
-                molecule = Transformation.fromRotVector([0.,0.,0.],
-                                                        -molecule.getCenterOfMassCartesianCoordinates()).transform(molecule)
-                values, vectors = molecule.getPrincipalAxes()
+                coordinates = molecule.getCartesianCoordinates() - molecule.getCenterOfMassCartesianCoordinates()
+                values, vectors = cellType.getPrincipalAxes(coordinates)
                 short_direction = vectors[np.argmin(values)]
-                height_map = [np.abs(np.dot(pos, short_direction)) for pos in molecule.getCartesianCoordinates()]
+                height_map = [np.abs(np.dot(pos, short_direction)) for pos in coordinates]
                 ind = np.argmin(height_map)
-                atomRaduis = self.ionDistances.volumeEstimator.calcAtomVolume(molecule.getAtomTypes()[ind], self.conditions.externalPressure) ** (1.0 / 3.0)
-                radii.append(0.45 * atomRaduis + height_map[ind])
+                raduis = self.bondUtility.volumeEstimator.calcAtomVolume(molecule.getAtomTypes()[ind],
+                                                                          self.conditions.externalPressure)**(1.0/3.0)
+                radii.append(0.45 * raduis + height_map[ind])
         for i, j in combinations_with_replacement(range(len(radii)), 2):
             centerMinDistMatrix[i, j] = centerMinDistMatrix[j, i] = (radii[i] + radii[j])
         distCoeff = 1.0
 
         while True:
+            envAssembler = np.random.choice(self.environmentUtility.assemblers) if self.environmentUtility.assemblers\
+                else None
+            envCell = envAssembler.getCell() if envAssembler is not None else None
+
             endTime = time()
             failedTime = endTime - startTime
             if failedDist > MAX_RANDOM_FAILED_DIST or failedTime > MAX_RANDOM_TIME:
@@ -153,34 +165,40 @@ class RandSym:
                 estimatedVolume = self.cellUtility.getCellVolume()
                 if estimatedVolume is None:
                     elementalComposition = self.simpleMoleculeUtility.getElementalComposition(composition)
-                    estimatedVolume = self.ionDistances.volumeEstimator.calcCompositionVolume(elementalComposition,
+                    estimatedVolume = self.bondUtility.volumeEstimator.calcCompositionVolume(elementalComposition,
                                                                                               self.conditions.externalPressure)
                 if sum(self.splitInto) > 3:  # split cell
-                    lat = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons)).getCellParameters()
+                    lat = self.cellUtility.getRandomCell(estimatedVolume, sum(numIons),
+                                                         baseCell=envCell).getCellParameters()
                     lat, candidate = splitBigCell(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, lat,
                                                   np.random.choice(self.splitInto), numIons, nsym, self.sym_coef)
                 else:
-
-                    candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,
+                    if self.cellUtility.getDim() == 0:
+                        randcell = np.random.random(3)
+                        randcell *= (estimatedVolume / np.prod(randcell)) ** (1 / 3)
+                        rand_orthog_cell = self.cellUtility.cellType.initFromCellVectors((1, 1, 1), np.diag(randcell))
+                        candidate, lat = symope_cluster(distCoeff * centerMinDistMatrix, nsym,
+                                                        numIons_tmp, rand_orthog_cell)
+                    else:
+                        candidate, lat = symope_crystal(distCoeff * centerMinDistMatrix, False, self.fixRndSeed, nsym, numIons_tmp,
                                                     estimatedVolume, self.sym_coef)
                 name, cell, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
-                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons))
+                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons), baseCell=envCell)
                 for i in range(self.attemptsRotation):
-                    system = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                    molecules = system['molecules']
-                    cell = system['cell']
-                    self.environmentUtility.putEnvironment(system)
-                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
-                    minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                    if envAssembler is not None:
+                        offspring['environment'] = envAssembler.assemble(**offspring)
+                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
+                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                     if disassembler.environment is not None:
                         inds = disassembler.envIndices
                         atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                     if np.all(atomDistances >= distCoeff * minDistMatrix):
-                        self.conditions.putConditions(system)
-                        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
-                        if self.bonds.isConnected(structure):
-                            return (system,)
+                        self.conditions.putConditions(offspring)
+                        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring)
+                        if self.bondUtility.isConnected(structure):
+                            return offspring,
             except Exception as e:
                 logger.debug(e, exc_info=True)
 

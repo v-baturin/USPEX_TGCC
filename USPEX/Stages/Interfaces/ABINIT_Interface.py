@@ -10,7 +10,6 @@ import logging
 import os
 import shutil
 import numpy as np
-from abipy import abilab
 from os.path import join as pj
 from typing import List
 
@@ -42,10 +41,15 @@ class ABINIT_Interface:
     structureType = None
     atomType = None
     cellType = None
-    atomicDisassemblerType = None
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
 
     def __init__(self, tag: str, kresol: float,  in_file: str = None, pp_files: List[str] = None,
-                 vacuumSize=10, targetProperties: list = None, **kwargs):
+                 targetProperties: list = None, **kwargs):
         """
         Initializes the class.
 
@@ -59,6 +63,7 @@ class ABINIT_Interface:
         :param kwargs: parameters for initializing the parent class.
         """
 
+        self.tag = tag
         if in_file is None:
             in_file = pj(os.getcwd(), f'./Specific/abinit.in_{tag}')
 
@@ -72,7 +77,6 @@ class ABINIT_Interface:
 
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -80,10 +84,10 @@ class ABINIT_Interface:
         :param system: our system
         :return:
         """
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
-        system['disassembler'] = disassembler
+        structure = system['structure']
+
         cell = structure.getCell()
-        system['assembledCell'] = cell
+        system['pbc'] = cell.getPBC()
         coordinates = structure.getCartesianCoordinates()
         atomTypes = structure.getAtomTypes()
 
@@ -193,6 +197,7 @@ class ABINIT_Interface:
             for pos in cell.cartesianToFractional(coordinates):
                 f.write('%18.14f %18.14f %18.14f\n' % tuple(pos))
 
+        return ''
 
         ############################# LDAU #################################
         ####################################################################
@@ -274,40 +279,32 @@ class ABINIT_Interface:
         return True
 
     def readOutput(self, system, calcFolder: str):
+        results = {}
         if not os.path.isfile(pj(calcFolder, self.gsr_file_name)):
             msg = (f'file {self.gsr_file_name:s} not found in {os.path.basename(calcFolder):s}.'
                    'Your ABINIT executable needs to be compiled with NETCDF support in order to be used with USPEX.')
             raise IOError(msg)
 
+        from abipy import abilab
         gsr = abilab.abiopen(pj(calcFolder, self.gsr_file_name))
         if 'structure' in self.targetProperties:
-            self.readStructure(system, gsr)
+            results['structure'] = self.readStructure(gsr, system.pop('pbc'))
         if 'enthalpy' in self.targetProperties:
-            system['enthalpy'] = float(gsr.energy) + \
-                                 np.linalg.det(gsr.structure.lattice.matrix) * system['externalPressure'] * \
-                                 EV_PER_CUBIC_ANGSTREM_PER_GPA
+            results['enthalpy'] = float(gsr.energy) + \
+                                  np.linalg.det(gsr.structure.lattice.matrix) * system['externalPressure'] * \
+                                  EV_PER_CUBIC_ANGSTREM_PER_GPA
         if 'forces' in self.targetProperties:
-            system['forces'] = np.copy(gsr.cart_forces)
+            results['forces'] = np.copy(gsr.cart_forces)
         if 'stressTensor' in self.targetProperties:
-            system['stressTensor'] = np.copy(gsr.cart_stress_tensor)
+            results['stressTensor'] = np.copy(gsr.cart_stress_tensor)
+        return results
 
-    def readStructure(self, system, gsr):
-        assembledCell = system.pop('assembledCell')
-        disassembler = system.pop('disassembler')
-
+    def readStructure(self, gsr, pbc):
         tmp_positions = gsr.structure.cart_coords
         atomTypes = [self.atomType(el.symbol) for el in gsr.structure.species]
         positions = np.empty(tmp_positions.shape, dtype=float)
         atomSymbols = [el.short_name for el in atomTypes]
         for i, position in zip(np.argsort(atomSymbols), tmp_positions):
             positions[i] = position
-        cell = self.cellType(gsr.structure.lattice.matrix, assembledCell.getPBC())
-        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell=cell)))
-
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
+        cell = self.cellType(gsr.structure.lattice.matrix, pbc)
+        return self.structureType(atomTypes, positions, cell=cell)

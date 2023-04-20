@@ -4,7 +4,6 @@ logger = logging.getLogger(__name__)
 import numpy as np
 
 from ..Transformation import Transformation
-from ...Atomistic.softmodes.calcSoftModes import calcSoftModes
 
 
 _MIN_VALID_FREQUENCY = 5.0e-4
@@ -13,8 +12,7 @@ _MIN_VALID_FREQUENCY = 5.0e-4
 class Softmodemutation:
     def __init__(self, utilities, degree: float = None):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.ionDistances = utilities.ionDistances
-        self.bonds = utilities.bonds
+        self.bondUtility = utilities.bondUtility
         self.environmentUtility = utilities.environmentUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
@@ -25,19 +23,18 @@ class Softmodemutation:
         ID = system['ID']
         molecules = system['molecules']
         cell = system['cell']
-        environment = system['environment'] if 'environment' in system else None
-        structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(molecules, cell)
+        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             degree = self.degree if self.degree else np.mean([el.covalent_radius for el in structure.getAtomTypes()]) * 3
             if ID in self.knownSystems:
                 frequencies, eigenVectors = self.knownSystems[ID]
             else:
                 try:
-                    bonds = self.bonds.getMinimalGraphBonds(structure)
+                    bonds = self.bondUtility.getMinimalGraphBonds(structure)
                 except Exception as e:
                     logger.debug(e)
                     raise RuntimeError("Softmutation failed.")
-                frequencies, eigenVectors = calcSoftModes(structure, bonds)
+                frequencies, eigenVectors = self.bondUtility.calcSoftModes(structure, bonds)
                 self.knownSystems[ID] = (frequencies, eigenVectors)
             while len(frequencies) > 0:
                 freq = frequencies.pop(0)
@@ -61,30 +58,32 @@ class Softmodemutation:
                     molecules2.append(molecule2)
 
                 offsprings = ()
-                system = {'molecules': molecules1, 'cell': cell}
-                self.environmentUtility.putEnvironment(system, environment)
-                atomSymbols, atomDistances, disassembler1 = self.simpleMoleculeUtility.getMinDistances(**system)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                offspring1 = {'molecules': molecules1, 'cell': cell}
+                if 'environment' in system:
+                    offspring1['environment'] = system['environment']
+                atomSymbols, atomDistances, disassembler1 = self.simpleMoleculeUtility.getMinDistances(**offspring1)
+                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                 if disassembler1.environment is not None:
                     inds = disassembler1.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
-                    self.conditions.putConditions(system)
-                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
-                    # if self.bonds.isConnected(structure):
-                    offsprings += (system,)
-                system = {'molecules': molecules2, 'cell': cell}
-                self.environmentUtility.putEnvironment(system, environment)
-                atomSymbols, atomDistances, disassembler2 = self.simpleMoleculeUtility.getMinDistances(**system)
-                minDistMatrix = self.ionDistances.getDistances(atomSymbols, self.conditions.externalPressure)
+                    self.conditions.putConditions(offspring1)
+                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring1)
+                    if self.bondUtility.isConnected(structure):
+                        offsprings += (offspring1,)
+                offspring2 = {'molecules': molecules2, 'cell': cell}
+                if 'environment' in system:
+                    offspring2['environment'] = system['environment']
+                atomSymbols, atomDistances, disassembler2 = self.simpleMoleculeUtility.getMinDistances(**offspring2)
+                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                 if disassembler2.environment is not None:
                     inds = disassembler2.envIndices
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
-                    self.conditions.putConditions(system)
-                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**system)
-                    # if self.bonds.isConnected(structure):
-                    offsprings += (system,)
+                    self.conditions.putConditions(offspring2)
+                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring2)
+                    if self.bondUtility.isConnected(structure):
+                        offsprings += (offspring2,)
                 if offsprings:
                     return offsprings
 

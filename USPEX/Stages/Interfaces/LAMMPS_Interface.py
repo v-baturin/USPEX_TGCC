@@ -6,19 +6,17 @@ USPEX.Stages.LAMMPS_Interface
 
 """
 import logging
-import os
-import shutil
-
 import numpy as np
-from ase.io import read
-from ase import Atoms
-from typing import List
+import shutil
+import os
 from os.path import join as pj
+from typing import List
+
+
 logger = logging.getLogger(__name__)
 
+REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp', 'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
 
-REQUIRED_THERMO_STYLE_PROPERTIES = ['enthalpy', 'etotal', 'ke', 'pe', 'temp',
-                                    'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz']
 
 class LAMMPS_Interface:
     """
@@ -34,15 +32,23 @@ class LAMMPS_Interface:
     log_file = 'log.lammps'
     data_file = 'STRUC'
     dump_file = 'lammps.dump'
+    mlip_ini = 'mlip.ini'
+    mlip_in = None
+    mlip_sample = None
+    mlip_mtp = 'default.mtp'
     
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
 
-    def __init__(self, tag: str, lammps_in: str, libs: List[str], specorder: List[str],
-                 vacuumSize: float = 10.0, targetProperties: list = None, **kwargs):
+    atomisticRepresentationType = None
+    aseAdapterType = None
+
+    @classmethod
+    def registerTypes(cls, atomisticRepresentationType, aseAdapterType):
+        cls.atomisticRepresentationType = atomisticRepresentationType
+        cls.aseAdapterType = aseAdapterType
+
+    def __init__(self, tag: str, specorder: List[str], lammps_in: str = None, mlip_in: str = None, mlip: str = None,
+                 libs: List[str] = None, targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -50,17 +56,36 @@ class LAMMPS_Interface:
                 * libs: (list) list of paths to interatomic potentials and associated files.
         """
 
-        self.lammps_in = lammps_in
+        self.tag = tag
+        self.lammps_in = pj(os.getcwd(), f'Specific/lammps.in_{tag}') if lammps_in is None else lammps_in
+
+        self.mlip = mlip
+        if self.mlip is not None:
+            self.mlip_in = pj(os.getcwd(), f'Specific/mlip.ini_{tag}') if mlip_in is None else mlip_in
+
+            with open(self.mlip_in, 'r') as f:
+                content = f.readlines()
+
+            for line in content:
+                if 'sample:save_sampled_to' in line:
+                    self.mlip_sample = line.split()[1]
+
+            for line in content:
+                if 'mlip:load_from' in line:
+                    self.mlip_mtp = line.split()[1]
+                    break
+            else:
+                raise RuntimeError('Bad mlip.ini: load_from not specified.')
+
         self.specorder = specorder
         assert os.path.exists(self.lammps_in)
 
         if libs is not None:
-            self.libs = libs
+            assert all([os.path.exists(lib) for lib in libs])
+        self.libs = [] if libs is None else libs
 
-        assert all([os.path.exists(lib) for lib in libs])
-
+        self.adapter = self.aseAdapterType()
         self.failedSystems = []
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -68,19 +93,15 @@ class LAMMPS_Interface:
         :param system:
         :param calcFolder:
         """
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
-        system['disassembler'] = disassembler
-        cell = structure.getCell()
-        system['assembledCell'] = cell
-        coordinates = structure.getCartesianCoordinates()
 
-        if not os.path.exists(calcFolder):
-            os.makedirs(calcFolder)
-        
+        structure = system['structure']
+
+        system['ase'] = self.adapter.write(structure, system['disassembler'].fixedIndices,
+                                           f"EA{system['ID']}", self.specorder, calcFolder)
+
         with open(self.lammps_in, 'r') as f:
             content = f.readlines()
-        
-        
+
         # Step 1. We check if our lammps data file will be read properly 
         # with read_data command when calculation is started
         
@@ -105,6 +126,7 @@ class LAMMPS_Interface:
         else:
             index = np.where(pair_style_occurence)[0][0]
             content.insert(index+1, thermo_style_content)
+            
         # Step 3. We check if lammps.dump file will be written properly 
         # with dump command after calculation is finished
         
@@ -116,18 +138,15 @@ class LAMMPS_Interface:
         
         with open(pj(calcFolder, self.inputFile), 'w') as f:
             f.writelines(content)
-        
-        if 'environmentEnthalpy' not in self.targetProperties:
-            atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell = cell.getCellVectors())
-        else:
-            environment = system['environment'].getStructure()
-            atoms = Atoms([el.short_name for el in environment.getAtomTypes()], environment.getCartesianCoordinates(), cell = cell.getCellVectors())
-        
-        write_lammps_data_with_label(pj(calcFolder, self.data_file), atoms, specorder=self.specorder, label=f"EA{system['ID']}")
-        
+
         for lib in self.libs:
             shutil.copy2(lib, calcFolder)
-                
+
+        if self.mlip is not None:
+            shutil.copy2(self.mlip, pj(calcFolder, self.mlip_mtp))
+            shutil.copy2(self.mlip_in, pj(calcFolder, self.mlip_ini))
+
+        return ''
 
     def isConverged(self, calcFolder : str):
         lammps_completed = False
@@ -160,37 +179,61 @@ class LAMMPS_Interface:
             logger.error('LAMMPS minimization tolerance criteria is not achieved.')
             shutil.copy(output,  pj(calcFolder, 'ERROR-'+self.outputFile))
             self.failedSystems.append(calcFolder)
-        return lammps_completed and tolerance_achieved        
+        return True        
 
     def readOutput(self, system, calcFolder : str):
-        aseStructure = read(pj(calcFolder, self.dump_file), format='lammps-dump-text')
-        if 'structure' in self.targetProperties:
-            self.readStructure(system, aseStructure)
-
+        results = {}
+        aseData = self.adapter.read(calcFolder, self.specorder,
+                                    **system.pop('ase'))
         properties = self.readProperties(calcFolder)
+        if 'structure' in self.targetProperties:
+            results['structure'] = aseData['structure']
         if 'enthalpy' in self.targetProperties:
-            system['enthalpy'] = properties['Enthalpy']
+            if properties is not None:
+                results['enthalpy'] = properties['Enthalpy']
+            elif aseData is not None:
+                results['enthalpy'] = aseData['results'].getEnthalpy(system['externalPressure'])
+            else:
+                raise RuntimeError("Bad lammps output.")
         if 'energy' in self.targetProperties:
-            system['energy'] = properties['TotEng']
-        if 'stressTensor' in self.targetProperties:
-            system['stressTensor'] = properties['StressTensor']
-        if 'environmentEnthalpy' in self.targetProperties:
-            system['environmentEnthalpy'] = properties['Enthalpy']
-        if 'environmentEnergy' in self.targetProperties:
-            system['environmentEnergy'] = properties['TotEng']
-        if 'environmentStressTensor' in self.targetProperties:
-            system['environmentStressTensor'] = properties['StressTensor']
+            if properties is not None:
+                results['energy'] = properties['TotEng']
+            elif aseData is not None:
+                results['energy'] = aseData['results'].results['energy']
+            else:
+                raise RuntimeError("Bad lammps output.")
+        if 'forces' in self.targetProperties:
+            if aseData is not None:
+                results['forces'] = aseData['results'].results['forces']
+            else:
+                raise RuntimeError("Bad lammps output.")
 
-    def readStructure(self, system, aseStructure):
-        disassembler = system.pop('disassembler')
-        assembledCell = system.pop('assembledCell')
-        positions = aseStructure.get_positions()
-        numbers = aseStructure.get_atomic_numbers()
-        symbols = [self.specorder[i - 1] for i in numbers]
-        atomTypes = np.array([self.atomType(symbol) for symbol in symbols], dtype=self.atomType)
-        cell = self.cellType(aseStructure.get_cell().array, assembledCell.getPBC())
-        structure = self.structureType(atomTypes, positions, cell=cell)
-        system.update(disassembler.disassemble(structure))
+        if 'stressTensor' in self.targetProperties:
+            if properties is not None:
+                stressTensor = np.zeros((3, 3))
+                stressTensor[0][0] = properties['Pxx']
+                stressTensor[1][1] = properties['Pyy']
+                stressTensor[2][2] = properties['Pzz']
+                stressTensor[0][1] = stressTensor[1][0] = properties['Pxy']
+                stressTensor[0][2] = stressTensor[2][0] = properties['Pxz']
+                stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
+                results['stressTensor'] = stressTensor
+            else:
+                raise RuntimeError("Bad lammps output.")
+
+        if 'trajectory' in self.targetProperties:
+            sample = self.atomisticRepresentationType.readMLIPsample(pj(calcFolder, self.mlip_sample), self.specorder)
+            for subsystem in sample:
+                subsystem['disassembler'] = system['disassembler']
+                subsystem['externalPressure'] = system['externalPressure']
+            results['trajectory'] = sample
+
+        # TODO move to constraints
+        # BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3
+        # if abs(properties['TotEng']) / len(aseStructure) > BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD:
+        #     logger.error(f"System {system['ID']} seems to has wrong energy: {properties['TotEng']}. It will be discarded.")
+        #     system['isBad'] = True
+        return results
 
     def readProperties(self, calcFolder: str):
         if os.path.exists(pj(calcFolder, self.outputFile)):
@@ -201,41 +244,22 @@ class LAMMPS_Interface:
             raise FileNotFoundError('Cannot find either {self.outputFile} or {self.log_file}.')
         with open(output, 'r') as f:
             content = f.readlines()
-        
-        for i, line in enumerate(content):
-            if "Step" in line:
-                properties_list = line.split()
-                properties = dict().fromkeys(properties_list)
-            if "Loop" in line:
-                end_ind = i-1
-        templine = content[end_ind].split()
-        for j, item in enumerate(templine):
-            if properties_list[j] == "Step":
-                properties[properties_list[j]] = int(item)
-            else:
-                properties[properties_list[j]] = float(item)
-        stressTensor = np.zeros((3,3))
-        stressTensor[0][0] = properties['Pxx']
-        stressTensor[1][1] = properties['Pyy']
-        stressTensor[2][2] = properties['Pzz']
-        stressTensor[0][1] = stressTensor[1][0] = properties['Pxy']
-        stressTensor[0][2] = stressTensor[2][0] = properties['Pxz']
-        stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
-        properties['StressTensor'] = stressTensor
+        try:
+            for i, line in enumerate(content):
+                if "Step" in line:
+                    properties_list = line.split()
+                    properties = dict().fromkeys(properties_list)
+                if "Loop" in line:
+                    end_ind = i-1
+            templine = content[end_ind].split()
+            for j, item in enumerate(templine):
+                if properties_list[j] == "Step":
+                    properties[properties_list[j]] = int(item)
+                else:
+                    properties[properties_list[j]] = float(item)
+        except Exception:
+            properties = None
         return properties
 
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
-def write_lammps_data_with_label(filepath, atoms, specorder, label=None):
-    atoms.write(filepath, format='lammps-data', specorder=specorder)
-    if label:
-        with open(filepath, 'rt') as f:
-            content = f.readlines()
-        content[0] = label + "\n"
-        with open(filepath, 'wt') as f:
-            f.writelines(content)
+

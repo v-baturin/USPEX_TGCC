@@ -6,54 +6,50 @@ stages:
   - test_phase3
   - build_phase3
 
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+
 test_sources:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase1
   script:
-    - cd ./USPEX
+    - pip install nose
+    - pip install ase pymatgen abipy asyncssh pandas scikit-learn prettytable parsec pyxtal torch
+    - cd USPEX
     - nosetests -v .
 
-build_extensions:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
+build_whl38:
+  image: python:3.8
   stage: build_phase1
   script:
-    - mkdir unittests
-    - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./unittests/$(dirname {}) && mv {} ./unittests/$(dirname {})'
-    - python buildExtensions.py build_uspex -b ./BuildExt
+    - pip install build
+    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
+    - python -m build --wheel
   artifacts:
     paths:
-      - BuildExt
-      - unittests
+      - dist/uspex-*-cp38-cp38-linux_x86_64.whl
     expire_in: 1 mos 1 day
 
 test_binaries:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase2
   script:
-    - cp -r ./unittests/* ./BuildExt/
-    - cd ./BuildExt/USPEX
+    - pip install nose
+    - pip install ase pymatgen abipy asyncssh pandas scikit-learn prettytable parsec pyxtal torch
+    - mkdir binaries && unzip dist/uspex-*-cp38-cp38-linux_x86_64.whl -d binaries
+    - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./binaries/$(dirname {}) && mv {} ./binaries/$(dirname {})'
+    - cd binaries/USPEX
     - nosetests -v .
-
-build_whl38:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython38:master
-  stage: build_phase2
-  script:
-    - mkdir build
-    - cp pyproject.toml build/
-    - cp -r ./BuildExt/* build/
-    - cd build
-    - flit build --format wheel
-    - cd dist
-    - rename  's/py3\-none\-any/cp38\-cp38\-linux_x86_64/' *.whl
-  artifacts:
-    paths:
-      - build/dist
 
 test_package:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase3
   script:
-    - pip install build/dist/uspex-*-cp38-cp38-linux_x86_64.whl
+    - pip install dist/uspex-*-cp38-cp38-linux_x86_64.whl
     - cd testFolder
     - uspex -r
   artifacts:
@@ -61,10 +57,10 @@ test_package:
       - testFolder
 
 build_documentation:
-  image: $CI_REGISTRY/uspex_python/thirdparty:master
+  image: python:3.8
   stage: build_phase3
   script:
-    - pip install build/dist/uspex-*-cp38-cp38-linux_x86_64.whl
+    - pip install sphinx dist/uspex-*-cp38-cp38-linux_x86_64.whl
     - sphinx-build -b html sphinx build_docs
   artifacts:
     paths:
@@ -72,34 +68,24 @@ build_documentation:
     expire_in: 1 mos 1 day
 
 build_whl39:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython39:master
+  image: python:3.9
   stage: build_phase3
   script:
+    - pip install build
     - find ./USPEX -type d -name "*unittests*" | xargs rm -r
-    - python buildExtensions.py build_uspex -b ./BuildExt39
-    - cp -r ./BuildExt39/* build/
-    - cp pyproject.toml build/
-    - cd build
-    - flit build --format wheel
-    - cd dist
-    - rename  's/py3\-none\-any/cp39\-cp39\-linux_x86_64/' *.whl
+    - python -m build --wheel
   artifacts:
     paths:
-      - build/dist
+      - dist/uspex-*-cp39-cp39-linux_x86_64.whl
 
 build_whl310:
-  image: $CI_REGISTRY/uspex_python/thirdparty/cython310:master
+  image: python:3.10
   stage: build_phase3
   script:
+    - pip install build
     - find ./USPEX -type d -name "*unittests*" | xargs rm -r
-    - python buildExtensions.py build_uspex -b ./BuildExt310
-    - cp -r ./BuildExt310/* build/
-    - cp pyproject.toml build/
-    - cd build
-    - flit build --format wheel
-    - cd dist
-    - rename  's/py3\-none\-any/cp310\-cp310\-linux_x86_64/' *.whl
+    - python -m build --wheel
   artifacts:
     paths:
-      - build/dist
+      - dist/uspex-*-cp310-cp310-linux_x86_64.whl
 

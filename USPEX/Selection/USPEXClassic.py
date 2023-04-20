@@ -84,7 +84,7 @@ class USPEXClassic(object):
 
     def __init__(self, pool, target, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
                  initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False,
-                 antiseeds: dict = None, **kwargs):
+                 antiseeds: dict = None, globalParentsPool: bool = False, **kwargs):
         """
         :param target: reference to configuration space object
         :param params: dictionary contains following parameters:
@@ -107,6 +107,7 @@ class USPEXClassic(object):
         self.bestFrac = bestFrac
         self.howManyDiverse = howManyDiverse if howManyDiverse else np.round(0.15*self.popSize)
         self.diversityTolerance = diversityTolerance
+        self.globalParentsPool = globalParentsPool
         self._mostDiverse = []
         self.weightsLast = Counter()
         if debug:
@@ -124,24 +125,34 @@ class USPEXClassic(object):
         """
 
         if self.pool.generations:
-            population = self.pool.generations[-1]['allSystems']
+            if self.target.utilities.antiseeds.legacy:
+                self.target.utilities.antiseeds.payPenalties(self.pool.generations[-1]['allSystems'],
+                                                             self.pool.uniqueSystems, self.fingerprintUtility)
+
+            population = list(self.pool.uniqueSystems) if self.globalParentsPool else \
+                self.pool.generations[-1]['allSystems'] + self._mostDiverse
             newStructures = self.pool.generations[-1]['newSystems']
             fitness = self.pool.generations[-1]['fitness']
-            fronts = fitness.sort(population + self._mostDiverse, fitness.getAllFitnesses(self.optType))
-            sortedPopulation = list(chain.from_iterable(fronts))
+            fronts = fitness.sort(population, fitness.getAllFitnesses(self.optType))
+            sortedPopulation = []
+            tournament = []
+            for i, front in enumerate(fronts):
+                sortedPopulation.extend(front)
+                tournament.extend([(len(fronts) - i) ** 2] * len(front))
 
-            howManyProliferate = int(np.ceil(self.bestFrac * len(sortedPopulation)))
-            best = sortedPopulation[:howManyProliferate]
-            tournament = [(i + 1.0) ** 2 for i in reversed(range(howManyProliferate))]
+            howManyProliferate = int(np.ceil(self.bestFrac * self.popSize))
+            parentsPool = sortedPopulation[:howManyProliferate]
+            tournament = tournament[:howManyProliferate]
             tournament /= np.sum(tournament)
 
-            self._mostDiverse = self.determineMostDiverse(best, self.howManyDiverse, self.diversityTolerance)
+            if not self.globalParentsPool:
+                self._mostDiverse = self.determineMostDiverse(parentsPool, self.howManyDiverse, self.diversityTolerance)
 
             popSize = self.popSize
         else:
-            newStructures, best, tournament, popSize = [], [], [], self.initialPopSize
+            newStructures, parentsPool, tournament, popSize = [], [], [], self.initialPopSize
 
-        autofrac = Autofrac(self.fractions, self.weightsLast, best, newStructures, self.target.variationOperators)
+        autofrac = Autofrac(self.fractions, self.weightsLast, parentsPool, newStructures, self.target.variationOperators)
 
         population = []
         actualParents = []
@@ -150,11 +161,11 @@ class USPEXClassic(object):
             howCome = type(mutation).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
             howMany = 0 if howMany < 0 else howMany
-            if best:
+            if parentsPool:
                 self.weightsLast[howCome] = howMany
                 if hasattr(mutation, 'prepare'):
                     mutation.prepare()
-                possibleParents = np.random.choice(best, size=10*howMany, replace=True, p=tournament)
+                possibleParents = np.random.choice(parentsPool, size=10*howMany, replace=True, p=tournament)
                 for parent in possibleParents:
                     if howMany <= 0:
                         break
@@ -181,12 +192,12 @@ class USPEXClassic(object):
             howCome = type(hybridization).__name__
             howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
             howMany = 0 if howMany < 0 else howMany
-            if best:
+            if parentsPool:
                 self.weightsLast[howCome] = howMany
                 if hasattr(hybridization, 'prepare'):
                     hybridization.prepare()
-                pairs = zip(np.random.choice(best, size=10 * howMany, replace=True, p=tournament),
-                            np.random.choice(best, size=10 * howMany, replace=True, p=tournament))
+                pairs = zip(np.random.choice(parentsPool, size=10 * howMany, replace=True, p=tournament),
+                            np.random.choice(parentsPool, size=10 * howMany, replace=True, p=tournament))
                 for parent1, parent2 in pairs:
                     if parent1['ID'] == parent2['ID']:
                         continue
@@ -237,7 +248,8 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        self.target.utilities.antiseeds.payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
+        if not self.target.utilities.antiseeds.legacy:
+            self.target.utilities.antiseeds.payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
 
         if self.target.seeds is not None:
             seeds = self.target.seeds()

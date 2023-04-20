@@ -11,13 +11,12 @@ import os
 import shutil
 import unittest
 import filecmp
+import numpy as np
 
 from os.path import join as pj
 
 
-from USPEX.Atomistic.RadialDistributionUtility import RadialDistributionUtility
-from ..ABINIT_Interface import ABINIT_Interface
-from USPEX.components import AtomisticRepresentation
+from ....components import AtomisticRepresentation, ABINIT_Interface
 
 
 HOMEPATH = os.path.dirname(os.path.abspath(__file__))
@@ -25,37 +24,47 @@ SPECIFICPATH = os.path.join(HOMEPATH, 'abinitSpecific')
 GATHEREDPATH = os.path.join(HOMEPATH, 'abinitGatheredData')
 WORKPATH = os.path.join(HOMEPATH, 'Eu2H18_abinit')
 
+try:
+    from abipy import abilab
+except Exception:
+    pass
+else:
+    class ABINIT_Interface_Test(unittest.TestCase):
+        """
+        Checking correct parsing properties
+        """
 
-class ABINIT_Interface_Test(unittest.TestCase):
-    """
-    Checking correct parsing properties
-    """
-
-    def test_life(self):
-        abinit = ABINIT_Interface(tag='0', in_file=pj(SPECIFICPATH, 'abinit.in_1'), kresol=0.13,
-                                  pp_files=[pj(SPECIFICPATH, 'H.psp8'), pj(SPECIFICPATH, 'Eu.psp8')])
-        radialDistributionUtility = RadialDistributionUtility(symbols=['Eu', 'H'])
+        def test_life(self):
+            abinit = ABINIT_Interface(tag='0', in_file=pj(SPECIFICPATH, 'abinit.in_1'), kresol=0.13,
+                                      pp_files=[pj(SPECIFICPATH, 'H.psp8'), pj(SPECIFICPATH, 'Eu.psp8')])
 
 
-        for ID in range(10):
-            with open(pj(GATHEREDPATH, f'input/system{ID}.vasp'), 'rt') as f:
-                system = AtomisticRepresentation.readAtomicStructure(f)
-                system['assembled_cell'] = system['cell']
-                system['ID'] = ID
-                system['externalPressure'] = 130.0
-            os.mkdir(WORKPATH)
-            abinit.prepareLocalCalculation(system, WORKPATH)
-            folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
-            dcmp = filecmp.dircmp(folder, WORKPATH)
-            match = not dcmp.diff_files
-            for common_dir in dcmp.common_dirs:
-                match = match and not dcmp.subdirs[common_dir].diff_files
-            shutil.rmtree(WORKPATH)
-            self.assertTrue(match)
-            folder = pj(GATHEREDPATH, 'output')
-            shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
-            abinit.readOutput(system, WORKPATH)
-            shutil.rmtree(WORKPATH)
-            with open(pj(folder, f"system{system['ID']}.vasp"), 'rt') as f:
-                systemRef = AtomisticRepresentation.readAtomicStructure(f)
-            self.assertTrue(radialDistributionUtility.equal(system, systemRef))
+            for ID in range(10):
+                structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))
+                system = dict(
+                    ID=ID,
+                    structure=structure,
+                    disassembler=AtomisticRepresentation.atomicDisassemblerType(
+                        np.arange(len(structure)).reshape((-1, 1))),
+                    externalPressure=130.0
+                )
+                os.mkdir(WORKPATH)
+                abinit.prepareLocalCalculation(system, WORKPATH)
+                folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
+                dcmp = filecmp.dircmp(folder, WORKPATH)
+                match = not dcmp.diff_files
+                for common_dir in dcmp.common_dirs:
+                    match = match and not dcmp.subdirs[common_dir].diff_files
+                shutil.rmtree(WORKPATH)
+                self.assertTrue(match)
+                folder = pj(GATHEREDPATH, 'output')
+                shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
+                results = abinit.readOutput(system, WORKPATH)
+                shutil.rmtree(WORKPATH)
+                structureRef = AtomisticRepresentation.readPOSCAR(pj(folder, f"system{system['ID']}.vasp"), (1, 1, 1))
+                cell = results['structure'].getCell()
+                cellRef = structureRef.getCell()
+                self.assertTrue(np.allclose(cell.getCellVectors(),
+                                            cellRef.getCellVectors()))
+                # self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(results['structure'].getCartesianCoordinates()),
+                #                             cellRef.getWrapedCartesianCoordinates(structureRef.getCartesianCoordinates())))

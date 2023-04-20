@@ -58,7 +58,7 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
                     'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O']},
-                    'ionDistances': {'volumeType': 0}
+                    'bondUtility': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
@@ -77,10 +77,10 @@ class CompileParams_Test(unittest.TestCase):
                 }
             },
             'stages': [
-                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1'},
-                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '2'},
-                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '3'},
-                {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '4'}],
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1'},
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '2'},
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '3'},
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '4'}],
             'numParallelCalcs': 20,
             'numGenerations': 60,
             'stopCrit': 30
@@ -127,7 +127,7 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['mol_h2o'],
                                          'blocks': [[4]]},
                     'radialDistributionUtility': {'symbols': ['H', 'O']},
-                    'ionDistances': {'volumeType': 0.5}
+                    'bondUtility': {'volumeType': 0.5}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
@@ -177,7 +177,7 @@ class CompileParams_Test(unittest.TestCase):
                                          'blocks': [[8,24]],
                                          'range': [[1,1]]},
                     'radialDistributionUtility': {'symbols': ['Cl', 'Na']},
-                    'ionDistances': {'volumeType': 0}
+                    'bondUtility': {'volumeType': 0}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',

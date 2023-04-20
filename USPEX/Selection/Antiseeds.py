@@ -11,13 +11,14 @@ class Antiseeds:
     Such penalties applied not only to some system itself but to all its neighbours with gaussian distribution.
     """
 
-    def __init__(self, max = ANTISEEDS_MAX, sigma = ANTISEEDS_SIGMA, **kwargs):
+    def __init__(self, max=ANTISEEDS_MAX, sigma=ANTISEEDS_SIGMA, legacy=True, **kwargs):
         """
         :param max: height of gaussian distribution.
         :param sigma: width of gaussian distribution.
         """
         self.max = max
         self.sigma = sigma
+        self.legacy = legacy
 
     def payPenalties(self, population, pool, fingerprintUtility):
         """
@@ -37,11 +38,12 @@ class Antiseeds:
             sigma = 1
         sigma *= self.sigma
         for system in pool:
-            if 'antiseeds.corrections' not in system:
+            if 'antiseeds.corrections' in system:
+                for ref_system in population:
+                    dist = fingerprintUtility.dist(ref_system, system)
+                    system['antiseeds.corrections'] += self.max * np.exp(-dist ** 2 / (2 * sigma ** 2))
+            else:
                 system['antiseeds.corrections'] = 0
-            for ref_system in pool:
-                dist = fingerprintUtility.dist(ref_system, system)
-                system['antiseeds.corrections'] += self.max * np.exp(-dist**2/(2*sigma**2))
 
     def corrections(self, system : dict):
         """

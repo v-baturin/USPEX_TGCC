@@ -1,5 +1,6 @@
 from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
+from ..Atomistic.EnvironmentUtility import EnvironmentUtility
 from .read_molecule import read_molecule
 
 
@@ -8,6 +9,8 @@ def compileParams(main: dict) -> dict:
     for i, stage in enumerate(stages):
         if 'tag' not in stage:
             stages[i]['tag'] = str(i+1)
+        if 'stageType' not in stage:
+            stage['stageType'] = 'atomistic'
 
     if 'optimizer' in main and 'target' in main['optimizer']:
         optimizer = main['optimizer']
@@ -25,18 +28,21 @@ def compileParams(main: dict) -> dict:
                 elementalSymbols.add(symbol)
             if molecules:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
-        if 'ionDistances' not in target:
-            target['ionDistances'] = {}
-        if 'volumeType' not in target['ionDistances']:
+        if 'selection' in optimizer:
+            selection = optimizer['selection']
+            if len(target['compositionSpace']['blocks']) > 1:
+                selection['globalParentsPool'] = True
+            if 'optType' not in selection:
+                selection['optType'] = optimizer['optType']
+        if 'bondUtility' not in target:
+            target['bondUtility'] = {}
+        if 'volumeType' not in target['bondUtility']:
             if molecules:
-                target['ionDistances']['volumeType'] = 0.5
+                target['bondUtility']['volumeType'] = 0.5
             else:
-                target['ionDistances']['volumeType'] = 0
+                target['bondUtility']['volumeType'] = 0
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
-        selection = optimizer['selection']
-        if 'optType' not in selection:
-            selection['optType'] = optimizer['optType']
         if 'powderSpectrumAnalyzer' in target:
             target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(target['powderSpectrumAnalyzer'])
         if 'singleCrystalSpectrumAnalyzer' in target:
@@ -46,5 +52,8 @@ def compileParams(main: dict) -> dict:
             target['radialDistributionUtility'] = {}
         if 'symbols' not in target['radialDistributionUtility']:
             target['radialDistributionUtility']['symbols'] = sorted(elementalSymbols)
+        if 'environmentUtility' in target:
+            for environmentDesciption in target['environmentUtility']['environments']:
+                environmentDesciption.update(EnvironmentUtility.build(**environmentDesciption))
 
     return main

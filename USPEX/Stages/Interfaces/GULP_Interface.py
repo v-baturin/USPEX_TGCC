@@ -12,6 +12,7 @@ import shutil
 from os.path import join as pj
 from typing import List
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,11 +27,15 @@ class GULP_Interface:
     structureType = None
     atomType = None
     cellType = None
-    atomicDisassemblerType = None
+
+    @classmethod
+    def registerTypes(cls, structureType, atomType, cellType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
 
     def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: List[str] = None,
-                 moleculeSpecifics: dict = None, perturbate: bool = True, fixCell: bool = False, vacuumSize = 10,
-                 targetProperties: list = None, **kwargs):
+                 moleculeSpecifics: dict = None, fixCell: bool = False, targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -41,6 +46,7 @@ class GULP_Interface:
                 * taskManager: (dict) task managers params     # optional
         """
 
+        self.tag = tag
         if ginput is None:
             ginput = pj(os.getcwd(), f'Specific/ginput_{tag}')
 
@@ -63,10 +69,9 @@ class GULP_Interface:
         else:
             self.moleculeSpecifics = {}
 
-        self.perturbate = perturbate
         self.fixCell = fixCell
-        self.vacuumSize = vacuumSize
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+
         logger.debug('GULP calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder : str):
@@ -74,11 +79,7 @@ class GULP_Interface:
 
         """
 
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
-        system['disassembler'] = disassembler
-        cell = structure.getCell()
-        system['assembledCell'] = cell
-        coordinates = structure.getCartesianCoordinates()
+        structure = system['structure']
 
         files_to_delete = ['output', 'optimized.structure']
         for f in files_to_delete:
@@ -99,7 +100,9 @@ class GULP_Interface:
         #     pass
         # else:
 
-        lattice = type(cell)(cell.getCellVectors(), (1,1,1)).getCellParameters()
+        cell = structure.getCell()
+        system['pbc'] = cell.getPBC()
+        lattice = type(cell)(cell.getCellVectors(), (1, 1, 1)).getCellParameters()
 
         content_to_write = ''
         content_to_write += 'cell\n'
@@ -110,9 +113,6 @@ class GULP_Interface:
             content_to_write += '%7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n' % tuple(lattice)
 
         content_to_write += 'fractional\n'
-
-        if self.perturbate:
-            coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
 
         # TODO gulp specifics for atoms
         # symbols = []
@@ -137,16 +137,17 @@ class GULP_Interface:
         #         content_to_write += '%4s %12.6f %12.6f %12.6f   core %12.6f\n' % tuple_to_format
         # else:
 
-        fixedIndices = disassembler.envIndices[system['environment'].getFixedIndices()] if 'environment' in system else []
-        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), cell.cartesianToFractional(coordinates))):
-            tuple_to_format = tuple([symbol.short_name] + coord.tolist())
+        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getFractionalCoordinates())):
+            tuple_to_format = (symbol.short_name, ) +\
+                              tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
+                                                               precision=6) for c in coord)
             if cell.dim == 2:
-                if i in fixedIndices:
-                    content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 1 1 1\n' % tuple_to_format
+                if i in system['disassembler'].fixedIndices:
+                    content_to_write += '%4s %12s %12s %12s 1 1 0 1 1 1\n' % tuple_to_format
                 else:
-                    content_to_write += '%4s %12.6f %12.6f %12.6f 1 1 0 0 0 0\n' % tuple_to_format
+                    content_to_write += '%4s %12s %12s %12s 1 1 0 0 0 0\n' % tuple_to_format
             else:
-                content_to_write += '%4s %12.6f %12.6f %12.6f\n' % tuple_to_format
+                content_to_write += '%4s %12s %12s %12s\n' % tuple_to_format
 
         # Write part:
         total_content = self.goptions + '\n' + content_to_write + self.ginput + '\n'
@@ -161,6 +162,8 @@ class GULP_Interface:
                 shutil.copy(lib, calcFolder)
 
         logger.debug('GULP calculator prepared calculation.')
+
+        return ''
 
     def isConverged(self, calcFolder : str):
         """
@@ -201,29 +204,28 @@ class GULP_Interface:
         with open(pj(calcFolder, self.outputFile), 'rt') as f:
             content = f.readlines()
 
+        results = {}
         if 'structure' in self.targetProperties:
-            self.readStructure(system, content)
+            results['structure'] = self.readStructure(content, system.pop('pbc'))
         if 'enthalpy' in self.targetProperties:
-            system['enthalpy'] = self.readEnergy(content)
+            results['enthalpy'] = self.readEnergy(content)
         if 'stressTensor' in self.targetProperties:
-            system['stressTensor'] = self.readStressTensor(content)
+            results['stressTensor'] = self.readStressTensor(content)
         if 'strains' in self.targetProperties:
-            system['strains'] = self.readStrains(content)
+            results['strains'] = self.readStrains(content)
         if 'forces' in self.targetProperties:
-            system['forces'] = self.readForces(content, len(system['molecules']))
+            results['forces'] = self.readForces(content, len(system['molecules']))
         if 'dielectricTensor' in self.targetProperties:
-            system['dielectricTensor'] = self.readDielectricProperties(content)
+            results['dielectricTensor'] = self.readDielectricProperties(content)
         if 'elasticConstants' in self.targetProperties:
-            system['elasticMatrix'] = self.readElasticMatrix(content)
+            results['elasticMatrix'] = self.readElasticMatrix(content)
+        return results
 
-    def readStructure(self, system, content):
+    def readStructure(self, content, pbc):
         # This routine is to read crystal structure from GULP output
         # File: output
         # fractional for bulk
         # cartesian for surface
-
-        assembledCell = system.pop('assembledCell')
-        disassembler = system.pop('disassembler')
 
         # GULP prints the fractional coordinates before the Final lattice vectors
         # so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
@@ -252,7 +254,7 @@ class GULP_Interface:
                     temp = content[j].split()
                     for k in range(3):
                         lattice_vectors[j - s][k] = float(temp[k])
-                cell = self.cellType(lattice_vectors, pbc = assembledCell.getPBC())
+                cell = self.cellType(lattice_vectors, pbc=pbc)
                 if fractional_coordinates is not None:
                     positions = cell.fractionalToCartesian(fractional_coordinates)
 
@@ -263,7 +265,7 @@ class GULP_Interface:
                     temp = content[j].split()
                     for k in range(3):
                         lattice_vectors[j - s][k] = float(temp[k])
-                cell = self.cellType(lattice_vectors, pbc = assembledCell.getPBC())
+                cell = self.cellType(lattice_vectors, pbc=pbc)
                 if fractional_coordinates is not None:
                     positions = cell.fractionalToCartesian(fractional_coordinates)
 
@@ -282,8 +284,8 @@ class GULP_Interface:
                     scaled_positions.append(XYZ)
                     atomTypes.append(self.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
-                positions = assembledCell.fractionalToCartesian(fractional_coordinates)
-        system.update(disassembler.disassemble(self.structureType(atomTypes, positions, cell = cell)))
+                positions = cell.fractionalToCartesian(fractional_coordinates)
+        return self.structureType(atomTypes, positions, cell=cell)
 
     def readEnergy(self, content) -> float:
         energy_enthalpy = np.inf
@@ -384,10 +386,3 @@ class GULP_Interface:
             if line.lower().startswith('* Version'):
                 number = line[12:17]
         return number
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
