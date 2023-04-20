@@ -7,10 +7,10 @@ USPEX.Stages.MOPAC_Interface
 """
 
 import logging
-import os
 import re
 import numpy as np
-from os.path import join as pj
+
+from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
@@ -44,8 +44,10 @@ class MOPAC_Interface:
 
         self.tag = tag
         if mop_input is None:
-            mop_input = pj(os.getcwd(), f'Specific/mop_{tag}')
-        assert os.path.exists(mop_input)
+            mop_input = Path.cwd()/f'Specific/mop_{tag}'
+        else:
+            mop_input = Path(mop_input)
+        assert mop_input.exists()
 
         with open(mop_input, 'r') as f:
             self.mop_input = f.read().strip()
@@ -58,11 +60,11 @@ class MOPAC_Interface:
 
         logger.debug('MOPAC calculator created.')
 
-    def prepareLocalCalculation(self, system, calcFolder: str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
         """
 
         :param system:
-        :param isFullRelaxation:
+        :param calcFolder:
         """
         structure = system['structure']
 
@@ -94,32 +96,32 @@ class MOPAC_Interface:
 
         total_content = self.mop_input + '\n' + content_to_write + '\n'
 
-        with open(pj(calcFolder, self.inputFile), 'wt') as f:
+        with open(calcFolder/self.inputFile, 'wt') as f:
             f.write(total_content)
 
         logger.debug('MOPAC calculator prepared calculation.')
         return ''
 
-    def isConverged(self, calcFolder: str):
+    def isConverged(self, calcFolder: Path):
         """
-        :param SYSTEM:
+        :param calcFolder:
         :return: whether optimization converged
         """
-
-        if not (os.path.exists(pj(calcFolder, self.mopacOut))
-                and os.path.exists(pj(calcFolder, self.arcFile))):
+        calcFolder = Path(calcFolder)
+        if not (calcFolder.joinpath(self.mopacOut).exists()
+                and calcFolder.joinpath(self.arcFile).exists()):
             return False
 
-        with open(pj(calcFolder, self.arcFile), 'rt') as arc_fid:
+        with open(calcFolder/self.arcFile, 'rt') as arc_fid:
             arc_content = arc_fid.read()
             if 'FINAL GEOMETRY OBTAINED' not in arc_content:
                 return False
             else:
                 return True
 
-    def readOutput(self, system, calcFolder: str):
-
-        with open(pj(calcFolder, self.arcFile), 'rt') as arc_fid:
+    def readOutput(self, system, calcFolder: Path):
+        calcFolder = Path(calcFolder)
+        with open(calcFolder/self.arcFile, 'rt') as arc_fid:
             content = arc_fid.readlines()
 
         results = {}

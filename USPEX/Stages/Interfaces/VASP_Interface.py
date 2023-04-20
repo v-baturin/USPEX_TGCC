@@ -70,12 +70,15 @@ class VASP_Interface:
     def __init__(self, tag: str, kresol: float, incar: str = None, potcarsPath: str = None,
                  targetProperties: list = None, **kwargs):
         '''
-        :param params: dictionary with parameters:
-                * commandExecutable: str of executable command
-                * kresol: float of K-points resolution
-                * remote: dict of remote server params
-                * taskManager: dict of task managers params
-        :param step: int of current step
+
+        :param tag:
+        :param kresol:
+        :param incar:
+        :param potcarsPath:
+        :param perturbate:
+        :param vacuumSize:
+        :param targetProperties:
+        :param kwargs:
         '''
 
         if incar is not None:
@@ -205,6 +208,7 @@ class VASP_Interface:
         :param calcFolder:
         :return: (bool) whether system calculation converged
         '''
+        calcFolder = Path(calcFolder)
 
         if not (calcFolder.joinpath(self.outcar_file).exists() and
                 calcFolder.joinpath(self.oszicar_file).exists() and

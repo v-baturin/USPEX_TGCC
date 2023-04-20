@@ -7,22 +7,21 @@
 @brief       Class for testing ABINIT_Interface class.
 """
 
-import os
 import shutil
 import unittest
 import filecmp
 import numpy as np
 
-from os.path import join as pj
+from pathlib import Path
 
 
 from ....components import AtomisticRepresentation, ABINIT_Interface
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = os.path.join(HOMEPATH, 'abinitSpecific')
-GATHEREDPATH = os.path.join(HOMEPATH, 'abinitGatheredData')
-WORKPATH = os.path.join(HOMEPATH, 'Eu2H18_abinit')
+HOMEPATH = Path(__file__).parent
+SPECIFICPATH = HOMEPATH/'abinitSpecific'
+GATHEREDPATH = HOMEPATH/'abinitGatheredData'
+WORKPATH = HOMEPATH/'Eu2H18_abinit'
 
 try:
     from abipy import abilab

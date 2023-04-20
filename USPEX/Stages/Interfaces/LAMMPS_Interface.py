@@ -7,11 +7,14 @@ USPEX.Stages.LAMMPS_Interface
 """
 import logging
 import numpy as np
-import shutil
 import os
-from os.path import join as pj
-from typing import List
+import shutil
 
+from ase.io import read
+from ase import Atoms
+
+from pathlib import Path
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,7 @@ class LAMMPS_Interface:
     log_file = 'log.lammps'
     data_file = 'STRUC'
     dump_file = 'lammps.dump'
+
     mlip_ini = 'mlip.ini'
     mlip_in = None
     mlip_sample = None
@@ -78,7 +82,7 @@ class LAMMPS_Interface:
                 raise RuntimeError('Bad mlip.ini: load_from not specified.')
 
         self.specorder = specorder
-        assert os.path.exists(self.lammps_in)
+        assert self.lammps_in.exists()
 
         if libs is not None:
             assert all([os.path.exists(lib) for lib in libs])
@@ -88,7 +92,7 @@ class LAMMPS_Interface:
         self.failedSystems = []
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
         """
         :param system:
         :param calcFolder:
@@ -136,7 +140,7 @@ class LAMMPS_Interface:
     
         # Step 4. We write all the input files to our calcFolder
         
-        with open(pj(calcFolder, self.inputFile), 'w') as f:
+        with open(calcFolder/self.inputFile, 'w') as f:
             f.writelines(content)
 
         for lib in self.libs:
@@ -148,16 +152,17 @@ class LAMMPS_Interface:
 
         return ''
 
-    def isConverged(self, calcFolder : str):
+    def isConverged(self, calcFolder: Path):
+        calcFolder = Path(calcFolder)
         lammps_completed = False
         tolerance_achieved = False
-        if os.path.exists(pj(calcFolder, self.outputFile)):
-            output = pj(calcFolder, self.outputFile)
-        elif os.path.exists(pj(calcFolder, self.log_file)):
-            output = pj(calcFolder, self.log_file)
+        if calcFolder.joinpath(self.outputFile).exists():
+            output = calcFolder/self.outputFile
+        elif calcFolder.joinpath(self.log_file).exists():
+            output = calcFolder/self.log_file
         else:
             return False
-        
+
         with open(output, 'r') as f:
             content = f.readlines()
 
@@ -174,10 +179,10 @@ class LAMMPS_Interface:
             if 'Breaking threshold exceeded' in line:
                 lammps_completed = True
                 tolerance_achieved = True
-        
+
         if not tolerance_achieved:
             logger.error('LAMMPS minimization tolerance criteria is not achieved.')
-            shutil.copy(output,  pj(calcFolder, 'ERROR-'+self.outputFile))
+            shutil.copy(output,  calcFolder/f'ERROR-{self.outputFile}')
             self.failedSystems.append(calcFolder)
         return True        
 
@@ -235,11 +240,11 @@ class LAMMPS_Interface:
         #     system['isBad'] = True
         return results
 
-    def readProperties(self, calcFolder: str):
-        if os.path.exists(pj(calcFolder, self.outputFile)):
-            output = pj(calcFolder, self.outputFile)
-        elif os.path.exists(pj(calcFolder, self.log_file)):
-            output = pj(calcFolder, self.log_file)
+    def readProperties(self, calcFolder: Path):
+        if calcFolder.joinpath(self.outputFile).exists():
+            output = calcFolder/self.outputFile
+        elif calcFolder.joinpath(self.log_file).exists():
+            output = calcFolder/self.log_file
         else:
             raise FileNotFoundError('Cannot find either {self.outputFile} or {self.log_file}.')
         with open(output, 'r') as f:

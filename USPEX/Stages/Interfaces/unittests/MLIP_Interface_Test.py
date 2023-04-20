@@ -7,20 +7,18 @@
 @brief       Class for testing MLIP_Interface.
 """
 
-import os
 import shutil
 import unittest
 import filecmp
 
-from os.path import join as pj
+from pathlib import Path
 
 from ....components import AtomisticRepresentation, MLIP_Interface
 
-
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'mlipSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'mlipGatheredData')
-WORKPATH = pj(HOMEPATH, 'NaCl_mlip')
+HOMEPATH = Path(__file__).parent
+SPECIFICPATH = HOMEPATH/'mlipSpecific'
+GATHEREDPATH = HOMEPATH/'mlipGatheredData'
+WORKPATH = HOMEPATH/'NaCl_mlip'
 
 
 # class MLIP_CalculatorTest2(unittest.TestCase):

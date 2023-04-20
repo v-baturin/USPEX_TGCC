@@ -6,10 +6,10 @@ USPEX.Stages.MLIP_Interface
 
 """
 import logging
-import os
 import shutil
 import numpy as np
-from os.path import join as pj, basename as bn
+
+from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class MLIP_Interface:
     def prepareLocalCalculation(self, system, calcFolder: str):
 
         # create empty input file
-        with open(pj(calcFolder, self.inputFile), 'wt') as f:
+        with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
         if 'trajectory' in system:

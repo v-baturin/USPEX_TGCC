@@ -9,12 +9,10 @@
 
 __author__ = 'asamtsevich'
 
-import os
 import shutil
 import unittest
 import filecmp
 
-from os.path import join as pj
 from pathlib import Path
 
 import numpy as np
@@ -49,7 +47,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
             )
             os.mkdir(WORKPATH)
             vasp.prepareLocalCalculation(system, WORKPATH)
-            folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
+            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
@@ -88,6 +86,7 @@ class VASP_interfaceTest(unittest.TestCase):
             content = f.readlines()
         stress = self.interface.readPressureTensor(content)
         assert stress.shape == (3, 3)
+
 
 class VASP_interface_elastic_Test(unittest.TestCase):
 

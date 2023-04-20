@@ -1,22 +1,20 @@
 
 import numpy as np
-import os
 import shutil
 import unittest
 import filecmp
 
-from os.path import join as pj
+from pathlib import Path
 
 from USPEX.components import AtomisticRepresentation, MOPAC_Interface
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'mopacSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'mopacGatheredData')
-WORKPATH = pj(HOMEPATH, 'Si7O14_mopac')
+HOMEPATH = Path(__file__).parent
+SPECIFICPATH = HOMEPATH/'mopacSpecific'
+GATHEREDPATH = HOMEPATH/'mopacGatheredData'
+WORKPATH = HOMEPATH/'Si7O14_mopac'
 
 
 class MOPAC_CalculatorTest(unittest.TestCase):
-
 
     def test_life(self):
         mopac = MOPAC_Interface(tag='0', mop_input=pj(SPECIFICPATH, 'mop_1'))
@@ -32,7 +30,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             )
             os.mkdir(WORKPATH)
             mopac.prepareLocalCalculation(system, WORKPATH)
-            folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
+            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:

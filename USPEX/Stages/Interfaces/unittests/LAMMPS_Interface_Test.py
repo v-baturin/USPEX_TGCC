@@ -1,18 +1,17 @@
 
 import numpy as np
-import os
 import shutil
 import unittest
 import filecmp
 
-from os.path import join as pj
+from pathlib import Path
 
 from ....components import AtomisticRepresentation, LAMMPS_Interface
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'lammpsSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'lammpsGatheredData')
-WORKPATH = pj(HOMEPATH, 'C_lammps')
+HOMEPATH = Path(__file__).parent
+SPECIFICPATH = HOMEPATH/'lammpsSpecific'
+GATHEREDPATH = HOMEPATH/'lammpsGatheredData'
+WORKPATH = HOMEPATH/'C_lammps'
 
 
 class LAMMPS_CalculatorTest(unittest.TestCase):
@@ -34,7 +33,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
             )
             os.mkdir(WORKPATH)
             lammps.prepareLocalCalculation(system, WORKPATH)
-            folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
+            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:

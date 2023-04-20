@@ -10,20 +10,19 @@
 __author__ = 'asamtsevich'
 
 import numpy as np
-import os
 import shutil
 import unittest
 import filecmp
 
-from os.path import join as pj
+from pathlib import Path
 
 from ....components import AtomisticRepresentation, GULP_Interface
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'gulpSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'gulpGatheredData')
-WORKPATH = pj(HOMEPATH, 'Mg4Al8O16_gulp')
+HOMEPATH = Path(__file__).parent
+SPECIFICPATH = HOMEPATH/'gulpSpecific'
+GATHEREDPATH = HOMEPATH/'gulpGatheredData'
+WORKPATH = HOMEPATH/'Mg4Al8O16_gulp'
 
 
 class GULP_CalculatorTest(unittest.TestCase):
@@ -43,7 +42,7 @@ class GULP_CalculatorTest(unittest.TestCase):
             )
             os.mkdir(WORKPATH)
             gulp.prepareLocalCalculation(system, WORKPATH)
-            folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
+            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
@@ -68,10 +67,10 @@ class GULP_InterfaceTest(unittest.TestCase):
         ID = 0
         # HERE what is written in ginput and goption no make sense.
         # Only output will be parsed and properties checked
-        interface = GULP_Interface(tag='1', ginput=pj(HOMEPATH, 'Specific', 'ginput_1'),
-                                   goptions=pj(HOMEPATH, 'Specific', 'goptions_1'),
+        interface = GULP_Interface(tag='1', ginput=HOMEPATH/'Specific'/'ginput_1',
+                                   goptions=HOMEPATH/'Specific'/'goptions_1',
                                    targetProperties=['structure', 'enthalpy', 'stressTensor', 'strains'])
-        # with open(pj(GATHEREDPATH, f'input/system{ID}'), 'rt') as f:
+        # with open(GATHEREDPATH/f'input/system{ID}', 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
 
         structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))
@@ -90,8 +89,7 @@ class GULP_InterfaceTest(unittest.TestCase):
         self.assertTrue(np.allclose(results['strains'], strains_ref))
 
     def test_read_energy(self):
-         with open(pj(HOMEPATH, 'gulp_test', 'output_bad_1st_SCF'), 'rt') as f:
-             contents = f.readlines()
-         ev = GULP_Interface.readEnergy(None, contents)
-         self.assertAlmostEqual(ev, -1604.1694, delta=0.001)
-
+        with open(HOMEPATH/'gulp_test'/'output_bad_1st_SCF', 'rt') as f:
+            contents = f.readlines()
+        ev = GULP_Interface.readEnergy(None, contents)
+        self.assertAlmostEqual(ev, -1604.1694, delta=0.001)

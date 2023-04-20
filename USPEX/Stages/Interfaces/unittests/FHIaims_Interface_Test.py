@@ -9,22 +9,21 @@
 
 __author__ = 'asamtsevich'
 
-import os
 import shutil
 import unittest
 import filecmp
 import numpy as np
 
-from os.path import join as pj
+from pathlib import Path
 
 
 from ....components import AtomisticRepresentation, FHIaims_Interface
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'aimsSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'aimsGatheredData')
-WORKPATH = pj(HOMEPATH, 'F2_aims')
+HOMEPATH = Path(__file__).parent
+SPECIFICPATH = HOMEPATH/'aimsSpecific'
+GATHEREDPATH = HOMEPATH/'aimsGatheredData'
+WORKPATH = HOMEPATH/'F2_aims'
 
 
 class VASP_CalculatorTest2(unittest.TestCase):
@@ -47,7 +46,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
             )
             os.mkdir(WORKPATH)
             aims.prepareLocalCalculation(system, WORKPATH)
-            folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
+            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
