@@ -489,35 +489,35 @@ class Bulk:
         return self._indices
 
 class NanoparticleCore:
+    class Site:
+        def __init__(self, mountPoint, orientation, junctionTypes=None, passivateBy=None):
+            self.mountPoint = mountPoint
+            self.orientation = orientation
+            self.junctionTypes = set(junctionTypes) if junctionTypes else None
+            self.passivateBy = passivateBy
+
+        def dock(self, adsorbant, ownAxisAngle=0):
+            if self.junctionTypes and adsorbant.junctionTypes:
+                assert self.junctionTypes & adsorbant.junctionTypes
+            rotAroundOrientationAxis = Transformation.fromRotVector(adsorbant.orientation * ownAxisAngle,
+                                                                    -adsorbant.mountPoint)
+            trotated_structure = rotAroundOrientationAxis.transform(adsorbant.structure)
+            rot_ax = np.cross(adsorbant.orientation, self.orientation)
+            rot_ax /= np.linalg.norm(rot_ax)
+            alpha = np.arccos(adsorbant.orientation @ self.orientation)
+            matchOrientation = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
+            return matchOrientation.transform(trotated_structure)
+
 
     class Assembler:
 
-        class Site:
-            def __init__(self, mountPoint, orientation, junctionTypes=None, passivate=None):
-                self.mountPoint = mountPoint
-                self.orientation = orientation
-                self.junctionTypes = set(junctionTypes) if junctionTypes else junctionTypes
-                self.passivate = passivate
-
-            def dock(self, adsorbant, ownAxisAngle=0):
-                if self.junctionTypes and adsorbant.junctionType:
-                    assert self.junctionTypes & adsorbant.junctionType
-                rotAroundOrientationAxis = Transformation.fromRotVector(adsorbant.orientation * ownAxisAngle, -adsorbant.mountPoint)
-                trotated_structure = rotAroundOrientationAxis.transform(adsorbant.structure)
-                rot_ax = np.cross(adsorbant.orientation, self.orientation)
-                rot_ax /= np.linalg.norm(rot_ax)
-                alpha = np.arccos(adsorbant.orientation @ self.orientation)
-                rotation = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
-                return rotation.transform(trotated_structure)
-
-
-
         def __init__(self, structure, sites=None, **kwargs):
             self.structure = structure
+            self._alphaShapesCollection = {}  # {alphaValue: alphashape}
             if sites is None:
                 self.sites = []
             else:
-                self.sites = [NanoparticleCore.Assembler.Site(**site) for site in sites]
+                self.sites = [NanoparticleCore.Site(**site) for site in sites]
                 self.sitesByType = {}
                 for site in self.sites:
                     for junctionType in site.junctionTypes:
@@ -529,36 +529,44 @@ class NanoparticleCore:
 
 
         def assemble(self, alpha, **kwargs):
-            return NanoparticleCore(self.structure, alpha)
+            return NanoparticleCore(self.structure)
 
         def getSitesByType(self, junctionType):
-            if junctionType in self.sites:
-                return self.sites[junctionType]
+            if junctionType in self.sitesByType:
+                return self.sitesByType[junctionType]
             elif hasattr(junctionType, 'label') and junctionType.label in ('FACE', 'EDGE', 'VERTEX'):
-                return self.calc_alphashape_sites(junctionType)
+                return self.calcAlphashapeSites(junctionType)
             else:
                 logger.warning(f'No sites of type "{junctionType}" on the nanoparticle core')
 
-        def calc_alphashape_sites(self, junctionType):
+        def calcAlphashapeSites(self, junctionType):
             # determine active centers + normal vectors self.activeCenters = [(xyz, normal), ...],
-            if junctionType.juctionParam is None:
-                alpha = 0.
-            else:
-                alpha = junctionType.juctionParam
-            alpha_shape = alphashape.alphashape(self.structure.getCartesianCoordinates(), alpha)
-            self.sites[type(junctionType)("FACE", alpha)] =\
-                [{'mount_point': m, 'orientation': v}
-                 for m, v in zip(alpha_shape.triangles_center, alpha_shape.face_normals)]
-            self.sites[type(junctionType)("VERTEX", alpha)] =\
-                [{'mount_point': m, 'orientation': v}
-                 for m, v in zip(alpha_shape.vertices, alpha_shape.vertex_normals)]
-            edge_normals = []
-            for adj_e, adj_f in zip(alpha_shape.face_adjacency_edges, alpha_shape.face_adjacency):
-                origin = 0.5 * (alpha_shape.vertices[adj_e[0]] + alpha_shape.vertices[adj_e[1]])
-                normal = alpha_shape.face_normals[adj_f[0]] + alpha_shape.face_normals[adj_f[1]]
-                normal /= np.linalg.norm(normal)
-                edge_normals.append({'mount_point': origin, 'orientation': normal})
-            self.sites[type(junctionType)("EDGE", alpha)] = edge_normals
+
+            newSites = []
+
+            if junctionType.juctionParam not in self._alphaShapesCollection:
+                self._alphaShapesCollection[junctionType.juctionParam] = \
+                    alphashape.alphashape(self.structure.getCartesianCoordinates(), alpha=junctionType.juctionParam)
+            alphaShape = self._alphaShapesCollection[junctionType.juctionParam]
+
+            if junctionType.label == "FACE":
+                newSites = [NanoparticleCore.Site(mountPoint=m, orientation=v, junctionTypes={junctionType})
+                     for m, v in zip(alphaShape.triangles_center, alphaShape.face_normals)]
+            elif junctionType.label == "VERTEX":
+                newSites = [NanoparticleCore.Site(mountPoint=m, orientation=v, junctionTypes={junctionType})
+                     for m, v in zip(alphaShape.vertices, alphaShape.vertex_normals)]
+            elif junctionType.label == "EDGE":
+                edgeSites = []
+                for adj_e, adj_f in zip(alphaShape.face_adjacency_edges, alphaShape.face_adjacency):
+                    origin = 0.5 * (alphaShape.vertices[adj_e[0]] + alphaShape.vertices[adj_e[1]])
+                    normal = alphaShape.face_normals[adj_f[0]] + alphaShape.face_normals[adj_f[1]]
+                    normal /= np.linalg.norm(normal)
+                    edgeSites.append(
+                        NanoparticleCore.Site(
+                            mountPoint=origin, orientation=normal, junctionTypes={junctionType}))
+                newSites = edgeSites
+            self.sitesByType[junctionType] = newSites
+            self.sites += newSites
             return self.sites[junctionType]
 
         @staticmethod
