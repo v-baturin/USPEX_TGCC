@@ -569,6 +569,11 @@ class NanoparticleCore:
             self.sites += newSites
             return self.sites[junctionType]
 
+        def passivateSite(self, site):
+            pass
+
+
+
         @staticmethod
         def build(filename, **kwargs):
             structure = EnvironmentUtility.structureRepresentation.readXYZ(filename)
@@ -577,9 +582,26 @@ class NanoparticleCore:
             )
             return environment
 
+        # def calcCovOffset(self, site, dist):
+        #     mPoint = site.mountPoint
+        #     v = site.orientation
+        #
+        #     def find_x(a, e, r):
+        #         # calculate the coefficients of the quadratic equation
+        #         rts = np.roots([np.dot(e, e), 2 * np.dot(e, a), np.dot(a, a) - r ** 2])
+        #         rts = rts[np.isreal(rts)]
+        #         return np.max([0., np.max(rts)])
+        #
+        #     max_x = -np.inf
+        #     max_i = -1
+        #     for i in range(len(a)):
+        #         x = find_x(a[i], e, r[i])
+        #         if x is not None and x > max_x:
+        #             max_x = x
+        #             max_i = i
+        #     return max_x, max_i
 
-
-    def __init__(self, structure, links):
+    def __init__(self, structure):
         self.structure = structure
 
 
