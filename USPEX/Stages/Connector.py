@@ -195,12 +195,13 @@ class Connector(object):
     async def _start_sftp_session(self):
         await self._checkConnection()
         await self.channelGuard.acquire()
-        for i in range(10):
+        for i in [5, 10, 20, 50, 100, 200, 500]:
             try:
                 sftp = await self.conn.start_sftp_client()
             except Exception as e:
                 logger.debug(e)
-                await asyncio.sleep(10)
+                logger.debug(f"Trying in {i} seconds")
+                await asyncio.sleep(i)
                 continue
             break
         else:
