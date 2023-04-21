@@ -6,13 +6,10 @@ USPEX.Stages.CP2K_Interface
 
 import logging
 import os
-import shutil
 import numpy as np
 from os.path import join as pj
-from typing import List
 
-from ase.atoms import Atoms
-from ase.io import read, write
+from ase.io import read
 
 from .KPoints import KPoints, BadKPoints
 
@@ -38,7 +35,7 @@ class CP2K_Interface:
     pressure_file = 'pressure.uspex'
     fixedIndices_file = 'fixed.uspex'
     atomIndices_file = '_list.uspex'
-    specific_file = 'cp2k_in_'
+    specific_file = 'cp2k.inp_'
 
     out_geometry_file = 'USPEX-pos-1.xyz'
     out_cell_file = 'USPEX-1.cell'
