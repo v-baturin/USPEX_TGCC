@@ -5,20 +5,19 @@ logger = logging.getLogger(__name__)
 import itertools
 import json
 import numpy as np
-import os
 import pandas
 import time
 import signal
 
-
+from pathlib import Path
 from sympy.combinatorics.partitions import Partition, RGS_rank
 
 from ..SymmetricStructure import SymmetricStructure
 from ...SpaceGroups.SpaceGroups3D import Group
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-with open(f'{HOMEPATH}/idealnets.json', 'rt') as f:
+HOMEPATH = Path(__file__).parent
+with open(HOMEPATH/'idealnets.json', 'rt') as f:
     TOPOLOGICAL_NETS = pandas.DataFrame.from_dict(json.load(f)).T
 
 MAX_SUPERSIZE = 4

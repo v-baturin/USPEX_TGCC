@@ -14,6 +14,7 @@ import numpy as np
 from collections.abc import Sequence
 from copy import copy, deepcopy
 from itertools import combinations
+from pathlib import Path
 from pymatgen.symmetry.groups import in_array_list
 from scipy.spatial.distance import squareform, pdist
 
@@ -21,8 +22,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-with open(f'{HOMEPATH}/decompositions.json', 'rt') as f:
+HOMEPATH = Path(__file__).parent
+with open(HOMEPATH/'decompositions.json', 'rt') as f:
     DECOMPOSITIONS = json.load(f)
 
 # These are matrices describing translations along each axis.

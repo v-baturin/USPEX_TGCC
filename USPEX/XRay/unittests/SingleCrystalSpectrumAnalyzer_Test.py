@@ -7,23 +7,23 @@ Class for SingleCrystalSpectrumAnalyzer testing
 .. codeauthor:: Michele Galasso <m.galasso@yandex.com>
 """
 
-import os
 import unittest
-from os.path import join as pj
+
+from pathlib import Path
 
 from ...components import AtomisticRepresentation
 from ..SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 
-PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
+PATH_WITH_TESTS = Path(__file__).parent
 
 
 class SpectrumAnalyzer_Test(unittest.TestCase):
     def setUp(self):
-        self.system = AtomisticRepresentation.readAtomicStructure(pj(PATH_WITH_TESTS, 'Mg4O12Si4.vasp'))
+        self.system = AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/'Mg4O12Si4.vasp')
         self.system['ID'] = 1
 
     def test(self):
-        hklFile = '{}/test_P1.hkl'.format(PATH_WITH_TESTS)
+        hklFile = PATH_WITH_TESTS/'test_P1.hkl'
         expReflections = SingleCrystalSpectrumAnalyzer.parse(hklFile)
         cellParameters = (4.7877, 4.9480, 6.9151, 90, 90, 90)
         analyzer = SingleCrystalSpectrumAnalyzer(expReflections, cellParameters)

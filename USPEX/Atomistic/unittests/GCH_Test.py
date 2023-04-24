@@ -9,24 +9,23 @@
 
 
 import numpy as np
-import os
 import unittest
 
-from os.path import join as pj
+from pathlib import Path
 
 from ..GCH import GeneralizedConvexHull
 from ...components import AtomisticRepresentation, RadialDistributionUtility, CompositionSpace
 
-TESTPATH = os.path.dirname(os.path.abspath(__file__))
+TESTPATH = Path(__file__).parent
 
-Si_gch_path = pj(TESTPATH, 'Si_gch_test')
-FeC_gch_path = pj(TESTPATH, 'FeC_gch_test')
+Si_gch_path = TESTPATH/'Si_gch_test'
+FeC_gch_path = TESTPATH/'FeC_gch_test'
 
 
-def read_structures_and_energies(symbols, folder : str):
-    with open(pj(folder, 'Individuals'), 'r') as fp:
+def read_structures_and_energies(symbols, folder: Path):
+    with open(folder/'Individuals', 'r') as fp:
         info = fp.readlines()[2:]
-    all_systems = AtomisticRepresentation.readAtomicStructures(pj(folder, 'gatheredPOSCARS'))
+    all_systems = AtomisticRepresentation.readAtomicStructures(folder/'gatheredPOSCARS')
     assert all_systems
     radialDistributionUtility = RadialDistributionUtility(symbols=symbols)
 
