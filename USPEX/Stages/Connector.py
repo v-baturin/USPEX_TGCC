@@ -10,14 +10,12 @@ import logging
 import asyncio, asyncssh
 import os
 from copy import copy
+import random
 
 logger = logging.getLogger(__name__)
 asyncssh.set_log_level(logging.WARNING)
 
-WAIT_PATTERN = 'progressive'
-WAIT_STEPS = 9
-
-wait_periods = {'flat': [10] * WAIT_STEPS, 'progressive': [round(10 ** (x/3)) for x in range(WAIT_STEPS)]}[WAIT_PATTERN]
+N_TRIES = 100
 
 
 class SSHConnectorClient(asyncssh.SSHClient):
@@ -181,7 +179,6 @@ class Connector(object):
         self._lock.release()
 
     async def _run(self, *args, **kwargs):
-        await self._checkConnection()
         await self.channelGuard.acquire()
         for i in range(N_TRIES):
             await self._checkConnection()
@@ -189,7 +186,9 @@ class Connector(object):
                 remote_result = await self.conn.run(*args, **kwargs)
             except Exception as e:
                 logger.debug(e)
-                await asyncio.sleep(10)
+                pause = round(10 * (1 + random.random()))
+                logger.debug(f"Trying in {pause} seconds (_run)")
+                await asyncio.sleep(pause)
                 continue
             break
         else:
@@ -199,7 +198,6 @@ class Connector(object):
         return remote_result
 
     async def _start_sftp_session(self):
-        await self._checkConnection()
         await self.channelGuard.acquire()
         for i in range(N_TRIES):
             await self._checkConnection()
@@ -207,8 +205,9 @@ class Connector(object):
                 sftp = await self.conn.start_sftp_client()
             except Exception as e:
                 logger.debug(e)
-                logger.debug(f"Trying in {i} seconds")
-                await asyncio.sleep(i)
+                pause = round(10 * (1 + random.random()))
+                logger.debug(f"Trying in {pause} seconds (_start_sftp_session)")
+                await asyncio.sleep(pause)
                 continue
             break
         else:
