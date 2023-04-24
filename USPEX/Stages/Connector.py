@@ -184,10 +184,11 @@ class Connector(object):
             await self._checkConnection()
             try:
                 remote_result = await self.conn.run(*args, **kwargs)
+                logger.debug(f"_run worked at a try No {i + 1}/{N_TRIES}")
             except Exception as e:
                 logger.debug(e)
                 pause = round(10 * (1 + random.random()))
-                logger.debug(f"Retrying _run in {pause} seconds ({i}/{N_TRIES})")
+                logger.debug(f"Retrying _run in {pause} seconds ({i + 1}/{N_TRIES})")
                 await asyncio.sleep(pause)
                 continue
             break
@@ -203,10 +204,11 @@ class Connector(object):
             await self._checkConnection()
             try:
                 sftp = await self.conn.start_sftp_client()
+                logger.debug(f"_start_sftp_session worked at a try No {i + 1}/{N_TRIES}")
             except Exception as e:
                 logger.debug(e)
                 pause = round(10 * (1 + random.random()))
-                logger.debug(f"Retrying _start_sftp_session in {pause} seconds ({i}/{N_TRIES})")
+                logger.debug(f"Retrying _start_sftp_session in {pause} seconds ({i + 1}/{N_TRIES})")
                 await asyncio.sleep(pause)
                 continue
             break
