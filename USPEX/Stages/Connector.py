@@ -181,7 +181,8 @@ class Connector(object):
     async def _run(self, *args, **kwargs):
         await self._checkConnection()
         await self.channelGuard.acquire()
-        for i in range(10):
+        for i in range(N_TRIES):
+            await self._checkConnection()
             try:
                 remote_result = await self.conn.run(*args, **kwargs)
             except Exception as e:
@@ -198,7 +199,8 @@ class Connector(object):
     async def _start_sftp_session(self):
         await self._checkConnection()
         await self.channelGuard.acquire()
-        for i in wait_periods:
+        for i in range(N_TRIES):
+            await self._checkConnection()
             try:
                 sftp = await self.conn.start_sftp_client()
             except Exception as e:
