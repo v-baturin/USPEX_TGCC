@@ -101,7 +101,7 @@ class Executor(object):
                 self._gatherData(calcFolder, ioType='input')
                 await self._connector.sync_l2r(calcFolder)
                 logger.info(f'System {ID} with tag {tag} will be submitted now.')
-                jobID = await self._taskManager.submit(f'{self.commandExecutable} {args}', f'USPEX-{ID}S{tag}',
+                jobID = await self._taskManager.submit(f'{self.commandExecutable} {args}', f'U{ID}S{tag}',
                                                        self._interface.inputFile, self._interface.outputFile,
                                                        self._interface.errorFile, calcFolder)
                 self.submittedTasks[calcFolder] = jobID
