@@ -14,6 +14,11 @@ from copy import copy
 logger = logging.getLogger(__name__)
 asyncssh.set_log_level(logging.WARNING)
 
+WAIT_PATTERN = 'progressive'
+WAIT_STEPS = 9
+
+wait_periods = {'flat': [10] * WAIT_STEPS, 'progressive': [round(10 ** (x/3)) for x in range(WAIT_STEPS)]}[WAIT_PATTERN]
+
 
 class SSHConnectorClient(asyncssh.SSHClient):
 
@@ -195,7 +200,7 @@ class Connector(object):
     async def _start_sftp_session(self):
         await self._checkConnection()
         await self.channelGuard.acquire()
-        for i in [5, 10, 20, 50, 100, 200, 500]:
+        for i in wait_periods:
             try:
                 sftp = await self.conn.start_sftp_client()
             except Exception as e:
