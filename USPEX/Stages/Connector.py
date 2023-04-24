@@ -8,9 +8,8 @@ USPEX.Stages.Connector
 
 import logging
 import asyncio, asyncssh
-
+import os
 from copy import copy
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 asyncssh.set_log_level(logging.WARNING)
@@ -187,7 +186,9 @@ class Connector(object):
                 remote_result = await self.conn.run(*args, **kwargs)
             except Exception as e:
                 logger.debug(e)
-                await asyncio.sleep(10)
+                pause = round(10 * (1 + random.random()))
+                logger.debug(f"Trying in {pause} seconds (_run)")
+                await asyncio.sleep(pause)
                 continue
             break
         else:
@@ -205,8 +206,9 @@ class Connector(object):
                 sftp = await self.conn.start_sftp_client()
             except Exception as e:
                 logger.debug(e)
-                logger.debug(f"Trying in {i} seconds")
-                await asyncio.sleep(i)
+                pause = round(10 * (1 + random.random()))
+                logger.debug(f"Trying in {pause} seconds (_start_sftp_session)")
+                await asyncio.sleep(pause)
                 continue
             break
         else:
