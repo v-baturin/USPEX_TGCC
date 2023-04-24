@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 import numpy as np
-import os
 
 from ase.io.vasp import read_vasp
+from pathlib import Path
 from time import time
 from typing import List
 
@@ -38,7 +38,7 @@ class Seeds(object):
         self.conditions = utilities.conditions
 
         self.generations = generations if generations is not None else []
-        self.seedsFolders = seedsFolders if seedsFolders is not None else []
+        self.seedsFolders = [Path(s) for s in seedsFolders] if seedsFolders is not None else []
         self.currentGeneration = 0
 
     def __call__(self):
@@ -51,19 +51,17 @@ class Seeds(object):
         ind = self.generations.index(self.currentGeneration)
         seedsFolder = self.seedsFolders[ind]
 
-        if not os.path.isdir(seedsFolder):
+        if not seedsFolder.is_dir():
             logger.debug(f"Seeds folder {seedsFolder} doesn't exist.")
             self.currentGeneration += 1
             return ()
 
         seeds = []
 
-        filenames = os.listdir(seedsFolder)
-        hasDesciption = np.any(['.uspex' in filename for filename in filenames])
-        for filename in filenames:
-            if ('.uspex' in filename) == hasDesciption:
-                filename = os.path.join(seedsFolder, filename)
-                if os.path.isfile(filename):
+        hasDesciption = np.any(['.uspex' == filename.suffix for filename in seedsFolder.iterdir()])
+        for filename in seedsFolder.iterdir:
+            if ('.uspex' in filename.suffix) == hasDesciption:
+                if filename.is_file():
                     systems = self.systemRepresentationClass.readAtomicStructures(filename, self.environmentUtility)
                     for system in systems:
                         atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)

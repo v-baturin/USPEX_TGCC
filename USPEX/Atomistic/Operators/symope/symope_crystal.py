@@ -1,7 +1,7 @@
-import os
+import numpy as np
 import subprocess as sp
 
-import numpy as np
+from pathlib import Path
 
 from ...CellUtility import Cell
 
@@ -15,7 +15,7 @@ from .fix_latticeStokes_after import fix_latticeStokes_after
 from .spaceGroups import SpaceGroups
 from .unitCellFromPrimitive import unitCellFromPrimitive
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
+HOMEPATH = Path(__file__).parent
 
 
 def symope_crystal(CenterminDistMatrice, fixLat, fixRndSeed, nsym, numIons, lat, sym_coef, silent=True):
@@ -31,7 +31,7 @@ def symope_crystal(CenterminDistMatrice, fixLat, fixRndSeed, nsym, numIons, lat,
     :return errorS: error flag.
     """
 
-    spgBINDIR = HOMEPATH + '/spacegroup'  # path to the Stokes' executable
+    spgBINDIR = HOMEPATH/'spacegroup'  # path to the Stokes' executable
 
     #fixRndSeed = master._params['fixRndSeed']  # fix rand seed, to reproduce results
 
