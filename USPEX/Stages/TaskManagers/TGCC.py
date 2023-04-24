@@ -80,7 +80,7 @@ class TGCC:
             logger.error(out)
 
         jobID = self._parseJobID(out, err)
-        logger.info(f"Job ID is {jobID}")
+        logger.info(f"Job in {calcFolder}. ID = {jobID}")
         return jobID
 
     def _parseJobID(self, output : str, error : str) -> int:
