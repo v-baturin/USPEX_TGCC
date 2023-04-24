@@ -187,7 +187,7 @@ class Connector(object):
             except Exception as e:
                 logger.debug(e)
                 pause = round(10 * (1 + random.random()))
-                logger.debug(f"Trying in {pause} seconds (_run)")
+                logger.debug(f"Retrying _run in {pause} seconds ({i}/{N_TRIES})")
                 await asyncio.sleep(pause)
                 continue
             break
@@ -206,7 +206,7 @@ class Connector(object):
             except Exception as e:
                 logger.debug(e)
                 pause = round(10 * (1 + random.random()))
-                logger.debug(f"Trying in {pause} seconds (_start_sftp_session)")
+                logger.debug(f"Retrying _start_sftp_session in {pause} seconds ({i}/{N_TRIES})")
                 await asyncio.sleep(pause)
                 continue
             break
