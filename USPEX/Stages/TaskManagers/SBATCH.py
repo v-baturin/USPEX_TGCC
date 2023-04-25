@@ -5,7 +5,8 @@ USPEX.Stages.TaskManagers.SBATCH
 """
 
 import logging
-from os.path import join as pj
+
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,11 @@ class SBATCH:
         self.header = header
         self.connector = connector
 
-    def _prepareSubmission(self, COMMAND_EXEC : str, JOB_NAME : str,
-                                 inputFile : str, outputFile : str, errorFile : str) -> str:
+    def _prepareSubmission(self, COMMAND_EXEC : str,
+                                 JOB_NAME : str,
+                                 inputFile : str,
+                                 outputFile : str,
+                                 errorFile : str) -> str:
         '''
         Preparing jobscript for submission
         :param commandExec:
@@ -57,7 +61,12 @@ class SBATCH:
 
         return ''.join(content)
 
-    async def submit(self, command: str, jobname: str, input: str, output: str, error: str, calcFolder: str) -> int:
+    async def submit(self, command: str,
+                           jobname: str,
+                           input: str,
+                           output: str,
+                           error: str,
+                           calcFolder: Path) -> int:
         '''
         :param command: command executable
         :param jobname: name of the job
@@ -68,12 +77,12 @@ class SBATCH:
         :return:
         '''
         content = self._prepareSubmission(command, jobname, input, output, error)
-        filepath = pj(calcFolder, self._RUNSCRIPT)
+        filepath = calcFolder/self._RUNSCRIPT
         with open(filepath, 'wt') as f:
             f.write(content)
         await self.connector.sync_l2r(filepath)
 
-        returncode, out, err = await self.connector.execute(f'sbatch {self._RUNSCRIPT}', cwd=calcFolder)
+        returncode, out, err = await self.connector.execute(f'sbatch {self._RUNSCRIPT}', cwd=str(calcFolder))
         logger.debug(f'process returned code {returncode}')
         if returncode != 0:
             logger.error(err)

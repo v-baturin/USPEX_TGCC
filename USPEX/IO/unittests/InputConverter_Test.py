@@ -8,7 +8,7 @@
 '''
 
 import unittest
-import os
+
 from pathlib import Path
 from ..InputConverter import InputConverter
 

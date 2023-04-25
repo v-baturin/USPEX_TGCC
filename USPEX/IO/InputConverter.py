@@ -39,7 +39,6 @@ SPECIFIC_COPY_EXCEPTIONS = {
 
 }
 
-import os
 from pathlib import Path
 
 

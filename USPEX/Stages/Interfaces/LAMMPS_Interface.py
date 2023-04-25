@@ -8,8 +8,8 @@ USPEX.Stages.LAMMPS_Interface
 import logging
 import numpy as np
 import shutil
-import os
-from os.path import join as pj
+
+from pathlib import Path
 from typing import List
 
 
@@ -57,11 +57,13 @@ class LAMMPS_Interface:
         """
 
         self.tag = tag
-        self.lammps_in = pj(os.getcwd(), f'Specific/lammps.in_{tag}') if lammps_in is None else lammps_in
+        self.lammps_in = Path.cwd()/f'Specific/lammps.in_{tag}' if lammps_in is None else Path(lammps_in)
+        assert self.lammps_in.exists()
 
         self.mlip = mlip
         if self.mlip is not None:
-            self.mlip_in = pj(os.getcwd(), f'Specific/mlip.ini_{tag}') if mlip_in is None else mlip_in
+            self.mlip_in = Path.cwd()/f'Specific/mlip.ini_{tag}' if mlip_in is None else Path(mlip_in)
+            assert self.mlip_in.exists()
 
             with open(self.mlip_in, 'r') as f:
                 content = f.readlines()
@@ -78,17 +80,15 @@ class LAMMPS_Interface:
                 raise RuntimeError('Bad mlip.ini: load_from not specified.')
 
         self.specorder = specorder
-        assert os.path.exists(self.lammps_in)
 
-        if libs is not None:
-            assert all([os.path.exists(lib) for lib in libs])
-        self.libs = [] if libs is None else libs
+        self.libs = [] if libs is None else [Path(lib) for lib in libs]
+        assert all([lib.exists() for lib in self.libs])
 
         self.adapter = self.aseAdapterType()
         self.failedSystems = []
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
         """
         :param system:
         :param calcFolder:
@@ -136,25 +136,25 @@ class LAMMPS_Interface:
     
         # Step 4. We write all the input files to our calcFolder
         
-        with open(pj(calcFolder, self.inputFile), 'w') as f:
+        with open(calcFolder/self.inputFile, 'w') as f:
             f.writelines(content)
 
         for lib in self.libs:
             shutil.copy2(lib, calcFolder)
 
         if self.mlip is not None:
-            shutil.copy2(self.mlip, pj(calcFolder, self.mlip_mtp))
-            shutil.copy2(self.mlip_in, pj(calcFolder, self.mlip_ini))
+            shutil.copy2(self.mlip, calcFolder/self.mlip_mtp)
+            shutil.copy2(self.mlip_in, calcFolder/self.mlip_ini)
 
         return ''
 
-    def isConverged(self, calcFolder : str):
+    def isConverged(self, calcFolder: Path):
         lammps_completed = False
         tolerance_achieved = False
-        if os.path.exists(pj(calcFolder, self.outputFile)):
-            output = pj(calcFolder, self.outputFile)
-        elif os.path.exists(pj(calcFolder, self.log_file)):
-            output = pj(calcFolder, self.log_file)
+        if calcFolder.joinpath(self.outputFile).exists():
+            output = calcFolder/self.outputFile
+        elif calcFolder.joinpath(self.log_file).exists():
+            output = calcFolder/self.log_file
         else:
             return False
         
@@ -177,11 +177,11 @@ class LAMMPS_Interface:
         
         if not tolerance_achieved:
             logger.error('LAMMPS minimization tolerance criteria is not achieved.')
-            shutil.copy(output,  pj(calcFolder, 'ERROR-'+self.outputFile))
+            shutil.copy(output,  calcFolder/f'ERROR-{self.outputFile}')
             self.failedSystems.append(calcFolder)
         return True        
 
-    def readOutput(self, system, calcFolder : str):
+    def readOutput(self, system, calcFolder: Path):
         results = {}
         aseData = self.adapter.read(calcFolder, self.specorder,
                                     **system.pop('ase'))
@@ -222,7 +222,7 @@ class LAMMPS_Interface:
                 raise RuntimeError("Bad lammps output.")
 
         if 'trajectory' in self.targetProperties:
-            sample = self.atomisticRepresentationType.readMLIPsample(pj(calcFolder, self.mlip_sample), self.specorder)
+            sample = self.atomisticRepresentationType.readMLIPsample(calcFolder/self.mlip_sample, self.specorder)
             for subsystem in sample:
                 subsystem['disassembler'] = system['disassembler']
                 subsystem['externalPressure'] = system['externalPressure']
@@ -235,13 +235,13 @@ class LAMMPS_Interface:
         #     system['isBad'] = True
         return results
 
-    def readProperties(self, calcFolder: str):
-        if os.path.exists(pj(calcFolder, self.outputFile)):
-            output = pj(calcFolder, self.outputFile)
-        elif os.path.exists(pj(calcFolder, self.log_file)):
-            output = pj(calcFolder, self.log_file)
+    def readProperties(self, calcFolder: Path):
+        if calcFolder.joinpath(self.outputFile).exists():
+            output = calcFolder/self.outputFile
+        elif calcFolder.joinpath(self.log_file).exists():
+            output = calcFolder/self.log_file
         else:
-            raise FileNotFoundError('Cannot find either {self.outputFile} or {self.log_file}.')
+            raise FileNotFoundError(f'Cannot find either {self.outputFile} or {self.log_file}.')
         with open(output, 'r') as f:
             content = f.readlines()
         try:
