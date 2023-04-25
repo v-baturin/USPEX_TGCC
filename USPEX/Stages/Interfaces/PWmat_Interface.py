@@ -71,7 +71,7 @@ class PWmat_Interface:
         self.failedSystems = []
 
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
         '''
         :param system: our system
         :return:

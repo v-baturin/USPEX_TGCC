@@ -40,8 +40,7 @@ class BSUB_Test(unittest.TestCase):
     def setUpClass(cls):
         cls.command_exec = 'sleep 20'
 
-    async def coro(self, i):
-        folder = Path(f'folder{i}')
+    async def coro(self, folder: Path):
         if folder.is_dir():
             shutil.rmtree(folder)
         folder.mkdir()
@@ -62,14 +61,24 @@ class BSUB_Test(unittest.TestCase):
         self.taskManager = BSUB(HEADER, Connector(domain = 'localhost', known_hosts=None))
         coros = []
         for i in range(Nchan):
-            coros.append(self.coro(i))
+            folder = Path(f'folder{i}')
+            coros.append(self.coro(folder))
         loop = asyncio.get_event_loop()
         isExists = loop.run_until_complete(asyncio.gather(*coros))
+        for i in range(Nchan):
+            folder = Path(f'folder{i}')
+            self.assertFalse(folder.exists())
+
 
     def test_submit_kill_isExist_local(self):
         self.taskManager = BSUB(HEADER, Connector())
         coros = []
         for i in range(Nchan):
-            coros.append(self.coro(i))
+            folder = Path(f'folder{i}')
+            coros.append(self.coro(folder))
         loop = asyncio.get_event_loop()
         isExists = loop.run_until_complete(asyncio.gather(*coros))
+        for i in range(Nchan):
+            folder = Path(f'folder{i}')
+            self.assertFalse(folder.exists())
+
