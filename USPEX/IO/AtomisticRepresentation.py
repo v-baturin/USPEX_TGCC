@@ -372,6 +372,10 @@ class AtomisticRepresentation(object):
         return all_systems
 
     @classmethod
+    def readAtomicStructure(cls, filename, environmentUtility=None) -> dict:
+        return cls.readAtomicStructures(filename, environmentUtility)[0]
+
+    @classmethod
     def readAtomicStructures(cls, filename, environmentUtility=None) -> list:
         filename = Path(filename)
         directory = filename.parent
