@@ -45,14 +45,12 @@ from pathlib import Path
 class InputConverter(object):
 
     def __init__(self, filePath=None, wd=Path.cwd()):
-    def __init__(self, filePath=None, wd=Path.cwd()):
         assert isinstance(filePath, str) or filePath is None
         self.filePath = filePath
         self.wd = wd
 
     def parse(self):
         try:
-            with open(self.wd/self.filePath, 'r') as f:
             with open(self.wd/self.filePath, 'r') as f:
                 content = f.readlines()
         except:
@@ -139,7 +137,6 @@ class InputConverter(object):
 
                     if 'whichTaskManager' in input_variables.keys():
                         with open(self.wd/'HEADER') as f:
-                        with open(self.wd/'HEADER') as f:
                             tmHeader = f.read()
                         tm = input_variables['whichTaskManager']
                         codeDict['params'].update({'taskManager': {'type': tm, 'header': tmHeader}})
@@ -154,17 +151,9 @@ class InputConverter(object):
                         for file in specificFiles.iterdir():
                             if 'POTCAR' in str(file):
                                 codeDict['params']['potcars'].append(f'Specific/{file.name}')
-                        specificFiles = self.wd/'Specific'
-                        for file in specificFiles.iterdir():
-                            if 'POTCAR' in str(file):
-                                codeDict['params']['potcars'].append(f'Specific/{file.name}')
 
                     if code in [3,4]:
                         codeDict['params']['libs'] = []
-                        specificFiles = self.wd/'Specific'
-                        for file in specificFiles.iterdir():
-                            if not any([item in file.name for item in SPECIFIC_COPY_EXCEPTIONS[code]]):
-                                codeDict['params']['libs'].append(f'Specific/{file.name}')
                         specificFiles = self.wd/'Specific'
                         for file in specificFiles.iterdir():
                             if not any([item in file.name for item in SPECIFIC_COPY_EXCEPTIONS[code]]):

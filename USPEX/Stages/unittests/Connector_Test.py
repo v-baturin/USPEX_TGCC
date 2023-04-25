@@ -66,7 +66,7 @@ class Connector_Test(unittest.TestCase):
         loop = asyncio.get_event_loop()
         ret, out, err = loop.run_until_complete(connector.execute('pwd'))
         self.assertEqual(ret, 0)
-        self.assertEqual(out.replace('\n', ''), str(connector.remoteFolder.replace('~', str(Path.home()))))
+        self.assertEqual(out.replace('\n', ''), str(connector.remoteFolder).replace('~', str(Path.home())))
         self.assertEqual(err, '')
         ret, out, err = loop.run_until_complete(connector.execute('cat', input='Hi'))
         self.assertEqual(ret, 0)
