@@ -493,7 +493,7 @@ class NanoparticleCore:
         def __init__(self, mountPoint, orientation, junctionTypes=None, passivateBy=None):
             self.mountPoint = mountPoint
             self.orientation = orientation
-            self.junctionTypes = set(junctionTypes) if junctionTypes else None
+            self.junctionTypes = frozenset(junctionTypes) if junctionTypes else None
             self.passivateBy = passivateBy
 
         def dock(self, adsorbant, ownAxisAngle=0):
@@ -507,6 +507,9 @@ class NanoparticleCore:
             alpha = np.arccos(adsorbant.orientation @ self.orientation)
             matchOrientation = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
             return matchOrientation.transform(trotated_structure)
+
+        def __hash__(self):
+            return hash(tuple(map(tuple, (self.mountPoint, self.orientation, self.junctionTypes))))
 
 
     class Assembler:
