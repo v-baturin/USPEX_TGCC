@@ -70,7 +70,7 @@ class SHELL_Test(unittest.TestCase):
         #await self.taskManager.connector.copyFromRemote(error, error)
         await self.taskManager.connector.sync_r2l(folder)
         await self.taskManager.connector.clean(folder)
-        shutil.rmtree(folder)
+        shutil.rmtree(folder, ignore_errors=True)
 
     def test_submit_kill_isExist_remote(self):
         # connector = Connector(domain='192.168.88.245', username='difron', known_hosts=None,
