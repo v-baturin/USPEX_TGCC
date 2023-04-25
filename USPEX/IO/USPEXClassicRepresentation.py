@@ -10,7 +10,7 @@ matplotlib.use('Agg')
 
 class USPEXClassicRepresentation(object):
     def __init__(self, RES_FOLDER: Path, **params):
-        self.RES_FOLDER  = RES_FOLDER
+        self.RES_FOLDER = RES_FOLDER
 
     def presentFractions(self, populations):
         allOperators = set()
@@ -31,7 +31,7 @@ class USPEXClassicRepresentation(object):
             plt.plot(fracs, label = operator)
         plt.legend()
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
-        plt.savefig(self.RES_FOLDER + '/VarOperators.svg')
+        plt.savefig(self.RES_FOLDER/'VarOperators.svg')
 
 
     @staticmethod

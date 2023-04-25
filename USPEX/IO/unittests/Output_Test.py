@@ -1,8 +1,9 @@
 import unittest
-import os
 import json
 import filecmp
 import shutil
+
+from pathlib import Path
 
 from ...components import GlobalOptimizer, AtomisticRepresentation
 from ..OutputRepresentation import OutputRepresentation

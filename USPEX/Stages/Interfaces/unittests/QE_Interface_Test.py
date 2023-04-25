@@ -30,7 +30,7 @@ class QE_CalculatorTest2(unittest.TestCase):
                     np.arange(len(structure)).reshape((-1, 1))),
                 externalPressure=0.0001
             )
-            WORKPATH.mkdir(exist_ok=True)
+            WORKPATH.mkdir(parents=True, exist_ok=True)
             qe.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)

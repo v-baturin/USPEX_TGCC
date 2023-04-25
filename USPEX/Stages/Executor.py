@@ -8,7 +8,7 @@ USPEX.Stages.Executor
 
 import asyncio
 import logging
-import os, shutil
+import shutil
 
 from pathlib import Path
 
@@ -36,8 +36,16 @@ class Executor(object):
         assert name not in cls.knownTaskManagers
         cls.knownTaskManagers[name] = taskManagerType
 
-    def __init__(self, type: str, commandExecutable: str, tag: str, workingDirectory: str = '.', remote=None,
-                 taskManager=None, gather: bool = False, keepFolders: bool = False, sleepTime: int = None, **kwargs):
+    def __init__(self, type: str,
+                       commandExecutable: str,
+                       tag: str,
+                       workingDirectory: str = '.',
+                       remote=None,
+                       taskManager=None,
+                       gather: bool = False,
+                       keepFolders: bool = False,
+                       sleepTime: int = None,
+                       **kwargs):
         """
 
         :param commandExecutable:
@@ -89,7 +97,7 @@ class Executor(object):
             else:
                 shutil.rmtree(calcFolder, ignore_errors=True)
                 calcFolder.mkdir(parents=True)
-                self._interface.prepareLocalCalculation(system, calcFolder)
+                args = self._interface.prepareLocalCalculation(system, calcFolder)
                 self._gatherData(calcFolder, ioType='input')
                 await self._connector.sync_l2r(calcFolder)
                 logger.info(f'System {ID} with tag {tag} will be submitted now.')
@@ -133,15 +141,12 @@ class Executor(object):
             copytree(calcFolder, self.workingDirectory/'GatheredData'/ioType/calcFolder.name)
 
 
-def copytree(src, dst, symlinks=False, ignore=None):
-    if not os.path.exists(dst):
-        os.makedirs(dst)
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dst, item)
-        if os.path.isdir(s):
-            shutil.copytree(s, d, symlinks, ignore)
+def copytree(src: Path, dst: Path, symlinks=False, ignore=None):
+    dst.mkdir(exist_ok=True, parents=True)
+    for item in src.iterdir():
+        d = dst/item.name
+        if item.is_dir():
+            shutil.copytree(item, d, symlinks, ignore)
         else:
-            if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
-                shutil.copy2(s, d)
-
+            if not d.exists() or item.stat().st_mtime - d.stat().st_mtime > 1:
+                shutil.copy2(item, d)

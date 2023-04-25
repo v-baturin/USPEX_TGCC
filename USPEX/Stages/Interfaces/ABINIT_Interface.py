@@ -10,7 +10,7 @@ import logging
 import os
 import shutil
 import numpy as np
-from os.path import join as pj
+from pathlib import Path
 from typing import List
 
 from .KPoints import KPoints, BadKPoints
@@ -64,22 +64,18 @@ class ABINIT_Interface:
         """
 
         self.tag = tag
-        if in_file is None:
-            in_file = pj(os.getcwd(), f'./Specific/abinit.in_{tag}')
 
-        pp_files = pp_files if pp_files is not None else []
+        self.in_file = Path.cwd()/f'./Specific/abinit.in_{tag}' if in_file is None else Path(in_file)
+        assert self.in_file.exists()
 
-        assert os.path.exists(in_file)
-        assert np.all([os.path.exists(pp_file) for pp_file in pp_files])
-
-        self.in_file = in_file
-        self.pp_files = pp_files
+        self.pp_files = [Path(pp_file) for pp_file in pp_files] if pp_files is not None else []
+        assert np.all([p.exists() for p in self.pp_files])
 
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
         """
         :param system: our system
         :return:
@@ -94,9 +90,9 @@ class ABINIT_Interface:
 
         ############################# FILES FILE ################################
         for pp_file_path in self.pp_files:
-            shutil.copy2(pp_file_path, calcFolder)
+            shutil.copy(pp_file_path, calcFolder)
 
-        with open(pj(calcFolder, self.inputFile), 'wt') as f:
+        with open(calcFolder/self.inputFile, 'wt') as f:
             f.write(f'{self.in_file_name}\n'
                     f'{self.out_file_name}\n'
                     'abinit_i\n'
@@ -131,16 +127,16 @@ class ABINIT_Interface:
                         user_params.append(param)
                     clean_in_file += line
 
-        with open(pj(calcFolder, self.in_file_name), 'wt') as f:
+        with open(calcFolder/self.in_file_name, 'wt') as f:
             f.write(clean_in_file)
 
         if system['externalPressure']:
-            with open(pj(calcFolder, self.in_file_name), 'a') as myfile:
+            with open(calcFolder/self.in_file_name, 'a') as myfile:
                 abipressure = -1 * system['externalPressure'] * GPA_TO_HARTREE_PER_CUBIC_BOHR
                 myfile.write(f'strtarget {abipressure:.2e} {abipressure:.2e} {abipressure:.2e} 0.0 0.0 0.0\n')
         if calcFolder in self.failedSystems:
             if 'kptopt' not in user_params:
-                with open(pj(calcFolder, self.in_file_name), 'a') as myfile:
+                with open(calcFolder/self.in_file_name, 'a') as myfile:
                     myfile.write('kptopt 2\n')
 
         # K-GRID
@@ -151,7 +147,7 @@ class ABINIT_Interface:
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
             kPoints = [1, 1, 1]
 
-        with open(pj(calcFolder, self.in_file_name), 'a') as f:
+        with open(calcFolder/self.in_file_name, 'a') as f:
             f.write('\n# k-point grid\n')
             f.write('ngkpt   %d %d %d\n' % tuple(kPoints))
             f.write('nshiftk 1\n')
@@ -160,7 +156,7 @@ class ABINIT_Interface:
         # DEFINITION OF THE ATOM TYPES AND UNIT CELL
         species = list(set(el.z for el in atomTypes))
 
-        with open(pj(calcFolder, self.in_file_name), 'a') as f:
+        with open(calcFolder/self.in_file_name, 'a') as f:
             f.write('\n# Definition of the unit cell\n')
             f.write('acell 1 1 1 angstrom\n')
             f.write('rprim\n')
@@ -252,41 +248,41 @@ class ABINIT_Interface:
         #     [nothing, nothing] = unix('cat INCAR_LDAUPart >> INCAR');
         # end
 
-    def isConverged(self, calcFolder : str):
+    def isConverged(self, calcFolder: Path):
         """
         :param SYSTEM:
         :return: (bool) whether system calculation converged
         """
 
-        if not (os.path.exists(pj(calcFolder, self.out_file_name))):
+        if not (calcFolder.joinpath(self.out_file_name).exists()):
             return False
 
-        if os.path.exists(pj(calcFolder, '__ABI_MPIABORTFILE__')):
+        if calcFolder.joinpath('__ABI_MPIABORTFILE__').exists():
             logger.error('ABINIT exited with error.')
             return False
 
         # Checking whether the SCF has converged
-        with open(pj(calcFolder, self.out_file_name)) as f:
+        with open(calcFolder/self.out_file_name) as f:
             for line in f:
                 lowerline = line.lower()
 
                 if lowerline.rfind('was not enough scf cycles to converge') > -1:
                     logger.error('ABINIT SCF is not converged.')
-                    shutil.copy2(pj(calcFolder, self.out_file_name), f'{pj(calcFolder, "ERROR")}-{self.out_file_name}')
+                    shutil.copy(calcFolder/self.out_file_name, calcFolder/f"ERROR{self.out_file_name}")
                     self.failedSystems.append(calcFolder)
                     return False
 
         return True
 
-    def readOutput(self, system, calcFolder: str):
+    def readOutput(self, system, calcFolder: Path):
         results = {}
-        if not os.path.isfile(pj(calcFolder, self.gsr_file_name)):
-            msg = (f'file {self.gsr_file_name:s} not found in {os.path.basename(calcFolder):s}.'
+        if not calcFolder.joinpath(self.gsr_file_name).is_file():
+            msg = (f'file {self.gsr_file_name:s} not found in {calcFolder.name:s}.'
                    'Your ABINIT executable needs to be compiled with NETCDF support in order to be used with USPEX.')
             raise IOError(msg)
 
         from abipy import abilab
-        gsr = abilab.abiopen(pj(calcFolder, self.gsr_file_name))
+        gsr = abilab.abiopen(calcFolder/self.gsr_file_name)
         if 'structure' in self.targetProperties:
             results['structure'] = self.readStructure(gsr, system.pop('pbc'))
         if 'enthalpy' in self.targetProperties:

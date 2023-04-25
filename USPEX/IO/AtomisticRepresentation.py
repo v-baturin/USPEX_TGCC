@@ -142,7 +142,7 @@ class AtomisticRepresentation(object):
                 table_Individuals.update(ID, system[-1], optimizer.fitness)
                 systems_gatheredPOSCARS.append(system[numStages])
 
-        self.RES_FOLDER.mkdir(exist_ok=True)
+        self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
 
         self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS_unrelaxed',
                                    systems_gatheredPOSCARS_unrelaxed)
@@ -370,6 +370,10 @@ class AtomisticRepresentation(object):
                 except Exception:
                     break
         return all_systems
+
+    @classmethod
+    def readAtomicStructure(cls, filename, environmentUtility=None) -> dict:
+        return cls.readAtomicStructures(filename, environmentUtility)[0]
 
     @classmethod
     def readAtomicStructures(cls, filename, environmentUtility=None) -> list:
@@ -617,7 +621,7 @@ class AtomisticRepresentation(object):
         systems_goodStructuresPOSCARS = []
         systems_extendedConvexHullPOSCARS = []
 
-        self.RES_FOLDER.mkdir(exist_ok=True)
+        self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
 
         fitness = optimizer.optType
 
@@ -653,7 +657,7 @@ class AtomisticRepresentation(object):
             self.writeAtomicStructures(self.RES_FOLDER/'goodStructures_POSCARS', systems_goodStructuresPOSCARS)
         else:
             goodStructresFolder = self.RES_FOLDER/'goodStructures'
-            goodStructresFolder.mkdir(exist_ok=True)
+            goodStructresFolder.mkdir(parents=True, exist_ok=True)
             goodStructures = {}
             goodStructuresPOSCARS = {}
             for rank, front in enumerate(fronts):

@@ -7,8 +7,6 @@ USPEX.Stages.VASP_Interface
 import logging
 import numpy as np
 import shutil
-import os
-from os.path import join as pj
 
 from ase.io.vasp import read_vasp_out, write_vasp
 from ase.atoms import Atoms
@@ -73,8 +71,12 @@ class VASP_Interface:
     def registerTypes(cls, aseAdapterType):
         cls.aseAdapterType = aseAdapterType
 
-    def __init__(self, tag: str, kresol: float, incar: str = None, potcarsPath: str = None,
-                 targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str,
+                       kresol: float,
+                       incar: str = None,
+                       potcarsPath: str = None,
+                       targetProperties: list = None,
+                       **kwargs):
         '''
         :param params: dictionary with parameters:
                 * commandExecutable: str of executable command
@@ -84,17 +86,11 @@ class VASP_Interface:
         :param step: int of current step
         '''
 
-        if incar is not None:
-            self.incar = Path(incar)
-        else:
-            self.incar = Path.cwd()/f'Specific/INCAR_{tag}'
-
+        self.incar = Path(incar) if incar is not None else Path.cwd()/f'Specific/INCAR_{tag}'
         assert self.incar.exists()
 
-        if potcarsPath is not None:
-            self.potcarsPath = Path(potcarsPath)
-        else:
-            self.potcarsPath = Path.cwd()/'Specific'
+        self.potcarsPath = Path(potcarsPath) if potcarsPath is not None else Path.cwd()/'Specific'
+        assert self.potcarsPath.exists()
 
         self.adapter = self.aseAdapterType()
         self.kPoints = KPoints(kresol)
@@ -105,17 +101,8 @@ class VASP_Interface:
     def prepareLocalCalculation(self, system, calcFolder: Path):
         '''
         :param system: our system
-        :param calcFolder: calculation folder
         :return:
         '''
-        structure, disassembler = self.structureType.assemble(**system, vacuumSize=self.vacuumSize)
-        system['disassembler'] = disassembler
-        atomTypes = structure.getAtomTypes()
-        system['symbolsOrder'] = np.argsort([el.short_name for el in atomTypes])
-        cell = structure.getCell()
-        system['assembledCell'] = cell
-        coordinates = structure.getCartesianCoordinates()
-
         with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
@@ -137,35 +124,13 @@ class VASP_Interface:
                 myfile.write('ISYM=0\n')
 
         ############################# POTCAR ##################################
-        calcFolder.joinpath('POTCAR').unlink(missing_ok=True)
 
-        for atomType in np.unique([el.short_name for el in atomTypes]):
-            potcarPath = self.potcarsPath/f'POTCAR_{atomType}'
-            os.system(f'cat {potcarPath} >>  {calcFolder}/POTCAR ')
-
-        ############################# POSCAR ##################################
-        if self.perturbate:
-            coordinates += 0.1 * (np.random.rand(len(structure), 3) - 0.5)
-
-        with open(calcFolder/self.poscar_file, 'wt') as f:
-            if 'environmentEnthalpy' in self.targetProperties:
-                environment = system['environment'].getStructure()
-                atoms = Atoms([el.short_name for el in environment.getAtomTypes()], environment.getCartesianCoordinates(), cell = cell.getCellVectors())
-                write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
-            else:
-                atoms = Atoms([el.short_name for el in atomTypes], coordinates, cell = cell.getCellVectors())
-                if 'environment' in system:
-                    indices = disassembler.envIndices[system['environment'].getFixedIndices()]
-                    atoms.set_constraint(FixAtoms(indices=indices))
-                write_vasp(f, atoms, label=f"EA{system['ID']}", sort=True, direct=True, vasp5=True, long_format=False)
-
-
-        if os.path.exists(pj(calcFolder, 'POTCAR')):
-            os.remove(pj(calcFolder, 'POTCAR'))
-
-        for atomType in np.unique([el.short_name for el in structure.getAtomTypes()]):
-            potcarPath = pj(self.potcarsPath, f'POTCAR_{atomType}')
-            os.system(f'cat {potcarPath} >>  {calcFolder}/POTCAR ')
+        potcar = calcFolder/'POTCAR'
+        potcar.unlink(missing_ok=True)
+        with open(potcar, 'w') as outfile:
+            for atomType in np.unique([el.short_name for el in structure.getAtomTypes()]):
+                with open(self.potcarsPath/f'POTCAR_{atomType}') as infile:
+                    outfile.write(infile.read())
 
         ############################# KPOINTS #################################
 
@@ -239,7 +204,7 @@ class VASP_Interface:
 
     def isConverged(self, calcFolder: Path):
         '''
-        :param calcFolder:
+        :param SYSTEM:
         :return: (bool) whether system calculation converged
         '''
 
@@ -277,7 +242,27 @@ class VASP_Interface:
             self.failedSystems.append(calcFolder)
             return False
 
+    ############reading part
 
+    def readOutput(self, system, calcFolder: Path):
+        trajectory = self.adapter.read(calcFolder, **system.pop('ase'))
+        aseResults = trajectory[-1]['results']
+        results = {}
+        if 'structure' in self.targetProperties:
+            results['structure'] = trajectory[-1]['structure']
+        if 'enthalpy' in self.targetProperties:
+            results['enthalpy'] = aseResults.getEnthalpy(system['externalPressure'])
+        if 'energy' in self.targetProperties:
+            results['energy'] = aseResults.results['energy']
+        if 'forces' in self.targetProperties:
+            results['forces'] = aseResults.results['forces']
+        if 'trajectory' in self.targetProperties:
+            for subsystem in trajectory:
+                subsystem['disassembler'] = system['disassembler']
+                subsystem['externalPressure'] = system['externalPressure']
+            results['trajectory'] = trajectory
+
+        with open(calcFolder/self.outcar_file, 'rt') as fp:
             content = fp.readlines()
         if 'stressTensor' in self.targetProperties:
             results['stressTensor'] = self.readPressureTensor(content)

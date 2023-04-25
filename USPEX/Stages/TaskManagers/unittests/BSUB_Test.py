@@ -8,16 +8,18 @@
 '''
 
 import unittest
-from ..BSUB import BSUB
-from ...Connector import Connector
 
-import os
 import shutil
 import asyncio
 
+from pathlib import Path
+
+from ..BSUB import BSUB
+from ...Connector import Connector
+
 Nchan = 40
 
-TESTPATH = os.path.dirname(os.path.abspath(__file__))
+TESTPATH = Path(__file__).parent
 
 HEADER =  '''#!/bin/sh
 #BSUB -q normal
@@ -38,25 +40,22 @@ class BSUB_Test(unittest.TestCase):
     def setUpClass(cls):
         cls.command_exec = 'sleep 20'
 
-
     async def coro(self, i):
-        folder = 'folder{}/'.format(i)
-        if os.path.exists(folder):
+        folder = Path(f'folder{i}')
+        if folder.is_dir():
             shutil.rmtree(folder)
-        os.mkdir(folder)
-        input = 'folder{}/input'.format(i)
-        output = 'folder{}/output'.format(i)
-        error = 'folder{}/error'.format(i)
-        with open(input, 'wt') as f:
+        folder.mkdir()
+        input, output, error = 'input', 'output', 'error'
+        with open(folder/input, 'wt') as f:
             pass
         await self.taskManager.connector.sync_l2r(folder)
-        jobID = await self.taskManager.submit(self.command_exec, 'TestJob', 'input', 'output', 'error', folder)
+        jobID = await self.taskManager.submit(self.command_exec, 'TestJob', input, output, error, folder)
         self.assertTrue(jobID > 0)
         self.assertTrue(await self.taskManager.isExist(jobID))
         await self.taskManager.kill(jobID)
         await self.taskManager.connector.sync_r2l(folder)
         await self.taskManager.connector.clean(folder)
-        shutil.rmtree('folder{}'.format(i))
+        shutil.rmtree(folder)
 
     def test_submit_kill_isExist_remote(self):
 

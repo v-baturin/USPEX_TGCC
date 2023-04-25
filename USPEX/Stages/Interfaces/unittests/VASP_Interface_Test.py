@@ -9,12 +9,10 @@
 
 __author__ = 'asamtsevich'
 
-import os
 import shutil
 import unittest
 import filecmp
 
-from os.path import join as pj
 from pathlib import Path
 
 import numpy as np
@@ -33,31 +31,33 @@ class VASP_CalculatorTest2(unittest.TestCase):
     Checking correct parsing properties
     """
     def test_life(self):
-        vasp = VASP_Interface(tag='1', incar=pj(SPECIFICPATH, 'INCAR_1'), potcarsPath=SPECIFICPATH, kresol=0.13)
+        vasp = VASP_Interface(tag='1', 
+                              incar=SPECIFICPATH/'INCAR_1',
+                              potcarsPath=SPECIFICPATH, kresol=0.13)
 
 
         for ID in range(10):
-            structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))
+            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
             system = dict(
                 ID=ID,
                 structure=structure,
                 disassembler=AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))),
                 externalPressure=0.0001
             )
-            os.mkdir(WORKPATH)
+            WORKPATH.mkdir(exist_ok=True, parents=True)
             vasp.prepareLocalCalculation(system, WORKPATH)
-            folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
+            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
                 match = match and not dcmp.subdirs[common_dir].diff_files
             shutil.rmtree(WORKPATH)
             self.assertTrue(match)
-            folder = pj(GATHEREDPATH, 'output')
-            shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
+            folder = GATHEREDPATH/'output'
+            shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
             results = vasp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            structureRef = AtomisticRepresentation.readPOSCAR(pj(folder, f"system{system['ID']}.vasp"), (1, 1, 1))
+            structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
             cell = results['structure'].getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(),
@@ -77,7 +77,7 @@ class VASP_interfaceTest(unittest.TestCase):
         wd = self.working_dir
         outcar = wd/'OUTCAR'
         self.interface = VASP_Interface(tag='1',
-                                        incar=wd/'Specific'/'INCAR_1',
+                                        incar=wd/'Specific/INCAR_1',
                                         potcarsPath=wd/'Specific',
                                         kresol=0.05)
 
@@ -98,7 +98,7 @@ class VASP_interface_elastic_Test(unittest.TestCase):
         wd = HOMEPATH/'vaspElastic'
         self.interface = VASP_Interface(tag='5', incar=wd/'Specific'/'INCAR_5', potcarsPath=wd/'Specific',
                                         kresol=0.06, targetProperties=['elasticConstants'])
-        with open(pj(wd, 'output', 'OUTCAR'), 'r') as f:
+        with open(wd/'output/OUTCAR', 'r') as f:
             content = f.readlines()
         elasticMatrix = self.interface.readElasticMatrix(content)
         self.assertTrue(np.allclose(elasticMatrix, elasticMatrix_ref))
@@ -106,8 +106,8 @@ class VASP_interface_elastic_Test(unittest.TestCase):
 class VASP_interface_MD_Test(unittest.TestCase):
 
     def test1(self):
-        wd = pj(HOMEPATH, 'AIMD_AlB2')
-        self.interface = VASP_Interface(tag='1', incar=pj(wd, 'INCAR'), potcarsPath=wd,
+        wd = HOMEPATH/'AIMD_AlB2'
+        self.interface = VASP_Interface(tag='1', incar=wd/'INCAR', potcarsPath=wd,
                                         kresol=0.06, targetProperties=['trajectory'])
         system = dict(
             ase={'pbc': (1, 1, 1), 'symbolsOrder': [0, 1, 2]},

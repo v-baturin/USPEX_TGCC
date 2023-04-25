@@ -4,7 +4,7 @@ USPEX.Stages.TaskManagers.QSUB
 
 """
 import logging
-from os.path import join as pj
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +24,11 @@ class QSUB:
         self.connector = connector
         self.header = header
 
-    def _prepareSubmission(self, COMMAND_EXEC : str, JOB_NAME : str,
-                                 inputFile : str, outputFile : str, errorFile : str) -> str:
+    def _prepareSubmission(self, COMMAND_EXEC: str,
+                                 JOB_NAME: str,
+                                 inputFile: str,
+                                 outputFile : str,
+                                 errorFile : str) -> str:
         """
         Preparing jobscript for submission
         :param commandExec:
@@ -51,13 +54,18 @@ class QSUB:
 
         return ''.join(content)
 
-    async def submit(self, command: str, jobname: str, input: str, output: str, error: str, calcFolder : str) -> int:
+    async def submit(self, command: str,
+                           jobname: str,
+                           input: str,
+                           output: str,
+                           error: str,
+                           calcFolder: Path) -> int:
         content = self._prepareSubmission(command, jobname, input, output, error)
-        with open(pj(calcFolder, self._RUNSCRIPT), 'wt') as f:
+        with open(calcFolder/self._RUNSCRIPT, 'wt') as f:
             f.write(content)
-        await self.connector.sync_l2r(pj(calcFolder, self._RUNSCRIPT))
+        await self.connector.sync_l2r(calcFolder/self._RUNSCRIPT)
 
-        returncode, out, err = await self.connector.execute(f'qsub {self._RUNSCRIPT}', cwd=calcFolder)
+        returncode, out, err = await self.connector.execute(f'qsub {self._RUNSCRIPT}', cwd=str(calcFolder))
 
         logger.debug(f'process returned code {returncode}')
         if returncode != 0:

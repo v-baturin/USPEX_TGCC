@@ -7,7 +7,6 @@ Objects and functions for working with 3D space groups
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
 
-import os
 import json
 import numpy as np
 
