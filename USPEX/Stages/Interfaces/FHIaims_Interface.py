@@ -125,6 +125,7 @@ class FHIaims_Interface:
             results['structure'] = self.readStructure(content, system.pop('pbc'))
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.outputFile, 'r') as f:
+            with open(calcFolder/self.outputFile, 'r') as f:
                 content = f.readlines()
             for line in content:
                 if 'Total energy corrected' in line:

@@ -14,9 +14,12 @@ from ..InputConverter import InputConverter
 
 TESTPATH = Path(__file__).parent
 
+TESTPATH = Path(__file__).parent
+
 
 class InputParser_Test(unittest.TestCase):
     def test_c2(self):
+        inputParser = InputConverter('INPUT.txt', wd =TESTPATH/'c2')
         inputParser = InputConverter('INPUT.txt', wd =TESTPATH/'c2')
         params = inputParser.parse()
         params_ref = {'system': {'type': 'Crystal','heredity': {'initFrac': 0.5},
@@ -43,6 +46,7 @@ class InputParser_Test(unittest.TestCase):
         self.assertEqual(params,params_ref)
 
     def test_c1(self):
+        inputParser = InputConverter('INPUT.txt', wd =TESTPATH/'c1')
         inputParser = InputConverter('INPUT.txt', wd =TESTPATH/'c1')
         params = inputParser.parse()
         HEADER = '#!/bin/sh\n#BSUB -sp 100\n#BSUB -a  intelmpi\n#BSUB -R  "span[ptile=8]"\n#BSUB -J  USPEX\n#BSUB -n  8\n' \
@@ -88,6 +92,7 @@ class InputParser_Test(unittest.TestCase):
         self.assertEqual(params,params_ref)
 
     def test_c4(self):
+        inputParser = InputConverter('INPUT.txt', wd =TESTPATH/'c4/')
         inputParser = InputConverter('INPUT.txt', wd =TESTPATH/'c4/')
         params = inputParser.parse()
         params_ref = {'system': {'type': 'Crystal', 'heredity': {'initFrac': 0.5},

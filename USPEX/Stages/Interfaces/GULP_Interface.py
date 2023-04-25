@@ -38,12 +38,16 @@ class GULP_Interface:
                  moleculeSpecifics: dict = None, fixCell: bool = False, targetProperties: list = None, **kwargs):
         """
 
-        :param params: dictionary with parameters:
-                * ginput: (str) path to ginput-file.
-                * goption: (str) path to goption-file.
-                * commandExecutable: (str) executable command
-                * remote: (dict) remote server params    # optional
-                * taskManager: (dict) task managers params     # optional
+        :param tag:
+        :param ginput:
+        :param goptions:
+        :param libs:
+        :param moleculeSpecifics:
+        :param perturbate:
+        :param fixCell:
+        :param vacuumSize:
+        :param targetProperties:
+        :param kwargs:
         """
 
         self.tag = tag
@@ -80,7 +84,7 @@ class GULP_Interface:
 
         structure = system['structure']
 
-        files_to_delete = ['output', 'optimized.structure']
+        files_to_delete = [Path.cwd()/'output', Path.cwd()/'optimized.structure']
         for f in files_to_delete:
             if Path(f).is_file:
                 Path(f).unlink(missing_ok=True)
@@ -166,13 +170,14 @@ class GULP_Interface:
 
     def isConverged(self, calcFolder: Path):
         """
-        :param SYSTEM:
+        :param calcFolder:
         :return: whether optimization converged
         """
         with open(calcFolder/self.errorFile, 'rt') as fp:
             content = fp.readlines()
             if 'STOP GULP terminated with an error\n' in content:
                 return False
+        with open(calcFolder/self.outputFile, 'rt') as fp:
         with open(calcFolder/self.outputFile, 'rt') as fp:
             content = fp.readlines()
             for line in reversed(content):
@@ -186,6 +191,7 @@ class GULP_Interface:
                         return True
 
         try:
+            with open(calcFolder/self.optimizedStructure, 'rt') as fp:
             with open(calcFolder/self.optimizedStructure, 'rt') as fp:
                 content = fp.readlines()
                 for line in reversed(content):
@@ -344,7 +350,7 @@ class GULP_Interface:
                 break
         return np.array(strains)
 
-    def readForces(self, content, numAtoms : int):
+    def readForces(self, content, numAtoms: int):
         assert numAtoms > 0
 
         # force_orig = callAWK('GULP_force.awk', 'output', ['num=', num2str(numIons)]);

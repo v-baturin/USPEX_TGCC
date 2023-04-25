@@ -14,6 +14,7 @@ import unittest
 import filecmp
 
 from pathlib import Path
+from pathlib import Path
 
 import numpy as np
 
@@ -33,7 +34,8 @@ class VASP_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         vasp = VASP_Interface(tag='1', 
                               incar=SPECIFICPATH/'INCAR_1',
-                              potcarsPath=SPECIFICPATH, kresol=0.13)
+                              potcarsPath=SPECIFICPATH,
+                              kresol=0.13)
 
 
         for ID in range(10):
@@ -85,6 +87,7 @@ class VASP_interfaceTest(unittest.TestCase):
             content = f.readlines()
         stress = self.interface.readPressureTensor(content)
         assert stress.shape == (3, 3)
+
 
 class VASP_interface_elastic_Test(unittest.TestCase):
 

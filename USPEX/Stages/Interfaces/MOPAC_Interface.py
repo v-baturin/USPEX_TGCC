@@ -12,6 +12,8 @@ import numpy as np
 
 from pathlib import Path
 
+from pathlib import Path
+
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +64,7 @@ class MOPAC_Interface:
         """
 
         :param system:
-        :param isFullRelaxation:
+        :param calcFolder:
         """
         structure = system['structure']
 
@@ -102,7 +104,7 @@ class MOPAC_Interface:
 
     def isConverged(self, calcFolder: Path):
         """
-        :param SYSTEM:
+        :param calcFolder:
         :return: whether optimization converged
         """
 
