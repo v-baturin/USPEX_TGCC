@@ -58,7 +58,7 @@ class GlobalOptimizer(object):
         :type seeds: type
         :param seeds: type of Seeds operator.
         """
-        assert name not in cls.knownTargetTypes
+        assert name not in cls.knownTargetTypes, f'{name} is not registered as known Target'
         cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
                                                 mutations=mutations, creations=creations, seeds=seeds)
 
