@@ -79,7 +79,6 @@ class ABINIT_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-    def prepareLocalCalculation(self, system, calcFolder: Path):
         """
         :param system:
         :param calcFolder:
@@ -96,7 +95,6 @@ class ABINIT_Interface:
         for pp_file_path in self.pp_files:
             shutil.copy(pp_file_path, calcFolder)
 
-        with open(calcFolder/self.inputFile, 'wt') as f:
         with open(calcFolder/self.inputFile, 'wt') as f:
             f.write(f'{self.in_file_name}\n'
                     f'{self.out_file_name}\n'
@@ -133,17 +131,14 @@ class ABINIT_Interface:
                     clean_in_file += line
 
         with open(calcFolder/self.in_file_name, 'wt') as f:
-        with open(calcFolder/self.in_file_name, 'wt') as f:
             f.write(clean_in_file)
 
         if system['externalPressure']:
-            with open(calcFolder/self.in_file_name, 'a') as myfile:
             with open(calcFolder/self.in_file_name, 'a') as myfile:
                 abipressure = -1 * system['externalPressure'] * GPA_TO_HARTREE_PER_CUBIC_BOHR
                 myfile.write(f'strtarget {abipressure:.2e} {abipressure:.2e} {abipressure:.2e} 0.0 0.0 0.0\n')
         if calcFolder in self.failedSystems:
             if 'kptopt' not in user_params:
-                with open(calcFolder/self.in_file_name, 'a') as myfile:
                 with open(calcFolder/self.in_file_name, 'a') as myfile:
                     myfile.write('kptopt 2\n')
 
@@ -156,7 +151,6 @@ class ABINIT_Interface:
             kPoints = [1, 1, 1]
 
         with open(calcFolder/self.in_file_name, 'a') as f:
-        with open(calcFolder/self.in_file_name, 'a') as f:
             f.write('\n# k-point grid\n')
             f.write('ngkpt   %d %d %d\n' % tuple(kPoints))
             f.write('nshiftk 1\n')
@@ -165,7 +159,6 @@ class ABINIT_Interface:
         # DEFINITION OF THE ATOM TYPES AND UNIT CELL
         species = list(set(el.z for el in atomTypes))
 
-        with open(calcFolder/self.in_file_name, 'a') as f:
         with open(calcFolder/self.in_file_name, 'a') as f:
             f.write('\n# Definition of the unit cell\n')
             f.write('acell 1 1 1 angstrom\n')
@@ -259,7 +252,6 @@ class ABINIT_Interface:
         # end
 
     def isConverged(self, calcFolder: Path):
-    def isConverged(self, calcFolder: Path):
         """
         :param calcFolder:
         :return: (bool) whether system calculation converged
@@ -269,12 +261,10 @@ class ABINIT_Interface:
             return False
 
         if calcFolder.joinpath('__ABI_MPIABORTFILE__').exists():
-        if calcFolder.joinpath('__ABI_MPIABORTFILE__').exists():
             logger.error('ABINIT exited with error.')
             return False
 
         # Checking whether the SCF has converged
-        with open(calcFolder/self.out_file_name) as f:
         with open(calcFolder/self.out_file_name) as f:
             for line in f:
                 lowerline = line.lower()

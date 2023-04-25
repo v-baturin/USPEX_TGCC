@@ -122,7 +122,6 @@ class AtomisticRepresentation(object):
     def __init__(self, RES_FOLDER: str, columns, toDraw, presentConvexHull: bool, presentPareto,
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = Path(RES_FOLDER)
-        self.RES_FOLDER = Path(RES_FOLDER)
         self.columns = columns
         self.toDraw = toDraw
         self.presentConvexHull = presentConvexHull
@@ -179,7 +178,6 @@ class AtomisticRepresentation(object):
                 plt.plot(enths[:, i], enths[:, i+1], 'go')
                 plt.ylabel(f'E{i+2}')
                 plt.xlabel(f'E{i+1}')
-            plt.savefig(self.RES_FOLDER/'E_series.svg')
             plt.savefig(self.RES_FOLDER/'E_series.svg')
             plt.close()
 
@@ -323,7 +321,6 @@ class AtomisticRepresentation(object):
     @classmethod
     def writeAtomicStructure(cls, filename, system: dict):
         filename = Path(filename)
-        filename = Path(filename)
         cls.writeAtomicStructures(filename, [system])
 
     @classmethod
@@ -384,7 +381,6 @@ class AtomisticRepresentation(object):
     @classmethod
     def readAtomicStructures(cls, filename, environmentUtility=None) -> list:
         filename = Path(filename)
-        directory = filename.parent
         directory = filename.parent
         if filename.suffix == '.uspex':
             with open(filename) as f:

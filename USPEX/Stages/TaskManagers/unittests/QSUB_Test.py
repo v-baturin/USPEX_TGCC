@@ -56,7 +56,7 @@ class QSUB_Test(unittest.TestCase):
         await self.taskManager.kill(jobID)
         await self.taskManager.connector.sync_r2l(folder)
         await self.taskManager.connector.clean(folder)
-        folder.unlink()
+        folder.rmdir()
 
     def test_submit_kill_isExist_remote(self):
 
