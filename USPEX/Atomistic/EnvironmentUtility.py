@@ -529,8 +529,6 @@ class NanoparticleCore:
                         else:
                             self.sitesByType[junctionType] = [site]
 
-
-
         def assemble(self, alpha, **kwargs):
             return NanoparticleCore(self.structure)
 
@@ -570,7 +568,7 @@ class NanoparticleCore:
                 newSites = edgeSites
             self.sitesByType[junctionType] = newSites
             self.sites += newSites
-            return self.sites[junctionType]
+            return newSites
 
         def passivateSite(self, site):
             pass
@@ -585,24 +583,30 @@ class NanoparticleCore:
             )
             return environment
 
-        # def calcCovOffset(self, site, dist):
-        #     mPoint = site.mountPoint
-        #     v = site.orientation
-        #
-        #     def find_x(a, e, r):
-        #         # calculate the coefficients of the quadratic equation
-        #         rts = np.roots([np.dot(e, e), 2 * np.dot(e, a), np.dot(a, a) - r ** 2])
-        #         rts = rts[np.isreal(rts)]
-        #         return np.max([0., np.max(rts)])
-        #
-        #     max_x = -np.inf
-        #     max_i = -1
-        #     for i in range(len(a)):
-        #         x = find_x(a[i], e, r[i])
-        #         if x is not None and x > max_x:
-        #             max_x = x
-        #             max_i = i
-        #     return max_x, max_i
+        def calcCovOffset(self, site, dist):
+            """
+            shifts mountpoint of site in order to respect interatomic distances
+            """
+            # mPoint = site.mountPoint
+            # v = site.orientation
+            #
+            # def find_x(a, e, r):
+            #     # intersection of ray (mountPoint, orientation) and a sphere around
+            #     a = mountPoint - atomCoords
+            #     rts = np.roots([np.dot(e, e), 2 * np.dot(e, a), np.dot(a, a) - r ** 2])
+            #     rts = rts[np.isreal(rts)]
+            #     return np.max([0., np.max(rts)])
+            #
+            # max_x = -np.inf
+            # max_i = -1
+            # for i in range(len(a)):
+            #     x = find_x(a[i], e, r[i])
+            #     if x is not None and x > max_x:
+            #         max_x = x
+            #         max_i = i
+            # return max_x, max_i
+            correctedSite = site
+            return correctedSite
 
     def __init__(self, structure):
         self.structure = structure
