@@ -1,15 +1,36 @@
+import numpy as np
+from scipy.spatial.distance import cdist
+from collections import namedtuple
 
+import logging
+
+ALPHA_SITES = ['VERTEX', 'EDGE', 'FACE']
+
+AlphaJuctionType = namedtuple('AlphaJuctionType', ['label', 'adsRadius'])
 class Adsorbant:
 
-    def __init__(self, structure, mountpoint, orientation, junctionType=None):
+    def __init__(self, structure, mountpoint, orientation, junctionTypes=None, filename=None):
         self.structure = structure
         self.mountpoint = mountpoint
         self.orientation = orientation
-        self.junctionType = junctionType
-        self.radius = self._calcRadius()
+        if junctionTypes is None:
+            logging.info(f"No junctionType specified in {filename}. Trying to use alpha-shape-based sites")
+            junctionTypes = ALPHA_SITES
+        else:
+            junctionTypes = list(junctionTypes)
+        if set(junctionTypes) & set(ALPHA_SITES):
+            self._r = self._calcEffectiveRadius()
+        for k in junctionTypes:
+            if junctionTypes[k] in ALPHA_SITES:
+                junctionTypes[k] = AlphaJuctionType(label=junctionTypes[k], adsRadius=self._r)
+        self.junctionTypes = frozenset(junctionTypes)
 
-    def _calcRadius(self):
-        pass
+    def _calcEffectiveRadius(self):
+        distMatrix = cdist(self.structure.getCartesianCoordinates(),self.structure.getCartesianCoordinates())
+        geometricalDiameter = np.max(distMatrix)
+        diametralAtomsIdx = np.where(distMatrix == geometricalDiameter)[0]
+        maxAtRadius = np.max([at.covalent_radius for at in self.structure.getAtomTypes()[diametralAtomsIdx]])
+        return geometricalDiameter / 2 + maxAtRadius
 
 
 

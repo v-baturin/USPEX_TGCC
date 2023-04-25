@@ -25,9 +25,9 @@ def compileParams(main: dict) -> dict:
             if not isinstance(symbol, dict):
                 elementalSymbols.add(symbol)
             elif 'type' in symbol:
-                symbol['structure'] = AtomisticRepresentation.readXYZ(symbol.pop('filename'))
+                symbol['structure'] = AtomisticRepresentation.readXYZ(symbol['filename'])
                 if 'junctionTypes' in symbol:
-                    symbol['junctionTypes'] = set(symbol['junctionTypes'])
+                    symbol['junctionTypes'] = symbol['junctionTypes']
                 adsorbants[symbol['name']] = symbol
             else:
                 molDct = read_molecule(symbol['filename'])
