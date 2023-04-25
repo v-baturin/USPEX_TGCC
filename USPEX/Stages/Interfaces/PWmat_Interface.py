@@ -1,5 +1,5 @@
 """
-USPEX.Stages.Interfaces.PWmat_Interface
+USPEX.Stages.PWmat_Interface
 ============================
 
 .. codeauthor:: Hao Li
@@ -71,7 +71,7 @@ class PWmat_Interface:
         self.failedSystems = []
 
 
-    def prepareLocalCalculation(self, system, calcFolder: Path):
+    def prepareLocalCalculation(self, system, calcFolder : str):
         '''
         :param system: our system
         :return:

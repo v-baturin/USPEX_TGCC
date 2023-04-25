@@ -90,7 +90,6 @@ class LAMMPS_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-    def prepareLocalCalculation(self, system, calcFolder: Path):
         """
         :param system:
         :param calcFolder:
@@ -139,7 +138,6 @@ class LAMMPS_Interface:
         # Step 4. We write all the input files to our calcFolder
         
         with open(calcFolder/self.inputFile, 'w') as f:
-        with open(calcFolder/self.inputFile, 'w') as f:
             f.writelines(content)
 
         for lib in self.libs:
@@ -180,7 +178,6 @@ class LAMMPS_Interface:
 
         if not tolerance_achieved:
             logger.error('LAMMPS minimization tolerance criteria is not achieved.')
-            shutil.copy(output,  calcFolder/f'ERROR-{self.outputFile}')
             shutil.copy(output,  calcFolder/f'ERROR-{self.outputFile}')
             self.failedSystems.append(calcFolder)
         return True        
@@ -239,11 +236,6 @@ class LAMMPS_Interface:
         #     system['isBad'] = True
         return results
 
-    def readProperties(self, calcFolder: Path):
-        if calcFolder.joinpath(self.outputFile).exists():
-            output = calcFolder/self.outputFile
-        elif calcFolder.joinpath(self.log_file).exists():
-            output = calcFolder/self.log_file
     def readProperties(self, calcFolder: Path):
         if calcFolder.joinpath(self.outputFile).exists():
             output = calcFolder/self.outputFile

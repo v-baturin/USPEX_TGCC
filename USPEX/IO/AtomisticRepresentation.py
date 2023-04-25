@@ -339,7 +339,6 @@ class AtomisticRepresentation(object):
             structures.append(structure)
             labels.append(f"EA{system['ID']}")
             d = {'filename': filename.name, 'index': i}
-            d = {'filename': filename.name, 'index': i}
             pbc = system['cell'].getPBC()
             if pbc != (1, 1, 1):
                 d['pbc'] = ' '.join(f'{c}' for c in pbc)
@@ -377,6 +376,10 @@ class AtomisticRepresentation(object):
                 except Exception:
                     break
         return all_systems
+
+    @classmethod
+    def readAtomicStructure(cls, filename, environmentUtility=None) -> dict:
+        return cls.readAtomicStructures(filename, environmentUtility)[0]
 
     @classmethod
     def readAtomicStructures(cls, filename, environmentUtility=None) -> list:

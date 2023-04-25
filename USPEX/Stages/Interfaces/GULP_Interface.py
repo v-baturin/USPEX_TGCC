@@ -178,7 +178,6 @@ class GULP_Interface:
             if 'STOP GULP terminated with an error\n' in content:
                 return False
         with open(calcFolder/self.outputFile, 'rt') as fp:
-        with open(calcFolder/self.outputFile, 'rt') as fp:
             content = fp.readlines()
             for line in reversed(content):
                 if ' Energy:' in line:
@@ -191,7 +190,6 @@ class GULP_Interface:
                         return True
 
         try:
-            with open(calcFolder/self.optimizedStructure, 'rt') as fp:
             with open(calcFolder/self.optimizedStructure, 'rt') as fp:
                 content = fp.readlines()
                 for line in reversed(content):

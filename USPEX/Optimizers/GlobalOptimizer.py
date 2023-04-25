@@ -36,7 +36,7 @@ class GlobalOptimizer(object):
 
     @classmethod
     def registerSelection(cls, selectionType: type):
-        assert selectionType.__name__ not in cls.knownSelectionTypes
+        assert selectionType.__name__ not in cls.knownSelectionTypes, f'{selectionType.__name__} is not set as known Selection type'
         cls.knownSelectionTypes[selectionType.__name__] = selectionType
 
     @classmethod

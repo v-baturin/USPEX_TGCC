@@ -21,10 +21,6 @@ HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'abinitSpecific'
 GATHEREDPATH = HOMEPATH/'abinitGatheredData'
 WORKPATH = HOMEPATH/'Eu2H18_abinit'
-HOMEPATH = Path(__file__).parent
-SPECIFICPATH = HOMEPATH/'abinitSpecific'
-GATHEREDPATH = HOMEPATH/'abinitGatheredData'
-WORKPATH = HOMEPATH/'Eu2H18_abinit'
 
 try:
     from abipy import abilab

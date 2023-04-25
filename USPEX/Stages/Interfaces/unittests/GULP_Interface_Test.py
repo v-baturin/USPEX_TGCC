@@ -15,15 +15,10 @@ import unittest
 import filecmp
 
 from pathlib import Path
-from pathlib import Path
 
 from ....components import AtomisticRepresentation, GULP_Interface
 
 
-HOMEPATH = Path(__file__).parent
-SPECIFICPATH = HOMEPATH/'gulpSpecific'
-GATHEREDPATH = HOMEPATH/'gulpGatheredData'
-WORKPATH = HOMEPATH/'Mg4Al8O16_gulp'
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'gulpSpecific'
 GATHEREDPATH = HOMEPATH/'gulpGatheredData'
@@ -47,7 +42,6 @@ class GULP_CalculatorTest(unittest.TestCase):
             )
             WORKPATH.mkdir(parents=True, exist_ok=True)
             gulp.prepareLocalCalculation(system, WORKPATH)
-            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
@@ -76,7 +70,6 @@ class GULP_InterfaceTest(unittest.TestCase):
         interface = GULP_Interface(tag='1', ginput=HOMEPATH/'Specific'/'ginput_1',
                                    goptions= HOMEPATH/'Specific'/'goptions_1',
                                    targetProperties=['structure', 'enthalpy', 'stressTensor', 'strains'])
-        # with open(GATHEREDPATH/f'input/system{ID}', 'rt') as f:
         # with open(GATHEREDPATH/f'input/system{ID}', 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
 

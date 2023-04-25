@@ -9,6 +9,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from pathlib import Path
+
 
 class BSUB:
 
@@ -63,7 +65,7 @@ class BSUB:
                            input: str,
                            output: str,
                            error: str,
-                           calcFolder: str) -> int:
+                           calcFolder: Path) -> int:
         content = self._prepareSubmission(command, jobname, input, output, error)
         with open(calcFolder/self._RUNSCRIPT, 'wt') as f:
             f.write(content)
