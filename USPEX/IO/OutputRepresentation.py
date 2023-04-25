@@ -22,14 +22,14 @@ Comp. Phys. Comm., 184, 1172-1182\
 '''
 
 
-def newResFolderName(path: Path) -> Path:
+def newResFolderName(path: str) -> Path:
     toCreate = True
     folderNum = 0
     resFolder = None
 
     while toCreate:
         folderNum += 1
-        resFolder = path/f'results{folderNum}'
+        resFolder = Path(path)/f'results{folderNum}'
         if not resFolder.is_dir():
             toCreate = False
     return resFolder
