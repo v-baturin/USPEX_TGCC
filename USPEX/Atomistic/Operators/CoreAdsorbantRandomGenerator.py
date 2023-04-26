@@ -6,8 +6,8 @@ import numpy as np
 class CoreAdsorbantRandomGenerator:
     def __init__(self, utilities, debug = False):
         self.cellUtility = utilities.cellUtility
-        self.environmentUtility = utilities.environmentUtility
         self.adsorbantUtility = utilities.AdsorbantUtility
+        self.environmentUtility = utilities.environmentUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.compositionSpace = utilities.compositionSpace

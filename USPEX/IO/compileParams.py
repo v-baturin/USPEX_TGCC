@@ -14,7 +14,6 @@ def compileParams(main: dict) -> dict:
             stage['stageType'] = 'atomistic'
 
     if 'optimizer' in main and 'target' in main['optimizer']:
-        # TODO: add adsorbant reader
         optimizer = main['optimizer']
         target = optimizer['target']
         symbols = target['compositionSpace']['symbols']

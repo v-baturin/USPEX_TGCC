@@ -517,12 +517,11 @@ class NanoparticleCore:
         def __hash__(self):
             return hash(tuple(map(tuple, (self.mountPoint, self.orientation, self.junctionTypes))))
 
-
     class Assembler:
 
         def __init__(self, structure, sites=None, **kwargs):
             self.structure = structure
-            self._alphaShapesCollection = {}  # {alphaValue: alphashape}
+            self.seenAdsorptions = []  # [{site1: ads1, {site2:ads12}, ...}, ...]
             if sites is None:
                 self.sites = []
             else:
@@ -551,10 +550,12 @@ class NanoparticleCore:
 
             newSites = []
 
-            if junctionType.juctionParam not in self._alphaShapesCollection:
-                self._alphaShapesCollection[junctionType.juctionParam] = \
-                    alphashape.alphashape(self.structure.getCartesianCoordinates(), alpha=junctionType.juctionParam)
-            alphaShape = self._alphaShapesCollection[junctionType.juctionParam]
+            if junctionType.adsRadius not in self._alphaShapesCollection:
+                alpha = 1 / (junctionType.adsRadius +
+                             np.max([at.covalent_radius for at in self.structure.getAtomTypes()]))
+                self._alphaShapesCollection[junctionType.adsRadius] = \
+                    alphashape.alphashape(self.structure.getCartesianCoordinates(), alpha=alpha)
+            alphaShape = self._alphaShapesCollection[junctionType.adsRadius]
 
             if junctionType.label == "FACE":
                 newSites = [NanoparticleCore.Site(mountPoint=m, orientation=v, junctionTypes={junctionType})
