@@ -18,8 +18,10 @@ class CoreAdsorbantRandomGenerator:
         # Choice of active centers
         # Reorienting adsorbants according to chosen active centers in core
         composition = self.compositionSpace.randomComposition()  # {symbol : numbers, ...}
-        np_core = np.random.choice(self.environmentUtility.assemblers)
-        for ads_type, ads_no in composition.items():
+        npCoreAssembler = np.random.choice(self.environmentUtility.assemblers)
+        adsTypesSitesDiGraph = npCoreAssembler.getAdsJuncSiteGraph(self.adsorbantUtility.adsorbants)
+        current_adsorption = dict()
+        for varied_item, quantity in composition.items():
             pass
 
 

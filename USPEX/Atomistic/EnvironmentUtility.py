@@ -17,7 +17,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from collections import namedtuple
 from .Transformation import Transformation
-
+import networkx as nx
 import alphashape
 
 logger = logging.getLogger(__name__)
@@ -503,8 +503,6 @@ class NanoparticleCore:
             self.passivateBy = passivateBy
 
         def dock(self, adsorbant, ownAxisAngle=0):
-            if self.junctionTypes and adsorbant.junctionTypes:
-                assert self.junctionTypes & adsorbant.junctionTypes
             rotAroundOrientationAxis = Transformation.fromRotVector(adsorbant.orientation * ownAxisAngle,
                                                                     -adsorbant.mountPoint)
             trotated_structure = rotAroundOrientationAxis.transform(adsorbant.structure)
@@ -533,6 +531,8 @@ class NanoparticleCore:
                             self.sitesByType[junctionType].append(site)
                         else:
                             self.sitesByType[junctionType] = [site]
+            self._alphaShapesCollection = {}  # {adsRadius: alphashape}
+            self._adsJuncSiteGraph = None
 
         def assemble(self, alpha, **kwargs):
             return NanoparticleCore(self.structure)
@@ -580,6 +580,25 @@ class NanoparticleCore:
         def passivateSite(self, site):
             pass
 
+        def getAdsJuncSiteGraph(self, adsorbants):
+            """
+            Directed tripartite graph (adsorbants)-(junctiontypes)-(sites)
+            @param adsorbants:
+            @return:
+            """
+            if self._adsJuncSiteGraph is None:
+                DG = nx.DiGraph()
+                allAdsJuncType = set()
+                for ads in adsorbants:
+                    for jt in ads.junctionTypes:
+                        DG.add_edge(ads, jt)
+                        allAdsJuncType |= jt
+                for jt in allAdsJuncType:
+                    sites = self.getSitesByType(jt)
+                    for site in sites:
+                        DG.add_edge(jt, site)
+                self._adsJuncSiteGraph = DG
+            return self._adsJuncSiteGraph.copy()
 
 
         @staticmethod
@@ -617,14 +636,6 @@ class NanoparticleCore:
 
     def __init__(self, structure):
         self.structure = structure
-
-
-
-
-
-
-
-    pass
 
 
 class EnvironmentUtility:
