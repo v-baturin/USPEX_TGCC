@@ -1,12 +1,14 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 from collections import namedtuple
-
+from .EnvironmentUtility import NanoparticleCore
 import logging
 
-ALPHA_SITES = ['VERTEX', 'EDGE', 'FACE']
+ALPHA_JUNCTION_LABELS = ['VERTEX', 'EDGE', 'FACE']
 
-AlphaJuctionType = namedtuple('AlphaJuctionType', ['label', 'adsRadius'])
+JunctionType = NanoparticleCore.Site.JunctionType #namedtuple('AlphaJunctionType', ['label', 'adsRadius'])
+
+
 class Adsorbant:
 
     def __init__(self, structure, mountpoint, orientation, junctionTypes=None, filename=None):
@@ -21,8 +23,10 @@ class Adsorbant:
         if set(junctionTypes) & set(ALPHA_SITES):
             self._r = self._calcEffectiveRadius()
         for k in junctionTypes:
-            if junctionTypes[k] in ALPHA_SITES:
-                junctionTypes[k] = AlphaJuctionType(label=junctionTypes[k], adsRadius=self._r)
+            if junctionTypes[k] in ALPHA_JUNCTION_LABELS:
+                junctionTypes[k] = JunctionType(label=junctionTypes[k], adsRadius=self._r)
+            else:
+                junctionTypes[k] = JunctionType(label=junctionTypes[k], adsRadius=None)
         self.junctionTypes = frozenset(junctionTypes)
 
     def _calcEffectiveRadius(self):

@@ -15,6 +15,7 @@ from pymatgen.core.surface import SlabGenerator
 from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
+from collections import namedtuple
 from .Transformation import Transformation
 
 import alphashape
@@ -488,12 +489,17 @@ class Bulk:
         """
         return self._indices
 
+
 class NanoparticleCore:
+
+    JunctionType = namedtuple('AlphaJunctionType', ['label', 'adsRadius'])
+
     class Site:
         def __init__(self, mountPoint, orientation, junctionTypes=None, passivateBy=None):
             self.mountPoint = mountPoint
             self.orientation = orientation
-            self.junctionTypes = frozenset(junctionTypes) if junctionTypes else None
+            self.junctionTypes = frozenset([NanoparticleCore.JunctionType(jt, None) for jt in junctionTypes]) \
+                if junctionTypes else None
             self.passivateBy = passivateBy
 
         def dock(self, adsorbant, ownAxisAngle=0):
@@ -535,7 +541,7 @@ class NanoparticleCore:
         def getSitesByType(self, junctionType):
             if junctionType in self.sitesByType:
                 return self.sitesByType[junctionType]
-            elif hasattr(junctionType, 'label') and junctionType.label in ('FACE', 'EDGE', 'VERTEX'):
+            elif junctionType.label in ('FACE', 'EDGE', 'VERTEX'):
                 return self.calcAlphashapeSites(junctionType)
             else:
                 logger.warning(f'No sites of type "{junctionType}" on the nanoparticle core')
