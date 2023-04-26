@@ -35,7 +35,29 @@ class Adsorbant:
         return geometricalDiameter / 2 + maxAtRadius
 
 
-
 class AdsorbantUtility(object):
     def __init__(self, adsorbants):
         self.adsorbants = {key: Adsorbant(**adsorbant) for key, adsorbant in adsorbants.items()}
+        self._adsorbantsJunctionTypes = None
+        self._adsorbantsJunctionsByType = None
+
+    @property
+    def adsorbantsJunctionByType(self):
+        if self._adsorbantsJunctionsByType is None:
+            self._adsorbantsJunctionsByType = {}
+            for adsorbant in self.adsorbants:
+                for junctionType in adsorbant.junctionTypes:
+                    if junctionType in self._adsorbantsJunctionsByType:
+                        self._adsorbantsJunctionsByType[junctionType].append(adsorbant)
+                    else:
+                        self._adsorbantsJunctionsByType[junctionType] = [adsorbant]
+        return self._adsorbantsJunctionsByType
+
+    @property
+    def adsorbantJunctionTypes(self):
+        if self._adsorbantsJunctionTypes is None:
+            self._adsorbantsJunctionTypes = set()
+            for ads in self.adsorbants:
+                self._adsorbantsJunctionTypes |= set(ads.junctionTypes)
+        return self._adsorbantsJunctionTypes
+
