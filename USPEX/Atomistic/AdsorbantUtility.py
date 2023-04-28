@@ -6,7 +6,7 @@ import logging
 
 ALPHA_JUNCTION_LABELS = ['VERTEX', 'EDGE', 'FACE']
 
-JunctionType = NanoparticleCore.Site.JunctionType #namedtuple('AlphaJunctionType', ['label', 'adsRadius'])
+JunctionType = NanoparticleCore.JunctionType  #namedtuple('AlphaJunctionType', ['label', 'adsRadius'])
 
 
 class Adsorbant:
@@ -20,12 +20,13 @@ class Adsorbant:
             junctionTypes = ALPHA_JUNCTION_LABELS
         if set(junctionTypes) & set(ALPHA_JUNCTION_LABELS):
             self._r = self._calcEffectiveRadius()
-        for k in junctionTypes:
-            if junctionTypes[k] in ALPHA_JUNCTION_LABELS:
-                junctionTypes[k] = JunctionType(label=junctionTypes[k], adsRadius=self._r)
+        properClassJunctionTypes = []
+        for jt in junctionTypes:
+            if jt in ALPHA_JUNCTION_LABELS:
+                properClassJunctionTypes.append(JunctionType(label=jt, adsRadius=self._r))
             else:
-                junctionTypes[k] = JunctionType(label=junctionTypes[k], adsRadius=None)
-        self.junctionTypes = frozenset(junctionTypes)
+                properClassJunctionTypes.append(JunctionType(label=jt, adsRadius=None))
+        self.junctionTypes = frozenset(properClassJunctionTypes)
 
     def _calcEffectiveRadius(self):
         distMatrix = cdist(self.structure.getCartesianCoordinates(), self.structure.getCartesianCoordinates())

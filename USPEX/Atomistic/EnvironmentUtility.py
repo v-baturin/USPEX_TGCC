@@ -492,25 +492,28 @@ class Bulk:
 
 class NanoparticleCore:
 
-    JunctionType = namedtuple('AlphaJunctionType', ['label', 'adsRadius'])
+    class JunctionType:
+        def __init__(self, label, adsRadius=None):
+            self.label = label
+            self.adsRadius = adsRadius
 
     class Site:
         def __init__(self, mountPoint, orientation, junctionTypes=None, passivateBy=None):
             self.mountPoint = mountPoint
             self.orientation = orientation
-            self.junctionTypes = frozenset([NanoparticleCore.JunctionType(jt, None) for jt in junctionTypes]) \
+            self.junctionTypes = frozenset([NanoparticleCore.JunctionType(jt) for jt in junctionTypes]) \
                 if junctionTypes else None
             self.passivateBy = passivateBy
 
         def dock(self, adsorbant, ownAxisAngle=0):
             rotAroundOrientationAxis = Transformation.fromRotVector(adsorbant.orientation * ownAxisAngle,
                                                                     -adsorbant.mountPoint)
-            trotated_structure = rotAroundOrientationAxis.transform(adsorbant.structure)
+            rotated_structure = rotAroundOrientationAxis.transform(adsorbant.structure)
             rot_ax = np.cross(adsorbant.orientation, self.orientation)
             rot_ax /= np.linalg.norm(rot_ax)
             alpha = np.arccos(adsorbant.orientation @ self.orientation)
             matchOrientation = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
-            return matchOrientation.transform(trotated_structure)
+            return matchOrientation.transform(rotated_structure)
 
         def __hash__(self):
             return hash(tuple(map(tuple, (self.mountPoint, self.orientation, self.junctionTypes))))
