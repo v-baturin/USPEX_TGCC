@@ -1,7 +1,7 @@
 {
 optimizer : {type : GlobalOptimizer
              target: {type: Atomistic
-                      compositionSpace: {symbols: [X Y] blocks: [[2 2]]}
+                      compositionSpace: {symbols: [X1 Y1] blocks: [[2 2]]}
                       environmentUtility: {environments: [np_core]}}
              optType: enthalpy
              selection: {type: USPEXClassic
@@ -23,7 +23,7 @@ stopCrit: 6
 #define X1
 {
 type: adsorbant
-filename: ligand_X1.xyz
+filename: "ligands_X/1.xyz"
 mountpoint: (-0.91665000 1.48792000 0.25636000)
 orientation: (-0.88341253 -0.21756933 -0.41502516)
 junctionTypes: (X)}
@@ -31,7 +31,7 @@ junctionTypes: (X)}
 #define X2
 {
 type: adsorbant
-filename: ligand_X2.xyz
+filename: "ligands_X/2.xyz"
 mountpoint: (-1.10835000 1.46811000 0.12423000)
 orientation: (-0.94402140 -0.29168871 -0.15408209)
 junctionTypes: (X)}
@@ -39,7 +39,7 @@ junctionTypes: (X)}
 #define X3
 {
 type: adsorbant
-filename: ligand_X3.xyz
+filename: "ligands_X/3.xyz"
 mountpoint: (-0.88584000 1.51989000 0.19494000)
 orientation: (-0.94735558 -0.30143196 -0.10796381)
 junctionTypes: (X)}
@@ -47,7 +47,7 @@ junctionTypes: (X)}
 #define X4
 {
 type: adsorbant
-filename: ligand_X4.xyz
+filename: "ligands_X/4.xyz"
 mountpoint: (0.16165000 1.99750000 0.64885000)
 orientation: (-0.95040664 -0.25658226 0.17576336)
 junctionTypes: (X)}
@@ -55,7 +55,7 @@ junctionTypes: (X)}
 #define Y1
 {
 type: adsorbant
-filename: ligand_Y1.xyz
+filename: "ligands_Y/1.xyz"
 mountpoint: (-3.18038000 0.61361000 -0.08426000)
 orientation: (0.81373925 0.44984143 0.36806402)
 junctionTypes: (Y)}
@@ -63,7 +63,7 @@ junctionTypes: (Y)}
 #define Y2
 {
 type: adsorbant
-filename: ligand_Y2.xyz
+filename: "ligands_Y/2.xyz"
 mountpoint: (-3.79202000 0.63479000 -0.18131000)
 orientation: (0.94975994 0.29774402 0.09646017)
 junctionTypes: (Y)}
@@ -71,7 +71,7 @@ junctionTypes: (Y)}
 #define Y3
 {
 type: adsorbant
-filename: ligand_Y3.xyz
+filename: "ligands_Y/3.xyz"
 mountpoint: (-3.39206000 0.62270000 -0.21308000)
 orientation: (0.91459874 0.37000404 0.16311392)
 junctionTypes: (Y)}
@@ -79,7 +79,7 @@ junctionTypes: (Y)}
 #define Y4
 {
 type: adsorbant
-filename: ligand_Y4.xyz
+filename: "ligands_Y/4.xyz"
 mountPoint: (-3.48719000 0.72140000 -0.32203000)
 orientation: (0.91525179 0.35835210 0.18411389)
 junctionTypes: (Y)}
