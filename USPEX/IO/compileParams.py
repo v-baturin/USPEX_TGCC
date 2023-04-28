@@ -28,6 +28,8 @@ def compileParams(main: dict) -> dict:
                 if 'junctionTypes' in symbol:
                     symbol['junctionTypes'] = symbol['junctionTypes']
                 adsorbants[symbol['name']] = symbol
+                symbols[i] = symbol['name']
+                elementalSymbols |= set(symbol['structure'].getAtomTypes())
             else:
                 molDct = read_molecule(symbol['filename'])
                 molecules[symbol['name']] = molDct
