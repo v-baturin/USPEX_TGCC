@@ -15,7 +15,6 @@ from pymatgen.core.surface import SlabGenerator
 from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from collections import namedtuple
 from .Transformation import Transformation
 import networkx as nx
 import alphashape
