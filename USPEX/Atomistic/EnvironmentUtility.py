@@ -495,6 +495,16 @@ class NanoparticleCore:
             self.label = label
             self.adsRadius = adsRadius
 
+        def __repr__(self):
+            return f"<junctionType {self.label}, R={self.adsRadius:.2f}>" if self.adsRadius \
+                else f"<junctionType {self.label}>"
+
+        def __eq__(self, other):
+            return (self.label == other.label) and (self.adsRadius == other.adsRadius)
+
+        def __hash__(self):
+            return hash((self.label, self.adsRadius))
+
     class Site:
         def __init__(self, host, mountPoint, orientation, junctionTypes=None, passivateBy=None):
             self.host = host
@@ -539,6 +549,9 @@ class NanoparticleCore:
                             self.sitesByType[junctionType] = [site]
             self._alphaShapesCollection = {}  # {adsRadius: alphashape}
             self._adsJuncSiteGraph = None
+
+        def __repr__(self):
+            return f"<Core {self.structure.getFormula()}>"
 
         def assemble(self, alpha, **kwargs):
             return NanoparticleCore(self.structure)
