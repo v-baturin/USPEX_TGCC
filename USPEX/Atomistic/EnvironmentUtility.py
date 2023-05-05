@@ -532,34 +532,42 @@ class NanoparticleCore:
 
     class Assembler:
 
-        def __init__(self, structure, sites=None, **kwargs):
-            self.structure = structure
+        def __init__(self, structure, sites=None, isFixed: bool = True, **kwargs):
+            self._structure = structure
             self.seenAdsorptions = []  # [{site1: ads1, {site2:ads12}, ...}, ...]
+            self._sitesByType = {}
             if sites is None:
                 self.sites = []
             else:
                 for site in sites:
                     site['junctionTypes'] = frozenset([NanoparticleCore.JunctionType(jt) for jt in site['junctionTypes']])
                 self.sites = [NanoparticleCore.Site(self, **site) for site in sites]
-                self.sitesByType = {}
                 for site in self.sites:
                     for junctionType in site.junctionTypes:
-                        if junctionType in self.sitesByType:
-                            self.sitesByType[junctionType].append(site)
+                        if junctionType in self._sitesByType:
+                            self._sitesByType[junctionType].append(site)
                         else:
-                            self.sitesByType[junctionType] = [site]
+                            self._sitesByType[junctionType] = [site]
+            self.isFixed = isFixed
+            if self.isFixed:
+                self._indices = np.arange(len(structure))
+            else:
+                self._indices = np.array([], dtype=int)
             self._alphaShapesCollection = {}  # {adsRadius: alphashape}
             self._adsJuncSiteGraph = None
 
-        def __repr__(self):
-            return f"<Core {self.structure.getFormula()}>"
+        def getCell(self):
+            return self._structure.getCell()
 
-        def assemble(self, alpha, **kwargs):
-            return NanoparticleCore(self.structure)
+        def __repr__(self):
+            return f"<Core {self._structure.getFormula()}>"
+
+        def assemble(self, **kwargs):
+            return NanoparticleCore(self._structure, self._indices, self)
 
         def getSitesByType(self, junctionType):
-            if junctionType in self.sitesByType:
-                return self.sitesByType[junctionType]
+            if junctionType in self._sitesByType:
+                return self._sitesByType[junctionType]
             elif junctionType.label in ('FACE', 'EDGE', 'VERTEX'):
                 return self.calcAlphashapeSites(junctionType)
             else:
@@ -572,9 +580,9 @@ class NanoparticleCore:
 
             if junctionType.adsRadius not in self._alphaShapesCollection:
                 alpha = 1 / (junctionType.adsRadius +
-                             np.max([at.covalent_radius for at in self.structure.getAtomTypes()]))
+                             np.max([at.covalent_radius for at in self._structure.getAtomTypes()]))
                 self._alphaShapesCollection[junctionType.adsRadius] = \
-                    alphashape.alphashape(self.structure.getCartesianCoordinates(), alpha=alpha)
+                    alphashape.alphashape(self._structure.getCartesianCoordinates(), alpha=alpha)
             alphaShape = self._alphaShapesCollection[junctionType.adsRadius]
 
             if junctionType.label == "FACE":
@@ -593,7 +601,7 @@ class NanoparticleCore:
                         NanoparticleCore.Site(self,
                                               mountPoint=origin, orientation=normal, junctionTypes={junctionType}))
                 newSites = edgeSites
-            self.sitesByType[junctionType] = newSites
+            self._sitesByType[junctionType] = newSites
             self.sites += newSites
             return newSites
 
@@ -653,9 +661,41 @@ class NanoparticleCore:
             correctedSite = site
             return correctedSite
 
-    def __init__(self, structure):
-        self.structure = structure
+    processingStyles = {
+        'onlyEnvironment': 'getStructure'
+    }
 
+    def __init__(self, structure, indices, assembler):
+        self._structure = structure
+        self._indices = indices
+        self._assembler = assembler
+
+    @staticmethod
+    def fromIndices(structure, all, fixed, pbc):
+        all = np.asarray(all, dtype=int)
+        fixed = np.where(np.in1d(all, fixed))[0]
+        envStructure = EnvironmentUtility.structureType(structure.getAtomTypes()[all],
+                                                        structure.getCartesianCoordinates()[all],
+                                                        EnvironmentUtility.cellType(
+                                                            structure.getCell().getCellVectors(), pbc=pbc))
+        return Bulk(envStructure, fixed, None), all
+
+    def getUpdatedEnvironment(self, envStructure):
+        return NanoparticleCore(envStructure, self._indices, self._assembler)
+
+    def getStructure(self):
+        """
+        Retrieve atomic structure associated with environment.
+
+        :return: atomic structure.
+        """
+        return self._structure
+
+    def getFixedIndices(self):
+        """
+        Get indices of atoms in substrate positions of which are fixed.
+        """
+        return self._indices
 
 class EnvironmentUtility:
     """
