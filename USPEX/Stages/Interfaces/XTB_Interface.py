@@ -113,8 +113,6 @@ class XTB_Interface:
 
     def readStructure(self, calcFolder: str, pbc):
 
-        LOCAL_VACUUM = 4.0
-
         ase_struct = read_gen(pj(calcFolder, self.out_geometry_file))
         atomTypes = []
         new_lattice = []
@@ -126,15 +124,6 @@ class XTB_Interface:
             if pbc[i]:
                 new_lattice.append([float(x) for x in vec])
         cell = self.cellType.initFromCellVectors(pbc, new_lattice)
-#        if sum(pbc) == 0:
-#            xsize = np.amax(ase_struct.get_positions()[:, 0]) - np.amin(ase_struct.get_positions()[:, 0])
-#            ysize = np.amax(ase_struct.get_positions()[:, 1]) - np.amin(ase_struct.get_positions()[:, 1])
-#            zsize = np.amax(ase_struct.get_positions()[:, 2]) - np.amin(ase_struct.get_positions()[:, 2])
-#            new_lattice = np.array([[xsize + LOCAL_VACUUM, 0.0, 0.0], [0.0, ysize + LOCAL_VACUUM, 0.0],\
-#                                    [0.0, 0.0, zsize + LOCAL_VACUUM]])
-#        else:
-#            new_lattice = ase_struct.cell[:].copy()
-#        cell = self.cellType(new_lattice, pbc)
         new_structure = self.structureType(atomTypes, positions, cell=cell)
 
         return new_structure
