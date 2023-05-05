@@ -5,7 +5,7 @@ import json
 import numpy as np
 from itertools import combinations_with_replacement
 
-from ...components import AtomisticRepresentation, EnvironmentUtility, AdsorbantUtility
+from ...components import AtomisticRepresentation, EnvironmentUtility, AdsorbantUtility, AtomicDisassembler, Cell
 
 
 class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
@@ -36,7 +36,21 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
     def test_dock_NDI(self):
         assembler = self.NDI_core.assemblers[0]
         adsorbant = self.adsorbantsNDI.adsorbants['X2']
-        new_struct = assembler.sites[0].dock(adsorbant.site)
+        new_ads_struct = assembler.sites[0].dock(adsorbant.site)
+        structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
+                                                              cell=Cell.initFromCellVectors((0,0,0)),
+                                                              environment=assembler.assemble())
+        AtomisticRepresentation.writeXYZ(pj(self.TEST_FILES_DIR, 'outNDI.xyz'), structure)
+
+    def test_dock_Alpha(self):
+        assembler = self.Alpha_core.assemblers[0]
+        adsorbant = self.adsorbantsAlpha.adsorbants['phenyl']
+        jtype, = adsorbant.site.junctionTypes
+        new_ads_struct = assembler.sites[0].dock(adsorbant.site)
+        structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
+                                                              cell=Cell.initFromCellVectors((0, 0, 0)),
+                                                              environment=assembler.assemble())
+        AtomisticRepresentation.writeXYZ(pj(self.TEST_FILES_DIR, 'out.xyz'), structure)
 
 
 
