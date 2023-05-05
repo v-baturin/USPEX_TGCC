@@ -472,7 +472,7 @@ class Bulk:
         return Bulk(envStructure, fixed, None), all
 
     def getUpdatedEnvironment(self, envStructure):
-        return Bulk(envStructure, self._indices, self)
+        return Bulk(envStructure, self._indices, self._assembler)
 
     def getStructure(self):
         """
@@ -510,13 +510,14 @@ class NanoparticleCore:
             self.host = host
             self.mountPoint = np.array(mountPoint)
             self.orientation = np.array(orientation)
-            self.junctionTypes = junctionTypes  if junctionTypes else None #frozenset([NanoparticleCore.JunctionType(jt) for jt in junctionTypes]) \
+            self.junctionTypes = junctionTypes if junctionTypes else None #frozenset([NanoparticleCore.JunctionType(jt) for jt in junctionTypes]) \
             self.passivateBy = passivateBy
 
         def __repr__(self):
             return f"<Site@ {self.host}, junctionTypes={self.junctionTypes}"
 
         def dock(self, other, ownAxisAngle=0):
+            assert self.junctionTypes & other.junctionTypes
             rotAroundOrientationAxis = Transformation.fromRotVector(other.orientation * ownAxisAngle,
                                                                     -other.mountPoint)
             rotated_structure = rotAroundOrientationAxis.transform(other.host.structure)
