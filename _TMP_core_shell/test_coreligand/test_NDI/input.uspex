@@ -7,7 +7,7 @@ optimizer : {type : GlobalOptimizer
              selection: {type: USPEXClassic
                          popSize: 20
                          optType: (aging enthalpy)
-                         fractions: {CoreAdsorbantRandomGenerator: (1.0 1.0 1.0)
+                         fractions: {coreAdsorbantRandomGenerator: (1.0 1.0 1.0)
                                      }
                          }
              }

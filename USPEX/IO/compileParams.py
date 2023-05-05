@@ -23,12 +23,12 @@ def compileParams(main: dict) -> dict:
         for i, symbol in enumerate(symbols):
             if not isinstance(symbol, dict):
                 elementalSymbols.add(symbol)
-            elif 'type' in symbol:
+            elif 'type' in symbol and symbol.pop('type') == 'adsorbant':
                 symbol['structure'] = AtomisticRepresentation.readXYZ(symbol['filename'])
                 if 'junctionTypes' in symbol:
                     symbol['junctionTypes'] = symbol['junctionTypes']
-                adsorbants[symbol['name']] = symbol
                 symbols[i] = symbol['name']
+                adsorbants[symbol.pop('name')] = symbol
                 elementalSymbols |= set(symbol['structure'].getAtomTypes())
             else:
                 molDct = read_molecule(symbol['filename'])

@@ -490,7 +490,6 @@ class Bulk:
 
 
 class NanoparticleCore:
-
     class JunctionType:
         def __init__(self, label, adsRadius=None):
             self.label = label
@@ -560,11 +559,11 @@ class NanoparticleCore:
             alphaShape = self._alphaShapesCollection[junctionType.adsRadius]
 
             if junctionType.label == "FACE":
-                newSites = [NanoparticleCore.Site(mountPoint=m, orientation=v, junctionTypes={junctionType})
-                     for m, v in zip(alphaShape.triangles_center, alphaShape.face_normals)]
+                newSites = [NanoparticleCore.Site(self, mountPoint=m, orientation=v, junctionTypes={junctionType})
+                            for m, v in zip(alphaShape.triangles_center, alphaShape.face_normals)]
             elif junctionType.label == "VERTEX":
-                newSites = [NanoparticleCore.Site(mountPoint=m, orientation=v, junctionTypes={junctionType})
-                     for m, v in zip(alphaShape.vertices, alphaShape.vertex_normals)]
+                newSites = [NanoparticleCore.Site(self, mountPoint=m, orientation=v, junctionTypes={junctionType})
+                            for m, v in zip(alphaShape.vertices, alphaShape.vertex_normals)]
             elif junctionType.label == "EDGE":
                 edgeSites = []
                 for adj_e, adj_f in zip(alphaShape.face_adjacency_edges, alphaShape.face_adjacency):
@@ -572,8 +571,8 @@ class NanoparticleCore:
                     normal = alphaShape.face_normals[adj_f[0]] + alphaShape.face_normals[adj_f[1]]
                     normal /= np.linalg.norm(normal)
                     edgeSites.append(
-                        NanoparticleCore.Site(
-                            mountPoint=origin, orientation=normal, junctionTypes={junctionType}))
+                        NanoparticleCore.Site(self,
+                                              mountPoint=origin, orientation=normal, junctionTypes={junctionType}))
                 newSites = edgeSites
             self.sitesByType[junctionType] = newSites
             self.sites += newSites
@@ -591,17 +590,16 @@ class NanoparticleCore:
             if self._adsJuncSiteGraph is None:
                 DG = nx.DiGraph()
                 allAdsJuncType = set()
-                for ads in adsorbants:
-                    for jt in ads.junctionTypes:
-                        DG.add_edge(ads, jt)
-                        allAdsJuncType |= jt
+                for adsName, ads in adsorbants.items():
+                    for jt in ads.site.junctionTypes:
+                        DG.add_edge(adsName, jt)
+                        allAdsJuncType |= {jt}
                 for jt in allAdsJuncType:
                     sites = self.getSitesByType(jt)
                     for site in sites:
                         DG.add_edge(jt, site)
                 self._adsJuncSiteGraph = DG
             return self._adsJuncSiteGraph.copy()
-
 
         @staticmethod
         def build(filename, **kwargs):
@@ -656,7 +654,6 @@ class EnvironmentUtility:
         'bulk': Bulk,
         'nanoparticle_core': NanoparticleCore
     }
-   
 
     @classmethod
     def setRepresentation(cls, representation):

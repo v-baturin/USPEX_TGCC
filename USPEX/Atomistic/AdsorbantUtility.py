@@ -11,7 +11,7 @@ JunctionType = NanoparticleCore.JunctionType  #namedtuple('AlphaJunctionType', [
 
 class Adsorbant:
 
-    def __init__(self, structure, mountpoint, orientation, junctionTypes=None, filename=None):
+    def __init__(self, structure, mountPoint, orientation, junctionTypes=None, filename=None, **kwargs):
         self.structure = structure
         self.mountPoint = mountpoint
         self.orientation = orientation
@@ -40,19 +40,18 @@ class AdsorbantUtility(object):
     def __init__(self, adsorbants):
         self.adsorbants = {key: Adsorbant(**adsorbant) for key, adsorbant in adsorbants.items()}
         self._adsorbantsJunctionTypes = None
-        self._adsorbantsJunctionsByType = None
+        self._adsorbantsByJunctionsType = {}
 
     @property
-    def adsorbantsJunctionByType(self):
-        if self._adsorbantsJunctionsByType is None:
-            self._adsorbantsJunctionsByType = {}
+    def adsorbantsByJunctionType(self):
+        if not self._adsorbantsByJunctionsType:
             for adsorbant in self.adsorbants:
-                for junctionType in adsorbant.junctionTypes:
-                    if junctionType in self._adsorbantsJunctionsByType:
-                        self._adsorbantsJunctionsByType[junctionType].append(adsorbant)
+                for junctionType in adsorbant.site.junctionTypes:
+                    if junctionType in self._adsorbantsByJunctionsType:
+                        self._adsorbantsByJunctionsType[junctionType].append(adsorbant)
                     else:
-                        self._adsorbantsJunctionsByType[junctionType] = [adsorbant]
-        return self._adsorbantsJunctionsByType
+                        self._adsorbantsByJunctionsType[junctionType] = [adsorbant]
+        return self._adsorbantsByJunctionsType
 
     @property
     def adsorbantJunctionTypes(self):
