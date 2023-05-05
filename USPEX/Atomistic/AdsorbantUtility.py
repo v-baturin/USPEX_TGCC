@@ -7,14 +7,13 @@ import logging
 ALPHA_JUNCTION_LABELS = ['VERTEX', 'EDGE', 'FACE']
 
 JunctionType = NanoparticleCore.JunctionType  #namedtuple('AlphaJunctionType', ['label', 'adsRadius'])
+Site = NanoparticleCore.Site
 
 
 class Adsorbant:
 
     def __init__(self, structure, mountPoint, orientation, junctionTypes=None, filename=None, **kwargs):
         self.structure = structure
-        self.mountPoint = mountpoint
-        self.orientation = orientation
         if junctionTypes is None:
             logging.info(f"No junctionType specified in {filename}. Trying to use alpha-shape-based sites")
             junctionTypes = ALPHA_JUNCTION_LABELS
@@ -26,7 +25,8 @@ class Adsorbant:
                 properClassJunctionTypes.append(JunctionType(label=jt, adsRadius=self._r))
             else:
                 properClassJunctionTypes.append(JunctionType(label=jt, adsRadius=None))
-        self.junctionTypes = frozenset(properClassJunctionTypes)
+        junctionTypes = frozenset(properClassJunctionTypes)
+        self.site = Site(host=self, mountPoint=mountPoint, orientation=orientation, junctionTypes=junctionTypes)
 
     def _calcEffectiveRadius(self):
         distMatrix = cdist(self.structure.getCartesianCoordinates(), self.structure.getCartesianCoordinates())
