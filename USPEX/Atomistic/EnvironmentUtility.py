@@ -496,20 +496,23 @@ class NanoparticleCore:
             self.adsRadius = adsRadius
 
     class Site:
-        def __init__(self, mountPoint, orientation, junctionTypes=None, passivateBy=None):
-            self.mountPoint = mountPoint
-            self.orientation = orientation
-            self.junctionTypes = frozenset([NanoparticleCore.JunctionType(jt) for jt in junctionTypes]) \
-                if junctionTypes else None
+        def __init__(self, host, mountPoint, orientation, junctionTypes=None, passivateBy=None):
+            self.host = host
+            self.mountPoint = np.array(mountPoint)
+            self.orientation = np.array(orientation)
+            self.junctionTypes = junctionTypes  if junctionTypes else None #frozenset([NanoparticleCore.JunctionType(jt) for jt in junctionTypes]) \
             self.passivateBy = passivateBy
 
-        def dock(self, adsorbant, ownAxisAngle=0):
-            rotAroundOrientationAxis = Transformation.fromRotVector(adsorbant.orientation * ownAxisAngle,
-                                                                    -adsorbant.mountPoint)
-            rotated_structure = rotAroundOrientationAxis.transform(adsorbant.structure)
-            rot_ax = np.cross(adsorbant.orientation, self.orientation)
+        def __repr__(self):
+            return f"<Site@ {self.host}, junctionTypes={self.junctionTypes}"
+
+        def dock(self, other, ownAxisAngle=0):
+            rotAroundOrientationAxis = Transformation.fromRotVector(other.orientation * ownAxisAngle,
+                                                                    -other.mountPoint)
+            rotated_structure = rotAroundOrientationAxis.transform(other.host.structure)
+            rot_ax = np.cross(other.orientation, self.orientation)
             rot_ax /= np.linalg.norm(rot_ax)
-            alpha = np.arccos(adsorbant.orientation @ self.orientation)
+            alpha = np.arccos(other.orientation @ self.orientation)
             matchOrientation = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
             return matchOrientation.transform(rotated_structure)
 
@@ -524,7 +527,9 @@ class NanoparticleCore:
             if sites is None:
                 self.sites = []
             else:
-                self.sites = [NanoparticleCore.Site(**site) for site in sites]
+                for site in sites:
+                    site['junctionTypes'] = frozenset([NanoparticleCore.JunctionType(jt) for jt in site['junctionTypes']])
+                self.sites = [NanoparticleCore.Site(self, **site) for site in sites]
                 self.sitesByType = {}
                 for site in self.sites:
                     for junctionType in site.junctionTypes:
