@@ -507,10 +507,13 @@ class NanoparticleCore:
             return hash((self.label, self.adsRadius))
 
     class Site:
-        def __init__(self, host, mountPoint, orientation, junctionTypes=None, passivateBy=None):
+        def __init__(self, host, mountPoint, orientation, junctionTypes=None, passivateBy=None,
+                     mountPointOffset=None):
             self.host = host
-            self.mountPoint = np.array(mountPoint)
             self.orientation = np.array(orientation)
+            self.mountPoint = np.array(mountPoint)
+            if mountPointOffset:
+                self.performOffset(mountPointOffset)
             self.junctionTypes = junctionTypes if junctionTypes else None #frozenset([NanoparticleCore.JunctionType(jt) for jt in junctionTypes]) \
             self.passivateBy = passivateBy
 
@@ -530,6 +533,29 @@ class NanoparticleCore:
 
         def __hash__(self):
             return hash(tuple(map(tuple, (self.mountPoint, self.orientation, self.junctionTypes))))
+
+        def performOffset(self, mountPointOffset):
+            """
+            Shifts mountpoint so that it's located not too close to the host structure. the distance is either
+            user-defined (mountPointOffset=R), or equals to covalent atomic radius
+            @param mountPointOffset: float or "covalent"
+            @return:
+            """
+            e = self.orientation.reshape((1,-1))
+            x = self.mountPoint - self.host._structure.getCartesianCoordinates()
+            l = (x @ e.T)
+            le = l @ e
+            if mountPointOffset == "covalent":
+                radii = np.array([x.covalent_radius for x in self.host.getStructure().getAtomTypes()])
+            else:
+                radii = mountPointOffset
+            shift_coeff = np.nanmax(-l.T[0] + np.sqrt(radii ** 2 - np.linalg.norm(x - le, axis=1) ** 2))
+            if not np.isnan(shift_coeff):
+                self.mountPoint = self.mountPoint + self.orientation * shift_coeff
+
+
+
+            pass
 
     class Assembler:
 
@@ -577,7 +603,7 @@ class NanoparticleCore:
             else:
                 logger.warning(f'No sites of type "{junctionType}" on the nanoparticle core')
 
-        def calcAlphashapeSites(self, junctionType):
+        def calcAlphashapeSites(self, junctionType, mountPointOffset="covalent"):
             # determine active centers + normal vectors self.activeCenters = [(xyz, normal), ...],
 
             newSites = []
@@ -590,10 +616,12 @@ class NanoparticleCore:
             alphaShape = self._alphaShapesCollection[junctionType.adsRadius]
 
             if junctionType.label == "FACE":
-                newSites = [NanoparticleCore.Site(self, mountPoint=m, orientation=v, junctionTypes={junctionType})
+                newSites = [NanoparticleCore.Site(self, mountPoint=m, orientation=v, junctionTypes={junctionType},
+                                                  mountPointOffset=mountPointOffset)
                             for m, v in zip(alphaShape.triangles_center, alphaShape.face_normals)]
             elif junctionType.label == "VERTEX":
-                newSites = [NanoparticleCore.Site(self, mountPoint=m, orientation=v, junctionTypes={junctionType})
+                newSites = [NanoparticleCore.Site(self, mountPoint=m, orientation=v, junctionTypes={junctionType},
+                                                  mountPointOffset=mountPointOffset)
                             for m, v in zip(alphaShape.vertices, alphaShape.vertex_normals)]
             elif junctionType.label == "EDGE":
                 edgeSites = []
@@ -602,8 +630,8 @@ class NanoparticleCore:
                     normal = alphaShape.face_normals[adj_f[0]] + alphaShape.face_normals[adj_f[1]]
                     normal /= np.linalg.norm(normal)
                     edgeSites.append(
-                        NanoparticleCore.Site(self,
-                                              mountPoint=origin, orientation=normal, junctionTypes={junctionType}))
+                        NanoparticleCore.Site(self, mountPoint=origin, orientation=normal,
+                                              junctionTypes={junctionType}, mountPointOffset=mountPointOffset))
                 newSites = edgeSites
             self._sitesByType[junctionType] = newSites
             self.sites += newSites
