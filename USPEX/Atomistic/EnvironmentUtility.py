@@ -490,6 +490,7 @@ class Bulk:
 
 
 class NanoparticleCore:
+
     class JunctionType:
         def __init__(self, label, adsRadius=None):
             self.label = label
@@ -520,8 +521,8 @@ class NanoparticleCore:
             assert self.junctionTypes & other.junctionTypes
             rotAroundOrientationAxis = Transformation.fromRotVector(other.orientation * ownAxisAngle,
                                                                     -other.mountPoint)
-            rotated_structure = rotAroundOrientationAxis.transform(other.host.structure)
-            rot_ax = np.cross(other.orientation, self.orientation)
+            rotated_structure = rotAroundOrientationAxis.transform(other.host.getStructure())
+            rot_ax = np.cross(-other.orientation, self.orientation)
             rot_ax /= np.linalg.norm(rot_ax)
             alpha = np.arccos(other.orientation @ self.orientation)
             matchOrientation = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
@@ -558,6 +559,9 @@ class NanoparticleCore:
 
         def getCell(self):
             return self._structure.getCell()
+
+        def getStructure(self):
+            return self._structure
 
         def __repr__(self):
             return f"<Core {self._structure.getFormula()}>"
@@ -678,7 +682,7 @@ class NanoparticleCore:
                                                         structure.getCartesianCoordinates()[all],
                                                         EnvironmentUtility.cellType(
                                                             structure.getCell().getCellVectors(), pbc=pbc))
-        return Bulk(envStructure, fixed, None), all
+        return NanoparticleCore(envStructure, fixed, None), all
 
     def getUpdatedEnvironment(self, envStructure):
         return NanoparticleCore(envStructure, self._indices, self._assembler)
