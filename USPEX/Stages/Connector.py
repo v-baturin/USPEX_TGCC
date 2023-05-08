@@ -182,13 +182,13 @@ class Connector(object):
             try:
                 remote_result = await self.conn.run(*args, **kwargs)
             except Exception as e:
-                logger.exception(e)
+                logger.debug(e)
                 await asyncio.sleep(10)
                 continue
             break
         else:
             self.channelGuard.release()
-            raise RuntimeError('Cant start sftp session')
+            raise RuntimeError('Cant run ssh command')
         self.channelGuard.release()
         return remote_result
 
@@ -199,7 +199,7 @@ class Connector(object):
             try:
                 sftp = await self.conn.start_sftp_client()
             except Exception as e:
-                logger.exception(e)
+                logger.debug(e)
                 await asyncio.sleep(10)
                 continue
             break

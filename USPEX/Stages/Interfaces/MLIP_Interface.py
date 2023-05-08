@@ -76,7 +76,7 @@ class MLIP_Interface:
         elif 'population' in system:
             sample = []
             for individual in system['population']:
-                sample.extend(individual['trajectory'])
+                sample.extend(s for s in individual['trajectory'] if not s['isBad'])
         else:
             raise RuntimeError('No mlip sample in system.')
         self.atomisticRepresentation.saveMLIPsample(pj(calcFolder, self.in_cfg_file), self.specorder, sample)
