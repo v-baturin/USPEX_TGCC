@@ -522,7 +522,18 @@ class NanoparticleCore:
             return hash((self.label, self.junctionParam))
 
     class Site:
-        def __init__(self, host, mountPoint, orientation, junctionTypes=None, passivateBy=None,
+        """
+        Class Site describes docking site
+        The object stores information of the host structure, mountPoint and the orientation.
+        orientation vector points OUTWARDS the structure
+
+        The object has method dock(self, other, ownAxisAngle=0), that returns the structure of the "other" site, so that
+        the "mountPoint"s coincide and orientations FACE each other (--> <--). Also rotation of the "other" by angle
+        ownAxisAngle around its orientation is performed
+
+        """
+
+        def __init__(self, host, mountPoint, orientation, junctionTypes=None, passivateBy=None, id=0,
                      mountPointOffset=None):
             self.host = host
             self.orientation = np.array(orientation)
@@ -551,26 +562,31 @@ class NanoparticleCore:
 
         def performOffset(self, mountPointOffset):
             """
-            Shifts mountpoint so that it's located not too close to the host structure. the distance is either
+            Shifts mountPoint so that it's located not too close to the host structure. the distance is either
             user-defined (mountPointOffset=R), or equals to covalent atomic radius
+            Let A -- atomic position
+                e -- unit vector (self.self.orientation with proper dimensions)
+                M -- self.mountPoint
+                R -- radius of sphere around A, that we don't penetrate
+            Objective:
+                out of two points:
+                    Q1, Q2 -- intersections of a line (M,e) with a sphere (A, R)
+                find the one that has the largest coordinate along e and update M to that point
+            Code performs this operation to all atoms in vectorized fashion and finds the maximum shift along e
             @param mountPointOffset: float or "covalent"
             @return:
             """
-            e = self.orientation.reshape((1,-1))
-            x = self.mountPoint - self.host._structure.getCartesianCoordinates()
-            l = (x @ e.T)
-            le = l @ e
+            e = self.orientation.reshape((1, -1))
+            AM = self.mountPoint - self.host.getStructure().getCartesianCoordinates()
+            AMx = (AM @ e.T)  # projection of AM onto e
+            eAMx = AMx @ e  # component of AM along e
             if mountPointOffset == "covalent":
                 radii = np.array([x.covalent_radius for x in self.host.getStructure().getAtomTypes()])
             else:
                 radii = mountPointOffset
-            shift_coeff = np.nanmax(-l.T[0] + np.sqrt(radii ** 2 - np.linalg.norm(x - le, axis=1) ** 2))
+            shift_coeff = np.nanmax(-AMx.T[0] + np.sqrt(radii ** 2 - np.linalg.norm(AM - eAMx, axis=1) ** 2))
             if not np.isnan(shift_coeff):
                 self.mountPoint = self.mountPoint + self.orientation * shift_coeff
-
-
-
-            pass
 
     class Assembler:
 
