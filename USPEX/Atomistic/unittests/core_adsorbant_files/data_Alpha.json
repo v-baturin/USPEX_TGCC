@@ -1,7 +1,7 @@
 { "adsorbants": [
                  { "type": "adsorbant",
                    "filename": "./phenyl.xyz",
-                   "mountPoint": [1.2194, -0.1652, 2.16],
+                   "mountPoint": [1.05521938, -0.14293822,  1.86909848],
                    "orientation": [0.49042023, -0.06649766, 0.86894537],
                    "junctionTypes": ["VERTEX"],
                    "name": "phenyl"
