@@ -21,11 +21,10 @@ class CoreAdsorbantRandomGenerator:
         npCoreAssembler = np.random.choice(self.environmentUtility.assemblers)
         adsTypesSitesDiGraph = npCoreAssembler.getAdsJuncSiteGraph(self.adsorbantUtility.adsorbants)
         current_adsorption = dict()
-        for varied_item, quantity in composition.items():
-            pass
-
-
-        pass
-
-# Code for development purposes ****
-
+        molecules = []
+        for ads, quantity in composition.items():
+            compatibleSites = list([adsTypesSitesDiGraph.successors(y) for y in adsTypesSitesDiGraph.successors(ads)][0])
+            selectedSites = np.random.choice(compatibleSites, quantity)
+            for site in selectedSites:
+                molecules.append(site.dock(self.adsorbantUtility.adsorbants[ads]))
+                adsTypesSitesDiGraph.remove_node(site)
