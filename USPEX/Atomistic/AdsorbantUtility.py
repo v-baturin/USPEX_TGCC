@@ -22,9 +22,9 @@ class Adsorbant:
         properClassJunctionTypes = []
         for jt in junctionTypes:
             if jt in ALPHA_JUNCTION_LABELS:
-                properClassJunctionTypes.append(JunctionType(label=jt, adsRadius=self._r))
+                properClassJunctionTypes.append(JunctionType(label=jt, junctParam=self._r))
             else:
-                properClassJunctionTypes.append(JunctionType(label=jt, adsRadius=None))
+                properClassJunctionTypes.append(JunctionType(label=jt, junctParam=None))
         junctionTypes = frozenset(properClassJunctionTypes)
         self.site = Site(host=self, mountPoint=mountPoint, orientation=orientation, junctionTypes=junctionTypes)
 
@@ -64,3 +64,5 @@ class AdsorbantUtility(object):
                 self._adsorbantsJunctionTypes |= set(ads.junctionTypes)
         return self._adsorbantsJunctionTypes
 
+
+__author__ = "Vladimir Baturin"

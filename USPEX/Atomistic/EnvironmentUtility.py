@@ -490,21 +490,36 @@ class Bulk:
 
 
 class NanoparticleCore:
+    """
+    Class NanoparticleCore provides basic functionality for Core-Adsorbant search.
+    It consists of the following classes:
+    Assembler -- the factory that creates the NanoparticleCore objects and has the utilities that create, store and
+    select docking Sites, store the history of processed combinations of core sites and adsorbants
+    """
 
     class JunctionType:
-        def __init__(self, label, adsRadius=None):
+        def __init__(self, label, junctParam=None):
             self.label = label
-            self.adsRadius = adsRadius
+            self.junctionParam = junctParam
 
         def __repr__(self):
-            return f"<junctionType {self.label}, R={self.adsRadius:.2f}>" if self.adsRadius \
-                else f"<junctionType {self.label}>"
+            if isinstance(self.junctionParam, float):
+                paramstr = f", {self.junctionParam:.2f}"
+            elif self.junctionParam is not None:
+                paramstr = f", {self.junctionParam}"
+            else:
+                paramstr = ""
+            return f"<junctionType {self.label}{paramstr}>"
 
         def __eq__(self, other):
-            return (self.label == other.label) and (self.adsRadius == other.adsRadius)
+            try:
+                isParamEqual = (np.abs(self.junctionParam - other.junctionParam) < 1e-6)
+            except TypeError:
+                isParamEqual = (self.junctionParam == other.junctionParam)
+            return (self.label == other.label) and isParamEqual
 
         def __hash__(self):
-            return hash((self.label, self.adsRadius))
+            return hash((self.label, self.junctionParam))
 
     class Site:
         def __init__(self, host, mountPoint, orientation, junctionTypes=None, passivateBy=None,
@@ -667,31 +682,6 @@ class NanoparticleCore:
                 structure=structure,
             )
             return environment
-
-        def calcCovOffset(self, site, dist):
-            """
-            shifts mountpoint of site in order to respect interatomic distances
-            """
-            # mPoint = site.mountPoint
-            # v = site.orientation
-            #
-            # def find_x(a, e, r):
-            #     # intersection of ray (mountPoint, orientation) and a sphere around
-            #     a = mountPoint - atomCoords
-            #     rts = np.roots([np.dot(e, e), 2 * np.dot(e, a), np.dot(a, a) - r ** 2])
-            #     rts = rts[np.isreal(rts)]
-            #     return np.max([0., np.max(rts)])
-            #
-            # max_x = -np.inf
-            # max_i = -1
-            # for i in range(len(a)):
-            #     x = find_x(a[i], e, r[i])
-            #     if x is not None and x > max_x:
-            #         max_x = x
-            #         max_i = i
-            # return max_x, max_i
-            correctedSite = site
-            return correctedSite
 
     processingStyles = {
         'onlyEnvironment': 'getStructure'
