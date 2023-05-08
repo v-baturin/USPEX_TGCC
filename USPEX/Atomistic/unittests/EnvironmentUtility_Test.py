@@ -51,7 +51,7 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
         structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
                                                               cell=Cell.initFromCellVectors((0, 0, 0)),
                                                               environment=assembler.assemble())
-        AtomisticRepresentation.writeXYZ(pj(self.TEST_FILES_DIR, 'out.xyz'), structure)
+        AtomisticRepresentation.writeXYZ(pj(self.TEST_FILES_DIR, 'outAlpha.xyz'), structure)
 
 def json2dict(fname):
     with open(fname, 'r') as f:
