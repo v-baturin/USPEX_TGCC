@@ -536,19 +536,20 @@ class NanoparticleCore:
         def __init__(self, host, mountPoint, orientation, junctionTypes=None, passivateBy=None, id=0,
                      mountPointOffset=None):
             self.host = host
+            self.id = id
             self.orientation = np.array(orientation)
             self.mountPoint = np.array(mountPoint)
             if mountPointOffset:
                 self.performOffset(mountPointOffset)
-            self.junctionTypes = junctionTypes if junctionTypes else None #frozenset([NanoparticleCore.JunctionType(jt) for jt in junctionTypes]) \
+            self.junctionTypes = junctionTypes if junctionTypes else None  # frozenset([NanoparticleCore.JunctionType(jt) for jt in junctionTypes]) \
             self.passivateBy = passivateBy
 
         def __repr__(self):
-            return f"<Site@ {self.host}, junctionTypes={self.junctionTypes}"
+            return f"<Site #{self.id} {self.host}, junctionTypes={self.junctionTypes}>"
 
-        def dock(self, other, ownAxisAngle=0):
+        def dock(self, other, otherAxisAngle=0):
             assert self.junctionTypes & other.junctionTypes
-            rotAroundOrientationAxis = Transformation.fromRotVector(-other.orientation * ownAxisAngle,
+            rotAroundOrientationAxis = Transformation.fromRotVector(-other.orientation * otherAxisAngle,
                                                                     -other.mountPoint)
             rotated_structure = rotAroundOrientationAxis.transform(other.host.getStructure())
             rot_ax = np.cross(-other.orientation, self.orientation)
@@ -598,8 +599,9 @@ class NanoparticleCore:
                 self.sites = []
             else:
                 for site in sites:
-                    site['junctionTypes'] = frozenset([NanoparticleCore.JunctionType(jt) for jt in site['junctionTypes']])
-                self.sites = [NanoparticleCore.Site(self, **site) for site in sites]
+                    site['junctionTypes'] = frozenset(
+                        [NanoparticleCore.JunctionType(jt) for jt in site['junctionTypes']])
+                self.sites = [NanoparticleCore.Site(self, id=idx, **site) for idx, site in enumerate(sites)]
                 for site in self.sites:
                     for junctionType in site.junctionTypes:
                         if junctionType in self._sitesByType:
@@ -639,29 +641,34 @@ class NanoparticleCore:
 
             newSites = []
 
-            if junctionType.adsRadius not in self._alphaShapesCollection:
-                alpha = 1 / (junctionType.adsRadius +
+            if junctionType.junctionParam not in self._alphaShapesCollection:
+                alpha = 1 / (junctionType.junctionParam +
                              np.max([at.covalent_radius for at in self._structure.getAtomTypes()]))
-                self._alphaShapesCollection[junctionType.adsRadius] = \
+                self._alphaShapesCollection[junctionType.junctionParam] = \
                     alphashape.alphashape(self._structure.getCartesianCoordinates(), alpha=alpha)
-            alphaShape = self._alphaShapesCollection[junctionType.adsRadius]
-
+            alphaShape = self._alphaShapesCollection[junctionType.junctionParam]
+            nSites = len(self.sites)
             if junctionType.label == "FACE":
-                newSites = [NanoparticleCore.Site(self, mountPoint=m, orientation=v, junctionTypes={junctionType},
-                                                  mountPointOffset=mountPointOffset)
-                            for m, v in zip(alphaShape.triangles_center, alphaShape.face_normals)]
+                newSites = [
+                    NanoparticleCore.Site(self, id=idx, mountPoint=m, orientation=v, junctionTypes={junctionType},
+                                          mountPointOffset=mountPointOffset)
+                    for m, v, idx in zip(alphaShape.triangles_center, alphaShape.face_normals,
+                                         range(nSites, nSites + len(alphaShape.triangles_center)))]
             elif junctionType.label == "VERTEX":
-                newSites = [NanoparticleCore.Site(self, mountPoint=m, orientation=v, junctionTypes={junctionType},
-                                                  mountPointOffset=mountPointOffset)
-                            for m, v in zip(alphaShape.vertices, alphaShape.vertex_normals)]
+                newSites = [
+                    NanoparticleCore.Site(self, id=idx, mountPoint=m, orientation=v, junctionTypes={junctionType},
+                                          mountPointOffset=mountPointOffset)
+                    for m, v, idx in zip(alphaShape.vertices, alphaShape.vertex_normals,
+                                         range(nSites, nSites + len(alphaShape.vertices)))]
             elif junctionType.label == "EDGE":
                 edgeSites = []
-                for adj_e, adj_f in zip(alphaShape.face_adjacency_edges, alphaShape.face_adjacency):
+                for adj_e, adj_f, idx in zip(alphaShape.face_adjacency_edges, alphaShape.face_adjacency,
+                                             range(nSites, nSites + len(alphaShape.face_adjacency))):
                     origin = 0.5 * (alphaShape.vertices[adj_e[0]] + alphaShape.vertices[adj_e[1]])
                     normal = alphaShape.face_normals[adj_f[0]] + alphaShape.face_normals[adj_f[1]]
                     normal /= np.linalg.norm(normal)
                     edgeSites.append(
-                        NanoparticleCore.Site(self, mountPoint=origin, orientation=normal,
+                        NanoparticleCore.Site(self, id=idx, mountPoint=origin, orientation=normal,
                                               junctionTypes={junctionType}, mountPointOffset=mountPointOffset))
                 newSites = edgeSites
             self._sitesByType[junctionType] = newSites
