@@ -6,7 +6,7 @@ optimizer : {type : GlobalOptimizer
                       environmentUtility: {environments: [np_core]}}
              optType: enthalpy
              selection: {type: USPEXClassic
-                         popSize: 20
+                         popSize: 5
                          optType: (aging enthalpy)
                          fractions: {coreAdsorbantRandomGenerator: (1.0 1.0 1.0)
                                      }
