@@ -56,7 +56,8 @@ class CoreAdsorbantRandomGenerator:
                 if adsorptionmap in npCoreAssembler.seenAdsorptions:
                     failCounter += 1
                     continue
-                offspring = {'molecules': molecules, 'cell': self.cell, 'environment': npCoreAssembler.assemble()}
+                offspring = {'molecules': molecules, 'cell': self.cell,
+                             'environment': npCoreAssembler.assemble(molecules)}
                 # atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                 # minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
                 structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring)

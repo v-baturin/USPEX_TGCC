@@ -626,8 +626,14 @@ class NanoparticleCore:
         def __repr__(self):
             return f"<Core {self._structure.getFormula()}>"
 
-        def assemble(self, **kwargs):
-            return NanoparticleCore(self._structure, self._indices, self)
+        def assemble(self, molecules, **kwargs):
+            sysStruct, _ = EnvironmentUtility.atomicDisassemblerType.assemble(molecules + [self._structure],
+                                                                           cell=self._structure.getCell())
+            newCell = self.getCell().getEnvelopeCell(sysStruct.getCartesianCoordinates())
+            newEnvStructure = EnvironmentUtility.structureType(self._structure.getAtomTypes(),
+                                                               self._structure.getCartesianCoordinates(),
+                                                               newCell)
+            return NanoparticleCore(newEnvStructure, self._indices, self)
 
         def getSitesByType(self, junctionType):
             if junctionType in self._sitesByType:
