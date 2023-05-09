@@ -29,7 +29,7 @@ def compileParams(main: dict) -> dict:
                     symbol['junctionTypes'] = symbol['junctionTypes']
                 symbols[i] = symbol['name']
                 adsorbants[symbol.pop('name')] = symbol
-                elementalSymbols |= set(symbol['structure'].getAtomTypes())
+                elementalSymbols |= set([x.short_name for x in symbol['structure'].getAtomTypes()])
             else:
                 molDct = read_molecule(symbol['filename'])
                 molecules[symbol['name']] = molDct
