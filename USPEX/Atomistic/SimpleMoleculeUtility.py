@@ -43,6 +43,7 @@ class SimpleMoleculeUtility(object):
 
         """
         self.isTrueMolecular = bool(molecules)
+        self.isCoreAdsorbant = bool(adsorbants)
         self.molecules = {el.short_name : self.structureType([el], [[0., 0., 0.]]) for el in self.atomType.all_elements()}
         if molecules is not None:
             for symbol, molDct in list(molecules.items()):
@@ -58,11 +59,6 @@ class SimpleMoleculeUtility(object):
                 self.molecules[symbol] = adsDct['structure']
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
         # TODO: what if we have two molecules with same formula?
-
-    def extendMolecules(self, newMolecules: dict = None):
-        for molName, molstruct in newMolecules:
-            self.molecules[molName] = molstruct
-            self.formulaToTypeMap[molstruct.getFormula()] = molName
 
 
     def populateStructure(self, cell, operations):

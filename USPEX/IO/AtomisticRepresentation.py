@@ -451,6 +451,7 @@ class AtomisticRepresentation(object):
         header = []
         ut = target.utilities
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
+        isCoreAdsorbant = ut.simpleMoleculeUtility.isCoreAdsorbant
         isVarComp = not ut.compositionSpace.isFixedComposition
         dim = ut.cellUtility.getDim()
         hasEnv = len(ut.environmentUtility.assemblers) > 0
@@ -464,6 +465,7 @@ class AtomisticRepresentation(object):
         row = '    System type          :  Atomistic\n'
         row += f'    Dimension            :  {dim}\n'
         row += f'    Molecular            :  {"Yes" if isMolSystem else "No"}\n'
+        row += f'    Core-Adsorbants      :  {"Yes" if isCoreAdsorbant else "No"}\n'
         row += f'    Variable composition :  {"Yes" if isVarComp else "No"}\n'
         row += f'    Has environment      :  {"Yes" if hasEnv else "No"}\n'
 
@@ -488,15 +490,14 @@ class AtomisticRepresentation(object):
                     f'        {lattice[1, 0]:.4}   {lattice[1, 1]:.4}    {lattice[1, 2]:.4}',
                     f'        {lattice[2, 0]:.4}   {lattice[2, 1]:.4}    {lattice[2, 2]:.4}']
         else:
-            pass  # TODO: Compatibility between SimpleMoleculeUtility and AdsorbantsUtility
-            # rows = ['    Volume (estimated) for blocks :']
-            # for block in compositionSpace.blocks:
-            #     comp = Counter()
-            #     for s, b in zip(symbols, block):
-            #         comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
-            #
-            #     volume = ut.bondUtility.volumeEstimator.calcCompositionVolume(comp, ut.conditions.externalPressure)
-            #     rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
+            rows = ['    Volume (estimated) for blocks :']
+            for block in compositionSpace.blocks:
+                comp = Counter()
+                for s, b in zip(symbols, block):
+                    comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
+
+                volume = ut.bondUtility.volumeEstimator.calcCompositionVolume(comp, ut.conditions.externalPressure)
+                rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
 
         rows.append('')
         header += rows
@@ -539,8 +540,7 @@ class AtomisticRepresentation(object):
 
         symbols = set()
         for symbol in ut.compositionSpace.symbols:
-            # symbols.update(ut.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
-            pass  # TODO: Compatibility between SimpleMoleculeUtility and AdsorbantsUtility
+            symbols.update(ut.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
         symbols = sorted(symbols)
         minDistMatrix = ut.bondUtility.getDistances(symbols, ut.conditions.externalPressure)
 
@@ -588,9 +588,8 @@ class AtomisticRepresentation(object):
     def getPopulationSummaryBlock(population, optimizer) -> list:
         utlts = optimizer.target.utilities
         if utlts.cellUtility.getDim() == 3:
-            # numBlocks = [utlts.compositionSpace.numBlocks(utlts.simpleMoleculeUtility.composition(system)) for system in population]
-            numBlocks = np.asarray([]) # TODO: Compatibility between SimpleMoleculeUtility and AdsorbantsUtility
-            # numBlocks = np.asarray(numBlocks)
+            numBlocks = [utlts.compositionSpace.numBlocks(utlts.simpleMoleculeUtility.composition(system)) for system in population]
+            numBlocks = np.asarray(numBlocks)
             volumes = [optimizer.fitness.getFitnessDirect('cellUtility.volume', system) for system in population]
             volumes = np.asarray(volumes)
             approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
