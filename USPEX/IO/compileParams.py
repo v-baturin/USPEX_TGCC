@@ -37,6 +37,7 @@ def compileParams(main: dict) -> dict:
                 elementalSymbols |= set(molDct['symbols'])
         if adsorbants:
             target['adsorbantUtility'] = {'adsorbants': adsorbants}
+            target['simpleMoleculeUtility'] = {'adsorbants': adsorbants}  # TODO: get rid of this abomination
         if molecules:
             target['simpleMoleculeUtility'] = {'molecules': molecules}
         if 'selection' in optimizer:

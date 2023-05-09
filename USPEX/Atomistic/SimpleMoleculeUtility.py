@@ -37,7 +37,7 @@ class SimpleMoleculeUtility(object):
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, molecules : dict = None):
+    def __init__(self, molecules : dict = None, adsorbants: dict = None):
         """
         :param molecules: {<name>: <definition>} dictionary of molecule definitions.
 
@@ -53,7 +53,17 @@ class SimpleMoleculeUtility(object):
                 offset = Transformation.fromRotVector([0.,0.,0.], -molecule.getCenterOfMassCartesianCoordinates())
                 molecule = offset.transform(molecule)
                 self.molecules[symbol] = molecule
+        if adsorbants is not None:
+            for symbol, adsDct in adsorbants.items():
+                self.molecules[symbol] = adsDct['structure']
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
+        # TODO: what if we have two molecules with same formula?
+
+    def extendMolecules(self, newMolecules: dict = None):
+        for molName, molstruct in newMolecules:
+            self.molecules[molName] = molstruct
+            self.formulaToTypeMap[molstruct.getFormula()] = molName
+
 
     def populateStructure(self, cell, operations):
         """
