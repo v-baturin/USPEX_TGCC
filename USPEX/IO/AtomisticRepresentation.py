@@ -384,15 +384,18 @@ class AtomisticRepresentation(object):
         atoms = read(filename, format='xyz')
         atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
         coordinates = atoms.get_positions()
-        return cls.structureType(atomTypes, coordinates)
+        cell = cls.cellType.initFromCellParameters((0, 0, 0)).getEnvelopeCell(coordinates)
+        return cls.structureType(atomTypes, coordinates, cell)
 
     @classmethod
     def readXYZs(cls, filename):
         all_atoms = read(filename, index=':', format='xyz')
         all_systems = []
+        dummy_cell = cls.cellType.initFromCellParameters((0, 0, 0))
         for atoms in all_atoms:
             all_systems.append(cls.structureType([cls.atomType(s) for s in atoms.get_chemical_symbols()],
-                                                 atoms.get_positions()))
+                                                 atoms.get_positions(),
+                                                 dummy_cell.getEnvelopeCell(atoms.get_positions())))
         return all_systems
 
     @classmethod
