@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.spatial.distance import cdist
-from collections import namedtuple
 from .EnvironmentUtility import NanoparticleCore
 import logging
 

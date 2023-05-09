@@ -593,7 +593,7 @@ class NanoparticleCore:
 
         def __init__(self, structure, sites=None, isFixed: bool = True, **kwargs):
             self._structure = structure
-            self.seenAdsorptions = []  # [{site1: ads1, {site2:ads12}, ...}, ...]
+            self.seenAdsorptions = []  # [{site1: ads1, site2:ads12, ...}, ...]
             self._sitesByType = {}
             if sites is None:
                 self.sites = []
