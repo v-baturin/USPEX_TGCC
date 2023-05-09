@@ -549,9 +549,10 @@ class NanoparticleCore:
 
         def dock(self, other, otherAxisAngle=0):
             assert self.junctionTypes & other.junctionTypes
-            rotAroundOrientationAxis = Transformation.fromRotVector(-other.orientation * otherAxisAngle,
-                                                                    -other.mountPoint)
-            rotated_structure = rotAroundOrientationAxis.transform(other.host.getStructure())
+            shiftOriginToMountpoint = Transformation.fromRotVector((0.,0.,0.), -other.mountPoint)
+            rotAroundOrientationAxis = Transformation.fromRotVector(-other.orientation * otherAxisAngle, 0.)
+            rotated_structure =\
+                rotAroundOrientationAxis.transform(shiftOriginToMountpoint.transform(other.host.getStructure()))
             rot_ax = np.cross(-other.orientation, self.orientation)
             rot_ax /= np.linalg.norm(rot_ax)
             alpha = np.arccos(-other.orientation @ self.orientation)
