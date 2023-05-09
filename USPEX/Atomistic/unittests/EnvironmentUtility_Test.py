@@ -36,7 +36,7 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
     def test_dock_NDI(self):
         assembler = self.NDI_core.assemblers[0]
         adsorbant = self.adsorbantsNDI.adsorbants['X2']
-        new_ads_struct = assembler.sites[0].dock(adsorbant.site)
+        new_ads_struct = assembler.sites[0].dock(adsorbant.site, np.pi / 2)
         structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
                                                               cell=Cell.initFromCellVectors((0,0,0)),
                                                               environment=assembler.assemble())
