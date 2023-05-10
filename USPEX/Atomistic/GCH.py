@@ -1,6 +1,5 @@
 import logging
 import numpy as np
-import pandas as pd
 
 from ..Fitness.ConvexHull import ConvexHull
 from ..Fitness.Fitness import Fitness
@@ -45,9 +44,11 @@ class GeneralizedConvexHull(ConvexHull):
 
         self.systems = systems
         if len(self.systems) <= self.DIMENSIONALITY:
-            self._df = pd.DataFrame(columns=['argument', 'property', 'height', 'depth'])
-            for i, system in enumerate(systems):
-                self._df.loc[i] = None, None, 0.0, 0.0
+            size = len(systems)
+            self._argument = np.full(size, None)
+            self._properties = np.full(size, None)
+            self._height = np.full(size, 0.0)
+            self._depth = np.full(size, 0.0)
         else:
             pool = SystemPool()
             pool.update(self.systems)
@@ -75,9 +76,11 @@ class GeneralizedConvexHull(ConvexHull):
     def extend(self, systems: list):
         self.systems.extend(systems)
         if len(self.systems) <= self.DIMENSIONALITY:
-            self._df = pd.DataFrame(columns=['argument', 'property', 'height', 'depth'])
-            for i, system in enumerate(systems):
-                self._df.loc[i] = None, None, 0.0, 0.0
+            size = len(systems)
+            self._argument = np.full(size, None)
+            self._properties = np.full(size, None)
+            self._height = np.full(size, 0.0)
+            self._depth = np.full(size, 0.0)
         else:
             pool = SystemPool()
             pool.update(self.systems)

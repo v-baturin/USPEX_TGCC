@@ -353,13 +353,13 @@ class Group(object):
         # We want to divide our generators into two parts. One -- generators preserving our position.
         # And second -- ones not preserving.
         # Generators preserving our position might differ from our initial generators.
-        allGenerators = [np.identity(4, dtype=np.float)]
+        allGenerators = [np.identity(4, dtype=float)]
         allDimensions = [1]
         trivialGenerators = [0]
         nonTrivialGenerators = [0]
 
         for generator, dimension in zip(generators, dimensions):
-            if not np.allclose(generator, np.identity(4, dtype=np.float)):
+            if not np.allclose(generator, np.identity(4, dtype=float)):
                 operators = _generate_full_symmetry_ops(allGenerators, (1, 1, 1))
                 trivial = False
                 for modifier in self.operators:

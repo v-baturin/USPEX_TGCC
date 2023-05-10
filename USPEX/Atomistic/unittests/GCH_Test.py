@@ -9,7 +9,6 @@
 
 
 import numpy as np
-import pandas as pd
 import os
 import unittest
 
@@ -27,35 +26,39 @@ FeC_gch_path = pj(TESTPATH, 'FeC_gch_test')
 def read_structures_and_energies(symbols, folder : str):
     with open(pj(folder, 'Individuals'), 'r') as fp:
         info = fp.readlines()[2:]
-    DATA = pd.DataFrame(columns=['Generation', 'ID', 'composition', 'enthalpy'], dtype=int)
     all_systems = AtomisticRepresentation.readAtomicStructures(pj(folder, 'gatheredPOSCARS'))
     assert all_systems
     radialDistributionUtility = RadialDistributionUtility(symbols=symbols)
 
+    generations = []
+    IDs = []
     populations = []
-    for i, (_info, system) in enumerate(zip(info, all_systems)):
+    for _info, system in zip(info, all_systems):
         tmp = _info.split()
         gen = int(tmp[0])
         ID = int(tmp[1])
         _b, _e = tmp.index('['), tmp.index(']')
-        composition = [int(x) for x in tmp[_b+1:_e]]
+        # composition = [int(x) for x in tmp[_b+1:_e]]
         enthalpy = float(tmp[_e+1])
-        DATA.loc[i] = gen, ID, composition, enthalpy
+        generations.append(gen)
+        IDs.append(ID)
         system['ID'] = ID
         system['isBad'] = False
         system['enthalpy'] = enthalpy
         system['fingerprint'] = radialDistributionUtility.structureFingerprint(system)
 
-    for gen in np.unique(DATA.Generation.astype(int)):
-        ids = DATA[DATA.Generation == gen]['ID'].astype(int)
+    generations = np.asarray(generations, dtype=int)
+    IDs = np.asarray(IDs, dtype=int)
+    for gen in np.unique(generations):
+        ids = IDs[np.where(generations == gen)]
         populations.append([system for system in all_systems if system['ID'] in ids])
-    return DATA, populations, all_systems
+    return populations, all_systems
 
 
 class GenConvexHull_Si_Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.data, cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Si'], folder=Si_gch_path)
+        cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Si'], folder=Si_gch_path)
         cls.config = CompositionSpace(symbols=['Si'], blocks=[[8]], range=[[1, 1]])
         # All systems will be added to the convex hull at one moment.
         # Systems will be added to the convex hull step by step.
@@ -94,7 +97,7 @@ class GenConvexHull_Si_Test(unittest.TestCase):
 class GenConvexHull_FeC_Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.data, cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Fe', 'C'], folder=FeC_gch_path)
+        cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Fe', 'C'], folder=FeC_gch_path)
         cls.config = CompositionSpace(symbols=['Fe', 'C'], blocks=[[3,1]], range=[[1, 10]], minAt=4, maxAt=40)
 
     def test_is_on_CH_short(self):
