@@ -7,10 +7,6 @@ USPEX.Stages.VASP_Interface
 import logging
 import numpy as np
 import shutil
-
-from ase.io.vasp import read_vasp_out, write_vasp
-from ase.atoms import Atoms
-from ase.constraints import FixAtoms
 from pathlib import Path
 from typing import List
 
@@ -202,8 +198,6 @@ class VASP_Interface:
         # end
 
         return ''
-
-############reading part
 
     def isConverged(self, calcFolder: Path):
         '''

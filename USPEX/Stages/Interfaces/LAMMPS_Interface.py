@@ -157,7 +157,7 @@ class LAMMPS_Interface:
             output = calcFolder/self.log_file
         else:
             return False
-        
+
         with open(output, 'r') as f:
             content = f.readlines()
 
@@ -174,7 +174,7 @@ class LAMMPS_Interface:
             if 'Breaking threshold exceeded' in line:
                 lammps_completed = True
                 tolerance_achieved = True
-        
+
         if not tolerance_achieved:
             logger.error('LAMMPS minimization tolerance criteria is not achieved.')
             shutil.copy(output,  calcFolder/f'ERROR-{self.outputFile}')

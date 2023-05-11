@@ -36,7 +36,6 @@ class ABINIT_Interface:
     outputFile = 'output'
     errorFile = 'error'
 
-
     DEFAULT_SLEEP_TIME = 30
     structureType = None
     atomType = None
@@ -48,8 +47,12 @@ class ABINIT_Interface:
         cls.atomType = atomType
         cls.cellType = cellType
 
-    def __init__(self, tag: str, kresol: float,  in_file: str = None, pp_files: List[str] = None,
-                 targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str, 
+                       kresol: float,
+                       in_file: str = None,
+                       pp_files: List[str] = None,
+                       targetProperties: list = None,
+                       **kwargs):
         """
         Initializes the class.
 
@@ -77,7 +80,8 @@ class ABINIT_Interface:
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
         """
-        :param system: our system
+        :param system:
+        :param calcFolder:
         :return:
         """
         structure = system['structure']
@@ -86,7 +90,6 @@ class ABINIT_Interface:
         system['pbc'] = cell.getPBC()
         coordinates = structure.getCartesianCoordinates()
         atomTypes = structure.getAtomTypes()
-
 
         ############################# FILES FILE ################################
         for pp_file_path in self.pp_files:
@@ -100,7 +103,7 @@ class ABINIT_Interface:
                     'abinit\n')
 
             # pp files need to be ordered by increasing atomic number
-            pp_files_names = [os.path.split(pp_file_path)[1] for pp_file_path in self.pp_files]
+            pp_files_names = [pp_file_path.name for pp_file_path in self.pp_files]
             for pp_file_name in sorted(pp_files_names, key=lambda e: self.atomType(e.split('.')[0]).z):
                 f.write(f'{pp_file_name}\n')
 
@@ -119,7 +122,7 @@ class ABINIT_Interface:
 
                 param = clean_line.partition(' ')[0]
                 if param in ignored_params:
-                    msg = (f'The parameter {param:s} that you specified in {os.path.split(self.in_file)[1]:s}'
+                    msg = (f'The parameter {param:s} that you specified in {self.in_file.name}'
                            'will have no effect since it will be overwritten by USPEX.')
                     logger.warning(msg)
                 else:
@@ -250,7 +253,7 @@ class ABINIT_Interface:
 
     def isConverged(self, calcFolder: Path):
         """
-        :param SYSTEM:
+        :param calcFolder:
         :return: (bool) whether system calculation converged
         """
 
@@ -271,7 +274,6 @@ class ABINIT_Interface:
                     shutil.copy(calcFolder/self.out_file_name, calcFolder/f"ERROR{self.out_file_name}")
                     self.failedSystems.append(calcFolder)
                     return False
-
         return True
 
     def readOutput(self, system, calcFolder: Path):
