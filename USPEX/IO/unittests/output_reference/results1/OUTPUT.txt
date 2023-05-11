@@ -53,6 +53,7 @@
     Molecular            :  No
     Variable composition :  No
     Has environment      :  No
+    Core-Adsorbants      :  No
 
     The investigated system is (block -- range): 
         <Mg>4<Al>8<O>16  --  [1 1]

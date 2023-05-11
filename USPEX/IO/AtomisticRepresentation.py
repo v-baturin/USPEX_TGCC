@@ -465,9 +465,9 @@ class AtomisticRepresentation(object):
         row = '    System type          :  Atomistic\n'
         row += f'    Dimension            :  {dim}\n'
         row += f'    Molecular            :  {"Yes" if isMolSystem else "No"}\n'
-        row += f'    Core-Adsorbants      :  {"Yes" if isCoreAdsorbant else "No"}\n'
         row += f'    Variable composition :  {"Yes" if isVarComp else "No"}\n'
         row += f'    Has environment      :  {"Yes" if hasEnv else "No"}\n'
+        row += f'    Core-Adsorbants      :  {"Yes" if isCoreAdsorbant else "No"}\n'
 
 
         formatted_rows.append(row)
