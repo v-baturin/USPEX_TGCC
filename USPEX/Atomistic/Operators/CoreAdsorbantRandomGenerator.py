@@ -8,7 +8,7 @@ from scipy.special import binom
 MAX_CORELIGAND_TIME = 30
 MAX_RANDOM_TIME = 300
 MAX_CORELIGAND_ATTEMPTS = 1000
-MAX_ROTATION_ATTEMPTS = 20  # rotation step will be 2pi/MAX_ROTATION_ATTEMPTS
+TOTAL_ROTATION_STEPS = 20  # rotation step will be 2pi/MAX_ROTATION_ATTEMPTS
 MAX_SITE_SAMPLES_TRY = 1000
 
 
@@ -21,7 +21,7 @@ class CoreAdsorbantRandomGenerator:
         self.conditions = utilities.conditions
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.all_angles = 2 * np.pi * np.arange(MAX_ROTATION_ATTEMPTS) / MAX_ROTATION_ATTEMPTS
+        self.angle_indices = np.arange(TOTAL_ROTATION_STEPS)
         self.cell = self.cellUtility.cellType.initFromCellParameters((0, 0, 0))
 
         if debug:
@@ -50,7 +50,7 @@ class CoreAdsorbantRandomGenerator:
                 adsTypesSitesDiGraph = npCoreAssembler.getAdsJuncSiteGraph(self.adsorbantUtility.adsorbants)
                 tmp_molecules = []
                 tmp_offspring = {}
-                adsorptionmap = set()
+                goodAdsorptionmap = set()
                 for adsName, quantity in composition.items():
                     adsorbant = self.adsorbantUtility.adsorbants[adsName]
                     compatibleSites = select_compatible_sites(adsName, adsTypesSitesDiGraph)
@@ -62,27 +62,49 @@ class CoreAdsorbantRandomGenerator:
                     max_samples_try = int(min(MAX_SITE_SAMPLES_TRY, binom(len(compatibleSites), quantity)))
                     i_sample = 0
                     isDocked = False
+
                     while i_sample <= max_samples_try and not isDocked:
                         sample_molecules = tmp_molecules.copy()
                         sites_sample_attempt = np.random.choice(compatibleSites, quantity, replace=False)
                         i_sample += 1
                         for site in sites_sample_attempt:
-                            for angle in list(np.random.permutation(self.all_angles)):
+                            for k_angle in list(np.random.permutation(self.angle_indices)):
+                                angle = 2 * np.pi * k_angle / TOTAL_ROTATION_STEPS
+                                sampleAdsorptionMap = {(site.id, adsName, k_angle) for site in sites_sample_attempt}
+                                if npCoreAssembler.isBadAdsMap(sampleAdsorptionMap | goodAdsorptionmap):
+                                    continue
                                 dock_attempt = site.dock(adsorbant.site, angle)
                                 tmp_offspring, isDocked = self.checkDocking(sample_molecules, dock_attempt, npCoreAssembler)
                                 if isDocked:
                                     sample_molecules.append(dock_attempt)
                                     break  # from angles loop, to the next site
+                                npCoreAssembler.addBadAdsorption(goodAdsorptionmap | sampleAdsorptionMap)
                                 # bad angle, going to next one
+
+                        # done with this sample
+                        # add mapping to previously seen
+
                         if isDocked:  # all sites in the sample are docked,
+                            goodAdsorptionmap |= sampleAdsorptionMap
                             tmp_molecules = sample_molecules
                             for site in sites_sample_attempt:
                                 adsTypesSitesDiGraph.remove_node(site)
                             break  # we can go the next adsName
-                        # else -- bad sample, going to the next one
+
+                        logger.debug(f"Attempt {i_sample}: bad sample, moving to next one")
                     if not isDocked:
                         raise Exception(f"Can't dock {adsName} after {max_samples_try} tries")
-                return tmp_offspring,
+                adsMapString = ' '.join([
+                    f"(site {x[0]}, {x[1]}, {int(360 * x[2] / TOTAL_ROTATION_STEPS)}\N{DEGREE SIGN})"
+                    for x in goodAdsorptionmap])
+                if not npCoreAssembler.isMapAlreadySeen(goodAdsorptionmap):
+                    npCoreAssembler.addSeenAdsorbtion(goodAdsorptionmap)
+                    logger.debug(f"Adsorption {adsMapString} sucessfully created")
+                    tmp_offspring['adsorption_map'] = goodAdsorptionmap
+                    return tmp_offspring,
+                else:
+                    logger.debug(f"Adsorption {adsMapString} already seen")
+                logger.debug(f"Core-Adsorbant generator failed")
             except Exception as e:
                 logger.debug(e, exc_info=True)
             failCounter += 1

@@ -595,6 +595,7 @@ class NanoparticleCore:
         def __init__(self, structure, sites=None, isFixed: bool = True, **kwargs):
             self._structure = structure
             self.seenAdsorptions = []  # [{site1: ads1, site2:ads12, ...}, ...]
+            self.badAdsorptions = []
             self._sitesByType = {}
             if sites is None:
                 self.sites = []
@@ -704,6 +705,21 @@ class NanoparticleCore:
                         DG.add_edge(jt, site)
                 self._adsJuncSiteGraph = DG
             return self._adsJuncSiteGraph.copy()
+
+        def addSeenAdsorbtion(self, adsMap):
+            self.seenAdsorptions.append(adsMap)
+
+        def addBadAdsorption(self, adsMap):
+            self.badAdsorptions.append(adsMap)
+
+        def isMapAlreadySeen(self, adsMap):
+            return adsMap in self.seenAdsorptions
+
+        def isBadAdsMap(self, adsMap):
+            for adsBadMap in self.badAdsorptions:
+                if adsBadMap.issubset(adsMap):
+                    return True
+            return False
 
         @staticmethod
         def build(filename, **kwargs):
