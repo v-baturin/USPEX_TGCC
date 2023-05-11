@@ -587,7 +587,7 @@ class NanoparticleCore:
             else:
                 radii = mountPointOffset
             shift_coeff = np.nanmax(-AMx.T[0] + np.sqrt(radii ** 2 - np.linalg.norm(AM - eAMx, axis=1) ** 2))
-            if not np.isnan(shift_coeff):
+            if not np.isnan(shift_coeff) and shift_coeff > 0.:
                 self.mountPoint = self.mountPoint + self.orientation * shift_coeff
 
     class Assembler:
