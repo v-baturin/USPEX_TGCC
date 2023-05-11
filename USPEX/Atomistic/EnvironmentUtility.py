@@ -547,17 +547,18 @@ class NanoparticleCore:
         def __repr__(self):
             return f"<Site #{self.id} {self.host}, junctionTypes={self.junctionTypes}>"
 
-        def dock(self, other, otherAxisAngle=0):
+        def dockTransformation(self, other, otherAxisAngle=0):
             assert self.junctionTypes & other.junctionTypes
             shiftOriginToMountpoint = Transformation.fromRotVector((0.,0.,0.), -other.mountPoint)
             rotAroundOrientationAxis = Transformation.fromRotVector(-other.orientation * otherAxisAngle, 0.)
-            rotated_structure =\
-                rotAroundOrientationAxis.transform(shiftOriginToMountpoint.transform(other.host.getStructure()))
+            # rotated_structure =\
+            #     rotAroundOrientationAxis.transform(shiftOriginToMountpoint.transform(other.host.getStructure()))
             rot_ax = np.cross(-other.orientation, self.orientation)
             rot_ax /= np.linalg.norm(rot_ax)
             alpha = np.arccos(-other.orientation @ self.orientation)
-            matchOrientation = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
-            return matchOrientation.transform(rotated_structure)
+            matchOrientationTransform = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
+            netTransform = matchOrientationTransform * (rotAroundOrientationAxis * shiftOriginToMountpoint)
+            return netTransform
 
         def __hash__(self):
             return hash(tuple(map(tuple, (self.mountPoint, self.orientation, self.junctionTypes))))

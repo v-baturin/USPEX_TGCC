@@ -35,8 +35,9 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
 
     def test_dock_NDI(self):
         assembler = self.NDI_core.assemblers[0]
-        adsorbant = self.adsorbantsNDI.adsorbants['X2']
-        new_ads_struct = assembler.sites[0].dock(adsorbant.site, np.pi / 2)
+        adsorbant = self.adsorbantsNDI.adsorbants['Y2']
+        dockingTransf = assembler.sites[2].dockTransformation(adsorbant.site, np.pi / 2)
+        new_ads_struct = dockingTransf.transform(adsorbant.getStructure())
         structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
                                                               cell=Cell.initFromCellVectors((0,0,0)),
                                                               environment=assembler.assemble([new_ads_struct]))
@@ -47,7 +48,8 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
         adsorbant = self.adsorbantsAlpha.adsorbants['phenyl']
         jtype, = adsorbant.site.junctionTypes
         assembler.getSitesByType(jtype)
-        new_ads_struct = assembler.sites[0].dock(adsorbant.site)
+        dockingTransf = assembler.sites[15].dockTransformation(adsorbant.site, np.pi / 2)
+        new_ads_struct = dockingTransf.transform(adsorbant.getStructure())
         structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
                                                               cell=Cell.initFromCellVectors((0, 0, 0)),
                                                               environment=assembler.assemble([new_ads_struct]))

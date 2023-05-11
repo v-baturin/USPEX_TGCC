@@ -73,7 +73,9 @@ class CoreAdsorbantRandomGenerator:
                                 sampleAdsorptionMap = {(site.id, adsName, k_angle) for site in sites_sample_attempt}
                                 if npCoreAssembler.isBadAdsMap(sampleAdsorptionMap | goodAdsorptionmap):
                                     continue
-                                dock_attempt = site.dock(adsorbant.site, angle)
+
+                                dockingTransfmn = site.dockTransformation(adsorbant.site, angle)
+                                dock_attempt = dockingTransfmn.transform(adsorbant.getStructure())
                                 tmp_offspring, isDocked = self.checkDocking(sample_molecules, dock_attempt, npCoreAssembler)
                                 if isDocked:
                                     sample_molecules.append(dock_attempt)
