@@ -58,9 +58,10 @@ class Seeds(object):
 
         seeds = []
 
-        hasDesciption = np.any(['.uspex' == filename.suffix for filename in seedsFolder.iterdir()])
+        USUF = '.uspex' # Suffix of uspex files
+        hasDesciption = np.any([USUF == filename.suffix for filename in seedsFolder.iterdir()])
         for filename in seedsFolder.iterdir:
-            if ('.uspex' in filename.suffix) == hasDesciption:
+            if (USUF == filename.suffix) == hasDesciption:
                 if filename.is_file():
                     systems = self.systemRepresentationClass.readAtomicStructures(filename, self.environmentUtility)
                     for system in systems:
