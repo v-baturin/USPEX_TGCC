@@ -39,7 +39,7 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
         new_ads_struct = assembler.sites[0].dock(adsorbant.site, np.pi / 2)
         structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
                                                               cell=Cell.initFromCellVectors((0,0,0)),
-                                                              environment=assembler.assemble())
+                                                              environment=assembler.assemble([new_ads_struct]))
         AtomisticRepresentation.writeXYZ(pj(self.TEST_FILES_DIR, 'outNDI.xyz'), structure)
 
     def test_dock_Alpha(self):
@@ -50,7 +50,7 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
         new_ads_struct = assembler.sites[0].dock(adsorbant.site)
         structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
                                                               cell=Cell.initFromCellVectors((0, 0, 0)),
-                                                              environment=assembler.assemble())
+                                                              environment=assembler.assemble([new_ads_struct]))
         AtomisticRepresentation.writeXYZ(pj(self.TEST_FILES_DIR, 'outAlpha.xyz'), structure)
 
 def json2dict(fname):
