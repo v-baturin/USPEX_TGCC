@@ -55,7 +55,7 @@ class GULP_Interface:
         ginput = Path.cwd()/f'Specific/ginput_{tag}' if ginput is None else Path(ginput)
         assert ginput.exists()
 
-        goptions = Path.cwd()/f'Specific/goptions_{tag}' if ginput is None else Path(goptions)
+        goptions = Path.cwd()/f'Specific/goptions_{tag}' if goptions is None else Path(goptions)
         assert goptions.exists()
 
         self.optimizedStructure = 'optimized.structure'
