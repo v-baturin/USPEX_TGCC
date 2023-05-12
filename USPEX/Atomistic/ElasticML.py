@@ -1,7 +1,8 @@
-import os
 import numpy as np
 import torch
 import torch.nn as nn
+
+from pathlib import Path
 from pymatgen.core.structure import Structure
 
 EMBEDDINGS = [
@@ -185,7 +186,7 @@ class ElasticML:
     STD = torch.FloatTensor([88.7647, 0.1142])
     MEAN = torch.FloatTensor([109.2043, 0.2731])
 
-    MODELNAME = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model_hf73kd992kz.pt")
+    MODELNAME = Path(__file__).parent/"model_hf73kd992kz.pt"
 
     RADIUS = 8
     MAX_NUM_NBR = 12

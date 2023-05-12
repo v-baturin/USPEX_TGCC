@@ -1,16 +1,16 @@
-import os
 import matplotlib
 import matplotlib.pyplot as plt
-from collections import Counter
 
+from collections import Counter
+from pathlib import Path
 from .formatters import createHeader_wrap
 
 matplotlib.use('Agg')
 
 
 class USPEXClassicRepresentation(object):
-    def __init__(self, RES_FOLDER : str, **params):
-        self.RES_FOLDER  = RES_FOLDER
+    def __init__(self, RES_FOLDER: Path, **params):
+        self.RES_FOLDER = RES_FOLDER
 
     def presentFractions(self, populations):
         allOperators = set()
@@ -30,8 +30,8 @@ class USPEXClassicRepresentation(object):
         for operator, fracs in operatorsFracs.items():
             plt.plot(fracs, label = operator)
         plt.legend()
-        os.makedirs(self.RES_FOLDER, exist_ok=True)
-        plt.savefig(self.RES_FOLDER + '/VarOperators.svg')
+        self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
+        plt.savefig(self.RES_FOLDER/'VarOperators.svg')
 
 
     @staticmethod

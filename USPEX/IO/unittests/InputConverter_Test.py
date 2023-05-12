@@ -8,14 +8,16 @@
 '''
 
 import unittest
-import os
+
+from pathlib import Path
 from ..InputConverter import InputConverter
 
-TESTPATH = os.path.dirname(os.path.abspath(__file__))
+TESTPATH = Path(__file__).parent
+
 
 class InputParser_Test(unittest.TestCase):
     def test_c2(self):
-        inputParser = InputConverter('INPUT.txt', wd =f'{TESTPATH}/c2/')
+        inputParser = InputConverter('INPUT.txt', wd =TESTPATH/'c2')
         params = inputParser.parse()
         params_ref = {'system': {'type': 'Crystal','heredity': {'initFrac': 0.5},
                                              'random': {'initFrac': 0.2},
@@ -41,7 +43,7 @@ class InputParser_Test(unittest.TestCase):
         self.assertEqual(params,params_ref)
 
     def test_c1(self):
-        inputParser = InputConverter('INPUT.txt', wd =f'{TESTPATH}/c1/')
+        inputParser = InputConverter('INPUT.txt', wd =TESTPATH/'c1')
         params = inputParser.parse()
         HEADER = '#!/bin/sh\n#BSUB -sp 100\n#BSUB -a  intelmpi\n#BSUB -R  "span[ptile=8]"\n#BSUB -J  USPEX\n#BSUB -n  8\n' \
                  '#BSUB -W  06:00\n#BSUB -q  intel\n#BSUB -o  output\n#\n#\n#            -__-  have fun in Rurik cluster @ MIPT !\n#'
@@ -86,7 +88,7 @@ class InputParser_Test(unittest.TestCase):
         self.assertEqual(params,params_ref)
 
     def test_c4(self):
-        inputParser = InputConverter('INPUT.txt', wd =f'{TESTPATH}/c4/')
+        inputParser = InputConverter('INPUT.txt', wd =TESTPATH/'c4/')
         params = inputParser.parse()
         params_ref = {'system': {'type': 'Crystal', 'heredity': {'initFrac': 0.5},
                                              'random': {'initFrac': 0.1},
