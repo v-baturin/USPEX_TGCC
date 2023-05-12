@@ -1,9 +1,10 @@
 import logging
 import asyncio
 import pickle as pcl
-import os
-from shutil import copyfile
+
 from copy import deepcopy, copy
+from pathlib import Path
+from shutil import copyfile
 
 
 logger = logging.getLogger(__name__)
@@ -76,24 +77,24 @@ class PopulationDump:
 
     def __init__(self, population, dumpFilename):
         self.population = population
-        self.dumpFilename = dumpFilename
-        self.dumpFilenameBackup = self.BACKUP_TEMPLATE.format(dumpFilename)
+        self.dumpFilename = Path(dumpFilename)
+        self.dumpFilenameBackup = Path(self.BACKUP_TEMPLATE.format(dumpFilename))
 
     @staticmethod
     def load(ID, tag, population):
-        dumpFilename = PopulationDump.DUMPFILE_TEMPLATE.format(ID, tag)
-        if os.path.exists(dumpFilename):
+        dumpFilename = Path(PopulationDump.DUMPFILE_TEMPLATE.format(ID, tag))
+        if dumpFilename.exists():
             with open(dumpFilename, 'rb') as f:
                 systems = pcl.load(f)
             if not set(systems.keys()) <= set(system['ID'] for system in population):
-                os.remove(dumpFilename)
+                dumpFilename.unlink()
                 systems = {}
         else:
             systems = {}
         return PopulationDump(systems, dumpFilename)
 
     def save(self):
-        if os.path.exists(self.dumpFilename):
+        if self.dumpFilename.exists():
             copyfile(self.dumpFilename, self.dumpFilenameBackup)
         with open(self.dumpFilename, 'wb') as f:
             pcl.dump(self.population, f)

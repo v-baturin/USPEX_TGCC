@@ -1,10 +1,10 @@
 import numpy as np
-from os.path import join as pj, exists as ex
 from ase.io.vasp import iread_vasp_out, read_vasp_xml, write_vasp
 from ase.io.espresso import read_fortran_namelist, read_espresso_out, write_espresso_in
 from ase.io import ParseError, read
 from ase.atoms import Atoms
 from ase.constraints import FixAtoms
+from pathlib import Path
 
 
 class ASEInterfaceAdapter:
@@ -45,22 +45,22 @@ class ASEInterfaceAdapter:
         poscar_file = 'POSCAR'
         potcar_file = 'POTCAR'
 
-        def write(self, structure, fixedIndices, label, calcFolder):
+        def write(self, structure, fixedIndices, label, calcFolder: Path):
             cell = structure.getCell()
             symbols = np.asarray([el.short_name for el in structure.getAtomTypes()])
             order = np.argsort(symbols)
             atoms = Atoms(symbols[order], structure.getCartesianCoordinates()[order], cell=cell.getCellVectors())
             if len(fixedIndices) > 0:
                 atoms.set_constraint(FixAtoms(indices=fixedIndices))
-            write_vasp(pj(calcFolder, self.poscar_file), atoms, label=label, direct=True, vasp5=True, long_format=False)
+            write_vasp(calcFolder/self.poscar_file, atoms, label=label, direct=True, vasp5=True, long_format=False)
             return {'pbc': cell.getPBC(), 'symbolsOrder': order}
 
-        def read(self, calcFolder, pbc, symbolsOrder):
+        def read(self, calcFolder: Path, pbc, symbolsOrder):
             try:
-                with open(pj(calcFolder, self.outcar_file)) as f:
+                with open(calcFolder/self.outcar_file) as f:
                     trajectoryAtoms = list(iread_vasp_out(f, None))
             except (KeyError, ParseError):
-                with open(pj(calcFolder, self.xml_file)) as f:
+                with open(calcFolder/self.xml_file) as f:
                     trajectoryAtoms = list(read_vasp_xml(f))
             trajectory = []
             for atoms in trajectoryAtoms:
@@ -88,7 +88,7 @@ class ASEInterfaceAdapter:
             cell = structure.getCell()
             atoms = Atoms([el.short_name for el in structure.getAtomTypes()], structure.getCartesianCoordinates(),
                           cell=cell.getCellVectors())
-            filename = pj(calcFolder, self.data_file)
+            filename = calcFolder/self.data_file
             atoms.write(filename, format='lammps-data', specorder=specorder)
             with open(filename, 'rt') as f:
                 content = f.readlines()
@@ -97,9 +97,9 @@ class ASEInterfaceAdapter:
                 f.writelines(content)
             return {'pbc': cell.getPBC()}
 
-        def read(self, calcFolder, specorder, pbc):
-            if ex(pj(calcFolder, self.dump_file)):
-                atoms = read(pj(calcFolder, self.dump_file), format='lammps-dump-text')
+        def read(self, calcFolder: Path, specorder, pbc):
+            if calcFolder.joinpath(self.dump_file).exists():
+                atoms = read(calcFolder/self.dump_file, format='lammps-dump-text')
                 atomTypes = np.array([ASEInterfaceAdapter.atomType(specorder[i - 1]) for i in atoms.get_atomic_numbers()])
                 structure = ASEInterfaceAdapter.structureType(atomTypes, atoms.get_positions(),
                                                               cell=ASEInterfaceAdapter.cellType(atoms.get_cell().array, pbc))
@@ -121,7 +121,7 @@ class ASEInterfaceAdapter:
                 raise KeyError('Required section &SYSTEM not found.')
             self.data = data
 
-        def write(self, structure, fixedIndices, kPoints, pseudopotentials, calcFolder):
+        def write(self, structure, fixedIndices, kPoints, pseudopotentials, calcFolder: Path):
             cell = structure.getCell()
             atoms = Atoms(symbols=[el.short_name for el in structure.getAtomTypes()],
                           positions=structure.getCartesianCoordinates(),
@@ -136,8 +136,8 @@ class ASEInterfaceAdapter:
                                   crystal_coordinates=True)
             return {'pbc': cell.getPBC()}
 
-        def read(self, calcFolder, pbc):
-            with open(pj(calcFolder, self.outputFile)) as f:
+        def read(self, calcFolder: Path, pbc):
+            with open(calcFolder/self.outputFile) as f:
                 atoms = next(read_espresso_out(f, index=slice(None, -2, -1)))
             atomTypes = np.array([ASEInterfaceAdapter.atomType(s) for s in atoms.get_chemical_symbols()])
             structure = ASEInterfaceAdapter.structureType(atomTypes, atoms.get_positions(),

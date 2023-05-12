@@ -1,10 +1,12 @@
 import logging
-import os
+
 import asyncio
 import pickle as pcl
-from shutil import copyfile
+
 from copy import copy, deepcopy
 from enum import Enum
+from pathlib import Path
+from shutil import copyfile
 
 from ..IO.OutputRepresentation import OutputRepresentation
 from ..IO.InputParser import read
@@ -24,9 +26,9 @@ class ControllerState(Enum):
 
 class GenerationController(object):
 
-    INPUT_FILENAME = 'input.uspex'
-    DUMP_FILENAME = "controller.dump"
-    DUMP_FILENAME_BACKUP = "controller.dump.back"
+    INPUT_FILENAME = Path('input.uspex')
+    DUMP_FILENAME = Path("controller.dump")
+    DUMP_FILENAME_BACKUP = Path("controller.dump.back")
     knownOptimizers = {}
     populationProcessorType = None
 
@@ -63,11 +65,11 @@ class GenerationController(object):
 
     @staticmethod
     def createController():
-        if os.path.exists(GenerationController.DUMP_FILENAME):
+        if GenerationController.DUMP_FILENAME.exists():
             with open(GenerationController.DUMP_FILENAME, 'rb') as f:
                 controller = pcl.load(f)
             logger.info('Calculation initialized from dump file.')
-        elif os.path.exists(GenerationController.INPUT_FILENAME):
+        elif GenerationController.INPUT_FILENAME.exists():
             params = compileParams(read(GenerationController.INPUT_FILENAME))
             optimizer = params['optimizer']
             numParallelCalcs = params['numParallelCalcs']
@@ -141,7 +143,7 @@ class GenerationController(object):
         self.outputRepresentation.presentSystems(self.systems, self.optimizer)
 
     def save(self):
-        if os.path.exists(GenerationController.DUMP_FILENAME):
+        if GenerationController.DUMP_FILENAME.exists():
             copyfile(GenerationController.DUMP_FILENAME, GenerationController.DUMP_FILENAME_BACKUP)
         with open(GenerationController.DUMP_FILENAME, 'wb') as f:
             pcl.dump(self, f)

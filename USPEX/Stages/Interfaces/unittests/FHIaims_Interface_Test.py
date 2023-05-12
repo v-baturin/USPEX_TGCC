@@ -9,22 +9,20 @@
 
 __author__ = 'asamtsevich'
 
-import os
 import shutil
 import unittest
 import filecmp
 import numpy as np
 
-from os.path import join as pj
-
+from pathlib import Path
 
 from ....components import AtomisticRepresentation, FHIaims_Interface
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'aimsSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'aimsGatheredData')
-WORKPATH = pj(HOMEPATH, 'F2_aims')
+HOMEPATH = Path(__file__).parent
+SPECIFICPATH = HOMEPATH/'aimsSpecific'
+GATHEREDPATH = HOMEPATH/'aimsGatheredData'
+WORKPATH = HOMEPATH/'F2_aims'
 
 
 class VASP_CalculatorTest2(unittest.TestCase):
@@ -33,11 +31,12 @@ class VASP_CalculatorTest2(unittest.TestCase):
     """
     def test_life(self):
         aims = FHIaims_Interface(tag='1',
-                              control=pj(SPECIFICPATH, 'aims_control_1'), kresol=0.14)
+                                 control=SPECIFICPATH/'aims_control_1',
+                                 kresol=0.14)
 
 
         for ID in range(10):
-            structure = AtomisticRepresentation.readPOSCAR(pj(GATHEREDPATH, f'input/system{ID}.vasp'), (1, 1, 1))
+            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
             system = dict(
                 ID=ID,
                 structure=structure,
@@ -45,20 +44,20 @@ class VASP_CalculatorTest2(unittest.TestCase):
                     np.arange(len(structure)).reshape((-1, 1))),
                 externalPressure=0.0001
             )
-            os.mkdir(WORKPATH)
+            WORKPATH.mkdir(parents=True, exist_ok=True)
             aims.prepareLocalCalculation(system, WORKPATH)
-            folder = pj(GATHEREDPATH, 'input', f"CalcFold{system['ID']}")
+            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
                 match = match and not dcmp.subdirs[common_dir].diff_files
             shutil.rmtree(WORKPATH)
             self.assertTrue(match)
-            folder = pj(GATHEREDPATH, 'output')
-            shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
+            folder = GATHEREDPATH/'output'
+            shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
             results = aims.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            structureRef = AtomisticRepresentation.readPOSCAR(pj(folder, f"system{system['ID']}.vasp"), (1, 1, 1))
+            structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
             cell = results['structure'].getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(),

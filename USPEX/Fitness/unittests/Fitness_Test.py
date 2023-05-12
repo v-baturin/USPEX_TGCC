@@ -9,8 +9,8 @@ Class for Fitness testing
 
 import unittest
 import numpy as np
-import os
-from os.path import join as pj
+
+from pathlib import Path
 from types import SimpleNamespace
 
 
@@ -21,7 +21,7 @@ from ...Atomistic.RadialDistributionUtility import Fingerprint
 from ...XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
+HOMEPATH = Path(__file__).parent
 
 
 class System(object):
@@ -195,7 +195,7 @@ class Fitness_Test(unittest.TestCase):
 class FitnessXray_Test(unittest.TestCase):
     def setUp(self) -> None:
         # 'externalPressure': 135,
-        filename = pj(HOMEPATH,'XRay_POSCARS')
+        filename = HOMEPATH/'XRay_POSCARS'
         self.systems = AtomisticRepresentation.readAtomicStructures(filename)
         enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
         for ID, system in enumerate(self.systems):
@@ -203,7 +203,7 @@ class FitnessXray_Test(unittest.TestCase):
             system['enthalpy'] = enthalpies[ID]
 
         self.compositionSpace = CompositionSpace(symbols=['Ba', 'H'], blocks=[[1, 12]], range=[[4, 4]])
-        self.powderSpectrumAnalyzer = PowderSpectrumAnalyzer(**PowderSpectrumAnalyzer.parse(pj(HOMEPATH, 'spectrum.txt')))
+        self.powderSpectrumAnalyzer = PowderSpectrumAnalyzer(**PowderSpectrumAnalyzer.parse(HOMEPATH/'spectrum.txt'))
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
 
         utilities = SimpleNamespace(compositionSpace=self.compositionSpace,

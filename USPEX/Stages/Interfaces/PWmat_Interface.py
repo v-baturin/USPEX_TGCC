@@ -7,16 +7,17 @@ USPEX.Stages.PWmat_Interface
 """
 import logging
 import sys
-import os
 import shutil
 import re
 import numpy as np
 
+from pathlib import Path
 from .KPoints import KPoints, BadKPoints
 
 
 logger = logging.getLogger(__name__)
 EV_PER_CUBIC_ANGSTREM_PER_GPA = 1/160.21766208
+
 
 class PWmat_Interface:
     '''
@@ -57,19 +58,20 @@ class PWmat_Interface:
         :param step: int of current step
         '''
 
-        assert isinstance(etot_input, str) and os.path.exists(etot_input)
-        assert isinstance(potcars, list) and np.all([os.path.exists(potcar) for potcar in potcars])
 
         self.tag = tag
-        self.etot_input = etot_input
-        self.potcars = potcars
+        self.etot_input = Path(etot_input)
+        assert self.etot_input.exists()
+
+        self.potcars = [Path(potcar) for potcar in potcars]
+        assert np.all([potcar.exists() for potcar in potcars])
 
         self.kPoints = KPoints(kresol)
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
         self.failedSystems = []
 
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
         '''
         :param system: our system
         :return:
@@ -88,7 +90,7 @@ class PWmat_Interface:
             # if self.state.varcomp or not os.path.exists('POTCAR_' + str(self.step)):  # we prefer this way
             f_potcar = (lambda pattern, filesname_list: [x for x in filesname_list if re.match(pattern, x)])
             for el in np.unique(atomSymbols):
-                pattern = '.*' + el + '.*UPF'
+                pattern = f'.*{el}.*UPF'
                 potcarPath = f_potcar(pattern, self.potcars)[0]
                 shutil.copy2(potcarPath, calcFolder)
         except:
@@ -97,7 +99,7 @@ class PWmat_Interface:
             raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
 
         ############################## etot.input ##################################
-        shutil.copy2(self.etot_input, os.path.join(calcFolder, 'etot.input'))
+        shutil.copy2(self.etot_input, calcFolder/'etot.input')
 
         # set mp_n123
         try:
@@ -108,31 +110,30 @@ class PWmat_Interface:
             kPoints = [1, 1, 1]
 
         # set IN.PSP
-        with open(os.path.join(calcFolder, 'etot.input'), 'a') as fp:
+        with open(calcFolder/'etot.input', 'a') as fp:
             fp.write('\nMP_n123 = %d %d %d 0 0 0\n' % tuple(kPoints))
 
-            files_in_calcFolder = os.listdir(calcFolder)
+            files_in_calcFolder = [f.name for f in calcFolder.iterdir()]
             tmp_i = 1
             for el in np.unique(atomSymbols):
-                pattern = el + '.*.UPF'
+                pattern = f'{el}.*.UPF'
                 PSP_name = f_potcar(pattern, files_in_calcFolder)
-                INPSP = 'IN.PSP' + str(tmp_i) + '=' + PSP_name[0] + '\n'
+                INPSP = f'IN.PSP{tmp_i}={PSP_name[0]}\n'
                 fp.write(INPSP)
                 tmp_i += 1
         # set IN.RELAXOPT
         if system['externalPressure']:
-            with open(os.path.join(calcFolder, 'etot.input'), 'a') as fp:
+            with open(calcFolder/'etot.input', 'a') as fp:
                 fp.write('IN.RELAXOPT = T\n')
-            with open(os.path.join(calcFolder, 'IN.RELAXOPT'), 'a') as fp:
+            with open(calcFolder/'IN.RELAXOPT', 'a') as fp:
                 fp.write('PSTRESS_EXTERNAL= %10f\n' % (system['externalPressure']))
-
 
 
 
         ############################# atom.config ##################################
 
         # def writeAtomconfig(self,system : dict):
-        with open(os.path.join(calcFolder, 'atom.config'), 'w') as fp:
+        with open(calcFolder/'atom.config', 'w') as fp:
             symbols = structure.getComposition()
             totalatom = 0
             for key, value in symbols.items():
@@ -164,19 +165,19 @@ class PWmat_Interface:
         return ''
 
 ############reading part
-    def isConverged(self, calcFolder : str):
+    def isConverged(self, calcFolder: Path):
         '''
         :param SYSTEM:
         :return: (bool) whether system calculation converged
         '''
 
-        if not (os.path.exists(os.path.join(calcFolder , self.REPORT)) and
-                os.path.exists(os.path.join(calcFolder , self.MOVEMENT)) and
-                os.path.exists(os.path.join(calcFolder , self.RELAXSTEPS))):
+        if not (calcFolder.joinpath(self.REPORT).exists() and
+                calcFolder.joinpath(self.MOVEMENT).exists() and
+                calcFolder.joinpath(self.RELAXSTEPS).exists()):
             return False
         # Checking whether converge
 
-        with open(os.path.join(calcFolder , self.REPORT), 'r') as fp:
+        with open(calcFolder/self.REPORT, 'r') as fp:
             content = fp.readlines()
 
         for line in content:
@@ -193,18 +194,17 @@ class PWmat_Interface:
             return True
         else:
             logging.error('PWmat SCF is not converged.')
-            shutil.copy2(os.path.join(calcFolder + self.REPORT), '%s-%s' % (os.path.join(calcFolder, 'ERROR'), self.REPORT))
+            shutil.copy2(calcFolder/self.REPORT, calcFolder/f'ERROR{self.REPORT}')
             return False
 
-    def readOutput(self, system, calcFolder : str):
+    def readOutput(self, system, calcFolder: Path):
         """
 
         :rtype: object
         """
-        files_in_calcFolder = os.listdir(calcFolder)
-        if 'final.config' not in files_in_calcFolder:
-            os.system('cp %s %s' % (os.path.join(calcFolder, 'atom.config'), os.path.join(calcFolder, 'final.config')))
-        with open(os.path.join(calcFolder , self.FINAL_CONFIG), 'r') as fp:
+        if not calcFolder.joinpath('final.config').exists():
+            shutil.copy(calcFolder/'atom.config', calcFolder/'final.config')
+        with open(calcFolder/self.FINAL_CONFIG, 'r') as fp:
             content = fp.readlines()
         pbc = system.pop('pbc')
         atoms = int(content[0].split()[0])
@@ -228,12 +228,12 @@ class PWmat_Interface:
         if 'structure' in self.targetProperties:
             results['structure'] = structure
         if 'enthalpy' in self.targetProperties:
-            with open(os.path.join(calcFolder , self.REPORT), 'r') as fp:
+            with open(calcFolder/self.REPORT, 'r') as fp:
                 content = fp.readlines()
             results['enthalpy'] = self.readEnergy(content) + \
                                  cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
         if 'stressTensor' in self.targetProperties:
-            with open(os.path.join(calcFolder, self.MOVEMENT), 'r') as fp:
+            with open(calcFolder/self.MOVEMENT, 'r') as fp:
                 content = fp.readlines()
             results['stressTensor'] = self.readPressureTensor(content)
         return results
