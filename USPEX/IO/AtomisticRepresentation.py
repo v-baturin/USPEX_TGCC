@@ -17,6 +17,7 @@ from prettytable import PrettyTable
 
 from .formatters import createHeader_wrap
 from ..presets import presetFitness
+from .read_molecule import read_molecule
 
 matplotlib.use('Agg')
 
@@ -359,6 +360,7 @@ class AtomisticRepresentation(object):
             with open(f'{filename}.uspex', 'wt') as f:
                 f.write(yaml.safe_dump(descriptions))
 
+
     @classmethod
     def readPOSCAR(cls, filename, pbc=(1, 1, 1)):
         atoms = read_vasp(filename)
@@ -377,6 +379,14 @@ class AtomisticRepresentation(object):
                 except Exception:
                     break
         return all_systems
+
+    @classmethod
+    def readMol(cls, filename):
+        molDct = read_molecule(filename)
+        atomTypes = [cls.atomType(s) for s in molDct['symbols']]
+        coordinates = molDct['positions']
+        zmatrixConfig = molDct['configZMatrix']
+        return cls.structureType(atomTypes, coordinates, zmatrixConfig=zmatrixConfig)
 
 
     @classmethod
@@ -439,22 +449,25 @@ class AtomisticRepresentation(object):
         elements = molecule.getAtomTypes()
         coordinates = molecule.getCartesianCoordinates()
         zmatrixConfig = molecule.getZmatrixConfig()
-        zmatrix = utility.coordToZmatrix(coordinates, zmatrixConfig)
-        repr = ['Atom Bond-length Bond-angle Torsion-angle   i   j   k',
-                '      (Angstrom)  (Degree)    (Degree)',
-             *(f'{el.short_name:2}    {zrow[0]:8.4}    {zrow[1]*180/np.pi:8.4}    {zrow[2]*180/np.pi:8.4}    {fmt[0]:3} {fmt[1]:3} {fmt[2]:3}'
-               for el, zrow, fmt in zip(elements, zmatrix, zmatrixConfig))]
-        return '\n'.join(repr)
+        if zmatrixConfig is not None:
+            zmatrix = utility.coordToZmatrix(coordinates, zmatrixConfig)
+            repr = ['Atom Bond-length Bond-angle Torsion-angle   i   j   k',
+                    '      (Angstrom)  (Degree)    (Degree)',
+                 *(f'{el.short_name:2}    {zrow[0]:8.4}    {zrow[1]*180/np.pi:8.4}    {zrow[2]*180/np.pi:8.4}    {fmt[0]:3} {fmt[1]:3} {fmt[2]:3}'
+                   for el, zrow, fmt in zip(elements, zmatrix, zmatrixConfig))]
+            return '\n'.join(repr)
+        else:
+            return 'No corresponding Z-matrix\n'
 
     @classmethod
     def getParametersBlock(cls, target) -> list:
         header = []
         ut = target.utilities
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
-        isCoreAdsorbant = ut.simpleMoleculeUtility.isCoreAdsorbant
         isVarComp = not ut.compositionSpace.isFixedComposition
         dim = ut.cellUtility.getDim()
         hasEnv = len(ut.environmentUtility.assemblers) > 0
+        hasJunct = ut.junctionUtility.hasJunctions
 
 
         # ---------------------------------------------------------------------------
@@ -467,7 +480,7 @@ class AtomisticRepresentation(object):
         row += f'    Molecular            :  {"Yes" if isMolSystem else "No"}\n'
         row += f'    Variable composition :  {"Yes" if isVarComp else "No"}\n'
         row += f'    Has environment      :  {"Yes" if hasEnv else "No"}\n'
-        row += f'    Core-Adsorbants      :  {"Yes" if isCoreAdsorbant else "No"}\n'
+        row += f'    Has Junctions        :  {"Yes" if hasJunct else "No"}\n'
 
 
         formatted_rows.append(row)

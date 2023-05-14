@@ -18,7 +18,7 @@ from .Atomistic.CellUtility import CellUtility
 CellUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
 SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
-from .Atomistic.AdsorbantUtility import AdsorbantUtility
+from .Atomistic.JunctionUtility import JunctionUtility
 from .Atomistic.Conditions import Conditions
 from .Atomistic.BondUtility import BondUtility
 BondUtility.registerTypes(Element, AtomicDisassembler)
@@ -45,7 +45,7 @@ Seeds.registerTypes(AtomisticRepresentation)
 GlobalOptimizer.registerTarget('Atomistic',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
                                  SimpleMoleculeUtility, Conditions, BondUtility, Constraints, ElasticML,
-                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, AdsorbantUtility],
+                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
@@ -93,7 +93,7 @@ ModelOptimizer.registerModel(External)
 ModelOptimizer.registerTarget('Atomistic',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
                                  SimpleMoleculeUtility, Conditions, BondUtility, Constraints, ElasticML,
-                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, AdsorbantUtility],
+                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],

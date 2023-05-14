@@ -15,7 +15,8 @@ from pymatgen.core.surface import SlabGenerator
 from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from .Transformation import Transformation
+from .JunctionUtility import Site, JunctionType
+
 import networkx as nx
 import alphashape
 
@@ -497,100 +498,6 @@ class NanoparticleCore:
     select docking Sites, store the history of processed combinations of core sites and adsorbants
     """
 
-    class JunctionType:
-        def __init__(self, label, junctParam=None):
-            self.label = label
-            self.junctionParam = junctParam
-
-        def __repr__(self):
-            if isinstance(self.junctionParam, float):
-                paramstr = f", {self.junctionParam:.2f}"
-            elif self.junctionParam is not None:
-                paramstr = f", {self.junctionParam}"
-            else:
-                paramstr = ""
-            return f"<junctionType {self.label}{paramstr}>"
-
-        def __eq__(self, other):
-            try:
-                isParamEqual = (np.abs(self.junctionParam - other.junctionParam) < 1e-6)
-            except TypeError:
-                isParamEqual = (self.junctionParam == other.junctionParam)
-            return (self.label == other.label) and isParamEqual
-
-        def __hash__(self):
-            return hash((self.label, self.junctionParam))
-
-    class Site:
-        """
-        Class Site describes docking site
-        The object stores information of the host structure, mountPoint and the orientation.
-        orientation vector points OUTWARDS the structure
-
-        The object has method dock(self, other, ownAxisAngle=0), that returns the structure of the "other" site, so that
-        the "mountPoint"s coincide and orientations FACE each other (--> <--). Also rotation of the "other" by angle
-        ownAxisAngle around its orientation is performed
-
-        """
-
-        def __init__(self, host, mountPoint, orientation, junctionTypes=None, passivateBy=None, id=0,
-                     mountPointOffset=None):
-            self.host = host
-            self.id = id
-            self.orientation = np.array(orientation)
-            self.mountPoint = np.array(mountPoint)
-            if mountPointOffset:
-                self.performOffset(mountPointOffset)
-            self.junctionTypes = junctionTypes if junctionTypes else None  # frozenset([NanoparticleCore.JunctionType(jt) for jt in junctionTypes]) \
-            self.passivateBy = passivateBy
-
-        def __repr__(self):
-            return f"<Site #{self.id} {self.host}, junctionTypes={self.junctionTypes}>"
-
-        def dockTransformation(self, other, otherAxisAngle=0):
-            assert self.junctionTypes & other.junctionTypes
-            shiftOriginToMountpoint = Transformation.fromRotVector((0.,0.,0.), -other.mountPoint)
-            rotAroundOrientationAxis = Transformation.fromRotVector(-other.orientation * otherAxisAngle, 0.)
-            # rotated_structure =\
-            #     rotAroundOrientationAxis.transform(shiftOriginToMountpoint.transform(other.host.getStructure()))
-            rot_ax = np.cross(-other.orientation, self.orientation)
-            rot_ax /= np.linalg.norm(rot_ax)
-            alpha = np.arccos(-other.orientation @ self.orientation)
-            matchOrientationTransform = Transformation.fromRotVector(alpha * rot_ax, self.mountPoint)
-            netTransform = matchOrientationTransform * (rotAroundOrientationAxis * shiftOriginToMountpoint)
-            return netTransform
-
-        def __hash__(self):
-            return hash(tuple(map(tuple, (self.mountPoint, self.orientation, self.junctionTypes))))
-
-        def performOffset(self, mountPointOffset):
-            """
-            Shifts mountPoint so that it's located not too close to the host structure. the distance is either
-            user-defined (mountPointOffset=R), or equals to covalent atomic radius
-            Let A -- atomic position
-                e -- unit vector (self.self.orientation with proper dimensions)
-                M -- self.mountPoint
-                R -- radius of sphere around A, that we don't penetrate
-            Objective:
-                out of two points:
-                    Q1, Q2 -- intersections of a line (M,e) with a sphere (A, R)
-                find the one that has the largest coordinate along e and update M to that point
-            Code performs this operation to all atoms in vectorized fashion and finds the maximum shift along e
-            @param mountPointOffset: float or "covalent"
-            @return:
-            """
-            e = self.orientation.reshape((1, -1))
-            AM = self.mountPoint - self.host.getStructure().getCartesianCoordinates()
-            AMx = (AM @ e.T)  # projection of AM onto e
-            eAMx = AMx @ e  # component of AM along e
-            if mountPointOffset == "covalent":
-                radii = np.array([x.covalent_radius for x in self.host.getStructure().getAtomTypes()])
-            else:
-                radii = mountPointOffset
-            shift_coeff = np.nanmax(-AMx.T[0] + np.sqrt(radii ** 2 - np.linalg.norm(AM - eAMx, axis=1) ** 2))
-            if not np.isnan(shift_coeff) and shift_coeff > 0.:
-                self.mountPoint = self.mountPoint + self.orientation * shift_coeff
-
     class Assembler:
 
         def __init__(self, structure, sites=None, isFixed: bool = True, **kwargs):
@@ -603,8 +510,8 @@ class NanoparticleCore:
             else:
                 for site in sites:
                     site['junctionTypes'] = frozenset(
-                        [NanoparticleCore.JunctionType(jt) for jt in site['junctionTypes']])
-                self.sites = [NanoparticleCore.Site(self, id=idx, **site) for idx, site in enumerate(sites)]
+                        [JunctionType(jt) for jt in site['junctionTypes']])
+                self.sites = [Site(id=idx, **site) for idx, site in enumerate(sites)]
                 for site in self.sites:
                     for junctionType in site.junctionTypes:
                         if junctionType in self._sitesByType:
@@ -659,14 +566,14 @@ class NanoparticleCore:
             nSites = len(self.sites)
             if junctionType.label == "FACE":
                 newSites = [
-                    NanoparticleCore.Site(self, id=idx, mountPoint=m, orientation=v, junctionTypes={junctionType},
-                                          mountPointOffset=mountPointOffset)
+                    Site(id=idx, mountPoint=m, orientation=v,
+                         junctionTypes={junctionType}).doOffset(self.getStructure())
                     for m, v, idx in zip(alphaShape.triangles_center, alphaShape.face_normals,
                                          range(nSites, nSites + len(alphaShape.triangles_center)))]
             elif junctionType.label == "VERTEX":
                 newSites = [
-                    NanoparticleCore.Site(self, id=idx, mountPoint=m, orientation=v, junctionTypes={junctionType},
-                                          mountPointOffset=mountPointOffset)
+                    Site(id=idx, mountPoint=m, orientation=v,
+                         junctionTypes={junctionType}).doOffset(self.getStructure())
                     for m, v, idx in zip(alphaShape.vertices, alphaShape.vertex_normals,
                                          range(nSites, nSites + len(alphaShape.vertices)))]
             elif junctionType.label == "EDGE":
@@ -677,8 +584,8 @@ class NanoparticleCore:
                     normal = alphaShape.face_normals[adj_f[0]] + alphaShape.face_normals[adj_f[1]]
                     normal /= np.linalg.norm(normal)
                     edgeSites.append(
-                        NanoparticleCore.Site(self, id=idx, mountPoint=origin, orientation=normal,
-                                              junctionTypes={junctionType}, mountPointOffset=mountPointOffset))
+                        Site(id=idx, mountPoint=origin, orientation=normal,
+                             junctionTypes={junctionType}).doOffset(self.getStructure()))
                 newSites = edgeSites
             self._sitesByType[junctionType] = newSites
             self.sites += newSites
@@ -687,7 +594,7 @@ class NanoparticleCore:
         def passivateSite(self, site):
             pass
 
-        def getAdsJuncSiteGraph(self, adsorbants):
+        def getAdsJuncSiteGraph(self, molSitesMapping):
             """
             Directed tripartite graph (adsorbants)-(junctiontypes)-(sites)
             @param adsorbants:
@@ -696,10 +603,11 @@ class NanoparticleCore:
             if self._adsJuncSiteGraph is None:
                 DG = nx.DiGraph()
                 allAdsJuncType = set()
-                for adsName, ads in adsorbants.items():
-                    for jt in ads.site.junctionTypes:
-                        DG.add_edge(adsName, jt)
-                        allAdsJuncType |= {jt}
+                for adsName, sites in molSitesMapping.items():
+                    for site in sites:
+                        for jt in site.junctionTypes:
+                            DG.add_edge(adsName, jt)
+                            allAdsJuncType |= {jt}
                 for jt in allAdsJuncType:
                     sites = self.getSitesByType(jt)
                     for site in sites:

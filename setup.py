@@ -21,7 +21,7 @@ extensions = [
     Extension("USPEX.Atomistic.BondUtility", ["USPEX/Atomistic/BondUtility.py"]),
     Extension("USPEX.Atomistic.CellUtility", ["USPEX/Atomistic/CellUtility.py"]),
     Extension("USPEX.Atomistic.EnvironmentUtility", ["USPEX/Atomistic/EnvironmentUtility.py"]),
-    Extension("USPEX.Atomistic.AdsorbantUtility", ["USPEX/Atomistic/AdsorbantUtility.py"]),
+    Extension("USPEX.Atomistic.JunctionUtility", ["USPEX/Atomistic/JunctionUtility.py"]),
     Extension("USPEX.Atomistic.CompositionCH", ["USPEX/Atomistic/CompositionCH.py"]),
     Extension("USPEX.Atomistic.CompositionSpace", ["USPEX/Atomistic/CompositionSpace.py"]),
     Extension("USPEX.Atomistic.Conditions", ["USPEX/Atomistic/Conditions.py"]),

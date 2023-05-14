@@ -15,7 +15,7 @@ MAX_SITE_SAMPLES_TRY = 1000
 class CoreAdsorbantRandomGenerator:
     def __init__(self, utilities, debug = False):
         self.cellUtility = utilities.cellUtility
-        self.adsorbantUtility = utilities.adsorbantUtility
+        self.junctionUtility = utilities.junctionUtility
         self.environmentUtility = utilities.environmentUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
@@ -31,7 +31,7 @@ class CoreAdsorbantRandomGenerator:
         # Choice of active centers
         # Reorienting adsorbants according to chosen active centers in core
         composition = self.compositionSpace.randomComposition()  # {symbol : numbers, ...}
-        symbols = list(composition.keys())
+
         numIons = list(composition.values())
 
         if np.sum(numIons) == 0:
@@ -47,12 +47,13 @@ class CoreAdsorbantRandomGenerator:
 
             try:
                 npCoreAssembler = np.random.choice(self.environmentUtility.assemblers)
-                adsTypesSitesDiGraph = npCoreAssembler.getAdsJuncSiteGraph(self.adsorbantUtility.adsorbants)
+                adsTypesSitesDiGraph = npCoreAssembler.getAdsJuncSiteGraph(self.junctionUtility.molSitesMapping)
                 tmp_molecules = []
                 tmp_offspring = {}
                 goodAdsorptionmap = set()
                 for adsName, quantity in composition.items():
-                    adsorbant = self.adsorbantUtility.adsorbants[adsName]
+                    adsorbant = self.simpleMoleculeUtility.molecules[adsName]
+                    adsSites = self.junctionUtility.molSitesMapping[adsName]
                     compatibleSites = select_compatible_sites(adsName, adsTypesSitesDiGraph)
 
                     # check if there is enough sites
@@ -74,8 +75,8 @@ class CoreAdsorbantRandomGenerator:
                                 if npCoreAssembler.isBadAdsMap(sampleAdsorptionMap | goodAdsorptionmap):
                                     continue
 
-                                dockingTransfmn = site.dockTransformation(adsorbant.site, angle)
-                                dock_attempt = dockingTransfmn.transform(adsorbant.getStructure())
+                                dockingTransfmn = site.dockTransformation(np.random.choice(adsSites), angle)
+                                dock_attempt = dockingTransfmn.transform(adsorbant)
                                 tmp_offspring, isDocked = self.checkDocking(sample_molecules, dock_attempt, npCoreAssembler)
                                 if isDocked:
                                     sample_molecules.append(dock_attempt)
