@@ -82,6 +82,10 @@ class DFTBplus_Interface:
                 f.write('0  0  {}\n'.format(kPoints[2]))
                 f.write('0.0 0.0 0.0\n')
 
+        if system['externalPressure']:
+            with open(pj(calcFolder, self.pressure_file), 'a') as myfile:
+                myfile.write(f"Pressure [Pa] = {system['externalPressure']*10.0**9:10f}\n")
+
         fixedIndices = system['disassembler'].envIndices[
             system['environment'].getFixedIndices()] if 'environment' in system else None
         if fixedIndices is not None:
@@ -117,13 +121,21 @@ class DFTBplus_Interface:
 
     def readOutput(self, system, calcFolder: str):
 
+        new_structure = self.readStructure(calcFolder, system.pop('pbc'))
+        EnergyHa = self.readEnergyHa(calcFolder)
+
         results = {}
         if 'structure' in self.targetProperties:
-            results['structure'] = self.readStructure(calcFolder, system.pop('pbc'))
+            results['structure'] = new_structure
         if 'energy' in self.targetProperties:
-            results['energy'] = self.readEnergyHa(calcFolder) * HARTREE_TO_EV
+            results['energy'] = EnergyHa * HARTREE_TO_EV
         if 'enthalpy' in self.targetProperties:
-            results['enthalpy'] = self.readEnergyHa(calcFolder) * HARTREE_TO_EV
+            if system['structure'].getCell().dim == 3:
+                results['enthalpy'] = (EnergyHa + \
+                                       new_structure.getCell().getVolume() * system['externalPressure'] * \
+                                      ANGSTROM_TO_BOHR**3.0 * GPA_TO_AU) * HARTREE_TO_EV
+            else:
+                results['enthalpy'] = EnergyHa * HARTREE_TO_EV
 
         return results
 
