@@ -34,7 +34,7 @@ class DFTBplus_Interface:
     specific_file = 'dftb_in.hsd_'
     kpoints_file = 'kpoints.uspex'
     pressure_file = 'pressure.uspex'
-    fixedIndices_file = 'fixed.uspex'
+    movedAtoms_file = 'movedatoms.uspex'
 
     out_geometry_file = 'geo_end.gen'
 
@@ -69,38 +69,47 @@ class DFTBplus_Interface:
         ase_struct = Atoms(symbols, positions=coordinates, cell=cell_vectors, pbc=system['pbc'])
         write_gen(pj(calcFolder, self.geometry_file), ase_struct)
 
-        if self.kPoints is not None:
+        if self.kPoints is None or cell.dim == 0:
+            with open(pj(calcFolder, self.kpoints_file), 'wt') as f:
+                f.write('')
+        else:
             try:
                 kPoints = self.kPoints.build(cell)
             except BadKPoints:
                 # This LATTICE is extremely wrong, let's skip it from now
                 logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
                 kPoints = [1, 1, 1]
-            with open(pj(calcFolder, self.kpoints_file), 'a') as f:
+            with open(pj(calcFolder, self.kpoints_file), 'wt') as f:
+                f.write('KPointsAndWeights = SupercellFolding {\n')
                 f.write('{}  0  0\n'.format(kPoints[0]))
                 f.write('0  {}  0\n'.format(kPoints[1]))
                 f.write('0  0  {}\n'.format(kPoints[2]))
                 f.write('0.0 0.0 0.0\n')
+                f.write('}\n')
 
-        if system['externalPressure']:
-            with open(pj(calcFolder, self.pressure_file), 'a') as myfile:
-                myfile.write(f"Pressure [Pa] = {system['externalPressure']*10.0**9:10f}\n")
+        with open(pj(calcFolder, self.pressure_file), 'wt') as f:
+            if system['externalPressure']:
+                f.write(f"Pressure [Pa] = {system['externalPressure']*10.0**9:10f}\n")
+            else:
+                f.write("")
 
         fixedIndices = system['disassembler'].envIndices[
             system['environment'].getFixedIndices()] if 'environment' in system else None
         if fixedIndices is not None:
-            fixed_indices_string = 'MovedAtoms = !('
+            moved_atoms_string = 'MovedAtoms = !('
             onebased_fixedIndices = fixedIndices + 1
             indices = np.where(np.diff(onebased_fixedIndices) != 1)[0] + 1
             groups = np.split(onebased_fixedIndices, indices)
             for i, group in enumerate(groups):
                 if len(group) == 1:
-                    fixed_indices_string += f"{group[0]} "
+                    moved_atoms_string += f"{group[0]} "
                 else:
-                    fixed_indices_string += f"{group[0]}:{group[-1]} "
-            fixed_indices_string += ')\n'
-            with open(pj(calcFolder, self.fixedIndices_file), 'a') as f:
-                f.write(fixed_indices_string)
+                    moved_atoms_string += f"{group[0]}:{group[-1]} "
+            moved_atoms_string += ')\n'
+        else:
+            moved_atoms_string = 'MovedAtoms = 1:-1\n'
+        with open(pj(calcFolder, self.movedAtoms_file), 'wt') as f:
+            f.write(moved_atoms_string)
 
         with open(pj(calcFolder, self.inputFile), 'wt') as dest:
             dest.write(self.dftb_input)
