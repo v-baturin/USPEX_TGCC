@@ -41,7 +41,7 @@ class Site:
 
     """
 
-    def __init__(self, mountPoint, orientation, junctionTypes=None, passivateBy=None, id=0):
+    def __init__(self, mountPoint, orientation, junctionTypes=None, passivateBy=None, id=0, **kwargs):
         self.id = id
         self.orientation = np.array(orientation)
         self.mountPoint = np.array(mountPoint)
@@ -49,7 +49,7 @@ class Site:
         self.passivateBy = passivateBy
 
     def __repr__(self):
-        return f"<Site #{self.id} {self.host}, junctionTypes={self.junctionTypes}>"
+        return f"<Site #{self.id}, junctionTypes={self.junctionTypes}>"
 
     def dockTransformation(self, other, otherAxisAngle=0):
         assert self.junctionTypes & other.junctionTypes
