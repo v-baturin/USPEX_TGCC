@@ -8,7 +8,8 @@ USPEX.Stages.TaskManagers.Screen
 
 import logging
 import asyncio
-from os.path import getsize
+
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +22,11 @@ class ScreenNotFoundError(Exception):
         super(ScreenNotFoundError, self).__init__(message)
 
 
-def tailf(file_):
+def tailf(file_: Path):
     """Each value is content added to the log file since last value return"""
-    last_size = getsize(file_)
+    last_size = file_.stat().st_size
     while True:
-        cur_size = getsize(file_)
+        cur_size = file_.stat().st_size
         if (cur_size != last_size):
             f = open(file_, 'r')
             f.seek(last_size if cur_size > last_size else 0)
@@ -46,12 +47,12 @@ def tailf(file_):
 #         res = getoutput(cmd)
 #     return res
 
-async def kill_screen_by_id(connector, id : int):
+async def kill_screen_by_id(connector, id: int):
     await _exec(f'screen -dm -x {id} -p 0 -X  {"quit"}', connector=connector)
     await asyncio.sleep(0.02)
 
-async def _exec(cmd, connector, cwd='.'):
-    returncode, out, err = await connector.execute(cmd, cwd=cwd)
+async def _exec(cmd, connector, cwd: Path =Path.cwd()):
+    returncode, out, err = await connector.execute(cmd, cwd=str(cwd))
     await asyncio.sleep(0.1)
     logger.debug(f'process returned code {returncode}')
     if returncode != 0:
@@ -63,7 +64,6 @@ async def list_screens_id(connector):
     list_cmd = "screen -ls "
     lines = (await _exec(list_cmd, connector=connector)).split('\n')
     return [int(l.split(".")[0]) for l in lines if "\t" in l and ".".join(l.split(".")[1:]).split("\t")[0]]
-
 
 async def list_screens(connector):
     """
@@ -108,7 +108,7 @@ class Screen(object):
         self._logfilename = None
         self._connector = connector
 
-    async def run_and_exit(self, command : str, cwd='.') -> int:
+    async def run_and_exit(self, command: str, cwd: Path=Path.cwd()) -> int:
         '''
         Takes just a command and run only it and then it finishes and exit.
         :param command:
@@ -128,7 +128,7 @@ class Screen(object):
         # returncode, out, err = await self._connector.execute('bash', input=script, cwd=cwd)
         return int(out.split('.')[0])
 
-    async def initialize(self, cwd='.'):
+    async def initialize(self, cwd: Path=Path.cwd()):
         """initialize a screen, if does not exists yet"""
         # self.lock = asyncio.Lock()
         print('Initialization starts')
@@ -181,7 +181,7 @@ class Screen(object):
 
     async def enable_logs(self, filename=None):
         if filename is None:
-            filename = self.name
+            filename = Path(self.name)
         await self._screen_commands(f"logfile {filename}", "log on")
         self._logfilename = filename
         open(filename, 'w+')
@@ -209,7 +209,7 @@ class Screen(object):
         await _exec(f"screen -d  {ID}", connector=self._connector)
         print('detach ends')
 
-    async def send_commands(self, *commands, cwd:str='.'):
+    async def send_commands(self, *commands, cwd:Path = Path.cwd()):
         """send commands to the active gnu-screen"""
         print('send_commands starts')
         await self._check_exists()
@@ -223,7 +223,7 @@ class Screen(object):
         """allow to share your session with an other unix user"""
         await self._screen_commands('multiuser on', 'acladd ' + unix_user_name)
 
-    async def _screen_commands(self, *commands, cwd:str='.'):
+    async def _screen_commands(self, *commands, cwd:Path = Path.cwd()):
         """allow to insert generic screen specific commands
         a glossary of the existing screen command in `man screen`"""
         print('_screen_commands starts')

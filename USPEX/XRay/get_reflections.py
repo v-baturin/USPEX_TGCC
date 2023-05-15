@@ -7,14 +7,13 @@ Function adapted from pymatgen to get structure factors
 .. codeauthor:: Michele Galasso <m.galasso@yandex.com>
 """
 
-import os
 import json
 import numpy as np
 
-from math import pi
+from pathlib import Path
 
 
-with open(os.path.join(os.path.dirname(__file__), 'atomic_scattering_params.json')) as f:
+with open(Path(__file__).parent/'atomic_scattering_params.json') as f:
     ATOMIC_SCATTERING_PARAMS = json.load(f)
 
 
@@ -101,7 +100,7 @@ def get_reflections(structure, min_d_spacing):
             # Structure factor = sum of atomic scattering factors (with
             # position factor exp(2j * pi * g.r and occupancies).
             # Vectorized computation.
-            f_hkl = np.sum(fs * occus * np.exp(2j * pi * g_dot_r) * dw_correction)
+            f_hkl = np.sum(fs * occus * np.exp(2j * np.pi * g_dot_r) * dw_correction)
 
             # Intensity for hkl is modulus square of structure factor.
             i_hkl = (f_hkl * f_hkl.conjugate()).real

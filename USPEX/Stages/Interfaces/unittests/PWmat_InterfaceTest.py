@@ -9,15 +9,14 @@
 
 __author__ = 'Hao Li'
 
-import os
 import shutil
 import unittest
 import numpy as np
-
+from pathlib import Path
 from ....components import AtomisticRepresentation, PWmat_Interface
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
+HOMEPATH = Path(__file__).parent
 CALC_FOLDER_TEMPLATE = 'CalcFold{}{}'
 
 
@@ -31,11 +30,11 @@ class PWmat_InterfaceTest(unittest.TestCase):
 
         cls.knownSystemEnergy = -858.0749767374361
 
-        params = {'tag': 's0', 'kresol': 0.05, 'etot_input': '{}/Specific/etot.input_1'.format(HOMEPATH),
-                  'potcars': ['{}/Specific/Si.SG15.PBE.UPF'.format(HOMEPATH)]}
+        params = {'tag': 's0', 'kresol': 0.05, 'etot_input': HOMEPATH/'Specific/etot.input_1',
+                  'potcars': [HOMEPATH/'Specific/Si.SG15.PBE.UPF']}
 
         cls.vcEmpty = PWmat_Interface(**params)
-        structure = AtomisticRepresentation.readPOSCAR(os.path.join(HOMEPATH, 'Si4System.vasp'), (1, 1, 1))
+        structure = AtomisticRepresentation.readPOSCAR(HOMEPATH/'Si4System.vasp', pbc=(1, 1, 1))
         cls.testSystem = dict(
             ID=0,
             structure=structure,
@@ -44,31 +43,30 @@ class PWmat_InterfaceTest(unittest.TestCase):
             externalPressure=0.00001
         )
 
-        cls.CALC_FOLDER = os.path.join(HOMEPATH, CALC_FOLDER_TEMPLATE.format(0, 's0'))
-        cls.REFERENCE_FOLDER = os.path.join(HOMEPATH, 'PWmatReference/')
+        cls.CALC_FOLDER = HOMEPATH/CALC_FOLDER_TEMPLATE.format(0, 's0')
+        cls.REFERENCE_FOLDER = HOMEPATH/'PWmatReference/'
 
     @classmethod
     def tearDownClass(cls):
-        for f in os.listdir(HOMEPATH):
-            if os.path.isdir(os.path.join(HOMEPATH, f)) and 'CalcFold' in f:
-                shutil.rmtree(os.path.join(HOMEPATH, f))
+        for f in HOMEPATH.iterdir():
+            if f.is_dir() and 'CalcFold' in str(f):
+                shutil.rmtree(f)
 
     def test_submit(self):
-        if not os.path.isdir(self.CALC_FOLDER):
-            os.mkdir(self.CALC_FOLDER)
+        self.CALC_FOLDER.mkdir(exist_ok=True)
         self.vcEmpty.prepareLocalCalculation(self.testSystem, self.CALC_FOLDER)
 
-        self.assertTrue(os.path.exists(os.path.join(self.CALC_FOLDER, 'etot.input')))
-        with open(os.path.join(self.CALC_FOLDER , 'etot.input')) as f:
+        self.assertTrue(self.CALC_FOLDER.joinpath('etot.input').exists())
+        with open(self.CALC_FOLDER/'etot.input') as f:
             content = f.read()
-        with open(os.path.join(self.REFERENCE_FOLDER , 'etot.input')) as f:
+        with open(self.REFERENCE_FOLDER/'etot.input') as f:
             reference = f.read()
-        self.assertEqual(content,reference)
+        self.assertEqual(content, reference)
 
-        self.assertTrue(os.path.exists(os.path.join(self.CALC_FOLDER , 'atom.config')))
-        with open(os.path.join(self.CALC_FOLDER , 'atom.config')) as f:
+        self.assertTrue(self.CALC_FOLDER.joinpath('atom.config').exists())
+        with open(self.CALC_FOLDER/'atom.config') as f:
             content = f.read()
-        with open(os.path.join(self.REFERENCE_FOLDER , 'atom.config')) as f:
+        with open(self.REFERENCE_FOLDER/'atom.config') as f:
             reference = f.read()
         self.assertEqual(content, reference)
 
@@ -87,13 +85,12 @@ class PWmat_InterfaceTest(unittest.TestCase):
             0.750000  0.750000 0.250000'))
         self.LATTICE_FINAL = np.diag([5.48955284] * 3)#np.eye(3) * 4.398995291
         #self.vcEmpty.submitted[self.testSystem.ID] = 1
-        if not os.path.isdir(self.CALC_FOLDER):
-            os.mkdir(self.CALC_FOLDER)
-        shutil.copy(os.path.join(self.REFERENCE_FOLDER , 'REPORT'), self.CALC_FOLDER)
-        shutil.copy(os.path.join(self.REFERENCE_FOLDER , 'final.config'), self.CALC_FOLDER)
-        shutil.copy(os.path.join(self.REFERENCE_FOLDER , 'RELAXSTEPS'), self.CALC_FOLDER)
-        shutil.copy(os.path.join(self.REFERENCE_FOLDER , 'MOVEMENT'), self.CALC_FOLDER)
-        shutil.copy(os.path.join(self.REFERENCE_FOLDER, 'IN.RELAXOPT'), self.CALC_FOLDER)
+        self.CALC_FOLDER.mkdir(exist_ok=True)
+        shutil.copy(self.REFERENCE_FOLDER/'REPORT', self.CALC_FOLDER)
+        shutil.copy(self.REFERENCE_FOLDER/'final.config', self.CALC_FOLDER)
+        shutil.copy(self.REFERENCE_FOLDER/'RELAXSTEPS', self.CALC_FOLDER)
+        shutil.copy(self.REFERENCE_FOLDER/'MOVEMENT', self.CALC_FOLDER)
+        shutil.copy(self.REFERENCE_FOLDER/'IN.RELAXOPT', self.CALC_FOLDER)
 
         self.assertTrue(self.vcEmpty.isConverged(self.CALC_FOLDER))
         results = self.vcEmpty.readOutput(self.testSystem, self.CALC_FOLDER)

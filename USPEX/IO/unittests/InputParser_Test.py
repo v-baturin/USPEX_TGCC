@@ -1,10 +1,11 @@
 import unittest
-import os
+
+from pathlib import Path
 
 from ..InputParser import read, write
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
+HOMEPATH = Path(__file__).parent
 
 
 class InputParser_Test(unittest.TestCase):
@@ -45,14 +46,14 @@ class InputParser_Test(unittest.TestCase):
 
 
     def test_read(self):
-        self.assertEqual(read(os.path.join(HOMEPATH, 'input1.uspex')), self.params_ref)
+        self.assertEqual(read(HOMEPATH/'input1.uspex'), self.params_ref)
 
     def test_write_read(self):
-        filename = os.path.join(HOMEPATH, 'input_test.uspex')
+        filename = HOMEPATH/'input_test.uspex'
         write(filename, self.params_ref)
         definitions = read(filename)
         self.assertEqual(definitions, self.params_ref)
-        os.remove(filename)
+        filename.unlink()
 
     def test_molecules(self):
         params_ref = {
@@ -79,4 +80,4 @@ class InputParser_Test(unittest.TestCase):
             'numGenerations': 30,
             'stopCrit': 6,
         }
-        self.assertEqual(read(os.path.join(HOMEPATH, 'input2.uspex')), params_ref)
+        self.assertEqual(read(HOMEPATH/'input2.uspex'), params_ref)

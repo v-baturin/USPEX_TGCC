@@ -7,13 +7,13 @@ Objects and functions for working with 3D space groups
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
 
-import os
 import json
 import numpy as np
 
 from collections.abc import Sequence
 from copy import copy, deepcopy
 from itertools import combinations
+from pathlib import Path
 from pymatgen.symmetry.groups import in_array_list
 from scipy.spatial.distance import squareform, pdist
 
@@ -21,8 +21,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-with open(f'{HOMEPATH}/decompositions.json', 'rt') as f:
+HOMEPATH = Path(__file__).parent
+with open(HOMEPATH/'decompositions.json', 'rt') as f:
     DECOMPOSITIONS = json.load(f)
 
 # These are matrices describing translations along each axis.
@@ -353,13 +353,13 @@ class Group(object):
         # We want to divide our generators into two parts. One -- generators preserving our position.
         # And second -- ones not preserving.
         # Generators preserving our position might differ from our initial generators.
-        allGenerators = [np.identity(4, dtype=np.float)]
+        allGenerators = [np.identity(4, dtype=float)]
         allDimensions = [1]
         trivialGenerators = [0]
         nonTrivialGenerators = [0]
 
         for generator, dimension in zip(generators, dimensions):
-            if not np.allclose(generator, np.identity(4, dtype=np.float)):
+            if not np.allclose(generator, np.identity(4, dtype=float)):
                 operators = _generate_full_symmetry_ops(allGenerators, (1, 1, 1))
                 trivial = False
                 for modifier in self.operators:

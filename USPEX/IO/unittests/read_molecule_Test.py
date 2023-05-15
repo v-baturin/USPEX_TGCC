@@ -1,11 +1,10 @@
 import unittest
-import os
-from os.path import join as pj
 
+from pathlib import Path
 from ..read_molecule import read_molecule
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
+HOMEPATH = Path(__file__).parent
 
 
 class ReadMolecule_Test(unittest.TestCase):
@@ -18,8 +17,5 @@ class ReadMolecule_Test(unittest.TestCase):
             'flexDihedrals': [12],
             'charges': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         }
-        mol = read_molecule(pj(HOMEPATH, 'MOL_penicillincharge'))
+        mol = read_molecule(HOMEPATH/'MOL_penicillincharge')
         self.assertEqual(mol, mol_ref)
-
-
-

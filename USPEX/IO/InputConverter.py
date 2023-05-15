@@ -38,19 +38,20 @@ SPECIFIC_COPY_EXCEPTIONS = {
     4: ['lammps.in']
 
 }
-import os
+
+from pathlib import Path
 
 
 class InputConverter(object):
 
-    def __init__(self, filePath=None, wd = './'):
+    def __init__(self, filePath=None, wd=Path.cwd()):
         assert isinstance(filePath, str) or filePath is None
         self.filePath = filePath
         self.wd = wd
 
     def parse(self):
         try:
-            with open(self.wd + self.filePath, 'r') as f:
+            with open(self.wd/self.filePath, 'r') as f:
                 content = f.readlines()
         except:
             return None
@@ -135,7 +136,7 @@ class InputConverter(object):
                     }
 
                     if 'whichTaskManager' in input_variables.keys():
-                        with open(self.wd + 'HEADER') as f:
+                        with open(self.wd/'HEADER') as f:
                             tmHeader = f.read()
                         tm = input_variables['whichTaskManager']
                         codeDict['params'].update({'taskManager': {'type': tm, 'header': tmHeader}})
@@ -146,17 +147,17 @@ class InputConverter(object):
 
                     if code == 1:
                         codeDict['params']['potcars'] = []
-                        specificFiles = os.listdir(self.wd + 'Specific')
-                        for file in specificFiles:
-                            if 'POTCAR' in file:
-                                codeDict['params']['potcars'].append('Specific/' + file)
+                        specificFiles = self.wd/'Specific'
+                        for file in specificFiles.iterdir():
+                            if 'POTCAR' in str(file):
+                                codeDict['params']['potcars'].append(f'Specific/{file.name}')
 
                     if code in [3,4]:
                         codeDict['params']['libs'] = []
-                        specificFiles = os.listdir(self.wd + 'Specific')
-                        for file in specificFiles:
-                            if not any([item in file for item in SPECIFIC_COPY_EXCEPTIONS[code]]):
-                                codeDict['params']['libs'].append('Specific/' + file)
+                        specificFiles = self.wd/'Specific'
+                        for file in specificFiles.iterdir():
+                            if not any([item in file.name for item in SPECIFIC_COPY_EXCEPTIONS[code]]):
+                                codeDict['params']['libs'].append(f'Specific/{file.name}')
 
                     if 'KresolStart' in input_variables.keys():
                         codeDict['params'].update({'kresol' : KPOINTS[i]})
