@@ -60,7 +60,8 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
                     'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O']},
-                    'bondUtility': {'volumeType': 0}
+                    'bondUtility': {'volumeType': 0},
+                    'junctionUtility': {'molSitesMapping': {}}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
@@ -129,7 +130,8 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['mol_h2o'],
                                          'blocks': [[4]]},
                     'radialDistributionUtility': {'symbols': ['H', 'O']},
-                    'bondUtility': {'volumeType': 0.5}
+                    'bondUtility': {'volumeType': 0.5},
+                    'junctionUtility': {'molSitesMapping': {}}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
@@ -158,7 +160,7 @@ class CompileParams_Test(unittest.TestCase):
                         'powderSpectrumAnalyzer': 'spectrum.txt',
                         'compositionSpace': {'symbols': ['Na', 'Cl'],
                                              'blocks': [[8,24]],
-                                             'range': [[1,1]]}
+                                             'range': [[1,1]]},
                     },
                     'optType': 'enthalpy',
                     'selection': {}
@@ -179,7 +181,8 @@ class CompileParams_Test(unittest.TestCase):
                                          'blocks': [[8,24]],
                                          'range': [[1,1]]},
                     'radialDistributionUtility': {'symbols': ['Cl', 'Na']},
-                    'bondUtility': {'volumeType': 0}
+                    'bondUtility': {'volumeType': 0},
+                    'junctionUtility': {'molSitesMapping': {}}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',

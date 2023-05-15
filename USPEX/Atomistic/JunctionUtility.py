@@ -101,11 +101,12 @@ class JunctionUtility:
 
     def __init__(self, molSitesMapping=None):
         self.hasJunctions = bool(molSitesMapping)
-        self.molSitesMapping = dict()
-        for molSymbol, sitesDescriptions in molSitesMapping.items():
-            self.molSitesMapping[molSymbol] = [Site(**siteDescription) for siteDescription in sitesDescriptions]
-        self._adsorbantsJunctionTypes = None
-        self._adsorbantsByJunctionsType = {}
+        if self.hasJunctions:
+            self.molSitesMapping = dict()
+            for molSymbol, sitesDescriptions in molSitesMapping.items():
+                self.molSitesMapping[molSymbol] = [Site(**siteDescription) for siteDescription in sitesDescriptions]
+            self._adsorbantsJunctionTypes = None
+            self._adsorbantsByJunctionsType = {}
 
     @staticmethod
     def calculateJunctionTypes(structure, junctionsDescription):
