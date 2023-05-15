@@ -154,13 +154,13 @@ class DFTBplus_Interface:
     def readStructure(self, calcFolder: Path, pbc):
         ase_struct = read_gen(calcFolder/self.out_geometry_file)
         new_lattice = []
-        positions = ase_struct.get_positions()
         tmp_lattice = ase_struct.cell[:].copy()
         for i, vec in enumerate(tmp_lattice):
             if pbc[i]:
                 new_lattice.append([float(x) for x in vec])
         cell = self.cellType.initFromCellVectors(pbc, new_lattice)
-        new_structure = self.structureType(ase_struct.get_chemical_symbols(), positions, cell=cell)
+        new_structure = self.structureType([self.atomType(i) for i in ase_struct.get_chemical_symbols()], \
+                                           ase_struct.get_positions(), cell=cell)
 
         return new_structure
 
