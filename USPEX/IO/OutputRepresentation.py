@@ -1,7 +1,6 @@
-import os
-from os.path import join as pj
 from datetime import datetime
 from itertools import zip_longest
+from pathlib import Path
 
 from .formatters import createHeader, createHeader_wrap
 from .InputParser import write
@@ -23,15 +22,15 @@ Comp. Phys. Comm., 184, 1172-1182\
 '''
 
 
-def newResFolderName(path: str) -> str:
+def newResFolderName(path: str) -> Path:
     toCreate = True
     folderNum = 0
     resFolder = None
 
     while toCreate:
         folderNum += 1
-        resFolder = os.path.join(path, f'results{folderNum}')
-        if not os.path.isdir(resFolder):
+        resFolder = Path(path)/f'results{folderNum}'
+        if not resFolder.is_dir():
             toCreate = False
     return resFolder
 
@@ -41,7 +40,7 @@ class OutputRepresentation(object):
 
     def __init__(self, optimizerInstance, path: str = './', **params):
         self.RES_FOLDER = newResFolderName(path)
-        self.OUTPUT_FILE = os.path.join(self.RES_FOLDER, 'OUTPUT.txt')
+        self.OUTPUT_FILE = self.RES_FOLDER/'OUTPUT.txt'
         self.stages = params['stages']
         self.numParallelCalcs = params['numParallelCalcs']
         self.numGenerations = params['numGenerations']
@@ -71,8 +70,8 @@ class OutputRepresentation(object):
             self.targetRepresentation = None
         else:
             raise RuntimeError('Unknown optimizer type in output initialization.')
-        os.makedirs(self.RES_FOLDER, exist_ok=True)
-        write(pj(self.RES_FOLDER, self.PARAMETERS_FILENAME), params)
+        self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
+        write(self.RES_FOLDER/self.PARAMETERS_FILENAME, params)
 
     def presentSystems(self, systems: dict, optimizer):
         if self.targetRepresentation is not None:
@@ -82,7 +81,7 @@ class OutputRepresentation(object):
 
     def presentOutput(self, populations, optimizers, optimizer, printDate=True, final=False):
         if self.selectionRepresentation is not None and self.targetRepresentation is not None:
-            os.makedirs(os.path.dirname(self.OUTPUT_FILE), exist_ok=True)
+            self.OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
             # Print the header to the log so it's clear that we execute USPEX:
             output = createHeader('Evolutionary Algorithm Code for Structure Prediction')
@@ -125,7 +124,6 @@ class OutputRepresentation(object):
             row += 'For submission details of each stage see parameters.txt.'
             row += '\n'
             output.append(row)
-
 
 
             output += createHeader_wrap(['Generations block'], 'center')

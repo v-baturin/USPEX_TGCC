@@ -1,13 +1,14 @@
 import unittest
-import os
 import json
 import filecmp
 import shutil
 
+from pathlib import Path
+
 from ...components import GlobalOptimizer, AtomisticRepresentation
 from ..OutputRepresentation import OutputRepresentation
 
-TESTPATH = os.path.dirname(os.path.abspath(__file__))
+TESTPATH = Path(__file__).parent
 
 
 class Output_Test(unittest.TestCase):
@@ -60,16 +61,16 @@ class Output_Test(unittest.TestCase):
                 system = []
                 for j in range(numStages + 1):
                     try:
-                        with open(os.path.join(TESTPATH, f"output_data/system{gen * popSize + i}s{j}"), "r") as f:
+                        with open(TESTPATH/f"output_data/system{gen * popSize + i}s{j}", "r") as f:
                             structure = json.load(f)
-                        structure.update(AtomisticRepresentation.readAtomicStructure(os.path.join(TESTPATH, f"output_data/system{gen*popSize+i}s{j}.vasp")))
+                        structure.update(AtomisticRepresentation.readAtomicStructure(TESTPATH/f"output_data/system{gen*popSize+i}s{j}.vasp"))
                         system.append(structure)
                     except FileNotFoundError:
                         break
                 systems[system[0]['ID']] = system
-            with open(os.path.join(TESTPATH, f"output_data/analisis{gen}"), "r") as f:
+            with open(TESTPATH/f"output_data/analisis{gen}", "r") as f:
                 infos.append(json.load(f))
-            with open(os.path.join(TESTPATH, f"output_data/targetState{gen}"), "r") as f:
+            with open(TESTPATH/f"output_data/targetState{gen}", "r") as f:
                 targetState = json.load(f)
                 optimizer = GlobalOptimizer(**optimizerConfig)
                 for ID in targetState[1]:
@@ -80,22 +81,22 @@ class Output_Test(unittest.TestCase):
                 optimizer.fitness = optimizer.Fitness.calculate(optimizer.pool.uniqueSystems, optimizer.optType,
                                                                 optimizer.target.utilities)
                 optimizers.append(optimizer)
-            with open(os.path.join(TESTPATH, f"output_data/population{gen}"), "r") as f:
+            with open(TESTPATH/f"output_data/population{gen}", "r") as f:
                 populations.append([systems[ID][-1] for ID in json.load(f)])
 
         representation = OutputRepresentation(optimizer, optimizer=optimizerConfig,
                                               stages=stages, numParallelCalcs=numParallelCalcs,
                                               numGenerations=numGenerations, stopCrit=stopCrit,
-                                              path=os.path.join(TESTPATH, folder_name),
+                                              path=TESTPATH/folder_name,
                                               output=output)
 
         representation.presentSystems(systems, optimizers[-1])
         representation.presentOutput(populations, optimizers, optimizers[-1], printDate=False)
 
-        dcmp = filecmp.dircmp(os.path.join(TESTPATH, folder_name_ref), os.path.join(TESTPATH, folder_name))
+        dcmp = filecmp.dircmp(TESTPATH/folder_name_ref, TESTPATH/folder_name)
         self.assertEqual(len(dcmp.diff_files), 0)
         self.assertEqual(len(dcmp.common_dirs), 1)
         for diff_file in dcmp.subdirs[dcmp.common_dirs[0]].diff_files:
             self.assertTrue(".svg" in diff_file or "POSCARS" in diff_file)
 
-        shutil.rmtree(os.path.join(TESTPATH, folder_name))
+        shutil.rmtree(TESTPATH/folder_name)

@@ -1,11 +1,13 @@
 import unittest
 import os
 
+from pathlib import Path
+
 from ..compileParams import compileParams, read_molecule, PowderSpectrumAnalyzer
 
 
-TESTPATH = os.path.dirname(os.path.abspath(__file__))
-PATH_BACKUP = os.getcwd()
+TESTPATH = Path(__file__).parent
+PATH_BACKUP = Path.cwd()
 
 
 class CompileParams_Test(unittest.TestCase):
