@@ -5,7 +5,7 @@ import json
 import numpy as np
 from itertools import combinations_with_replacement
 
-from ...components import AtomisticRepresentation, EnvironmentUtility, AdsorbantUtility, AtomicDisassembler, Cell
+from ...components import AtomisticRepresentation, EnvironmentUtility, JunctionUtility, AtomicDisassembler, Cell
 
 
 class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
@@ -19,14 +19,25 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
         cls.data_Alpha = json2dict(pj(cls.TEST_FILES_DIR, 'data_Alpha.json'))
         cls.NDI_core = cls.compile_core_envutility(cls, cls.data_NDI)
         cls.Alpha_core = cls.compile_core_envutility(cls, cls.data_Alpha)
-        cls.adsorbantsNDI = cls.compile_adsorbants(cls, cls.data_NDI)
-        cls.adsorbantsAlpha = cls.compile_adsorbants(cls, cls.data_Alpha)
+        cls.moleculesNDI, cls.adsorbantsNDI = cls.compile_adsorbants(cls, cls.data_NDI)
+        cls.moleculesAlpha, cls.adsorbantsAlpha = cls.compile_adsorbants(cls, cls.data_Alpha)
 
     def compile_adsorbants(self, data_core_adsorbant):
-        adsorb_dict = {x.pop('name'): x for x in data_core_adsorbant['adsorbants']}
-        for k, v in adsorb_dict.items():
-            v['structure'] = AtomisticRepresentation.readXYZ(pj(self.TEST_FILES_DIR, v['filename']))
-        return AdsorbantUtility(adsorb_dict)
+        molSitesMapping = dict()
+        molecules = dict()
+        for ads in data_core_adsorbant['adsorbants']:
+            adsName = ads['name']
+            structure = AtomisticRepresentation.readXYZ(pj(self.TEST_FILES_DIR, ads['filename']))
+            molecules[adsName] = structure
+            adsSites = []
+            for site in ads['sites']:
+                site['junctionTypes'] = \
+                    JunctionUtility.calculateJunctionTypes(structure,
+                                                           junctionsDescription=site['junctionTypes'])
+                adsSites.append(site)
+            molSitesMapping[adsName] = adsSites
+
+        return molecules, JunctionUtility(molSitesMapping=molSitesMapping)
 
     def compile_core_envutility(self, data_core_adsorbant):
         for env_descr in data_core_adsorbant["environments"]:
@@ -34,22 +45,27 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
         return EnvironmentUtility(data_core_adsorbant["environments"])
 
     def test_dock_NDI(self):
+        adsName = 'Y2'
         assembler = self.NDI_core.assemblers[0]
-        adsorbant = self.adsorbantsNDI.adsorbants['Y2']
-        dockingTransf = assembler.sites[2].dockTransformation(adsorbant.site, np.pi / 2)
-        new_ads_struct = dockingTransf.transform(adsorbant.getStructure())
+        adsorbantSites = self.adsorbantsNDI.molSitesMapping[adsName]
+        adsorbantmol = self.moleculesNDI[adsName]
+        dockingTransf = assembler.sites[2].dockTransformation(adsorbantSites[0], np.pi / 2)
+        new_ads_struct = dockingTransf.transform(adsorbantmol)
         structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
                                                               cell=Cell.initFromCellVectors((0,0,0)),
                                                               environment=assembler.assemble([new_ads_struct]))
         AtomisticRepresentation.writeXYZ(pj(self.TEST_FILES_DIR, 'outNDI.xyz'), structure)
 
     def test_dock_Alpha(self):
+        adsName = 'phenyl'
+        coreSiteNo = 2
         assembler = self.Alpha_core.assemblers[0]
-        adsorbant = self.adsorbantsAlpha.adsorbants['phenyl']
-        jtype, = adsorbant.site.junctionTypes
+        adsorbantSites = self.adsorbantsAlpha.molSitesMapping[adsName]
+        adsorbantmol = self.moleculesAlpha[adsName]
+        jtype, = adsorbantSites[0].junctionTypes
         assembler.getSitesByType(jtype)
-        dockingTransf = assembler.sites[15].dockTransformation(adsorbant.site, np.pi / 2)
-        new_ads_struct = dockingTransf.transform(adsorbant.getStructure())
+        dockingTransf = assembler.sites[coreSiteNo].dockTransformation(adsorbantSites[0], np.pi / 2)
+        new_ads_struct = dockingTransf.transform(adsorbantmol)
         structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
                                                               cell=Cell.initFromCellVectors((0, 0, 0)),
                                                               environment=assembler.assemble([new_ads_struct]))
