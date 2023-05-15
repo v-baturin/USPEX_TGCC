@@ -7,6 +7,8 @@ USPEX.Stages.TaskManagers.Screen_TM
 """
 import logging
 
+from pathlib import Path
+
 from .Screen import Screen, list_screens_id, kill_screen_by_id
 
 logger = logging.getLogger(__name__)
@@ -47,7 +49,7 @@ class Screen_TM:
     #
     #     return ''.join(content)
 
-    async def submit(self, command: str, jobname: str, input: str, output: str, error: str, calcFolder: str) -> int:
+    async def submit(self, command: str, jobname: str, input: str, output: str, error: str, calcFolder: Path) -> int:
         # jobscript = self._prepareSubmission(command, jobname, input, output, error)
         # with open(os.path.join(calcFolder, 'jobscript'), 'wt') as f:
         #     f.write(jobscript)
@@ -59,7 +61,7 @@ class Screen_TM:
         # await screen.send_commands(command, cwd=calcFolder)
         return ID
 
-    def _parseJobID(self, output : str, error : str) -> int:
+    def _parseJobID(self, output : str, error: str) -> int:
         """
 
         :param output:

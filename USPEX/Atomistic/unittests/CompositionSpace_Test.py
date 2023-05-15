@@ -8,11 +8,11 @@ Class for Config testing
 """
 
 import unittest
-import os
+from pathlib import Path
 
 from ...components import AtomisticRepresentation, CompositionSpace, SimpleMoleculeUtility
 
-PATH_WITH_TESTS = os.path.dirname(os.path.abspath(__file__))
+PATH_WITH_TESTS = Path(__file__).parent
 
 
 class CompositionSpace_Test(unittest.TestCase):
@@ -21,10 +21,10 @@ class CompositionSpace_Test(unittest.TestCase):
         # data_2109-TOPOS_fmj_fmj
 
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
-        self.system1 = AtomisticRepresentation.readAtomicStructure('{}/system1.vasp'.format(PATH_WITH_TESTS))
-        self.system2 = AtomisticRepresentation.readAtomicStructure('{}/system2.vasp'.format(PATH_WITH_TESTS))
-        self.system3 = AtomisticRepresentation.readAtomicStructure('{}/system3.vasp'.format(PATH_WITH_TESTS))
-        self.system4 = AtomisticRepresentation.readAtomicStructure('{}/system4.vasp'.format(PATH_WITH_TESTS))
+        self.system1 = AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/'system1.vasp')
+        self.system2 = AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/'system2.vasp')
+        self.system3 = AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/'system3.vasp')
+        self.system4 = AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/'system4.vasp')
 
     def test_fixed(self):
         config = CompositionSpace(symbols=['Mg', 'Al', 'O'], blocks=[[4, 8, 16]], range=[[1, 1]])

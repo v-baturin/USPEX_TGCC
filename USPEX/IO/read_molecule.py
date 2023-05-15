@@ -8,8 +8,9 @@ Function for reading molecule from a MOL file
 """
 
 import logging
-import os
 import numpy as np
+
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ def read_molecule(filename: str):
     :rtype: dict
     :return: molecule as a dictionary.
     """
-    assert os.path.exists(filename), f'File {filename} with molecule does not exist. Please, check the path.'
+    assert Path(filename).exists(), f'File {filename} with molecule does not exist. Please, check the path.'
     
     dct = {}
     with open(filename) as handle:

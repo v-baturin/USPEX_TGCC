@@ -6,9 +6,10 @@ USPEX.Stages.TaskManagers.BSUB
 
 
 import logging
-from os.path import join as pj
 
 logger = logging.getLogger(__name__)
+
+from pathlib import Path
 
 
 class BSUB:
@@ -27,8 +28,11 @@ class BSUB:
         self.connector = connector
         self.header = header
 
-    def _prepareSubmission(self, COMMAND_EXEC : str, JOB_NAME : str,
-                                 inputFile : str, outputFile : str, errorFile : str) -> str:
+    def _prepareSubmission(self, COMMAND_EXEC: str,
+                                 JOB_NAME : str,
+                                 inputFile : str,
+                                 outputFile : str,
+                                 errorFile : str) -> str:
         """
         Preparing jobscript for submission
         :param commandExec:
@@ -56,13 +60,18 @@ class BSUB:
 
         return ''.join(content)
 
-    async def submit(self, command: str, jobname: str, input: str, output: str, error: str, calcFolder : str) -> int:
+    async def submit(self, command: str,
+                           jobname: str,
+                           input: str,
+                           output: str,
+                           error: str,
+                           calcFolder: Path) -> int:
         content = self._prepareSubmission(command, jobname, input, output, error)
-        with open(pj(calcFolder, self._RUNSCRIPT), 'wt') as f:
+        with open(calcFolder/self._RUNSCRIPT, 'wt') as f:
             f.write(content)
-        await self.connector.sync_l2r(pj(calcFolder, self._RUNSCRIPT))
+        await self.connector.sync_l2r(calcFolder/self._RUNSCRIPT)
 
-        returncode, out, err = await self.connector.execute('bsub', cwd=calcFolder, input=content)
+        returncode, out, err = await self.connector.execute('bsub', cwd=str(calcFolder), input=content)
         logger.debug(f'process returned code {returncode}')
         if returncode != 0:
             logger.error(err)

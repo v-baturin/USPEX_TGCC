@@ -7,20 +7,19 @@
 @brief       Class for testing MLIP_Interface.
 """
 
-import os
 import shutil
 import unittest
 import filecmp
 
-from os.path import join as pj
+from pathlib import Path
 
 from ....components import AtomisticRepresentation, MLIP_Interface
 
 
-HOMEPATH = os.path.dirname(os.path.abspath(__file__))
-SPECIFICPATH = pj(HOMEPATH, 'mlipSpecific')
-GATHEREDPATH = pj(HOMEPATH, 'mlipGatheredData')
-WORKPATH = pj(HOMEPATH, 'NaCl_mlip')
+HOMEPATH = Path(__file__).parent
+SPECIFICPATH = HOMEPATH/'mlipSpecific'
+GATHEREDPATH = HOMEPATH/'mlipGatheredData'
+WORKPATH = HOMEPATH/'NaCl_mlip'
 
 
 # class MLIP_CalculatorTest2(unittest.TestCase):
@@ -57,24 +56,24 @@ WORKPATH = pj(HOMEPATH, 'NaCl_mlip')
 class MLIP_train_Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.trainFolder = pj(HOMEPATH, 'MLIP_TRAIN')
-        os.mkdir(self.trainFolder)
-        shutil.copy2(pj(SPECIFICPATH, '24g.mtp'), self.trainFolder)
-        self.interface = MLIP_Interface(tag='0', mode='train', potential=pj(self.trainFolder, '24g.mtp'),
-                                        specorder=['Mo', 'S'], trainingSet=pj(self.trainFolder, 'ts.cfg'),
-                                        args=pj(SPECIFICPATH, 'mlip_args_0'))
+        self.trainFolder = HOMEPATH/'MLIP_TRAIN'
+        self.trainFolder.mkdir()
+        shutil.copy(SPECIFICPATH/'24g.mtp', self.trainFolder)
+        self.interface = MLIP_Interface(tag='0', mode='train', potential=self.trainFolder/'24g.mtp',
+                                        specorder=['Mo', 'S'], trainingSet=self.trainFolder/'ts.cfg',
+                                        args=SPECIFICPATH/'mlip_args_0')
 
     def test_init(self):
         system = dict(
             ID=0,
-            trajectory = AtomisticRepresentation.readMLIPsample(pj(SPECIFICPATH, 'configurations.cfg'),
+            trajectory = AtomisticRepresentation.readMLIPsample(SPECIFICPATH/'configurations.cfg',
                                                                 specorder=['Mo', 'S'])
         )
-        calcFolder = pj(HOMEPATH, 'MLIP_INIT')
-        os.mkdir(calcFolder)
+        calcFolder = HOMEPATH/'MLIP_INIT'
+        calcFolder.mkdir(exist_ok=True)
         args = self.interface.prepareLocalCalculation(system=system, calcFolder=calcFolder)
         self.assertEqual(args, 'train 24g.mtp input.cfg --weight_scaling=2 --weight_scaling_forces=1')
-        self.assertTrue(not filecmp.dircmp(pj(HOMEPATH, 'MLIP_REF'), calcFolder).diff_files)
+        self.assertTrue(not filecmp.dircmp(HOMEPATH/'MLIP_REF', calcFolder).diff_files)
         shutil.rmtree(calcFolder)
 
 
@@ -82,9 +81,9 @@ class MLIP_train_Test(unittest.TestCase):
         system = dict(
         )
 
-        calcFolder=pj(HOMEPATH, 'MLIP_REF')
+        calcFolder=HOMEPATH/'MLIP_REF'
         results = self.interface.readOutput(system=system, calcFolder=calcFolder)
-        self.assertTrue(filecmp.cmp(pj(self.trainFolder, 'ts.cfg'), pj(calcFolder, 'input.cfg')))
+        self.assertTrue(filecmp.cmp(self.trainFolder/'ts.cfg', calcFolder/'input.cfg'))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.trainFolder)
