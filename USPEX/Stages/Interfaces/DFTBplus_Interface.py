@@ -6,18 +6,20 @@ USPEX.Stages.DFTBplus_Interface
 
 import logging
 import os
-from os.path import join as pj
 import numpy as np
 
 from ase import Atoms
 from ase.io.gen import read_gen, write_gen
+from pathlib import Path
 
 from .KPoints import KPoints, BadKPoints
 
 logger = logging.getLogger(__name__)
+
 HARTREE_TO_EV = 27.211386245988 #https://physics.nist.gov/cgi-bin/cuu/Value?hrev
 GPA_TO_AU = 1.0/29421.015697
 ANGSTROM_TO_BOHR = 1.0/0.529177210903
+
 
 class DFTBplus_Interface:
     """
@@ -44,13 +46,17 @@ class DFTBplus_Interface:
         cls.atomType = atomType
         cls.cellType = cellType
 
-    def __init__(self, tag: str, kresol: float = None, dftb_input: str = None, targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str,
+                       kresol: float = None,
+                       dftb_input: str = None,
+                       targetProperties: list = None,
+                       **kwargs):
 
         self.tag = tag
         if dftb_input is None:
-            dftb_input = pj(os.getcwd(), f'Specific/{self.specific_file}{tag}')
+            dftb_input = Path.cwd()/f'Specific/{self.specific_file}{tag}'
 
-        assert os.path.exists(dftb_input)
+        assert dftb_input.exists(), f'Please, check path to DFTB input. Now it is {dftb_input}'
 
         with open(dftb_input, 'r') as f:
             self.dftb_input = f.read()
@@ -58,7 +64,7 @@ class DFTBplus_Interface:
         self.kPoints = KPoints(kresol) if kresol is not None else None
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
 
         structure = system['structure']
         cell = structure.getCell()
@@ -67,10 +73,10 @@ class DFTBplus_Interface:
         coordinates = structure.getCartesianCoordinates()
         cell_vectors = cell.getCellVectors()
         ase_struct = Atoms(symbols, positions=coordinates, cell=cell_vectors, pbc=system['pbc'])
-        write_gen(pj(calcFolder, self.geometry_file), ase_struct)
+        write_gen(calcFolder/self.geometry_file, ase_struct)
 
         if self.kPoints is None or cell.dim == 0:
-            with open(pj(calcFolder, self.kpoints_file), 'wt') as f:
+            with open(calcFolder/self.kpoints_file, 'wt') as f:
                 f.write('')
         else:
             try:
@@ -79,15 +85,14 @@ class DFTBplus_Interface:
                 # This LATTICE is extremely wrong, let's skip it from now
                 logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
                 kPoints = [1, 1, 1]
-            with open(pj(calcFolder, self.kpoints_file), 'wt') as f:
+            with open(calcFolder/self.kpoints_file, 'wt') as f:
                 f.write('KPointsAndWeights = SupercellFolding {\n')
-                f.write('{}  0  0\n'.format(kPoints[0]))
-                f.write('0  {}  0\n'.format(kPoints[1]))
-                f.write('0  0  {}\n'.format(kPoints[2]))
-                f.write('0.0 0.0 0.0\n')
-                f.write('}\n')
+                f.write(f'{kPoints[0]}  0  0\n')
+                f.write(f'0  {kPoints[1]}  0\n')
+                f.write(f'0  0  {kPoints[2]}\n')
+                f.write('0.0 0.0 0.0\n}\n')
 
-        with open(pj(calcFolder, self.pressure_file), 'wt') as f:
+        with open(calcFolder/self.pressure_file, 'wt') as f:
             if system['externalPressure']:
                 f.write(f"Pressure [Pa] = {system['externalPressure']*10.0**9:10f}\n")
             else:
@@ -108,28 +113,26 @@ class DFTBplus_Interface:
             moved_atoms_string += ')\n'
         else:
             moved_atoms_string = 'MovedAtoms = 1:-1\n'
-        with open(pj(calcFolder, self.movedAtoms_file), 'wt') as f:
+        with open(calcFolder/self.movedAtoms_file, 'wt') as f:
             f.write(moved_atoms_string)
 
-        with open(pj(calcFolder, self.inputFile), 'wt') as dest:
+        with open(calcFolder/self.inputFile, 'wt') as dest:
             dest.write(self.dftb_input)
 
         return ''
 
-    def isConverged(self, calcFolder: str):
-
-        if not os.path.exists(pj(calcFolder, self.outputFile)):
+    def isConverged(self, calcFolder: Path) -> bool:
+        if not calcFolder.joinpath(self.outputFile).exists():
             return False
 
-        with open(pj(calcFolder, self.outputFile), 'rt') as f:
+        with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.read()
         if 'DFTB+ running times' not in content:
             logger.error('dftb+ is not completely Done')
             return False
         return True
 
-    def readOutput(self, system, calcFolder: str):
-
+    def readOutput(self, system, calcFolder: Path):
         new_structure = self.readStructure(calcFolder, system.pop('pbc'))
         EnergyHa = self.readEnergyHa(calcFolder)
 
@@ -148,29 +151,23 @@ class DFTBplus_Interface:
 
         return results
 
-    def readStructure(self, calcFolder: str, pbc):
-
-        ase_struct = read_gen(pj(calcFolder, self.out_geometry_file))
-        atomTypes = []
+    def readStructure(self, calcFolder: Path, pbc):
+        ase_struct = read_gen(calcFolder/self.out_geometry_file)
         new_lattice = []
-        for i in ase_struct.get_chemical_symbols():
-            atomTypes.append(self.atomType(i))
         positions = ase_struct.get_positions()
         tmp_lattice = ase_struct.cell[:].copy()
         for i, vec in enumerate(tmp_lattice):
             if pbc[i]:
                 new_lattice.append([float(x) for x in vec])
         cell = self.cellType.initFromCellVectors(pbc, new_lattice)
-        new_structure = self.structureType(atomTypes, positions, cell=cell)
+        new_structure = self.structureType(ase_struct.get_chemical_symbols(), positions, cell=cell)
 
         return new_structure
 
-    def readEnergyHa(self, calcFolder: str):
-
-        with open(pj(calcFolder, self.outputFile), 'rt') as f:
+    def readEnergyHa(self, calcFolder: Path) -> float:
+        with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
             for i in content:
                 if 'Total Energy:' in i:
                     EnergyHa = float(i.split()[2])
-
         return EnergyHa
