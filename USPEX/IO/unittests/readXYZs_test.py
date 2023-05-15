@@ -4,7 +4,7 @@ from pathlib import Path
 from ...components import AtomisticRepresentation
 
 
-HOMEPATH = Path(__file__)
+HOMEPATH = Path(__file__).parent
 
 
 class ReadXYZs_Test(unittest.TestCase):
