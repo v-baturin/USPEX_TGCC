@@ -566,14 +566,12 @@ class NanoparticleCore:
             nSites = len(self.sites)
             if junctionType.label == "FACE":
                 newSites = [
-                    Site(id=idx, mountPoint=m, orientation=v,
-                         junctionTypes={junctionType}).doOffset(self.getStructure())
+                    Site(id=idx, mountPoint=m, orientation=v, junctionTypes={junctionType})
                     for m, v, idx in zip(alphaShape.triangles_center, alphaShape.face_normals,
                                          range(nSites, nSites + len(alphaShape.triangles_center)))]
             elif junctionType.label == "VERTEX":
                 newSites = [
-                    Site(id=idx, mountPoint=m, orientation=v,
-                         junctionTypes={junctionType}).doOffset(self.getStructure())
+                    Site(id=idx, mountPoint=m, orientation=v, junctionTypes={junctionType})
                     for m, v, idx in zip(alphaShape.vertices, alphaShape.vertex_normals,
                                          range(nSites, nSites + len(alphaShape.vertices)))]
             elif junctionType.label == "EDGE":
@@ -583,10 +581,9 @@ class NanoparticleCore:
                     origin = 0.5 * (alphaShape.vertices[adj_e[0]] + alphaShape.vertices[adj_e[1]])
                     normal = alphaShape.face_normals[adj_f[0]] + alphaShape.face_normals[adj_f[1]]
                     normal /= np.linalg.norm(normal)
-                    edgeSites.append(
-                        Site(id=idx, mountPoint=origin, orientation=normal,
-                             junctionTypes={junctionType}).doOffset(self.getStructure()))
+                    edgeSites.append(Site(id=idx, mountPoint=origin, orientation=normal, junctionTypes={junctionType}))
                 newSites = edgeSites
+            [site.doOffset(self.getStructure()) for site in newSites]
             self._sitesByType[junctionType] = newSites
             self.sites += newSites
             return newSites
