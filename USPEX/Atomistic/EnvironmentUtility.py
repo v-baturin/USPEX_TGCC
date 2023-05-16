@@ -533,7 +533,7 @@ class NanoparticleCore:
             return self._structure
 
         def __repr__(self):
-            return f"<Core {self._structure.getFormula()}>"
+            return f"<CoreAssembler {self._structure.getFormula()}>"
 
         def assemble(self, molecules, **kwargs):
             wholeSysStruct, _ = EnvironmentUtility.atomicDisassemblerType.assemble(molecules + [self._structure],
