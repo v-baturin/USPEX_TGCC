@@ -10,7 +10,6 @@ from shutil import copyfile
 
 from ..IO.OutputRepresentation import OutputRepresentation
 from ..IO.InputParser import read
-from ..IO.compileParams import compileParams
 
 
 logger = logging.getLogger(__name__)
@@ -31,6 +30,7 @@ class GenerationController(object):
     DUMP_FILENAME_BACKUP = Path("controller.dump.back")
     knownOptimizers = {}
     populationProcessorType = None
+    compileParams = None
 
     @classmethod
     def registerOptimizer(cls, optimizerType: type):
@@ -40,6 +40,10 @@ class GenerationController(object):
     @classmethod
     def setPopulationProcessor(cls, populationProcessorType):
         cls.populationProcessorType = populationProcessorType
+
+    @classmethod
+    def setUpcompileParams(cls, compileParams):
+        cls.compileParams = compileParams
 
     def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages : list,
                  optimizer, outputRepresentation, outputRefreshDelay):
@@ -70,7 +74,7 @@ class GenerationController(object):
                 controller = pcl.load(f)
             logger.info('Calculation initialized from dump file.')
         elif GenerationController.INPUT_FILENAME.exists():
-            params = compileParams(read(GenerationController.INPUT_FILENAME))
+            params = GenerationController.compileParams(read(GenerationController.INPUT_FILENAME))
             optimizer = params['optimizer']
             numParallelCalcs = params['numParallelCalcs']
             numGenerations = params['numGenerations']
