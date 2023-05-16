@@ -126,7 +126,19 @@ class BondUtility:
                 self.goodBonds[frozenset(key)] = value
         else:
             self.goodBonds = None
-        self.cutoff = cutoff
+
+
+        if isinstance(cutoff, dict):
+            cutoff_tmp = {}
+            for key, value in cutoff.items():
+                assert isinstance(key, str)
+                assert np.isfinite(value)
+                s1, s2 = key.split(' ')
+                cutoff_tmp[frozenset((s1, s2))] = value
+            self.cutoff = {tuple(key) * (3 - len(key)): val for key, val in cutoff_tmp.items()}
+        else:
+            self.cutoff = cutoff
+
         self.volumeEstimator = VolumeEstimator(volumeType)
 
         self._distances = {}
