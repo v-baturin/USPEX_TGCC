@@ -942,6 +942,14 @@ class BondUtility_TestCheckConnectivity(unittest.TestCase):
         system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
         self.assertTrue(bonds.isConnected(system))
 
+    def test_cusomCutoff(self):
+        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'POSCARS'/'BeB2H8_POSCAR')
+        bonds = BondUtility()
+        self.assertFalse(bonds.isConnected(system))
+        cutoffInputDict = { 'B B': 4.37,  'B Be': 4.68,   'B H': 2.99,  'Be Be': 4.992,  'Be H': 3.302,  'H H': 1.612}
+        bonds2 = BondUtility(cutoff=cutoffInputDict)
+        self.assertTrue(bonds2.isConnected(system))
+
 
 if __name__ == '__main__':
     unittest.main()
