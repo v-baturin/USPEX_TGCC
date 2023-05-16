@@ -1,9 +1,5 @@
-from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
-from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
-from ..Atomistic.EnvironmentUtility import EnvironmentUtility
-from .AtomisticRepresentation import AtomisticRepresentation
-from .read_molecule import read_molecule
-from ..components import JunctionUtility
+from ..components import AtomisticRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
+    EnvironmentUtility, JunctionUtility
 
 
 def compileParams(main: dict) -> dict:
@@ -39,8 +35,6 @@ def compileParams(main: dict) -> dict:
                 defaultVolumeType = 0.5
                 structure = AtomisticRepresentation.readMol(symbol['filename'])
                 molecules[symbol['name']] = structure
-                # molDct = read_molecule(symbol['filename'])
-                # molecules[symbol['name']] = molDct
                 symbols[i] = symbol['name']
                 elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
         target['junctionUtility'] = {'molSitesMapping': molSitesMapping}

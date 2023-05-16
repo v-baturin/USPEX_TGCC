@@ -110,3 +110,5 @@ Stages.registerStage('atomistic', AtomisticStage)
 Stages.registerStage('populationProcessor', PopulationProcessor)
 GenerationController.setPopulationProcessor(PopulationProcessor)
 PopulationProcessor.setStages(Stages)
+from .IO.compileParams import compileParams
+GenerationController.setUpcompileParams(compileParams)

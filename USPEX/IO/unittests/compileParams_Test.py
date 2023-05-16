@@ -3,7 +3,7 @@ import os
 
 from pathlib import Path
 
-from ..compileParams import compileParams, read_molecule, PowderSpectrumAnalyzer
+from ...components import compileParams, PowderSpectrumAnalyzer
 
 
 TESTPATH = Path(__file__).parent
