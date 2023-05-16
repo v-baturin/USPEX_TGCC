@@ -8,9 +8,10 @@ USPEX.Stages.Connector
 
 import logging
 import asyncio, asyncssh
-import os
+
 from copy import copy
 import random
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 asyncssh.set_log_level(logging.WARNING)
@@ -50,7 +51,7 @@ class Connector(object):
 
     MAX_CHAN = 10
 
-    def __init__(self, domain: str = None, remoteFolder: str = '~/USPEXRemoteFolder', maxChannels=MAX_CHAN, **kwargs):
+    def __init__(self, domain: str = None, remoteFolder: Path = Path('~/USPEXRemoteFolder'), maxChannels=MAX_CHAN, **kwargs):
         '''
         :type domain: str
         :param domain: domain name or IP address of remote server.
@@ -62,15 +63,12 @@ class Connector(object):
         :param password: password for the connection. (optional)
         :type know_hosts: str or NoneType
         :param: path to file containing list of known hosts. None if verification of known hosts is not needed.
-        :type remoteFolder: str
+        :type remoteFolder: Path
         :param remoteFolder: path to working folder on remote server.
         '''
 
         self._domain = domain
-        if domain is None:
-            self.remoteFolder = None
-        else:
-            self.remoteFolder = remoteFolder
+        self.remoteFolder = None if domain is None else remoteFolder
         self._maxChannels = maxChannels
         self._kwargs = kwargs
 
@@ -97,7 +95,7 @@ class Connector(object):
         self.channelGuard = asyncio.Semaphore(self._maxChannels)
     ############################################
 
-    async def execute(self, execCommand : str, cwd : str = '.', **kwargs):
+    async def execute(self, execCommand: str, cwd: str = '.', **kwargs):
         '''
         Method for running some commands on remote server
         :param execCommand:
@@ -105,7 +103,7 @@ class Connector(object):
         '''
         if self._domain is not None:
             sftp = await self._start_sftp_session()
-            remote_cwd = os.path.join(self.remoteFolder, cwd).replace('~', await sftp.getcwd())
+            remote_cwd = str(self.remoteFolder/cwd).replace('~', await sftp.getcwd())
             await sftp.makedirs(remote_cwd, exist_ok=True)
             await self._close_sftp_session(sftp)
             command = f"cd {remote_cwd} && {execCommand}"
@@ -137,37 +135,37 @@ class Connector(object):
             returncode = process.returncode
             return returncode, out, err
 
-    async def sync_l2r(self, path : str):
+    async def sync_l2r(self, path: Path):
         '''
         Local to remote
         :param path: path to directory
         '''
         if self._domain is not None:
             sftp = await self._start_sftp_session()
-            remote_path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
-            await sftp.makedirs(os.path.dirname(remote_path), exist_ok=True)
+            remote_path = Path(str(self.remoteFolder/path).replace('~', await sftp.getcwd()))
+            await sftp.makedirs(remote_path.parent, exist_ok=True)
             await sftp.put(path, remote_path, recurse=True)
             await self._close_sftp_session(sftp)
 
-    async def sync_r2l(self, path : str):
+    async def sync_r2l(self, path: Path):
         '''
         Remote to local
         :param path: path to directory
         '''
         if self._domain is not None:
             sftp = await self._start_sftp_session()
-            remote_path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
-            local_path = os.path.dirname(path) if os.path.isdir(path) else path
+            remote_path = Path(str(self.remoteFolder/path).replace('~', await sftp.getcwd()))
+            local_path = path.parent if path.is_dir() else path
             await sftp.get(remote_path, local_path, recurse=True)
             await self._close_sftp_session(sftp)
 
-    async def clean(self, path : str):
+    async def clean(self, path: Path):
         '''
         :param path: path to directory
         '''
         if self._domain is not None:
             sftp = await self._start_sftp_session()
-            path = os.path.join(self.remoteFolder, path).replace('~', await sftp.getcwd())
+            path = str(self.remoteFolder/path).replace('~', await sftp.getcwd())
             await sftp.rmtree(path, ignore_errors=True)
             await self._close_sftp_session(sftp)
 

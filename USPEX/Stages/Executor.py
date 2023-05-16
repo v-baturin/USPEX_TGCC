@@ -6,10 +6,11 @@ USPEX.Stages.Executor
 
 """
 
-import logging
-import os, shutil
 import asyncio
-from os.path import join as pj
+import logging
+import shutil
+
+from pathlib import Path
 
 from .Connector import Connector
 
@@ -35,8 +36,16 @@ class Executor(object):
         assert name not in cls.knownTaskManagers
         cls.knownTaskManagers[name] = taskManagerType
 
-    def __init__(self, type: str, commandExecutable: str, tag: str, workingDirectory: str = '.', remote=None,
-                 taskManager=None, gather: bool = False, keepFolders: bool = False, sleepTime: int = None, **kwargs):
+    def __init__(self, type: str,
+                       commandExecutable: str,
+                       tag: str,
+                       workingDirectory: str = '.',
+                       remote=None,
+                       taskManager=None,
+                       gather: bool = False,
+                       keepFolders: bool = False,
+                       sleepTime: int = None,
+                       **kwargs):
         """
 
         :param commandExecutable:
@@ -50,7 +59,7 @@ class Executor(object):
         logger.debug('Created calculator.')
 
         self.commandExecutable = commandExecutable
-        self.workingDirectory = workingDirectory
+        self.workingDirectory = Path(workingDirectory)
         self.tag = tag
         self.gather = gather
         self.keepFolders = keepFolders
@@ -80,14 +89,14 @@ class Executor(object):
         ID = system['ID']
         tag = self.tag
         self._gatherSystems(system, tag, ioType='input')
-        calcFolder = pj(self.workingDirectory, self.CALC_FOLDER_TEMPLATE.format(ID, tag))
+        calcFolder = self.workingDirectory/self.CALC_FOLDER_TEMPLATE.format(ID, tag)
         for attempt in range(self._ATTEMPTS):
             if calcFolder in self.submittedTasks:
                 jobID = self.submittedTasks[calcFolder]
                 logger.info(f'System {ID} with tag {tag} was already submitted as {jobID} job.')
             else:
                 shutil.rmtree(calcFolder, ignore_errors=True)
-                os.makedirs(calcFolder)
+                calcFolder.mkdir(parents=True)
                 args = self._interface.prepareLocalCalculation(system, calcFolder)
                 self._gatherData(calcFolder, ioType='input')
                 await self._connector.sync_l2r(calcFolder)
@@ -119,28 +128,25 @@ class Executor(object):
         self._gatherSystems(system, tag, ioType='output')
         return results
 
-    def _gatherSystems(self, system, tag : str, ioType : str):
+    def _gatherSystems(self, system, tag: str, ioType: str):
         if self.gather:
-            folder = pj(self.workingDirectory, 'GatheredData', ioType)
-            os.makedirs(folder, exist_ok=True)
+            folder = self.workingDirectory/'GatheredData'/ioType
+            folder.mkdir(exist_ok=True)
             from ..components import AtomisticRepresentation
-            with open(pj(folder, f"system{system['ID']}_{tag}"), 'wt') as f:
+            with open(folder/f"system{system['ID']}_{tag}", 'wt') as f:
                 AtomisticRepresentation.writeAtomicStructure(f, system)
 
-    def _gatherData(self, calcFolder : str, ioType : str):
+    def _gatherData(self, calcFolder: Path, ioType : str):
         if self.gather:
-            copytree(calcFolder, pj(self.workingDirectory, 'GatheredData', ioType, os.path.basename(calcFolder)))
+            copytree(calcFolder, self.workingDirectory/'GatheredData'/ioType/calcFolder.name)
 
 
-def copytree(src, dst, symlinks=False, ignore=None):
-    if not os.path.exists(dst):
-        os.makedirs(dst)
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dst, item)
-        if os.path.isdir(s):
-            shutil.copytree(s, d, symlinks, ignore)
+def copytree(src: Path, dst: Path, symlinks=False, ignore=None):
+    dst.mkdir(exist_ok=True, parents=True)
+    for item in src.iterdir():
+        d = dst/item.name
+        if item.is_dir():
+            shutil.copytree(item, d, symlinks, ignore)
         else:
-            if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
-                shutil.copy2(s, d)
-
+            if not d.exists() or item.stat().st_mtime - d.stat().st_mtime > 1:
+                shutil.copy2(item, d)

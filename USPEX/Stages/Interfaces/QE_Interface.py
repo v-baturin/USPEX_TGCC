@@ -63,9 +63,7 @@ class QE_Interface:
         self.adapter = self.aseAdapterType(self.options)
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system: dict, calcFolder: str):
-        calcFolder = Path(calcFolder)
-
+    def prepareLocalCalculation(self, system: dict, calcFolder: Path):
         structure = system['structure']
 
         # Copying pseudopotentials to calc folder
@@ -86,9 +84,8 @@ class QE_Interface:
 
         return ''
 
-    def isConverged(self, calcFolder: str):
-        calcFolder = Path(calcFolder)
-        if not calcFolder.joinpath(self.outputFile).exists():
+    def isConverged(self, calcFolder: Path):
+        if not Path(calcFolder).joinpath(self.outputFile).exists():
             res = False
         else:
             with open(calcFolder/self.outputFile, 'rt') as out:

@@ -11,11 +11,13 @@ import unittest
 from ..SBATCH import SBATCH
 from ...Connector import Connector
 
-import os
-import shutil
 import asyncio
+import shutil
 
-TESTPATH = os.path.dirname(os.path.abspath(__file__))
+from pathlib import Path
+
+TESTPATH = Path(__file__).parent
+
 Nchan = 40
 
 HEADER =  '''#!/bin/sh
@@ -32,44 +34,48 @@ class SBATCH_Test(unittest.TestCase):
 
     '''
 
-
-
     @classmethod
     def setUpClass(cls):
         cls.command_exec = 'sleep 20'
 
 
-    async def coro(self, i):
-        folder = 'folder{}/'.format(i)
-        if os.path.exists(folder):
+    async def coro(self, folder: Path):
+        if folder.is_dir():
             shutil.rmtree(folder)
-        os.mkdir(folder)
-        input = 'folder{}/input'.format(i)
-        output = 'folder{}/output'.format(i)
-        error = 'folder{}/error'.format(i)
-        with open(input, 'wt') as f:
+        folder.mkdir()
+        input, output, error = 'input', 'output', 'error'
+        with open(folder/input, 'wt') as f:
             pass
         await self.taskManager.connector.sync_l2r(folder)
-        jobID = await self.taskManager.submit(self.command_exec, 'TestJob', 'input', 'output', 'error', folder)
+        jobID = await self.taskManager.submit(self.command_exec, 'TestJob', input, output, error, folder)
         self.assertTrue(jobID > 0)
         self.assertTrue(await self.taskManager.isExist(jobID))
         await self.taskManager.kill(jobID)
         await self.taskManager.connector.sync_r2l(folder)
         await self.taskManager.connector.clean(folder)
-        shutil.rmtree('folder{}'.format(i))
+        shutil.rmtree(folder)
 
     def test_submit_kill_isExist_remote(self):
         self.taskManager = SBATCH(HEADER, Connector(domain = 'localhost', known_hosts=None))
         coros = []
         for i in range(Nchan):
-            coros.append(self.coro(i))
+            folder = Path(f'folder{i}')
+            coros.append(self.coro(folder))
         loop = asyncio.get_event_loop()
         isExists = loop.run_until_complete(asyncio.gather(*coros))
+        for i in range(Nchan):
+            folder = Path(f'folder{i}')
+            self.assertFalse(folder.exists())
 
     def test_submit_kill_isExist_local(self):
         self.taskManager = SBATCH(HEADER, Connector())
         coros = []
         for i in range(Nchan):
-            coros.append(self.coro(i))
+            folder = Path(f'folder{i}')
+            coros.append(self.coro(folder))
         loop = asyncio.get_event_loop()
         isExists = loop.run_until_complete(asyncio.gather(*coros))
+        for i in range(Nchan):
+            folder = Path(f'folder{i}')
+            self.assertFalse(folder.exists())
+

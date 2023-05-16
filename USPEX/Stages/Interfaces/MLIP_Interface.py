@@ -6,10 +6,9 @@ USPEX.Stages.MLIP_Interface
 
 """
 import logging
-import os
 import shutil
 import numpy as np
-from os.path import join as pj, basename as bn
+from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
@@ -42,19 +41,25 @@ class MLIP_Interface:
         cls.atomisticRepresentation = atomisticRepresentation
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, tag: str, mode: str, potential: str, specorder, args: str = None, trainingSet: str = None,
-                 targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str,
+                       mode: str,
+                       potential: str,
+                       specorder,
+                       args: str = None,
+                       trainingSet: str = None,
+                       targetProperties: list = None,
+                       **kwargs):
 
         self.tag = tag
         self.tmp = f'tmp_{tag}'
         self.mode = mode
-        self.potential = potential
+        self.potential = Path(potential)
         self.specorder = specorder
         self.trainingSet = trainingSet
         if self.mode == 'select_add':
             assert self.trainingSet is not None
-        argsFile = f'Specific/mlip_args_{tag}' if args is None else args
-        with open(pj(os.getcwd(), argsFile)) as f:
+        argsFile = Path(f'Specific/mlip_args_{tag}') if args is None else Path(args)
+        with open(argsFile) as f:
             self.args = f.read()
         if targetProperties is not None:
             self.targetProperties = targetProperties
@@ -65,10 +70,10 @@ class MLIP_Interface:
         else:
             self.targetProperties = []
 
-    def prepareLocalCalculation(self, system, calcFolder: str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
 
         # create empty input file
-        with open(pj(calcFolder, self.inputFile), 'wt') as f:
+        with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
         if 'trajectory' in system:
@@ -79,14 +84,14 @@ class MLIP_Interface:
                 sample.extend(s for s in individual['trajectory'] if not s['isBad'])
         else:
             raise RuntimeError('No mlip sample in system.')
-        self.atomisticRepresentation.saveMLIPsample(pj(calcFolder, self.in_cfg_file), self.specorder, sample)
+        self.atomisticRepresentation.saveMLIPsample(calcFolder/self.in_cfg_file, self.specorder, sample)
 
         shutil.copy2(self.potential, calcFolder)
 
         if self.mode == 'train':
-            args = f'train {bn(self.potential)} {self.in_cfg_file} {self.args}'
+            args = f'train {self.potential.name} {self.in_cfg_file} {self.args}'
         elif self.mode == 'select_add':
-            args = f'select_add {bn(self.potential)} {bn(self.trainingSet)}' \
+            args = f'select_add {self.potential.name} {self.trainingSet.name}' \
                    f' {self.in_cfg_file} {self.out_cfg_file} {self.args}'
             shutil.copy2(self.trainingSet, calcFolder)
         else:
@@ -94,9 +99,9 @@ class MLIP_Interface:
 
         return args
 
-    def isConverged(self, calcFolder: str):
-        if os.path.isfile(pj(calcFolder, self.out_cfg_file)):
-            with open(pj(calcFolder, self.out_cfg_file), 'r') as f:
+    def isConverged(self, calcFolder: Path):
+        if calcFolder.joinpath(self.out_cfg_file).is_file():
+            with open(calcFolder/self.out_cfg_file, 'r') as f:
                 content = f.read()
             if content:
                 return True
@@ -108,14 +113,14 @@ class MLIP_Interface:
             #         return True
         return self.mode == 'train'
 
-    def readOutput(self, system, calcFolder: str):
+    def readOutput(self, system, calcFolder: Path):
         results = {}
         if 'sample' in self.targetProperties:
-            sample = self.atomisticRepresentation.readMLIPsample(pj(calcFolder, self.out_cfg_file), self.specorder)
+            sample = self.atomisticRepresentation.readMLIPsample(calcFolder/self.out_cfg_file, self.specorder)
             system['sample'] = sample
         if 'potential' in self.targetProperties:
-            shutil.copy2(pj(calcFolder, bn(self.potential)), self.potential)
-        with open(pj(calcFolder, self.in_cfg_file), 'r') as f:
+            shutil.copy2(calcFolder/self.potential.name, self.potential)
+        with open(calcFolder/self.in_cfg_file, 'r') as f:
             content = f.read()
         results['isStable'] = len(content) == 0
         if 'trainingSet' in self.targetProperties:
