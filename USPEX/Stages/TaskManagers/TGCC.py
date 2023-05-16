@@ -5,7 +5,8 @@ USPEX.Stages.TaskManagers.TGCC
 """
 
 import logging
-from os.path import join as pj
+
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class TGCC:
 
         return ''.join(content)
 
-    async def submit(self, command: str, jobname: str, input: str, output: str, error: str, calcFolder: str) -> int:
+    async def submit(self, command: str, jobname: str, input: str, output: str, error: str, calcFolder: Path) -> int:
         '''
         :param command: command executable
         :param jobname: name of the job
@@ -68,7 +69,7 @@ class TGCC:
         :return:
         '''
         content = self._prepareSubmission(command, jobname, input, output, error)
-        filepath = pj(calcFolder, self._RUNSCRIPT)
+        filepath = calcFolder/self._RUNSCRIPT
         with open(filepath, 'wt') as f:
             f.write(content)
         await self.connector.sync_l2r(filepath)
