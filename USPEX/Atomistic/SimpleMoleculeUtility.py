@@ -37,23 +37,22 @@ class SimpleMoleculeUtility(object):
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, molecules : dict = None):
+    def __init__(self, molecules: dict = None, doCenterMolecule=False):
         """
         :param molecules: {<name>: <definition>} dictionary of molecule definitions.
 
         """
         self.isTrueMolecular = bool(molecules)
-        self.molecules = {el.short_name : self.structureType([el], [[0., 0., 0.]]) for el in self.atomType.all_elements()}
+        self.molecules = {el.short_name: self.structureType([el], [[0., 0., 0.]]) for el in self.atomType.all_elements()}
         if molecules is not None:
-            for symbol, molDct in list(molecules.items()):
-                atomTypes = [self.atomType(s) for s in molDct['symbols']]
-                coordinates = molDct['positions']
-                zmatrixConfig = molDct['configZMatrix']
-                molecule = self.structureType(atomTypes, coordinates, zmatrixConfig=zmatrixConfig)
-                offset = Transformation.fromRotVector([0.,0.,0.], -molecule.getCenterOfMassCartesianCoordinates())
-                molecule = offset.transform(molecule)
+            for symbol, molecule in molecules.items():
+                if doCenterMolecule:
+                    offset = Transformation.fromRotVector([0., 0., 0.], -molecule.getCenterOfMassCartesianCoordinates())
+                    molecule = offset.transform(molecule)
                 self.molecules[symbol] = molecule
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
+        # TODO: what if we have two molecules with same formula?
+
 
     def populateStructure(self, cell, operations):
         """
