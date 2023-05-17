@@ -48,7 +48,7 @@ class Connector(object):
 
     MAX_CHAN = 10
 
-    def __init__(self, domain: str = None, remoteFolder: Path = Path('~/USPEXRemoteFolder'), maxChannels=MAX_CHAN, **kwargs):
+    def __init__(self, domain: str = None, remoteFolder: str = '~/USPEXRemoteFolder', maxChannels=MAX_CHAN, **kwargs):
         '''
         :type domain: str
         :param domain: domain name or IP address of remote server.
@@ -65,7 +65,7 @@ class Connector(object):
         '''
 
         self._domain = domain
-        self.remoteFolder = None if domain is None else remoteFolder
+        self.remoteFolder = None if domain is None else Path(remoteFolder)
         self._maxChannels = maxChannels
         self._kwargs = kwargs
 
