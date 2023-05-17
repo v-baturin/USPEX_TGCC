@@ -82,8 +82,7 @@ class FHIaims_Interface:
                 if self.fixCell:
                     fp.write('constrain_relaxation .true.\n')
 
-            fixedIndices = system['disassembler'].envIndices[
-                system['environment'].getFixedIndices()] if 'environment' in system else []
+            fixedIndices = system['disassembler'].allFixedIndices
             for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
                 fp.write('atom  {1:15.8f} {2:15.8f} {3:15.8f} {0:2s}\n'.format(symbol.short_name, *coord))
                 if i in fixedIndices:

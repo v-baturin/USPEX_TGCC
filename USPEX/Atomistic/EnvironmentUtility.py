@@ -23,13 +23,13 @@ class EnvironmentUtility:
 
     @classmethod
     def build(cls, type, **description):
-        return cls.supportedEnvironments.get(type).Assembler.build(**description)
+        return cls.supportedEnvironments.get(type).build(**description)
 
     def __init__(self, environments: list = None):
         """
 
         """
-        self.assemblers = [self.supportedEnvironments.get(environment['type']).Assembler(**environment)
-                           for environment in (environments if environments is not None else [])]
+        self.environments = [self.supportedEnvironments.get(environment['type'])(**environment)
+                             for environment in (environments if environments is not None else [])]
 
 

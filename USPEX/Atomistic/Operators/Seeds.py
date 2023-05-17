@@ -67,8 +67,7 @@ class Seeds(object):
                     for system in systems:
                         atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
                         minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                        if disassembler.environment is not None:
-                            inds = disassembler.envIndices
+                        for inds in disassembler.envIndices:
                             atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                         if np.all(atomDistances >= minDistMatrix):
                             self.conditions.putConditions(system)

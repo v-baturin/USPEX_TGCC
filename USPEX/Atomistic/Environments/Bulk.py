@@ -12,6 +12,10 @@ class Bulk:
     cellType = None
     atomicDisassemblerType = None
 
+    processingStyles = {
+        'onlyEnvironment': 'getStructure'
+    }
+
     @classmethod
     def registerTypes(cls,representationType, structureType, atomType, cellType, atomicDisassemblerType):
         """
@@ -28,64 +32,37 @@ class Bulk:
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    class Assembler:
 
-        def __init__(self, structure, isFixed: bool = True, **kwargs):
-            self._structure = structure
-            self.isFixed = isFixed
-            if self.isFixed:
-                self._indices = np.arange(len(structure))
-            else:
-                self._indices = np.array([], dtype=int)
-
-        def getCell(self):
-            return self._structure.getCell()
-
-        def assemble(self, molecules, cell, **kwargs):
-            return Bulk(self._structure, self._indices, self)
-
-        @staticmethod
-        def build(file, **kwargs):
-            """
-            Builds the environment objects for a given description.
-            """
-            structure = Bulk.structureRepresentation.readPOSCAR(file)
-            environment = dict(
-                structure=structure,
-            )
-            return environment
-
-    processingStyles = {
-        'onlyEnvironment': 'getStructure'
-    }
-
-    def __init__(self, structure, indices, assembler):
+    def __init__(self, structure, isFixed: bool = True, **kwargs):
         self._structure = structure
-        self._indices = indices
-        self._assembler = assembler
+        self.isFixed = isFixed
+        if self.isFixed:
+            self._indices = np.arange(len(structure))
+        else:
+            self._indices = np.array([], dtype=int)
+
+    def getCell(self):
+        return self._structure.getCell()
+
+    def assemble(self, molecules, cell, **kwargs):
+        return [(self._structure, self._indices)]
 
     @staticmethod
-    def fromIndices(structure, all, fixed, pbc):
-        all = np.asarray(all, dtype=int)
-        fixed = np.where(np.in1d(all, fixed))[0]
-        envStructure = Bulk.structureType(structure.getAtomTypes()[all],
-                                          structure.getCartesianCoordinates()[all],
-                                          Bulk.cellType(structure.getCell().getCellVectors(), pbc=pbc))
-        return Bulk(envStructure, fixed, None), all
-
-    def getUpdatedEnvironment(self, envStructure):
-        return Bulk(envStructure, self._indices, self._assembler)
-
-    def getStructure(self):
+    def build(file, **kwargs):
         """
-        Retrieve atomic structure associated with environment.
+        Builds the environment objects for a given description.
+        """
+        structure = Bulk.structureRepresentation.readPOSCAR(file)
+        environment = dict(
+            structure=structure,
+        )
+        return environment
 
-        :return: atomic structure.
-        """
-        return self._structure
+def fromIndices(structure, all, fixed, pbc):
+    all = np.asarray(all, dtype=int)
+    fixed = np.where(np.in1d(all, fixed))[0]
+    envStructure = Bulk.structureType(structure.getAtomTypes()[all],
+                                      structure.getCartesianCoordinates()[all],
+                                      Bulk.cellType(structure.getCell().getCellVectors(), pbc=pbc))
+    return envStructure, fixed,  all
 
-    def getFixedIndices(self):
-        """
-        Get indices of atoms in substrate positions of which are fixed.
-        """
-        return self._indices

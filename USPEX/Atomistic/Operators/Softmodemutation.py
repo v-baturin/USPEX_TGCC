@@ -59,12 +59,11 @@ class Softmodemutation:
 
                 offsprings = ()
                 offspring1 = {'molecules': molecules1, 'cell': cell}
-                if 'environment' in system:
-                    offspring1['environment'] = system['environment']
+                if 'environments' in system:
+                    offspring1['environments'] = system['environments']
                 atomSymbols, atomDistances, disassembler1 = self.simpleMoleculeUtility.getMinDistances(**offspring1)
                 minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                if disassembler1.environment is not None:
-                    inds = disassembler1.envIndices
+                for inds in disassembler1.envIndices:
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
                     self.conditions.putConditions(offspring1)
@@ -72,12 +71,11 @@ class Softmodemutation:
                     if self.bondUtility.isConnected(structure):
                         offsprings += (offspring1,)
                 offspring2 = {'molecules': molecules2, 'cell': cell}
-                if 'environment' in system:
-                    offspring2['environment'] = system['environment']
+                if 'environments' in system:
+                    offspring2['environments'] = system['environments']
                 atomSymbols, atomDistances, disassembler2 = self.simpleMoleculeUtility.getMinDistances(**offspring2)
                 minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                if disassembler2.environment is not None:
-                    inds = disassembler2.envIndices
+                for inds in disassembler2.envIndices:
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 if np.all(atomDistances >= minDistMatrix):
                     self.conditions.putConditions(offspring2)
