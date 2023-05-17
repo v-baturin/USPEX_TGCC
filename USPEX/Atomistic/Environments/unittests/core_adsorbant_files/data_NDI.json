@@ -72,7 +72,8 @@
                 }
 
               ],
-"environments": [{"type": "nanoparticle_core",
+"core": {
+                  "type": "nanoparticle_core",
                   "filename": "./core_NDI_no_H.xyz",
                   "sites": [{"mountPoint":  [3.81223758, -4.30594659, -0.00015917],
                              "orientation":  [-0.00001334, -1.00000000, 0.00006315],
@@ -99,6 +100,6 @@
                              "passivateBy": "H",
                              "junctionTypes": ["Y"]}
                           ],
-                  "name": "np_core"}
-                ]
+                  "name": "np_core"
+        }
 }
