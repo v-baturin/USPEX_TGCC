@@ -57,12 +57,3 @@ class Bulk:
             structure=structure,
         )
         return environment
-
-def fromIndices(structure, all, fixed, pbc):
-    all = np.asarray(all, dtype=int)
-    fixed = np.where(np.in1d(all, fixed))[0]
-    envStructure = Bulk.structureType(structure.getAtomTypes()[all],
-                                      structure.getCartesianCoordinates()[all],
-                                      Bulk.cellType(structure.getCell().getCellVectors(), pbc=pbc))
-    return envStructure, fixed,  all
-

@@ -179,20 +179,6 @@ class Interface:
         return environment
 
 
-def fromIndices(structure, lowerSlab, upperSlab, fixed, pbc):
-    all = np.asarray(lowerSlab + upperSlab, dtype=int)
-    lowerSlab = np.asarray(lowerSlab, dtype=int)
-    upperSlab = np.asarray(upperSlab, dtype=int)
-    fixed = np.where(np.in1d(all, fixed))[0]
-    cell = Interface.cellType(structure.getCell().getCellVectors(), pbc=pbc)
-    lowerEnvStructure = Interface.structureType(structure.getAtomTypes()[lowerSlab],
-                                                         structure.getCartesianCoordinates()[lowerSlab],
-                                                         cell)
-    upperEnvStructure = Interface.structureType(structure.getAtomTypes()[upperSlab],
-                                                         structure.getCartesianCoordinates()[upperSlab],
-                                                         cell)
-    return lowerEnvStructure, upperEnvStructure, fixed,  all
-
 def adjustSystem(self, molecules, cell):
     """
     Adjusts the cells of the environment and the structure to fit each other

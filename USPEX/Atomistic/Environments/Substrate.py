@@ -95,17 +95,6 @@ class Substrate:
         )
         return environment
 
-
-def fromIndices(structure, all, fixed, pbc):
-    all = np.asarray(all, dtype=int)
-    fixed = np.where(np.in1d(all, fixed))[0]
-    envStructure = Substrate.structureType(structure.getAtomTypes()[all],
-                                                    structure.getCartesianCoordinates()[all],
-                                                    Substrate.cellType(
-                                                        structure.getCell().getCellVectors(), pbc=pbc))
-    return envStructure, fixed, all
-
-
 def adjustSystem(self, molecules, cell):
     """
     Adjusts the cells of the environment and the structure to fit each other

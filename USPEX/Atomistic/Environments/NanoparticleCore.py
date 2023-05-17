@@ -177,13 +177,3 @@ class NanoparticleCore:
             structure=structure,
         )
         return environment
-
-
-def fromIndices(structure, all, fixed, pbc):
-    all = np.asarray(all, dtype=int)
-    fixed = np.where(np.in1d(all, fixed))[0]
-    envStructure = NanoparticleCore.structureType(structure.getAtomTypes()[all],
-                                                    structure.getCartesianCoordinates()[all],
-                                                    NanoparticleCore.cellType(
-                                                        structure.getCell().getCellVectors(), pbc=pbc))
-    return envStructure, fixed, all
