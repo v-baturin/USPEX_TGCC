@@ -5,12 +5,8 @@ USPEX.Stages.XTB_Interface
 """
 
 import logging
-import os
-from os.path import join as pj
+from pathlib import Path
 import numpy as np
-
-from ase import Atoms
-from ase.io.gen import read_gen, write_gen
 
 logger = logging.getLogger(__name__)
 HARTREE_TO_EV = 27.211386245988 #https://physics.nist.gov/cgi-bin/cuu/Value?hrev
@@ -33,35 +29,34 @@ class XTB_Interface:
 
     out_geometry_file = 'xtbopt.gen'
 
+    aseAdapterType = None
+
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
+    def registerTypes(cls, structureType, atomType, cellType, aseAdapterType):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
+        cls.aseAdapterType = aseAdapterType
 
     def __init__(self, tag: str, xtb_input: str = None, targetProperties: list = None, **kwargs):
 
         self.tag = tag
         if xtb_input is None:
-            xtb_input = pj(os.getcwd(), f'Specific/{self.specific_file}{tag}')
+            xtb_input = Path.cwd()/f'Specific/{self.specific_file}{tag}'
 
-        assert os.path.exists(xtb_input)
+        assert xtb_input.exists(), f'Please, check path to xTB input. Now it is {xtb_input}'
 
         with open(xtb_input, 'r') as f:
             self.xtb_input = f.read()
 
+        self.adapter = self.aseAdapterType()
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder : Path):
 
         structure = system['structure']
-        cell = structure.getCell()
-        system['pbc'] = cell.getPBC()
-        symbols = np.asarray([el.short_name for el in structure.getAtomTypes()])
-        coordinates = structure.getCartesianCoordinates()
-        cell_vectors = cell.getCellVectors()
-        ase_struct = Atoms(symbols, positions=coordinates, cell=cell_vectors, pbc=system['pbc'])
-        write_gen(pj(calcFolder, self.geometry_file), ase_struct)
+
+        system['ase'] = self.adapter.write_structure(structure, self.geometry_file, calcFolder)
 
         content_to_write = ''
         fixedIndices = system['disassembler'].envIndices[
@@ -82,28 +77,28 @@ class XTB_Interface:
             content_to_write += '\n$end\n'
         total_content = self.xtb_input + '\n' + content_to_write + '\n'
 
-        with open(pj(calcFolder, self.inputFile), 'wt') as dest:
+        with open(calcFolder/self.inputFile, 'wt') as dest:
             dest.write(total_content)
 
         return ''
 
-    def isConverged(self, calcFolder: str):
+    def isConverged(self, calcFolder: Path):
 
-        if not os.path.exists(pj(calcFolder, self.outputFile)):
+        if not calcFolder.joinpath(self.outputFile).exists():
             return False
 
-        with open(pj(calcFolder, self.outputFile), 'rt') as f:
+        with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.read()
         if 'finished run' not in content:
             logger.error('xtb is not completely Done')
             return False
         return True
 
-    def readOutput(self, system, calcFolder: str):
+    def readOutput(self, system, calcFolder: Path):
 
         results = {}
         if 'structure' in self.targetProperties:
-            results['structure'] = self.readStructure(calcFolder, system.pop('pbc'))
+            results['structure'] = self.adapter.read_structure(self.out_geometry_file, calcFolder, **system.pop('ase'))
         if 'energy' in self.targetProperties:
             results['energy'] = self.readEnergyHa(calcFolder) * HARTREE_TO_EV
         if 'enthalpy' in self.targetProperties:
@@ -111,26 +106,9 @@ class XTB_Interface:
 
         return results
 
-    def readStructure(self, calcFolder: str, pbc):
+    def readEnergyHa(self, calcFolder: Path):
 
-        ase_struct = read_gen(pj(calcFolder, self.out_geometry_file))
-        atomTypes = []
-        new_lattice = []
-        for i in ase_struct.get_chemical_symbols():
-            atomTypes.append(self.atomType(i))
-        positions = ase_struct.get_positions()
-        tmp_lattice = ase_struct.cell[:].copy()
-        for i, vec in enumerate(tmp_lattice):
-            if pbc[i]:
-                new_lattice.append([float(x) for x in vec])
-        cell = self.cellType.initFromCellVectors(pbc, new_lattice)
-        new_structure = self.structureType(atomTypes, positions, cell=cell)
-
-        return new_structure
-
-    def readEnergyHa(self, calcFolder: str):
-
-        with open(pj(calcFolder, self.outputFile), 'rt') as f:
+        with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
             for i in content:
                 if 'TOTAL ENERGY' in i:

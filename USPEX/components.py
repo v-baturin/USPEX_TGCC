@@ -78,7 +78,7 @@ from .Stages.Interfaces.FHIaims_Interface import FHIaims_Interface
 FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('aims', FHIaims_Interface)
 from .Stages.Interfaces.XTB_Interface import XTB_Interface
-XTB_Interface.registerTypes(AtomicStructure, Element, Cell)
+XTB_Interface.registerTypes(AtomicStructure, Element, Cell, ASEInterfaceAdapter.XTB)
 Executor.registerInterface('xtb', XTB_Interface)
 from .Stages.TaskManagers.BSUB import BSUB
 Executor.registerTaskManager('BSUB', BSUB)
