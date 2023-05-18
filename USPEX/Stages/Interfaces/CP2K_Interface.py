@@ -99,9 +99,11 @@ class CP2K_Interface:
             for i in fixedIndices:
                 fp.write('{} '.format(i + 1))
 
-        if system['externalPressure']:
-            with open(calcFolder/self.pressure_file, 'a') as myfile:
-                myfile.write(f"EXTERNAL_PRESSURE [GPa] {system['externalPressure']:10f}\n")
+        with open(calcFolder/self.pressure_file, 'wt') as f:
+            if system['externalPressure']:
+                f.write(f"EXTERNAL_PRESSURE [GPa] {system['externalPressure']:10f}\n")
+            else:
+                f.write("")
 
         atomTypes = structure.getAtomTypes()
         species = list(set(el.short_name for el in atomTypes))
