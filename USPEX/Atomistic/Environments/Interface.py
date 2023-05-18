@@ -2,7 +2,7 @@ import numpy as np
 import logging
 
 
-from .slabFunctions import adjustSystem, adjustStructures, constructSurfaceSlab, constructGrainsSlabs, alignStructure
+from .slabFunctions import constructSurfaceSlab, constructGrainsSlabs  # adjustSystem, adjustStructures, alignStructure
 
 
 logger = logging.getLogger(__name__)
@@ -162,16 +162,16 @@ class Interface:
             lowerStructure = constructSurfaceSlab(initLowerStructure, pbc, lowerPlane, slabThickness)
             upperStructure = constructSurfaceSlab(initUpperStructure, pbc, upperPlane, slabThickness)
             logger.debug('Surface Slabs are successfully created')
-        if adjust:
-            logger.debug(f'Auto-adjustment of interfacial slabs was enabled')
-            antiPBC = tuple((~np.asarray(pbc, dtype=bool)).tolist())
-            nonPBCAxis = np.flatnonzero(antiPBC)[0]
-            maxMisfitStrain = maxMisfitStrain if maxMisfitStrain else DEFAULT_MAX_MISFIT_STRAIN
-            maxEnvironmentArea = maxEnvironmentArea if maxEnvironmentArea else DEFAULT_MAX_ENVIRONMENT_AREA
-            lowerStructure, upperStructure, _ = adjustStructures(lowerStructure, upperStructure, axis=nonPBCAxis,
-                                                                    maxMisfitStrain=maxMisfitStrain,
-                                                                    maxSubstrateArea=maxEnvironmentArea)
-            logger.debug(f'Interfacial slabs are successfully adjusted')
+        # if adjust:
+        #     logger.debug(f'Auto-adjustment of interfacial slabs was enabled')
+        #     antiPBC = tuple((~np.asarray(pbc, dtype=bool)).tolist())
+        #     nonPBCAxis = np.flatnonzero(antiPBC)[0]
+        #     maxMisfitStrain = maxMisfitStrain if maxMisfitStrain else DEFAULT_MAX_MISFIT_STRAIN
+        #     maxEnvironmentArea = maxEnvironmentArea if maxEnvironmentArea else DEFAULT_MAX_ENVIRONMENT_AREA
+        #     lowerStructure, upperStructure, _ = adjustStructures(lowerStructure, upperStructure, axis=nonPBCAxis,
+        #                                                             maxMisfitStrain=maxMisfitStrain,
+        #                                                             maxSubstrateArea=maxEnvironmentArea)
+        #     logger.debug(f'Interfacial slabs are successfully adjusted')
         environment = dict(
             lowerStructure=lowerStructure,
             upperStructure=upperStructure,
@@ -179,56 +179,56 @@ class Interface:
         return environment
 
 
-def adjustSystem(self, molecules, cell):
-    """
-    Adjusts the cells of the environment and the structure to fit each other
-    """
-    maxMisfitStrain = self._assembler.maxMisfitStrain
-    maxEnvironmentArea = self._assembler.maxEnvironmentArea
-    lowerEnvStructure, upperEnvStructure = self._structures
-    lowerCell = lowerEnvStructure.getCell()
-    upperCell = upperEnvStructure.getCell()
-    axis = np.flatnonzero(lowerCell.getAntiPBC())[0]
-
-    logger.debug('Starting adjustment of the Interface')
-
-    envCellsAreClose = lowerCell.isClose(upperCell)
-    firstStageMaxArea = maxEnvironmentArea if envCellsAreClose else maxEnvironmentArea * 0.6
-
-    # Stage 1. We adjust initial molecules and cell of our system to the lower part of the environment
-    newMolecules, newCell, newLowerEnvStructure, supercellMatrices = adjustSystem(molecules, cell,
-                                                                                  lowerEnvStructure, axis,
-                                                                                  firstStageMaxArea,
-                                                                                  maxMisfitStrain,
-                                                                                  returnSupercellMatrices=True)
-    logger.debug('Adjustment Stage 1 is done')
-
-    if envCellsAreClose:
-        logger.debug('Stage 2 is skipped due to proximity of lower and upper environment cells.')
-        # Stage 3. We finally adjust the upper part of the environment to fit the lower part from stage 1
-        envSupercellMatrix = supercellMatrices[0]
-        newUpperEnvStructure = upperEnvStructure.makeSupercell(envSupercellMatrix)
-        newUpperEnvStructure = alignStructure(newUpperEnvStructure, newLowerEnvStructure)
-    else:
-        # Stage 2. We adjuct the molecules and cell from the previous stage to fit the upper part of the environment
-        newMolecules, newCell, newUpperEnvStructure, supercellMatrices = adjustSystem(newMolecules, newCell,
-                                                                                      upperEnvStructure, axis,
-                                                                                      maxEnvironmentArea,
-                                                                                      maxMisfitStrain,
-                                                                                      returnSupercellMatrices=True)
-        logger.debug('Adjustment Stage 2 is done')
-        # Stage 3. We finally adjust the lower part of the environment from stage 1 to fit the new upper part from stage 2
-        envSupercellMatrix = supercellMatrices[1]
-        newLowerEnvStructure = newLowerEnvStructure.makeSupercell(envSupercellMatrix)
-        newLowerEnvStructure = alignStructure(newLowerEnvStructure, newUpperEnvStructure)
-
-    logger.debug('Adjustment Stage 3 is done')
-    logger.debug('Adjustment of the Interface is finished')
-
-    assert len(newLowerEnvStructure) % len(lowerEnvStructure) == 0
-    assert len(newUpperEnvStructure) % len(upperEnvStructure) == 0
-
-    newEnvironment = self._assembler.assemble(molecules, cell,
-                                              lowerEnvStructure=newLowerEnvStructure,
-                                              upperStructure=newUpperEnvStructure)
-    return newMolecules, newCell, newEnvironment
+# def adjustSystem(self, molecules, cell):
+#     """
+#     Adjusts the cells of the environment and the structure to fit each other
+#     """
+#     maxMisfitStrain = self._assembler.maxMisfitStrain
+#     maxEnvironmentArea = self._assembler.maxEnvironmentArea
+#     lowerEnvStructure, upperEnvStructure = self._structures
+#     lowerCell = lowerEnvStructure.getCell()
+#     upperCell = upperEnvStructure.getCell()
+#     axis = np.flatnonzero(lowerCell.getAntiPBC())[0]
+#
+#     logger.debug('Starting adjustment of the Interface')
+#
+#     envCellsAreClose = lowerCell.isClose(upperCell)
+#     firstStageMaxArea = maxEnvironmentArea if envCellsAreClose else maxEnvironmentArea * 0.6
+#
+#     # Stage 1. We adjust initial molecules and cell of our system to the lower part of the environment
+#     newMolecules, newCell, newLowerEnvStructure, supercellMatrices = adjustSystem(molecules, cell,
+#                                                                                   lowerEnvStructure, axis,
+#                                                                                   firstStageMaxArea,
+#                                                                                   maxMisfitStrain,
+#                                                                                   returnSupercellMatrices=True)
+#     logger.debug('Adjustment Stage 1 is done')
+#
+#     if envCellsAreClose:
+#         logger.debug('Stage 2 is skipped due to proximity of lower and upper environment cells.')
+#         # Stage 3. We finally adjust the upper part of the environment to fit the lower part from stage 1
+#         envSupercellMatrix = supercellMatrices[0]
+#         newUpperEnvStructure = upperEnvStructure.makeSupercell(envSupercellMatrix)
+#         newUpperEnvStructure = alignStructure(newUpperEnvStructure, newLowerEnvStructure)
+#     else:
+#         # Stage 2. We adjuct the molecules and cell from the previous stage to fit the upper part of the environment
+#         newMolecules, newCell, newUpperEnvStructure, supercellMatrices = adjustSystem(newMolecules, newCell,
+#                                                                                       upperEnvStructure, axis,
+#                                                                                       maxEnvironmentArea,
+#                                                                                       maxMisfitStrain,
+#                                                                                       returnSupercellMatrices=True)
+#         logger.debug('Adjustment Stage 2 is done')
+#         # Stage 3. We finally adjust the lower part of the environment from stage 1 to fit the new upper part from stage 2
+#         envSupercellMatrix = supercellMatrices[1]
+#         newLowerEnvStructure = newLowerEnvStructure.makeSupercell(envSupercellMatrix)
+#         newLowerEnvStructure = alignStructure(newLowerEnvStructure, newUpperEnvStructure)
+#
+#     logger.debug('Adjustment Stage 3 is done')
+#     logger.debug('Adjustment of the Interface is finished')
+#
+#     assert len(newLowerEnvStructure) % len(lowerEnvStructure) == 0
+#     assert len(newUpperEnvStructure) % len(upperEnvStructure) == 0
+#
+#     newEnvironment = self._assembler.assemble(molecules, cell,
+#                                               lowerEnvStructure=newLowerEnvStructure,
+#                                               upperStructure=newUpperEnvStructure)
+#     return newMolecules, newCell, newEnvironment

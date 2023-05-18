@@ -2,7 +2,7 @@ import numpy as np
 import logging
 
 
-from .slabFunctions import adjustSystem, constructSurfaceSlab
+from .slabFunctions import constructSurfaceSlab  # adjustSystem
 
 
 logger = logging.getLogger(__name__)
@@ -95,16 +95,16 @@ class Substrate:
         )
         return environment
 
-def adjustSystem(self, molecules, cell):
-    """
-    Adjusts the cells of the environment and the structure to fit each other
-    """
-    antiPBC = self._structure.getCell().getAntiPBC()
-    assert sum(antiPBC) == 1
-    axis = np.flatnonzero(antiPBC)[0]
-    maxEnvironmentArea = self._assembler.maxEnvironmentArea
-    maxMisfitStrain = self._assembler.maxMisfitStrain
-    newMolecules, newCell, newEnvStructure = adjustSystem(molecules, cell, self._structure, axis,
-                                                          maxEnvironmentArea, maxMisfitStrain)
-    newEnvironment = self._assembler.assemble(molecules, cell, structure=newEnvStructure)
-    return newMolecules, newCell, newEnvironment
+# def adjustSystem(self, molecules, cell):
+#     """
+#     Adjusts the cells of the environment and the structure to fit each other
+#     """
+#     antiPBC = self._structure.getCell().getAntiPBC()
+#     assert sum(antiPBC) == 1
+#     axis = np.flatnonzero(antiPBC)[0]
+#     maxEnvironmentArea = self._assembler.maxEnvironmentArea
+#     maxMisfitStrain = self._assembler.maxMisfitStrain
+#     newMolecules, newCell, newEnvStructure = adjustSystem(molecules, cell, self._structure, axis,
+#                                                           maxEnvironmentArea, maxMisfitStrain)
+#     newEnvironment = self._assembler.assemble(molecules, cell, structure=newEnvStructure)
+#     return newMolecules, newCell, newEnvironment
