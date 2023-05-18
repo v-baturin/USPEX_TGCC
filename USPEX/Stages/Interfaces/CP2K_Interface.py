@@ -5,9 +5,8 @@ USPEX.Stages.CP2K_Interface
 """
 
 import logging
-import os
 import numpy as np
-from os.path import join as pj
+from pathlib import Path
 
 from ase.io import read
 
@@ -17,6 +16,7 @@ logger = logging.getLogger(__name__)
 HARTREE_TO_EV = 27.211386245988 #https://physics.nist.gov/cgi-bin/cuu/Value?hrev
 GPA_TO_AU = 1.0/29421.015697
 ANGSTROM_TO_BOHR = 1.0/0.529177210903
+
 
 class CP2K_Interface:
     """
@@ -51,9 +51,9 @@ class CP2K_Interface:
 
         self.tag = tag
         if cp2k_in is None:
-            cp2k_in = pj(os.getcwd(), f'Specific/{self.specific_file}{tag}')
+            cp2k_in = Path.cwd()/f'Specific/{self.specific_file}{tag}'
 
-        assert os.path.exists(cp2k_in)
+        assert cp2k_in.exists(), f'Please, check path to cp2k_in input. Now it is {cp2k_in}'
 
         with open(cp2k_in, 'r') as f:
             self.cp2k_in = f.read()
@@ -63,13 +63,13 @@ class CP2K_Interface:
         self.fixCell = fixCell
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system, calcFolder : str):
+    def prepareLocalCalculation(self, system, calcFolder: Path):
         structure = system['structure']
 
         cell = structure.getCell()
         system['pbc'] = cell.getPBC()
 
-        with open(pj(calcFolder, self.inputFile), 'wt') as dest:
+        with open(calcFolder/self.inputFile, 'wt') as dest:
             dest.write(self.cp2k_in)
 
         if self.kPoints is not None:
@@ -79,20 +79,20 @@ class CP2K_Interface:
                 # This LATTICE is extremely wrong, let's skip it from now
                 logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
                 kPoints = [1, 1, 1]
-            with open(pj(calcFolder, self.kpoints_file), 'a') as f:
+            with open(calcFolder/self.kpoints_file, 'a') as f:
                 f.write('SCHEME MONKHORST-PACK {} {} {}'.format(*kPoints))
 
-        with open(pj(calcFolder, self.cell_file), 'wt') as fp:
+        with open(calcFolder/self.cell_file, 'wt') as fp:
             lat = cell.getCellVectors()
             fp.write('A   {:12.6f} {:12.6f} {:12.6f}\n'.format(*lat[0, :]))
             fp.write('B   {:12.6f} {:12.6f} {:12.6f}\n'.format(*lat[1, :]))
             fp.write('C   {:12.6f} {:12.6f} {:12.6f}\n'.format(*lat[2, :]))
 
-        with open(pj(calcFolder, self.geometry_file), 'wt') as fp:
+        with open(calcFolder/self.geometry_file, 'wt') as fp:
             for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
                 fp.write('{0:2s}  {1:15.8f} {2:15.8f} {3:15.8f} \n'.format(symbol.short_name, *coord))
 
-        with open(pj(calcFolder, self.fixedIndices_file), 'wt') as fp:
+        with open(calcFolder/self.fixedIndices_file, 'wt') as fp:
             fixedIndices = system['disassembler'].envIndices[
                 system['environment'].getFixedIndices()] if 'environment' in system else []
             fp.write('LIST  ')
@@ -100,14 +100,14 @@ class CP2K_Interface:
                 fp.write('{} '.format(i + 1))
 
         if system['externalPressure']:
-            with open(pj(calcFolder, self.pressure_file), 'a') as myfile:
+            with open(calcFolder/self.pressure_file, 'a') as myfile:
                 myfile.write(f"EXTERNAL_PRESSURE [GPa] {system['externalPressure']:10f}\n")
 
         atomTypes = structure.getAtomTypes()
         species = list(set(el.short_name for el in atomTypes))
         for i in species:
             atomTypes_file = i + self.atomIndices_file
-            with open(pj(calcFolder, atomTypes_file), 'wt') as fp:
+            with open(calcFolder/atomTypes_file, 'wt') as fp:
                 fp.write('ATOMS_LIST  ')
                 for j in range(len(atomTypes)):
                     if atomTypes[j].short_name == i:
@@ -115,20 +115,18 @@ class CP2K_Interface:
 
         return ''
 
-    def isConverged(self, calcFolder: str):
-
-        if not os.path.exists(pj(calcFolder, self.outputFile)):
+    def isConverged(self, calcFolder: Path) -> bool:
+        if not calcFolder.joinpath(self.outputFile).exists():
             return False
 
-        with open(pj(calcFolder, self.outputFile), 'rt') as f:
+        with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.read()
         if 'PROGRAM ENDED AT' not in content:
             logger.error('cp2k is not completely Done')
             return False
         return True
 
-    def readOutput(self, system, calcFolder: str):
-
+    def readOutput(self, system, calcFolder: Path):
         new_structure = self.readStructure(system, calcFolder)
         EnergyHa = self.readEnergy(calcFolder)
 
@@ -147,20 +145,19 @@ class CP2K_Interface:
 
         return results
 
-    def readStructure(self, system, calcFolder: str):
-
+    def readStructure(self, system, calcFolder: Path):
         structure = system['structure']
         cell = structure.getCell()
         pbc = cell.getPBC()
 
-        if os.path.exists(pj(calcFolder, self.out_cell_file)):
-            with open(pj(calcFolder, self.out_cell_file), 'rt') as f:
+        if calcFolder.joinpath(self.out_cell_file).exists():
+            with open(calcFolder/self.out_cell_file, 'rt') as f:
                 content_list = f.readlines()
                 lattice = [float(x) for x in content_list[-1].split()[2:11]]
                 lat = np.array([lattice[0:3], lattice[3:6], lattice[6:9]])
                 cell = self.cellType(lat, pbc)
         else:
-            with open(pj(calcFolder, self.outputFile), 'rt') as f:
+            with open(calcFolder/self.outputFile, 'rt') as f:
                content = f.read()
             if ' CELL| Volume' in content:
                 content_list = content.split('\n')
@@ -174,8 +171,8 @@ class CP2K_Interface:
                 lat = np.array([lattice_a, lattice_b, lattice_c])
                 cell = self.cellType(lat, pbc)
 
-        if os.path.exists(pj(calcFolder, self.out_geometry_file)):
-            ase_struct = read(pj(calcFolder, self.out_geometry_file), index='-1')
+        if calcFolder.joinpath(self.out_geometry_file).exists():
+            ase_struct = read(calcFolder/self.out_geometry_file, index='-1')
             atomTypes = []
             for i in ase_struct.get_chemical_symbols():
                 atomTypes.append(self.atomType(i))
@@ -186,9 +183,8 @@ class CP2K_Interface:
 
         return new_structure
 
-    def readEnergy(self, calcFolder: str):
-
-        with open(pj(calcFolder, self.outputFile), 'rt') as f:
+    def readEnergy(self, calcFolder: Path):
+        with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.read()
             content_list = content.split('\n')
         if ' ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):' in content:
