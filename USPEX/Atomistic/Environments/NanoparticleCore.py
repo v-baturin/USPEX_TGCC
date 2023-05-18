@@ -23,10 +23,6 @@ class NanoparticleCore:
     cellType = None
     atomicDisassemblerType = None
 
-    processingStyles = {
-        'onlyEnvironment': 'getStructure'
-    }
-
     @classmethod
     def registerTypes(cls,representationType, structureType, atomType, cellType, atomicDisassemblerType):
         """

@@ -25,11 +25,6 @@ class Interface:
     cellType = None
     atomicDisassemblerType = None
 
-    processingStyles = {
-        'onlyLowerEnvironment': 'getLowerStructure',
-        'onlyUpperEnvironment': 'getUpperStructure'
-    }
-
     @classmethod
     def registerTypes(cls,representationType, structureType, atomType, cellType, atomicDisassemblerType):
         """

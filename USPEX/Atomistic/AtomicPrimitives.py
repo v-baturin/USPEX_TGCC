@@ -247,9 +247,6 @@ class AtomicDisassembler:
             environments = None
         # elif style == 'adjust':
         #     molecules, cell, environment = environment.adjustSystem(molecules, cell)
-        # elif environment is not None and style in environment.processingStyles:
-        #     # TODO do we ever need to disassemble such structures?
-        #     return getattr(environment, environment.processingStyles[style])(vacuumSize), None
         elif style is not None:
             raise ValueError(f"Style {style} is not valid.")
         pbc = cell.getPBC()
