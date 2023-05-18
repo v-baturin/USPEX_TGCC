@@ -741,7 +741,7 @@ class AtomisticRepresentation(object):
                     table.update(system['ID'], system, opt.fitness)
                 content_convexHull += table.table.get_string() + '\n'
 
-            with open(self.RES_FOLDER, 'convex_hull', 'w') as fp:
+            with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
                 fp.write(content_convexHull)
 
             extendedConvexHull = [system for system in optimizer.pool.uniqueSystems
