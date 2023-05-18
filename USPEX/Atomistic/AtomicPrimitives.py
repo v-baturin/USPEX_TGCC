@@ -230,25 +230,15 @@ class AtomicDisassembler:
         self.allFixedIndices = np.concatenate(self.fixedIndices) if self.fixedIndices else np.empty(0, dtype=int)
 
     @staticmethod
-    def assemble(molecules, cell, environments=None, vacuumSize=0, style=None, inStyle=None, **kwargs):
+    def assemble(molecules, cell, environments=None, vacuumSize=0, **kwargs):
         """
 
         :param molecules:
         :param cell:
-        :param environment:
+        :param environments:
         :param kwargs:
 
         """
-        if f'{inStyle}.system' in kwargs:
-            system = kwargs[f'{inStyle}.system']
-            molecules, cell = system['molecules'], system['cell']
-            environments = system['environments'] if 'environments' in system else None
-        if style == 'noEnvironment':
-            environments = None
-        # elif style == 'adjust':
-        #     molecules, cell, environment = environment.adjustSystem(molecules, cell)
-        elif style is not None:
-            raise ValueError(f"Style {style} is not valid.")
         pbc = cell.getPBC()
         atomTypes = []
         coordinates = []
