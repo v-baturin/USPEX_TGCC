@@ -46,12 +46,11 @@ class Transmutation:
 
                 offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
                 offspring['molecules'][0:0] = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
-                if 'environment' in system:
-                    offspring['environment'] = system['environment']
+                if 'environments' in system:
+                    offspring['environments'] = system['environments']
                 atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                 minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                if disassembler.environment is not None:
-                    inds = disassembler.envIndices
+                for inds in disassembler.envIndices:
                     atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                 composition = self.simpleMoleculeUtility.composition(offspring)
                 if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):

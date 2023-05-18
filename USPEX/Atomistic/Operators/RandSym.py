@@ -124,7 +124,7 @@ class RandSym:
         distCoeff = 1.0
 
         while True:
-            envAssembler = np.random.choice(self.environmentUtility.assemblers) if self.environmentUtility.assemblers\
+            envAssembler = np.random.choice(self.environmentUtility.environments) if self.environmentUtility.environments\
                 else None
             envCell = envAssembler.getCell() if envAssembler is not None else None
 
@@ -188,11 +188,10 @@ class RandSym:
                 for i in range(self.attemptsRotation):
                     offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
                     if envAssembler is not None:
-                        offspring['environment'] = envAssembler.assemble(**offspring)
+                        offspring['environments'] = envAssembler.assemble(**offspring)
                     atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                     minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                    if disassembler.environment is not None:
-                        inds = disassembler.envIndices
+                    for inds in disassembler.envIndices:
                         atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                     if np.all(atomDistances >= distCoeff * minDistMatrix):
                         self.conditions.putConditions(offspring)

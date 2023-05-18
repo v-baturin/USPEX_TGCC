@@ -46,7 +46,7 @@ class CoreAdsorbantRandomGenerator:
                 raise RuntimeError("Core-adsorbant generator failed.")
 
             try:
-                npCoreAssembler = np.random.choice(self.environmentUtility.assemblers)
+                npCoreAssembler = np.random.choice(self.environmentUtility.environments)
                 adsTypesSitesDiGraph = npCoreAssembler.getAdsJuncSiteGraph(self.junctionUtility.molSitesMapping)
                 tmp_molecules = []
                 tmp_offspring = {}
@@ -115,7 +115,7 @@ class CoreAdsorbantRandomGenerator:
     def checkDocking(self, tmp_molecules, ads_attempt, npCoreAssembler):
         docked = False
         tmp_offspring = {'molecules': tmp_molecules + [ads_attempt], 'cell': self.cell,
-                         'environment': npCoreAssembler.assemble(tmp_molecules + [ads_attempt])}
+                         'environments': npCoreAssembler.assemble(tmp_molecules + [ads_attempt])}
         tmp_struct, _ = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(
             **tmp_offspring)
         tmp_minDistMatrix = self.bondUtility.getDistances(tmp_struct.getAtomTypes(),

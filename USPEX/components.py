@@ -10,8 +10,14 @@ from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.EnvironmentUtility import EnvironmentUtility
-EnvironmentUtility.setRepresentation(AtomisticRepresentation)
-EnvironmentUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Atomistic.Environments.Interface import Interface
+Interface.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Atomistic.Environments.Substrate import Substrate
+Substrate.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Atomistic.Environments.Bulk import Bulk
+Bulk.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Atomistic.Environments.NanoparticleCore import NanoparticleCore
+NanoparticleCore.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 RadialDistributionUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.CellUtility import CellUtility

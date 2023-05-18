@@ -99,14 +99,13 @@ class TeleportAtom:
             del offspring['molecules'][molInd]
             atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
             minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-            if disassembler.environment is not None:
-                inds = disassembler.envIndices
+            for inds in disassembler.envIndices:
                 atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
                     tuple(np.meshgrid(inds, inds))]
             composition = self.simpleMoleculeUtility.composition(offspring)
             if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-                if 'environment' in system:
-                    offspring['environment'] = system['environment']
+                if 'environments' in system:
+                    offspring['environments'] = system['environments']
                 self.conditions.putConditions(offspring)
                 tagsAddRemove[molInd].append('removed')
                 tagsAddRemove[mol1Ind].append(f'added_{newAtomType}')

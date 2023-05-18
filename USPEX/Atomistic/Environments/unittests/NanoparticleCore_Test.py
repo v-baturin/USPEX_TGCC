@@ -2,12 +2,11 @@ import unittest
 from pathlib import Path
 import json
 import numpy as np
-from itertools import combinations_with_replacement
 
-from ...components import AtomisticRepresentation, EnvironmentUtility, JunctionUtility, AtomicDisassembler, Cell
+from ....components import AtomisticRepresentation, NanoparticleCore, JunctionUtility, AtomicDisassembler, Cell
 
 
-class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
+class NanoparticleCore_Test(unittest.TestCase):
 
 
     @classmethod
@@ -16,11 +15,12 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
         cls.TEST_FILES_DIR = cls.CURRENT_DIR/'core_adsorbant_files'
         cls.data_NDI = json2dict(cls.TEST_FILES_DIR/'data_NDI.json')
         cls.data_Alpha = json2dict(cls.TEST_FILES_DIR/'data_Alpha.json')
-        cls.NDI_core = cls.compile_core_envutility(cls, cls.data_NDI)
-        cls.Alpha_core = cls.compile_core_envutility(cls, cls.data_Alpha)
-        cls.moleculesNDI, cls.adsorbantsNDI = cls.compile_adsorbants(cls, cls.data_NDI)
-        cls.moleculesAlpha, cls.adsorbantsAlpha = cls.compile_adsorbants(cls, cls.data_Alpha)
+        cls.NDI_core = cls.compile_core(cls.data_NDI)
+        cls.Alpha_core = cls.compile_core(cls.data_Alpha)
+        cls.moleculesNDI, cls.adsorbantsNDI = cls.compile_adsorbants(cls.data_NDI)
+        cls.moleculesAlpha, cls.adsorbantsAlpha = cls.compile_adsorbants(cls.data_Alpha)
 
+    @classmethod
     def compile_adsorbants(self, data_core_adsorbant):
         molSitesMapping = dict()
         molecules = dict()
@@ -38,14 +38,15 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
 
         return molecules, JunctionUtility(molSitesMapping=molSitesMapping)
 
-    def compile_core_envutility(self, data_core_adsorbant):
-        for env_descr in data_core_adsorbant["environments"]:
-            env_descr['structure'] = AtomisticRepresentation.readXYZ(self.TEST_FILES_DIR/env_descr['filename'])
-        return EnvironmentUtility(data_core_adsorbant["environments"])
+    @classmethod
+    def compile_core(cls, data_core_adsorbant):
+        core_descr = data_core_adsorbant["core"]
+        core_descr['structure'] = AtomisticRepresentation.readXYZ(cls.TEST_FILES_DIR/core_descr['filename'])
+        return NanoparticleCore(**core_descr)
 
     def test_dock_NDI(self):
         adsName = 'Y2'
-        assembler = self.NDI_core.assemblers[0]
+        assembler = self.NDI_core
         adsorbantSites = self.adsorbantsNDI.molSitesMapping[adsName]
         adsorbantmol = self.moleculesNDI[adsName]
         dockingTransf = assembler.sites[2].dockTransformation(adsorbantSites[0], np.pi / 2)
@@ -58,7 +59,7 @@ class EnvironmentUtility_TestNanoparticleCore(unittest.TestCase):
     def test_dock_Alpha(self):
         adsName = 'phenyl'
         coreSiteNo = 2
-        assembler = self.Alpha_core.assemblers[0]
+        assembler = self.Alpha_core
         adsorbantSites = self.adsorbantsAlpha.molSitesMapping[adsName]
         adsorbantmol = self.moleculesAlpha[adsName]
         jtype, = adsorbantSites[0].junctionTypes

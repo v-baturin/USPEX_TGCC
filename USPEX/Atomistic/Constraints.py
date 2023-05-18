@@ -26,8 +26,7 @@ class Constraints:
         """
         atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
         minDistMatrix = self.bondUtiity.getDistances(atomSymbols, self.conditions.externalPressure)
-        if disassembler.environment is not None:
-            inds = disassembler.envIndices
+        for inds in disassembler.envIndices:
             atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
         goodStructure = np.all(atomDistances >= minDistMatrix) and self.cellUtility.isGoodCell(system['cell'])
         # composition = self.simpleMoleculeUtility.composition(system)
