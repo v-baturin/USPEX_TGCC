@@ -4,6 +4,7 @@ from ase.io.espresso import read_fortran_namelist, read_espresso_out, write_espr
 from ase.io import ParseError, read
 from ase.atoms import Atoms
 from ase.constraints import FixAtoms
+from ase.io.gen import read_gen, write_gen
 from pathlib import Path
 
 
@@ -146,3 +147,29 @@ class ASEInterfaceAdapter:
                 structure=structure,
                 results=ASEInterfaceAdapter.Results(atoms)
             )
+
+    class DFTBplus:
+
+        def write_structure(self, structure, geometry_file, calcFolder: Path):
+            cell = structure.getCell()
+            pbc = cell.getPBC()
+            symbols = np.asarray([el.short_name for el in structure.getAtomTypes()])
+            coordinates = structure.getCartesianCoordinates()
+            cell_vectors = cell.getCellVectors()
+            ase_struct = Atoms(symbols, positions=coordinates, cell=cell_vectors, pbc=pbc)
+            write_gen(calcFolder / geometry_file, ase_struct)
+            return {'pbc': cell.getPBC()}
+
+        def read_structure(self, geometry_file, calcFolder: Path, pbc):
+            ase_struct = read_gen(calcFolder / geometry_file)
+            new_lattice = []
+            tmp_lattice = ase_struct.cell[:].copy()
+            for i, vec in enumerate(tmp_lattice):
+                if pbc[i]:
+                    new_lattice.append([float(x) for x in vec])
+            cell = ASEInterfaceAdapter.cellType.initFromCellVectors(pbc, new_lattice)
+            new_structure = ASEInterfaceAdapter.structureType([ASEInterfaceAdapter.atomType(i)
+                                                               for i in ase_struct.get_chemical_symbols()],
+                                                              ase_struct.get_positions(), cell=cell)
+
+            return new_structure

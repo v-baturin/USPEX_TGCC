@@ -5,11 +5,8 @@ USPEX.Stages.DFTBplus_Interface
 """
 
 import logging
-import os
 import numpy as np
 
-from ase import Atoms
-from ase.io.gen import read_gen, write_gen
 from pathlib import Path
 
 from .KPoints import KPoints, BadKPoints
@@ -40,11 +37,14 @@ class DFTBplus_Interface:
 
     out_geometry_file = 'geo_end.gen'
 
+    aseAdapterType = None
+
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
+    def registerTypes(cls, structureType, atomType, cellType, aseAdapterType):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
+        cls.aseAdapterType = aseAdapterType
 
     def __init__(self, tag: str,
                        kresol: float = None,
@@ -61,6 +61,7 @@ class DFTBplus_Interface:
         with open(dftb_input, 'r') as f:
             self.dftb_input = f.read()
 
+        self.adapter = self.aseAdapterType()
         self.kPoints = KPoints(kresol) if kresol is not None else None
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
@@ -68,12 +69,8 @@ class DFTBplus_Interface:
 
         structure = system['structure']
         cell = structure.getCell()
-        system['pbc'] = cell.getPBC()
-        symbols = np.asarray([el.short_name for el in structure.getAtomTypes()])
-        coordinates = structure.getCartesianCoordinates()
-        cell_vectors = cell.getCellVectors()
-        ase_struct = Atoms(symbols, positions=coordinates, cell=cell_vectors, pbc=system['pbc'])
-        write_gen(calcFolder/self.geometry_file, ase_struct)
+
+        system['ase'] = self.adapter.write_structure(structure, self.geometry_file, calcFolder)
 
         if self.kPoints is None or cell.dim == 0:
             with open(calcFolder/self.kpoints_file, 'wt') as f:
@@ -133,7 +130,7 @@ class DFTBplus_Interface:
         return True
 
     def readOutput(self, system, calcFolder: Path):
-        new_structure = self.readStructure(calcFolder, system.pop('pbc'))
+        new_structure = self.adapter.read_structure(self.out_geometry_file, calcFolder, **system.pop('ase'))
         EnergyHa = self.readEnergyHa(calcFolder)
 
         results = {}
@@ -150,19 +147,6 @@ class DFTBplus_Interface:
                 results['enthalpy'] = EnergyHa * HARTREE_TO_EV
 
         return results
-
-    def readStructure(self, calcFolder: Path, pbc):
-        ase_struct = read_gen(calcFolder/self.out_geometry_file)
-        new_lattice = []
-        tmp_lattice = ase_struct.cell[:].copy()
-        for i, vec in enumerate(tmp_lattice):
-            if pbc[i]:
-                new_lattice.append([float(x) for x in vec])
-        cell = self.cellType.initFromCellVectors(pbc, new_lattice)
-        new_structure = self.structureType([self.atomType(i) for i in ase_struct.get_chemical_symbols()], \
-                                           ase_struct.get_positions(), cell=cell)
-
-        return new_structure
 
     def readEnergyHa(self, calcFolder: Path) -> float:
         with open(calcFolder/self.outputFile, 'rt') as f:
