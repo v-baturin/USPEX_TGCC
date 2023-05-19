@@ -85,6 +85,9 @@ Executor.registerInterface('mopac', MOPAC_Interface)
 from .Stages.Interfaces.FHIaims_Interface import FHIaims_Interface
 FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('aims', FHIaims_Interface)
+from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
+CP2K_Interface.registerTypes(AtomicStructure, Element, Cell)
+Executor.registerInterface('cp2k', CP2K_Interface)
 from .Stages.TaskManagers.BSUB import BSUB
 Executor.registerTaskManager('BSUB', BSUB)
 from .Stages.TaskManagers.QSUB import QSUB
