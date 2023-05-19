@@ -59,9 +59,8 @@ class XTB_Interface:
         system['ase'] = self.adapter.write_structure(structure, self.geometry_file, calcFolder)
 
         content_to_write = ''
-        fixedIndices = system['disassembler'].envIndices[
-            system['environment'].getFixedIndices()] if 'environment' in system else None
-        if fixedIndices is not None:
+        fixedIndices = np.copy(system['disassembler'].fixedIndices)
+        if np.any(fixedIndices):
             content_to_write += '$fix\n'
             content_to_write += 'atoms: '
             onebased_fixedIndices = fixedIndices + 1
