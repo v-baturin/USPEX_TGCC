@@ -79,7 +79,7 @@ class QE_Interface:
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
             kPoints = [1, 1, 1]
 
-        system['ase'] = self.adapter.write(structure, system['disassembler'].fixedIndices,
+        system['ase'] = self.adapter.write(structure, system['disassembler'].allFixedIndices,
                                            kPoints, self.pseudopotentials, calcFolder)
 
         return ''

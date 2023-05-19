@@ -7,9 +7,8 @@
                    "name": "phenyl"
                  }
                 ],
-  "environments": [
-                   { "type": "nanoparticle_core",
+  "core":       { "type": "nanoparticle_core",
                      "filename": "./Au-51-15.xyz",
-                     "name": "np_core_alpha"}
-                  ]
+                     "name": "np_core_alpha"
+                }
 }

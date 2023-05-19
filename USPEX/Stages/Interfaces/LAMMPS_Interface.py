@@ -96,7 +96,7 @@ class LAMMPS_Interface:
 
         structure = system['structure']
 
-        system['ase'] = self.adapter.write(structure, system['disassembler'].fixedIndices,
+        system['ase'] = self.adapter.write(structure, system['disassembler'].allFixedIndices,
                                            f"EA{system['ID']}", self.specorder, calcFolder)
 
         with open(self.lammps_in, 'r') as f:

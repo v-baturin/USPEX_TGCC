@@ -352,8 +352,12 @@ class AtomisticRepresentation(object):
                     printUSPEX = True
             if molecules:
                 d['molecules'] = molecules
-            if 'environment' in system:
+            if 'environments' in system:
                 printUSPEX = True
+                d['environments'] = []
+                for eInds in disassembler.envIndices:
+                    d['environments'].append(' '.join(f'{ind}' for ind in eInds))
+                d['fixed'] = ' '.join(f'{ind}' for ind in disassembler.allFixedIndices)
             descriptions.append(d)
         cls.writePOSCARS(filename, structures, labels)
         if printUSPEX:
@@ -409,11 +413,11 @@ class AtomisticRepresentation(object):
         return all_systems
 
     @classmethod
-    def readAtomicStructure(cls, filename, environmentUtility=None) -> dict:
-        return cls.readAtomicStructures(filename, environmentUtility)[0]
+    def readAtomicStructure(cls, filename) -> dict:
+        return cls.readAtomicStructures(filename)[0]
 
     @classmethod
-    def readAtomicStructures(cls, filename, environmentUtility=None) -> list:
+    def readAtomicStructures(cls, filename) -> list:
         filename = Path(filename)
         directory = filename.parent
         if filename.suffix == '.uspex':
@@ -428,16 +432,22 @@ class AtomisticRepresentation(object):
                 if 'pbc' in d:
                     d['pbc'] = tuple(int(c) for c in d.pop('pbc').split(' '))
                 if 'molecules' in d:
-                    d['molecules'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
+                    d['indices'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
                 else:
-                    d['molecules'] = []
-                if 'environment' in d:
-                    environment = d.pop('environment')
-                    environmentType = environmentUtility.supportedEnvironments.get(environment.pop('type'))
-                    d['environment'], envIndices = environmentType.fromIndices(**environment)
+                    d['indices'] = []
+                fixed = np.array(d.pop('fixed').split(' '), dtype=int) if 'fixed' in d else np.empty(0, dtype=int)
+                if 'environments' in d:
+                    d['envIndices'] = []
+                    d['fixedIndices'] = []
+                    for eInds in d.pop('environments'):
+                        eInds = np.array(eInds.split(' '), dtype=int)
+                        fInds = np.argwhere(eInds.reshape((-1, 1)) == fixed.reshape((1, -1)))[:, 0]
+                        d['envIndices'].append(eInds)
+                        d['fixedIndices'].append(fInds)
+                    envIndices = np.concatenate(d['envIndices'])
                 else:
                     envIndices = []
-                d['molecules'].extend([np.array([i]) for i in set(range(len(structure))).difference(set(envIndices))])
+                d['indices'].extend([np.array([i]) for i in set(range(len(structure))).difference(set(envIndices))])
                 systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
         else:
             systems = [cls.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))).disassemble(structure)
@@ -466,7 +476,7 @@ class AtomisticRepresentation(object):
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
         isVarComp = not ut.compositionSpace.isFixedComposition
         dim = ut.cellUtility.getDim()
-        hasEnv = len(ut.environmentUtility.assemblers) > 0
+        hasEnv = len(ut.environmentUtility.environments) > 0
         hasJunct = ut.junctionUtility.hasJunctions
 
 
@@ -731,7 +741,7 @@ class AtomisticRepresentation(object):
                     table.update(system['ID'], system, opt.fitness)
                 content_convexHull += table.table.get_string() + '\n'
 
-            with open(self.RES_FOLDER, 'convex_hull', 'w') as fp:
+            with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
                 fp.write(content_convexHull)
 
             extendedConvexHull = [system for system in optimizer.pool.uniqueSystems

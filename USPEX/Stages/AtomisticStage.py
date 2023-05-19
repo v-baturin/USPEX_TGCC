@@ -28,10 +28,11 @@ class AtomisticStage:
         self.executor = self.executorType(**kwargs)
 
     async def run(self, system):
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system,
-                                                                       style=self.environmentStyle,
-                                                                       inStyle=self.inStyle,
-                                                                       vacuumSize=self.vacuumSize)
+        if self.inStyle is not None:
+            system = system[f'{self.inStyle}.system']
+        if self.environmentStyle == 'noEnvironment':
+            system = {'molecules': system['molecules'], 'cell': system['cell']}
+        structure, disassembler = self.atomicDisassemblerType.assemble(**system, vacuumSize=self.vacuumSize)
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
         system = copy(system)

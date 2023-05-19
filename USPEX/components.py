@@ -10,8 +10,14 @@ from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.EnvironmentUtility import EnvironmentUtility
-EnvironmentUtility.setRepresentation(AtomisticRepresentation)
-EnvironmentUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Atomistic.Environments.Interface import Interface
+Interface.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Atomistic.Environments.Substrate import Substrate
+Substrate.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Atomistic.Environments.Bulk import Bulk
+Bulk.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Atomistic.Environments.NanoparticleCore import NanoparticleCore
+NanoparticleCore.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 RadialDistributionUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.CellUtility import CellUtility
@@ -79,6 +85,9 @@ Executor.registerInterface('mopac', MOPAC_Interface)
 from .Stages.Interfaces.FHIaims_Interface import FHIaims_Interface
 FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('aims', FHIaims_Interface)
+from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
+CP2K_Interface.registerTypes(AtomicStructure, Element, Cell)
+Executor.registerInterface('cp2k', CP2K_Interface)
 from .Stages.TaskManagers.BSUB import BSUB
 Executor.registerTaskManager('BSUB', BSUB)
 from .Stages.TaskManagers.QSUB import QSUB
