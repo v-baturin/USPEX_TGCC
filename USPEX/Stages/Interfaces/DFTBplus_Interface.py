@@ -95,9 +95,8 @@ class DFTBplus_Interface:
             else:
                 f.write("")
 
-        fixedIndices = system['disassembler'].envIndices[
-            system['environment'].getFixedIndices()] if 'environment' in system else None
-        if fixedIndices is not None:
+        fixedIndices = np.copy(system['disassembler'].fixedIndices)
+        if np.any(fixedIndices):
             moved_atoms_string = 'MovedAtoms = !('
             onebased_fixedIndices = fixedIndices + 1
             indices = np.where(np.diff(onebased_fixedIndices) != 1)[0] + 1
