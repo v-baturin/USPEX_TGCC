@@ -145,7 +145,7 @@ class GULP_Interface:
                               tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
                                                                precision=6) for c in coord)
             if cell.dim == 2:
-                if i in system['disassembler'].fixedIndices:
+                if i in system['disassembler'].allFixedIndices:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 1 1 1\n' % tuple_to_format
                 else:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 0 0 0\n' % tuple_to_format

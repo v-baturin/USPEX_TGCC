@@ -47,7 +47,7 @@ class Heredity:
         order2 = self.radialDistributionUtility.order(system2)
 
         parentEnv = np.random.choice((system1, system2)) \
-            if 'environment' in system1 and 'environment' in system2 else None
+            if 'environments' in system1 and 'environments' in system2 else None
 
         for i in range(self.attempts):
             outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell() \
@@ -123,11 +123,10 @@ class Heredity:
                 if composition == desiredComposition:
                     offspring = {'molecules': molecules, 'cell': outputCell}
                     if parentEnv is not None:
-                        offspring['environment'] = parentEnv['environment']
+                        offspring['environments'] = parentEnv['environments']
                     atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
                     minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                    if disassembler.environment is not None:
-                        inds = disassembler.envIndices
+                    for inds in disassembler.envIndices:
                         atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                     if np.all(atomDistances >= minDistMatrix):
                         self.conditions.putConditions(offspring)

@@ -44,7 +44,7 @@ class RandTop:
 
     def __call__(self, *args, **kwargs):
         composition = self.compositionSpace.randomComposition()
-        envAssembler = np.random.choice(self.environmentUtility.assemblers) if self.environmentUtility.assemblers \
+        envAssembler = np.random.choice(self.environmentUtility.environments) if self.environmentUtility.environments \
             else None
         envCell = envAssembler.getCell() if envAssembler is not None else None
 
@@ -123,15 +123,13 @@ class RandTop:
                                             cell = offspring['cell']
                                             if len(molecules) != totalAtomNumber:
                                                 continue
-                                            elif self.environmentUtility.assemblers:
-                                                if envAssembler is not None:
-                                                    offspring['environment'] = envAssembler.assemble(**offspring)
+                                            if envAssembler is not None:
+                                                offspring['environments'] = envAssembler.assemble(**offspring)
                                             atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(
                                                 **offspring)
                                             minDistMatrix = self.bondUtility.getDistances(atomSymbols,
                                                                                           self.conditions.externalPressure)
-                                            if disassembler.environment is not None:
-                                                inds = disassembler.envIndices
+                                            for inds in disassembler.envIndices:
                                                 atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
                                                     tuple(np.meshgrid(inds, inds))]
                                             if np.all(atomDistances >= minDistMatrix):

@@ -7,6 +7,7 @@ import yaml
 
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
+from ase.io import read, write
 from copy import copy
 from collections import Counter
 from collections.abc import Mapping
@@ -16,6 +17,7 @@ from prettytable import PrettyTable
 
 from .formatters import createHeader_wrap
 from ..presets import presetFitness
+from .read_molecule import read_molecule
 
 matplotlib.use('Agg')
 
@@ -313,6 +315,12 @@ class AtomisticRepresentation(object):
             shutil.copyfileobj(content, f)
 
     @classmethod
+    def writeXYZ(cls, filename, structure, label=''):
+        coordinates = structure.getCartesianCoordinates()
+        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=None)
+        write(filename, atoms, format='xyz', comment=label)
+
+    @classmethod
     def writeAtomicStructure(cls, filename, system: dict):
         filename = Path(filename)
         cls.writeAtomicStructures(filename, [system])
@@ -344,13 +352,18 @@ class AtomisticRepresentation(object):
                     printUSPEX = True
             if molecules:
                 d['molecules'] = molecules
-            if 'environment' in system:
+            if 'environments' in system:
                 printUSPEX = True
+                d['environments'] = []
+                for eInds in disassembler.envIndices:
+                    d['environments'].append(' '.join(f'{ind}' for ind in eInds))
+                d['fixed'] = ' '.join(f'{ind}' for ind in disassembler.allFixedIndices)
             descriptions.append(d)
         cls.writePOSCARS(filename, structures, labels)
         if printUSPEX:
             with open(f'{filename}.uspex', 'wt') as f:
                 f.write(yaml.safe_dump(descriptions))
+
 
     @classmethod
     def readPOSCAR(cls, filename, pbc=(1, 1, 1)):
@@ -372,11 +385,39 @@ class AtomisticRepresentation(object):
         return all_systems
 
     @classmethod
-    def readAtomicStructure(cls, filename, environmentUtility=None) -> dict:
-        return cls.readAtomicStructures(filename, environmentUtility)[0]
+    def readMol(cls, filename):
+        molDct = read_molecule(filename)
+        atomTypes = [cls.atomType(s) for s in molDct['symbols']]
+        coordinates = molDct['positions']
+        zmatrixConfig = molDct['configZMatrix']
+        return cls.structureType(atomTypes, coordinates, zmatrixConfig=zmatrixConfig)
+
 
     @classmethod
-    def readAtomicStructures(cls, filename, environmentUtility=None) -> list:
+    def readXYZ(cls, filename):
+        atoms = read(filename, format='xyz')
+        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
+        coordinates = atoms.get_positions()
+        cell = cls.cellType.initFromCellParameters((0, 0, 0)).getEnvelopeCell(coordinates)
+        return cls.structureType(atomTypes, coordinates, cell)
+
+    @classmethod
+    def readXYZs(cls, filename):
+        all_atoms = read(filename, index=':', format='xyz')
+        all_systems = []
+        dummy_cell = cls.cellType.initFromCellParameters((0, 0, 0))
+        for atoms in all_atoms:
+            all_systems.append(cls.structureType([cls.atomType(s) for s in atoms.get_chemical_symbols()],
+                                                 atoms.get_positions(),
+                                                 dummy_cell.getEnvelopeCell(atoms.get_positions())))
+        return all_systems
+
+    @classmethod
+    def readAtomicStructure(cls, filename) -> dict:
+        return cls.readAtomicStructures(filename)[0]
+
+    @classmethod
+    def readAtomicStructures(cls, filename) -> list:
         filename = Path(filename)
         directory = filename.parent
         if filename.suffix == '.uspex':
@@ -391,16 +432,22 @@ class AtomisticRepresentation(object):
                 if 'pbc' in d:
                     d['pbc'] = tuple(int(c) for c in d.pop('pbc').split(' '))
                 if 'molecules' in d:
-                    d['molecules'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
+                    d['indices'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
                 else:
-                    d['molecules'] = []
-                if 'environment' in d:
-                    environment = d.pop('environment')
-                    environmentType = environmentUtility.supportedEnvironments.get(environment.pop('type'))
-                    d['environment'], envIndices = environmentType.fromIndices(**environment)
+                    d['indices'] = []
+                fixed = np.array(d.pop('fixed').split(' '), dtype=int) if 'fixed' in d else np.empty(0, dtype=int)
+                if 'environments' in d:
+                    d['envIndices'] = []
+                    d['fixedIndices'] = []
+                    for eInds in d.pop('environments'):
+                        eInds = np.array(eInds.split(' '), dtype=int)
+                        fInds = np.argwhere(eInds.reshape((-1, 1)) == fixed.reshape((1, -1)))[:, 0]
+                        d['envIndices'].append(eInds)
+                        d['fixedIndices'].append(fInds)
+                    envIndices = np.concatenate(d['envIndices'])
                 else:
                     envIndices = []
-                d['molecules'].extend([np.array([i]) for i in set(range(len(structure))).difference(set(envIndices))])
+                d['indices'].extend([np.array([i]) for i in set(range(len(structure))).difference(set(envIndices))])
                 systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
         else:
             systems = [cls.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))).disassemble(structure)
@@ -412,12 +459,15 @@ class AtomisticRepresentation(object):
         elements = molecule.getAtomTypes()
         coordinates = molecule.getCartesianCoordinates()
         zmatrixConfig = molecule.getZmatrixConfig()
-        zmatrix = utility.coordToZmatrix(coordinates, zmatrixConfig)
-        repr = ['Atom Bond-length Bond-angle Torsion-angle   i   j   k',
-                '      (Angstrom)  (Degree)    (Degree)',
-             *(f'{el.short_name:2}    {zrow[0]:8.4}    {zrow[1]*180/np.pi:8.4}    {zrow[2]*180/np.pi:8.4}    {fmt[0]:3} {fmt[1]:3} {fmt[2]:3}'
-               for el, zrow, fmt in zip(elements, zmatrix, zmatrixConfig))]
-        return '\n'.join(repr)
+        if zmatrixConfig is not None:
+            zmatrix = utility.coordToZmatrix(coordinates, zmatrixConfig)
+            repr = ['Atom Bond-length Bond-angle Torsion-angle   i   j   k',
+                    '      (Angstrom)  (Degree)    (Degree)',
+                 *(f'{el.short_name:2}    {zrow[0]:8.4}    {zrow[1]*180/np.pi:8.4}    {zrow[2]*180/np.pi:8.4}    {fmt[0]:3} {fmt[1]:3} {fmt[2]:3}'
+                   for el, zrow, fmt in zip(elements, zmatrix, zmatrixConfig))]
+            return '\n'.join(repr)
+        else:
+            return 'No corresponding Z-matrix\n'
 
     @classmethod
     def getParametersBlock(cls, target) -> list:
@@ -426,7 +476,8 @@ class AtomisticRepresentation(object):
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
         isVarComp = not ut.compositionSpace.isFixedComposition
         dim = ut.cellUtility.getDim()
-        hasEnv = len(ut.environmentUtility.assemblers) > 0
+        hasEnv = len(ut.environmentUtility.environments) > 0
+        hasJunct = ut.junctionUtility.hasJunctions
 
 
         # ---------------------------------------------------------------------------
@@ -439,6 +490,7 @@ class AtomisticRepresentation(object):
         row += f'    Molecular            :  {"Yes" if isMolSystem else "No"}\n'
         row += f'    Variable composition :  {"Yes" if isVarComp else "No"}\n'
         row += f'    Has environment      :  {"Yes" if hasEnv else "No"}\n'
+        row += f'    Has Junctions        :  {"Yes" if hasJunct else "No"}\n'
 
 
         formatted_rows.append(row)
@@ -466,6 +518,7 @@ class AtomisticRepresentation(object):
                 comp = Counter()
                 for s, b in zip(symbols, block):
                     comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
+
                 volume = ut.bondUtility.volumeEstimator.calcCompositionVolume(comp, ut.conditions.externalPressure)
                 rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
 
@@ -688,7 +741,7 @@ class AtomisticRepresentation(object):
                     table.update(system['ID'], system, opt.fitness)
                 content_convexHull += table.table.get_string() + '\n'
 
-            with open(self.RES_FOLDER, 'convex_hull', 'w') as fp:
+            with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
                 fp.write(content_convexHull)
 
             extendedConvexHull = [system for system in optimizer.pool.uniqueSystems
