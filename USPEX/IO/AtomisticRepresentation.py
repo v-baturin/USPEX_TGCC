@@ -429,12 +429,18 @@ class AtomisticRepresentation(object):
             for d in descriptions:
                 d = copy(d)
                 structure = files[d.pop('filename')][d.pop('index')]
+                d['indices'] = []
                 if 'pbc' in d:
                     d['pbc'] = tuple(int(c) for c in d.pop('pbc').split(' '))
                 if 'molecules' in d:
-                    d['indices'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
+                    molind = []
+                    for mol in d.pop('molecules'):
+                        newind = mol.split(' ')
+                        d['indices'].append(np.array(newind, dtype=int))
+                        molind += newind
+                    molindSet = set(np.array(molind, dtype=int))
                 else:
-                    d['indices'] = []
+                    molindSet = set()
                 fixed = np.array(d.pop('fixed').split(' '), dtype=int) if 'fixed' in d else np.empty(0, dtype=int)
                 if 'environments' in d:
                     d['envIndices'] = []
@@ -447,7 +453,7 @@ class AtomisticRepresentation(object):
                     envIndices = np.concatenate(d['envIndices'])
                 else:
                     envIndices = []
-                d['indices'].extend([np.array([i]) for i in set(range(len(structure))).difference(set(envIndices))])
+                d['indices'].extend([np.array([i]) for i in set(range(len(structure))) - set(envIndices) - molindSet])
                 systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
         else:
             systems = [cls.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))).disassemble(structure)
