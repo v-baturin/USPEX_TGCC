@@ -352,7 +352,7 @@ class AtomisticRepresentation(object):
                     printUSPEX = True
             if molecules:
                 d['molecules'] = molecules
-            if 'environments' in system:
+            if 'environments' in system and len(system['environments']):
                 printUSPEX = True
                 d['environments'] = []
                 for eInds in disassembler.envIndices:
@@ -429,12 +429,15 @@ class AtomisticRepresentation(object):
             for d in descriptions:
                 d = copy(d)
                 structure = files[d.pop('filename')][d.pop('index')]
+                allIndSet = set(range(len(structure)))
+                d['indices'] = []
                 if 'pbc' in d:
                     d['pbc'] = tuple(int(c) for c in d.pop('pbc').split(' '))
                 if 'molecules' in d:
                     d['indices'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
+                    molIndSet = set(np.concatenate(d['indices']))
                 else:
-                    d['indices'] = []
+                    molIndSet = set()
                 fixed = np.array(d.pop('fixed').split(' '), dtype=int) if 'fixed' in d else np.empty(0, dtype=int)
                 if 'environments' in d:
                     d['envIndices'] = []
@@ -444,10 +447,10 @@ class AtomisticRepresentation(object):
                         fInds = np.argwhere(eInds.reshape((-1, 1)) == fixed.reshape((1, -1)))[:, 0]
                         d['envIndices'].append(eInds)
                         d['fixedIndices'].append(fInds)
-                    envIndices = np.concatenate(d['envIndices'])
+                    envIndSet = set(np.concatenate(d['envIndices']))
                 else:
-                    envIndices = []
-                d['indices'].extend([np.array([i]) for i in set(range(len(structure))).difference(set(envIndices))])
+                    envIndSet = set()
+                d['indices'].extend(np.fromiter(allIndSet - envIndSet - molIndSet, dtype=int).reshape((-1, 1)))
                 systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
         else:
             systems = [cls.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))).disassemble(structure)
