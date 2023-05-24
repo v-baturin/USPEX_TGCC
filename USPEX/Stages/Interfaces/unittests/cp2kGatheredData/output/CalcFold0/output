@@ -1,0 +1,994 @@
+ DBCSR| Multiplication driver                                               BLAS
+ DBCSR| Multrec recursion limit                                              512
+ DBCSR| Multiplication stack size                                           1000
+ DBCSR| Maximum elements for images                                    UNLIMITED
+ DBCSR| Multiplicative factor virtual images                                   1
+ DBCSR| Multiplication size stacks                                             3
+ DBCSR| Number of 3D layers                                               SINGLE
+ DBCSR| Use MPI memory allocation                                              T
+ DBCSR| Use RMA algorithm                                                      F
+ DBCSR| Use Communication thread                                               T
+ DBCSR| Communication thread load                                             87
+
+
+  **** **** ******  **  PROGRAM STARTED AT               2023-05-03 11:57:49.871
+ ***** ** ***  *** **   PROGRAM STARTED ON                        ask-VirtualBox
+ **    ****   ******    PROGRAM STARTED BY                                   ask
+ ***** **    ** ** **   PROGRAM PROCESS ID                                  7617
+  **** **  *******  **  PROGRAM STARTED IN /home/ask/WORK/USPEX_GIT/15_3D_Li6P2_
+                                           data_for_unittest/0_Copy_CalcFold/Cal
+                                           cFold0_1
+
+ CP2K| version string:                                          CP2K version 6.1
+ CP2K| source code revision number:                                    svn:18464
+ CP2K| cp2kflags: libint fftw3 libxc elpa=201605 elpa_qr parallel mpi3 scalapack
+ CP2K|             libderiv_max_am1=5 libint_max_am=6
+ CP2K| is freely available from                            https://www.cp2k.org/
+ CP2K| Program compiled at                          Sun Mar 22 16:45:27 UTC 2020
+ CP2K| Program compiled on                                       lcy01-amd64-017
+ CP2K| Program compiled for                                Linux-x86_64-gfortran
+ CP2K| Data directory path                                       /usr/share/cp2k
+ CP2K| Input file name                                                  cp2k.inp
+
+ GLOBAL| Force Environment number                                              1
+ GLOBAL| Basis set file name            /home/ask/SOFT/cp2k/data/BASIS_MOLOPT_UZ
+ GLOBAL| Potential file name              /home/ask/SOFT/cp2k/data/POTENTIAL_UZH
+ GLOBAL| MM Potential file name                                     MM_POTENTIAL
+ GLOBAL| Coordinate file name                                      __STD_INPUT__
+ GLOBAL| Method name                                                        CP2K
+ GLOBAL| Project name                                                      USPEX
+ GLOBAL| Preferred FFT library                                             FFTW3
+ GLOBAL| Preferred diagonalization lib.                                       SL
+ GLOBAL| Run type                                                       CELL_OPT
+ GLOBAL| All-to-all communication in single precision                          F
+ GLOBAL| FFTs using library dependent lengths                                  F
+ GLOBAL| Global print level                                                  LOW
+ GLOBAL| Total number of message passing processes                             1
+ GLOBAL| Number of threads for this process                                    1
+ GLOBAL| This output is from process                                           0
+ GLOBAL| CPU model name :  Intel(R) Core(TM) i7-10700KF CPU @ 3.80GHz
+
+ MEMORY| system memory details [Kb]
+ MEMORY|                        rank 0           min           max       average
+ MEMORY| MemTotal             16398016      16398016      16398016      16398016
+ MEMORY| MemFree              10003092      10003092      10003092      10003092
+ MEMORY| Buffers                392872        392872        392872        392872
+ MEMORY| Cached                3378616       3378616       3378616       3378616
+ MEMORY| Slab                   395676        395676        395676        395676
+ MEMORY| SReclaimable           322820        322820        322820        322820
+ MEMORY| MemLikelyFree        14097400      14097400      14097400      14097400
+
+
+ GENERATE|  Preliminary Number of Bonds generated:                             0
+ GENERATE|  Achieved consistency in connectivity generation.
+
+ *** WARNING in cryssym.F:163 :: Symmetry library SPGLIB not available ***
+
+
+ *******************************************************************************
+ *******************************************************************************
+ **                                                                           **
+ **     #####                         ##              ##                      **
+ **    ##   ##            ##          ##              ##                      **
+ **   ##     ##                       ##            ######                    **
+ **   ##     ##  ##   ##  ##   #####  ##  ##   ####   ##    #####    #####    **
+ **   ##     ##  ##   ##  ##  ##      ## ##   ##      ##   ##   ##  ##   ##   **
+ **   ##  ## ##  ##   ##  ##  ##      ####     ###    ##   ######   ######    **
+ **    ##  ###   ##   ##  ##  ##      ## ##      ##   ##   ##       ##        **
+ **     #######   #####   ##   #####  ##  ##  ####    ##    #####   ##        **
+ **           ##                                                    ##        **
+ **                                                                           **
+ **                                                ... make the atoms dance   **
+ **                                                                           **
+ **            Copyright (C) by CP2K developers group (2000 - 2018)           **
+ **                                                                           **
+ *******************************************************************************
+
+ *** WARNING in qs_environment.F:1142 :: More added MOs requested than ***
+ *** available. The full set of unoccupied MOs will be used.           ***
+
+
+
+ TOTAL NUMBERS AND MAXIMUM NUMBERS
+
+  Total number of            - Atomic kinds:                                   2
+                             - Atoms:                                          8
+                             - Shell sets:                                     8
+                             - Shells:                                        28
+                             - Primitive Cartesian functions:                 32
+                             - Cartesian basis functions:                     58
+                             - Spherical basis functions:                     56
+
+  Maximum angular momentum of- Orbital basis functions:                        2
+                             - Local part of the GTH pseudopotential:          2
+                             - Non-local part of the GTH pseudopotential:      2
+
+
+ SCF PARAMETERS         Density guess:                                    ATOMIC
+                        --------------------------------------------------------
+                        max_scf:                                             300
+                        max_scf_history:                                       0
+                        max_diis:                                              4
+                        --------------------------------------------------------
+                        eps_scf:                                        1.00E-04
+                        eps_scf_history:                                0.00E+00
+                        eps_diis:                                       1.00E-01
+                        eps_eigval:                                     1.00E-05
+                        --------------------------------------------------------
+                        level_shift [a.u.]:                                 0.00
+                        added MOs                                        48    0
+                        --------------------------------------------------------
+                        Mixing method:                            BROYDEN_MIXING
+                                                charge density mixing in g-space
+                        --------------------------------------------------------
+                        Smear method:                                FERMI_DIRAC
+                        Electronic temperature [K]:                        900.0
+                        Electronic temperature [a.u.]:                  2.85E-03
+                        Accuracy threshold:                             1.00E-10
+                        --------------------------------------------------------
+                        No outer SCF
+
+ CELL_OPT| Pressure tolerance [bar]:                                      1000.0
+ CELL_OPT| Keep angles between the cell vectors:                              NO
+ CELL_OPT| Keep cell symmetry:                                                NO
+ CELL_OPT| Constraint:                                                      NONE
+
+ BFGS| Use rational function optimization for step estimation:                NO
+ BFGS| Use model Hessian for initial guess:                                   NO
+ BFGS| Restart Hessian:                                                       NO
+ BFGS| Trust radius:                                                       0.472
+
+ *******************************************************************************
+ ***                     STARTING   CELL   OPTIMIZATION                      ***
+ ***                                   BFGS                                  ***
+ *******************************************************************************
+
+ CELL| Volume [angstrom^3]:                                              149.060
+ CELL| Vector a [angstrom]:       4.809     0.000     0.000    |a| =       4.809
+ CELL| Vector b [angstrom]:       0.000     4.809     0.000    |b| =       4.809
+ CELL| Vector c [angstrom]:       0.000     0.000     6.444    |c| =       6.444
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                             YES
+
+ --------  Informations at step =     0 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.7420933665
+  Internal Pressure [bar]    =    -53972.2315092274
+  Used time                  =              405.658
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:      1
+ --------------------------
+
+ CELL| Volume [angstrom^3]:                                              148.157
+ CELL| Vector a [angstrom]:       4.797     0.000     0.000    |a| =       4.797
+ CELL| Vector b [angstrom]:      -0.000     4.797     0.000    |b| =       4.797
+ CELL| Vector c [angstrom]:       0.000     0.000     6.439    |c| =       6.439
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =     1 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.7433386878
+  Internal Pressure [bar]    =    -53361.0087517360
+  Real energy change         =        -0.0012453213
+  Predicted change in energy =        -0.0006204592
+  Scaling factor             =         0.0000000000
+  Step size                  =         0.0239165480
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              186.757
+
+  Convergence check :
+  Max. step size             =         0.0239165480
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                  YES
+  RMS step size              =         0.0143812288
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                  YES
+  Max. gradient              =         0.0238857475
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0142932029
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =    -53461.0087517360
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:      2
+ --------------------------
+
+  Step is scaled; Scaling factor =  0.11844
+
+ CELL| Volume [angstrom^3]:                                              131.118
+ CELL| Vector a [angstrom]:       4.547     0.000     0.000    |a| =       4.547
+ CELL| Vector b [angstrom]:      -0.000     4.547     0.000    |b| =       4.547
+ CELL| Vector c [angstrom]:       0.000     0.000     6.343    |c| =       6.343
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =     2 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.7661464276
+  Internal Pressure [bar]    =    -36923.0294138626
+  Real energy change         =        -0.0228077398
+  Predicted change in energy =        -0.0228134217
+  Scaling factor             =         0.1184379200
+  Step size                  =         0.4724315332
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              245.439
+
+  Convergence check :
+  Max. step size             =         0.4724315332
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.2827620957
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0234658727
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0137515101
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =    -37023.0294138627
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:      3
+ --------------------------
+
+  Step is scaled; Scaling factor =  0.13761
+
+ CELL| Volume [angstrom^3]:                                              115.459
+ CELL| Vector a [angstrom]:       4.297     0.000     0.000    |a| =       4.297
+ CELL| Vector b [angstrom]:      -0.000     4.297     0.000    |b| =       4.297
+ CELL| Vector c [angstrom]:       0.000     0.000     6.254    |c| =       6.254
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =     3 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.7843029495
+  Internal Pressure [bar]    =     -6623.5002925147
+  Real energy change         =        -0.0181565219
+  Predicted change in energy =        -0.0197455952
+  Scaling factor             =         0.1376124595
+  Step size                  =         0.4724315332
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              268.085
+
+  Convergence check :
+  Max. step size             =         0.4724315332
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.2812016180
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0209809802
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0137175293
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =     -6723.5002925147
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:      4
+ --------------------------
+
+  Step is scaled; Scaling factor =  0.48686
+
+ CELL| Volume [angstrom^3]:                                              101.167
+ CELL| Vector a [angstrom]:       4.047     0.000     0.000    |a| =       4.047
+ CELL| Vector b [angstrom]:      -0.000     4.047     0.000    |b| =       4.047
+ CELL| Vector c [angstrom]:       0.000     0.000     6.178    |c| =       6.178
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =     4 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.7924158787
+  Internal Pressure [bar]    =     47191.5433844942
+  Real energy change         =        -0.0081129292
+  Predicted change in energy =        -0.0109815422
+  Scaling factor             =         0.4868636949
+  Step size                  =         0.4724315332
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              288.935
+
+  Convergence check :
+  Max. step size             =         0.4724315332
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.2790161539
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0361996137
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0152053447
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =     47091.5433844942
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:      5
+ --------------------------
+
+ CELL| Volume [angstrom^3]:                                              100.306
+ CELL| Vector a [angstrom]:       4.026     0.000     0.000    |a| =       4.026
+ CELL| Vector b [angstrom]:      -0.000     4.026     0.000    |b| =       4.026
+ CELL| Vector c [angstrom]:       0.000     0.000     6.190    |c| =       6.190
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =     5 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.7937140896
+  Internal Pressure [bar]    =     51992.7799008141
+  Real energy change         =        -0.0012982109
+  Predicted change in energy =        -0.0006556323
+  Scaling factor             =         0.4868636949
+  Step size                  =         0.0399480303
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              246.827
+
+  Convergence check :
+  Max. step size             =         0.0399480303
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.0248327734
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0376712904
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0156943347
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =     51892.7799008141
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:      6
+ --------------------------
+
+  Step is scaled; Scaling factor =  0.10798
+
+ CELL| Volume [angstrom^3]:                                               91.288
+ CELL| Vector a [angstrom]:       3.776     0.000     0.000    |a| =       3.776
+ CELL| Vector b [angstrom]:      -0.000     3.776     0.000    |b| =       3.776
+ CELL| Vector c [angstrom]:       0.000     0.000     6.404    |c| =       6.404
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =     6 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.8130703799
+  Internal Pressure [bar]    =    112116.8388093526
+  Real energy change         =        -0.0193562903
+  Predicted change in energy =        -0.0192733947
+  Scaling factor             =         0.1079771810
+  Step size                  =         0.4724315332
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              269.794
+
+  Convergence check :
+  Max. step size             =         0.4724315332
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.3189329843
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0516409411
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0213215203
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =    112016.8388093526
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:      7
+ --------------------------
+
+  Step is scaled; Scaling factor =  0.16683
+
+ CELL| Volume [angstrom^3]:                                               83.977
+ CELL| Vector a [angstrom]:       3.553     0.000     0.000    |a| =       3.553
+ CELL| Vector b [angstrom]:      -0.000     3.553     0.000    |b| =       3.553
+ CELL| Vector c [angstrom]:      -0.000    -0.000     6.654    |c| =       6.654
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =     7 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.8224338430
+  Internal Pressure [bar]    =    173861.1411380720
+  Real energy change         =        -0.0093634632
+  Predicted change in energy =        -0.0180997558
+  Scaling factor             =         0.1668315911
+  Step size                  =         0.4724315332
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              296.546
+
+  Convergence check :
+  Max. step size             =         0.4724315332
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.3105023864
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0465838949
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0261776470
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =    173761.1411380720
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:      8
+ --------------------------
+
+ CELL| Volume [angstrom^3]:                                               87.682
+ CELL| Vector a [angstrom]:       3.605     0.000     0.000    |a| =       3.605
+ CELL| Vector b [angstrom]:      -0.000     3.605     0.000    |b| =       3.605
+ CELL| Vector c [angstrom]:       0.000     0.000     6.745    |c| =       6.745
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =     8 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.8352827405
+  Internal Pressure [bar]    =    136282.1927695114
+  Real energy change         =        -0.0128488975
+  Predicted change in energy =        -0.0071275720
+  Scaling factor             =         0.1668315911
+  Step size                  =         0.1722638484
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              278.456
+
+  Convergence check :
+  Max. step size             =         0.1722638484
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.0909836652
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0408892953
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0209933929
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =    136182.1927695114
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:      9
+ --------------------------
+
+  Step is scaled; Scaling factor =  0.33094
+
+ CELL| Volume [angstrom^3]:                                               92.551
+ CELL| Vector a [angstrom]:       3.637     0.000     0.000    |a| =       3.637
+ CELL| Vector b [angstrom]:      -0.000     3.637     0.000    |b| =       3.637
+ CELL| Vector c [angstrom]:       0.000     0.000     6.995    |c| =       6.995
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =     9 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.8539350238
+  Internal Pressure [bar]    =     93276.0033500490
+  Real energy change         =        -0.0186522833
+  Predicted change in energy =        -0.0183433437
+  Scaling factor             =         0.3309369768
+  Step size                  =         0.4724315332
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              251.621
+
+  Convergence check :
+  Max. step size             =         0.4724315332
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.1959951056
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0287225036
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0147667587
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =     93176.0033500490
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:     10
+ --------------------------
+
+  Step is scaled; Scaling factor =  0.42385
+
+ CELL| Volume [angstrom^3]:                                               97.580
+ CELL| Vector a [angstrom]:       3.670     0.000     0.000    |a| =       3.670
+ CELL| Vector b [angstrom]:      -0.000     3.670     0.000    |b| =       3.670
+ CELL| Vector c [angstrom]:       0.000     0.000     7.245    |c| =       7.245
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =    10 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.8665109009
+  Internal Pressure [bar]    =     57580.1442216076
+  Real energy change         =        -0.0125758771
+  Predicted change in energy =        -0.0121991702
+  Scaling factor             =         0.4238482411
+  Step size                  =         0.4724315332
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              244.253
+
+  Convergence check :
+  Max. step size             =         0.4724315332
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.1961041727
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0181602955
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0093614920
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =     57480.1442216076
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:     11
+ --------------------------
+
+  Step is scaled; Scaling factor =  0.58188
+
+ CELL| Volume [angstrom^3]:                                              102.786
+ CELL| Vector a [angstrom]:       3.703     0.000     0.000    |a| =       3.703
+ CELL| Vector b [angstrom]:      -0.000     3.703     0.000    |b| =       3.703
+ CELL| Vector c [angstrom]:       0.000     0.000     7.495    |c| =       7.495
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =    11 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.8738246939
+  Internal Pressure [bar]    =     28315.6068771299
+  Real energy change         =        -0.0073137930
+  Predicted change in energy =        -0.0069663921
+  Scaling factor             =         0.5818790507
+  Step size                  =         0.4724315332
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              234.242
+
+  Convergence check :
+  Max. step size             =         0.4724315332
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.1962578254
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0091406521
+  Conv. limit for gradients  =         0.0045000000
+  Conv. for gradients        =                   NO
+  RMS gradient               =         0.0047209113
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. for gradients        =                   NO
+  Pressure Deviation [bar]   =     28215.6068771299
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:     12
+ --------------------------
+
+  Step is scaled; Scaling factor =  0.98677
+
+ CELL| Volume [angstrom^3]:                                              108.152
+ CELL| Vector a [angstrom]:       3.737     0.000     0.000    |a| =       3.737
+ CELL| Vector b [angstrom]:      -0.000     3.737     0.000    |b| =       3.737
+ CELL| Vector c [angstrom]:       0.000     0.000     7.745    |c| =       7.745
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =    12 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.8766685681
+  Internal Pressure [bar]    =      4598.3945998328
+  Real energy change         =        -0.0028438742
+  Predicted change in energy =        -0.0025102215
+  Scaling factor             =         0.9867728772
+  Step size                  =         0.4724315332
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              212.469
+
+  Convergence check :
+  Max. step size             =         0.4724315332
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.1963281604
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0015383413
+  Conv. limit for gradients  =         0.0045000000
+  Conv. in gradients         =                  YES
+  RMS gradient               =         0.0007715169
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. in RMS gradients     =                  YES
+  Pressure Deviation [bar]   =      4498.3945998328
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                   NO
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:     13
+ --------------------------
+
+ CELL| Volume [angstrom^3]:                                              109.222
+ CELL| Vector a [angstrom]:       3.743     0.000     0.000    |a| =       3.743
+ CELL| Vector b [angstrom]:      -0.000     3.743     0.000    |b| =       3.743
+ CELL| Vector c [angstrom]:       0.000     0.000     7.796    |c| =       7.796
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =    13 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.8767617834
+  Internal Pressure [bar]    =       527.3849923167
+  Real energy change         =        -0.0000932153
+  Predicted change in energy =        -0.0000825652
+  Scaling factor             =         0.9867728772
+  Step size                  =         0.0954365112
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              185.557
+
+  Convergence check :
+  Max. step size             =         0.0954365112
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                   NO
+  RMS step size              =         0.0395528369
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                   NO
+  Max. gradient              =         0.0001568228
+  Conv. limit for gradients  =         0.0045000000
+  Conv. in gradients         =                  YES
+  RMS gradient               =         0.0000738488
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. in RMS gradients     =                  YES
+  Pressure Deviation [bar]   =       427.3849923167
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                  YES
+ ---------------------------------------------------
+
+ --------------------------
+ OPTIMIZATION STEP:     14
+ --------------------------
+
+ CELL| Volume [angstrom^3]:                                              109.336
+ CELL| Vector a [angstrom]:       3.744     0.000     0.000    |a| =       3.744
+ CELL| Vector b [angstrom]:      -0.000     3.744     0.000    |b| =       3.744
+ CELL| Vector c [angstrom]:       0.000     0.000     7.801    |c| =       7.801
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ --------  Informations at step =    14 ------------
+  Optimization Method        =                 BFGS
+  Total Energy               =       -14.8767629554
+  Internal Pressure [bar]    =       104.2042469314
+  Real energy change         =        -0.0000011721
+  Predicted change in energy =        -0.0000009158
+  Scaling factor             =         0.9867728772
+  Step size                  =         0.0107766569
+  Trust radius               =         0.4724315332
+  Decrease in energy         =                  YES
+  Used time                  =              182.906
+
+  Convergence check :
+  Max. step size             =         0.0107766569
+  Conv. limit for step size  =         0.0300000000
+  Convergence in step size   =                  YES
+  RMS step size              =         0.0044460539
+  Conv. limit for RMS step   =         0.0150000000
+  Convergence in RMS step    =                  YES
+  Max. gradient              =         0.0000039669
+  Conv. limit for gradients  =         0.0045000000
+  Conv. in gradients         =                  YES
+  RMS gradient               =         0.0000019709
+  Conv. limit for RMS grad.  =         0.0030000000
+  Conv. in RMS gradients     =                  YES
+  Pressure Deviation [bar]   =         4.2042469314
+  Pressure Tolerance [bar]   =      1000.0000000000
+  Conv. for  PRESSURE        =                  YES
+ ---------------------------------------------------
+
+ *******************************************************************************
+ ***                    GEOMETRY OPTIMIZATION COMPLETED                      ***
+ *******************************************************************************
+
+                    Reevaluating energy at the minimum
+
+ CELL| Volume [angstrom^3]:                                              109.336
+ CELL| Vector a [angstrom]:       3.744     0.000     0.000    |a| =       3.744
+ CELL| Vector b [angstrom]:      -0.000     3.744     0.000    |b| =       3.744
+ CELL| Vector c [angstrom]:       0.000     0.000     7.801    |c| =       7.801
+ CELL| Angle (b,c), alpha [degree]:                                       90.000
+ CELL| Angle (a,c), beta  [degree]:                                       90.000
+ CELL| Angle (a,b), gamma [degree]:                                       90.000
+ CELL| Numerically orthorhombic:                                              NO
+
+ Number of electrons:                                                         16
+ Number of occupied orbitals:                                                  8
+ Number of molecular orbitals:                                                56
+
+ Number of orbital functions:                                                 56
+ Number of independent orbital functions:                                     56
+
+ Extrapolation method: initial_guess
+
+
+ SCF WAVEFUNCTION OPTIMIZATION
+
+  Step     Update method      Time    Convergence         Total energy    Change
+  ------------------------------------------------------------------------------
+     1 Broy./Diag. 0.20E+00    4.5     1.79060671       -15.0872890682 -1.51E+01
+     2 Broy./Diag. 0.20E+00    9.0     0.02393783       -14.8627965255  2.24E-01
+     3 Broy./Diag. 0.20E+00    9.0     0.04802045       -14.8943561673 -3.16E-02
+     4 Broy./Diag. 0.20E+00    9.0     0.01037772       -14.9439031522 -4.95E-02
+     5 Broy./Diag. 0.20E+00    9.0     0.00352447       -14.8732484318  7.07E-02
+     6 Broy./Diag. 0.20E+00    9.0     0.00038736       -14.8771776917 -3.93E-03
+     7 Broy./Diag. 0.20E+00    9.0     0.00041298       -14.8768552045  3.22E-04
+     8 Broy./Diag. 0.20E+00    9.0     0.00002040       -14.8766975676  1.58E-04
+
+  *** SCF run converged in     8 steps ***
+
+
+  Electronic density on regular grids:        -16.0000000000        0.0000000000
+  Core density on regular grids:               15.9999999774       -0.0000000226
+  Total charge density on r-space grids:       -0.0000000225
+  Total charge density g-space grids:          -0.0000000225
+
+  Overlap energy of the core charge distribution:               0.00001423622912
+  Self energy of the core charge distribution:                -34.99965528943525
+  Core Hamiltonian energy:                                      8.12769933341189
+  Hartree energy:                                              16.59867639496403
+  Exchange-correlation energy:                                 -4.60343124317858
+  Electronic entropic energy:                                  -0.00000099943598
+  Fermi energy:                                                 0.08162481082623
+
+  Total energy:                                               -14.87669756761960
+
+ ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):              -14.876697567619603
+
+
+ -------------------------------------------------------------------------------
+ -                                                                             -
+ -                                DBCSR STATISTICS                             -
+ -                                                                             -
+ -------------------------------------------------------------------------------
+ COUNTER                                    TOTAL       BLAS       SMM       ACC
+ flops inhomo. stacks                           0       0.0%      0.0%      0.0%
+ flops total                         0.000000E+00       0.0%      0.0%      0.0%
+ flops max/rank                      0.000000E+00       0.0%      0.0%      0.0%
+ matmuls inhomo. stacks                         0       0.0%      0.0%      0.0%
+ matmuls total                                  0       0.0%      0.0%      0.0%
+ number of processed stacks                     0       0.0%      0.0%      0.0%
+ average stack size                                     0.0       0.0       0.0
+ marketing flops                     0.000000E+00
+ -------------------------------------------------------------------------------
+
+ MEMORY| Estimated peak process memory [MiB]                                 156
+
+ -------------------------------------------------------------------------------
+ -                                                                             -
+ -                         MESSAGE PASSING PERFORMANCE                         -
+ -                                                                             -
+ -------------------------------------------------------------------------------
+
+ ROUTINE             CALLS      AVE VOLUME [Bytes]
+ MP_Group             5276
+ MP_Bcast            49002                      7.
+ MP_Allreduce       319713                     11.
+ MP_Sync                75
+ MP_Alltoall        108728                  16668.
+ MP_Wait             40520
+ MP_ISend            56728                   3590.
+ MP_IRecv            56728                   3590.
+ -------------------------------------------------------------------------------
+
+
+ -------------------------------------------------------------------------------
+ -                                                                             -
+ -                           R E F E R E N C E S                               -
+ -                                                                             -
+ -------------------------------------------------------------------------------
+ 
+ CP2K version 6.1, the CP2K developers group (2018).
+ CP2K is freely available from https://www.cp2k.org/ .
+
+ Schuett, Ole; Messmer, Peter; Hutter, Juerg; VandeVondele, Joost. 
+ Electronic Structure Calculations on Graphics Processing Units, John Wiley & Sons, Ltd, 173-190 (2016). 
+ GPU-Accelerated Sparse Matrix-Matrix Multiplication for Linear Scaling Density Functional Theory.
+ http://dx.doi.org/10.1002/9781118670712.ch8
+
+
+ Borstnik, U; VandeVondele, J; Weber, V; Hutter, J. 
+ PARALLEL COMPUTING, 40 (5-6), 47-58 (2014). 
+ Sparse matrix multiplication: The distributed block-compressed sparse
+ row library.
+ http://dx.doi.org/10.1016/j.parco.2014.03.012
+
+
+ Hutter, J; Iannuzzi, M; Schiffmann, F; VandeVondele, J. 
+ WILEY INTERDISCIPLINARY REVIEWS-COMPUTATIONAL MOLECULAR SCIENCE, 4 (1), 15-25 (2014). 
+ CP2K: atomistic simulations of condensed matter systems.
+ http://dx.doi.org/10.1002/wcms.1159
+
+
+ VandeVondele, J; Hutter, J. 
+ JOURNAL OF CHEMICAL PHYSICS, 127 (11), 114105 (2007). 
+ Gaussian basis sets for accurate calculations on molecular systems in
+ gas and condensed phases.
+ http://dx.doi.org/10.1063/1.2770708
+
+
+ Krack, M. 
+ THEORETICAL CHEMISTRY ACCOUNTS, 114 (1-3), 145-152 (2005). 
+ Pseudopotentials for H to Kr optimized for gradient-corrected
+ exchange-correlation functionals.
+ http://dx.doi.org/10.1007/s00214-005-0655-y
+
+
+ VandeVondele, J; Krack, M; Mohamed, F; Parrinello, M; Chassaing, T;
+ Hutter, J. COMPUTER PHYSICS COMMUNICATIONS, 167 (2), 103-128 (2005). 
+ QUICKSTEP: Fast and accurate density functional calculations using a
+ mixed Gaussian and plane waves approach.
+ http://dx.doi.org/10.1016/j.cpc.2004.12.014
+
+
+ Frigo, M; Johnson, SG. 
+ PROCEEDINGS OF THE IEEE, 93 (2), 216-231 (2005). 
+ The design and implementation of FFTW3.
+ http://dx.doi.org/10.1109/JPROC.2004.840301
+
+
+ Hartwigsen, C; Goedecker, S; Hutter, J. 
+ PHYSICAL REVIEW B, 58 (7), 3641-3662 (1998). 
+ Relativistic separable dual-space Gaussian pseudopotentials from H to Rn.
+ http://dx.doi.org/10.1103/PhysRevB.58.3641
+
+
+ Lippert, G; Hutter, J; Parrinello, M. 
+ MOLECULAR PHYSICS, 92 (3), 477-487 (1997). 
+ A hybrid Gaussian and plane wave density functional scheme.
+ http://dx.doi.org/10.1080/002689797170220
+
+
+ Goedecker, S; Teter, M; Hutter, J. 
+ PHYSICAL REVIEW B, 54 (3), 1703-1710 (1996). 
+ Separable dual-space Gaussian pseudopotentials.
+ http://dx.doi.org/10.1103/PhysRevB.54.1703
+
+
+ -------------------------------------------------------------------------------
+ -                                                                             -
+ -                                T I M I N G                                  -
+ -                                                                             -
+ -------------------------------------------------------------------------------
+ SUBROUTINE                       CALLS  ASD         SELF TIME        TOTAL TIME
+                                MAXIMUM       AVERAGE  MAXIMUM  AVERAGE  MAXIMUM
+ CP2K                                 1  1.0    0.028    0.028 3874.513 3874.513
+ cp_cell_opt                          1  2.0    0.000    0.000 3874.461 3874.461
+ geoopt_bfgs                         16  5.8    0.043    0.043 3874.461 3874.461
+ cp_eval_at                          54  6.1    0.065    0.065 3874.428 3874.428
+ cp_geo_opt                          15  5.0    0.000    0.000 3797.451 3797.451
+ qs_forces                           38  8.0    0.121    0.121 3797.277 3797.277
+ qs_energies                         39  8.9    0.084    0.084 3276.598 3276.598
+ scf_env_do_scf                      39  9.9    0.002    0.002 3039.296 3039.296
+ scf_env_do_scf_inner_loop          325 10.9    0.612    0.612 3039.294 3039.294
+ rebuild_ks_matrix                  363 12.6    0.001    0.001 1744.780 1744.780
+ qs_ks_build_kohn_sham_matrix       363 13.6    0.934    0.934 1744.779 1744.779
+ sum_up_and_integrate               363 14.6    0.018    0.018 1731.871 1731.871
+ integrate_v_rspace                 363 15.6 1705.972 1705.972 1731.825 1731.825
+ qs_rho_update_rho                  364 11.9    0.062    0.062 1513.837 1513.837
+ calculate_rho_elec                 364 12.9 1506.004 1506.004 1513.776 1513.776
+ qs_ks_update_qs_env                325 11.9    0.038    0.038 1438.090 1438.090
+ qs_ks_update_qs_env_forces          38  9.0    0.000    0.000  314.530  314.530
+ build_core_hamiltonian_matrix_      38  9.0    0.166    0.166  281.723  281.723
+ qs_energies_init_hamiltonians       39  9.9    0.001    0.001  182.796  182.796
+ build_core_hamiltonian_matrix       39 10.9    0.080    0.080  163.924  163.924
+ build_core_ppnl_forces              38 10.0  126.474  126.474  126.474  126.474
+ build_core_ppl_forces               38 10.0  110.056  110.056  110.056  110.056
+ qs_scf_new_mos_kp                  325 11.9    0.030    0.030   95.876   95.876
+ do_general_diag_kp                 325 12.9    0.239    0.239   95.846   95.846
+ build_core_ppnl                     39 11.9   86.169   86.169   86.169   86.169
+ cp_dbcsr_alloc_block_from_nbl   118989 11.6   74.601   74.601   78.175   78.175
+ -------------------------------------------------------------------------------
+
+ The number of warnings for this run is : 2
+ 
+ -------------------------------------------------------------------------------
+  **** **** ******  **  PROGRAM ENDED AT                 2023-05-03 13:02:24.657
+ ***** ** ***  *** **   PROGRAM RAN ON                            ask-VirtualBox
+ **    ****   ******    PROGRAM RAN BY                                       ask
+ ***** **    ** ** **   PROGRAM PROCESS ID                                  7617
+  **** **  *******  **  PROGRAM STOPPED IN /home/ask/WORK/USPEX_GIT/15_3D_Li6P2_
+                                           data_for_unittest/0_Copy_CalcFold/Cal
+                                           cFold0_1

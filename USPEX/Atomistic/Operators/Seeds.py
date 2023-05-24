@@ -33,7 +33,6 @@ class Seeds(object):
         self.cellUtility = utilities.cellUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.environmentUtility = utilities.environmentUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
 
@@ -63,12 +62,11 @@ class Seeds(object):
         for filename in seedsFolder.iterdir():
             if (USUF == filename.suffix) == hasDesciption:
                 if filename.is_file():
-                    systems = self.systemRepresentationClass.readAtomicStructures(filename, self.environmentUtility)
+                    systems = self.systemRepresentationClass.readAtomicStructures(filename)
                     for system in systems:
                         atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
                         minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                        if disassembler.environment is not None:
-                            inds = disassembler.envIndices
+                        for inds in disassembler.envIndices:
                             atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
                         if np.all(atomDistances >= minDistMatrix):
                             self.conditions.putConditions(system)

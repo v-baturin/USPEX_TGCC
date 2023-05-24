@@ -1,7 +1,5 @@
-from ..XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
-from ..XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
-from ..Atomistic.EnvironmentUtility import EnvironmentUtility
-from .read_molecule import read_molecule
+from ..components import AtomisticRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
+    EnvironmentUtility, JunctionUtility
 
 
 def compileParams(main: dict) -> dict:
@@ -16,18 +14,32 @@ def compileParams(main: dict) -> dict:
         optimizer = main['optimizer']
         target = optimizer['target']
         symbols = target['compositionSpace']['symbols']
+        defaultVolumeType = 0
         molecules = {}
+        molSitesMapping = {}
         elementalSymbols = set()
         for i, symbol in enumerate(symbols):
-            if isinstance(symbol, dict):
-                molDct = read_molecule(symbol['filename'])
-                molecules[symbol['name']] = molDct
-                symbols[i] = symbol['name']
-                elementalSymbols |= set(molDct['symbols'])
-            else:
+            if not isinstance(symbol, dict):
                 elementalSymbols.add(symbol)
-            if molecules:
-                target['simpleMoleculeUtility'] = {'molecules': molecules}
+            elif 'type' in symbol and symbol.pop('type') == 'adsorbant':
+                structure = AtomisticRepresentation.readXYZ(symbol['filename'])
+                molecules[symbol['name']] = structure
+                symbols[i] = symbol['name']
+                for site in symbol['sites']:
+                    site['junctionTypes'] =\
+                        JunctionUtility.calculateJunctionTypes(structure,
+                                                               junctionsDescription=site['junctionTypes'])
+                molSitesMapping[symbol['name']] = symbol['sites']
+                elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
+            else:
+                defaultVolumeType = 0.5
+                structure = AtomisticRepresentation.readMol(symbol['filename'])
+                molecules[symbol['name']] = structure
+                symbols[i] = symbol['name']
+                elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
+        target['junctionUtility'] = {'molSitesMapping': molSitesMapping}
+        if molecules:
+            target['simpleMoleculeUtility'] = {'molecules': molecules}
         if 'selection' in optimizer:
             selection = optimizer['selection']
             if len(target['compositionSpace']['blocks']) > 1:
@@ -37,10 +49,7 @@ def compileParams(main: dict) -> dict:
         if 'bondUtility' not in target:
             target['bondUtility'] = {}
         if 'volumeType' not in target['bondUtility']:
-            if molecules:
-                target['bondUtility']['volumeType'] = 0.5
-            else:
-                target['bondUtility']['volumeType'] = 0
+            target['bondUtility']['volumeType'] = defaultVolumeType
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
         if 'powderSpectrumAnalyzer' in target:

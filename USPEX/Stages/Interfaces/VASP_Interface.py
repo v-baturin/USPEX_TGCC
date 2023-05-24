@@ -107,7 +107,7 @@ class VASP_Interface:
 
         ############################# POSCAR ##################################
 
-        system['ase'] = self.adapter.write(structure, system['disassembler'].fixedIndices, f"EA{system['ID']}",
+        system['ase'] = self.adapter.write(structure, system['disassembler'].allFixedIndices, f"EA{system['ID']}",
                                            calcFolder)
 
         ############################## INCAR ##################################
