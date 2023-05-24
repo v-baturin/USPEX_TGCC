@@ -1,5 +1,4 @@
-from ..components import AtomisticRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
-    EnvironmentUtility, JunctionUtility
+from ..components import AtomisticRepresentation, EnvironmentUtility, JunctionUtility # PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer
 
 
 def compileParams(main: dict) -> dict:
@@ -56,11 +55,11 @@ def compileParams(main: dict) -> dict:
             target['bondUtility']['cutoff'] = 'vdw'
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
-        if 'powderSpectrumAnalyzer' in target:
-            target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(target['powderSpectrumAnalyzer'])
-        if 'singleCrystalSpectrumAnalyzer' in target:
-            sCS = target['singleCrystalSpectrumAnalyzer']
-            sCS['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(sCS.pop('hklFile'))
+        # if 'powderSpectrumAnalyzer' in target:
+        #     target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(target['powderSpectrumAnalyzer'])
+        # if 'singleCrystalSpectrumAnalyzer' in target:
+        #     sCS = target['singleCrystalSpectrumAnalyzer']
+        #     sCS['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(sCS.pop('hklFile'))
         if 'radialDistributionUtility' not in target:
             target['radialDistributionUtility'] = {}
         if 'symbols' not in target['radialDistributionUtility']:
