@@ -1,5 +1,7 @@
 import logging
 
+import time
+
 import asyncio
 import pickle as pcl
 
@@ -14,7 +16,8 @@ from ..IO.InputParser import read
 
 logger = logging.getLogger(__name__)
 DEFAULT_OUTPUT_REFRESH_DELAY = 120
-
+SESSION_TIME = 14400
+START = time.time()
 
 class ControllerState(Enum):
     createPopulation = 0
@@ -151,3 +154,5 @@ class GenerationController(object):
             copyfile(GenerationController.DUMP_FILENAME, GenerationController.DUMP_FILENAME_BACKUP)
         with open(GenerationController.DUMP_FILENAME, 'wb') as f:
             pcl.dump(self, f)
+        if time.time() - START >= SESSION_TIME:
+            exit()
