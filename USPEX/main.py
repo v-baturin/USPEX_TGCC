@@ -1,6 +1,9 @@
 import logging
 import sys
 import asyncio
+from time import time
+
+start = time()
 
 logging.basicConfig(filename='log', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -100,7 +103,7 @@ def main():
     if args.uspex_run:
         try:
             from .components import GenerationController
-            asyncio.get_event_loop().run_until_complete(GenerationController.createController().run())
+            asyncio.get_event_loop().run_until_complete(GenerationController.createController(start).run())
         except Exception as ex:
             logger.exception(ex)
             exc_info = sys.exc_info()

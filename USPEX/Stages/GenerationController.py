@@ -7,14 +7,14 @@ from copy import copy, deepcopy
 from enum import Enum
 from pathlib import Path
 from shutil import copyfile
-
+from time import time
 from ..IO.OutputRepresentation import OutputRepresentation
 from ..IO.InputParser import read
 
 
 logger = logging.getLogger(__name__)
 DEFAULT_OUTPUT_REFRESH_DELAY = 120
-
+DEFAULT_EXECUTION_TIME = 86400  # 24h run
 
 class ControllerState(Enum):
     createPopulation = 0
@@ -46,12 +46,14 @@ class GenerationController(object):
         cls.compileParams = compileParams
 
     def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages : list,
-                 optimizer, outputRepresentation, outputRefreshDelay):
+                 optimizer, outputRepresentation, outputRefreshDelay, executionTime):
         self.numGenerations = numGenerations
         self.stopCrit = stopCrit
         self.optimizer = optimizer
         self.outputRepresentation = outputRepresentation
         self.outputRefreshDelay = outputRefreshDelay
+        self.start = time()
+        self.executionTime = executionTime
         self.doPresentSystems = True
         self.generation = 0
         self.numberStableGenerations = 0
@@ -68,7 +70,7 @@ class GenerationController(object):
         self.save()
 
     @staticmethod
-    def createController():
+    def createController(start):
         if GenerationController.DUMP_FILENAME.exists():
             with open(GenerationController.DUMP_FILENAME, 'rb') as f:
                 controller = pcl.load(f)
@@ -81,7 +83,9 @@ class GenerationController(object):
             stopCrit = params['stopCrit']
             outputRefreshDelay = params['outputRefreshDelay'] if 'outputRefreshDelay' in params \
                 else DEFAULT_OUTPUT_REFRESH_DELAY
-
+            executionTime = params['executionTime']if 'executionTime' in params \
+                else DEFAULT_EXECUTION_TIME
+            executionTime -= time() - start
             if optimizer['type'] in GenerationController.knownOptimizers:
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
             else:
@@ -89,7 +93,7 @@ class GenerationController(object):
             stages = params['stages']
             outputRepresentation = OutputRepresentation(optimizer, **params)
             controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
-                                              outputRepresentation, outputRefreshDelay)
+                                              outputRepresentation, outputRefreshDelay, executionTime)
             logger.info('Calculation initialized from input parameters.')
         else:
             raise RuntimeError('No input or dump file to start.')
@@ -151,3 +155,5 @@ class GenerationController(object):
             copyfile(GenerationController.DUMP_FILENAME, GenerationController.DUMP_FILENAME_BACKUP)
         with open(GenerationController.DUMP_FILENAME, 'wb') as f:
             pcl.dump(self, f)
+        if time() - self.start >= self.executionTime:
+            exit()
