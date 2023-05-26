@@ -155,5 +155,8 @@ class GenerationController(object):
             copyfile(GenerationController.DUMP_FILENAME, GenerationController.DUMP_FILENAME_BACKUP)
         with open(GenerationController.DUMP_FILENAME, 'wb') as f:
             pcl.dump(self, f)
+        dt = time() - self.start
+        logger.info(f"{int(dt)} seconds passed")
         if time() - self.start >= self.executionTime:
+            logger.info("Time is up. Exiting")
             exit()
