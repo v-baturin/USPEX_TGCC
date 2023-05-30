@@ -22,27 +22,28 @@ class PopulationProcessor:
         for i, system in enumerate(initial):
             if 'ID' not in system:
                 system['ID'] = f'{self.tag}_{i}'
-        population = self.initializePopulation(self.tag, initial)
-        await self.processPopulation(population=population, **self.kwargs)
+        population, sc = self.initializePopulation(self.tag, initial)
+        await self.processPopulation(population=population, **self.kwargs, saveCallback=sc)
         final = [system[-1] for system in population.values()]
         sink.setProperty(self.inputKey, final)
 
     @staticmethod
     def initializePopulation(tag, initial):
-        return PopulationDump.load(tag, initial).population
+        pd = PopulationDump.load(tag, initial)
+        return pd.population, pd.save
 
     @staticmethod
-    async def processPopulation(stages, population, numParallelCalcs, systems=None, checkCallback=None):
+    async def processPopulation(stages, population, numParallelCalcs, systems=None, checkCallback=None, saveCallback=None):
         stages = [Stages.createStage(**stage) for stage in stages]
         for ID, system in population.items():
             if systems is not None:
                 systems[ID] = system[0:1]
         sem = asyncio.Semaphore(numParallelCalcs)
-        await asyncio.gather(*(PopulationProcessor.life(system, stages, systems, sem, checkCallback)
+        await asyncio.gather(*(PopulationProcessor.life(system, stages, systems, sem, checkCallback, saveCallback)
                                for system in population.values()))
 
     @staticmethod
-    async def life(processedSystems, stages, systems, sem, checkCallback):
+    async def life(processedSystems, stages, systems, sem, checkCallback, saveCallback):
         await sem.acquire()
         ID = processedSystems[0]['ID']
         for i, stage in enumerate(stages):
@@ -64,6 +65,8 @@ class PopulationProcessor:
                 processedSystems.append(deepcopy(sink))
             if systems is not None:
                 systems[ID].append(processedSystems[i+1])
+            if saveCallback is not None:
+                saveCallback()
             # self.populationDump.save()
         sem.release()
 
