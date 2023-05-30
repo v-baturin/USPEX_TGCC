@@ -104,7 +104,8 @@ class GULP_Interface:
         # else:
 
         cell = structure.getCell()
-        system.setProperty('pbc', cell.getPBC())
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
         lattice = type(cell)(cell.getCellVectors(), (1, 1, 1)).getCellParameters()
 
         content_to_write = ''
@@ -209,7 +210,9 @@ class GULP_Interface:
 
         results = {}
         if 'structure' in self.targetProperties:
-            system.updateAtomicStructure(self.readStructure(content, system.popProperty('pbc')))
+            with open(calcFolder/'pbc', 'rt') as f:
+                pbc = tuple(int(c) for c in f.read().split())
+            system.updateAtomicStructure(self.readStructure(content, pbc))
         if 'enthalpy' in self.targetProperties:
             system.setProperty('enthalpy', self.readEnergy(content))
         if 'stressTensor' in self.targetProperties:

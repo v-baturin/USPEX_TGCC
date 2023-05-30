@@ -51,10 +51,11 @@ class FHIaims_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system['structure']
+        structure = system.getAtomicStructure()
 
         cell = structure.getCell()
-        system['pbc'] = cell.getPBC()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
         with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
@@ -114,22 +115,22 @@ class FHIaims_Interface:
         # and FHI finishes without changing the relaxed structure, thus
         # geometry.in.next_step won't be created.
 
-        results = {}
         if 'structure' in self.targetProperties:
             geometry_file = calcFolder/self.out_geometry_file
             if not geometry_file.exists():
                 shutil.copy(calcFolder/self.geometry_file, geometry_file)
             with open(geometry_file,'r') as f:
                 content = f.read()
-            results['structure'] = self.readStructure(content, system.pop('pbc'))
+            with open(calcFolder/'pbc', 'rt') as f:
+                pbc = tuple(int(c) for c in f.read().split())
+            system.updateAtomicStructure(self.readStructure(content, pbc))
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.outputFile, 'r') as f:
                 content = f.readlines()
             for line in content:
                 if 'Total energy corrected' in line:
-                    results['enthalpy'] = float(line.split()[5])
+                    system.setProperty('enthalpy', float(line.split()[5]))
                     break
-        return results
 
     def readStructure(self, content, pbc):
         content_list = content.split('\n')

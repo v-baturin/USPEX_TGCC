@@ -94,10 +94,13 @@ class LAMMPS_Interface:
         :param calcFolder:
         """
 
-        structure = system['structure']
+        structure = system.getAtomicStructure()
+        cell = structure.getCell()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
-        system['ase'] = self.adapter.write(structure, system['disassembler'].allFixedIndices,
-                                           f"EA{system['ID']}", self.specorder, calcFolder)
+        self.adapter.write(structure, system['disassembler'].allFixedIndices, f"EA{system['ID']}", self.specorder,
+                           calcFolder)
 
         with open(self.lammps_in, 'r') as f:
             content = f.readlines()
@@ -182,29 +185,29 @@ class LAMMPS_Interface:
         return True        
 
     def readOutput(self, system, calcFolder: Path):
-        results = {}
-        aseData = self.adapter.read(calcFolder, self.specorder,
-                                    **system.pop('ase'))
+        with open(calcFolder / 'pbc', 'rt') as f:
+            pbc = tuple(int(c) for c in f.read().split())
+        aseData = self.adapter.read(calcFolder, self.specorder, pbc)
         properties = self.readProperties(calcFolder)
         if 'structure' in self.targetProperties:
-            results['structure'] = aseData['structure']
+            system.updateAtomicStructure(aseData['structure'])
         if 'enthalpy' in self.targetProperties:
             if properties is not None:
-                results['enthalpy'] = properties['Enthalpy']
+                system.setProperty('enthalpy', properties['Enthalpy'])
             elif aseData is not None:
-                results['enthalpy'] = aseData['results'].getEnthalpy(system['externalPressure'])
+                system.setProperty('enthalpy', aseData['results'].getEnthalpy(system['externalPressure']))
             else:
                 raise RuntimeError("Bad lammps output.")
         if 'energy' in self.targetProperties:
             if properties is not None:
-                results['energy'] = properties['TotEng']
+                system.setProperty('energy', properties['TotEng'])
             elif aseData is not None:
-                results['energy'] = aseData['results'].results['energy']
+                system.setProperty('energy', aseData['results'].results['energy'])
             else:
                 raise RuntimeError("Bad lammps output.")
         if 'forces' in self.targetProperties:
             if aseData is not None:
-                results['forces'] = aseData['results'].results['forces']
+                system.setProperty('forces', aseData['results'].results['forces'])
             else:
                 raise RuntimeError("Bad lammps output.")
 
@@ -217,7 +220,7 @@ class LAMMPS_Interface:
                 stressTensor[0][1] = stressTensor[1][0] = properties['Pxy']
                 stressTensor[0][2] = stressTensor[2][0] = properties['Pxz']
                 stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
-                results['stressTensor'] = stressTensor
+                system.setProperty('stressTensor', stressTensor)
             else:
                 raise RuntimeError("Bad lammps output.")
 
@@ -226,14 +229,13 @@ class LAMMPS_Interface:
             for subsystem in sample:
                 subsystem['disassembler'] = system['disassembler']
                 subsystem['externalPressure'] = system['externalPressure']
-            results['trajectory'] = sample
+            system.setProperty('trajectory', sample)
 
         # TODO move to constraints
         # BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3
         # if abs(properties['TotEng']) / len(aseStructure) > BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD:
         #     logger.error(f"System {system['ID']} seems to has wrong energy: {properties['TotEng']}. It will be discarded.")
         #     system['isBad'] = True
-        return results
 
     def readProperties(self, calcFolder: Path):
         if calcFolder.joinpath(self.outputFile).exists():

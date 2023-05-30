@@ -64,10 +64,12 @@ class MOPAC_Interface:
         :param system:
         :param calcFolder:
         """
-        structure = system['structure']
+        structure = system.getAtomicStructure()
 
         cell = structure.getCell()
         system['pbc'] = cell.getPBC()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
         # files_to_delete = ['output', 'optimized.structure']
         # for f in files_to_delete:
@@ -118,19 +120,19 @@ class MOPAC_Interface:
         with open(calcFolder/self.arcFile, 'rt') as arc_fid:
             content = arc_fid.readlines()
 
-        results = {}
         if 'structure' in self.targetProperties:
-            results['structure'] = self.readStructure(content, system.pop('pbc'))
+            with open(calcFolder/'pbc', 'rt') as f:
+                pbc = tuple(int(c) for c in f.read().split())
+            system.updateAtomicStructure(self.readStructure(content, pbc))
 
         if 'enthalpy' in self.targetProperties:
             for line in content:
                 if 'TOTAL ENERGY' in line:
                     e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
-                    results['enthalpy'] = float(e.group(1))
+                    system.setProperty('enthalpy', float(e.group(1)))
                     break
             else:
                 raise RuntimeError('Can not read enthalpy.')
-        return results
 
     def readStructure(self, content, pbc):
         atomTypes = []

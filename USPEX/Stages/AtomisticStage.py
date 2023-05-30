@@ -27,4 +27,4 @@ class AtomisticStage:
         if self.perturbate:
             sink.updateAtomicStructure(
                 sink.getAtomicStructure().getPerturbatedStructure(sink['disassembler'].fixedIndices))
-        await self.executor.run(sink)
+        await self.executor.run(sink, sink)
