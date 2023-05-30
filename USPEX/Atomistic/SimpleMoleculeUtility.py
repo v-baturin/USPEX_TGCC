@@ -91,7 +91,7 @@ class SimpleMoleculeUtility(object):
         """
         return self.formulaToTypeMap[molecule.getFormula()]
 
-    def moleculeTypes(self, system : dict):
+    def moleculeTypes(self, system):
         """
         For using in **Fitness** infrastructure
 
@@ -104,7 +104,7 @@ class SimpleMoleculeUtility(object):
             system.setProperty('simpleMoleculeUtility.moleculeTypes', moleculeTypes)
         return system['simpleMoleculeUtility.moleculeTypes']
 
-    def composition(self, system: dict):
+    def composition(self, system):
         """
         For using in **Fitness** infrastructure
 

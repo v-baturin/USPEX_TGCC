@@ -419,7 +419,7 @@ class CellUtility:
         return isGood
 
     @staticmethod
-    def volume(system: dict):
+    def volume(system):
         """
         For using in **Fitness** infrastructure
 
@@ -430,7 +430,7 @@ class CellUtility:
         return system['cell'].getVolume()
 
     @staticmethod
-    def area(system: dict):
+    def area(system):
         """
         For using in **Fitness** infrastructure
 
@@ -441,7 +441,7 @@ class CellUtility:
         return system['cell'].getArea()
     
     @staticmethod
-    def length(system: dict):
+    def length(system):
         """
         For using in **Fitness** infrastructure
 
@@ -451,7 +451,7 @@ class CellUtility:
         """
         return system['cell'].getLength()
 
-    def symmetry(self, system: dict):
+    def symmetry(self, system):
         """
         For using in **Fitness** infrastructure
 
