@@ -20,6 +20,8 @@ class SystemPool(object):
     It subdivide systems into generations. Each call to *update* method creates new generation record.
     """
 
+    entryFactory = None
+
     def __init__(self):
         self.allSystems = {}
         self.generations = []
@@ -94,8 +96,8 @@ class SystemPool(object):
         :param system: system to be labeled with ID.
 
         """
-        system['ID'] = self._newID
-        system['isBad'] = True
+        system.setProperty('ID', self._newID)
+        system.setProperty('isBad', True)
         self._newID += 1
         self.allSystems[system['ID']] = system
 

@@ -101,7 +101,7 @@ class SimpleMoleculeUtility(object):
         """
         if 'simpleMoleculeUtility.moleculeTypes' not in system:
             moleculeTypes = [self.determineMoleculeType(molecule) for molecule in system['molecules']]
-            system['simpleMoleculeUtility.moleculeTypes'] = moleculeTypes
+            system.setProperty('simpleMoleculeUtility.moleculeTypes', moleculeTypes)
         return system['simpleMoleculeUtility.moleculeTypes']
 
     def composition(self, system: dict):
@@ -114,7 +114,7 @@ class SimpleMoleculeUtility(object):
         """
         if 'simpleMoleculeUtility.composition' not in system:
             composition = Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
-            system['simpleMoleculeUtility.composition'] = composition
+            system.setProperty('simpleMoleculeUtility.composition', composition)
         return system['simpleMoleculeUtility.composition']
 
     def density(self, system):
@@ -143,7 +143,7 @@ class SimpleMoleculeUtility(object):
                     comp[symbol] += value*amount
         return comp
 
-    def getMinDistances(self, molecules, cell, environment=None, **kwargs):
+    def checkMinDistances(self, entry, minDistMatrix):
         """
         Calculates minimal distances between atoms excluding intramolecular distances.
 
@@ -169,9 +169,13 @@ class SimpleMoleculeUtility(object):
         #     if not inMolecule: return False
         # return True
 
-        structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell, environment)
+        molecules = entry['molecules']
+        cell = entry['cell']
+        structure = entry.getAtomicStructure()
+        disassembler = entry['disassembler']
         actualDistances = structure.getAllDistances()
-        constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
+        eye = np.eye(3)[np.nonzero(cell.getPBC())]
+        constNeighbours = np.vstack([eye, -eye])
         for inds, molecule in zip(disassembler.indices, molecules):
             distVectorsMatrix = molecule.getAllPairVectors()
             for i, distVectorsRow in enumerate(distVectorsMatrix):
@@ -181,8 +185,11 @@ class SimpleMoleculeUtility(object):
                         dists = np.linalg.norm(vect + constNeighbours, axis=1)
                         distVectorsMatrix[i,j] = cell.fractionalToCartesian(vect + constNeighbours[np.argmin(dists)])
             actualDistances[tuple(np.meshgrid(inds, inds))] = np.linalg.norm(distVectorsMatrix, axis=2)
+        for inds in disassembler.envIndices:
+            actualDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
+                tuple(np.meshgrid(inds, inds))]
 
-        return structure.getAtomTypes(), actualDistances, disassembler
+        return np.all(actualDistances >= minDistMatrix)
 
     @staticmethod
     def rotationClearance(inertiaValues):

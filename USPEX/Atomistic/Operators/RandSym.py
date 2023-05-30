@@ -91,7 +91,7 @@ class RandSym:
 
         self.fixRndSeed = False
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, offspringFactory=None):
         composition = self.compositionSpace.randomComposition()
 
         symbols = list(composition.keys())
@@ -186,16 +186,16 @@ class RandSym:
                 operations = dict(zip(symbols, operations))
                 cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons), baseCell=envCell)
                 for i in range(self.attemptsRotation):
-                    offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                    offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
+                    molecules = offspring['molecules']
+                    cell = offspring['cell']
                     if envAssembler is not None:
-                        offspring['environments'] = envAssembler.assemble(**offspring)
-                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                    for inds in disassembler.envIndices:
-                        atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                    if np.all(atomDistances >= distCoeff * minDistMatrix):
+                        offspring['environments'] = envAssembler.assemble(molecules, cell)
+                    structure = offspring.getAtomicStructure()
+                    minDistMatrix = self.bondUtility.getDistances(
+                        structure.getAtomTypes(), self.conditions.externalPressure)
+                    if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
                         self.conditions.putConditions(offspring)
-                        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring)
                         if self.bondUtility.isConnected(structure):
                             return offspring,
             except Exception as e:

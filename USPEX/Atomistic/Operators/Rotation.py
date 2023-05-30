@@ -18,7 +18,7 @@ class Rotation():
         self.cellUtility = utilities.cellUtility
 
 
-    def __call__(self, system) -> tuple:
+    def __call__(self, system, offspringFactory=None) -> tuple:
         molecules = system['molecules']
         cell = system['cell']
         if self.cellUtility.isGoodCell(cell):

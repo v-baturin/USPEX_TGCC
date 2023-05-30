@@ -19,7 +19,7 @@ class Softmodemutation:
         self.degree= degree
         self.knownSystems = {}
 
-    def __call__(self, system):
+    def __call__(self, system, offspringFactory=None):
         ID = system['ID']
         molecules = system['molecules']
         cell = system['cell']
@@ -61,25 +61,23 @@ class Softmodemutation:
                 offspring1 = {'molecules': molecules1, 'cell': cell}
                 if 'environments' in system:
                     offspring1['environments'] = system['environments']
-                atomSymbols, atomDistances, disassembler1 = self.simpleMoleculeUtility.getMinDistances(**offspring1)
-                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                for inds in disassembler1.envIndices:
-                    atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                if np.all(atomDistances >= minDistMatrix):
+                offspring1 = offspringFactory(**offspring1)
+                structure = offspring1.getAtomicStructure()
+                minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
+                                                              self.conditions.externalPressure)
+                if self.simpleMoleculeUtility.checkMinDistances(offspring1, minDistMatrix):
                     self.conditions.putConditions(offspring1)
-                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring1)
                     if self.bondUtility.isConnected(structure):
                         offsprings += (offspring1,)
                 offspring2 = {'molecules': molecules2, 'cell': cell}
                 if 'environments' in system:
                     offspring2['environments'] = system['environments']
-                atomSymbols, atomDistances, disassembler2 = self.simpleMoleculeUtility.getMinDistances(**offspring2)
-                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                for inds in disassembler2.envIndices:
-                    atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                if np.all(atomDistances >= minDistMatrix):
+                offspring2 = offspringFactory(**offspring2)
+                structure = offspring2.getAtomicStructure()
+                minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
+                                                              self.conditions.externalPressure)
+                if self.simpleMoleculeUtility.checkMinDistances(offspring2, minDistMatrix):
                     self.conditions.putConditions(offspring2)
-                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring2)
                     if self.bondUtility.isConnected(structure):
                         offsprings += (offspring2,)
                 if offsprings:

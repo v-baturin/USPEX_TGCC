@@ -41,9 +41,11 @@ class Antiseeds:
             if 'antiseeds.corrections' in system:
                 for ref_system in population:
                     dist = fingerprintUtility.dist(ref_system, system)
-                    system['antiseeds.corrections'] += self.max * np.exp(-dist ** 2 / (2 * sigma ** 2))
+                    correction = system['antiseeds.corrections']
+                    system.setProperty('antiseeds.corrections',
+                                       correction + self.max * np.exp(-dist ** 2 / (2 * sigma ** 2)))
             else:
-                system['antiseeds.corrections'] = 0
+                system.setProperty('antiseeds.corrections', 0)
 
     def corrections(self, system : dict):
         """

@@ -40,7 +40,7 @@ class Seeds(object):
         self.seedsFolders = [Path(s) for s in seedsFolders] if seedsFolders is not None else []
         self.currentGeneration = 0
 
-    def __call__(self):
+    def __call__(self, offspringFactory=None):
 
         if self.currentGeneration not in self.generations:
             logger.debug(f'No Seeds specified for generation {self.currentGeneration}.')
@@ -64,11 +64,11 @@ class Seeds(object):
                 if filename.is_file():
                     systems = self.systemRepresentationClass.readAtomicStructures(filename)
                     for system in systems:
-                        atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
-                        minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                        for inds in disassembler.envIndices:
-                            atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                        if np.all(atomDistances >= minDistMatrix):
+                        system = offspringFactory(**system)
+                        structure = system.getAtomicStructure()
+                        minDistMatrix = self.bondUtility.getDistances(
+                            structure.getAtomTypes(), self.conditions.externalPressure)
+                        if self.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix):
                             self.conditions.putConditions(system)
                             system['filename'] = filename
                             seeds.append(system)
