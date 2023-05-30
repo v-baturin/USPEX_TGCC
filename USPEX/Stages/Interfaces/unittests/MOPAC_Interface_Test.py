@@ -42,6 +42,6 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             mopac.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (0, 0, 0))
-            self.assertTrue(np.allclose(system['structure'].getCartesianCoordinates(),
+            self.assertTrue(np.allclose(system.getAtomicStructure().getCartesianCoordinates(),
                                         structureRef.getCartesianCoordinates()))
 

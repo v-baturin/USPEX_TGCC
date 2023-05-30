@@ -67,7 +67,6 @@ class MOPAC_Interface:
         structure = system.getAtomicStructure()
 
         cell = structure.getCell()
-        system['pbc'] = cell.getPBC()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
