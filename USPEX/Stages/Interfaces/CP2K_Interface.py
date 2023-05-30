@@ -133,13 +133,12 @@ class CP2K_Interface:
         new_structure = self.readStructure(system, calcFolder)
         EnergyHa = self.readEnergy(calcFolder)
 
-        results = {}
         if 'structure' in self.targetProperties:
             system.updateAtomicStructure(new_structure)
         if 'energy' in self.targetProperties:
             system.setProperty('energy', EnergyHa * HARTREE_TO_EV)
         if 'enthalpy' in self.targetProperties:
-            if system['structure'].getCell().dim == 3:
+            if new_structure.getCell().dim == 3:
                 system.setProperty('enthalpy', (EnergyHa +
                                                 new_structure.getCell().getVolume() * system['externalPressure'] *
                                                 ANGSTROM_TO_BOHR**3.0 * GPA_TO_AU) * HARTREE_TO_EV)

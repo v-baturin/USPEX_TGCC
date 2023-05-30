@@ -89,7 +89,7 @@ class PWmat_Interface:
         try:
             # TODO varcomp ??? DO we need it here?
             # if self.state.varcomp or not os.path.exists('POTCAR_' + str(self.step)):  # we prefer this way
-            f_potcar = (lambda pattern, filesname_list: [x for x in filesname_list if re.match(pattern, x)])
+            f_potcar = (lambda pattern, filesname_list: [x for x in filesname_list if re.match(pattern, str(x))])
             for el in np.unique(atomSymbols):
                 pattern = f'.*{el}.*UPF'
                 potcarPath = f_potcar(pattern, self.potcars)[0]

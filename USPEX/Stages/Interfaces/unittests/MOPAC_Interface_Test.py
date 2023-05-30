@@ -6,7 +6,7 @@ import filecmp
 
 from pathlib import Path
 
-from USPEX.components import AtomisticRepresentation, MOPAC_Interface
+from USPEX.components import AtomisticRepresentation, MOPAC_Interface, AtomisticPoolEntry
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'mopacSpecific'
@@ -21,7 +21,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
 
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (0, 0, 0))
-            system = dict(
+            system = AtomisticPoolEntry(
                 ID=ID,
                 structure=structure,
                 disassembler=AtomisticRepresentation.atomicDisassemblerType(
@@ -39,9 +39,9 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             shutil.rmtree(WORKPATH)
             folder = GATHEREDPATH/'output'
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
-            results = mopac.readOutput(system, WORKPATH)
+            mopac.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (0, 0, 0))
-            self.assertTrue(np.allclose(results['structure'].getCartesianCoordinates(),
+            self.assertTrue(np.allclose(system['structure'].getCartesianCoordinates(),
                                         structureRef.getCartesianCoordinates()))
 

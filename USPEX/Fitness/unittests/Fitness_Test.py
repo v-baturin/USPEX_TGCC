@@ -15,7 +15,7 @@ from types import SimpleNamespace
 
 
 from ..Fitness import Fitness
-from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation
+from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation, AtomisticPoolEntry
 from ...Atomistic.AtomicPrimitives import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint
 from ...XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
@@ -34,7 +34,7 @@ class Fitness_Test(unittest.TestCase):
     def setUp(self) -> None:
         molecules = [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mg'] * 4 + ['Al'] * 8 + ['O'] * 16]
-        self.systems = [{'ID': 0, 'molecules': molecules, 'enthalpy': -646.695,
+        systems = [{'ID': 0, 'molecules': molecules, 'enthalpy': -646.695,
                          'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
                         {'ID': 1, 'molecules': molecules, 'enthalpy': -644.480,
                          'fingerprint': Fingerprint({'a':[0.2,-0.2]}, None, None)},
@@ -52,6 +52,7 @@ class Fitness_Test(unittest.TestCase):
                          'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
                         {'ID': 8, 'molecules': molecules, 'enthalpy': -648.335,
                          'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)}]
+        self.systems = [AtomisticPoolEntry(**system) for system in systems]
         self.compositionSpace = CompositionSpace(symbols=['Mg', 'Al', 'O'], blocks=[[4, 8, 16]], range=[[1, 1]])
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
         utilities = SimpleNamespace(compositionSpace=self.compositionSpace,
@@ -196,11 +197,12 @@ class FitnessXray_Test(unittest.TestCase):
     def setUp(self) -> None:
         # 'externalPressure': 135,
         filename = HOMEPATH/'XRay_POSCARS'
-        self.systems = AtomisticRepresentation.readAtomicStructures(filename)
+        systems = AtomisticRepresentation.readAtomicStructures(filename)
         enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
-        for ID, system in enumerate(self.systems):
+        for ID, system in enumerate(systems):
             system['ID'] = ID
             system['enthalpy'] = enthalpies[ID]
+        self.systems = [AtomisticPoolEntry(**system) for system in systems]
 
         self.compositionSpace = CompositionSpace(symbols=['Ba', 'H'], blocks=[[1, 12]], range=[[4, 4]])
         self.powderSpectrumAnalyzer = PowderSpectrumAnalyzer(**PowderSpectrumAnalyzer.parse(HOMEPATH/'spectrum.txt'))
