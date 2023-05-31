@@ -148,7 +148,7 @@ class ASEInterfaceAdapter:
                 results=ASEInterfaceAdapter.Results(atoms)
             )
 
-    class DFTBplus:
+    class GEN:
 
         def write_structure(self, structure, geometry_file, calcFolder: Path):
             cell = structure.getCell()
