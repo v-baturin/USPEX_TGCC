@@ -47,7 +47,7 @@ class Antiseeds:
             else:
                 system.setProperty('antiseeds.corrections', 0)
 
-    def corrections(self, system : dict):
+    def corrections(self, system):
         """
         For using in **Fitness** infrastructure
         :param system: dictionary describing system.
