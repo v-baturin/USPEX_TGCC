@@ -103,9 +103,9 @@ class QE_Interface:
         if 'enthalpy' in self.targetProperties:
             results['enthalpy'] = aseData['results'].getEnthalpy(system['externalPressure'])
         if 'energy' in self.targetProperties:
-            results['energy'] = aseData['results']['energy']
+            results['energy'] = aseData['results'].results['energy']
         if 'forces' in self.targetProperties:
-            results['forces'] = aseData['results']['forces']
+            results['forces'] = aseData['results'].results['forces']
 
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
