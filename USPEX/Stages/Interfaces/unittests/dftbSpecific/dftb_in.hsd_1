@@ -1,0 +1,20 @@
+Geometry = GenFormat {
+<<< "uspex.gen"
+}
+
+Driver = ConjugateGradient {
+ MaxForceComponent = 1.0E-3
+ LatticeOpt = Yes
+ MaxSteps = 500
+<<+ "movedatoms.uspex"
+<<+ "pressure.uspex"
+}   
+
+Hamiltonian = xtb {
+  method = "GFN1-xTB"
+  Filling = Fermi {
+    Temperature [Kelvin] = 900
+  }
+<<+ "kpoints.uspex"
+}
+

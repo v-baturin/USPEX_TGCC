@@ -86,8 +86,11 @@ from .Stages.Interfaces.FHIaims_Interface import FHIaims_Interface
 FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('aims', FHIaims_Interface)
 from .Stages.Interfaces.XTB_Interface import XTB_Interface
-XTB_Interface.registerTypes(AtomicStructure, Element, Cell, ASEInterfaceAdapter.XTB)
+XTB_Interface.registerTypes(AtomicStructure, Element, Cell, ASEInterfaceAdapter.GEN)
 Executor.registerInterface('xtb', XTB_Interface)
+from .Stages.Interfaces.DFTBplus_Interface import DFTBplus_Interface
+DFTBplus_Interface.registerTypes(AtomicStructure, Element, Cell, ASEInterfaceAdapter.GEN)
+Executor.registerInterface('dftb', DFTBplus_Interface)
 from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
 CP2K_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('cp2k', CP2K_Interface)
