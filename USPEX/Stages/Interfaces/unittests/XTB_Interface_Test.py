@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, XTB_Interface
+from ....components import AtomisticRepresentation, XTB_Interface, AtomisticPoolEntry
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'xtbSpecific'
@@ -15,7 +15,7 @@ class XTB_InterfaceTest(unittest.TestCase):
         # Only output will be parsed and properties checked
         interface = XTB_Interface(tag='0', xtb_input=SPECIFICPATH/'xtb.inp_1')
         structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (0, 0, 0))
-        system = dict(
+        system = AtomisticPoolEntry(
             ID=ID,
             structure=structure,
             disassembler=AtomisticRepresentation.atomicDisassemblerType(
@@ -23,5 +23,5 @@ class XTB_InterfaceTest(unittest.TestCase):
             ase={'pbc': (0, 0, 0)},
             externalPressure=0.0
         )
-        results = interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
-        self.assertTrue(np.isclose(results['enthalpy'], -1003.116))
+        interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
+        self.assertTrue(np.isclose(system['enthalpy'], -1003.116))

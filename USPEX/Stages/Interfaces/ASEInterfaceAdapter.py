@@ -159,7 +159,6 @@ class ASEInterfaceAdapter:
             cell_vectors = cell.getCellVectors()
             ase_struct = Atoms(symbols, positions=coordinates, cell=cell_vectors, pbc=pbc)
             write_gen(calcFolder / geometry_file, ase_struct)
-            return {'pbc': cell.getPBC()}
 
         def read_structure(self, geometry_file, calcFolder: Path, pbc):
             ase_struct = read_gen(calcFolder / geometry_file)
