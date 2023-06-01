@@ -21,25 +21,6 @@ class CellUtility:
     Utility for working with unit cells of atomic structures.
     """
 
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        """
-        Register types used by this utility.
-
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
-        """
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
                  thickness=None, supercellDegree = None, symTolerance=None, debug = False):
         """
@@ -459,14 +440,13 @@ class CellUtility:
 
         :return: calculated symmetry of system.
         """
-        cell = system['cell']
-        molecules = system['molecules']
-        structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell)
+        structure = system.getAtomicStructure()
+        cell = system.getCell()
         lattice = cell.getCellVectors()
         coordinates = structure.getFractionalCoordinates()
         numbers = [el.z for el in structure.getAtomTypes()]
         spacegroup = spglib.get_spacegroup((lattice, coordinates, numbers), symprec=self._symTolerance)
-        if cell.getPBC() == (1, 1, 1) and spacegroup is not None:
+        if cell.dim == 3 and spacegroup is not None:
             symmetry = '{:7s} {:4s}'.format(*[str(x) for x in spacegroup.split()])
         else:
             symmetry = None

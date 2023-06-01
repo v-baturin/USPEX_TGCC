@@ -19,23 +19,17 @@ class SimpleMoleculeUtility(object):
 
     structureType = None
     atomType = None
-    cellType = None
-    atomicDisassemblerType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, structureType, atomType):
         """
         Register types used by this utility.
 
         :param structureType: type representing atomic structure.
         :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
         """
         cls.structureType = structureType
         cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, molecules: dict = None, doCenterMolecule=False):
         """
@@ -135,12 +129,8 @@ class SimpleMoleculeUtility(object):
         """
         comp = Counter()
         for symbol, amount in composition.items():
-            molecule = self.molecules[symbol]
-            if len(molecule) == 1:
-                comp[self.atomType(symbol)] += amount
-            else:
-                for symbol, value in molecule.getComposition().items():
-                    comp[symbol] += value*amount
+            for el, value in self.molecules[symbol].getComposition().items():
+                comp[el] += value*amount
         return comp
 
     def checkMinDistances(self, entry, minDistMatrix):
@@ -236,7 +226,7 @@ class SimpleMoleculeUtility(object):
 
         :return: array of coordination numbers.
         """
-        radiu = np.array([cls.atomType(atom).covalent_radius for atom in molecule.getAtomTypes()])
+        radiu = np.array([atom.covalent_radius for atom in molecule.getAtomTypes()])
         CN = np.fromiter((len(neighbours) for neighbours in _find_pair(molecule.getCartesianCoordinates(), radiu)), dtype=int)
         return CN
 
