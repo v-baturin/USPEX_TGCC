@@ -15,6 +15,7 @@ def compileParams(main: dict) -> dict:
         target = optimizer['target']
         symbols = target['compositionSpace']['symbols']
         defaultVolumeType = 0
+        cutoffVDW = False
         molecules = {}
         molSitesMapping = {}
         elementalSymbols = set()
@@ -33,6 +34,7 @@ def compileParams(main: dict) -> dict:
                 elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
             else:
                 defaultVolumeType = 0.5
+                cutoffVDW = True
                 structure = AtomisticRepresentation.readMol(symbol['filename'])
                 molecules[symbol['name']] = structure
                 symbols[i] = symbol['name']
@@ -50,6 +52,8 @@ def compileParams(main: dict) -> dict:
             target['bondUtility'] = {}
         if 'volumeType' not in target['bondUtility']:
             target['bondUtility']['volumeType'] = defaultVolumeType
+        if cutoffVDW:
+            target['bondUtility']['cutoff'] = 'vdw'
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
         if 'powderSpectrumAnalyzer' in target:

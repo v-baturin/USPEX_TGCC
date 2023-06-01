@@ -233,7 +233,7 @@ class AtomisticRepresentation(object):
 
         cell = cls.cellType(lat, (1, 1, 1))
         if specorder is not None:
-            types = [specorder[n-1] for n in types]
+            types = [specorder[n] for n in types]
         return dict(
             structure=cls.structureType([cls.atomType(n) for n in types], pos, cell=cell),
             energy=energy,
@@ -268,7 +268,7 @@ class AtomisticRepresentation(object):
             f.write(atstr1)
         else:
             f.write(atstr2)
-        atomTypes =  [specorder.index(el.short_name) for el in structure.getAtomTypes()]
+        atomTypes = [specorder.index(el.short_name) for el in structure.getAtomTypes()]
         positions = structure.getCartesianCoordinates()
         for i in range(size):
             if forces is not None:
@@ -303,7 +303,7 @@ class AtomisticRepresentation(object):
         cell = structure.getCell().getEnvelopeCell(coordinates, 10)
         coordinates = cell.center(coordinates)
         atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
-        write_vasp(filename, atoms, label=label, sort=True, direct=True, vasp5=True, long_format=False)
+        write_vasp(filename, atoms, label=label, direct=True, vasp5=True, long_format=False)
 
     @classmethod
     def writePOSCARS(cls, filename, structures, labels):
