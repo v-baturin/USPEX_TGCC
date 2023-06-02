@@ -46,13 +46,13 @@ class GenerationController(object):
         cls.compileParams = compileParams
 
     def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages : list,
-                 optimizer, outputRepresentation, outputRefreshDelay, executionTime):
+                 optimizer, outputRepresentation, outputRefreshDelay, executionTime, start):
         self.numGenerations = numGenerations
         self.stopCrit = stopCrit
         self.optimizer = optimizer
         self.outputRepresentation = outputRepresentation
         self.outputRefreshDelay = outputRefreshDelay
-        self.start = time()
+        self.start = start
         self.executionTime = executionTime
         self.doPresentSystems = True
         self.generation = 0
@@ -74,6 +74,7 @@ class GenerationController(object):
         if GenerationController.DUMP_FILENAME.exists():
             with open(GenerationController.DUMP_FILENAME, 'rb') as f:
                 controller = pcl.load(f)
+                controller.start = start
             logger.info('Calculation initialized from dump file.')
         elif GenerationController.INPUT_FILENAME.exists():
             params = GenerationController.compileParams(read(GenerationController.INPUT_FILENAME))
@@ -85,7 +86,6 @@ class GenerationController(object):
                 else DEFAULT_OUTPUT_REFRESH_DELAY
             executionTime = params['executionTime']if 'executionTime' in params \
                 else DEFAULT_EXECUTION_TIME
-            executionTime -= time() - start
             if optimizer['type'] in GenerationController.knownOptimizers:
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
             else:
@@ -93,14 +93,14 @@ class GenerationController(object):
             stages = params['stages']
             outputRepresentation = OutputRepresentation(optimizer, **params)
             controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
-                                              outputRepresentation, outputRefreshDelay, executionTime)
+                                              outputRepresentation, outputRefreshDelay, executionTime, start)
             logger.info('Calculation initialized from input parameters.')
         else:
             raise RuntimeError('No input or dump file to start.')
         return controller
 
     async def run(self):
-        self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
+        # self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
         while (self.generation < self.numGenerations and
                self.numberStableGenerations < self.stopCrit and
                not self.optimizer.isGoalReached):
@@ -156,7 +156,7 @@ class GenerationController(object):
         with open(GenerationController.DUMP_FILENAME, 'wb') as f:
             pcl.dump(self, f)
         dt = time() - self.start
-        logger.info(f"{int(dt)} seconds passed")
-        if time() - self.start >= self.executionTime:
+        logger.debug(f"{int(dt)} seconds passed")
+        if dt >= self.executionTime:
             logger.info("Time is up. Exiting")
             exit()
