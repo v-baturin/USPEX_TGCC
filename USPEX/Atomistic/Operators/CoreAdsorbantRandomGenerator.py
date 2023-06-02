@@ -116,7 +116,7 @@ class CoreAdsorbantRandomGenerator:
         cell = offspringFactory.cellType.initFromCellParameters((0, 0, 0))
         tmp_offspring = offspringFactory(molecules=tmp_molecules + [ads_attempt], cell=cell,
                                          environments=npCoreAssembler.assemble(tmp_molecules + [ads_attempt]))
-        tmp_struct, _ = tmp_offspring.getAtomicStructure()
+        tmp_struct = tmp_offspring.getAtomicStructure()
         tmp_minDistMatrix = self.bondUtility.getDistances(tmp_struct.getAtomTypes(),
                                                           self.conditions.externalPressure)
         # tmp_atomDistances = tmp_struct.getAllDistances()
