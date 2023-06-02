@@ -27,7 +27,7 @@ class Permutation:
     def __call__(self, system, offspringFactory=None):
         molecules = system['molecules']
         cell = system['cell']
-        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)
+        structure, disassembler = offspringFactory.atomicDisassemblerType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbols = self.simpleMoleculeUtility.moleculeTypes(system)
 

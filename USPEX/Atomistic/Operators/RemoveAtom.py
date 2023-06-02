@@ -21,7 +21,7 @@ class RemoveAtom:
         if 'tagsAddRemove' not in system:
             system['tagsAddRemove'] = [[] for _ in range(len(molecules))]
         tagsAddRemove = system['tagsAddRemove']
-        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)  # ,environment)
+        structure, disassembler = offspringFactory.atomicDisassemblerType.assemble(molecules, cell)  # ,environment)
         atomTypes = structure.getAtomTypes()
         species = np.unique(atomTypes)
 

@@ -1,9 +1,15 @@
 class AtomisticPoolEntry:
 
+    structureType = None
+    atomType = None
+    cellType = None
     atomicDisassemblerType = None
 
     @classmethod
-    def registerTypes(cls, atomicDisassemblerType):
+    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+        cls.structureType = structureType
+        cls.atomType = atomType
+        cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, **system):

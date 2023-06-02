@@ -2,7 +2,7 @@ from .Atomistic.Element import Element
 from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
 from .Atomistic.AtomisticPoolEntry import AtomisticPoolEntry
-AtomisticPoolEntry.registerTypes(AtomicDisassembler)
+AtomisticPoolEntry.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Optimizers.GlobalOptimizer import GlobalOptimizer

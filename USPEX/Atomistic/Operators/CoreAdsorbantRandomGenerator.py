@@ -14,7 +14,6 @@ MAX_SITE_SAMPLES_TRY = 1000
 
 class CoreAdsorbantRandomGenerator:
     def __init__(self, utilities, debug = False):
-        self.cellUtility = utilities.cellUtility
         self.junctionUtility = utilities.junctionUtility
         self.environmentUtility = utilities.environmentUtility
         self.bondUtility = utilities.bondUtility
@@ -22,7 +21,6 @@ class CoreAdsorbantRandomGenerator:
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.angle_indices = np.arange(TOTAL_ROTATION_STEPS)
-        self.cell = self.cellUtility.cellType.initFromCellParameters((0, 0, 0))
 
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -115,7 +113,8 @@ class CoreAdsorbantRandomGenerator:
 
     def checkDocking(self, tmp_molecules, ads_attempt, npCoreAssembler, offspringFactory):
         docked = False
-        tmp_offspring = offspringFactory(molecules=tmp_molecules + [ads_attempt], cell=self.cell,
+        cell = offspringFactory.cellType.initFromCellParameters((0, 0, 0))
+        tmp_offspring = offspringFactory(molecules=tmp_molecules + [ads_attempt], cell=cell,
                                          environments=npCoreAssembler.assemble(tmp_molecules + [ads_attempt]))
         tmp_struct, _ = tmp_offspring.getAtomicStructure()
         tmp_minDistMatrix = self.bondUtility.getDistances(tmp_struct.getAtomTypes(),

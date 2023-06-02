@@ -441,7 +441,7 @@ class CellUtility:
         :return: calculated symmetry of system.
         """
         structure = system.getAtomicStructure()
-        cell = system.getCell()
+        cell = structure.getCell()
         lattice = cell.getCellVectors()
         coordinates = structure.getFractionalCoordinates()
         numbers = [el.z for el in structure.getAtomTypes()]

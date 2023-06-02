@@ -103,7 +103,7 @@ class RandSym:
         badSymmetryCounter = 0
         startTime = time()
         centerMinDistMatrix = np.zeros((len(symbols), len(symbols)))
-        cellType = self.simpleMoleculeUtility.cellType
+        cellType = offspringFactory.cellType
         radii = []
         for s in symbols:
             molecule = self.simpleMoleculeUtility.molecules[s]
@@ -176,7 +176,7 @@ class RandSym:
                     if self.cellUtility.getDim() == 0:
                         randcell = np.random.random(3)
                         randcell *= (estimatedVolume / np.prod(randcell)) ** (1 / 3)
-                        rand_orthog_cell = self.cellUtility.cellType.initFromCellVectors((1, 1, 1), np.diag(randcell))
+                        rand_orthog_cell = cellType.initFromCellVectors((1, 1, 1), np.diag(randcell))
                         candidate, lat = symope_cluster(distCoeff * centerMinDistMatrix, nsym,
                                                         numIons_tmp, rand_orthog_cell)
                     else:
