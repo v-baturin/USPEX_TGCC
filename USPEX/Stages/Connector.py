@@ -8,16 +8,15 @@ USPEX.Stages.Connector
 
 import logging
 import asyncio, asyncssh
-import os
+
 from copy import copy
+import random
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 asyncssh.set_log_level(logging.WARNING)
 
-WAIT_PATTERN = 'progressive'
-WAIT_STEPS = 9
-
-wait_periods = {'flat': [10] * WAIT_STEPS, 'progressive': [round(10 ** (x/3)) for x in range(WAIT_STEPS)]}[WAIT_PATTERN]
+N_TRIES = 100
 
 
 class SSHConnectorClient(asyncssh.SSHClient):
