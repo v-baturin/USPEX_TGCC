@@ -1,0 +1,51 @@
+Settings are read from "1.relax.ini"
+Configurations are read from "for_relax.cfg"
+Relaxed configurations will be saved to "relaxed.cfg"
+Reading settings from 1.relax.ini
+Wrapper initialization
+	abinitio = false
+	calculate_efs = true
+	check_errors = false
+	fit = false
+	lotf = false
+	mlip = true
+	sample = true
+	select = false
+	write_cfgs = false
+	write_cfgs:skip = 0
+	mlip:load_from = 1.mtp
+MLIP type is non-linear MTP
+Selection: loading state from "1.mtp"
+Selection: loaded the following weights:
+	energy_weight = 1.000000
+	force_weight = 0.000000
+	stress_weight = 0.000000
+	site_en_weight = 0.000000
+
+Selection: loading state complete.
+	add_grade_feature = true
+	threshold = 4.000000
+	threshold_break = 21.000000
+	save_sampled_to = sampled.cfg
+Wrapper initialization complete
+Using internal relaxation driver
+	correct_cell = true
+	freeze_small_grads = false
+	use_gd_method = false
+	iteration_limit = 5000
+	bfgs_wolfe_c1 = 0.100000
+	bfgs_wolfe_c2 = 0.800000
+	force_tolerance = 0.000050
+	forces_elasticity_scale = 10.000000
+	max_step = 0.050000
+	min_step = 0.000000
+	mindist = 1.500000
+	pressure = 30.000000
+	stress_elasticity_scale = 500.000000
+	stress_tolerance = 0.000500
+	init_mindist = {11:1.3552,17:0.8712}
+	log = 1.relax.log
+Relaxation initialization complete
+From 1 configurations 1 were relaxed successfully
+
+Wrapper object has been destroyed

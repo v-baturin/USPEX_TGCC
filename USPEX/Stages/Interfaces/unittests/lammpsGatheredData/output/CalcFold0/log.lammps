@@ -1,0 +1,176 @@
+LAMMPS (29 Oct 2020)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (../comm.cpp:94)
+  using 1 OpenMP thread(s) per MPI task
+##########################################################
+# Simple cell relaxation CUBIC CELL
+##########################################################
+
+units           metal
+newton          on
+dimension       3
+boundary        p p p   # periodic boundary conditions (f ? aperiodic/ p - periodic)
+atom_style 	atomic      # Define what style of atoms to use in a simulation. http://lammps.sandia.gov/doc/atom_style.html
+
+
+read_data STRUC
+Reading data file ...
+  orthogonal box = (0.0000000 0.0000000 0.0000000) to (5.5248463 5.5248463 5.5248463)
+  2 by 2 by 2 MPI processor grid
+  reading atoms ...
+  16 atoms
+  read_data CPU = 0.004 seconds
+
+pair_style tersoff                 # Potential type http://lammps.sandia.gov/doc/pair_style.html
+thermo_style custom step enthalpy etotal ke pe temp pxx pyy pzz pxy pxz pyz
+pair_coeff * * SiC.tersoff C            # potential http://lammps.sandia.gov/doc/pair_coeff.html
+mass 1 12.0107
+neigh_modify 	every 1 delay 0 check yes   # When the neighbours list will be updated http://lammps.sandia.gov/doc/neigh_modify.html
+
+compute 	_rg all gyration                # All atoms will be involved in the simulation http://lammps.sandia.gov/doc/compute.html
+#---------------------------------------
+
+
+min_style 	cg                                    # The algoritm of relaxation
+min_modify 	line backtrack                        # The parameters of minimzation algoritm
+#fix 1 all box/relax iso 1000.0 dilate partial      # Cell relaxation
+fix 1 all npt temp 50 50 1 iso 1000 1000 1     # Cell relaxation, !!!!!!!USPEX use this to
+dump 		1 all xyz 50 out.xyz                      # Record animation every 50 steps
+
+dump_modify	1 append yes
+
+#----------- geometry optimization----------------------
+
+#minimize        1.0e-16 1.0e-8 15000 30000       # Perform an energy minimization of the system http://lammps.sandia.gov/doc/minimize.html
+run 1000
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 4.1
+  ghost atom cutoff = 4.1
+  binsize = 2.05, bins = 3 3 3
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair tersoff, perpetual
+      attributes: full, newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 3.973 | 3.973 | 3.973 Mbytes
+Step Enthalpy TotEng KinEng PotEng Temp Pxx Pyy Pzz Pxy Pxz Pyz 
+       0            0            0            0            0            0            0            0            0            0            0            0 
+    1000   -102.64364   -99.039898    1.3724672   -100.41237    707.85791   -51601.616   -51598.113    -51595.05   -978.05536   -956.12151    -933.9618 
+Loop time of 0.203598 on 8 procs for 1000 steps with 16 atoms
+
+Performance: 424.366 ns/day, 0.057 hours/ns, 4911.638 timesteps/s
+31.3% CPU use with 8 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.0075763  | 0.0095503  | 0.011594   |   2.0 |  4.69
+Neigh   | 7.683e-05  | 9.7189e-05 | 0.00012282 |   0.0 |  0.05
+Comm    | 0.10714    | 0.10921    | 0.1113     |   0.6 | 53.64
+Output  | 0.0014548  | 0.0021924  | 0.0058525  |   3.0 |  1.08
+Modify  | 0.076465   | 0.079953   | 0.080888   |   0.5 | 39.27
+Other   |            | 0.0026     |            |       |  1.28
+
+Nlocal:        2.00000 ave           2 max           2 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+Nghost:        187.000 ave         187 max         187 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+Neighs:        0.00000 ave           0 max           0 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+FullNghs:      86.0000 ave          86 max          86 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 688
+Ave neighs/atom = 43.000000
+Neighbor list builds = 7
+Dangerous builds = 0
+
+##########################################################
+# Writing Output Enthalpy and Cell Parameters.
+##########################################################
+variable v equal vol
+print "volume"
+volume
+print "$v"
+111.899811792082
+variable e equal etotal
+print "energy"
+energy
+print "$e"
+-99.0398978557739
+variable a equal cellalpha
+variable b equal cellbeta
+variable o equal cellgamma
+variable g equal cella
+variable h equal cellb
+variable y equal cellc
+print "Lattice parameters"
+Lattice parameters
+variable a1 equal $g
+variable a1 equal 4.81884679102449
+print "${a1} 0.00  0.00"
+4.81884679102449 0.00  0.00
+variable b1 equal $h*cos($o*PI/180)
+variable b1 equal 4.81884679102449*cos($o*PI/180)
+variable b1 equal 4.81884679102449*cos(90*PI/180)
+variable b2 equal $h*sin($o*PI/180)
+variable b2 equal 4.81884679102449*sin($o*PI/180)
+variable b2 equal 4.81884679102449*sin(90*PI/180)
+print "${b1} ${b2}  0.00"
+2.95069264910482e-16 4.81884679102449  0.00
+variable c1 equal $y*cos($b*PI/180)
+variable c1 equal 4.81884679102449*cos($b*PI/180)
+variable c1 equal 4.81884679102449*cos(90*PI/180)
+variable c2 equal $y*(cos($a*PI/180)-cos($b*PI/180)*cos($o*PI/180))/sin($o*PI/180)
+variable c2 equal 4.81884679102449*(cos($a*PI/180)-cos($b*PI/180)*cos($o*PI/180))/sin($o*PI/180)
+variable c2 equal 4.81884679102449*(cos(90*PI/180)-cos($b*PI/180)*cos($o*PI/180))/sin($o*PI/180)
+variable c2 equal 4.81884679102449*(cos(90*PI/180)-cos(90*PI/180)*cos($o*PI/180))/sin($o*PI/180)
+variable c2 equal 4.81884679102449*(cos(90*PI/180)-cos(90*PI/180)*cos(90*PI/180))/sin($o*PI/180)
+variable c2 equal 4.81884679102449*(cos(90*PI/180)-cos(90*PI/180)*cos(90*PI/180))/sin(90*PI/180)
+variable c3 equal $y*sqrt(1+2*cos($a*PI/180)*cos($b*PI/180)*cos($o*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 4.81884679102449*sqrt(1+2*cos($a*PI/180)*cos($b*PI/180)*cos($o*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 4.81884679102449*sqrt(1+2*cos(90*PI/180)*cos($b*PI/180)*cos($o*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 4.81884679102449*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos($o*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 4.81884679102449*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos($a*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 4.81884679102449*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos(90*PI/180)^2-cos($b*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 4.81884679102449*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos(90*PI/180)^2-cos(90*PI/180)^2-cos($o*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 4.81884679102449*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos(90*PI/180)^2-cos(90*PI/180)^2-cos(90*PI/180)^2)/sin($o*PI/180)
+variable c3 equal 4.81884679102449*sqrt(1+2*cos(90*PI/180)*cos(90*PI/180)*cos(90*PI/180)-cos(90*PI/180)^2-cos(90*PI/180)^2-cos(90*PI/180)^2)/sin(90*PI/180)
+print "${c1}  ${c2}  ${c3}"
+2.95069264910482e-16  2.95069264910482e-16  4.81884679102449
+#---------------------------------------
+dump lammps_uspex_dump all custom 1 lammps.dump id type x y z vx vy vz fx fy fz
+run 0
+Per MPI rank memory allocation (min/avg/max) = 5.224 | 5.224 | 5.224 Mbytes
+Step Enthalpy TotEng KinEng PotEng Temp Pxx Pyy Pzz Pxy Pxz Pyz 
+    1000   -102.64364   -99.039898    1.3724672   -100.41237    707.85791   -51601.616   -51598.113    -51595.05   -978.05536   -956.12151    -933.9618 
+Loop time of 2.71015e-06 on 8 procs for 0 steps with 16 atoms
+
+110.7% CPU use with 8 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0          | 0          | 0          |   0.0 |  0.00
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0          | 0          | 0          |   0.0 |  0.00
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 2.71e-06   |            |       |100.00
+
+Nlocal:        2.00000 ave           2 max           2 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+Nghost:        126.000 ave         126 max         126 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+Neighs:        0.00000 ave           0 max           0 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+FullNghs:      70.0000 ave          70 max          70 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 560
+Ave neighs/atom = 35.000000
+Neighbor list builds = 0
+Dangerous builds = 0
+Total wall time: 0:00:00

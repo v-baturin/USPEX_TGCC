@@ -1,0 +1,196 @@
+*------------------------------------------------------------------------------*
+|                                                                              |
+|                   _   _ ___ _ __   _____  __  _ __  _   _                    |
+|                  | | | / __| '_ \ / _ \ \/ / | '_ \| | | |                   |
+|                  | |_| \__ \ |_) |  __/>  < _| |_) | |_| |                   |
+|                   \__,_|___/ .__/ \___/_/\_(_) .__/ \__, |                   |
+|                            |_|               |_|    |___/                    |
+|                                                                              |
+|                                   2023.1.0                                   |
+|                                                                              |
+|             Evolutionary Algorithm Code for Structure Prediction             |
+|                      more info at http://uspex-team.org                      |
+|                                                                              |
+*------------------------------------------------------------------------------*
+*------------------------------------------------------------------------------*
+|                  Please cite the following suggested papers                  |
+|              when you publish the results obtained from USPEX:               |
+*------------------------------------------------------------------------------*
+*------------------------------------------------------------------------------*
+|  Oganov A.R., Glass C.W. (2006)                                              |
+|  Crystal structure prediction using evolutionary algorithms:                 |
+|  principles and applications.                                                |
+|  J. Chem. Phys. 124, 244704                                                  |
+|                                                                              |
+|  Oganov A.R., Stokes H., Valle M. (2011)                                     |
+|  How evolutionary crystal structure prediction works - and why.              |
+|  Acc. Chem. Res. 44, 227-237                                                 |
+|                                                                              |
+|  Lyakhov A.O., Oganov A.R., Stokes H., Zhu Q. (2013)                         |
+|  New developments in evolutionary structure prediction algorithm USPEX.      |
+|  Comp. Phys. Comm., 184, 1172-1182                                           |
+*------------------------------------------------------------------------------*
+*------------------------------------------------------------------------------*
+|                       Block for generations controller                       |
+*------------------------------------------------------------------------------*
+
+    Number of Generations  :    3
+    Halting criteria       :    3
+
+*------------------------------------------------------------------------------*
+|                       Block for evolutionary algorithm                       |
+*------------------------------------------------------------------------------*
+
+    Initial Population Size:    10
+    General Population Size:    10
+
+*------------------------------------------------------------------------------*
+|                         Block for system description                         |
+*------------------------------------------------------------------------------*
+
+    System type          :  Atomistic
+    Dimension            :  3
+    Molecular            :  No
+    Variable composition :  No
+    Has environment      :  No
+    Has Junctions        :  No
+
+    The investigated system is (block -- range): 
+        <Mg>4<Al>8<O>16  --  [1 1]
+
+    Volume (estimated) for blocks :
+        <Mg>4<Al>8<O>16  --  217.3 A^3
+
+*------------------------------------------------------------------------------*
+|                         Block for atomic description                         |
+*------------------------------------------------------------------------------*
+
+    There are 3 types of atoms in the system:    O   Mg   Al
+    Minimum distances:                     O: 0.78  0.89  0.87  
+    Minimum distances:                    Mg: 0.89  0.99  0.97  
+    Minimum distances:                    Al: 0.87  0.97  0.95  
+
+           Good Bonds:                     O: 0.30  0.17  0.24  
+           Good Bonds:                    Mg: 0.17  0.10  0.14  
+           Good Bonds:                    Al: 0.24  0.14  0.20  
+
+             Valences:                        2.00  2.00  3.00  
+
+*------------------------------------------------------------------------------*
+|                                  Conditions                                  |
+*------------------------------------------------------------------------------*
+
+* External Pressure is: 100.0000 GPa *
+
+*------------------------------------------------------------------------------*
+|                            Ab initio calculations                            |
+*------------------------------------------------------------------------------*
+
+* There are 5 local relaxation steps for each individual structure: *
+   Step/Tag     Abinitio Code   K-resolution
+1               gulp            None
+2               gulp            None
+3               gulp            None
+4               gulp            None
+5               gulp            None
+
+2 parallel calculations are performed simultaneously.
+For submission details of each stage see parameters.txt.
+
+*------------------------------------------------------------------------------*
+|                              Generations block                               |
+*------------------------------------------------------------------------------*
+ Generation    0
+     Best and diverse structures from previous generation
++----+--------+---------------+--------------+--------------+
+| ID | Origin | Enthalpy (eV) | Volume (A^3) | SYMMETRY (N) |
++----+--------+---------------+--------------+--------------+
++----+--------+---------------+--------------+--------------+
+    Variation Operators (amount and fraction)
+      SymRandom           :       5,  0.5
+      TopRandom           :       5,  0.5
+      Seeds               :       0
+    Optimization results
++----+-----------+---------------+--------------+----------------+
+| ID |   Origin  | Enthalpy (eV) | Volume (A^3) |  SYMMETRY (N)  |
++----+-----------+---------------+--------------+----------------+
+| 0  | SymRandom |    -637.102   |    218.161   | P6_3/mmc (194) |
+| 1  | SymRandom |    -646.835   |    203.648   |  P1      (1)   |
+| 2  | SymRandom |    -651.147   |    202.826   |  P1      (1)   |
+| 3  | SymRandom |    -645.522   |    217.501   | Fd-3m   (227)  |
+| 4  | SymRandom |    -643.446   |    205.371   |  P1      (1)   |
+| 5  | TopRandom |    -649.975   |    202.163   |  P1      (1)   |
+| 6  | TopRandom |    -647.013   |    207.649   |  P1      (1)   |
+| 7  | TopRandom |    -644.367   |    211.482   |  P1      (1)   |
+| 8  | TopRandom |    -645.892   |    207.788   |  P-1     (2)   |
+| 9  | TopRandom |    -647.638   |    205.861   |  P2_1    (4)   |
++----+-----------+---------------+--------------+----------------+
+    Generation Summary
+      Correlation coefficient: 0.4641
+      Approximate volume(s)  : 208.2 A^3
+      Quasi entropy          : 0.2265
+
+ Generation    1
+     Best and diverse structures from previous generation
++----+--------+---------------+--------------+--------------+
+| ID | Origin | Enthalpy (eV) | Volume (A^3) | SYMMETRY (N) |
++----+--------+---------------+--------------+--------------+
++----+--------+---------------+--------------+--------------+
+    Variation Operators (amount and fraction)
+      Twinning            :       2,  0.2
+      Heredity            :       2,  0.2
+      SymRandom           :       3,  0.3
+      TopRandom           :       3,  0.3
+      Seeds               :       0
+    Optimization results
++----+-----------+---------------+--------------+--------------+
+| ID |   Origin  | Enthalpy (eV) | Volume (A^3) | SYMMETRY (N) |
++----+-----------+---------------+--------------+--------------+
+| 10 |  Twinning |    -650.913   |    203.761   | C2/m    (12) |
+| 11 |  Twinning |    -649.607   |    203.115   | P1      (1)  |
+| 12 |  Heredity |    -647.322   |    203.029   | P1      (1)  |
+| 13 |  Heredity |    -652.422   |    201.224   | P1      (1)  |
+| 14 | SymRandom |    -645.033   |    207.312   | P-1     (2)  |
+| 15 | SymRandom |    -646.485   |    207.297   | P-1     (2)  |
+| 16 | SymRandom |    -644.849   |    207.685   | P1      (1)  |
+| 17 | TopRandom |    -648.552   |    205.124   | P1      (1)  |
+| 18 | TopRandom |    -648.666   |    204.828   | P1      (1)  |
+| 19 | TopRandom |    -647.766   |    206.538   | P1      (1)  |
++----+-----------+---------------+--------------+--------------+
+    Generation Summary
+      Correlation coefficient: -0.03616
+      Approximate volume(s)  : 205.0 A^3
+      Quasi entropy          : 0.164
+
+ Generation    2
+     Best and diverse structures from previous generation
++----+--------+---------------+--------------+--------------+
+| ID | Origin | Enthalpy (eV) | Volume (A^3) | SYMMETRY (N) |
++----+--------+---------------+--------------+--------------+
++----+--------+---------------+--------------+--------------+
+    Variation Operators (amount and fraction)
+      Twinning            :       2,  0.2
+      Heredity            :       2,  0.2
+      SymRandom           :       3,  0.3
+      TopRandom           :       3,  0.3
+      Seeds               :       0
+    Optimization results
++----+-----------+---------------+--------------+---------------+
+| ID |   Origin  | Enthalpy (eV) | Volume (A^3) |  SYMMETRY (N) |
++----+-----------+---------------+--------------+---------------+
+| 20 |  Twinning |    -649.053   |    205.315   |  P-1     (2)  |
+| 21 |  Twinning |    -649.193   |    202.303   |  C2/m    (12) |
+| 22 |  Heredity |    -647.389   |    202.489   |  P1      (1)  |
+| 23 |  Heredity |    -650.011   |    202.509   |  P2      (3)  |
+| 24 | SymRandom |    -648.800   |    207.532   |  Pmn2_1  (31) |
+| 25 | SymRandom |    -647.778   |    202.573   |  P-1     (2)  |
+| 26 | SymRandom |    -650.381   |    202.916   | R-3m    (166) |
+| 27 | TopRandom |    -649.737   |    205.383   |  P2      (3)  |
+| 28 | TopRandom |    -649.090   |    205.586   |  Cm      (8)  |
+| 29 | TopRandom |    -641.818   |    207.387   |  P1      (1)  |
++----+-----------+---------------+--------------+---------------+
+    Generation Summary
+      Correlation coefficient: -0.5008
+      Approximate volume(s)  : 204.4 A^3
+      Quasi entropy          : 0.172
+

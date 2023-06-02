@@ -1,0 +1,110 @@
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+LAMMPS (29 Oct 2020)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (../comm.cpp:94)
+  using 1 OpenMP thread(s) per MPI task
+Reading data file ...
+  orthogonal box = (0.0000000 0.0000000 0.0000000) to (7.9747644 7.9747644 2.6517029)
+  2 by 4 by 1 MPI processor grid
+  reading atoms ...
+  16 atoms
+  read_data CPU = 0.003 seconds
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 4.1
+  ghost atom cutoff = 4.1
+  binsize = 2.05, bins = 4 4 2
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair tersoff, perpetual
+      attributes: full, newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+WARNING: Proc sub-domain size < neighbor skin, could lead to lost atoms (../domain.cpp:963)
+Setting up Verlet run ...
+  Unit style    : metal
+  Current step  : 0
+  Time step     : 0.001
+Per MPI rank memory allocation (min/avg/max) = 3.981 | 3.981 | 3.981 Mbytes
+Step Enthalpy TotEng KinEng PotEng Temp Pxx Pyy Pzz Pxy Pxz Pyz 
+       0    -266.2903   -20.396681            0   -20.396681            0   -2323469.8   -2323469.8   -2361450.5 -2.0673598e-10 1.2657305e-11 -6.3286524e-12 
+    1000   -104.33641   -103.80482   0.06379759   -103.86862    32.903976   -15399.194   -15399.194    13594.431 5.8162667e-08 2.7270859e-09 -4.5245925e-10 
+Loop time of 0.124622 on 8 procs for 1000 steps with 16 atoms
+
+Performance: 693.299 ns/day, 0.035 hours/ns, 8024.291 timesteps/s
+37.4% CPU use with 8 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.0041338  | 0.0056029  | 0.0071331  |   1.8 |  4.50
+Neigh   | 3.0681e-05 | 3.8566e-05 | 4.7296e-05 |   0.0 |  0.03
+Comm    | 0.023052   | 0.090081   | 0.10214    |   8.5 | 72.28
+Output  | 0.0015678  | 0.0022685  | 0.0057473  |   2.8 |  1.82
+Modify  | 0.0099244  | 0.014571   | 0.018598   |   2.2 | 11.69
+Other   |            | 0.01206    |            |       |  9.68
+
+Nlocal:        2.00000 ave           2 max           2 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+Nghost:        133.000 ave         134 max         132 min
+Histogram: 4 0 0 0 0 0 0 0 0 4
+Neighs:        0.00000 ave           0 max           0 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+FullNghs:      70.0000 ave          70 max          70 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 560
+Ave neighs/atom = 35.000000
+Neighbor list builds = 4
+Dangerous builds = 0
+volume
+148.516315506701
+energy
+-103.80482375434
+Lattice parameters
+7.64403006558033 0.00  0.00
+4.68061847619954e-16 7.64403006558033  0.00
+1.55636067689028e-16  1.55636067689028e-16  2.54172987341964
+WARNING: Proc sub-domain size < neighbor skin, could lead to lost atoms (../domain.cpp:963)
+Setting up Verlet run ...
+  Unit style    : metal
+  Current step  : 1000
+  Time step     : 0.001
+Per MPI rank memory allocation (min/avg/max) = 5.231 | 5.231 | 5.231 Mbytes
+Step Enthalpy TotEng KinEng PotEng Temp Pxx Pyy Pzz Pxy Pxz Pyz 
+    1000   -104.33641   -103.80482   0.06379759   -103.86862    32.903976   -15399.194   -15399.194    13594.431 5.8459695e-08 2.8660186e-09 -3.1831735e-10 
+Loop time of 2.87965e-06 on 8 procs for 0 steps with 16 atoms
+
+56.4% CPU use with 8 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0          | 0          | 0          |   0.0 |  0.00
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0          | 0          | 0          |   0.0 |  0.00
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 2.88e-06   |            |       |100.00
+
+Nlocal:        2.00000 ave           2 max           2 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+Nghost:        133.000 ave         134 max         132 min
+Histogram: 4 0 0 0 0 0 0 0 0 4
+Neighs:        0.00000 ave           0 max           0 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+FullNghs:      62.0000 ave          62 max          62 min
+Histogram: 8 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 496
+Ave neighs/atom = 31.000000
+Neighbor list builds = 0
+Dangerous builds = 0
+Total wall time: 0:00:00

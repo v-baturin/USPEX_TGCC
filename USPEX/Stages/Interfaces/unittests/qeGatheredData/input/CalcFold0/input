@@ -1,0 +1,53 @@
+&CONTROL
+   calculation      = 'relax'
+   restart_mode     = 'from_scratch'
+   wf_collect       = .false.
+   nstep            = 250
+   outdir           = './'
+   prefix           = 'pp'
+   disk_io          = 'none'
+   pseudo_dir       = './'
+/
+&SYSTEM
+   ibrav            = 0
+   nat              = 8
+   ntyp             = 1
+   ecutwfc          = 40.0
+   nosym            = .true.
+   occupations      = 'smearing'
+   degauss          = 0.02
+   smearing         = 'marzari-vanderbilt'
+/
+&ELECTRONS
+   electron_maxstep = 250
+   conv_thr         = 0.0005
+   mixing_beta      = 0.5
+/
+&IONS
+   ion_dynamics     = 'bfgs'
+   trust_radius_max = 0.2
+/
+&CELL
+/
+
+ATOMIC_SPECIES
+C 12.011 C.pbe-van_bm.upf
+
+K_POINTS automatic
+2 2 3  0 0 0
+
+CELL_PARAMETERS angstrom
+6.13529700000000 0.00000000000000 0.00000000000000
+0.00000000000000 6.13529700000000 0.00000000000000
+0.00000000000000 0.00000000000000 2.24005900000000
+
+ATOMIC_POSITIONS crystal
+C 0.7500000000 0.5000000000 0.3750000000 
+C 0.5000000000 0.7500000000 0.6250000000 
+C 0.7500000000 0.0000000000 0.8750000000 
+C 0.0000000000 0.7500000000 0.1250000000 
+C 0.2500000000 0.0000000000 0.8750000000 
+C 0.0000000000 0.2500000000 0.1250000000 
+C 0.5000000000 0.2500000000 0.6250000000 
+C 0.2500000000 0.5000000000 0.3750000000 
+

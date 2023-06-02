@@ -1,0 +1,77 @@
+import unittest
+
+
+from ..RawParser import parse
+
+text='''
+{
+    optimizer: {
+        type: GlobalOptimizer
+        target: {
+            type: Crystal
+            conditions: {externalPressure: 100}
+            compositionSpace: {symbols: [Mg Al O]
+                               blocks: [[4 8 16]]}
+            radialDistributionUtility: {legacy: False}
+/*            cellUtility: {pbc: (1,1,1)},*/
+            seeds: {generations: [0,2] seedsFolders: [/*'./Seeds/0', */'./Seeds/2']}
+        }
+        optType: enthalpy
+/*        stopFitness: -655.062,*/
+        selection: {
+            type: 'USPEXClassic',
+            popSize: 10,
+            optType: ('aging', 'enthalpy'),
+            fractions: {
+                heredity: (0.1, 1.0, 0.5),
+/*                twinning: (0.0, 0.0, 0.0),*/
+                softmodemutation: (0.1, 1.0, 0.2),
+                randSym: (0.05, 1.0, 0.1),
+                randTop: (0.05, 1.0, 0.1),
+                permutation: (0.05, 1.0, 0.1)
+            }
+        }
+    },
+    stages: ['gulp', 'gulp', 'gulp', 'gulp', 'gulp5'],
+    numParallelCalcs: 2,
+    numGenerations: 3,
+    stopCrit: 3
+}
+'''
+
+ref_params = {
+    'optimizer': {
+        'type': 'GlobalOptimizer',
+        'target': {
+            'type': 'Crystal',
+            'conditions': {'externalPressure': 100},
+            'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
+                               'blocks': [[4, 8, 16]]},
+            'radialDistributionUtility': {'legacy': False},
+            'seeds': {'generations': [0,2], 'seedsFolders': ['./Seeds/2']}
+        },
+        'optType': 'enthalpy',
+        'selection': {
+            'type': 'USPEXClassic',
+            'popSize': 10,
+            'optType': ('aging', 'enthalpy'),
+            'fractions': {
+                'heredity': (0.1, 1.0, 0.5),
+                'softmodemutation': (0.1, 1.0, 0.2),
+                'randSym': (0.05, 1.0, 0.1),
+                'randTop': (0.05, 1.0, 0.1),
+                'permutation': (0.05, 1.0, 0.1)
+            }
+        }
+    },
+    'stages': ['gulp', 'gulp', 'gulp', 'gulp', 'gulp5'],
+    'numParallelCalcs': 2,
+    'numGenerations': 3,
+    'stopCrit': 3
+}
+
+
+class RawParser_Test(unittest.TestCase):
+    def test_newlineSeparator(self):
+        params = parse(text)
+        self.assertEqual(params, ref_params)

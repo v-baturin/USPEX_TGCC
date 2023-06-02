@@ -1,0 +1,31 @@
+# Eu2H18 pbe-Full-Relax
+
+ecut          42
+tolvrs        1.0d-12 eV
+tolsym        1.0d-5      # same as in VASP
+
+# save disk space
+prtwf  0
+prtden 0
+
+# optimization parameters
+optcell       2           # full optimization
+chkprim       0           # allow non-primitive cells
+ionmov        2           # BFGS
+#dtion         0.03        # ionic relaxation step with FIRE
+chkdilatmx    0
+#dilatmx       1.2
+tolmxf        5.0d-5
+ntime         100
+
+# PAW
+#pawecutdg    50
+#pawovlp      15
+               
+# SCF procedure  
+iscf         17
+nstep       100
+occopt        6
+tsmear        0.01
+ecutsm        0.5
+
