@@ -70,7 +70,7 @@ class Seeds(object):
                             structure.getAtomTypes(), self.conditions.externalPressure)
                         if self.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix):
                             self.conditions.putConditions(system)
-                            system['filename'] = filename
+                            system.setProperty('filename', filename)
                             seeds.append(system)
                         else:
                             logger.info(f"Structure created from seed {filename} violates constraints.")

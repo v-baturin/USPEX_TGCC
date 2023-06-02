@@ -41,7 +41,7 @@ class Softmodemutation:
                 eigenVector = eigenVectors.pop(0)
                 if freq < _MIN_VALID_FREQUENCY:
                     continue
-                displacements = eigenVector.reshape((len(structure),3))
+                displacements = eigenVector.reshape((len(structure), 3))
                 displacements *= degree/np.max(np.linalg.norm(displacements, axis = 1))
                 molecules1 = []
                 molecules2 = []
@@ -62,23 +62,23 @@ class Softmodemutation:
                 if 'environments' in system:
                     offspring1['environments'] = system['environments']
                 offspring1 = offspringFactory(**offspring1)
-                structure = offspring1.getAtomicStructure()
-                minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
+                structure1 = offspring1.getAtomicStructure()
+                minDistMatrix = self.bondUtility.getDistances(structure1.getAtomTypes(),
                                                               self.conditions.externalPressure)
                 if self.simpleMoleculeUtility.checkMinDistances(offspring1, minDistMatrix):
                     self.conditions.putConditions(offspring1)
-                    if self.bondUtility.isConnected(structure):
+                    if self.bondUtility.isConnected(structure1):
                         offsprings += (offspring1,)
                 offspring2 = {'molecules': molecules2, 'cell': cell}
                 if 'environments' in system:
                     offspring2['environments'] = system['environments']
                 offspring2 = offspringFactory(**offspring2)
-                structure = offspring2.getAtomicStructure()
-                minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
+                structure2 = offspring2.getAtomicStructure()
+                minDistMatrix = self.bondUtility.getDistances(structure2.getAtomTypes(),
                                                               self.conditions.externalPressure)
                 if self.simpleMoleculeUtility.checkMinDistances(offspring2, minDistMatrix):
                     self.conditions.putConditions(offspring2)
-                    if self.bondUtility.isConnected(structure):
+                    if self.bondUtility.isConnected(structure2):
                         offsprings += (offspring2,)
                 if offsprings:
                     return offsprings

@@ -112,7 +112,8 @@ class RandSymPyXtal:
                 molecules = offspring['molecules']
                 cell = offspring['cell']
                 if envAssembler is not None:
-                    offspring['environments'] = envAssembler.assemble(molecules, cell)
+                    offspring.setProperty('environments',
+                                          envAssembler.assemble(molecules, cell))
                 structure = offspring.getAtomicStructure()
                 minDistMatrix = self.bondUtility.getDistances(
                     structure.getAtomTypes(), self.conditions.externalPressure)
