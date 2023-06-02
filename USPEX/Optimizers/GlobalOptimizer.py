@@ -174,7 +174,7 @@ class GlobalOptimizer(object):
                             system.setProperty('duplicates', ref_system['duplicates'])
                             ref_system.delProperty('duplicates')
                             for ID in system['duplicates']:
-                                self.pool.allSystems[ID]['originalID'] = system['ID']
+                                self.pool.allSystems[ID].setProperty('originalID', system['ID'])
                             if ref_system['ID'] not in system['duplicates']:
                                 system['duplicates'].append(ref_system['ID'])
                         else:
