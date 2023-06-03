@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, QE_Interface
+from ....components import AtomisticRepresentation, QE_Interface, AtomisticPoolEntry
 
 
 HOMEPATH = Path(__file__).parent
@@ -23,7 +23,7 @@ class QE_CalculatorTest2(unittest.TestCase):
 
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            system = dict(
+            system = AtomisticPoolEntry(
                 ID=ID,
                 structure=structure,
                 disassembler=AtomisticRepresentation.atomicDisassemblerType(
@@ -41,10 +41,11 @@ class QE_CalculatorTest2(unittest.TestCase):
             shutil.rmtree(WORKPATH)
             folder = GATHEREDPATH/'output'
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
-            results = qe.readOutput(system, WORKPATH)
+            qe.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-            cell = results['structure'].getCell()
+            structure = system.getAtomicStructure()
+            cell = structure.getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(), cellRef.getCellVectors(), atol=1.0e-5))
             # self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(results['structure'].getCartesianCoordinates()),

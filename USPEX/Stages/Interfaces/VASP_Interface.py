@@ -103,12 +103,15 @@ class VASP_Interface:
         with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
-        structure = system['structure']
+        structure = system.getAtomicStructure()
+        cell = structure.getCell()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
+
 
         ############################# POSCAR ##################################
 
-        system['ase'] = self.adapter.write(structure, system['disassembler'].allFixedIndices, f"EA{system['ID']}",
-                                           calcFolder)
+        self.adapter.write(structure, system['disassembler'].allFixedIndices, f"EA{system['ID']}", calcFolder)
 
         ############################## INCAR ##################################
         shutil.copy2(self.incar, calcFolder/self.incar_file)
@@ -242,35 +245,37 @@ class VASP_Interface:
     ############reading part
 
     def readOutput(self, system, calcFolder: Path):
-        trajectory = self.adapter.read(calcFolder, **system.pop('ase'))
+        with open(calcFolder / 'pbc', 'rt') as f:
+            pbc = tuple(int(c) for c in f.read().split())
+        trajectory = self.adapter.read(calcFolder, pbc)
         aseResults = trajectory[-1]['results']
         results = {}
         if 'structure' in self.targetProperties:
-            results['structure'] = trajectory[-1]['structure']
+            system.updateAtomicStructure(trajectory[-1]['structure'])
         if 'enthalpy' in self.targetProperties:
-            results['enthalpy'] = aseResults.getEnthalpy(system['externalPressure'])
+            system.setProperty('enthalpy', aseResults.getEnthalpy(system['externalPressure']))
         if 'energy' in self.targetProperties:
-            results['energy'] = aseResults.results['energy']
+            system.setProperty('energy', aseResults.results['energy'])
         if 'forces' in self.targetProperties:
-            results['forces'] = aseResults.results['forces']
+            system.setProperty('forces', aseResults.results['forces'])
         if 'trajectory' in self.targetProperties:
             for subsystem in trajectory:
                 subsystem['disassembler'] = system['disassembler']
                 subsystem['externalPressure'] = system['externalPressure']
-            results['trajectory'] = trajectory
+            system.setProperty('trajectory', trajectory)
 
         with open(calcFolder/self.outcar_file, 'rt') as fp:
             content = fp.readlines()
         if 'stressTensor' in self.targetProperties:
-            results['stressTensor'] = self.readPressureTensor(content)
+            system.setProperty('stressTensor', self.readPressureTensor(content))
         if 'dielectricTensor' in self.targetProperties:
-            results['dielectricTensor'] = self.readDielectricProperties(content)
+            system.setProperty('dielectricTensor', self.readDielectricProperties(content))
         if 'dipoleMoment' in self.targetProperties:
-            results['dipoleMoment'] = self.readDipoleMoment(content)
+            system.setProperty('dipoleMoment', self.readDipoleMoment(content))
         if 'energyFermi' in self.targetProperties:
-            results['energyFermi'] = self.readFermi(content)
+            system.setProperty('energyFermi', self.readFermi(content))
         if 'elasticConstants' in self.targetProperties:
-            results['elasticConstants'] = self.readElasticMatrix(content)
+            system.setProperty('elasticConstants', self.readElasticMatrix(content))
         return results
 
     def readPressureTensor(self, content, index=-1):

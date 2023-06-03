@@ -27,6 +27,7 @@ class GlobalOptimizer(object):
     """
 
     Fitness = None
+    entryType = None
     knownSelectionTypes = {}
     knownTargetTypes = {}
 
@@ -41,7 +42,7 @@ class GlobalOptimizer(object):
 
     @classmethod
     def registerTarget(cls, name: str, utilities: List[type], hybridizations: List[type], mutations: List[type],
-                       creations: List[type], seeds: type = None):
+                       creations: List[type], entry: type, seeds: type = None):
         """
         Register the target as known target.
 
@@ -61,6 +62,7 @@ class GlobalOptimizer(object):
         assert name not in cls.knownTargetTypes, f'{name} is not registered as known Target'
         cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
                                                 mutations=mutations, creations=creations, seeds=seeds)
+        cls.entryType = entry
 
     def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None,
                  extraData=(), **kwargs):
@@ -74,6 +76,7 @@ class GlobalOptimizer(object):
         """
 
         self.pool = SystemPool()
+        self.pool.entryFactory = self.entryType
         self.target = Target(self.knownTargetTypes[target['type']], **target)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = list(extraData)
@@ -166,23 +169,23 @@ class GlobalOptimizer(object):
                     if self.fitness.getFitnessByID(self.optType, system['ID']) < \
                             self.fitness.getFitnessByID(self.optType, ref_system['ID']):
                         self.fingerprintUtility.clean(ref_system)
-                        ref_system['originalID'] = system['ID']
+                        ref_system.setProperty('originalID', system['ID'])
                         if 'duplicates' in ref_system:
-                            system['duplicates'] = ref_system['duplicates']
-                            del ref_system['duplicates']
+                            system.setProperty('duplicates', ref_system['duplicates'])
+                            ref_system.delProperty('duplicates')
                             for ID in system['duplicates']:
-                                self.pool.allSystems[ID]['originalID'] = system['ID']
+                                self.pool.allSystems[ID].setProperty('originalID', system['ID'])
                             if ref_system['ID'] not in system['duplicates']:
                                 system['duplicates'].append(ref_system['ID'])
                         else:
-                            system['duplicates'] = [ref_system['ID']]
+                            system.setProperty('duplicates', [ref_system['ID']])
                     else:
                         self.fingerprintUtility.clean(system)
-                        system['originalID'] = ref_system['ID']
+                        system.setProperty('originalID', ref_system['ID'])
                         if 'duplicates' in ref_system and system['ID'] not in ref_system['duplicates']:
                             ref_system['duplicates'].append(system['ID'])
                         else:
-                            ref_system['duplicates'] = [system['ID']]
+                            ref_system.setProperty('duplicates', [system['ID']])
                     break
 
     @property

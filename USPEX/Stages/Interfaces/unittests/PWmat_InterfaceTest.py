@@ -13,7 +13,7 @@ import shutil
 import unittest
 import numpy as np
 from pathlib import Path
-from ....components import AtomisticRepresentation, PWmat_Interface
+from ....components import AtomisticRepresentation, PWmat_Interface, AtomisticPoolEntry
 
 
 HOMEPATH = Path(__file__).parent
@@ -35,7 +35,7 @@ class PWmat_InterfaceTest(unittest.TestCase):
 
         cls.vcEmpty = PWmat_Interface(**params)
         structure = AtomisticRepresentation.readPOSCAR(HOMEPATH/'Si4System.vasp', pbc=(1, 1, 1))
-        cls.testSystem = dict(
+        cls.testSystem = AtomisticPoolEntry(
             ID=0,
             structure=structure,
             disassembler=AtomisticRepresentation.atomicDisassemblerType(
@@ -93,10 +93,10 @@ class PWmat_InterfaceTest(unittest.TestCase):
         shutil.copy(self.REFERENCE_FOLDER/'IN.RELAXOPT', self.CALC_FOLDER)
 
         self.assertTrue(self.vcEmpty.isConverged(self.CALC_FOLDER))
-        results = self.vcEmpty.readOutput(self.testSystem, self.CALC_FOLDER)
+        self.vcEmpty.readOutput(self.testSystem, self.CALC_FOLDER)
         #self.vcEmpty.clean(self.testSystem)
 
-        structure = results['structure']
+        structure = self.testSystem.getAtomicStructure()
         self.assertTrue(np.allclose(self.POSITIONS_FINAL, structure.getCartesianCoordinates(), atol=1.0e-3))
         self.assertTrue(np.allclose(self.LATTICE_FINAL, structure.getCell().getCellVectors(), atol=1.0e-3))
-        self.assertAlmostEqual(self.knownSystemEnergy, results['enthalpy'], delta=1.0e-3)
+        self.assertAlmostEqual(self.knownSystemEnergy, self.testSystem['enthalpy'], delta=1.0e-3)

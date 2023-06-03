@@ -3,7 +3,7 @@ import numpy as np
 
 from ..CompositionCH import CompositionCH
 from ..AtomicPrimitives import AtomicStructure
-from ...components import CompositionSpace, SimpleMoleculeUtility
+from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticPoolEntry
 
 
 class CompostionCH_Test(unittest.TestCase):
@@ -14,15 +14,19 @@ class CompostionCH_Test(unittest.TestCase):
         system0 = {'ID': 0, 'isBad': False, 'enthalpy': -2.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] ]}
+        system0 = AtomisticPoolEntry(**system0)
         system1 = {'ID': 1, 'isBad': False, 'enthalpy': -8.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 4]}
+        system1 = AtomisticPoolEntry(**system1)
         system2 = {'ID': 2, 'isBad': False, 'enthalpy': -16.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 4]}
+        system2 = AtomisticPoolEntry(**system2)
         system3 = {'ID': 3, 'isBad': False, 'enthalpy': -8.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 8]}
+        system3 = AtomisticPoolEntry(**system3)
         self.convexHull = CompositionCH([system0], compositionSpace, simpleMoleculeUtility)
 
         # ans = self.convexHull.height[0]
@@ -52,27 +56,35 @@ class CompostionCH_Test(unittest.TestCase):
         system1 = {'ID': 0, 'isBad': False, 'enthalpy': -5.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 4 + ['B'] * 10]}
+        system1 = AtomisticPoolEntry(**system1)
         system2 = {'ID': 1, 'isBad': False, 'enthalpy': -14.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 4 + ['B'] * 10]}
+        system2 = AtomisticPoolEntry(**system2)
         system3 = {'ID': 2, 'isBad': False, 'enthalpy': -8.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 8 + ['B'] * 8]}
+        system3 = AtomisticPoolEntry(**system3)
         system4 = {'ID': 3, 'isBad': False, 'enthalpy': -2.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 8]}
+        system4 = AtomisticPoolEntry(**system4)
         system5 = {'ID': 4, 'isBad': False, 'enthalpy': -4.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 8]}
+        system5 = AtomisticPoolEntry(**system5)
         system6 = {'ID': 5, 'isBad': False, 'enthalpy': -12.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['B'] * 10]}
+        system6 = AtomisticPoolEntry(**system6)
         system7 = {'ID': 6, 'isBad': False, 'enthalpy': -2.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 6 + ['B'] * 4]}
+        system7 = AtomisticPoolEntry(**system7)
         system8 = {'ID': 7, 'isBad': False, 'enthalpy': -16.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 4 + ['B'] * 6]}
+        system8 = AtomisticPoolEntry(**system8)
 
 
 
@@ -156,27 +168,35 @@ class CompostionCH_Test(unittest.TestCase):
         system1 = {'ID': 0, 'isBad': False, 'enthalpy': -5.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 4 + ['B'] * 10]}
+        system1 = AtomisticPoolEntry(**system1)
         system2 = {'ID': 1, 'isBad': False, 'enthalpy': -14.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 4 + ['B'] * 10]}
+        system2 = AtomisticPoolEntry(**system2)
         system3 = {'ID': 2, 'isBad': False, 'enthalpy': -8.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 8 + ['B'] * 8]}
+        system3 = AtomisticPoolEntry(**system3)
         system4 = {'ID': 3, 'isBad': False, 'enthalpy': -2.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 8]}
+        system4 = AtomisticPoolEntry(**system4)
         system5 = {'ID': 4, 'isBad': False, 'enthalpy': -4.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 8]}
+        system5 = AtomisticPoolEntry(**system5)
         system6 = {'ID': 5, 'isBad': False, 'enthalpy': -12.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['B'] * 10]}
+        system6 = AtomisticPoolEntry(**system6)
         system7 = {'ID': 6, 'isBad': False, 'enthalpy': -2.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 6 + ['B'] * 4]}
+        system7 = AtomisticPoolEntry(**system7)
         system8 = {'ID': 7, 'isBad': False, 'enthalpy': -16.0,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 4 + ['B'] * 6]}
+        system8 = AtomisticPoolEntry(**system8)
 
         systems = [system1, system2, system3, system4, system5, system6, system7, system8]
         self.convexHull = CompositionCH(systems, compositionSpace, simpleMoleculeUtility)
@@ -266,21 +286,27 @@ class CompostionCH_Test(unittest.TestCase):
         system1 = {'ID': 0, 'isBad': False, 'enthalpy': -178.845,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 6 + ['B'] * 14]}
+        system1 = AtomisticPoolEntry(**system1)
         system2 = {'ID': 1, 'isBad': False, 'enthalpy': -225.103,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 16 + ['B'] * 10]}
+        system2 = AtomisticPoolEntry(**system2)
         system3 = {'ID': 2, 'isBad': False, 'enthalpy': -162.761,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 5 + ['B'] * 14]}
+        system3 = AtomisticPoolEntry(**system3)
         system4 = {'ID': 3, 'isBad': False, 'enthalpy': -176.250,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 6 + ['B'] * 14]}
+        system4 = AtomisticPoolEntry(**system4)
         system5 = {'ID': 4, 'isBad': False, 'enthalpy': -150.735,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 13 + ['B'] * 5]}
+        system5 = AtomisticPoolEntry(**system5)
         system6 = {'ID': 5, 'isBad': False, 'enthalpy': -77.661,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 9 + ['B'] * 1]}
+        system6 = AtomisticPoolEntry(**system6)
         systems = [system1, system2, system3, system4, system5, system6]
 
         self.convexHull = CompositionCH(systems, compositionSpace, simpleMoleculeUtility)
@@ -326,18 +352,23 @@ class CompostionCH_Test(unittest.TestCase):
         system1 = {'ID': 0, 'isBad': False, 'enthalpy': -173.325,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 5 + ['B'] * 15]}
+        system1 = AtomisticPoolEntry(**system1)
         system2 = {'ID': 1, 'isBad': False, 'enthalpy': -42.944,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 5]}
+        system2 = AtomisticPoolEntry(**system2)
         system3 = {'ID': 2, 'isBad': False, 'enthalpy': -104.041,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 3 + ['B'] * 9]}
+        system3 = AtomisticPoolEntry(**system3)
         system4 = {'ID': 3, 'isBad': False, 'enthalpy': -177.431,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 6 + ['B'] * 14]}
+        system4 = AtomisticPoolEntry(**system4)
         system5 = {'ID': 4, 'isBad': False, 'enthalpy': -69.214,
                    'molecules': [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mo'] * 9]}
+        system5 = AtomisticPoolEntry(**system5)
         systems = [system1, system2, system3, system4, system5]
 
         self.convexHull = CompositionCH(systems, compositionSpace, simpleMoleculeUtility)

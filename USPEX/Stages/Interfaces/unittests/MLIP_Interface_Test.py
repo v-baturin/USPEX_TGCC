@@ -13,7 +13,7 @@ import filecmp
 
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, MLIP_Interface
+from ....components import AtomisticRepresentation, MLIP_Interface, AtomisticPoolEntry
 
 
 HOMEPATH = Path(__file__).parent
@@ -64,7 +64,7 @@ class MLIP_train_Test(unittest.TestCase):
                                         args=SPECIFICPATH/'mlip_args_0')
 
     def test_init(self):
-        system = dict(
+        system = AtomisticPoolEntry(
             ID=0,
             trajectory = AtomisticRepresentation.readMLIPsample(SPECIFICPATH/'configurations.cfg',
                                                                 specorder=['Mo', 'S'])
@@ -78,11 +78,11 @@ class MLIP_train_Test(unittest.TestCase):
 
 
     def test_sample(self):
-        system = dict(
+        system = AtomisticPoolEntry(
         )
 
         calcFolder=HOMEPATH/'MLIP_REF'
-        results = self.interface.readOutput(system=system, calcFolder=calcFolder)
+        self.interface.readOutput(system=system, calcFolder=calcFolder)
         self.assertTrue(filecmp.cmp(self.trainFolder/'ts.cfg', calcFolder/'input.cfg'))
 
     def tearDown(self) -> None:

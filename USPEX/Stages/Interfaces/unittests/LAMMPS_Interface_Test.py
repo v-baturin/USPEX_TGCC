@@ -6,7 +6,7 @@ import filecmp
 
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, LAMMPS_Interface
+from ....components import AtomisticRepresentation, LAMMPS_Interface, AtomisticPoolEntry
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'lammpsSpecific'
@@ -24,7 +24,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
 
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            system = dict(
+            system = AtomisticPoolEntry(
                 ID=ID,
                 structure=structure,
                 disassembler=AtomisticRepresentation.atomicDisassemblerType(
@@ -42,10 +42,11 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
             shutil.rmtree(WORKPATH)
             folder = GATHEREDPATH/'output'
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
-            results = lammps.readOutput(system, WORKPATH)
+            lammps.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-            cell = results['structure'].getCell()
+            structure = system.getAtomicStructure()
+            cell = structure.getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(),
                                         cellRef.getCellVectors()))
@@ -61,7 +62,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         interface = LAMMPS_Interface(tag='0', libs=[SPECIFICPATH/'SiC.tersoff'],
                                      lammps_in=SPECIFICPATH/'lammps.in_1', specorder=['C'])
         structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-        system = dict(
+        system = AtomisticPoolEntry(
             ID=ID,
             structure=structure,
             disassembler=AtomisticRepresentation.atomicDisassemblerType(
@@ -69,8 +70,8 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
             ase={'pbc': (1, 1, 1)},
             externalPressure=0.0
         )
-        results = interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
-        self.assertTrue(np.isclose(results['enthalpy'], -102.64364))
+        interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
+        self.assertTrue(np.isclose(system['enthalpy'], -102.64364))
 
 
 class LAMMPS_MLIP_Test(unittest.TestCase):
@@ -83,7 +84,7 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
 
     def test_init(self):
         structure = AtomisticRepresentation.readPOSCAR(HOMEPATH/'LAMMPS_MLIP_SAMPLE/Li_B_H_POSCAR', (1, 1, 1))
-        system = dict(
+        system = AtomisticPoolEntry(
             ID=0,
             structure=structure,
             disassembler=AtomisticRepresentation.atomicDisassemblerType(
@@ -102,13 +103,12 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
 
 
     def test_sample(self):
-        system = dict(
-            ase={'pbc': (1, 1, 1)},
+        system = AtomisticPoolEntry(
             disassembler=None,
             externalPressure=0.0
         )
 
-        results = self.interface.readOutput(system=system, calcFolder=HOMEPATH/'LAMMPS_MLIP_SAMPLE')
-        self.assertEqual(len(results['trajectory']), 1805)
-        for system in results['trajectory']:
+        self.interface.readOutput(system=system, calcFolder=HOMEPATH/'LAMMPS_MLIP_SAMPLE')
+        self.assertEqual(len(system['trajectory']), 1805)
+        for system in system['trajectory']:
             self.assertEqual(len(system['structure']), 104)

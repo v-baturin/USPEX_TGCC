@@ -54,9 +54,11 @@ class XTB_Interface:
 
     def prepareLocalCalculation(self, system, calcFolder : Path):
 
-        structure = system['structure']
-
-        system['ase'] = self.adapter.write_structure(structure, self.geometry_file, calcFolder)
+        structure = system.getAtomicStructure()
+        cell = structure.getCell()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
+        self.adapter.write_structure(structure, self.geometry_file, calcFolder)
 
         content_to_write = ''
         fixedIndices = np.copy(system['disassembler'].fixedIndices)
@@ -95,15 +97,14 @@ class XTB_Interface:
 
     def readOutput(self, system, calcFolder: Path):
 
-        results = {}
         if 'structure' in self.targetProperties:
-            results['structure'] = self.adapter.read_structure(self.out_geometry_file, calcFolder, **system.pop('ase'))
+            with open(calcFolder / 'pbc', 'rt') as f:
+                pbc = tuple(int(c) for c in f.read().split())
+            system.updateAtomicStructure(self.adapter.read_structure(self.out_geometry_file, calcFolder, pbc))
         if 'energy' in self.targetProperties:
-            results['energy'] = self.readEnergyHa(calcFolder) * HARTREE_TO_EV
+            system.setProperty('energy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV)
         if 'enthalpy' in self.targetProperties:
-            results['enthalpy'] = self.readEnergyHa(calcFolder) * HARTREE_TO_EV
-
-        return results
+            system.setProperty('enthalpy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV)
 
     def readEnergyHa(self, calcFolder: Path):
 
