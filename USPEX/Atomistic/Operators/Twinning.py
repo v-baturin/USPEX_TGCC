@@ -11,7 +11,7 @@ class Twinning:
         self.radialDistributionUtility = utilities.radialDistributionUtility
         self.correlation = 0
 
-    def __call__(self, system, *args, **kwargs):
+    def __call__(self, system, offspringFactory=None):
         cell = system['cell']
         molecules = system['molecules']
         order = self.radialDistributionUtility.order(system)

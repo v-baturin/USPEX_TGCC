@@ -47,10 +47,12 @@ class GenerationController(object):
     def setUpcompileParams(cls, compileParams):
         cls.compileParams = compileParams
 
-    def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages : list,
+    def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages: list,
                  optimizer, outputRepresentation, outputRefreshDelay, executionTime, start):
         self.numGenerations = numGenerations
         self.stopCrit = stopCrit
+        self.numParallelCalcs = numParallelCalcs
+        self.stages = stages
         self.optimizer = optimizer
         self.outputRepresentation = outputRepresentation
         self.outputRefreshDelay = outputRefreshDelay
@@ -64,11 +66,6 @@ class GenerationController(object):
         self.populations = []
         self.optimizers = []
         self.systems = {}
-        self.populationProcessor = self.populationProcessorType(tag='stages', stages=stages,
-                                                                inputKey='population',
-                                                                numParallelCalcs=numParallelCalcs,
-                                                                systems=self.systems,
-                                                                checkCallback=self.optimizer.target.constraints.systemCheckAndFix)
         self.save()
 
     @staticmethod
@@ -115,8 +112,12 @@ class GenerationController(object):
             if self.state is ControllerState.processPopulation:
                 self.doPresentSystems = True
                 task = asyncio.ensure_future(self.presentSystems())
-                system = await self.populationProcessor.run(dict(ID='USPEX', population=self.population))
-                self.population = system['population']
+                population, sc = self.populationProcessorType.initializePopulation('USPEX_stages', self.population)
+                await self.populationProcessorType.processPopulation(self.stages, population, self.numParallelCalcs,
+                                                                     self.systems,
+                                                                     self.optimizer.target.constraints.systemCheckAndFix,
+                                                                     sc)
+                self.population = [system[-1] for system in population.values()]
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.populations.append(copy(self.population))

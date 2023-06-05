@@ -54,9 +54,12 @@ class ASEInterfaceAdapter:
             if len(fixedIndices) > 0:
                 atoms.set_constraint(FixAtoms(indices=fixedIndices))
             write_vasp(calcFolder/self.poscar_file, atoms, label=label, direct=True, vasp5=True, long_format=False)
-            return {'pbc': cell.getPBC(), 'symbolsOrder': order}
+            with open(calcFolder/'symbolsOrder', 'wt') as f:
+                f.write(' '.join(f'{c}' for c in order))
 
-        def read(self, calcFolder: Path, pbc, symbolsOrder):
+        def read(self, calcFolder: Path, pbc):
+            with open(calcFolder/'symbolsOrder', 'rt') as f:
+                symbolsOrder = tuple(int(c) for c in f.read().split())
             try:
                 with open(calcFolder/self.outcar_file) as f:
                     trajectoryAtoms = list(iread_vasp_out(f, None))
@@ -96,7 +99,6 @@ class ASEInterfaceAdapter:
             content[0] = f'{label}\n'
             with open(filename, 'wt') as f:
                 f.writelines(content)
-            return {'pbc': cell.getPBC()}
 
         def read(self, calcFolder: Path, specorder, pbc):
             if calcFolder.joinpath(self.dump_file).exists():
@@ -135,7 +137,6 @@ class ASEInterfaceAdapter:
                                   pseudopotentials={s: p.name for s, p in pseudopotentials.items()},
                                   kpts=kPoints,
                                   crystal_coordinates=True)
-            return {'pbc': cell.getPBC()}
 
         def read(self, calcFolder: Path, pbc):
             with open(calcFolder/self.outputFile) as f:
@@ -158,7 +159,6 @@ class ASEInterfaceAdapter:
             cell_vectors = cell.getCellVectors()
             ase_struct = Atoms(symbols, positions=coordinates, cell=cell_vectors, pbc=pbc)
             write_gen(calcFolder / geometry_file, ase_struct)
-            return {'pbc': cell.getPBC()}
 
         def read_structure(self, geometry_file, calcFolder: Path, pbc):
             ase_struct = read_gen(calcFolder / geometry_file)

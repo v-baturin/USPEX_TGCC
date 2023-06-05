@@ -332,7 +332,8 @@ class AtomisticRepresentation(object):
         descriptions = []
         printUSPEX = False
         for i, system in enumerate(systems):
-            structure, disassembler = cls.atomicDisassemblerType.assemble(**system, vacuumSize=10.0)
+            structure = system.getAtomicStructure() # vacuumSize=10.0
+            disassembler = system['disassembler']
             atomTypes = structure.getAtomTypes()
             coordinates = structure.getCartesianCoordinates()
             sortIndices = np.argsort(atomTypes)

@@ -18,10 +18,10 @@ class Transmutation:
         self.howManyTrans = howManyTrans
         self.transAttempts = transAttempts
 
-    def __call__(self, system, *args, **kwargs):
+    def __call__(self, system, offspringFactory=None):
         molecules = system['molecules']
         cell = system['cell']
-        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)
+        structure, disassembler = offspringFactory.atomicDisassemblerType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbolsIn = self.simpleMoleculeUtility.moleculeTypes(system)
             symbolsOut = self.compositionSpace.symbols
@@ -48,14 +48,12 @@ class Transmutation:
                 offspring['molecules'][0:0] = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
                 if 'environments' in system:
                     offspring['environments'] = system['environments']
-                atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                for inds in disassembler.envIndices:
-                    atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                composition = self.simpleMoleculeUtility.composition(offspring)
-                if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
+                offspring = offspringFactory(**offspring)
+                structure = offspring.getAtomicStructure()
+                minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
+                                                              self.conditions.externalPressure)
+                if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
                     self.conditions.putConditions(offspring)
-                    # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
                     # if self.bonds.isConnected(structure):
                     return (offspring,)
 

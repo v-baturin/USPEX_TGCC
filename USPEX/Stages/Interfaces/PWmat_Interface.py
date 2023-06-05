@@ -76,10 +76,11 @@ class PWmat_Interface:
         :param system: our system
         :return:
         '''
-        structure = system['structure']
+        structure = system.getAtomicStructure()
 
         cell = structure.getCell()
-        system['pbc'] = cell.getPBC()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
         atomTypes = structure.getAtomTypes()
         atomSymbols = [el.short_name for el in atomTypes]
@@ -88,7 +89,7 @@ class PWmat_Interface:
         try:
             # TODO varcomp ??? DO we need it here?
             # if self.state.varcomp or not os.path.exists('POTCAR_' + str(self.step)):  # we prefer this way
-            f_potcar = (lambda pattern, filesname_list: [x for x in filesname_list if re.match(pattern, x)])
+            f_potcar = (lambda pattern, filesname_list: [x for x in filesname_list if re.match(pattern, str(x))])
             for el in np.unique(atomSymbols):
                 pattern = f'.*{el}.*UPF'
                 potcarPath = f_potcar(pattern, self.potcars)[0]
@@ -206,7 +207,8 @@ class PWmat_Interface:
             shutil.copy(calcFolder/'atom.config', calcFolder/'final.config')
         with open(calcFolder/self.FINAL_CONFIG, 'r') as fp:
             content = fp.readlines()
-        pbc = system.pop('pbc')
+        with open(calcFolder / 'pbc', 'rt') as f:
+            pbc = tuple(int(c) for c in f.read().split())
         atoms = int(content[0].split()[0])
         lat = []
         coor = []
@@ -224,19 +226,17 @@ class PWmat_Interface:
         cell = self.cellType(lat, pbc)
         structure = self.structureType(atomTypes, coor, cell=cell)
 
-        results = {}
         if 'structure' in self.targetProperties:
-            results['structure'] = structure
+            system.updateAtomicStructure(structure)
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.REPORT, 'r') as fp:
                 content = fp.readlines()
-            results['enthalpy'] = self.readEnergy(content) + \
-                                 cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA
+            system.setProperty('enthalpy', self.readEnergy(content) +
+                               cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA)
         if 'stressTensor' in self.targetProperties:
             with open(calcFolder/self.MOVEMENT, 'r') as fp:
                 content = fp.readlines()
-            results['stressTensor'] = self.readPressureTensor(content)
-        return results
+            system.setProperty('stressTensor', self.readPressureTensor(content))
 
     def readPressureTensor(self, content, index=-1):
         '''

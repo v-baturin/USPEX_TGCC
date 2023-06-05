@@ -84,10 +84,11 @@ class ABINIT_Interface:
         :param calcFolder:
         :return:
         """
-        structure = system['structure']
+        structure = system.getAtomicStructure()
 
         cell = structure.getCell()
-        system['pbc'] = cell.getPBC()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
         coordinates = structure.getCartesianCoordinates()
         atomTypes = structure.getAtomTypes()
 
@@ -277,7 +278,6 @@ class ABINIT_Interface:
         return True
 
     def readOutput(self, system, calcFolder: Path):
-        results = {}
         if not calcFolder.joinpath(self.gsr_file_name).is_file():
             msg = (f'file {self.gsr_file_name:s} not found in {calcFolder.name:s}.'
                    'Your ABINIT executable needs to be compiled with NETCDF support in order to be used with USPEX.')
@@ -286,16 +286,17 @@ class ABINIT_Interface:
         from abipy import abilab
         gsr = abilab.abiopen(calcFolder/self.gsr_file_name)
         if 'structure' in self.targetProperties:
-            results['structure'] = self.readStructure(gsr, system.pop('pbc'))
+            with open(calcFolder/'pbc', 'rt') as f:
+                pbc = tuple(int(c) for c in f.read().split())
+            system.updateAtomicStructure(self.readStructure(gsr, pbc))
         if 'enthalpy' in self.targetProperties:
-            results['enthalpy'] = float(gsr.energy) + \
+            system.setProperty('enthalpy', float(gsr.energy) + \
                                   np.linalg.det(gsr.structure.lattice.matrix) * system['externalPressure'] * \
-                                  EV_PER_CUBIC_ANGSTREM_PER_GPA
+                                  EV_PER_CUBIC_ANGSTREM_PER_GPA)
         if 'forces' in self.targetProperties:
-            results['forces'] = np.copy(gsr.cart_forces)
+            system.setProperty('forces', np.copy(gsr.cart_forces))
         if 'stressTensor' in self.targetProperties:
-            results['stressTensor'] = np.copy(gsr.cart_stress_tensor)
-        return results
+            system.setProperty('stressTensor', np.copy(gsr.cart_stress_tensor))
 
     def readStructure(self, gsr, pbc):
         tmp_positions = gsr.structure.cart_coords

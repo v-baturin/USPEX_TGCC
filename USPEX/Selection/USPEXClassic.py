@@ -171,11 +171,11 @@ class USPEXClassic(object):
                         break
                     try:
                         logger.debug(f"Trying {parent['ID']} parent.")
-                        offsprings = mutation(parent)
+                        offsprings = mutation(parent, self.pool.entryFactory)
                         for offspring in offsprings:
                             self.pool.assignID(offspring)
-                            offspring['howCome'] = howCome
-                            offspring['parent'] = f"{parent['ID']}"
+                            offspring.setProperty('howCome', howCome)
+                            offspring.setProperty('parent', f"{parent['ID']}")
                             logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
                                         f"from {offspring['parent']} parent.")
                         population.extend(offsprings)
@@ -205,11 +205,11 @@ class USPEXClassic(object):
                         break
                     try:
                         logger.debug(f"Trying {parent1['ID']} {parent2['ID']} parents.")
-                        offsprings = hybridization(parent1,parent2)
+                        offsprings = hybridization(parent1, parent2, self.pool.entryFactory)
                         for offspring in offsprings:
                             self.pool.assignID(offspring)
-                            offspring['howCome'] = howCome
-                            offspring['parent'] = f"{parent1['ID']} {parent2['ID']}"
+                            offspring.setProperty('howCome', howCome)
+                            offspring.setProperty('parent', f"{parent1['ID']} {parent2['ID']}")
                             logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
                                         f"from {offspring['parent']} parents.")
                         population.extend(offsprings)
@@ -233,11 +233,11 @@ class USPEXClassic(object):
                 if howMany <= 0:
                     break
                 try:
-                    offsprings = creation()
+                    offsprings = creation(self.pool.entryFactory)
                     for offspring in offsprings:
                         self.pool.assignID(offspring)
-                        offspring['howCome'] = howCome
-                        offspring['parent'] = "None"
+                        offspring.setProperty('howCome', howCome)
+                        offspring.setProperty('parent', "None")
                         logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator.")
                     population.extend(offsprings)
                     howMany -= len(offsprings)
@@ -252,11 +252,11 @@ class USPEXClassic(object):
             self.target.utilities.antiseeds.payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
 
         if self.target.seeds is not None:
-            seeds = self.target.seeds()
+            seeds = self.target.seeds(self.pool.entryFactory)
             for seed in seeds:
                 self.pool.assignID(seed)
-                seed['howCome'] = 'Seeds'
-                seed['parent'] = "None"
+                seed.setProperty('howCome', 'Seeds')
+                seed.setProperty('parent', "None")
                 logger.info(f"Structure {seed['ID']} created from seed {seed['filename']}.")
             population.extend(seeds)
 
