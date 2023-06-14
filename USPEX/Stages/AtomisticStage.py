@@ -41,30 +41,30 @@ class AtomisticStage:
     @staticmethod
     def fixMoleculesWrapping(source, sink):
         correctorDict = dict()
-        for i, molSink in enumerate(sink.system['molecules']):
+        for i, molSink in enumerate(sink['molecules']):
             if len(molSink) > 1:
-                molSource = source.system['molecules'][i]
+                molSource = source['molecules'][i]
                 cartCoordsSource = molSource.getCartesianCoordinates()
                 cartCoordsSink  =  molSink.getCartesianCoordinates()
-                distMatSource = get_distances(cartCoordsSource, cell=source.system['cell'].getCellVectors(),
-                                  pbc=source.system['cell'].getPBC())[1]
-                distMatSink = get_distances(cartCoordsSink, cell=sink.system['cell'].getCellVectors(),
-                              pbc=sink.system['cell'].getPBC())[1]
+                distMatSource = get_distances(cartCoordsSource, cell=source['cell'].getCellVectors(),
+                                  pbc=source['cell'].getPBC())[1]
+                distMatSink = get_distances(cartCoordsSink, cell=sink['cell'].getCellVectors(),
+                              pbc=sink['cell'].getPBC())[1]
                 diff = np.max(np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(len(distMatSource))))
-                distMatSourceNoPBC = get_distances(cartCoordsSource, cell=source.system['cell'].getCellVectors(),
+                distMatSourceNoPBC = get_distances(cartCoordsSource, cell=source['cell'].getCellVectors(),
                                                 pbc=(0, 0, 0))[1]
-                distMatSinkNoPBC = get_distances(cartCoordsSink, cell=sink.system['cell'].getCellVectors(),
+                distMatSinkNoPBC = get_distances(cartCoordsSink, cell=sink['cell'].getCellVectors(),
                                               pbc=(0, 0, 0))[1]
                 diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSourceNoPBC) /
                                    (distMatSourceNoPBC + np.eye(len(distMatSourceNoPBC))))
                 if diffNoPBC - diff > 1e-5:  # ith molecule is wrapped
-                    fractSource = source.system['cell'].cartesianToFractional(molSource.getCartesianCoordinates())
-                    fractSink = sink.system['cell'].cartesianToFractional(molSink.getCartesianCoordinates())
+                    fractSource = source['cell'].cartesianToFractional(molSource.getCartesianCoordinates())
+                    fractSink = sink['cell'].cartesianToFractional(molSink.getCartesianCoordinates())
                     wrapping = np.round(fractSink - fractSource)
                     newFractSink = fractSink - wrapping
-                    correctorDict[i] = sink.system['cell'].fractionalToCartesian(newFractSink)
+                    correctorDict[i] = sink['cell'].fractionalToCartesian(newFractSink)
         if correctorDict:
-            sink_molecules = sink.system['molecules']
+            sink_molecules = sink['molecules']
             for i, coords in correctorDict.items():
                 badMol = sink_molecules[i]
                 sink_molecules[i] = type(badMol)(atomTypes=badMol.getAtomTypes(), coordinates=coords,

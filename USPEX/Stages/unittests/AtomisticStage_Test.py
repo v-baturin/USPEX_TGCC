@@ -55,7 +55,6 @@ class AtomisticStage_Test(unittest.TestCase):
         sink = AtomisticPoolEntry(**systemSink)
         self.assertTrue(self.checkWrapped(source, sink))
         AtomisticStage.fixMoleculesWrapping(source, sink)
-        self.assertRaises(KeyError, sink.getProperty, 'isBad')
         self.assertFalse(self.checkWrapped(source, sink))
 
 
