@@ -26,7 +26,7 @@ class Interface:
     atomicDisassemblerType = None
 
     @classmethod
-    def registerTypes(cls,representationType, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, representationType, structureType, atomType, cellType, atomicDisassemblerType):
         """
         Register types used by this utility.
 

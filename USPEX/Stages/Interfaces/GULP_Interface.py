@@ -82,7 +82,7 @@ class GULP_Interface:
 
         """
 
-        structure = system['structure']
+        structure = system.getAtomicStructure()
 
         files_to_delete = [Path.cwd()/'output', Path.cwd()/'optimized.structure']
         for f in files_to_delete:
@@ -104,7 +104,8 @@ class GULP_Interface:
         # else:
 
         cell = structure.getCell()
-        system['pbc'] = cell.getPBC()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
         lattice = type(cell)(cell.getCellVectors(), (1, 1, 1)).getCellParameters()
 
         content_to_write = ''
@@ -209,20 +210,21 @@ class GULP_Interface:
 
         results = {}
         if 'structure' in self.targetProperties:
-            results['structure'] = self.readStructure(content, system.pop('pbc'))
+            with open(calcFolder/'pbc', 'rt') as f:
+                pbc = tuple(int(c) for c in f.read().split())
+            system.updateAtomicStructure(self.readStructure(content, pbc))
         if 'enthalpy' in self.targetProperties:
-            results['enthalpy'] = self.readEnergy(content)
+            system.setProperty('enthalpy', self.readEnergy(content))
         if 'stressTensor' in self.targetProperties:
-            results['stressTensor'] = self.readStressTensor(content)
+            system.setProperty('stressTensor', self.readStressTensor(content))
         if 'strains' in self.targetProperties:
-            results['strains'] = self.readStrains(content)
+            system.setProperty('strains', self.readStrains(content))
         if 'forces' in self.targetProperties:
-            results['forces'] = self.readForces(content, len(system['molecules']))
+            system.setProperty('forces', self.readForces(content, len(system['molecules'])))
         if 'dielectricTensor' in self.targetProperties:
-            results['dielectricTensor'] = self.readDielectricProperties(content)
+            system.setProperty('dielectricTensor', self.readDielectricProperties(content))
         if 'elasticConstants' in self.targetProperties:
-            results['elasticMatrix'] = self.readElasticMatrix(content)
-        return results
+            system.setProperty('elasticMatrix', self.readElasticMatrix(content))
 
     def readStructure(self, content, pbc):
         # This routine is to read crystal structure from GULP output

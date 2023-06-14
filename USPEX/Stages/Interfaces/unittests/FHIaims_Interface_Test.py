@@ -16,7 +16,7 @@ import numpy as np
 
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, FHIaims_Interface
+from ....components import AtomisticRepresentation, FHIaims_Interface, AtomisticPoolEntry
 
 
 HOMEPATH = Path(__file__).parent
@@ -37,7 +37,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
 
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            system = dict(
+            system = AtomisticPoolEntry(
                 ID=ID,
                 structure=structure,
                 disassembler=AtomisticRepresentation.atomicDisassemblerType(
@@ -55,13 +55,14 @@ class VASP_CalculatorTest2(unittest.TestCase):
             self.assertTrue(match)
             folder = GATHEREDPATH/'output'
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
-            results = aims.readOutput(system, WORKPATH)
+            aims.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-            cell = results['structure'].getCell()
+            structure = system.getAtomicStructure()
+            cell = structure.getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(),
                                         cellRef.getCellVectors()))
-            self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(results['structure'].getCartesianCoordinates()),
+            self.assertTrue(np.allclose(cell.getWrapedCartesianCoordinates(structure.getCartesianCoordinates()),
                                         cellRef.getWrapedCartesianCoordinates(structureRef.getCartesianCoordinates())))
 

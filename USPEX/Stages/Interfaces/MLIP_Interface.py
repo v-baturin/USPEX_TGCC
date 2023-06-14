@@ -114,15 +114,14 @@ class MLIP_Interface:
         return self.mode == 'train'
 
     def readOutput(self, system, calcFolder: Path):
-        results = {}
         if 'sample' in self.targetProperties:
             sample = self.atomisticRepresentation.readMLIPsample(calcFolder/self.out_cfg_file, self.specorder)
-            system['sample'] = sample
+            system.setProperty('sample', sample)
         if 'potential' in self.targetProperties:
             shutil.copy2(calcFolder/self.potential.name, self.potential)
         with open(calcFolder/self.in_cfg_file, 'r') as f:
             content = f.read()
-        results['isStable'] = len(content) == 0
+        system.setProperty('isStable', len(content) == 0)
         if 'trainingSet' in self.targetProperties:
             with open(self.trainingSet, 'a') as f:
                 f.write(content)
@@ -144,4 +143,3 @@ class MLIP_Interface:
         #     logger.info(f'structure {ID} led to extrapolation and will be discarded.')
         #     # system['structure'].set_cell(np.identity(3) * system['structure'].minVectorLength * 0.9)
         #     system['enthalpy'] = 1000
-        return results

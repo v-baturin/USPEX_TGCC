@@ -67,10 +67,12 @@ class DFTBplus_Interface:
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
 
-        structure = system['structure']
+        structure = system.getAtomicStructure()
         cell = structure.getCell()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
-        system['ase'] = self.adapter.write_structure(structure, self.geometry_file, calcFolder)
+        self.adapter.write_structure(structure, self.geometry_file, calcFolder)
 
         if self.kPoints is None or cell.dim == 0:
             with open(calcFolder/self.kpoints_file, 'wt') as f:
@@ -129,23 +131,23 @@ class DFTBplus_Interface:
         return True
 
     def readOutput(self, system, calcFolder: Path):
-        new_structure = self.adapter.read_structure(self.out_geometry_file, calcFolder, **system.pop('ase'))
+        with open(calcFolder / 'pbc', 'rt') as f:
+            pbc = tuple(int(c) for c in f.read().split())
+        new_structure = self.adapter.read_structure(self.out_geometry_file, calcFolder, pbc)
         EnergyHa = self.readEnergyHa(calcFolder)
 
         results = {}
         if 'structure' in self.targetProperties:
-            results['structure'] = new_structure
+            system.updateAtomicStructure(new_structure)
         if 'energy' in self.targetProperties:
-            results['energy'] = EnergyHa * HARTREE_TO_EV
+            system.setProperty('energy', EnergyHa * HARTREE_TO_EV)
         if 'enthalpy' in self.targetProperties:
-            if system['structure'].getCell().dim == 3:
-                results['enthalpy'] = (EnergyHa + \
-                                       new_structure.getCell().getVolume() * system['externalPressure'] * \
-                                      ANGSTROM_TO_BOHR**3.0 * GPA_TO_AU) * HARTREE_TO_EV
+            if new_structure.getCell().dim == 3:
+                system.setProperty('enthalpy', (EnergyHa +
+                                                new_structure.getCell().getVolume() * system['externalPressure'] *
+                                                ANGSTROM_TO_BOHR**3.0 * GPA_TO_AU) * HARTREE_TO_EV)
             else:
-                results['enthalpy'] = EnergyHa * HARTREE_TO_EV
-
-        return results
+                system.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV)
 
     def readEnergyHa(self, calcFolder: Path) -> float:
         with open(calcFolder/self.outputFile, 'rt') as f:

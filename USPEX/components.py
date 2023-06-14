@@ -1,6 +1,8 @@
 from .Atomistic.Element import Element
 from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
+from .Atomistic.AtomisticPoolEntry import AtomisticPoolEntry
+AtomisticPoolEntry.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
@@ -19,11 +21,9 @@ Bulk.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, Atom
 from .Atomistic.Environments.NanoparticleCore import NanoparticleCore
 NanoparticleCore.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
-RadialDistributionUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.CellUtility import CellUtility
-CellUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
-SimpleMoleculeUtility.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+SimpleMoleculeUtility.registerTypes(AtomicStructure, Element)
 from .Atomistic.JunctionUtility import JunctionUtility
 from .Atomistic.Conditions import Conditions
 from .Atomistic.BondUtility import BondUtility
@@ -32,9 +32,7 @@ from .Atomistic.ElasticML import ElasticML
 ElasticML.registerTypes(AtomicDisassembler)
 from .Atomistic.Constraints import Constraints
 from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
-PowderSpectrumAnalyzer.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
-SingleCrystalSpectrumAnalyzer.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
@@ -55,6 +53,7 @@ GlobalOptimizer.registerTarget('Atomistic',
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
+                      entry=AtomisticPoolEntry,
                       seeds=Seeds)
 from .Stages.Executor import Executor
 from .Stages.Interfaces.ASEInterfaceAdapter import ASEInterfaceAdapter
@@ -114,16 +113,14 @@ ModelOptimizer.registerTarget('Atomistic',
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
                       seeds=Seeds)
 from .Stages.AtomisticStage import AtomisticStage
-AtomisticStage.registerTypes(Executor, AtomicDisassembler)
-from .Stages.PopulationProcessor import PopulationProcessor
+AtomisticStage.registerTypes(Executor)
+from .Stages.PopulationProcessor import PopulationProcessor, Stages
 from .Stages.GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
 GenerationController.registerOptimizer(ModelOptimizer)
-from .Stages import Stages
 Stages.registerStage('execute', Executor)
 Stages.registerStage('atomistic', AtomisticStage)
 Stages.registerStage('populationProcessor', PopulationProcessor)
 GenerationController.setPopulationProcessor(PopulationProcessor)
-PopulationProcessor.setStages(Stages)
 from .IO.compileParams import compileParams
 GenerationController.setUpcompileParams(compileParams)

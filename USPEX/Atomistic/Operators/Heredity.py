@@ -36,7 +36,7 @@ class Heredity:
         if np.isnan(self.correlation):
             self.correlation = 0
 
-    def __call__(self, system1, system2):
+    def __call__(self, system1, system2, offspringFactory=None):
         cell1 = system1['cell']
         molecules1 = system1['molecules']
         composition1 = self.simpleMoleculeUtility.composition(system1)
@@ -121,16 +121,14 @@ class Heredity:
                 moleculeTypes = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in molecules]
                 composition = Counter(dict(zip(*np.unique(moleculeTypes, return_counts=True))))
                 if composition == desiredComposition:
-                    offspring = {'molecules': molecules, 'cell': outputCell}
+                    offspring = offspringFactory(molecules=molecules, cell=outputCell)
                     if parentEnv is not None:
-                        offspring['environments'] = parentEnv['environments']
-                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                    for inds in disassembler.envIndices:
-                        atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                    if np.all(atomDistances >= minDistMatrix):
+                        offspring.setProperty('environments', parentEnv['environments'])
+                    structure = offspring.getAtomicStructure()
+                    minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
+                                                                  self.conditions.externalPressure)
+                    if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
                         self.conditions.putConditions(offspring)
-                        # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
                         # if self.bonds.isConnected(structure):
                         return offspring,
 

@@ -5,7 +5,7 @@ import shutil
 
 from pathlib import Path
 
-from ...components import GlobalOptimizer, AtomisticRepresentation
+from ...components import GlobalOptimizer, AtomisticRepresentation, AtomisticPoolEntry
 from ..OutputRepresentation import OutputRepresentation
 
 TESTPATH = Path(__file__).parent
@@ -64,6 +64,7 @@ class Output_Test(unittest.TestCase):
                         with open(TESTPATH/f"output_data/system{gen * popSize + i}s{j}", "r") as f:
                             structure = json.load(f)
                         structure.update(AtomisticRepresentation.readAtomicStructure(TESTPATH/f"output_data/system{gen*popSize+i}s{j}.vasp"))
+                        structure = AtomisticPoolEntry(**structure)
                         system.append(structure)
                     except FileNotFoundError:
                         break
@@ -76,7 +77,7 @@ class Output_Test(unittest.TestCase):
                 for ID in targetState[1]:
                     system = systems[ID][-1]
                     optimizer.pool.allSystems[ID] = system
-                    system['isBad'] = False
+                    system.setProperty('isBad', False)
                 optimizer.best = set(targetState[0])
                 optimizer.fitness = optimizer.Fitness.calculate(optimizer.pool.uniqueSystems, optimizer.optType,
                                                                 optimizer.target.utilities)

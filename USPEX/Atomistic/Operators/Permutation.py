@@ -24,10 +24,10 @@ class Permutation:
         self.howManySwaps = howManySwaps
         self.swapAttempts = swapAttempts
 
-    def __call__(self, system, *args, **kwargs):
+    def __call__(self, system, offspringFactory=None):
         molecules = system['molecules']
         cell = system['cell']
-        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)
+        structure, disassembler = offspringFactory.atomicDisassemblerType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbols = self.simpleMoleculeUtility.moleculeTypes(system)
 
@@ -50,13 +50,12 @@ class Permutation:
                     offspring = {'molecules': offspringMolecules, 'cell': cell}
                     if 'environments' in system:
                         offspring['environments'] = system['environments']
-                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                    for inds in disassembler.envIndices:
-                        atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                    if np.all(atomDistances >= minDistMatrix):
+                    offspring = offspringFactory(**offspring)
+                    structure = offspring.getAtomicStructure()
+                    minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
+                                                                  self.conditions.externalPressure)
+                    if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
                         self.conditions.putConditions(offspring)
-                        # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
                         # if self.bonds.isConnected(structure):
                         return (offspring,)
 

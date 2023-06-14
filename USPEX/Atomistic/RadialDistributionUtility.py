@@ -141,25 +141,6 @@ class RadialDistributionUtility(object):
     """
     Utility for working with radial distribution related properties of systems.
     """
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        """
-        Register types used by this utility.
-
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
-        """
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, symbols, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
                  legacy=False):
@@ -265,23 +246,24 @@ class RadialDistributionUtility(object):
 
         """
         if 'radialDistribitionUtility.structureFingerprint' in system:
-            del system['radialDistribitionUtility.structureFingerprint']
+            system.delProperty('radialDistribitionUtility.structureFingerprint')
         if 'radialDistribitionUtility.complexFingerprint' in system:
-            del system['radialDistribitionUtility.complexFingerprint']
+            system.delProperty('radialDistribitionUtility.complexFingerprint')
         if 'radialDistribitionUtility.structureOrder' in system:
-            del system['radialDistribitionUtility.structureOrder']
+            system.delProperty('radialDistribitionUtility.structureOrder')
         if 'radialDistribitionUtility.atomFingerprints' in system:
-            del system['radialDistribitionUtility.atomFingerprints']
+            system.delProperty('radialDistribitionUtility.atomFingerprints')
         if 'radialDistribitionUtility.order' in system:
-            del system['radialDistribitionUtility.order']
+            system.delProperty('radialDistribitionUtility.order')
         if 'radialDistribitionUtility.quasientropy' in system:
-            del system['radialDistribitionUtility.quasientropy']
+            system.delProperty('radialDistribitionUtility.quasientropy')
 
     def _calcFingerprint(self, system):
         """
         Calculates fingerprint and related things.
         """
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system)
+        structure = system.getAtomicStructure()
+        disassembler = system['disassembler']
         atomTypes = structure.getAtomTypes()
         uniqueSimbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
@@ -488,13 +470,12 @@ class RadialDistributionUtility(object):
                 if len(comb) > 0:
                     sQE += weight[i] * tmp / len(comb)
 
-        system['radialDistribitionUtility.order'] = molOrder
-        system['radialDistribitionUtility.averageOrder'] = a_order
-        system['radialDistribitionUtility.structureOrder'] = s_order
-        system['radialDistribitionUtility.structureFingerprint'] = fingerprint
-        system['radialDistribitionUtility.complexFingerprint'] = complexFingerprint
-        system['radialDistribitionUtility.quasientropy'] = -sQE
-
+        system.setProperty('radialDistribitionUtility.order', molOrder)
+        system.setProperty('radialDistribitionUtility.averageOrder', a_order)
+        system.setProperty('radialDistribitionUtility.structureOrder', s_order)
+        system.setProperty('radialDistribitionUtility.structureFingerprint', fingerprint)
+        system.setProperty('radialDistribitionUtility.complexFingerprint', complexFingerprint)
+        system.setProperty('radialDistribitionUtility.quasientropy', -sQE)
 
     def dist(self, system1, system2):
         """

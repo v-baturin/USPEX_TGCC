@@ -63,8 +63,9 @@ class QE_Interface:
         self.adapter = self.aseAdapterType(self.options)
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
-    def prepareLocalCalculation(self, system: dict, calcFolder: Path):
-        structure = system['structure']
+    def prepareLocalCalculation(self, system, calcFolder: Path):
+        structure = system.getAtomicStructure()
+        cell = structure.getCell()
 
         # Copying pseudopotentials to calc folder
         for s, pseudo in self.pseudopotentials.items():
@@ -79,8 +80,11 @@ class QE_Interface:
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
             kPoints = [1, 1, 1]
 
-        system['ase'] = self.adapter.write(structure, system['disassembler'].allFixedIndices,
-                                           kPoints, self.pseudopotentials, calcFolder)
+
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
+
+        self.adapter.write(structure, system['disassembler'].allFixedIndices, kPoints, self.pseudopotentials, calcFolder)
 
         return ''
 
@@ -94,24 +98,24 @@ class QE_Interface:
             logger.error('Quantum Espresso is not completely Done')
         return res
 
-    def readOutput(self, system: dict, calcFolder: str):
+    def readOutput(self, system, calcFolder: str):
         calcFolder = Path(calcFolder)
-        aseData = self.adapter.read(calcFolder, **system.pop('ase'))
-        results = {}
+        with open(calcFolder / 'pbc', 'rt') as f:
+            pbc = tuple(int(c) for c in f.read().split())
+        aseData = self.adapter.read(calcFolder, pbc)
         if 'structure' in self.targetProperties:
-            results['structure'] = aseData['structure']
+            system.updateAtomicStructure(aseData['structure'])
         if 'enthalpy' in self.targetProperties:
-            results['enthalpy'] = aseData['results'].getEnthalpy(system['externalPressure'])
+            system.setProperty('enthalpy', aseData['results'].getEnthalpy(system['externalPressure']))
         if 'energy' in self.targetProperties:
-            results['energy'] = aseData['results'].results['energy']
+            system.setProperty('energy', aseData['results'].results['energy'])
         if 'forces' in self.targetProperties:
-            results['forces'] = aseData['results'].results['forces']
+            system.setProperty('forces', aseData['results'].results['forces'])
 
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
         if 'stressTensor' in self.targetProperties:
-            results['stressTensor'] = self.readStressTensor(content)
-        return results
+            system.setProperty('stressTensor', self.readStressTensor(content))
 
     def readStressTensor(self, content):
         stressTensor = np.zeros((3, 3), dtype=float)

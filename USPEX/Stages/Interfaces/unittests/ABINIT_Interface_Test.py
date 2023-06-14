@@ -14,7 +14,7 @@ import numpy as np
 
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, ABINIT_Interface
+from ....components import AtomisticRepresentation, ABINIT_Interface, AtomisticPoolEntry
 
 
 HOMEPATH = Path(__file__).parent
@@ -41,7 +41,7 @@ else:
 
             for ID in range(10):
                 structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-                system = dict(
+                system = AtomisticPoolEntry(
                     ID=ID,
                     structure=structure,
                     disassembler=AtomisticRepresentation.atomicDisassemblerType(
@@ -59,10 +59,10 @@ else:
                 self.assertTrue(match)
                 folder = GATHEREDPATH/'output'
                 shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
-                results = abinit.readOutput(system, WORKPATH)
+                abinit.readOutput(system, WORKPATH)
                 shutil.rmtree(WORKPATH)
                 structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-                cell = results['structure'].getCell()
+                cell = system['cell']
                 cellRef = structureRef.getCell()
                 self.assertTrue(np.allclose(cell.getCellVectors(),
                                             cellRef.getCellVectors()))

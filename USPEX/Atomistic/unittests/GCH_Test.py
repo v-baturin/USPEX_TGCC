@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 from ..GCH import GeneralizedConvexHull
-from ...components import AtomisticRepresentation, RadialDistributionUtility, CompositionSpace
+from ...components import AtomisticRepresentation, RadialDistributionUtility, CompositionSpace, AtomisticPoolEntry
 
 TESTPATH = Path(__file__).parent
 
@@ -32,6 +32,7 @@ def read_structures_and_energies(symbols, folder: Path):
     generations = []
     IDs = []
     populations = []
+    systems = []
     for _info, system in zip(info, all_systems):
         tmp = _info.split()
         gen = int(tmp[0])
@@ -44,7 +45,10 @@ def read_structures_and_energies(symbols, folder: Path):
         system['ID'] = ID
         system['isBad'] = False
         system['enthalpy'] = enthalpy
-        system['fingerprint'] = radialDistributionUtility.structureFingerprint(system)
+        system = AtomisticPoolEntry(**system)
+        system.setProperty('fingerprint', radialDistributionUtility.structureFingerprint(system))
+        systems.append(system)
+    all_systems = systems
 
     generations = np.asarray(generations, dtype=int)
     IDs = np.asarray(IDs, dtype=int)
