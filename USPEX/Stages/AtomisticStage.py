@@ -3,8 +3,6 @@ import logging
 import numpy as np
 from ase.geometry import get_distances
 
-MAX_RELATIVE_DIST_DEVIATION = 0.1  # Max relative distance change
-
 logger = logging.getLogger(__name__)
 
 class AtomisticStage:
@@ -53,11 +51,6 @@ class AtomisticStage:
                 distMatSink = get_distances(cartCoordsSink, cell=sink.system['cell'].getCellVectors(),
                               pbc=sink.system['cell'].getPBC())[1]
                 diff = np.max(np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(len(distMatSource))))
-                if diff > MAX_RELATIVE_DIST_DEVIATION:
-                    logger.info(f'system {source["ID"]}: broken molecule detected')
-                    print('bad')
-                    sink.setProperty('isBad', True)
-                    return
                 distMatSourceNoPBC = get_distances(cartCoordsSource, cell=source.system['cell'].getCellVectors(),
                                                 pbc=(0, 0, 0))[1]
                 distMatSinkNoPBC = get_distances(cartCoordsSink, cell=sink.system['cell'].getCellVectors(),
