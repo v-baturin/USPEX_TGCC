@@ -57,6 +57,14 @@ class AtomisticStage_Test(unittest.TestCase):
         AtomisticStage.fixMoleculesWrapping(source, sink)
         self.assertRaises(KeyError, sink.getProperty, 'isBad')
         self.assertFalse(self.checkWrapped(source, sink))
+        brokenMolFilePath = PATH_WITH_TESTS / 'mol_wrapping_POSCARS_brokenMol.uspex'
+        systemSource, systemSink = AtomisticRepresentation.readAtomicStructures(brokenMolFilePath)
+        systemSource['ID'] = 0
+        systemSink['ID'] = 1
+        source = AtomisticPoolEntry(**systemSource)
+        sink = AtomisticPoolEntry(**systemSink)
+        AtomisticStage.fixMoleculesWrapping(source, sink)
+        self.assertTrue(sink.getProperty('isBad'))
 
 
 
