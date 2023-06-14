@@ -57,10 +57,10 @@ class PopulationProcessor:
                     logger.warning(f'system {ID} error in relaxation:')
                     logger.exception(ex)
                     sink.setProperty('isBad', True)
-                    break
                 if checkCallback is not None and not checkCallback(sink):
                     logger.info(f'system {ID} violates constraints')
                     sink.setProperty('isBad', True)
+                if sink.getProperty('isBad'):
                     break
                 processedSystems.append(deepcopy(sink))
             if systems is not None:
