@@ -57,14 +57,14 @@ class AtomisticStage:
                     logger.info(f'system {source["ID"]}: broken molecule detected')
                     print('bad')
                     sink.setProperty('isBad', True)
-                    break
+                    return
                 distMatSourceNoPBC = get_distances(cartCoordsSource, cell=source.system['cell'].getCellVectors(),
                                                 pbc=(0, 0, 0))[1]
                 distMatSinkNoPBC = get_distances(cartCoordsSink, cell=sink.system['cell'].getCellVectors(),
                                               pbc=(0, 0, 0))[1]
                 diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSourceNoPBC) /
                                    (distMatSourceNoPBC + np.eye(len(distMatSourceNoPBC))))
-                if diffNoPBC > diff:  # ith molecule is wrapped
+                if diffNoPBC - diff > 1e-5:  # ith molecule is wrapped
                     fractSource = source.system['cell'].cartesianToFractional(molSource.getCartesianCoordinates())
                     fractSink = sink.system['cell'].cartesianToFractional(molSink.getCartesianCoordinates())
                     wrapping = np.round(fractSink - fractSource)
