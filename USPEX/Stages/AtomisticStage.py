@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from ase.geometry import get_distances
 
-MAX_DIST_DEVIATION = 0.2  # Angstrom
+MAX_RELATIVE_DIST_DEVIATION = 0.1  # Max relative distance change
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +52,8 @@ class AtomisticStage:
                                   pbc=source.system['cell'].getPBC())[1]
                 distMatSink = get_distances(cartCoordsSink, cell=sink.system['cell'].getCellVectors(),
                               pbc=sink.system['cell'].getPBC())[1]
-                diff = np.max(np.abs(distMatSink - distMatSource))
-                if diff > MAX_DIST_DEVIATION:
+                diff = np.max(np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(len(distMatSource))))
+                if diff > MAX_RELATIVE_DIST_DEVIATION:
                     logger.info(f'system {source["ID"]}: broken molecule detected')
                     print('bad')
                     sink.setProperty('isBad', True)
@@ -62,7 +62,8 @@ class AtomisticStage:
                                                 pbc=(0, 0, 0))[1]
                 distMatSinkNoPBC = get_distances(cartCoordsSink, cell=sink.system['cell'].getCellVectors(),
                                               pbc=(0, 0, 0))[1]
-                diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSourceNoPBC))
+                diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSourceNoPBC) /
+                                   (distMatSourceNoPBC + np.eye(len(distMatSourceNoPBC))))
                 if diffNoPBC > diff:  # ith molecule is wrapped
                     fractSource = source.system['cell'].cartesianToFractional(molSource.getCartesianCoordinates())
                     fractSink = sink.system['cell'].cartesianToFractional(molSink.getCartesianCoordinates())
