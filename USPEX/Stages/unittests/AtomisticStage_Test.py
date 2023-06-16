@@ -23,7 +23,6 @@ class FakeSimpleMoleculeUtility:
     integrityTol = 0.1
 class FakeUtilities:
     simpleMoleculeUtility = FakeSimpleMoleculeUtility()
-
 class FakeTarget:
     utilities = FakeUtilities()
 

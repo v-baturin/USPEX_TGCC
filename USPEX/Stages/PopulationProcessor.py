@@ -57,7 +57,7 @@ class PopulationProcessor:
                     logger.warning(f'system {ID} error in relaxation:')
                     logger.exception(ex)
                     sink.setProperty('isBad', True)
-                if sink.getProperty('isBad'):
+                if sink['isBad']:
                     break
                 processedSystems.append(deepcopy(sink))
             if systems is not None:
