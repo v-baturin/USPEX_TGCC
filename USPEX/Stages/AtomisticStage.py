@@ -3,8 +3,6 @@ import logging
 import numpy as np
 from ase.geometry import get_distances
 
-MAX_RELATIVE_DIST_DEVIATION = 0.1
-
 logger = logging.getLogger(__name__)
 
 class AtomisticStage:
@@ -38,39 +36,36 @@ class AtomisticStage:
             sink.updateAtomicStructure(
                 sink.getAtomicStructure().getPerturbatedStructure(sink['disassembler'].fixedIndices))
         await self.executor.run(sink, sink)
-        self.fixMoleculesWrapping(source, sink)
+        self.target.constraints.systemCheckAndFix(sink)
+        self.checkAndFixMolecules(source, sink)
 
-    @staticmethod
-    def fixMoleculesWrapping(source, sink):
+    def checkAndFixMolecules(self, source, sink):
         correctorDict = dict()
-        for i, molSink in enumerate(sink.system['molecules']):
+        for i, molSink in enumerate(sink['molecules']):
             if len(molSink) > 1:
-                molSource = source.system['molecules'][i]
-                cartCoordsSource = molSource.getCartesianCoordinates()
+                molSource = source['molecules'][i]
+                distMatSource = molSource.getAllDistances()
                 cartCoordsSink  =  molSink.getCartesianCoordinates()
-                distMatSource = get_distances(cartCoordsSource, cell=source.system['cell'].getCellVectors(),
-                                  pbc=source.system['cell'].getPBC())[1]
-                distMatSink = get_distances(cartCoordsSink, cell=sink.system['cell'].getCellVectors(),
-                              pbc=sink.system['cell'].getPBC())[1]
+                distMatSink = get_distances(cartCoordsSink, cell=sink['cell'].getCellVectors(),
+                              pbc=sink['cell'].getPBC())[1]
                 diff = np.max(np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(len(distMatSource))))
-                if diff > MAX_RELATIVE_DIST_DEVIATION:
-                    logger.info(f'system {source["ID"]}: broken molecule detected')
-                    sink.setProperty('isBad', True)
-                    return
-                distMatSourceNoPBC = get_distances(cartCoordsSource, cell=source.system['cell'].getCellVectors(),
-                                                pbc=(0, 0, 0))[1]
-                distMatSinkNoPBC = get_distances(cartCoordsSink, cell=sink.system['cell'].getCellVectors(),
-                                              pbc=(0, 0, 0))[1]
-                diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSourceNoPBC) /
-                                   (distMatSourceNoPBC + np.eye(len(distMatSourceNoPBC))))
-                if diffNoPBC - diff > 1e-5:  # ith molecule is wrapped
-                    fractSource = source.system['cell'].cartesianToFractional(molSource.getCartesianCoordinates())
-                    fractSink = sink.system['cell'].cartesianToFractional(molSink.getCartesianCoordinates())
+                distMatSinkNoPBC = molSink.getAllDistances()
+                diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSource) /
+                                   (distMatSource + np.eye(len(distMatSource))))
+                if self.target.utilities.simpleMoleculeUtility.checkIntegrityType == 'rigid':
+                    if diff > self.target.utilities.simpleMoleculeUtility.integrityTol:
+                        logger.info(f'system {source["ID"]}: broken molecule detected')
+                        sink.setProperty('isBad', True)
+                        break
+                if diffNoPBC - diff > 1e-5:
+                    logger.debug(f'system {source["ID"]}: wrapped molecule detected, unwrapping')# ith molecule is wrapped
+                    fractSource = source['cell'].cartesianToFractional(molSource.getCartesianCoordinates())
+                    fractSink = sink['cell'].cartesianToFractional(molSink.getCartesianCoordinates())
                     wrapping = np.round(fractSink - fractSource)
                     newFractSink = fractSink - wrapping
-                    correctorDict[i] = sink.system['cell'].fractionalToCartesian(newFractSink)
+                    correctorDict[i] = sink['cell'].fractionalToCartesian(newFractSink)
         if correctorDict:
-            sink_molecules = sink.system['molecules']
+            sink_molecules = sink['molecules']
             for i, coords in correctorDict.items():
                 badMol = sink_molecules[i]
                 sink_molecules[i] = type(badMol)(atomTypes=badMol.getAtomTypes(), coordinates=coords,

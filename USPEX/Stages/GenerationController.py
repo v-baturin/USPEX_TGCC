@@ -114,8 +114,8 @@ class GenerationController(object):
                 task = asyncio.ensure_future(self.presentSystems())
                 population, sc = self.populationProcessorType.initializePopulation('USPEX_stages', self.population)
                 await self.populationProcessorType.processPopulation(self.stages, population, self.numParallelCalcs,
+                                                                     self.optimizer.target,
                                                                      self.systems,
-                                                                     self.optimizer.target.constraints.systemCheckAndFix,
                                                                      sc)
                 self.population = [system[-1] for system in population.values()]
                 self.doPresentSystems = False

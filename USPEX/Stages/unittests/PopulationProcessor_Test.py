@@ -8,7 +8,7 @@ from ..PopulationProcessor import PopulationProcessor, Stages
 
 class Stage1:
 
-    def __init__(self, tag):
+    def __init__(self, tag, target=None):
         self.tag = tag
 
     async def run(self, source, sink):
@@ -18,7 +18,7 @@ class Stage1:
 
 class Stage2:
 
-    def __init__(self, tag):
+    def __init__(self, tag, target=None):
         self.tag = tag
 
     async def run(self, source, sink):
