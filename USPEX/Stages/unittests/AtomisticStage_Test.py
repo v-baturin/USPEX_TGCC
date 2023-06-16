@@ -65,16 +65,15 @@ class AtomisticStage_Test(unittest.TestCase):
                                         vacuumSize=0)
         badWrappingFilePath = PATH_WITH_TESTS/'mol_wrapping_POSCARS.uspex'
         systemSource, systemSink = AtomisticRepresentation.readAtomicStructures(badWrappingFilePath)
+        systemSource['ID'] = 0
         source = AtomisticPoolEntry(**systemSource)
         sink = AtomisticPoolEntry(**systemSink)
         self.assertTrue(self.checkWrapped(source, sink))
-
         atomisticStage.checkAndFixMolecules(source, sink)
         self.assertFalse(self.checkWrapped(source, sink))
         brokenMolFilePath = PATH_WITH_TESTS / 'mol_wrapping_POSCARS_brokenMol.uspex'
         systemSource, systemSink = AtomisticRepresentation.readAtomicStructures(brokenMolFilePath)
         systemSource['ID'] = 0
-        systemSink['ID'] = 1
         source = AtomisticPoolEntry(**systemSource)
         sink = AtomisticPoolEntry(**systemSink)
         atomisticStage.checkAndFixMolecules(source, sink)
