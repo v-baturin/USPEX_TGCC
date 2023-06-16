@@ -90,6 +90,9 @@ Executor.registerInterface('xtb', XTB_Interface)
 from .Stages.Interfaces.DFTBplus_Interface import DFTBplus_Interface
 DFTBplus_Interface.registerTypes(AtomicStructure, Element, Cell, ASEInterfaceAdapter.GEN)
 Executor.registerInterface('dftb', DFTBplus_Interface)
+from .Stages.Interfaces.ORCA_Interface import ORCA_Interface
+ORCA_Interface.registerTypes(AtomicStructure, Element, Cell, ASEInterfaceAdapter.XYZ)
+Executor.registerInterface('orca', ORCA_Interface)
 from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
 CP2K_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('cp2k', CP2K_Interface)
