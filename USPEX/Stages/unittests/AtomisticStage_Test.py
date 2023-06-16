@@ -18,9 +18,17 @@ from ase.geometry import get_distances
 
 PATH_WITH_TESTS = Path(__file__).parent
 
+class FakeSimpleMoleculeUtility:
+    checkIntegrityType = 'rigid'
+    integrityTol = 0.1
+class FakeUtilities:
+    simpleMoleculeUtility = FakeSimpleMoleculeUtility()
+
+class FakeTarget:
+    utilities = FakeUtilities()
+
 class AtomisticStage_Test(unittest.TestCase):
     '''
-
     '''
     @staticmethod
     def checkWrapped(source, sink):
@@ -49,13 +57,29 @@ class AtomisticStage_Test(unittest.TestCase):
 
 
     def test_fixMoleculesWrapping(self):
+        AtomisticStage.registerTypes(lambda *args, **kwargs: None)
+        atomisticStage = AtomisticStage(tag=0,
+                                        source=None,
+                                        perturbate=False,
+                                        target=FakeTarget(),
+                                        environmentStyle=None,
+                                        vacuumSize=0)
         badWrappingFilePath = PATH_WITH_TESTS/'mol_wrapping_POSCARS.uspex'
         systemSource, systemSink = AtomisticRepresentation.readAtomicStructures(badWrappingFilePath)
         source = AtomisticPoolEntry(**systemSource)
         sink = AtomisticPoolEntry(**systemSink)
         self.assertTrue(self.checkWrapped(source, sink))
-        AtomisticStage.fixMoleculesWrapping(source, sink)
+
+        atomisticStage.checkAndFixMolecules(source, sink)
         self.assertFalse(self.checkWrapped(source, sink))
+        brokenMolFilePath = PATH_WITH_TESTS / 'mol_wrapping_POSCARS_brokenMol.uspex'
+        systemSource, systemSink = AtomisticRepresentation.readAtomicStructures(brokenMolFilePath)
+        systemSource['ID'] = 0
+        systemSink['ID'] = 1
+        source = AtomisticPoolEntry(**systemSource)
+        sink = AtomisticPoolEntry(**systemSink)
+        atomisticStage.checkAndFixMolecules(source, sink)
+        self.assertTrue(sink.getProperty('isBad'))
 
 
 

@@ -36,28 +36,29 @@ class AtomisticStage:
             sink.updateAtomicStructure(
                 sink.getAtomicStructure().getPerturbatedStructure(sink['disassembler'].fixedIndices))
         await self.executor.run(sink, sink)
-        self.fixMoleculesWrapping(source, sink)
+        self.target.constraints.systemCheckAndFix(sink)
+        self.checkAndFixMolecules(source, sink)
 
-    @staticmethod
-    def fixMoleculesWrapping(source, sink):
+    def checkAndFixMolecules(self, source, sink):
         correctorDict = dict()
         for i, molSink in enumerate(sink['molecules']):
             if len(molSink) > 1:
                 molSource = source['molecules'][i]
-                cartCoordsSource = molSource.getCartesianCoordinates()
+                distMatSource = molSource.getAllDistances()
                 cartCoordsSink  =  molSink.getCartesianCoordinates()
-                distMatSource = get_distances(cartCoordsSource, cell=source['cell'].getCellVectors(),
-                                  pbc=source['cell'].getPBC())[1]
                 distMatSink = get_distances(cartCoordsSink, cell=sink['cell'].getCellVectors(),
                               pbc=sink['cell'].getPBC())[1]
                 diff = np.max(np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(len(distMatSource))))
-                distMatSourceNoPBC = get_distances(cartCoordsSource, cell=source['cell'].getCellVectors(),
-                                                pbc=(0, 0, 0))[1]
-                distMatSinkNoPBC = get_distances(cartCoordsSink, cell=sink['cell'].getCellVectors(),
-                                              pbc=(0, 0, 0))[1]
-                diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSourceNoPBC) /
-                                   (distMatSourceNoPBC + np.eye(len(distMatSourceNoPBC))))
-                if diffNoPBC - diff > 1e-5:  # ith molecule is wrapped
+                distMatSinkNoPBC = molSink.getAllDistances()
+                diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSource) /
+                                   (distMatSource + np.eye(len(distMatSource))))
+                if self.target.utilities.simpleMoleculeUtility.checkIntegrityType == 'rigid':
+                    if diff > self.target.utilities.simpleMoleculeUtility.integrityTol:
+                        logger.info(f'system {source["ID"]}: broken molecule detected')
+                        sink.setProperty('isBad', True)
+                        break
+                if diffNoPBC - diff > 1e-5:
+                    logger.debug(f'system {source["ID"]}: wrapped molecule detected, unwrapping')# ith molecule is wrapped
                     fractSource = source['cell'].cartesianToFractional(molSource.getCartesianCoordinates())
                     fractSink = sink['cell'].cartesianToFractional(molSink.getCartesianCoordinates())
                     wrapping = np.round(fractSink - fractSource)

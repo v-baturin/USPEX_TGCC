@@ -10,6 +10,10 @@ from .Transformation import Transformation
 
 
 DENSITY_CONST = 1.660539
+INTEGRITY_TOL = {'rigid': 0.1, # maximum relative change in all distances
+                 'none': None
+                 #'soft':
+                 }
 
 
 class SimpleMoleculeUtility(object):
@@ -31,7 +35,7 @@ class SimpleMoleculeUtility(object):
         cls.structureType = structureType
         cls.atomType = atomType
 
-    def __init__(self, molecules: dict = None, doCenterMolecule=False):
+    def __init__(self, molecules: dict = None, doCenterMolecule=False, checkIntegrityType='rigid', integrityTol=None):
         """
         :param molecules: {<name>: <definition>} dictionary of molecule definitions.
 
@@ -46,6 +50,9 @@ class SimpleMoleculeUtility(object):
                 self.molecules[symbol] = molecule
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
         # TODO: what if we have two molecules with same formula?
+        self.checkIntegrityType = checkIntegrityType
+        self.integrityTol = INTEGRITY_TOL[checkIntegrityType] if integrityTol is None else integrityTol
+
 
 
     def populateStructure(self, cell, operations):
