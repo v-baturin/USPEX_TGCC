@@ -20,6 +20,7 @@ from scipy.stats import gmean
 from itertools import chain
 
 from .VolumeEstimator import VolumeEstimator
+from ..Fitness.BondFunctions import BondFunctions
 
 
 logger = logging.getLogger(__name__)
@@ -101,6 +102,7 @@ class BondUtility:
 
     atomType = None
     disassemblerType = None
+    fitnessExtension = BondFunctions
 
     @classmethod
     def registerTypes(cls, atomType, disassemblerType):
@@ -516,13 +518,6 @@ class BondUtility:
         freq, eigvector = list(freq[IX]), list(np.real(eigvector[:, IX]).T)
 
         return freq, eigvector
-
-    def hardness(self, system):
-        if 'bondUtility.hardness' not in system:
-            structure, disassembler = self.disassemblerType.assembe(**system)
-            bonds = self.getMinimalGraphBonds(structure)
-            system['bondUtility.hardness'] = self.calcHardness(structure, bonds)
-        return system['bondUtility.hardness']
 
     @staticmethod
     def calcCoordinationNumbers(structure):

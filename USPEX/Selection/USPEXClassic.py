@@ -93,7 +93,7 @@ class USPEXClassic(object):
         self.pool = pool
         self.target = target
         antiseeds = {} if antiseeds is None else antiseeds
-        self.target.utilities.antiseeds = Antiseeds(**antiseeds)
+        self.pool.extensions['antiseeds'] = Antiseeds(**antiseeds)
         self.fingerprintUtility = fingerprintUtility
         self.optType = optType
         self.fractions = fractions
@@ -125,15 +125,14 @@ class USPEXClassic(object):
         """
 
         if self.pool.generations:
-            if self.target.utilities.antiseeds.legacy:
-                self.target.utilities.antiseeds.payPenalties(self.pool.generations[-1]['allSystems'],
+            if self.pool.extensions['antiseeds'].legacy:
+                self.pool.extensions['antiseeds'].payPenalties(self.pool.generations[-1]['allSystems'],
                                                              self.pool.uniqueSystems, self.fingerprintUtility)
 
             population = list(self.pool.uniqueSystems) if self.globalParentsPool else \
                 self.pool.generations[-1]['allSystems'] + self._mostDiverse
             newStructures = self.pool.generations[-1]['newSystems']
-            fitness = self.pool.generations[-1]['fitness']
-            fronts = fitness.sort(population, fitness.getAllFitnesses(self.optType))
+            fronts = self.pool.entryFactory.fronts(population, self.optType)
             sortedPopulation = []
             tournament = []
             for i, front in enumerate(fronts):
@@ -248,8 +247,8 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        if not self.target.utilities.antiseeds.legacy:
-            self.target.utilities.antiseeds.payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
+        if not self.pool.extensions['antiseeds'].legacy:
+            self.pool.extensions['antiseeds'].payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
 
         if self.target.seeds is not None:
             seeds = self.target.seeds(self.pool.entryFactory)

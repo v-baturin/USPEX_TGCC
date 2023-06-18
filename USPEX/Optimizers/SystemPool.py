@@ -23,6 +23,7 @@ class SystemPool(object):
     entryFactory = None
 
     def __init__(self):
+        self.extensions = {}
         self.allSystems = {}
         self.generations = []
         self._newID = 0
@@ -67,17 +68,13 @@ class SystemPool(object):
         for system in population:
             self.allSystems[system['ID']] = system
 
-    def append(self, population, fitness):
+    def append(self, population):
         """
-        Inserts fitness object into last generation record.
-
-        :param fitness: fitness object.
-
         """
         logger.debug('Updating target: list of unique systems.')
         IDs = set(system['ID'] for system in population)
         newIDs = []
-        newGeneration = {'allSystems': [], 'newSystems': [], 'fitness': fitness}
+        newGeneration = {'allSystems': [], 'newSystems': []}
         for system in population:
             original = self.allSystems[self.getOriginalID(system['ID'])]
             if original['ID'] not in newIDs:

@@ -5,12 +5,12 @@ USPEX.Atomistic.CellUtility
 
 import logging
 import numpy as np
-import spglib
 from copy import copy
 from scipy.spatial.transform import Rotation
 from scipy.linalg import orthogonal_procrustes
 
 from .Transformation import Transformation
+from ..Fitness.CellFunctions import CellFunctions
 
 logger = logging.getLogger(__name__)
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
@@ -20,6 +20,8 @@ class CellUtility:
     """
     Utility for working with unit cells of atomic structures.
     """
+
+    fitnessExtension = CellFunctions
 
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
                  thickness=None, supercellDegree = None, symTolerance=None, debug = False):
@@ -119,19 +121,19 @@ class CellUtility:
         if symTolerance is not None:
             if isinstance(symTolerance, str):
                 if 'high' in symTolerance:
-                    self._symTolerance = 0.05
+                    self.symTolerance = 0.05
                 elif 'medium' in symTolerance:
-                    self._symTolerance = 0.1
+                    self.symTolerance = 0.1
                 elif 'low' in symTolerance:
-                    self._symTolerance = 0.2
+                    self.symTolerance = 0.2
                 else:
-                    self._symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
+                    self.symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
             elif isinstance(symTolerance, (float, int)):
-                self._symTolerance = float(symTolerance)
+                self.symTolerance = float(symTolerance)
             else:
-                self._symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
+                self.symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
         else:
-            self._symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
+            self.symTolerance = _DEFAULT_SYMMETRY_TOLERANCE
 
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -399,58 +401,6 @@ class CellUtility:
             isGood = isGood and (cell.getRadius() <= self._thickness * 0.8661)
         return isGood
 
-    @staticmethod
-    def volume(system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated volume of system.
-        """
-        return system['cell'].getVolume()
-
-    @staticmethod
-    def area(system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated area of system.
-        """
-        return system['cell'].getArea()
-    
-    @staticmethod
-    def length(system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated length of system.
-        """
-        return system['cell'].getLength()
-
-    def symmetry(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated symmetry of system.
-        """
-        structure = system.getAtomicStructure()
-        cell = structure.getCell()
-        lattice = cell.getCellVectors()
-        coordinates = structure.getFractionalCoordinates()
-        numbers = [el.z for el in structure.getAtomTypes()]
-        spacegroup = spglib.get_spacegroup((lattice, coordinates, numbers), symprec=self._symTolerance)
-        if cell.dim == 3 and spacegroup is not None:
-            symmetry = '{:7s} {:4s}'.format(*[str(x) for x in spacegroup.split()])
-        else:
-            symmetry = None
-        return symmetry
 
 
 class Cell:

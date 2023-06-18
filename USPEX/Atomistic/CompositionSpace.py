@@ -8,6 +8,8 @@ import numpy as np
 from copy import copy
 from collections import Counter
 
+from ..Fitness.CompositionSpaceFunctions import CompositionSpaceFunctions
+
 logger = logging.getLogger(__name__)
 
 
@@ -15,6 +17,8 @@ class CompositionSpace(object):
     """
     Describes the chemical compositions configuration space.
     """
+
+    fitnessExtension = CompositionSpaceFunctions
 
     def __init__(self, symbols: list, blocks: list, range: list=None, minAt: int=None, maxAt: int=None):
         """
@@ -119,32 +123,6 @@ class CompositionSpace(object):
         :return: list of blocks amounts corresponding *blocks* variable of this instance.
         """
         return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(*args, **kwargs), rcond=None)[0]).astype(int)
-
-    def numBlocksFromCompositions(self, compositions: np.ndarray):
-        """
-        For using in **Fitness** infrastructure
-
-        :param compositions: N array of dictionary like compositions.
-
-        :return: N*M array of block numbers, where M number of different blocks defined in this space.
-        """
-        numBlocks = []
-        for composition in compositions:
-            numBlocks.append(self.numBlocks(composition))
-        return np.asarray(numBlocks)
-
-    def numMolsFromCompositions(self, compositions: np.ndarray):
-        """
-        For using in **Fitness** infrastructure
-
-        :param compositions: N array of dictionary like compositions.
-
-        :return: N*M array of elements numbers, where M number of different symbols defined in this space.
-        """
-        numMols = []
-        for composition in compositions:
-            numMols.append(self.numIons(composition))
-        return np.asarray(numMols)
 
     def randomComposition(self):
         """

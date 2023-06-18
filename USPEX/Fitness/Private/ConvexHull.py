@@ -10,6 +10,7 @@ Class for ConvexHull
 
 import logging
 import numpy as np
+import pandas as pd
 from scipy.spatial import ConvexHull as QHull
 from typing import List
 
@@ -60,14 +61,12 @@ class ConvexHull(object):
         if not len(systems):
             return
 
-        size = len(systems)
-        self._argument = systems[:, :-1]
-        self._properties = systems[:, -1]
-        self._height = np.full(size, np.inf)
-        self._depth = np.full(size, -np.inf)
+        self._df = pd.DataFrame(data=np.empty((0, 4), dtype=float), columns=['argument', 'property', 'height', 'depth'])
+        for i, system in enumerate(systems.tolist()):
+            self._df.loc[i] = system[:-1], system[-1], np.inf, -np.inf
 
-        properties = self._properties.tolist()
-        coords = self._argument.tolist()
+        properties = self._df.property.tolist()
+        coords = self._df.argument.tolist()
 
         min_ID, max_ID = np.argmin(properties), np.argmax(properties)
 
@@ -79,17 +78,17 @@ class ConvexHull(object):
 
         if n == 1:  # Single component
             min_E, max_E = np.min(properties), np.max(properties)
-            for i, prop in enumerate(properties):
-                self._height[i] = prop - min_E
-                self._depth[i] = prop - max_E
+            for i, row in self._df.iterrows():
+                self._df.at[i, 'height'] = row.property - min_E
+                self._df.at[i, 'depth'] = row.property - max_E
         elif m <= n:    # Not enough point to build proper CH, so all structures are on CH
-            for i, (p1, coord1) in enumerate(zip(properties, coords)):
+            for p1, coord1, (i, _) in zip(properties, coords, self._df.iterrows()):
                 _dists = []
                 for p2, coord2 in zip(properties, coords):
                     if np.allclose(coord1, coord2):
                         _dists.append(p1-p2)
-                self._height[i] = np.max(_dists)
-                self._depth[i] = np.min(_dists)
+                self._df.at[i, 'height'] = np.max(_dists)
+                self._df.at[i, 'depth'] = np.min(_dists)
         else:
             qhull = QHull(entries_set)
 
@@ -108,7 +107,7 @@ class ConvexHull(object):
                     # For composition case it means 2 or more structures have the same composition, but different energies
                     continue
 
-            for i, (p, coord) in enumerate(zip(properties, coords)):
+            for p, coord, (i, _) in zip(properties, coords, self._df.iterrows()):
                 # This is a dists to simplicies of CH.
                 # Positive when distance to the lower bound, negative when distance to the upper bound.
                 _dists = []
@@ -119,15 +118,15 @@ class ConvexHull(object):
                     y1 = list(filter(lambda x: not np.isclose(x, 0.0), y))
                     if np.abs(np.sum(np.sign(y1))) == len(y1):
                         _dists.append(np.round(p - np.dot(y, e), 6))
-                self._height[i] = np.max(_dists)
-                self._depth[i] = np.min(_dists)
+                self._df.at[i, 'height'] = np.max(_dists)
+                self._df.at[i, 'depth'] = np.min(_dists)
 
             # Check whether structure with lowest property is on CH
             for v in qhull.vertices:
-                assert np.isclose(self._height[v], 0.0) or np.isclose(self._depth[v], 0.0)
+                assert np.isclose(self._df.iloc[v].height, 0.0) or np.isclose(self._df.iloc[v].depth, 0.0)
 
-        assert np.isclose(self._height[min_ID], 0.0)
-        assert np.isclose(self._depth[max_ID], 0.0)
+        assert np.isclose(self._df.iloc[min_ID].height, 0.0)
+        assert np.isclose(self._df.iloc[max_ID].depth, 0.0)
         # assert set(qhull.vertices) == set(chain(self.lower_bound, self.upper_bound))
 
     @property
@@ -135,28 +134,28 @@ class ConvexHull(object):
         '''
         :return: IDs of structures, which are on the lower bound of CH
         '''
-        return list(i for i, x in enumerate(self._height) if np.isclose(x, 0.0))
+        return list(i for i,x in self._df.iterrows() if np.isclose(x.height, 0.0))
 
     @property
     def upper_bound(self) -> List[int]:
         '''
         :return: IDs of structures, which are on the lower bound of CH
         '''
-        return list(i for i, x in enumerate(self._depth) if np.isclose(x, 0.0))
+        return list(i for i,x in self._df.iterrows() if np.isclose(x.depth, 0.0))
 
     @property
     def depth(self) -> np.ndarray:
         """
         :return: array of depth of all point below upper bound.
         """
-        return self._depth
+        return self._df.depth.to_numpy()
 
     @property
     def height(self) -> np.ndarray:
         """
         :return: arrau of heights abve lower bound.
         """
-        return self._height
+        return self._df.height.to_numpy()
 
 
 # class ConvexHull_old(object):

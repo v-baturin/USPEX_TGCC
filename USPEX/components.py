@@ -6,8 +6,8 @@ AtomisticPoolEntry.registerTypes(AtomicStructure, Element, Cell, AtomicDisassemb
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
-from .Fitness.Fitness import Fitness
-GlobalOptimizer.setFitnessType(Fitness)
+from .Fitness.ExpressionEvaluator import ExpressionEvaluator
+GlobalOptimizer.setExpressionEvaluatorType(ExpressionEvaluator)
 from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace

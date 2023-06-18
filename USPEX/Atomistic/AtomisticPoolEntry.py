@@ -1,3 +1,8 @@
+import numpy as np
+
+from ..Fitness.presets import applyPresets
+
+
 class AtomisticPoolEntry:
 
     structureType = None
@@ -14,6 +19,7 @@ class AtomisticPoolEntry:
 
     def __init__(self, **system):
         self.system = system
+        self.expressions = {}
 
     def getAtomicStructure(self, prefix=None):
         system = self._getPrefixedValue(prefix)
@@ -77,8 +83,26 @@ class AtomisticPoolEntry:
             else:
                 del self.system[name]
 
+    def setExpression(self, expression, value):
+        if expression not in self.expressions:
+            self.expressions[expression] = []
+        self.expressions[expression].append(value)
+
     def __getitem__(self, item):
-        return self.system[item]
+        if item in self.system:
+            value = self.system[item]
+        elif item in self.expressions:
+            value = self.expressions[item][-1]
+        else:
+            raise KeyError(f'Property {item} is not set.')
+        return value
 
     def __contains__(self, item):
         return item in self.system
+
+    @staticmethod
+    def fronts(pool, expression):
+        expression = applyPresets(expression)
+        values = [s[expression] for s in pool]
+        return [[pool[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
+

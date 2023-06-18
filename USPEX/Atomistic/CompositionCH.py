@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
 from ..Fitness.ConvexHull import ConvexHull
-from ..Fitness.Fitness import Fitness
+from ..Fitness.Fitness import ExpressionEvaluator
 from ..Optimizers.SystemPool import SystemPool
 from .CompositionSpace import CompositionSpace
 
@@ -14,8 +14,8 @@ class CompositionCH(ConvexHull):
         self.compositionSpace = compositionSpace
         self.simpleMoleculeUtility = simpleMoleculeUtility
         utilities = SimpleNamespace(compositionSpace = compositionSpace, simpleMoleculeUtility = simpleMoleculeUtility)
-        super().__init__(Fitness(pool.uniqueSystems, utilities).calcFitness(('getRelativeCHSpace',
-                                                               ('compositionSpace.numBlocksFromCompositions',
+        super().__init__(ExpressionEvaluator(pool.uniqueSystems, utilities).evaluate(('getRelativeCHSpace',
+                                                                                      ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition'), 'enthalpy')))
 
     @property
@@ -39,6 +39,6 @@ class CompositionCH(ConvexHull):
         pool = SystemPool()
         pool.update(self.systems)
         utilities = SimpleNamespace(compositionSpace = self.compositionSpace, simpleMoleculeUtility = self.simpleMoleculeUtility)
-        super().__init__(Fitness(pool.uniqueSystems, utilities).calcFitness(('getRelativeCHSpace',
-                                                               ('compositionSpace.numBlocksFromCompositions',
+        super().__init__(ExpressionEvaluator(pool.uniqueSystems, utilities).evaluate(('getRelativeCHSpace',
+                                                                                      ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition'), 'enthalpy')))

@@ -81,17 +81,15 @@ class SystemsTable(object):
         self.table = PrettyTable(columnNames)
 
 
-    def update(self, ID: int, system, fitness, rank=None):
+    def update(self, ID: int, system, rank=None):
         row = [ID, system['howCome']]
         if self.isRank:
             row.insert(1, rank)
         for column, columnName in self.columns:
-            value = fitness.getFitnessByID(column, ID)
-            if value is None:
-                try:
-                    value = fitness.getFitnessDirect(column, system)
-                except Exception:
-                    pass
+            try:
+                value = system[column]
+            except Exception:
+                value = None
             if isinstance(value, float):
                 value = f'{value: 6.3f}'
             elif isinstance(value, Mapping):
@@ -141,7 +139,7 @@ class AtomisticRepresentation(object):
                 content_enthalpies += ','.join([f"{sys['enthalpy']:6.3f}" for sys in system[1:]]) + '\n'
 
             if len(system) == numStages + 1:
-                table_Individuals.update(ID, system[-1], optimizer.fitness)
+                table_Individuals.update(ID, system[-1])
                 systems_gatheredPOSCARS.append(system[numStages])
 
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
@@ -614,17 +612,19 @@ class AtomisticRepresentation(object):
     @staticmethod
     def getPopulationSummaryBlock(population, optimizer) -> list:
         utlts = optimizer.target.utilities
-        if utlts.cellUtility.getDim() == 3:
-            numBlocks = [utlts.compositionSpace.numBlocks(utlts.simpleMoleculeUtility.composition(system)) for system in population]
-            numBlocks = np.asarray(numBlocks)
-            volumes = [optimizer.fitness.getFitnessDirect('cellUtility.volume', system) for system in population]
-            volumes = np.asarray(volumes)
-            approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
-        else:
-            approximateVolume = 'NA'
-        originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
-        fitness = [optimizer.fitness.getFitnessByID(optimizer.optType, originalID(system)) for system in population if not system['isBad']]
-        order = [optimizer.target.utilities.radialDistributionUtility.averageOrder(system) for system in population if not system['isBad']]
+        smu = optimizer.pool.extensions['simpleMoleculeUtility']
+        rdu = optimizer.pool.extensions['radialDistributionUtility']
+        # if utlts.cellUtility.getDim() == 3:
+        #     numBlocks = [utlts.compositionSpace.numBlocks(smu.composition(system)) for system in population]
+        #     numBlocks = np.asarray(numBlocks)
+        #     volumes = [system['cellUtility.volume'] for system in population]
+        #     volumes = np.asarray(volumes)
+        #     approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
+        # else:
+        approximateVolume = 'NA'
+        # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
+        fitness = [system[optimizer.optType] for system in population if not system['isBad']]
+        order = [rdu.averageOrder(system) for system in population if not system['isBad']]
         if np.any(np.isnan(np.asarray(fitness, dtype = float))):
             correlation = 0.0
         else:
@@ -634,8 +634,8 @@ class AtomisticRepresentation(object):
         comb = list(combinations(population, 2))
         for s1, s2 in comb:
             if not s1['isBad'] and not s2['isBad']:
-                tmp_fing1 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s1)
-                tmp_fing2 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s2)
+                tmp_fing1 = rdu.structureFingerprint(s1)
+                tmp_fing2 = rdu.structureFingerprint(s2)
                 dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
                 qe += (1 - dist) * np.log(1 - dist)
         qe /= -len(comb) if comb else 1
@@ -646,7 +646,7 @@ class AtomisticRepresentation(object):
                  f'      Quasi entropy          : {qe:.4}']
 
         if not utlts.compositionSpace.isFixedComposition:
-            numIons = [utlts.compositionSpace.numIons(utlts.simpleMoleculeUtility.composition(system)) for system in population]
+            numIons = [utlts.compositionSpace.numIons(smu.composition(system)) for system in population]
             numIons = np.asarray(numIons)
             comps = numIons/np.sum(numIons, axis=1).reshape((-1,1))
             combs = list(combinations(comps, 2))
@@ -680,14 +680,12 @@ class AtomisticRepresentation(object):
 
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
 
-        fitness = optimizer.optType
-
         for generation, opt in enumerate(optimizers):
             content_BESTIndividuals += f'Generation {generation}\n'
             pool = opt.pool
             table = self.getNewSystemsTable()
             for ID in opt.best:
-                table.update(ID, pool.allSystems[ID], opt.fitness)
+                table.update(ID, pool.allSystems[ID])
             content_BESTIndividuals += table.table.get_string() + '\n'
         with open(self.RES_FOLDER/'BESTIndividuals', 'w') as fp:
             fp.write(content_BESTIndividuals)
@@ -701,12 +699,11 @@ class AtomisticRepresentation(object):
         compositionSpace = optimizer.target.utilities.compositionSpace
         csSize = len(compositionSpace.blocks)
 
-        allFitnesses = optimizer.fitness.getAllFitnesses(fitness)
-        fronts = optimizer.fitness.sort(list(optimizer.pool.uniqueSystems), allFitnesses)
+        fronts = optimizer.entryType.fronts(optimizer.pool.uniqueSystems, optimizer.optType)
         if csSize == 1:
             for rank, front in enumerate(fronts):
                 for system in front:
-                    table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
+                    table_goodStructures.update(system['ID'], system, rank=rank)
                     systems_goodStructuresPOSCARS.append(system)
             with open(self.RES_FOLDER/'goodStructures', 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
@@ -723,7 +720,7 @@ class AtomisticRepresentation(object):
                     if numBlocks not in goodStructures:
                         goodStructures[numBlocks] = self.getNewSystemsTable(isRank=True)
                         goodStructuresPOSCARS[numBlocks] = []
-                    goodStructures[numBlocks].update(system['ID'], system, optimizer.fitness, rank=rank)
+                    goodStructures[numBlocks].update(system['ID'], system, rank=rank)
                     goodStructuresPOSCARS[numBlocks].append(system)
 
             for comp, table_gs in goodStructures.items():
@@ -742,7 +739,7 @@ class AtomisticRepresentation(object):
                 content_convexHull += f'Generation {generation}\n'
                 table = self.getNewSystemsTable()
                 for system in convexHull:
-                    table.update(system['ID'], system, opt.fitness)
+                    table.update(system['ID'])
                 content_convexHull += table.table.get_string() + '\n'
 
             with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
@@ -751,13 +748,13 @@ class AtomisticRepresentation(object):
             extendedConvexHull = [system for system in optimizer.pool.uniqueSystems
                                   if optimizer.fitness.getFitnessByID('enthalpyCCH', originalID(system)) < self.rangeECH]
 
-            allFitnesses = {system['ID']: optimizer.pool.generations[-1]['fitness'].getFitnessByID(fitness, originalID(system))
+            allFitnesses = {system['ID']: optimizer.pool.generations[-1]['fitness'].getFitnessByID(optimizer.optType, originalID(system))
                             for system in extendedConvexHull}
             frontsECH = optimizer.fitness.sort(extendedConvexHull, allFitnesses)
 
             for rank, front in enumerate(frontsECH):
                 for system in front:
-                    table_extendedConvexHull.update(system['ID'], system, optimizer.fitness, rank=rank)
+                    table_extendedConvexHull.update(system['ID'], system, rank=rank)
             with open(self.RES_FOLDER/'extended_convex_hull', 'w') as fp:
                 fp.write(table_extendedConvexHull.table.get_string())
 
@@ -775,18 +772,18 @@ class AtomisticRepresentation(object):
         if self.presentPareto is not None and len(self.presentPareto) == 2:
             self._drawParetoFronts2(fronts, optimizer)
 
-        self._drawProperties(optimizer.pool.uniqueSystems, optimizer.fitness)
+        self._drawProperties(optimizer.pool.uniqueSystems)
 
 
-    def _drawProperties(self, uniqueSystems, fitness):
-        originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
+    def _drawProperties(self, uniqueSystems):
+        # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         for type, propertyY, typeY, propertyX, typeX in self.toDraw:
             if type == 'dep':
                 Y = []
                 X = []
                 for system in uniqueSystems:
-                    valueX = fitness.getFitnessByID(propertyX, originalID(system))
-                    valueY = fitness.getFitnessByID(propertyY, originalID(system))
+                    valueX = system[propertyX]
+                    valueY = system[propertyY]
                     if typeY == 'raw':
                         Y.append(valueY)
                     elif typeY == 'per_atom':
@@ -804,7 +801,7 @@ class AtomisticRepresentation(object):
             elif type == 'stat':
                 Y = []
                 for system in uniqueSystems:
-                    value = fitness.getFitnessByID(propertyY, originalID(system))
+                    value = system[propertyY]
                     if not np.isinf(value):
                         if typeY == 'raw':
                             Y.append(value)
