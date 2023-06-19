@@ -33,17 +33,17 @@ class PopulationProcessor:
         return pd.population, pd.save
 
     @staticmethod
-    async def processPopulation(stages, population, numParallelCalcs, systems=None, checkCallback=None, saveCallback=None):
-        stages = [Stages.createStage(**stage) for stage in stages]
+    async def processPopulation(stages, population, numParallelCalcs, target=None, systems=None, saveCallback=None):
+        stages = [Stages.createStage(**stage, target=target) for stage in stages]
         for ID, system in population.items():
             if systems is not None:
                 systems[ID] = system[0:1]
         sem = asyncio.Semaphore(numParallelCalcs)
-        await asyncio.gather(*(PopulationProcessor.life(system, stages, systems, sem, checkCallback, saveCallback)
+        await asyncio.gather(*(PopulationProcessor.life(system, stages, systems, sem, saveCallback)
                                for system in population.values()))
 
     @staticmethod
-    async def life(processedSystems, stages, systems, sem, checkCallback, saveCallback):
+    async def life(processedSystems, stages, systems, sem, saveCallback):
         await sem.acquire()
         ID = processedSystems[0]['ID']
         for i, stage in enumerate(stages):
@@ -57,10 +57,7 @@ class PopulationProcessor:
                     logger.warning(f'system {ID} error in relaxation:')
                     logger.exception(ex)
                     sink.setProperty('isBad', True)
-                    break
-                if checkCallback is not None and not checkCallback(sink):
-                    logger.info(f'system {ID} violates constraints')
-                    sink.setProperty('isBad', True)
+                if sink['isBad']:
                     break
                 processedSystems.append(deepcopy(sink))
             if systems is not None:
