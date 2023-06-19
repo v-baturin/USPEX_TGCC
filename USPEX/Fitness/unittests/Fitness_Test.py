@@ -54,12 +54,16 @@ class Fitness_Test(unittest.TestCase):
                          'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)}]
         self.compositionSpace = CompositionSpace(symbols=['Mg', 'Al', 'O'], blocks=[[4, 8, 16]], range=[[1, 1]])
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
-        expressions = dict(
+        expressionExtensions = dict(
             basic=BasicFunctions(),
             compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
-            simpleMoleculeUtility=self.simpleMoleculeUtility.expressionExtension(self.simpleMoleculeUtility)
         )
-        self.fitness = ExpressionEvaluator(tuple(self.systems), expressions)
+        propertyExtensions = dict(
+            simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility)
+        )
+        self.systems = [AtomisticPoolEntry(extensions=propertyExtensions, **system) for system in self.systems]
+
+        self.fitness = ExpressionEvaluator(tuple(self.systems), expressionExtensions)
 
     def test_enthalpy(self):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
@@ -201,23 +205,25 @@ class FitnessXray_Test(unittest.TestCase):
         filename = pj(HOMEPATH,'XRay_POSCARS')
         self.systems = AtomisticRepresentation.readAtomicStructures(filename)
         enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
-        for ID, system in enumerate(self.systems):
-            system['ID'] = ID
-            system['enthalpy'] = enthalpies[ID]
-            self.systems[ID] = AtomisticPoolEntry(**system)
 
         self.compositionSpace = CompositionSpace(symbols=['Ba', 'H'], blocks=[[1, 12]], range=[[4, 4]])
         self.powderSpectrumAnalyzer = PowderSpectrumAnalyzer(**PowderSpectrumAnalyzer.parse(pj(HOMEPATH, 'spectrum.txt')))
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
 
-        expressions = dict(
+        expressionExtensions = dict(
             basic=BasicFunctions(),
             compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
-            simpleMoleculeUtility=self.simpleMoleculeUtility.expressionExtension(self.simpleMoleculeUtility),
-            powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.expressionExtension(self.powderSpectrumAnalyzer),
         )
+        propertyExtensions = dict(
+            simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility),
+            powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.propertyExtension(self.powderSpectrumAnalyzer),
+        )
+        for ID, system in enumerate(self.systems):
+            system['ID'] = ID
+            system['enthalpy'] = enthalpies[ID]
+            self.systems[ID] = AtomisticPoolEntry(extensions=propertyExtensions, **system)
 
-        self.fitness = ExpressionEvaluator(tuple(self.systems), expressions)
+        self.fitness = ExpressionEvaluator(tuple(self.systems), expressionExtensions)
 
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]

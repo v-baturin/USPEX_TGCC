@@ -21,7 +21,7 @@ from ..Fitness.PowderSpectrumAnalyzerFunctions import PowderSpectrumAnalyzerFunc
 
 class PowderSpectrumAnalyzer(object):
 
-    expressionExtension = PowderSpectrumAnalyzerFunctions
+    propertyExtension = PowderSpectrumAnalyzerFunctions
 
     def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
                  exp_angles: list, exp_intensities: list):

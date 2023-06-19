@@ -47,7 +47,8 @@ class ExpressionEvaluator:
                     raise RuntimeError(f"Too complex expression {'.'.join(expression)}.")
                 valueArray = getattr(self.extensions[extension], funcName)(*arguments)
             elif isinstance(expression, str):
-                value = [self.evaluateTerminal(expression, system) for system in self.pool]
+                value = [system[expression] for system in self.pool]
+                # value = [self.evaluateTerminal(expression, system) for system in self.pool]
                 # unfortunately simple np.asarray spoils dictionaries
                 if value and isinstance(value[0], Mapping):
                     valueArray = np.empty((len(value,)), dtype=type(value[0]))

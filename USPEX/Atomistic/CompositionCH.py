@@ -8,16 +8,14 @@ from .CompositionSpace import CompositionSpace
 
 
 class CompositionCH(ConvexHull):
-    def __init__(self, systems: list, compositionSpace: CompositionSpace, simpleMoleculeUtility):
+    def __init__(self, systems: list, compositionSpace: CompositionSpace):
         self.systems = systems
         pool = SystemPool()
         pool.update(self.systems)
         self.compositionSpace = compositionSpace
-        self.simpleMoleculeUtility = simpleMoleculeUtility
         extensions = dict(
             basic=BasicFunctions(),
             compositionSpace=compositionSpace.expressionExtension(compositionSpace),
-            simpleMoleculeUtility=simpleMoleculeUtility.expressionExtension(simpleMoleculeUtility)
         )
         super().__init__(ExpressionEvaluator(pool.uniqueSystems, extensions).evaluate(('getRelativeCHSpace',
                                                                                       ('compositionSpace.numBlocksFromCompositions',
@@ -46,7 +44,6 @@ class CompositionCH(ConvexHull):
         extensions = dict(
             basic=BasicFunctions(),
             compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
-            simpleMoleculeUtility=self.simpleMoleculeUtility.expressionExtension(self.simpleMoleculeUtility)
         )
 
         super().__init__(ExpressionEvaluator(pool.uniqueSystems, extensions).evaluate(('getRelativeCHSpace',
