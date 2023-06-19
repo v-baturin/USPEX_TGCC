@@ -102,7 +102,7 @@ class BondUtility:
 
     atomType = None
     disassemblerType = None
-    fitnessExtension = BondFunctions
+    propertyExtension = BondFunctions
 
     @classmethod
     def registerTypes(cls, atomType, disassemblerType):

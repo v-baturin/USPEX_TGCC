@@ -6,8 +6,11 @@ USPEX.SystemPool
 
 
 import logging
+import numpy as np
 from copy import copy
 from itertools import chain
+
+from ..Fitness.presets import applyPresets
 
 logger = logging.getLogger(__name__)
 
@@ -108,3 +111,10 @@ class SystemPool(object):
         """
         system = self.allSystems[ID]
         return system['originalID'] if 'originalID' in system else ID
+
+    @staticmethod
+    def fronts(pool, expression):
+        expression = applyPresets(expression)
+        values = [s[expression] for s in pool]
+        return [[pool[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
+

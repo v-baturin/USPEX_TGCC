@@ -21,7 +21,7 @@ class CompositionSpace_Test(unittest.TestCase):
         # data_2109-TOPOS_fmj_fmj
 
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
-        self.extension = self.simpleMoleculeUtility.fitnessExtension(self.simpleMoleculeUtility)
+        self.extension = self.simpleMoleculeUtility.expressionExtension(self.simpleMoleculeUtility)
         self.system1 = AtomisticPoolEntry(**AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/'system1.vasp'))
         self.system2 = AtomisticPoolEntry(**AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/'system2.vasp'))
         self.system3 = AtomisticPoolEntry(**AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/'system3.vasp'))

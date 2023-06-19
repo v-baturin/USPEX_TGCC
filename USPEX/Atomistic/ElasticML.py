@@ -195,7 +195,7 @@ class ElasticML:
     STEP = 0.2
 
     disassemblerType = None
-    fitnessExtension = ElasticMLFunctions
+    propertyExtension = ElasticMLFunctions
 
     @classmethod
     def registerTypes(cls, disassemblerType):

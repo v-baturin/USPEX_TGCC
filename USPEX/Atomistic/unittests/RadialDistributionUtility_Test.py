@@ -11,7 +11,7 @@ PATH_WITH_TESTS = Path(__file__).parent
 class RadialDistributionUtility_Test(unittest.TestCase):
     def setUp(self):
         self.utility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'])
-        self.extension = self.utility.fitnessExtension(self.utility)
+        self.extension = self.utility.expressionExtension(self.utility)
         self.systemRDU1 = AtomisticPoolEntry(**AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/"systemRDU1.POSCAR"))
         self.systemRDU2 = AtomisticPoolEntry(**AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/"systemRDU2.POSCAR"))
         self.systemRDU3 = AtomisticPoolEntry(**AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/"systemRDU3.POSCAR"))

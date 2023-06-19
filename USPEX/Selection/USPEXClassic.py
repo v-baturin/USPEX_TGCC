@@ -132,7 +132,7 @@ class USPEXClassic(object):
             population = list(self.pool.uniqueSystems) if self.globalParentsPool else \
                 self.pool.generations[-1]['allSystems'] + self._mostDiverse
             newStructures = self.pool.generations[-1]['newSystems']
-            fronts = self.pool.entryFactory.fronts(population, self.optType)
+            fronts = self.pool.fronts(population, self.optType)
             sortedPopulation = []
             tournament = []
             for i, front in enumerate(fronts):

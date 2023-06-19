@@ -28,7 +28,7 @@ def read_structures_and_energies(symbols, folder: Path):
     all_systems = AtomisticRepresentation.readAtomicStructures(folder/'gatheredPOSCARS')
     assert all_systems
     radialDistributionUtility = RadialDistributionUtility(symbols=symbols)
-    extension = radialDistributionUtility.fitnessExtension(radialDistributionUtility)
+    extension = radialDistributionUtility.expressionExtension(radialDistributionUtility)
 
     generations = []
     IDs = []

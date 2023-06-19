@@ -56,8 +56,8 @@ class Fitness_Test(unittest.TestCase):
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
         expressions = dict(
             basic=BasicFunctions(),
-            compositionSpace=self.compositionSpace.fitnessExtension(self.compositionSpace),
-            simpleMoleculeUtility=self.simpleMoleculeUtility.fitnessExtension(self.simpleMoleculeUtility)
+            compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
+            simpleMoleculeUtility=self.simpleMoleculeUtility.expressionExtension(self.simpleMoleculeUtility)
         )
         self.fitness = ExpressionEvaluator(tuple(self.systems), expressions)
 
@@ -212,9 +212,9 @@ class FitnessXray_Test(unittest.TestCase):
 
         expressions = dict(
             basic=BasicFunctions(),
-            compositionSpace=self.compositionSpace.fitnessExtension(self.compositionSpace),
-            simpleMoleculeUtility=self.simpleMoleculeUtility.fitnessExtension(self.simpleMoleculeUtility),
-            powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.fitnessExtension(self.powderSpectrumAnalyzer),
+            compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
+            simpleMoleculeUtility=self.simpleMoleculeUtility.expressionExtension(self.simpleMoleculeUtility),
+            powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.expressionExtension(self.powderSpectrumAnalyzer),
         )
 
         self.fitness = ExpressionEvaluator(tuple(self.systems), expressions)

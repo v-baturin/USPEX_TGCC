@@ -21,7 +21,7 @@ class CellUtility:
     Utility for working with unit cells of atomic structures.
     """
 
-    fitnessExtension = CellFunctions
+    propertyExtension = CellFunctions
 
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
                  thickness=None, supercellDegree = None, symTolerance=None, debug = False):

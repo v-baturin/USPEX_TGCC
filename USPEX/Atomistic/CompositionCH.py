@@ -16,8 +16,8 @@ class CompositionCH(ConvexHull):
         self.simpleMoleculeUtility = simpleMoleculeUtility
         extensions = dict(
             basic=BasicFunctions(),
-            compositionSpace=compositionSpace.fitnessExtension(compositionSpace),
-            simpleMoleculeUtility=simpleMoleculeUtility.fitnessExtension(simpleMoleculeUtility)
+            compositionSpace=compositionSpace.expressionExtension(compositionSpace),
+            simpleMoleculeUtility=simpleMoleculeUtility.expressionExtension(simpleMoleculeUtility)
         )
         super().__init__(ExpressionEvaluator(pool.uniqueSystems, extensions).evaluate(('getRelativeCHSpace',
                                                                                       ('compositionSpace.numBlocksFromCompositions',
@@ -45,8 +45,8 @@ class CompositionCH(ConvexHull):
         pool.update(self.systems)
         extensions = dict(
             basic=BasicFunctions(),
-            compositionSpace=self.compositionSpace.fitnessExtension(self.compositionSpace),
-            simpleMoleculeUtility=self.simpleMoleculeUtility.fitnessExtension(self.simpleMoleculeUtility)
+            compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
+            simpleMoleculeUtility=self.simpleMoleculeUtility.expressionExtension(self.simpleMoleculeUtility)
         )
 
         super().__init__(ExpressionEvaluator(pool.uniqueSystems, extensions).evaluate(('getRelativeCHSpace',

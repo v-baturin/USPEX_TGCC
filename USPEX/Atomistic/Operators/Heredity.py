@@ -39,12 +39,12 @@ class Heredity:
     def __call__(self, system1, system2, offspringFactory=None):
         cell1 = system1['cell']
         molecules1 = system1['molecules']
-        composition1 = self.simpleMoleculeUtility.composition(system1)
-        order1 = self.radialDistributionUtility.order(system1)
+        composition1 = system1['simpleMoleculeUtility.composition']
+        order1 = system1['radialDistributionUtility.order']
         cell2 = system2['cell']
         molecules2 = system2['molecules']
-        composition2 = self.simpleMoleculeUtility.composition(system2)
-        order2 = self.radialDistributionUtility.order(system2)
+        composition2 = system2['simpleMoleculeUtility.composition']
+        order2 = system2['radialDistributionUtility.order']
 
         parentEnv = np.random.choice((system1, system2)) \
             if 'environments' in system1 and 'environments' in system2 else None

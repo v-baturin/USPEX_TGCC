@@ -1,7 +1,10 @@
-import numpy as np
+class EntryFactory:
 
-from ..Fitness.presets import applyPresets
+    def __init__(self, extensions):
+        self.extensions = extensions
 
+    def __call__(self, **kwargs):
+        return AtomisticPoolEntry(extensions=self.extensions, **kwargs)
 
 class AtomisticPoolEntry:
 
@@ -17,9 +20,10 @@ class AtomisticPoolEntry:
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, **system):
+    def __init__(self, extensions=None, **system):
         self.system = system
         self.expressions = {}
+        self.extensions = extensions if extensions is not None else {}
 
     def getAtomicStructure(self, prefix=None):
         system = self._getPrefixedValue(prefix)
@@ -90,19 +94,15 @@ class AtomisticPoolEntry:
 
     def __getitem__(self, item):
         if item in self.system:
-            value = self.system[item]
+            return self.system[item]
         elif item in self.expressions:
-            value = self.expressions[item][-1]
-        else:
-            raise KeyError(f'Property {item} is not set.')
-        return value
+            return self.expressions[item][-1]
+        elif '.' in item:
+            extension, method, *other = item.split('.')
+            assert not other, f'Too complex property name {item}.'
+            if extension in self.extensions:
+                return getattr(self.extensions[extension], method)(self)
+        raise KeyError(f'Property {item} is not set for {self}.')
 
     def __contains__(self, item):
         return item in self.system
-
-    @staticmethod
-    def fronts(pool, expression):
-        expression = applyPresets(expression)
-        values = [s[expression] for s in pool]
-        return [[pool[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
-

@@ -24,7 +24,7 @@ class SimpleMoleculeUtility(object):
 
     structureType = None
     atomType = None
-    fitnessExtension = SimpleMoleculeFunctions
+    propertyExtension = SimpleMoleculeFunctions
 
     @classmethod
     def registerTypes(cls, structureType, atomType):

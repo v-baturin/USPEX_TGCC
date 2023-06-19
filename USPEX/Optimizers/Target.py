@@ -54,7 +54,8 @@ class Target(object):
         """
         self.name = kwargs['type']
         utilities = {}
-        self.extensions = {}
+        self.expressionExtensions = {}
+        self.propertyExtensions = {}
         failedUtilities = []
         self.constraintsType = None
         for utilityType in targetTypes.utilities:
@@ -64,8 +65,10 @@ class Target(object):
             else:
                 try:
                     utilities[name] = utilityType(**kwargs[name]) if name in kwargs else utilityType()
-                    if hasattr(utilityType, 'fitnessExtension'):
-                        self.extensions[name] = getattr(utilityType, 'fitnessExtension')(utilities[name])
+                    if hasattr(utilityType, 'expressionExtension'):
+                        self.expressionExtensions[name] = getattr(utilityType, 'expressionExtension')(utilities[name])
+                    if hasattr(utilityType, 'propertyExtension'):
+                        self.propertyExtensions[name] = getattr(utilityType, 'propertyExtension')(utilities[name])
                 except TypeError as e:
                     logger.debug(e)
                     failedUtilities.append(utilityType.__name__)

@@ -18,7 +18,7 @@ class CompositionSpace(object):
     Describes the chemical compositions configuration space.
     """
 
-    fitnessExtension = CompositionSpaceFunctions
+    expressionExtension = CompositionSpaceFunctions
 
     def __init__(self, symbols: list, blocks: list, range: list=None, minAt: int=None, maxAt: int=None):
         """

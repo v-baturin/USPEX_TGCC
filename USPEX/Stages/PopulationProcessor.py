@@ -50,7 +50,7 @@ class PopulationProcessor:
             assert i < len(processedSystems)
             if i + 1 == len(processedSystems):
                 source = processedSystems[-1]
-                sink = type(source)(isBad=False)
+                sink = type(source)(extensions=source.extensions, isBad=False)
                 try:
                     await stage.run(source, sink)
                 except Exception as ex:

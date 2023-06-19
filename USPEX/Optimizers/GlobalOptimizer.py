@@ -77,10 +77,11 @@ class GlobalOptimizer(object):
         """
 
         self.pool = SystemPool()
-        self.pool.entryFactory = self.entryType
         self.pool.extensions['basic'] = BasicFunctions()
         self.target = Target(self.knownTargetTypes[target['type']], **target)
-        self.pool.extensions.update(**self.target.extensions)
+        self.pool.extensions.update(**self.target.expressionExtensions)
+        self.entryFactory = self.entryType(self.target.propertyExtensions)
+        self.pool.entryFactory = self.entryFactory
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = list(extraData)
         self.selectionConfig = selection
@@ -123,9 +124,6 @@ class GlobalOptimizer(object):
         self.pool.update(population)
         self.ExpressionEvaluator.calculate(self.optType, self.pool.goodSystems, self.pool.extensions)
         self.ExpressionEvaluator.calculate(self.createPopulation.optType, self.pool.goodSystems, self.pool.extensions)
-        self.ExpressionEvaluator.calculate('radialDistributionUtility.complexFingerprint', self.pool.goodSystems, self.pool.extensions)
-        self.ExpressionEvaluator.calculate('radialDistributionUtility.averageOrder', self.pool.goodSystems, self.pool.extensions)
-        self.ExpressionEvaluator.calculate('cellUtility.volume', self.pool.goodSystems, self.pool.extensions)
         population = [system for system in population if not system['isBad']]
         assert population, 'All systems in population failed relaxation.'
         self._markDuplicates(population)
@@ -133,7 +131,7 @@ class GlobalOptimizer(object):
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
                 VO.tune(population, self.optType)
-        best = set(system['ID'] for system in self.pool.entryFactory.fronts(self.pool.uniqueSystems, self.optType)[0])
+        best = set(system['ID'] for system in self.pool.fronts(self.pool.uniqueSystems, self.optType)[0])
         if best == self.best:
             self._isStable = True
         else:

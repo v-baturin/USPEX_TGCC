@@ -612,10 +612,8 @@ class AtomisticRepresentation(object):
     @staticmethod
     def getPopulationSummaryBlock(population, optimizer) -> list:
         utlts = optimizer.target.utilities
-        smu = optimizer.pool.extensions['simpleMoleculeUtility']
-        rdu = optimizer.pool.extensions['radialDistributionUtility']
         if utlts.cellUtility.getDim() == 3:
-            numBlocks = [utlts.compositionSpace.numBlocks(smu.composition(system)) for system in population]
+            numBlocks = [utlts.compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']) for system in population]
             numBlocks = np.asarray(numBlocks)
             volumes = [system['cellUtility.volume'] for system in population]
             volumes = np.asarray(volumes)
@@ -624,7 +622,7 @@ class AtomisticRepresentation(object):
             approximateVolume = 'NA'
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         fitness = [system[optimizer.optType] for system in population if not system['isBad']]
-        order = [rdu.averageOrder(system) for system in population if not system['isBad']]
+        order = [system['radialDistributionUtility.averageOrder'] for system in population if not system['isBad']]
         if np.any(np.isnan(np.asarray(fitness, dtype = float))):
             correlation = 0.0
         else:
@@ -634,8 +632,8 @@ class AtomisticRepresentation(object):
         comb = list(combinations(population, 2))
         for s1, s2 in comb:
             if not s1['isBad'] and not s2['isBad']:
-                tmp_fing1 = rdu.structureFingerprint(s1)
-                tmp_fing2 = rdu.structureFingerprint(s2)
+                tmp_fing1 = s1['radialDistributionUtility.structureFingerprint']
+                tmp_fing2 = s2['radialDistributionUtility.structureFingerprint']
                 dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
                 qe += (1 - dist) * np.log(1 - dist)
         qe /= -len(comb) if comb else 1
@@ -646,7 +644,7 @@ class AtomisticRepresentation(object):
                  f'      Quasi entropy          : {qe:.4}']
 
         if not utlts.compositionSpace.isFixedComposition:
-            numIons = [utlts.compositionSpace.numIons(smu.composition(system)) for system in population]
+            numIons = [utlts.compositionSpace.numIons(system['simpleMoleculeUtility.composition']) for system in population]
             numIons = np.asarray(numIons)
             comps = numIons/np.sum(numIons, axis=1).reshape((-1,1))
             combs = list(combinations(comps, 2))
@@ -699,7 +697,7 @@ class AtomisticRepresentation(object):
         compositionSpace = optimizer.target.utilities.compositionSpace
         csSize = len(compositionSpace.blocks)
 
-        fronts = optimizer.entryType.fronts(optimizer.pool.uniqueSystems, optimizer.optType)
+        fronts = optimizer.pool.fronts(optimizer.pool.uniqueSystems, optimizer.optType)
         if csSize == 1:
             for rank, front in enumerate(fronts):
                 for system in front:

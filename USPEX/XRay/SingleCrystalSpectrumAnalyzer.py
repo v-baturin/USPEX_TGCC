@@ -17,7 +17,7 @@ from ..Fitness.SingleCrystalSpectrumAnalyzerFunctions import SingleCrystalSpectr
 
 class SingleCrystalSpectrumAnalyzer(object):
 
-    fitnessExtension = SingleCrystalSpectrumAnalyzerFunctions
+    expressionExtension = SingleCrystalSpectrumAnalyzerFunctions
 
     def __init__(self, expReflections: list, cellParameters: tuple):
         """
