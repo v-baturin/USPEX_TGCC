@@ -1,0 +1,5 @@
+!PBE D3ZERO DEF2-TZVP COPT smallprint
+%geom
+MaxIter 200
+end
+* xyz 0 1
