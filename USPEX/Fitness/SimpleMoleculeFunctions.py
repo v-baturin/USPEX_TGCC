@@ -10,7 +10,7 @@ class SimpleMoleculeFunctions:
     def __init__(self, utility) -> None:
         self.utility = utility
 
-    def moleculeTypes(self, system : dict):
+    def moleculeTypes(self, system):
         """
         For using in **Fitness** infrastructure
 
@@ -20,7 +20,7 @@ class SimpleMoleculeFunctions:
         """
         return [self.utility.determineMoleculeType(molecule) for molecule in system['molecules']]
 
-    def composition(self, system: dict):
+    def composition(self, system):
         """
         For using in **Fitness** infrastructure
 

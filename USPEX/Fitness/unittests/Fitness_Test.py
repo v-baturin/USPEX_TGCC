@@ -11,11 +11,11 @@ import unittest
 import numpy as np
 import os
 from os.path import join as pj
-from types import SimpleNamespace
 
 
-from ..Fitness import ExpressionEvaluator
-from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation
+from ..ExpressionEvaluator import ExpressionEvaluator
+from ..BasicFunctions import BasicFunctions
+from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation, AtomisticPoolEntry
 from ...Atomistic.AtomicPrimitives import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint
 from ...XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
@@ -54,9 +54,12 @@ class Fitness_Test(unittest.TestCase):
                          'fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)}]
         self.compositionSpace = CompositionSpace(symbols=['Mg', 'Al', 'O'], blocks=[[4, 8, 16]], range=[[1, 1]])
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
-        utilities = SimpleNamespace(compositionSpace=self.compositionSpace,
-                                    simpleMoleculeUtility=self.simpleMoleculeUtility)
-        self.fitness = ExpressionEvaluator(tuple(self.systems), utilities)
+        expressions = dict(
+            basic=BasicFunctions(),
+            compositionSpace=self.compositionSpace.fitnessExtension(self.compositionSpace),
+            simpleMoleculeUtility=self.simpleMoleculeUtility.fitnessExtension(self.simpleMoleculeUtility)
+        )
+        self.fitness = ExpressionEvaluator(tuple(self.systems), expressions)
 
     def test_enthalpy(self):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
@@ -201,16 +204,20 @@ class FitnessXray_Test(unittest.TestCase):
         for ID, system in enumerate(self.systems):
             system['ID'] = ID
             system['enthalpy'] = enthalpies[ID]
+            self.systems[ID] = AtomisticPoolEntry(**system)
 
         self.compositionSpace = CompositionSpace(symbols=['Ba', 'H'], blocks=[[1, 12]], range=[[4, 4]])
         self.powderSpectrumAnalyzer = PowderSpectrumAnalyzer(**PowderSpectrumAnalyzer.parse(pj(HOMEPATH, 'spectrum.txt')))
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
 
-        utilities = SimpleNamespace(compositionSpace=self.compositionSpace,
-                                    powderSpectrumAnalyzer=self.powderSpectrumAnalyzer,
-                                    simpleMoleculeUtility=self.simpleMoleculeUtility)
+        expressions = dict(
+            basic=BasicFunctions(),
+            compositionSpace=self.compositionSpace.fitnessExtension(self.compositionSpace),
+            simpleMoleculeUtility=self.simpleMoleculeUtility.fitnessExtension(self.simpleMoleculeUtility),
+            powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.fitnessExtension(self.powderSpectrumAnalyzer),
+        )
 
-        self.fitness = ExpressionEvaluator(tuple(self.systems), utilities)
+        self.fitness = ExpressionEvaluator(tuple(self.systems), expressions)
 
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]

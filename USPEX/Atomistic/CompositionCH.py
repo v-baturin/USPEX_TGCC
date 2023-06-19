@@ -1,7 +1,8 @@
 from types import SimpleNamespace
 
-from ..Fitness.ConvexHull import ConvexHull
-from ..Fitness.Fitness import ExpressionEvaluator
+from ..Fitness.Private.ConvexHull import ConvexHull
+from ..Fitness.ExpressionEvaluator import ExpressionEvaluator
+from ..Fitness.BasicFunctions import BasicFunctions
 from ..Optimizers.SystemPool import SystemPool
 from .CompositionSpace import CompositionSpace
 
@@ -13,8 +14,12 @@ class CompositionCH(ConvexHull):
         pool.update(self.systems)
         self.compositionSpace = compositionSpace
         self.simpleMoleculeUtility = simpleMoleculeUtility
-        utilities = SimpleNamespace(compositionSpace = compositionSpace, simpleMoleculeUtility = simpleMoleculeUtility)
-        super().__init__(ExpressionEvaluator(pool.uniqueSystems, utilities).evaluate(('getRelativeCHSpace',
+        extensions = dict(
+            basic=BasicFunctions(),
+            compositionSpace=compositionSpace.fitnessExtension(compositionSpace),
+            simpleMoleculeUtility=simpleMoleculeUtility.fitnessExtension(simpleMoleculeUtility)
+        )
+        super().__init__(ExpressionEvaluator(pool.uniqueSystems, extensions).evaluate(('getRelativeCHSpace',
                                                                                       ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition'), 'enthalpy')))
 
@@ -38,7 +43,12 @@ class CompositionCH(ConvexHull):
         self.systems.extend(systems)
         pool = SystemPool()
         pool.update(self.systems)
-        utilities = SimpleNamespace(compositionSpace = self.compositionSpace, simpleMoleculeUtility = self.simpleMoleculeUtility)
-        super().__init__(ExpressionEvaluator(pool.uniqueSystems, utilities).evaluate(('getRelativeCHSpace',
+        extensions = dict(
+            basic=BasicFunctions(),
+            compositionSpace=self.compositionSpace.fitnessExtension(self.compositionSpace),
+            simpleMoleculeUtility=self.simpleMoleculeUtility.fitnessExtension(self.simpleMoleculeUtility)
+        )
+
+        super().__init__(ExpressionEvaluator(pool.uniqueSystems, extensions).evaluate(('getRelativeCHSpace',
                                                                                       ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition'), 'enthalpy')))

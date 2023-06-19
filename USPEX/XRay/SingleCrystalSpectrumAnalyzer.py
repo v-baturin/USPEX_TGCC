@@ -12,9 +12,12 @@ import numpy as np
 from pymatgen.core.structure import Structure
 
 from .get_reflections import get_reflections
+from ..Fitness.SingleCrystalSpectrumAnalyzerFunctions import SingleCrystalSpectrumAnalyzerFunctions
 
 
 class SingleCrystalSpectrumAnalyzer(object):
+
+    fitnessExtension = SingleCrystalSpectrumAnalyzerFunctions
 
     def __init__(self, expReflections: list, cellParameters: tuple):
         """
@@ -88,12 +91,6 @@ class SingleCrystalSpectrumAnalyzer(object):
 
             wR = np.sqrt(numerator / denominator)       # weighted R-factor
             system.setProperty('singleCrystalSpectrumAnalyzer.xraydistance', wR)
-
-    def xraydistance(self, system):
-        if 'singleCrystalSpectrumAnalyzer.xraydistance' not in system:
-            self.analyze(system)
-        assert 'singleCrystalSpectrumAnalyzer.xraydistance' in system
-        return system['singleCrystalSpectrumAnalyzer.xraydistance']
 
     @staticmethod
     def parse(hklFile: str):

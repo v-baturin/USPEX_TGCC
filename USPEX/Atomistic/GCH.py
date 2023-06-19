@@ -1,8 +1,9 @@
 import logging
 import numpy as np
 
-from ..Fitness.ConvexHull import ConvexHull
-from ..Fitness.Fitness import ExpressionEvaluator
+from ..Fitness.Private.ConvexHull import ConvexHull
+from ..Fitness.ExpressionEvaluator import ExpressionEvaluator
+from ..Fitness.BasicFunctions import BasicFunctions
 from ..Optimizers.SystemPool import SystemPool
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             pool = SystemPool()
             pool.update(self.systems)
-            super().__init__(ExpressionEvaluator(pool.uniqueSystems, []).evaluate(('getAbsoluteCHSpace',
+            super().__init__(ExpressionEvaluator(pool.uniqueSystems, {'basic': BasicFunctions()}).evaluate(('getAbsoluteCHSpace',
                                                                                    ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))
@@ -84,7 +85,7 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             pool = SystemPool()
             pool.update(self.systems)
-            super().__init__(ExpressionEvaluator(pool.uniqueSystems, []).evaluate(('getAbsoluteCHSpace',
+            super().__init__(ExpressionEvaluator(pool.uniqueSystems, {'basic': BasicFunctions()}).evaluate(('getAbsoluteCHSpace',
                                                                                    ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))

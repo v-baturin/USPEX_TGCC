@@ -9,6 +9,7 @@ Data type representing rules of how we determine which systems are better.
 
 import logging
 import numpy as np
+from typing import Mapping
 from copy import copy
 from sklearn.decomposition import PCA
 

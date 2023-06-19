@@ -6,7 +6,7 @@ class CellFunctions:
         self.utility = utility
 
     @staticmethod
-    def volume(system: dict):
+    def volume(system):
         """
         For using in **Fitness** infrastructure
 
@@ -17,7 +17,7 @@ class CellFunctions:
         return system['cell'].getVolume()
 
     @staticmethod
-    def area(system: dict):
+    def area(system):
         """
         For using in **Fitness** infrastructure
 
@@ -28,7 +28,7 @@ class CellFunctions:
         return system['cell'].getArea()
     
     @staticmethod
-    def length(system: dict):
+    def length(system):
         """
         For using in **Fitness** infrastructure
 
@@ -38,7 +38,7 @@ class CellFunctions:
         """
         return system['cell'].getLength()
 
-    def symmetry(self, system: dict):
+    def symmetry(self, system):
         """
         For using in **Fitness** infrastructure
 
@@ -46,15 +46,15 @@ class CellFunctions:
 
         :return: calculated symmetry of system.
         """
-        cell = system['cell']
-        molecules = system['molecules']
-        structure, disassembler = self.utility.atomicDisassemblerType.assemble(molecules, cell)
+        structure = system.getAtomicStructure()
+        cell = structure.getCell()
         lattice = cell.getCellVectors()
         coordinates = structure.getFractionalCoordinates()
         numbers = [el.z for el in structure.getAtomTypes()]
         spacegroup = spglib.get_spacegroup((lattice, coordinates, numbers), symprec=self.utility.symTolerance)
-        if cell.getPBC() == (1, 1, 1) and spacegroup is not None:
+        if cell.dim == 3 and spacegroup is not None:
             symmetry = '{:7s} {:4s}'.format(*[str(x) for x in spacegroup.split()])
         else:
             symmetry = None
         return symmetry
+

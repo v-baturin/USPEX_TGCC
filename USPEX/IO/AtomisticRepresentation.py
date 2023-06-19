@@ -614,14 +614,14 @@ class AtomisticRepresentation(object):
         utlts = optimizer.target.utilities
         smu = optimizer.pool.extensions['simpleMoleculeUtility']
         rdu = optimizer.pool.extensions['radialDistributionUtility']
-        # if utlts.cellUtility.getDim() == 3:
-        #     numBlocks = [utlts.compositionSpace.numBlocks(smu.composition(system)) for system in population]
-        #     numBlocks = np.asarray(numBlocks)
-        #     volumes = [system['cellUtility.volume'] for system in population]
-        #     volumes = np.asarray(volumes)
-        #     approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
-        # else:
-        approximateVolume = 'NA'
+        if utlts.cellUtility.getDim() == 3:
+            numBlocks = [utlts.compositionSpace.numBlocks(smu.composition(system)) for system in population]
+            numBlocks = np.asarray(numBlocks)
+            volumes = [system['cellUtility.volume'] for system in population]
+            volumes = np.asarray(volumes)
+            approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
+        else:
+            approximateVolume = 'NA'
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         fitness = [system[optimizer.optType] for system in population if not system['isBad']]
         order = [rdu.averageOrder(system) for system in population if not system['isBad']]

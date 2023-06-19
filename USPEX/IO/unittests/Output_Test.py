@@ -79,8 +79,10 @@ class Output_Test(unittest.TestCase):
                     optimizer.pool.allSystems[ID] = system
                     system.setProperty('isBad', False)
                 optimizer.best = set(targetState[0])
-                optimizer.fitness = optimizer.Fitness.calculate(optimizer.pool.uniqueSystems, optimizer.optType,
-                                                                optimizer.target.utilities)
+                optimizer.ExpressionEvaluator.calculate('cellUtility.volume', optimizer.pool.uniqueSystems,
+                                                        optimizer.pool.extensions)
+                optimizer.ExpressionEvaluator.calculate('cellUtility.symmetry', optimizer.pool.uniqueSystems,
+                                                        optimizer.pool.extensions)
                 optimizers.append(optimizer)
             with open(TESTPATH/f"output_data/population{gen}", "r") as f:
                 populations.append([systems[ID][-1] for ID in json.load(f)])
