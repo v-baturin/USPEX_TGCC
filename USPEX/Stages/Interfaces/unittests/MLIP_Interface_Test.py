@@ -59,6 +59,8 @@ class MLIP_train_Test(unittest.TestCase):
         self.trainFolder = HOMEPATH/'MLIP_TRAIN'
         self.trainFolder.mkdir()
         shutil.copy(SPECIFICPATH/'24g.mtp', self.trainFolder)
+        with open(self.trainFolder/'ts.cfg', 'wt'):
+            pass
         self.interface = MLIP_Interface(tag='0', mode='train', potential=self.trainFolder/'24g.mtp',
                                         specorder=['Mo', 'S'], trainingSet=self.trainFolder/'ts.cfg',
                                         args=SPECIFICPATH/'mlip_args_0')
