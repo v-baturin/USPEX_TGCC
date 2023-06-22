@@ -13,8 +13,8 @@ from typing import Mapping
 from copy import copy
 from sklearn.decomposition import PCA
 
-from .Private.ConvexHull import ConvexHull
-from .Private.paretoRanking import paretoRanking
+from USPEX.Expressions.ConvexHull import ConvexHull
+from USPEX.Expressions.paretoRanking import paretoRanking
 
 
 logger = logging.getLogger(__name__)

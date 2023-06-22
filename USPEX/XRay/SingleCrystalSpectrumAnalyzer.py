@@ -12,7 +12,7 @@ import numpy as np
 from pymatgen.core.structure import Structure
 
 from .get_reflections import get_reflections
-from ..Fitness.SingleCrystalSpectrumAnalyzerFunctions import SingleCrystalSpectrumAnalyzerFunctions
+from USPEX.Expressions.Functions.SingleCrystalSpectrumAnalyzerFunctions import SingleCrystalSpectrumAnalyzerFunctions
 
 
 class SingleCrystalSpectrumAnalyzer(object):

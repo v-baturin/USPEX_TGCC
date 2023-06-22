@@ -10,17 +10,17 @@ Objects and methods for handling chemical bonds
 
 import logging
 import numpy as np
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Tuple, Union
 from ase.atoms import Atom, Atoms
 from ase.neighborlist import primitive_neighbor_list
-from itertools import chain, combinations_with_replacement
+from itertools import combinations_with_replacement
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial.distance import cdist
 from scipy.stats import gmean
 from itertools import chain
 
 from .VolumeEstimator import VolumeEstimator
-from ..Fitness.BondFunctions import BondFunctions
+from USPEX.Expressions.Functions.BondFunctions import BondFunctions
 
 
 logger = logging.getLogger(__name__)

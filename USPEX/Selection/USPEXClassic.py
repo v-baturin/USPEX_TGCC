@@ -93,7 +93,7 @@ class USPEXClassic(object):
         self.pool = pool
         self.target = target
         antiseeds = {} if antiseeds is None else antiseeds
-        self.pool.extensions['antiseeds'] = Antiseeds(**antiseeds)
+        self.pool.entryFactory.extensions['antiseeds'] = Antiseeds(**antiseeds)
         self.fingerprintUtility = fingerprintUtility
         self.optType = optType
         self.fractions = fractions
@@ -125,8 +125,8 @@ class USPEXClassic(object):
         """
 
         if self.pool.generations:
-            if self.pool.extensions['antiseeds'].legacy:
-                self.pool.extensions['antiseeds'].payPenalties(self.pool.generations[-1]['allSystems'],
+            if self.pool.entryFactory.extensions['antiseeds'].legacy:
+                self.pool.entryFactory.extensions['antiseeds'].payPenalties(self.pool.generations[-1]['allSystems'],
                                                              self.pool.uniqueSystems, self.fingerprintUtility)
 
             population = list(self.pool.uniqueSystems) if self.globalParentsPool else \
@@ -247,8 +247,8 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        if not self.pool.extensions['antiseeds'].legacy:
-            self.pool.extensions['antiseeds'].payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
+        if not self.pool.entryFactory.extensions['antiseeds'].legacy:
+            self.pool.entryFactory.extensions['antiseeds'].payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
 
         if self.target.seeds is not None:
             seeds = self.target.seeds(self.pool.entryFactory)

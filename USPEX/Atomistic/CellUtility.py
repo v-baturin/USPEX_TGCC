@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation
 from scipy.linalg import orthogonal_procrustes
 
 from .Transformation import Transformation
-from ..Fitness.CellFunctions import CellFunctions
+from USPEX.Expressions.Functions.CellFunctions import CellFunctions
 
 logger = logging.getLogger(__name__)
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05

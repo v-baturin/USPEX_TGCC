@@ -2,16 +2,18 @@
 USPEX.Common.ExpressionEvaluator
 ================================
 
-Data type representing rules of how we determine which systems are better.
+Infrastructure component which evaluates complex expression for a pool of individuals.
+It utilizes extensions approach which allows developer to define their own primitives (properties and functions)
+to be used in expression.
 
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
 """
 
 import logging
 import numpy as np
-from collections.abc import Mapping
+from typing import Mapping, Sequence, Union
 
-from .presets import applyPresets
+from USPEX.Expressions.Functions.presets import applyPresets
 
 
 logger = logging.getLogger(__name__)
@@ -19,15 +21,21 @@ logger = logging.getLogger(__name__)
 
 class ExpressionEvaluator:
 
-    def __init__(self, pool, extensions):
-        self.pool = pool
-        self.extensions = extensions
+    @staticmethod
+    def calculate(expression: Union[str, tuple, int, float], pool: Sequence, extensions: Mapping) -> None:
+        calculator = ExpressionEvaluator(pool, extensions)
+        calculator.evaluate(expression)
+        calculator.setAllExpressions()
+
+    def __init__(self, pool: Sequence, extensions: Mapping):
+        self._pool = pool
+        self._extensions = extensions
         self._storedData = {}
 
-    def evaluate(self, expression):
+    def evaluate(self, expression: Union[str, tuple, int, float]) -> np.ndarray:
         expression = applyPresets(expression)
         if expression not in self._storedData:
-            if len(self.pool) == 0:
+            if len(self._pool) == 0:
                 valueArray = np.empty(0)
             elif isinstance(expression, tuple):
                 funcName, *funcParams = expression
@@ -45,9 +53,9 @@ class ExpressionEvaluator:
                     extension, funcName = funcName
                 else:
                     raise RuntimeError(f"Too complex expression {'.'.join(expression)}.")
-                valueArray = getattr(self.extensions[extension], funcName)(*arguments)
+                valueArray = getattr(self._extensions[extension], funcName)(*arguments)
             elif isinstance(expression, str):
-                value = [system[expression] for system in self.pool]
+                value = [system[expression] for system in self._pool]
                 # value = [self.evaluateTerminal(expression, system) for system in self.pool]
                 # unfortunately simple np.asarray spoils dictionaries
                 if value and isinstance(value[0], Mapping):
@@ -62,22 +70,7 @@ class ExpressionEvaluator:
             self._storedData[expression] = valueArray
         return self._storedData[expression]
 
-    def evaluateTerminal(self, expression, system):
-        if expression in system:
-            value = system[expression]
-        else:
-            extension, suffix, *extra = expression.split('.')
-            assert not extra, f"Too complex property {expression}."
-            value = getattr(self.extensions[extension], suffix)(system)
-        return value
-
-    def setAllExpressions(self):
+    def setAllExpressions(self) -> None:
         for expression, values in self._storedData.items():
-            for s, value in zip(self.pool, values):
+            for s, value in zip(self._pool, values):
                 s.setExpression(expression, value)
-
-    @staticmethod
-    def calculate(expression, pool, extensions):
-        calculator = ExpressionEvaluator(pool, extensions)
-        calculator.evaluate(expression)
-        calculator.setAllExpressions()

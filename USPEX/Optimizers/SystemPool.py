@@ -8,9 +8,8 @@ USPEX.SystemPool
 import logging
 import numpy as np
 from copy import copy
-from itertools import chain
 
-from ..Fitness.presets import applyPresets
+from USPEX.Expressions.Functions.presets import applyPresets
 
 logger = logging.getLogger(__name__)
 

@@ -14,7 +14,7 @@ from os.path import join as pj
 
 
 from ..ExpressionEvaluator import ExpressionEvaluator
-from ..BasicFunctions import BasicFunctions
+from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation, AtomisticPoolEntry
 from ...Atomistic.AtomicPrimitives import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint

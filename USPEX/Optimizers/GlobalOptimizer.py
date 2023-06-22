@@ -13,7 +13,7 @@ from typing import List
 
 from .SystemPool import SystemPool
 from .Target import Target, TargetType
-from ..Fitness.BasicFunctions import BasicFunctions
+from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 
 logger = logging.getLogger(__name__)
 

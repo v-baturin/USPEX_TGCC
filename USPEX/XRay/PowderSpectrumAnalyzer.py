@@ -16,7 +16,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 
-from ..Fitness.PowderSpectrumAnalyzerFunctions import PowderSpectrumAnalyzerFunctions
+from USPEX.Expressions.Functions.PowderSpectrumAnalyzerFunctions import PowderSpectrumAnalyzerFunctions
 
 
 class PowderSpectrumAnalyzer(object):

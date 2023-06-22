@@ -1,9 +1,9 @@
 import logging
 import numpy as np
 
-from ..Fitness.Private.ConvexHull import ConvexHull
-from ..Fitness.ExpressionEvaluator import ExpressionEvaluator
-from ..Fitness.BasicFunctions import BasicFunctions
+from USPEX.Expressions.ConvexHull import ConvexHull
+from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
+from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 from ..Optimizers.SystemPool import SystemPool
 
 logger = logging.getLogger(__name__)

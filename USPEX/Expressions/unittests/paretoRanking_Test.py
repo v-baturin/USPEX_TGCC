@@ -11,7 +11,7 @@ import unittest
 
 import numpy as np
 
-from ..paretoRanking import paretoRanking
+from USPEX.Expressions.paretoRanking import paretoRanking
 
 
 class paretoRankingTest(unittest.TestCase):

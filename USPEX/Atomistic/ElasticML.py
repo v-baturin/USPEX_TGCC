@@ -5,7 +5,7 @@ import torch.nn as nn
 from pathlib import Path
 from pymatgen.core.structure import Structure
 
-from ..Fitness.ElasticMLFunctions import ElasticMLFunctions
+from USPEX.Expressions.Functions.ElasticMLFunctions import ElasticMLFunctions
 
 EMBEDDINGS = [
     [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0],
