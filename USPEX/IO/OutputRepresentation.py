@@ -135,7 +135,7 @@ class OutputRepresentation(object):
                 output.append('    Optimization results')
                 table = self.targetRepresentation.getNewSystemsTable()
                 for system in population:
-                    table.update(system['ID'], system, optimizer.fitness)
+                    table.update(system['ID'], system)
                 output.append(table.table.get_string())
                 output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
                 output.append('')
@@ -144,7 +144,7 @@ class OutputRepresentation(object):
             if final:
                 table = self.targetRepresentation.getNewSystemsTable()
                 for ID in optimizer.best:
-                    table.update(ID, optimizer.pool.allSystems[ID], optimizer.fitness)
+                    table.update(ID, optimizer.pool.allSystems[ID])
                 output += createHeader_wrap(['Calculation results'], 'center')
                 output.append(table.table.get_string())
 

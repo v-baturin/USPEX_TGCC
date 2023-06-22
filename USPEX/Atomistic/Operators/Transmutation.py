@@ -21,9 +21,9 @@ class Transmutation:
     def __call__(self, system, offspringFactory=None):
         molecules = system['molecules']
         cell = system['cell']
-        structure, disassembler = offspringFactory.atomicDisassemblerType.assemble(molecules, cell)
+        structure, disassembler = system.atomicDisassemblerType.assemble(molecules, cell)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
-            symbolsIn = self.simpleMoleculeUtility.moleculeTypes(system)
+            symbolsIn = system['simpleMoleculeUtility.moleculeTypes']
             symbolsOut = self.compositionSpace.symbols
 
             trans = np.array([(i,sOut) for i, sIn in enumerate(symbolsIn) for sOut in symbolsOut if sIn != sOut],

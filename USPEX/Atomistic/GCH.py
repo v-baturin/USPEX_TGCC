@@ -1,8 +1,9 @@
 import logging
 import numpy as np
 
-from ..Fitness.ConvexHull import ConvexHull
-from ..Fitness.Fitness import Fitness
+from USPEX.Expressions.ConvexHull import ConvexHull
+from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
+from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 from ..Optimizers.SystemPool import SystemPool
 
 logger = logging.getLogger(__name__)
@@ -52,8 +53,8 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             pool = SystemPool()
             pool.update(self.systems)
-            super().__init__(Fitness(pool.uniqueSystems, []).calcFitness(('getAbsoluteCHSpace',
-                                                                    ('getPrincipalComponents', self.DIMENSIONALITY - 1,
+            super().__init__(ExpressionEvaluator(pool.uniqueSystems, {'basic': BasicFunctions()}).evaluate(('getAbsoluteCHSpace',
+                                                                                   ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))
 
@@ -84,7 +85,7 @@ class GeneralizedConvexHull(ConvexHull):
         else:
             pool = SystemPool()
             pool.update(self.systems)
-            super().__init__(Fitness(pool.uniqueSystems, []).calcFitness(('getAbsoluteCHSpace',
-                                                                    ('getPrincipalComponents', self.DIMENSIONALITY - 1,
+            super().__init__(ExpressionEvaluator(pool.uniqueSystems, {'basic': BasicFunctions()}).evaluate(('getAbsoluteCHSpace',
+                                                                                   ('getPrincipalComponents', self.DIMENSIONALITY - 1,
                                                                      ('hstack', ('tabulate', 'fingerprint'))),
                                                                     'enthalpy')))

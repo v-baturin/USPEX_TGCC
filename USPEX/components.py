@@ -1,13 +1,13 @@
 from .Atomistic.Element import Element
 from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
-from .Atomistic.AtomisticPoolEntry import AtomisticPoolEntry
+from .Atomistic.AtomisticPoolEntry import AtomisticPoolEntry, EntryFactory
 AtomisticPoolEntry.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
-from .Fitness.Fitness import Fitness
-GlobalOptimizer.setFitnessType(Fitness)
+from .Expressions.ExpressionEvaluator import ExpressionEvaluator
+GlobalOptimizer.setExpressionEvaluatorType(ExpressionEvaluator)
 from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
@@ -53,7 +53,7 @@ GlobalOptimizer.registerTarget('Atomistic',
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
-                      entry=AtomisticPoolEntry,
+                      entry=EntryFactory,
                       seeds=Seeds)
 from .Stages.Executor import Executor
 from .Stages.Interfaces.ASEInterfaceAdapter import ASEInterfaceAdapter

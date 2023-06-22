@@ -1,3 +1,11 @@
+class EntryFactory:
+
+    def __init__(self, extensions):
+        self.extensions = extensions
+
+    def __call__(self, **kwargs):
+        return AtomisticPoolEntry(extensions=self.extensions, **kwargs)
+
 class AtomisticPoolEntry:
 
     structureType = None
@@ -12,8 +20,10 @@ class AtomisticPoolEntry:
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, **system):
+    def __init__(self, extensions=None, **system):
         self.system = system
+        self.expressions = {}
+        self.extensions = extensions if extensions is not None else {}
 
     def getAtomicStructure(self, prefix=None):
         system = self._getPrefixedValue(prefix)
@@ -77,8 +87,22 @@ class AtomisticPoolEntry:
             else:
                 del self.system[name]
 
+    def setExpression(self, expression, value):
+        if expression not in self.expressions:
+            self.expressions[expression] = []
+        self.expressions[expression].append(value)
+
     def __getitem__(self, item):
-        return self.system[item]
+        if item in self.system:
+            return self.system[item]
+        elif item in self.expressions:
+            return self.expressions[item][-1]
+        elif '.' in item:
+            extension, method, *other = item.split('.')
+            assert not other, f'Too complex property name {item}.'
+            if extension in self.extensions:
+                return getattr(self.extensions[extension], method)(self)
+        raise KeyError(f'Property {item} is not set for {self}.')
 
     def __contains__(self, item):
         return item in self.system
