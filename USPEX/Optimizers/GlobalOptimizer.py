@@ -14,6 +14,8 @@ from typing import List
 from .SystemPool import SystemPool
 from .Target import Target, TargetType
 from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
+from USPEX.Expressions.Functions.presets import applyPresetsRecursive
+
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +132,7 @@ class GlobalOptimizer(object):
         self.pool.append(population)
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
-                VO.tune(population, self.optType)
+                VO.tune(population, applyPresetsRecursive(self.optType))
         best = set(system['ID'] for system in self.pool.fronts(self.pool.uniqueSystems, self.optType)[0])
         if best == self.best:
             self._isStable = True
@@ -166,8 +168,7 @@ class GlobalOptimizer(object):
             for i, ref_system in enumerate(self.pool.uniqueSystems):
                 if self.fingerprintUtility.equal(system, ref_system) and system['ID'] != ref_system['ID']:
                     logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
-                    if system[self.optType] < \
-                            ref_system[self.optType]:
+                    if system[applyPresetsRecursive(self.optType)] < ref_system[applyPresetsRecursive(self.optType)]:
                         self.fingerprintUtility.clean(ref_system)
                         ref_system.setProperty('originalID', system['ID'])
                         if 'duplicates' in ref_system:

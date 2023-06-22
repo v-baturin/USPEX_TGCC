@@ -39,6 +39,13 @@ def applyPresets(optType):
         optType = applyPresets(optType)
     return optType
 
+def applyPresetsRecursive(optType):
+    optType = applyPresets(optType)
+    if isinstance(optType, tuple):
+        optType = (optType[0], *(applyPresetsRecursive(param) for param in optType[1:]))
+    return optType
+
+
 def _substituteParams(optType, templateParam, param):
     if optType == templateParam:
         optType = param

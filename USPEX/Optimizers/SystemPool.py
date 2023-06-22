@@ -9,7 +9,7 @@ import logging
 import numpy as np
 from copy import copy
 
-from USPEX.Expressions.Functions.presets import applyPresets
+from USPEX.Expressions.Functions.presets import applyPresetsRecursive
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ class SystemPool(object):
 
     @staticmethod
     def fronts(pool, expression):
-        expression = applyPresets(expression)
+        expression = applyPresetsRecursive(expression)
         values = [s[expression] for s in pool]
         return [[pool[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
 

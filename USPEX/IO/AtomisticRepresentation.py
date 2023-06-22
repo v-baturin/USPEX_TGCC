@@ -16,8 +16,8 @@ from pathlib import Path
 from prettytable import PrettyTable
 
 from .formatters import createHeader_wrap
-from ..presets import presetFitness
 from .read_molecule import read_molecule
+from ..Expressions.Functions.presets import presetFitness, applyPresetsRecursive
 
 matplotlib.use('Agg')
 
@@ -87,7 +87,7 @@ class SystemsTable(object):
             row.insert(1, rank)
         for column, columnName in self.columns:
             try:
-                value = system[column]
+                value = system[applyPresetsRecursive(column)]
             except Exception:
                 value = None
             if isinstance(value, float):
@@ -621,7 +621,7 @@ class AtomisticRepresentation(object):
         else:
             approximateVolume = 'NA'
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
-        fitness = [system[optimizer.optType] for system in population if not system['isBad']]
+        fitness = [system[applyPresetsRecursive(optimizer.optType)] for system in population if not system['isBad']]
         order = [system['radialDistributionUtility.averageOrder'] for system in population if not system['isBad']]
         if np.any(np.isnan(np.asarray(fitness, dtype = float))):
             correlation = 0.0
@@ -733,22 +733,20 @@ class AtomisticRepresentation(object):
             convexHull = []
             for generation, opt in enumerate(optimizers):
                 convexHull = [system for system in opt.pool.uniqueSystems
-                              if np.isclose(opt.fitness.getFitnessByID('enthalpyCCH', originalID(system)), 0.0)]
+                              if np.isclose(system[applyPresetsRecursive('enthalpyCCH')], 0.0)]
                 content_convexHull += f'Generation {generation}\n'
                 table = self.getNewSystemsTable()
                 for system in convexHull:
-                    table.update(system['ID'])
+                    table.update(system['ID'], system)
                 content_convexHull += table.table.get_string() + '\n'
 
             with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
                 fp.write(content_convexHull)
 
             extendedConvexHull = [system for system in optimizer.pool.uniqueSystems
-                                  if optimizer.fitness.getFitnessByID('enthalpyCCH', originalID(system)) < self.rangeECH]
+                                  if system[applyPresetsRecursive('enthalpyCCH')] < self.rangeECH]
 
-            allFitnesses = {system['ID']: optimizer.pool.generations[-1]['fitness'].getFitnessByID(optimizer.optType, originalID(system))
-                            for system in extendedConvexHull}
-            frontsECH = optimizer.fitness.sort(extendedConvexHull, allFitnesses)
+            frontsECH = optimizer.pool.fronts(extendedConvexHull, optimizer.optType)
 
             for rank, front in enumerate(frontsECH):
                 for system in front:

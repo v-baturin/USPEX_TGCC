@@ -13,7 +13,7 @@ import logging
 import numpy as np
 from typing import Mapping, Sequence, Union
 
-from USPEX.Expressions.Functions.presets import applyPresets
+from USPEX.Expressions.Functions.presets import applyPresetsRecursive
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +23,7 @@ class ExpressionEvaluator:
 
     @staticmethod
     def calculate(expression: Union[str, tuple, int, float], pool: Sequence, extensions: Mapping) -> None:
+        expression = applyPresetsRecursive(expression)
         calculator = ExpressionEvaluator(pool, extensions)
         calculator.evaluate(expression)
         calculator.setAllExpressions()
@@ -33,7 +34,6 @@ class ExpressionEvaluator:
         self._storedData = {}
 
     def evaluate(self, expression: Union[str, tuple, int, float]) -> np.ndarray:
-        expression = applyPresets(expression)
         if expression not in self._storedData:
             if len(self._pool) == 0:
                 valueArray = np.empty(0)
