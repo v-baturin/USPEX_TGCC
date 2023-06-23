@@ -519,7 +519,7 @@ def _make_matrices(coor: np.ndarray, molIndices: list, envIndices,
 
     assert isinstance(Rmax, float) and Rmax >= 0
 
-    coor = coor - np.floor(coor)  # scale it the [0 1]
+    # coor = coor - np.floor(coor)  # scale it the [0 1]
     N_atom = np.sum(numIons)
 
     types = []
