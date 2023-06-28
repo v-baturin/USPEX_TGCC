@@ -79,7 +79,7 @@ class ORCA_Interface:
 
         orca_input_lines[xyz_line_index] = '* xyz  {}  {}'.format(charge, multiplicity)
 
-        fixedIndices = np.copy(system['disassembler'].fixedIndices)
+        fixedIndices = np.copy(system['disassembler'].allFixedIndices)
         for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
             if i in fixedIndices:
                 orca_input_lines.append('{0:2s}  {1:15.8f}$ {2:15.8f}$ {3:15.8f}$'
