@@ -5,6 +5,8 @@ import torch.nn as nn
 from pathlib import Path
 from pymatgen.core.structure import Structure
 
+from USPEX.Expressions.Functions.ElasticMLFunctions import ElasticMLFunctions
+
 EMBEDDINGS = [
     [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -193,6 +195,7 @@ class ElasticML:
     STEP = 0.2
 
     disassemblerType = None
+    propertyExtension = ElasticMLFunctions
 
     @classmethod
     def registerTypes(cls, disassemblerType):
@@ -207,7 +210,7 @@ class ElasticML:
         with open(self.MODELNAME, "rb") as f:
             self.model = torch.load(f)
 
-    def _predictValues(self, system):
+    def predictValues(self, system):
         """
         Predict values of E and nu using neural network from doi.org/10.1063/5.0012055
         """
@@ -243,38 +246,3 @@ class ElasticML:
         system['elasticML.fractureToughness'] = (10**-2)*(8840**-0.5)*(V0**(1/6)) * \
                                                 (E*(1-13.7*nu+48.6*nu**2)/(1-15.2*nu+70.2*nu**2-81.5*nu**3))**1.5
         return
-
-    def youngsModulus(self, system):
-        if not 'elasticML.youngsModulus' in system:
-            self._predictValues(system)
-        return system['elasticML.youngsModulus']
-
-    def poissonsRatio(self, system):
-        if not 'elasticML.poissonsRatio' in system:
-            self._predictValues(system)
-        return system['elasticML.poissonsRatio']
-
-    def bulkModulus(self, system):
-        if not 'elasticML.bulkModulus' in system:
-            self._predictValues(system)
-        return system['elasticML.bulkModulus']
-
-    def shearModulus(self, system):
-        if not 'elasticML.shearModulus' in system:
-            self._predictValues(system)
-        return system['elasticML.shearModulus']
-
-    def pughsRatio(self, system):
-        if not 'elasticML.pughsRatio' in system:
-            self._predictValues(system)
-        return system['elasticML.pughsRatio']
-
-    def vickersHardness(self, system):
-        if not 'elasticML.vickersHardness' in system:
-            self._predictValues(system)
-        return system['elasticML.vickersHardness']
-
-    def fractureToughness(self, system):
-        if not 'elasticML.fractureToughness' in system:
-            self._predictValues(system)
-        return system['elasticML.fractureToughness']

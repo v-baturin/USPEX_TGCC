@@ -56,7 +56,7 @@ class USPEXClassicRepresentation(object):
             block.append('     Best and diverse structures from previous generation')
             mostDiverseTable = targetRepresentation.getNewSystemsTable()
             for system in optimizer.createPopulation.getMostDiverse():
-                mostDiverseTable.update(system['ID'], system, optimizer.fitness)
+                mostDiverseTable.update(system['ID'], system)
             block.append(mostDiverseTable.table.get_string())
 
         amounts = Counter()

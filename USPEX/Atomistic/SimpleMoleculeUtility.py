@@ -7,9 +7,14 @@ import numpy as np
 from collections import Counter
 
 from .Transformation import Transformation
+from USPEX.Expressions.Functions.SimpleMoleculeFunctions import SimpleMoleculeFunctions
 
 
 DENSITY_CONST = 1.660539
+INTEGRITY_TOL = {'rigid': 0.1,  # maximum relative change in all distances
+                 'none': None
+                 # 'soft':
+                 }
 
 
 class SimpleMoleculeUtility(object):
@@ -19,6 +24,7 @@ class SimpleMoleculeUtility(object):
 
     structureType = None
     atomType = None
+    propertyExtension = SimpleMoleculeFunctions
 
     @classmethod
     def registerTypes(cls, structureType, atomType):
@@ -31,7 +37,7 @@ class SimpleMoleculeUtility(object):
         cls.structureType = structureType
         cls.atomType = atomType
 
-    def __init__(self, molecules: dict = None, doCenterMolecule=False):
+    def __init__(self, molecules: dict = None, doCenterMolecule=False, checkIntegrityType='rigid', integrityTol=None):
         """
         :param molecules: {<name>: <definition>} dictionary of molecule definitions.
 
@@ -46,6 +52,9 @@ class SimpleMoleculeUtility(object):
                 self.molecules[symbol] = molecule
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
         # TODO: what if we have two molecules with same formula?
+        self.checkIntegrityType = checkIntegrityType
+        self.integrityTol = INTEGRITY_TOL[checkIntegrityType] if integrityTol is None else integrityTol
+
 
 
     def populateStructure(self, cell, operations):
@@ -84,40 +93,6 @@ class SimpleMoleculeUtility(object):
         :return: molecule symbol.
         """
         return self.formulaToTypeMap[molecule.getFormula()]
-
-    def moleculeTypes(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated or retrieve list of types of molecules of a system.
-        """
-        if 'simpleMoleculeUtility.moleculeTypes' not in system:
-            moleculeTypes = [self.determineMoleculeType(molecule) for molecule in system['molecules']]
-            system.setProperty('simpleMoleculeUtility.moleculeTypes', moleculeTypes)
-        return system['simpleMoleculeUtility.moleculeTypes']
-
-    def composition(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated or retrieve molecular composition of a system.
-        """
-        if 'simpleMoleculeUtility.composition' not in system:
-            composition = Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
-            system.setProperty('simpleMoleculeUtility.composition', composition)
-        return system['simpleMoleculeUtility.composition']
-
-    def density(self, system):
-        cell = system['cell']
-        if cell.dim == 3:
-            mass = sum(e.mass*v for e, v in self.getElementalComposition(self.composition(system)).items())
-            return mass/cell.getVolume()*DENSITY_CONST
-        else:
-            return None
 
     def getElementalComposition(self, composition):
         """

@@ -103,7 +103,7 @@ class RandSym:
         badSymmetryCounter = 0
         startTime = time()
         centerMinDistMatrix = np.zeros((len(symbols), len(symbols)))
-        cellType = offspringFactory.cellType
+        cellType = type(self.cellUtility.getRandomCell(1, np.empty(0)))
         radii = []
         for s in symbols:
             molecule = self.simpleMoleculeUtility.molecules[s]

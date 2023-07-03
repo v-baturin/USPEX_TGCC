@@ -28,6 +28,9 @@ def read_structures_and_energies(symbols, folder: Path):
     all_systems = AtomisticRepresentation.readAtomicStructures(folder/'gatheredPOSCARS')
     assert all_systems
     radialDistributionUtility = RadialDistributionUtility(symbols=symbols)
+    extensions = dict(
+        radialDistributionUtility=radialDistributionUtility.propertyExtension(radialDistributionUtility)
+    )
 
     generations = []
     IDs = []
@@ -45,8 +48,8 @@ def read_structures_and_energies(symbols, folder: Path):
         system['ID'] = ID
         system['isBad'] = False
         system['enthalpy'] = enthalpy
-        system = AtomisticPoolEntry(**system)
-        system.setProperty('fingerprint', radialDistributionUtility.structureFingerprint(system))
+        system = AtomisticPoolEntry(extensions=extensions, **system)
+        system.setProperty('fingerprint', system['radialDistributionUtility.structureFingerprint'])
         systems.append(system)
     all_systems = systems
 

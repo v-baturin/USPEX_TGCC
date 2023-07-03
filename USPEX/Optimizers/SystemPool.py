@@ -6,8 +6,10 @@ USPEX.SystemPool
 
 
 import logging
+import numpy as np
 from copy import copy
-from itertools import chain
+
+from USPEX.Expressions.Functions.presets import applyPresetsRecursive
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,7 @@ class SystemPool(object):
     entryFactory = None
 
     def __init__(self):
+        self.extensions = {}
         self.allSystems = {}
         self.generations = []
         self._newID = 0
@@ -67,17 +70,13 @@ class SystemPool(object):
         for system in population:
             self.allSystems[system['ID']] = system
 
-    def append(self, population, fitness):
+    def append(self, population):
         """
-        Inserts fitness object into last generation record.
-
-        :param fitness: fitness object.
-
         """
         logger.debug('Updating target: list of unique systems.')
         IDs = set(system['ID'] for system in population)
         newIDs = []
-        newGeneration = {'allSystems': [], 'newSystems': [], 'fitness': fitness}
+        newGeneration = {'allSystems': [], 'newSystems': []}
         for system in population:
             original = self.allSystems[self.getOriginalID(system['ID'])]
             if original['ID'] not in newIDs:
@@ -111,3 +110,10 @@ class SystemPool(object):
         """
         system = self.allSystems[ID]
         return system['originalID'] if 'originalID' in system else ID
+
+    @staticmethod
+    def fronts(pool, expression):
+        expression = applyPresetsRecursive(expression)
+        values = [s[expression] for s in pool]
+        return [[pool[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
+
