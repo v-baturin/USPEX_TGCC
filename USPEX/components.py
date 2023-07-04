@@ -30,7 +30,6 @@ from .Atomistic.BondUtility import BondUtility
 BondUtility.registerTypes(Element, AtomicDisassembler)
 from .Atomistic.ElasticML import ElasticML
 ElasticML.registerTypes(AtomicDisassembler)
-from .Atomistic.Constraints import Constraints
 from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
@@ -48,7 +47,7 @@ from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRando
 Seeds.registerTypes(AtomisticRepresentation)
 GlobalOptimizer.registerTarget('Atomistic',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
-                                 SimpleMoleculeUtility, Conditions, BondUtility, Constraints, ElasticML,
+                                 SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
                                  PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],

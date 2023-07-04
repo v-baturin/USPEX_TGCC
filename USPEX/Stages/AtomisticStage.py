@@ -23,21 +23,46 @@ class AtomisticStage:
         self.executor = self.executorType(tag=tag, **kwargs)
 
     async def run(self, source, sink):
-        sink.setProperty('ID', source['ID'])
+        if self.environmentStyle != 'noEnvironment' and 'environments' in source:
+            structure, disassembler = source.atomicDisassemblerType.assemble(source['molecules'], source['cell'],
+                                                                             source['environments'])
+        else:
+            structure, disassembler = source.atomicDisassemblerType.assemble(source['molecules'], source['cell'])
+        if self.perturbate:
+            structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
+        intermediate = type(source)(extensions=source.extensions,
+                                    ID=source['ID'],
+                                    vacuumSize=self.vacuumSize,
+                                    externalPressure=source['externalPressure'],
+                                    **disassembler.disassemble(structure))
+
         sink.setProperty('howCome', source['howCome'])
         sink.setProperty('parent', source['parent'])
-        sink.setProperty('molecules', source['molecules'])
-        sink.setProperty('cell', source['cell'])
-        if self.environmentStyle != 'noEnvironment' and 'environments' in source:
-            sink.setProperty('environments', source['environments'])
-        sink.setProperty('vacuumSize', self.vacuumSize)
-        sink.setProperty('externalPressure', source['externalPressure'])
-        if self.perturbate:
-            sink.updateAtomicStructure(
-                sink.getAtomicStructure().getPerturbatedStructure(sink['disassembler'].fixedIndices))
-        await self.executor.run(sink, sink)
-        self.target.constraints.systemCheckAndFix(sink)
+        await self.executor.run(intermediate, sink)
+        self.systemCheckAndFix(sink)
         self.checkAndFixMolecules(source, sink)
+
+    def systemCheckAndFix(self, system):
+        """
+        Checks if given system complies set up constraints.
+        If it does, make surtain adjustments, like align the system along required axis.
+        :param system: system to be checked and fixed
+        """
+        structure = system.getAtomicStructure()
+        minDistMatrix = self.target.utilities.bondUtility.getDistances(structure.getAtomTypes(),
+                                                      self.target.utilities.conditions.externalPressure)
+        goodStructure = self.target.utilities.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix)\
+                        and self.target.utilities.cellUtility.isGoodCell(system['cell'])
+        # and self.compositionSpace.isGoodComposition(self.simpleMoleculeUtility.composition(system))
+        if goodStructure:
+            goodStructure = goodStructure and self.target.utilities.bondUtility.isConnected(structure)
+            cell = structure.getRectifiedCell()
+            coordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())
+            if self.target.utilities.cellUtility.getDim() == 1 or self.target.utilities.cellUtility.getDim() == 2:
+                cell = cell.getAlignedCell(self.target.utilities.cellUtility.getAxis())
+            structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell)
+            system.updateAtomicStructure(structure)
+        return goodStructure
 
     def checkAndFixMolecules(self, source, sink):
         correctorDict = dict()
