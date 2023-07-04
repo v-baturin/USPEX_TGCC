@@ -57,27 +57,21 @@ class Target(object):
         self.expressionExtensions = {}
         self.propertyExtensions = {}
         failedUtilities = []
-        self.constraintsType = None
         for utilityType in targetTypes.utilities:
             name = utilityType.__name__[0].lower() + utilityType.__name__[1:]
-            if name == 'constraints':
-                self.constraintsType = utilityType
-            else:
-                try:
-                    utilities[name] = utilityType(**kwargs[name]) if name in kwargs else utilityType()
-                    if hasattr(utilityType, 'expressionExtension'):
-                        self.expressionExtensions[name] = getattr(utilityType, 'expressionExtension')(utilities[name])
-                    if hasattr(utilityType, 'propertyExtension'):
-                        self.propertyExtensions[name] = getattr(utilityType, 'propertyExtension')(utilities[name])
-                except TypeError as e:
-                    logger.debug(e)
-                    failedUtilities.append(utilityType.__name__)
-                except Exception as e:
-                    logger.error(e, exc_info=True)
+            try:
+                utilities[name] = utilityType(**kwargs[name]) if name in kwargs else utilityType()
+                if hasattr(utilityType, 'expressionExtension'):
+                    self.expressionExtensions[name] = getattr(utilityType, 'expressionExtension')(utilities[name])
+                if hasattr(utilityType, 'propertyExtension'):
+                    self.propertyExtensions[name] = getattr(utilityType, 'propertyExtension')(utilities[name])
+            except TypeError as e:
+                logger.debug(e)
+                failedUtilities.append(utilityType.__name__)
+            except Exception as e:
+                logger.error(e, exc_info=True)
         logger.info(f'Following utilities was not initialized: {failedUtilities}.')
         self.utilities = SimpleNamespace(**utilities)
-        assert self.constraintsType is not None
-        self.constraints = self.constraintsType(self.utilities)
 
         self.hybridizations = []
         for hybridizationType in targetTypes.hybridizations:
