@@ -39,9 +39,15 @@ def compileParams(main: dict) -> dict:
                 molecules[symbol['name']] = structure
                 symbols[i] = symbol['name']
                 elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
-        target['junctionUtility'] = {'molSitesMapping': molSitesMapping}
+        if 'junctionUtility' in target:
+            target['junctionUtility']['molSitesMapping'] = molSitesMapping
+        else:
+            target['junctionUtility'] = {'molSitesMapping': molSitesMapping}
         if molecules:
-            target['simpleMoleculeUtility'] = {'molecules': molecules}
+            if 'simpleMoleculeUtility' in target:
+                target['simpleMoleculeUtility']['molecules'] = molecules
+            else:
+                target['simpleMoleculeUtility'] = {'molecules': molecules}
         if 'selection' in optimizer:
             selection = optimizer['selection']
             if len(target['compositionSpace']['blocks']) > 1:
