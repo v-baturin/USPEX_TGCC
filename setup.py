@@ -28,7 +28,6 @@ extensions = [
     Extension("USPEX.Atomistic.Conditions", ["USPEX/Atomistic/Conditions.py"]),
     Extension("USPEX.Atomistic.Element", ["USPEX/Atomistic/Element.py"]),
     Extension("USPEX.Atomistic.GCH", ["USPEX/Atomistic/GCH.py"]),
-    Extension("USPEX.Atomistic.Constraints", ["USPEX/Atomistic/Constraints.py"]),
     Extension("USPEX.Atomistic.RadialDistributionUtility", ["USPEX/Atomistic/RadialDistributionUtility.py"]),
     Extension("USPEX.Atomistic.SimpleMoleculeUtility", ["USPEX/Atomistic/SimpleMoleculeUtility.py"]),
     Extension("USPEX.Atomistic.Slab", ["USPEX/Atomistic/Slab.py"]),

@@ -105,7 +105,7 @@ External.setExecutorType(Executor)
 ModelOptimizer.registerModel(External)
 ModelOptimizer.registerTarget('Atomistic',
                       utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
-                                 SimpleMoleculeUtility, Conditions, BondUtility, Constraints, ElasticML,
+                                 SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
                                  PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
