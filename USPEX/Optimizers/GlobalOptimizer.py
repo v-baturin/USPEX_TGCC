@@ -131,7 +131,7 @@ class GlobalOptimizer(object):
         goodSystems = []
         for system in population:
             for suffix in self.goodSystemsSuffixes:
-                if not system[f'.isBad.{suffix}']:
+                if system[f'.isBad.{suffix}']:
                     break
             else:
                 self.pool.goodSystemIDs.append(system.ID)

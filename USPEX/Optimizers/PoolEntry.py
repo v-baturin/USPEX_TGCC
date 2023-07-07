@@ -7,21 +7,9 @@ class EntryFactory:
         self.extensions = extensions
 
     def __call__(self, **kwargs):
-        return AtomisticPoolEntry(extensions=self.extensions, **kwargs)
+        return PoolEntry(extensions=self.extensions, **kwargs)
 
-class AtomisticPoolEntry:
-
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
+class PoolEntry:
 
     def __init__(self, extensions=None, ID=None,  **system):
         self.ID = ID
@@ -32,11 +20,7 @@ class AtomisticPoolEntry:
     def getProperty(self, prop, prefix='', suffix='origin'):
         system = self.system[suffix]
         if f'{prefix}.{prop}' not in system:
-            if prefix == 'atomistic':
-                structure, disassembler = self.atomicDisassemblerType.assemble(system)
-                system['atomistic.structure'] = structure
-                system['atomistic.disassembler'] = disassembler
-            elif prefix in self.extensions:
+            if prefix in self.extensions:
                 system[f'{prefix}.{prop}'] = getattr(self.extensions[prefix], prop)(system)
             else:
                 raise KeyError(f'Extension {prefix} is not set for {self}.')
@@ -46,13 +30,10 @@ class AtomisticPoolEntry:
         if suffix not in self.system:
             self.system[suffix] = {}
         system = self.system[suffix]
-        if prefix == 'atomistic' and prop == 'structure':
-            disassembler = system['atomistic.disassembler']
-            system['atomistic.structure'] = value
-            for key, subvalue in disassembler.disassemble(value).items():
-                system[f'atomistic.{key}'] = subvalue
-        else:
-            system[f'{prefix}.{prop}'] = value
+        system[f'{prefix}.{prop}'] = value
+        if prefix in self.extensions:
+            self.extensions[prefix].set(system, prop, value)
+
 
     def delProperty(self, prop, prefix='', suffix='origin'):
         if suffix in self.system:

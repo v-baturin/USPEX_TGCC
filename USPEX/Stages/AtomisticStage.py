@@ -64,7 +64,7 @@ class AtomisticStage:
                 cell = cell.getAlignedCell(self.target.utilities.cellUtility.getAxis())
             structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell)
             system.setProperty('structure', structure, prefix='atomistic', suffix=self.tag)
-        system.setProperty('isBad',  goodStructure, suffix=self.tag)
+        system.setProperty('isBad',  not goodStructure, suffix=self.tag)
 
     def checkAndFixMolecules(self, system):
         correctorDict = dict()
