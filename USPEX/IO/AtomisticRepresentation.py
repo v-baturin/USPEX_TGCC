@@ -890,7 +890,7 @@ class AtomisticRepresentation(object):
 
     @staticmethod
     def applyPresetOutputParameters(optimizer):
-        columns = AtomisticRepresentation._extract(optimizer.optType)
+        columns = [column.split('.')[1] for column in  AtomisticRepresentation._extract(optimizer.optType)]
         if len(columns) > 1:
             presentPareto = columns
         else:

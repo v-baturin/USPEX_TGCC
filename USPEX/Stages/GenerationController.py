@@ -93,14 +93,14 @@ class GenerationController(object):
         return controller
 
     async def run(self):
-        self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
+        # self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
         while (self.generation < self.numGenerations and
                self.numberStableGenerations < self.stopCrit and
                not self.optimizer.isGoalReached):
 
             if self.state is ControllerState.createPopulation:
                 self.population = self.optimizer.createPopulation()
-                self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
+                # self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.processPopulation
                 self.save()
             if self.state is ControllerState.processPopulation:
@@ -109,19 +109,18 @@ class GenerationController(object):
                 population, sc = self.populationProcessorType.initializePopulation('USPEX_stages', self.population)
                 await self.populationProcessorType.processPopulation(self.stages, population, self.numParallelCalcs,
                                                                      self.optimizer.target,
-                                                                     self.systems,
                                                                      sc)
-                self.population = [system[-1] for system in population.values()]
+                self.population = list(population.values())
                 self.doPresentSystems = False
                 await asyncio.wait({task})
-                self.populations.append(copy(self.population))
+                # self.populations.append(copy(self.population))
                 # self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.updateOptimizer
                 self.save()
             if self.state is ControllerState.updateOptimizer:
                 await self.optimizer.update(self.population)
                 self.optimizers.append(copy(self.optimizer))
-                self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
+                # self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
                 self.state = ControllerState.runControllerLogic
                 self.save()
             if self.state is ControllerState.runControllerLogic:

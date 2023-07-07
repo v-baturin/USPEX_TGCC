@@ -189,8 +189,8 @@ class RadialDistributionUtility(object):
         """
         Calculates fingerprint and related things.
         """
-        structure = system.getAtomicStructure()
-        disassembler = system['disassembler']
+        structure = system['atomistic.structure']
+        disassembler = system['atomistic.disassembler']
         atomTypes = structure.getAtomTypes()
         uniqueSimbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
@@ -201,10 +201,7 @@ class RadialDistributionUtility(object):
         coordinates = cell.cartesianToFractional(cartesian)[indices]
         molIndices = [revertIndices[inds] for inds in disassembler.indices]
         envIndices = revertIndices[disassembler.envIndices]
-        if 'environment' in system:
-            fp_pbc = disassembler.environment.getStructure().getCell().getPBC() # TODO is this correct?
-        else:
-            fp_pbc = structure.getCell().getPBC()
+        fp_pbc = structure.getCell().getPBC()
         lat = cell.getCellVectors()
         dist_matrix = _make_matrices(coordinates, molIndices, envIndices, lat, numIons, pbc=fp_pbc, Rmax=self.Rmax)
 
@@ -397,12 +394,12 @@ class RadialDistributionUtility(object):
                 if len(comb) > 0:
                     sQE += weight[i] * tmp / len(comb)
 
-        system.setProperty('radialDistribitionUtility.order', molOrder)
-        system.setProperty('radialDistribitionUtility.averageOrder', a_order)
-        system.setProperty('radialDistribitionUtility.structureOrder', s_order)
-        system.setProperty('radialDistribitionUtility.structureFingerprint', fingerprint)
-        system.setProperty('radialDistribitionUtility.complexFingerprint', complexFingerprint)
-        system.setProperty('radialDistribitionUtility.quasientropy', -sQE)
+        system['radialDistribitionUtility.order'] = molOrder
+        system['radialDistribitionUtility.averageOrder'] = a_order
+        system['radialDistribitionUtility.structureOrder'] = s_order
+        system['radialDistribitionUtility.structureFingerprint'] = fingerprint
+        system['radialDistribitionUtility.complexFingerprint'] = complexFingerprint
+        system['radialDistribitionUtility.quasientropy'] = -sQE
 
     def dist(self, system1, system2):
         """
@@ -417,11 +414,11 @@ class RadialDistributionUtility(object):
         pair = frozenset((system1['ID'], system2['ID'])) if 'ID' in system1 and 'ID' in system2 else None
         if pair not in self.distances:
             if self.legacy:
-                distance = Fingerprint.cosine_distance(system1['radialDistributionUtility.structureFingerprint'],
-                                                       system2['radialDistributionUtility.structureFingerprint'])
+                distance = Fingerprint.cosine_distance(system1['radialDistributionUtility.structureFingerprint.origin'],
+                                                       system2['radialDistributionUtility.structureFingerprint.origin'])
             else:
-                distance = ComplexFingerprint.dist(system1['radialDistributionUtility.complexFingerprint'],
-                                                   system2['radialDistributionUtility.complexFingerprint'])
+                distance = ComplexFingerprint.dist(system1['radialDistributionUtility.complexFingerprint.origin'],
+                                                   system2['radialDistributionUtility.complexFingerprint.origin'])
             if pair is not None:
                 self.distances[pair] = distance
         else:

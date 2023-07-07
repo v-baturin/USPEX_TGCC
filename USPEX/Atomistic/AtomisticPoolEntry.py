@@ -1,3 +1,6 @@
+from typing import Union
+
+
 class EntryFactory:
 
     def __init__(self, extensions):
@@ -20,89 +23,56 @@ class AtomisticPoolEntry:
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, extensions=None, **system):
-        self.system = system
+    def __init__(self, extensions=None, ID=None,  **system):
+        self.ID = ID
+        self.system = dict(origin=system)
         self.expressions = {}
         self.extensions = extensions if extensions is not None else {}
 
-    def getAtomicStructure(self, prefix=None):
-        system = self._getPrefixedValue(prefix)
-        if 'structure' not in system:
-            structure, disassembler = self.atomicDisassemblerType.assemble(**system)
-            system['structure'] = structure
-            system['disassembler'] = disassembler
-        return system['structure']
+    def getProperty(self, prop, prefix='', suffix='origin'):
+        system = self.system[suffix]
+        if f'{prefix}.{prop}' not in system:
+            if prefix == 'atomistic':
+                structure, disassembler = self.atomicDisassemblerType.assemble(system)
+                system['atomistic.structure'] = structure
+                system['atomistic.disassembler'] = disassembler
+            elif prefix in self.extensions:
+                system[f'{prefix}.{prop}'] = getattr(self.extensions[prefix], prop)(system)
+            else:
+                raise KeyError(f'Extension {prefix} is not set for {self}.')
+        return system[f'{prefix}.{prop}']
 
-    def updateAtomicStructure(self, structure, prefix=None):
-        system = self._getPrefixedValue(prefix)
-        disassembler = system.pop('disassembler')
-        del system['structure']
-        data = disassembler.disassemble(structure)
-        system.update(data)
-
-    def setAtomicStructure(self, structure, disassembler, prefix=None):
-        self._setPrefixedValue(prefix, disassembler.disassemble(structure))
-
-    def getProperty(self, prop, prefix=None):
-        return self._getPrefixedValue(prefix, prop)
-
-    def setProperty(self, prop, value, prefix=None):
-        self._setPrefixedValue(prefix, value, prop)
-
-    def popProperty(self, prop, prefix=None):
-        value = self._getPrefixedValue(prefix, prop)
-        self._delPrefixedValue(prefix, prop)
-        return value
-
-    def delProperty(self, prop, prefix=None):
-        self._delPrefixedValue(prefix, prop)
-
-    def _getPrefixedValue(self, prefix, name=None):
-        if name is None:
-            return self.system[f'{prefix}'] if prefix else self.system
+    def setProperty(self, prop, value, prefix='', suffix='origin'):
+        if suffix not in self.system:
+            self.system[suffix] = {}
+        system = self.system[suffix]
+        if prefix == 'atomistic' and prop == 'structure':
+            disassembler = system['atomistic.disassembler']
+            system['atomistic.structure'] = value
+            for key, subvalue in disassembler.disassemble(value).items():
+                system[f'atomistic.{key}'] = subvalue
         else:
-            return self.system[f'{prefix}.{name}'] if prefix else self.system[name]
+            system[f'{prefix}.{prop}'] = value
 
-    def _setPrefixedValue(self, prefix, value, name=None):
-        if name is None:
-            if prefix:
-                self.system[f'{prefix}'] = value
-            else:
-                self.system = value
-        else:
-            if prefix:
-                self.system[f'{prefix}.{name}'] = value
-            else:
-                self.system[name] = value
+    def delProperty(self, prop, prefix='', suffix='origin'):
+        if suffix in self.system:
+            del self.system[suffix][f'{prefix}.{prop}']
 
-    def _delPrefixedValue(self, prefix, name=None):
-        if name is None:
-            if prefix:
-                del self.system[f'{prefix}']
-            else:
-                raise RuntimeError('Both prefix and name are None.')
-        else:
-            if prefix:
-                del self.system[f'{prefix}.{name}']
-            else:
-                del self.system[name]
-
-    def setExpression(self, expression, value):
+    def setExpression(self, expression: tuple, value):
         if expression not in self.expressions:
             self.expressions[expression] = []
         self.expressions[expression].append(value)
 
-    def __getitem__(self, item):
-        if item in self.system:
-            return self.system[item]
-        elif item in self.expressions:
+    def __getitem__(self, item: Union[str, tuple]):
+        if item == 'ID':
+            return self.ID
+        if isinstance(item, tuple):
             return self.expressions[item][-1]
-        elif '.' in item:
-            extension, method, *other = item.split('.')
+        elif isinstance(item, str):
+            prefix, prop, suffix, *other = item.split('.')
             assert not other, f'Too complex property name {item}.'
-            if extension in self.extensions:
-                return getattr(self.extensions[extension], method)(self)
-        raise KeyError(f'Property {item} is not set for {self}.')
+            return self.getProperty(prop, prefix, suffix)
+        raise KeyError(f'Property {item} is not valid.')
 
     def __contains__(self, item):
         return item in self.system

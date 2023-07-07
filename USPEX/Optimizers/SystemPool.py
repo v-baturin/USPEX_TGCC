@@ -28,6 +28,7 @@ class SystemPool(object):
         self.extensions = {}
         self.allSystems = {}
         self.generations = []
+        self.goodSystemIDs = []
         self._newID = 0
 
     def __copy__(self):
@@ -39,22 +40,18 @@ class SystemPool(object):
 
     @property
     def goodSystems(self):
-        return tuple(system for system in self.allSystems.values() if not system['isBad'])
-
-    @property
-    def goodSystemIDs(self):
-        return tuple(ID for ID, system in self.allSystems.items() if not system['isBad'])
+        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs)
 
     @property
     def uniqueSystems(self):
-        return tuple(system for system in self.allSystems.values() if 'originalID' not in system and not system['isBad'])
+        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs if 'originalID' not in self.allSystems[ID])
 
     @property
     def uniqueSystemIDs(self):
         """
         :return: list of IDs of unique structures.
         """
-        return tuple(ID for ID, system in self.allSystems.items() if 'originalID' not in system and not system['isBad'])
+        return tuple(ID for ID in self.goodSystemIDs if 'originalID' not in self.allSystems[ID])
 
     def __hash__(self):
         return hash(self.uniqueSystemIDs)
@@ -95,10 +92,10 @@ class SystemPool(object):
         :param system: system to be labeled with ID.
 
         """
-        system.setProperty('ID', self._newID)
+        system.ID = self._newID
         system.setProperty('isBad', True)
         self._newID += 1
-        self.allSystems[system['ID']] = system
+        self.allSystems[system.ID] = system
 
     def getOriginalID(self, ID):
         """

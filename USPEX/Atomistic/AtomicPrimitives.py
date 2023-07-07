@@ -230,7 +230,7 @@ class AtomicDisassembler:
         self.allFixedIndices = np.concatenate(self.fixedIndices) if self.fixedIndices else np.empty(0, dtype=int)
 
     @staticmethod
-    def assemble(molecules, cell, environments=None, vacuumSize=0, **kwargs):
+    def assemble(system, **kwargs):
         """
 
         :param molecules:
@@ -239,6 +239,10 @@ class AtomicDisassembler:
         :param kwargs:
 
         """
+        molecules = system['atomistic.molecules']
+        cell = system['atomistic.cell']
+        environments = system['atomistic.environments'] if 'atomistic.environments' in system else None
+        vacuumSize = system['.vacuumSize'] if '.vacuumSize' in system else 0
         pbc = cell.getPBC()
         atomTypes = []
         coordinates = []

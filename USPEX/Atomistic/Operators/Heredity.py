@@ -13,7 +13,7 @@ NSLUBS = 2
 
 class Heredity:
 
-    def __init__(self, utilities, nslabs = None, attempts = ATTEMPTS, debug = False):
+    def __init__(self, utilities, suffix='4', nslabs = None, attempts = ATTEMPTS, debug = False):
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
@@ -21,6 +21,7 @@ class Heredity:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
+        self.suffix = suffix
         self.nslabs = nslabs
         self.attempts = attempts
         if debug:
@@ -31,27 +32,31 @@ class Heredity:
 
     def tune(self, population, optType):
         fitness = [s[optType] for s in population]
-        order = [system['radialDistributionUtility.averageOrder'] for system in population]
+        order = [system['radialDistributionUtility.averageOrder.origin'] for system in population]
         self.correlation = np.corrcoef(order, fitness)[0, 1]
         if np.isnan(self.correlation):
             self.correlation = 0
 
     def __call__(self, system1, system2, offspringFactory=None):
-        cell1 = system1['cell']
-        molecules1 = system1['molecules']
-        composition1 = system1['simpleMoleculeUtility.composition']
-        order1 = system1['radialDistributionUtility.order']
-        cell2 = system2['cell']
-        molecules2 = system2['molecules']
-        composition2 = system2['simpleMoleculeUtility.composition']
-        order2 = system2['radialDistributionUtility.order']
-
-        parentEnv = np.random.choice((system1, system2)) \
-            if 'environments' in system1 and 'environments' in system2 else None
+        molecules1 = system1.getProperty('molecules', prefix='atomistic', suffix=self.suffix)
+        cell1 = system1.getProperty('cell', prefix='atomistic', suffix=self.suffix)
+        composition1 = system1.getProperty('composition', prefix='simpleMoleculeUtility', suffix='origin')
+        order1 = system1.getProperty('order', prefix='radialDistributionUtility', suffix=self.suffix)
+        molecules2 = system2.getProperty('molecules', prefix='atomistic', suffix=self.suffix)
+        cell2 = system2.getProperty('cell', prefix='atomistic', suffix=self.suffix)
+        composition2 = system2.getProperty('composition', prefix='simpleMoleculeUtility', suffix='origin')
+        order2 = system2.getProperty('order', prefix='radialDistributionUtility', suffix=self.suffix)
+        try:
+            system = np.random.choice((system1, system2))
+            outputCell = system.getProperty('cell', prefix='atomistic', suffix=self.suffix)
+            parentEnv = system.getProperty('environments', prefix='atomistic', suffix=self.suffix)
+        except Exception:
+            parentEnv = None
+            outputCell = None
 
         for i in range(self.attempts):
-            outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell() \
-                if parentEnv is None else parentEnv['cell']
+            if outputCell is None:
+                outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell()
             if self.cellUtility.isGoodCell(outputCell):
                 axis = np.random.randint(3)
                 if self.nslabs is None:
@@ -121,10 +126,11 @@ class Heredity:
                 moleculeTypes = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in molecules]
                 composition = Counter(dict(zip(*np.unique(moleculeTypes, return_counts=True))))
                 if composition == desiredComposition:
-                    offspring = offspringFactory(molecules=molecules, cell=outputCell)
+                    offspring = {'atomistic.molecules': molecules, 'atomistic.cell': outputCell}
+                    offspring = offspringFactory(**offspring)
                     if parentEnv is not None:
-                        offspring.setProperty('environments', parentEnv['environments'])
-                    structure = offspring.getAtomicStructure()
+                        offspring.setProperty('environments', parentEnv, prefix='atomistic')
+                    structure = offspring.getProperty('structure', prefix='atomistic')
                     minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
                                                                   self.conditions.externalPressure)
                     if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):

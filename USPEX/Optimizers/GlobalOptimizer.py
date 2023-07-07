@@ -10,6 +10,7 @@ Class implementing global optimizer
 import logging
 from copy import copy
 from typing import List
+from itertools import chain
 
 from .SystemPool import SystemPool
 from .Target import Target, TargetType
@@ -98,6 +99,10 @@ class GlobalOptimizer(object):
         else:
             self.stopSystems = None
 
+        self.goodSystemsSuffixes = set(
+            prop.split('.')[-1] for prop in _extract(self.optType) + _extract(self.createPopulation.optType)
+        )
+
         self.best = set()
         self._isStable = False
         self._isGoalReached = False
@@ -123,10 +128,17 @@ class GlobalOptimizer(object):
         :type population: list
         :param population: list of systems which allows to update our knowledge about target space.
         """
-        self.pool.update(population)
+        goodSystems = []
+        for system in population:
+            for suffix in self.goodSystemsSuffixes:
+                if not system[f'.isBad.{suffix}']:
+                    break
+            else:
+                self.pool.goodSystemIDs.append(system.ID)
+                goodSystems.append(system)
         self.ExpressionEvaluator.calculate(self.optType, self.pool.goodSystems, self.pool.extensions)
         self.ExpressionEvaluator.calculate(self.createPopulation.optType, self.pool.goodSystems, self.pool.extensions)
-        population = [system for system in population if not system['isBad']]
+        population = goodSystems
         assert population, 'All systems in population failed relaxation.'
         self._markDuplicates(population)
         self.pool.append(population)
@@ -196,3 +208,13 @@ class GlobalOptimizer(object):
     @property
     def isGoalReached(self):
         return self._isGoalReached
+
+
+def _extract(expression):
+    if isinstance(expression, str):
+        return [expression]
+    if isinstance(expression, tuple):
+        func, *arguments = expression
+        return list(set(chain(*[_extract(arg) for arg in arguments])))
+    else:
+        return []

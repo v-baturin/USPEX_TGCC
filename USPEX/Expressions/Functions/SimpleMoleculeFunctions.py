@@ -18,7 +18,7 @@ class SimpleMoleculeFunctions:
 
         :return: calculated or retrieve list of types of molecules of a system.
         """
-        return [self.utility.determineMoleculeType(molecule) for molecule in system['molecules']]
+        return [self.utility.determineMoleculeType(molecule) for molecule in system['atomistic.molecules']]
 
     def composition(self, system):
         """

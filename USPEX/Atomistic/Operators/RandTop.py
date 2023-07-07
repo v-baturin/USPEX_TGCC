@@ -128,14 +128,15 @@ class RandTop:
                                             for i in range(attemptsRotation):
                                                 offspring = offspringFactory(
                                                     **self.simpleMoleculeUtility.populateStructure(cell, operations))
-                                                molecules = offspring['molecules']
-                                                cell = offspring['cell']
+                                                molecules = offspring.getProperty('molecules', prefix='atomistic')
+                                                cell = offspring.getProperty('cell', prefix='atomistic')
                                                 if len(molecules) != totalAtomNumber:
                                                     continue
                                                 if envAssembler is not None:
                                                     offspring.setProperty('environments',
-                                                                          envAssembler.assemble(molecules, cell))
-                                                structure = offspring.getAtomicStructure()
+                                                                          envAssembler.assemble(molecules, cell),
+                                                                          prefix='atomistic')
+                                                structure = offspring.getProperty('structure', prefix='atomistic')
                                                 minDistMatrix = self.bondUtility.getDistances(
                                                     structure.getAtomTypes(), self.conditions.externalPressure)
                                                 if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
