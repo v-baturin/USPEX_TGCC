@@ -13,6 +13,8 @@ class PoolEntry:
 
     def __init__(self, extensions=None, ID=None,  **system):
         self.ID = ID
+        self.originalID = None
+        self.duplicates = []
         self.system = dict(origin=system)
         self.expressions = {}
         self.extensions = extensions if extensions is not None else {}
@@ -31,9 +33,8 @@ class PoolEntry:
             self.system[suffix] = {}
         system = self.system[suffix]
         system[f'{prefix}.{prop}'] = value
-        if prefix in self.extensions:
+        if prefix in self.extensions and hasattr(self.extensions[prefix], 'set'):
             self.extensions[prefix].set(system, prop, value)
-
 
     def delProperty(self, prop, prefix='', suffix='origin'):
         if suffix in self.system:
@@ -47,13 +48,23 @@ class PoolEntry:
     def __getitem__(self, item: Union[str, tuple]):
         if item == 'ID':
             return self.ID
-        if isinstance(item, tuple):
+        elif isinstance(item, tuple):
             return self.expressions[item][-1]
         elif isinstance(item, str):
             prefix, prop, suffix, *other = item.split('.')
             assert not other, f'Too complex property name {item}.'
             return self.getProperty(prop, prefix, suffix)
-        raise KeyError(f'Property {item} is not valid.')
+        else:
+            raise KeyError(f'Property {item} is not valid.')
 
-    def __contains__(self, item):
-        return item in self.system
+    def __contains__(self, item: Union[str, tuple]):
+        if item == 'ID':
+            return True
+        elif isinstance(item, tuple):
+            return item in self.expressions
+        elif isinstance(item, str):
+            prefix, prop, suffix, *other = item.split('.')
+            assert not other, f'Too complex property name {item}.'
+            return suffix in self.system and '.'.join((prefix, prop)) in self.system[suffix]
+        else:
+            raise KeyError(f'Property {item} is not valid.')

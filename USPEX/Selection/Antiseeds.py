@@ -28,6 +28,7 @@ class Antiseeds:
         All this systems will get penalties depending on their distance from systems in *popuation* list.
         :param fingerprintUtility: utility providing **dist** method which calculates distance between systems.
         """
+        suffix = fingerprintUtility.suffix
         comb = list(combinations(population, 2))
         if comb:
             sigma = 0
@@ -38,14 +39,14 @@ class Antiseeds:
             sigma = 1
         sigma *= self.sigma
         for system in pool:
-            if 'antiseeds.corrections' in system:
+            if f'antiseeds.corrections.{suffix}' in system:
                 for ref_system in population:
                     dist = fingerprintUtility.dist(ref_system, system)
-                    correction = system['antiseeds.corrections']
-                    system.setProperty('antiseeds.corrections',
-                                       correction + self.max * np.exp(-dist ** 2 / (2 * sigma ** 2)))
+                    correction = system[f'antiseeds.corrections.{suffix}']
+                    system.setProperty('corrections', correction + self.max * np.exp(-dist ** 2 / (2 * sigma ** 2)),
+                                       prefix='antiseeds', suffix=suffix)
             else:
-                system.setProperty('antiseeds.corrections', 0)
+                system.setProperty('corrections', 0, prefix='antiseeds', suffix=suffix)
 
     def corrections(self, system):
         """

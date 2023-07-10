@@ -145,7 +145,7 @@ class RadialDistributionUtility(object):
 
     propertyExtension = RadialDistributionFunctions
 
-    def __init__(self, symbols, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
+    def __init__(self, symbols, suffix, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
                  legacy=False):
         """
         :type Rmax: float
@@ -158,6 +158,7 @@ class RadialDistributionUtility(object):
         :param tolerance: tolerance within which systems considered the same.
         """
         self.symbols=symbols
+        self.suffix = suffix
         self.Rmax = Rmax
         self.sigma = sigma
         self.delta = delta
@@ -172,18 +173,18 @@ class RadialDistributionUtility(object):
         :param system: dictionary describing system.
 
         """
-        if 'radialDistribitionUtility.structureFingerprint' in system:
-            system.delProperty('radialDistribitionUtility.structureFingerprint')
-        if 'radialDistribitionUtility.complexFingerprint' in system:
-            system.delProperty('radialDistribitionUtility.complexFingerprint')
-        if 'radialDistribitionUtility.structureOrder' in system:
-            system.delProperty('radialDistribitionUtility.structureOrder')
-        if 'radialDistribitionUtility.atomFingerprints' in system:
-            system.delProperty('radialDistribitionUtility.atomFingerprints')
-        if 'radialDistribitionUtility.order' in system:
-            system.delProperty('radialDistribitionUtility.order')
-        if 'radialDistribitionUtility.quasientropy' in system:
-            system.delProperty('radialDistribitionUtility.quasientropy')
+        if f'radialDistribitionUtility.structureFingerprint.{self.suffix}' in system:
+            system.delProperty('structureFingerprint', prefix='radialDistribitionUtility', suffix=self.suffix)
+        if f'radialDistribitionUtility.complexFingerprint.{self.suffix}' in system:
+            system.delProperty('complexFingerprint', prefix='radialDistribitionUtility', suffix=self.suffix)
+        if f'radialDistribitionUtility.structureOrder.{self.suffix}' in system:
+            system.delProperty('structureOrder', prefix='radialDistribitionUtility', suffix=self.suffix)
+        if f'radialDistribitionUtility.atomFingerprints.{self.suffix}' in system:
+            system.delProperty('atomFingerprints', prefix='radialDistribitionUtility', suffix=self.suffix)
+        if f'radialDistribitionUtility.order.{self.suffix}' in system:
+            system.delProperty('order', prefix='radialDistribitionUtility', suffix=self.suffix)
+        if f'radialDistribitionUtility.quasientropy.{self.suffix}' in system:
+            system.delProperty('quasientropy', prefix='radialDistribitionUtility', suffix=self.suffix)
 
     def calcFingerprint(self, system):
         """
@@ -414,11 +415,11 @@ class RadialDistributionUtility(object):
         pair = frozenset((system1['ID'], system2['ID'])) if 'ID' in system1 and 'ID' in system2 else None
         if pair not in self.distances:
             if self.legacy:
-                distance = Fingerprint.cosine_distance(system1['radialDistributionUtility.structureFingerprint.origin'],
-                                                       system2['radialDistributionUtility.structureFingerprint.origin'])
+                distance = Fingerprint.cosine_distance(system1[f'radialDistributionUtility.structureFingerprint.{self.suffix}'],
+                                                       system2[f'radialDistributionUtility.structureFingerprint.{self.suffix}'])
             else:
-                distance = ComplexFingerprint.dist(system1['radialDistributionUtility.complexFingerprint.origin'],
-                                                   system2['radialDistributionUtility.complexFingerprint.origin'])
+                distance = ComplexFingerprint.dist(system1[f'radialDistributionUtility.complexFingerprint.{self.suffix}'],
+                                                   system2[f'radialDistributionUtility.complexFingerprint.{self.suffix}'])
             if pair is not None:
                 self.distances[pair] = distance
         else:

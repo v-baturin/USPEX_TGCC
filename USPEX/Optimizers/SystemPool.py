@@ -44,14 +44,14 @@ class SystemPool(object):
 
     @property
     def uniqueSystems(self):
-        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs if 'originalID' not in self.allSystems[ID])
+        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs if self.allSystems[ID].originalID is None)
 
     @property
     def uniqueSystemIDs(self):
         """
         :return: list of IDs of unique structures.
         """
-        return tuple(ID for ID in self.goodSystemIDs if 'originalID' not in self.allSystems[ID])
+        return tuple(ID for ID in self.goodSystemIDs if self.allSystems[ID].originalID is None)
 
     def __hash__(self):
         return hash(self.uniqueSystemIDs)
@@ -79,7 +79,7 @@ class SystemPool(object):
             if original['ID'] not in newIDs:
                 newGeneration['allSystems'].append(original)
                 newIDs.append(original['ID'])
-                if 'duplicates' not in original or set(original['duplicates']) <= IDs:
+                if set(original.duplicates) <= IDs:
                     logger.debug(f'add new system {system["ID"]} to list of unique systems')
                     newGeneration['newSystems'].append(original)
         self.generations.append(newGeneration)
@@ -106,7 +106,7 @@ class SystemPool(object):
         :return: ID of original system.
         """
         system = self.allSystems[ID]
-        return system['originalID'] if 'originalID' in system else ID
+        return system.originalID if system.originalID is not None else ID
 
     @staticmethod
     def fronts(pool, expression):

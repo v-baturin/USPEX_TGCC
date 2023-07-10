@@ -61,7 +61,7 @@ class OutputRepresentation(object):
                 raise RuntimeError('Unknown engine type in output initialization.')
             if optimizerInstance.target.name == 'Atomistic':
                 from .AtomisticRepresentation import AtomisticRepresentation
-                output = dict(AtomisticRepresentation.applyPresetOutputParameters(optimizerInstance), **output)
+                # output = dict(AtomisticRepresentation.applyPresetOutputParameters(optimizerInstance), **output)
                 self.targetRepresentation = AtomisticRepresentation(self.RES_FOLDER, **output)
             else:
                 raise RuntimeError('Unknown target type in output initialization.')
@@ -73,13 +73,13 @@ class OutputRepresentation(object):
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
         write(self.RES_FOLDER/self.PARAMETERS_FILENAME, params)
 
-    def presentSystems(self, systems: dict, optimizer):
+    def presentSystems(self, optimizer):
         if self.targetRepresentation is not None:
-            return self.targetRepresentation.presentSystems(systems, optimizer, len(self.stages))
+            return self.targetRepresentation.presentSystems(optimizer)
         else:
             return None
 
-    def presentOutput(self, populations, optimizers, optimizer, printDate=True, final=False):
+    def presentOutput(self, optimizer, printDate=True, final=False):
         if self.selectionRepresentation is not None and self.targetRepresentation is not None:
             self.OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -128,17 +128,17 @@ class OutputRepresentation(object):
 
             output += createHeader_wrap(['Generations block'], 'center')
 
-            for generation, (population, opt) in enumerate(zip_longest(populations, optimizers)):
-                opt = optimizer if opt is None else opt
-                output.append(' Generation {0:4d}'.format(generation))
-                output += self.selectionRepresentation.getPopulationCreationBlock(population, opt, self.targetRepresentation)
-                output.append('    Optimization results')
-                table = self.targetRepresentation.getNewSystemsTable()
-                for system in population:
-                    table.update(system['ID'], system)
-                output.append(table.table.get_string())
-                output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
-                output.append('')
+            # for generation, (population, opt) in enumerate(zip_longest(populations, optimizers)):
+            #     opt = optimizer if opt is None else opt
+            #     output.append(' Generation {0:4d}'.format(generation))
+            #     output += self.selectionRepresentation.getPopulationCreationBlock(population, opt, self.targetRepresentation)
+            #     output.append('    Optimization results')
+            #     table = self.targetRepresentation.getNewSystemsTable()
+            #     for system in population:
+            #         table.update(system['ID'], system)
+            #     output.append(table.table.get_string())
+            #     output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
+            #     output.append('')
 
 
             if final:
@@ -154,7 +154,5 @@ class OutputRepresentation(object):
                 for i in output:
                     f.write(i + '\n')
 
-            if populations:
-                self.selectionRepresentation.presentFractions(populations)
-            if optimizers:
-                self.targetRepresentation.presentOptimizer(optimizers, optimizer)
+            self.selectionRepresentation.presentFractions(optimizer)
+            # self.targetRepresentation.presentOptimizer(optimizer)

@@ -32,7 +32,7 @@ class Heredity:
 
     def tune(self, population, optType):
         fitness = [s[optType] for s in population]
-        order = [system['radialDistributionUtility.averageOrder.origin'] for system in population]
+        order = [system[f'radialDistributionUtility.averageOrder.{self.suffix}'] for system in population]
         self.correlation = np.corrcoef(order, fitness)[0, 1]
         if np.isnan(self.correlation):
             self.correlation = 0

@@ -183,22 +183,16 @@ class GlobalOptimizer(object):
                     if system[applyPresetsRecursive(self.optType)] < ref_system[applyPresetsRecursive(self.optType)]:
                         self.fingerprintUtility.clean(ref_system)
                         ref_system.setProperty('originalID', system['ID'])
-                        if 'duplicates' in ref_system:
-                            system.setProperty('duplicates', ref_system['duplicates'])
-                            ref_system.delProperty('duplicates')
-                            for ID in system['duplicates']:
-                                self.pool.allSystems[ID].setProperty('originalID', system['ID'])
-                            if ref_system['ID'] not in system['duplicates']:
-                                system['duplicates'].append(ref_system['ID'])
-                        else:
-                            system.setProperty('duplicates', [ref_system['ID']])
+                        system.duplicates = ref_system.duplicates
+                        for ID in system.duplicates:
+                            self.pool.allSystems[ID].originalID = system['ID']
+                        if ref_system['ID'] not in system.duplicates:
+                            system.duplicates.append(ref_system['ID'])
                     else:
                         self.fingerprintUtility.clean(system)
                         system.setProperty('originalID', ref_system['ID'])
-                        if 'duplicates' in ref_system and system['ID'] not in ref_system['duplicates']:
-                            ref_system['duplicates'].append(system['ID'])
-                        else:
-                            ref_system.setProperty('duplicates', [system['ID']])
+                        if system['ID'] not in ref_system.duplicates:
+                            ref_system.duplicates.append(system['ID'])
                     break
 
     @property

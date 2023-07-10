@@ -82,7 +82,7 @@ class SystemsTable(object):
 
 
     def update(self, ID: int, system, rank=None):
-        row = [ID, system['howCome']]
+        row = [ID, system['.howCome.origin']]
         if self.isRank:
             row.insert(1, rank)
         for column, columnName in self.columns:
@@ -113,10 +113,11 @@ class AtomisticRepresentation(object):
         cls.cellType = cellType
         cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, RES_FOLDER: str, columns, toDraw, presentConvexHull: bool, presentPareto,
+    def __init__(self, RES_FOLDER: str, columns, stages, toDraw, presentConvexHull: bool, presentPareto,
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = Path(RES_FOLDER)
         self.columns = columns
+        self.stages = stages
         self.toDraw = toDraw
         self.presentConvexHull = presentConvexHull
         self.presentPareto = presentPareto
@@ -125,42 +126,44 @@ class AtomisticRepresentation(object):
     def getNewSystemsTable(self, isRank=False):
         return SystemsTable(self.columns, isRank)
 
-    def presentSystems(self, systems: dict, optimizer, numStages):
+    def presentSystems(self, optimizer):
+        systems = optimizer.pool.allSystems
         systems_gatheredPOSCARS = []
         systems_gatheredPOSCARS_unrelaxed = []
         table_Individuals = self.getNewSystemsTable()
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            systems_gatheredPOSCARS_unrelaxed.append(system[0])
-            content_origin += f"{ID} {system[0]['howCome']} {system[0]['parent']}\n"
+            # systems_gatheredPOSCARS_unrelaxed.append(system[0])
+            content_origin += f"{ID} {system['.howCome.origin']} {system['.parent.origin']}\n"
 
-            if len(system) > 1:
-                content_enthalpies += ','.join([f"{sys['enthalpy']:6.3f}" for sys in system[1:]]) + '\n'
+            content_enthalpies += ','.join([f"{system[f'.enthalpy.{stage}']:6.3f}"
+                                            for stage in self.stages if f'.enthalpy.{stage}' in system]) + '\n'
 
-            if len(system) == numStages + 1:
-                table_Individuals.update(ID, system[-1])
-                systems_gatheredPOSCARS.append(system[numStages])
+            table_Individuals.update(ID, system)
+            # systems_gatheredPOSCARS.append(system[numStages])
 
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
 
-        self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS_unrelaxed',
-                                   systems_gatheredPOSCARS_unrelaxed)
-        self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS',
-                                   systems_gatheredPOSCARS)
+        # self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS_unrelaxed',
+        #                            systems_gatheredPOSCARS_unrelaxed)
+        # self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS',
+        #                            systems_gatheredPOSCARS)
         with open(self.RES_FOLDER/'Individuals', 'w') as f:
             f.write(table_Individuals.table.get_string() + '\n')
         with open(self.RES_FOLDER/'origin', 'w') as f:
             f.write(content_origin)
         with open(self.RES_FOLDER/'enthalpies_complete.csv', 'w') as f:
             f.write(content_enthalpies)
-        self.drawESeries(systems, numStages)
+        self.drawESeries(systems)
 
-    def drawESeries(self, systems, numStages):
+    def drawESeries(self, systems):
         enths = []
-        for system_stages in systems.values():
-            if len(system_stages) == numStages + 1:
-                enths.append([system['enthalpy'] for system in system_stages[1:]])
+        for system in systems.values():
+            try:
+                enths.append([system[f'.enthalpy.{suffix}'] for suffix in self.stages])
+            except Exception:
+                pass
         if enths:
             enths = np.asarray(enths, dtype=float)
             plt.figure()
@@ -666,8 +669,8 @@ class AtomisticRepresentation(object):
 
         return block
 
-    def presentOptimizer(self, optimizers, optimizer):
-        originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
+    def presentOptimizer(self, optimizer):
+        # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         content_BESTIndividuals = ''
         content_convexHull = ''
         table_goodStructures = self.getNewSystemsTable(isRank=True)
