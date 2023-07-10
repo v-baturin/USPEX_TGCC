@@ -155,4 +155,4 @@ class OutputRepresentation(object):
                     f.write(i + '\n')
 
             self.selectionRepresentation.presentFractions(optimizer)
-            # self.targetRepresentation.presentOptimizer(optimizer)
+            self.targetRepresentation.presentOptimizer(optimizer)

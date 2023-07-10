@@ -151,6 +151,7 @@ class GlobalOptimizer(object):
         else:
             self._isStable = False
             self.best = best
+        self.pool.generations[-1]['bestSystems'] = self.best
         if self.stopFitness is not None:
             for ID in self.best:
                 if round(self.pool.allSystems[self.pool.getOriginalID(ID)][self.optType], ndigits=3)\

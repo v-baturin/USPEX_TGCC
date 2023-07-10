@@ -681,21 +681,20 @@ class AtomisticRepresentation(object):
 
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
 
-        for generation, opt in enumerate(optimizers):
-            content_BESTIndividuals += f'Generation {generation}\n'
-            pool = opt.pool
+        for i, generation in enumerate(optimizer.pool.generations):
+            content_BESTIndividuals += f'Generation {i}\n'
             table = self.getNewSystemsTable()
-            for ID in opt.best:
-                table.update(ID, pool.allSystems[ID])
+            for ID in generation['bestSystems']:
+                table.update(ID, optimizer.pool.allSystems[ID])
             content_BESTIndividuals += table.table.get_string() + '\n'
         with open(self.RES_FOLDER/'BESTIndividuals', 'w') as fp:
             fp.write(content_BESTIndividuals)
 
-        for opt in optimizers:
-            pool = opt.pool
-            for ID in opt.best:
-                systems__BESTgatheredPOSCARS.append(pool.allSystems[ID])
-        self.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)
+        # for opt in optimizers:
+        #     pool = opt.pool
+        #     for ID in opt.best:
+        #         systems__BESTgatheredPOSCARS.append(pool.allSystems[ID])
+        # self.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)
 
         compositionSpace = optimizer.target.utilities.compositionSpace
         csSize = len(compositionSpace.blocks)
@@ -705,11 +704,11 @@ class AtomisticRepresentation(object):
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, rank=rank)
-                    systems_goodStructuresPOSCARS.append(system)
+                    # systems_goodStructuresPOSCARS.append(system)
             with open(self.RES_FOLDER/'goodStructures', 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
 
-            self.writeAtomicStructures(self.RES_FOLDER/'goodStructures_POSCARS', systems_goodStructuresPOSCARS)
+            # self.writeAtomicStructures(self.RES_FOLDER/'goodStructures_POSCARS', systems_goodStructuresPOSCARS)
         else:
             goodStructresFolder = self.RES_FOLDER/'goodStructures'
             goodStructresFolder.mkdir(parents=True, exist_ok=True)
@@ -757,19 +756,19 @@ class AtomisticRepresentation(object):
             with open(self.RES_FOLDER/'extended_convex_hull', 'w') as fp:
                 fp.write(table_extendedConvexHull.table.get_string())
 
-            for front in frontsECH:
-                for system in front:
-                    systems_extendedConvexHullPOSCARS.append(system)
-            self.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
-                                       systems_extendedConvexHullPOSCARS)
+            # for front in frontsECH:
+            #     for system in front:
+            #         systems_extendedConvexHullPOSCARS.append(system)
+            # self.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
+            #                            systems_extendedConvexHullPOSCARS)
 
             if csSize == 2:
                 self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
             elif csSize == 3:
                 self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
 
-        if self.presentPareto is not None and len(self.presentPareto) == 2:
-            self._drawParetoFronts2(fronts, optimizer)
+        # if self.presentPareto is not None and len(self.presentPareto) == 2:
+        #     self._drawParetoFronts2(fronts, optimizer)
 
         self._drawProperties(optimizer.pool.uniqueSystems)
 
@@ -777,6 +776,8 @@ class AtomisticRepresentation(object):
     def _drawProperties(self, uniqueSystems):
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         for type, propertyY, typeY, propertyX, typeX in self.toDraw:
+            suffixX = propertyX.split('.')[-1]
+            suffixY = propertyY.split('.')[-1]
             if type == 'dep':
                 Y = []
                 X = []
@@ -786,11 +787,11 @@ class AtomisticRepresentation(object):
                     if typeY == 'raw':
                         Y.append(valueY)
                     elif typeY == 'per_atom':
-                        Y.append(valueY/len(system['molecules']))
+                        Y.append(valueY/len(system[f'atomistic.molecules.{suffixY}']))
                     if typeX == 'raw':
                         X.append(valueX)
                     elif typeX == 'per_atom':
-                        X.append(valueX/len(system['molecules']))
+                        X.append(valueX/len(system[f'atomistic.molecules.{suffixX}']))
                 plt.figure()
                 plt.plot(X,Y,'go')
                 plt.ylabel(f'{propertyY}({typeY})')
@@ -805,7 +806,7 @@ class AtomisticRepresentation(object):
                         if typeY == 'raw':
                             Y.append(value)
                         elif typeY == 'per_atom':
-                            Y.append(value/len(system['molecules']))
+                            Y.append(value/len(system[f'atomistic.molecules.{suffixY}']))
                 plt.figure()
                 plt.hist(Y, len(Y)//10+1, facecolor='g', alpha=0.75)
                 plt.savefig(self.RES_FOLDER/f'{propertyY}({typeY})_statistics.svg')
