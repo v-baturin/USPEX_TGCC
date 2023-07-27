@@ -85,15 +85,13 @@ class AtomicDisassembler:
         sysCoordinates = coordinates[self.sysIndices]
         sysCell = type(cell)(cell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(sysCoordinates, vacuumSize=1.0)
         offset = np.mean(sysCell.center(sysCoordinates) - sysCoordinates, axis=0)
-        system = dict(
-            molecules=[Atomistic.structureType(atomTypes[inds], coordinates[inds] + offset) for inds in self.indices],
-            cell=sysCell
-        )
-        system['environments'] = []
+        system = {
+            'atomistic.molecules': [Atomistic.structureType(atomTypes[inds], coordinates[inds] + offset) for inds in
+                                    self.indices], 'atomistic.cell': sysCell, 'atomistic.environments': []}
         for eInds, fInds in zip(self.envIndices, self.fixedIndices):
             envStructure = Atomistic.structureType(atomTypes[eInds], coordinates[eInds] + offset, cell)
             indices = np.argwhere(eInds.reshape((-1, 1)) == fInds.reshape((1, -1)))[:, 0]
-            system['environments'].append((envStructure, indices))
+            system['atomistic.environments'].append((envStructure, indices))
         return system
 
     def decomposeDisplacements(self, displacements, structure):

@@ -95,12 +95,12 @@ class AtomisticStage:
                     wrapping = np.round(fractSink - fractSource)
                     newFractSink = fractSink - wrapping
                     correctorDict[i] = cellSink.fractionalToCartesian(newFractSink)
+        for i, coords in correctorDict.items():
+            badMol = moleculesSink[i]
+            moleculesSink[i] = type(badMol)(atomTypes=badMol.getAtomTypes(), coordinates=coords,
+                                             cell = badMol.getCell(),
+                                             zmatrixConfig = badMol.getZmatrixConfig())
         if correctorDict:
-            for i, coords in correctorDict.items():
-                badMol = moleculesSink
-                moleculesSink[i] = type(badMol)(atomTypes=badMol.getAtomTypes(), coordinates=coords,
-                                                 cell = badMol.getCell(),
-                                                 zmatrixConfig = badMol.getZmatrixConfig())
             system.setProperty('molecules', moleculesSink, prefix='atomistic', suffix=self.tag)
 
 
