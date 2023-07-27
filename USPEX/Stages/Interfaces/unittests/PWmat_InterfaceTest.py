@@ -13,7 +13,10 @@ import shutil
 import unittest
 import numpy as np
 from pathlib import Path
-from ....components import AtomisticRepresentation, PWmat_Interface, AtomisticPoolEntry
+
+
+from ....Optimizers.PoolEntry import PoolEntry
+from ....components import AtomisticRepresentation, PWmat_Interface, Atomistic
 
 
 HOMEPATH = Path(__file__).parent
@@ -32,17 +35,20 @@ class PWmat_InterfaceTest(unittest.TestCase):
 
         params = {'tag': 's0', 'kresol': 0.05, 'etot_input': HOMEPATH/'Specific/etot.input_1',
                   'potcars': [HOMEPATH/'Specific/Si.SG15.PBE.UPF']}
+        atomistic = Atomistic()
+        extensions = dict(
+            atomistic=atomistic.propertyExtension(atomistic)
+        )
 
         cls.vcEmpty = PWmat_Interface(**params)
         structure = AtomisticRepresentation.readPOSCAR(HOMEPATH/'Si4System.vasp', pbc=(1, 1, 1))
-        cls.testSystem = AtomisticPoolEntry(
-            ID=0,
-            structure=structure,
-            disassembler=AtomisticRepresentation.atomicDisassemblerType(
-                np.arange(len(structure)).reshape((-1, 1))),
-            externalPressure=0.00001
-        )
-
+        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        system = PoolEntry(extensions=extensions, ID=0)
+        system.setProperty('externalPressure', 0.00001)
+        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='s0')
+        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+        cls.testSystem = system
         cls.CALC_FOLDER = HOMEPATH/CALC_FOLDER_TEMPLATE.format(0, 's0')
         cls.REFERENCE_FOLDER = HOMEPATH/'PWmatReference/'
 
@@ -96,7 +102,8 @@ class PWmat_InterfaceTest(unittest.TestCase):
         self.vcEmpty.readOutput(self.testSystem, self.CALC_FOLDER)
         #self.vcEmpty.clean(self.testSystem)
 
-        structure = self.testSystem.getAtomicStructure()
+        structure = self.testSystem.getProperty('structure', prefix='atomistic', suffix='s0')
+
         self.assertTrue(np.allclose(self.POSITIONS_FINAL, structure.getCartesianCoordinates(), atol=1.0e-3))
         self.assertTrue(np.allclose(self.LATTICE_FINAL, structure.getCell().getCellVectors(), atol=1.0e-3))
-        self.assertAlmostEqual(self.knownSystemEnergy, self.testSystem['enthalpy'], delta=1.0e-3)
+        self.assertAlmostEqual(self.knownSystemEnergy, self.testSystem['.enthalpy.s0'], delta=1.0e-3)

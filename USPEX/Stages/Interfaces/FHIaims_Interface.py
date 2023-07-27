@@ -51,7 +51,7 @@ class FHIaims_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -83,7 +83,8 @@ class FHIaims_Interface:
                 if self.fixCell:
                     fp.write('constrain_relaxation .true.\n')
 
-            fixedIndices = system['disassembler'].allFixedIndices
+            disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+            fixedIndices = disassembler.allFixedIndices
             for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
                 fp.write('atom  {1:15.8f} {2:15.8f} {3:15.8f} {0:2s}\n'.format(symbol.short_name, *coord))
                 if i in fixedIndices:
@@ -123,13 +124,14 @@ class FHIaims_Interface:
                 content = f.read()
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.updateAtomicStructure(self.readStructure(content, pbc))
+            system.setProperty('structure', self.readStructure(content, pbc), prefix='atomistic', suffix=self.tag)
+
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.outputFile, 'r') as f:
                 content = f.readlines()
             for line in content:
                 if 'Total energy corrected' in line:
-                    system.setProperty('enthalpy', float(line.split()[5]))
+                    system.setProperty('enthalpy', float(line.split()[5]), suffix=self.tag)
                     break
 
     def readStructure(self, content, pbc):

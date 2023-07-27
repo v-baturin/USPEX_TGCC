@@ -84,7 +84,7 @@ class ABINIT_Interface:
         :param calcFolder:
         :return:
         """
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -134,9 +134,10 @@ class ABINIT_Interface:
         with open(calcFolder/self.in_file_name, 'wt') as f:
             f.write(clean_in_file)
 
-        if system['externalPressure']:
+        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        if externalPressure:
             with open(calcFolder/self.in_file_name, 'a') as myfile:
-                abipressure = -1 * system['externalPressure'] * GPA_TO_HARTREE_PER_CUBIC_BOHR
+                abipressure = -1 * externalPressure * GPA_TO_HARTREE_PER_CUBIC_BOHR
                 myfile.write(f'strtarget {abipressure:.2e} {abipressure:.2e} {abipressure:.2e} 0.0 0.0 0.0\n')
         if calcFolder in self.failedSystems:
             if 'kptopt' not in user_params:
@@ -288,15 +289,16 @@ class ABINIT_Interface:
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.updateAtomicStructure(self.readStructure(gsr, pbc))
+            system.setProperty('structure', self.readStructure(gsr, pbc), prefix='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
-            system.setProperty('enthalpy', float(gsr.energy) + \
-                                  np.linalg.det(gsr.structure.lattice.matrix) * system['externalPressure'] * \
-                                  EV_PER_CUBIC_ANGSTREM_PER_GPA)
+            V = np.linalg.det(gsr.structure.lattice.matrix)
+            P = system.getProperty('externalPressure', suffix='origin')
+            enthalpy = float(gsr.energy) + P*V*EV_PER_CUBIC_ANGSTREM_PER_GPA
+            system.setProperty('enthalpy', enthalpy, suffix=self.tag)
         if 'forces' in self.targetProperties:
-            system.setProperty('forces', np.copy(gsr.cart_forces))
+            system.setProperty('forces', np.copy(gsr.cart_forces), suffix=self.tag)
         if 'stressTensor' in self.targetProperties:
-            system.setProperty('stressTensor', np.copy(gsr.cart_stress_tensor))
+            system.setProperty('stressTensor', np.copy(gsr.cart_stress_tensor), suffix=self.tag)
 
     def readStructure(self, gsr, pbc):
         tmp_positions = gsr.structure.cart_coords
