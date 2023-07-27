@@ -83,9 +83,8 @@ class PopulationDump:
             systems = {}
         for system in population:
             ID = system['ID']
-            if ID in systems:
-                system.update(systems[ID])
-            systems[ID] = system
+            if ID not in systems:
+                systems[ID] = system
         return PopulationDump(systems, dumpFilename)
 
     def save(self):
