@@ -109,7 +109,7 @@ class AtomicDisassembler:
         """
         assert len(displacements) == len(structure)
         molecularDispacements = []
-        molecules = self.disassemble(structure)['molecules']
+        molecules = self.disassemble(structure)['atomistic.molecules']
         for molecule, inds in zip(molecules, self.indices):
             if len(molecule) > 1:
                 atomicDisplacements = displacements[inds]

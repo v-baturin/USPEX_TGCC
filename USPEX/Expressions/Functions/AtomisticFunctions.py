@@ -18,5 +18,4 @@ class AtomisticFunctions:
 
     def set(self, system, prop, value):
         if prop == 'structure':
-            for key, subvalue in system['atomistic.disassembler'].disassemble(value).items():
-                system[f'atomistic.{key}'] = subvalue
+            system.update(system['atomistic.disassembler'].disassemble(value))

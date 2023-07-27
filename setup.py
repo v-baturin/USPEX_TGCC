@@ -16,7 +16,7 @@ extensions = [
     Extension("USPEX.XRay.SingleCrystalSpectrumAnalyzer", ["USPEX/XRay/SingleCrystalSpectrumAnalyzer.py"]),
     Extension("USPEX.XRay.get_reflections", ["USPEX/XRay/get_reflections.py"]),
     Extension("USPEX.Atomistic.AtomicPrimitives", ["USPEX/Atomistic/AtomicPrimitives.py"]),
-    Extension("USPEX.Atomistic.AtomisticPoolEntry", ["USPEX/Atomistic/AtomisticPoolEntry.py"]),
+    Extension("USPEX.Optimizers.PoolEntry", ["USPEX/Optimizers/PoolEntry.py"]),
     Extension("USPEX.Atomistic.SymmetricStructure", ["USPEX/Atomistic/SymmetricStructure.py"]),
     Extension("USPEX.Atomistic.ElasticML", ["USPEX/Atomistic/ElasticML.py"]),
     Extension("USPEX.Atomistic.BondUtility", ["USPEX/Atomistic/BondUtility.py"]),
