@@ -27,7 +27,7 @@
     numGenerations: 3
     stopCrit: 3
     output: {
-        stages: [1 2 3 4]
+        stages: ['1' '2' '3' '4']
         columns: [
             ('simpleMoleculeUtility.composition.origin' 'Composition')
             ('.enthalpy.4' 'Enthalpy (eV)')
@@ -38,7 +38,7 @@
             ('radialDistributionUtility.quasientropy.4', 'Quasientropy')
         ]
         presentConvexHull: False
-        presentPareto: False
+        presentPareto: ()
         toDraw: [
             ('dep', '.enthalpy.4', 'per_atom', 'ID', 'raw')
             ('dep', '.enthalpy.4', 'raw', 'ID', 'raw')
