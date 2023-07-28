@@ -105,7 +105,7 @@ class USPEXClassic(object):
         else:
             self.initialPopSize = popSize
         self.bestFrac = bestFrac
-        self.howManyDiverse = howManyDiverse if howManyDiverse else np.round(0.15*self.popSize)
+        self.howManyDiverse = howManyDiverse if howManyDiverse else int(np.round(0.15*self.popSize))
         self.diversityTolerance = diversityTolerance
         self.globalParentsPool = globalParentsPool
         self._mostDiverse = []
