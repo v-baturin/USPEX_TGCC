@@ -73,4 +73,5 @@ class ExpressionEvaluator:
     def setAllExpressions(self) -> None:
         for expression, values in self._storedData.items():
             for s, value in zip(self._pool, values):
-                s.setExpression(expression, value)
+                if isinstance(expression, tuple):
+                    s.setExpression(expression, value)
