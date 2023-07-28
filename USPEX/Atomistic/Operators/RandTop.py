@@ -153,6 +153,7 @@ class RandTop:
 def randomPermutation(array, enumerate = False, maxSize = None):
     maxSize = maxSize if maxSize is not None else len(array)
     for i in np.random.permutation(list(range(len(array))))[0:maxSize]:
+        i = int(i)  # this is workaround for numpy int issue
         yield (i, array[i]) if enumerate else array[i]
 
 def randomPartitionSampler(itemsNumber : int, partitionsNumber : int, samplesNumber : int):
