@@ -53,7 +53,7 @@ class Output_Test(unittest.TestCase):
                 ('cellUtility.symmetry.5', 'SYMMETRY (N)'),
             ],
             'presentConvexHull': False,
-            'presentPareto': False,
+            'presentPareto': (),
             'toDraw': [
                 ('dep', '.enthalpy.5', 'per_atom', 'ID', 'raw'),
                 ('dep', '.enthalpy.5', 'raw', 'ID', 'raw'),

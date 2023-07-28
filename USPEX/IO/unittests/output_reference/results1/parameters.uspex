@@ -22,7 +22,7 @@
                         ('cellUtility.volume.5', 'Volume (A^3)'),
                         ('cellUtility.symmetry.5', 'SYMMETRY (N)')],
             'presentConvexHull': False,
-            'presentPareto': False,
+            'presentPareto': (),
             'stages': ['1', '2', '3', '4', '5'],
             'toDraw': [('dep', '.enthalpy.5', 'per_atom', 'ID', 'raw'),
                        ('dep', '.enthalpy.5', 'raw', 'ID', 'raw'),
