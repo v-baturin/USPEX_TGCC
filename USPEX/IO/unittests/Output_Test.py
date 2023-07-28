@@ -88,6 +88,7 @@ class Output_Test(unittest.TestCase):
                     except FileNotFoundError:
                         break
                 system.getProperty('structure', prefix='atomistic', suffix='5')
+                system.getProperty('structure', prefix='atomistic', suffix='origin')
             with open(TESTPATH/f"output_data/analisis{gen}", "r") as f:
                 infos.append(json.load(f))
             with open(TESTPATH/f"output_data/targetState{gen}", "r") as f:
@@ -117,6 +118,6 @@ class Output_Test(unittest.TestCase):
         self.assertEqual(len(dcmp.diff_files), 0)
         self.assertEqual(len(dcmp.common_dirs), 1)
         for diff_file in dcmp.subdirs[dcmp.common_dirs[0]].diff_files:
-            self.assertTrue(".svg" in diff_file or "POSCARS" in diff_file or "OUTPUT.txt" in diff_file)
+            self.assertTrue(".svg" in diff_file or "POSCARS" in diff_file)
 
         shutil.rmtree(TESTPATH/folder_name)

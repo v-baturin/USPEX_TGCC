@@ -618,20 +618,19 @@ class AtomisticRepresentation(object):
         return header
 
 
-    @staticmethod
-    def getPopulationSummaryBlock(population, optimizer) -> list:
+    def getPopulationSummaryBlock(self, population, optimizer) -> list:
         utlts = optimizer.target.utilities
         if utlts.cellUtility.getDim() == 3:
             numBlocks = [utlts.compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']) for system in population]
             numBlocks = np.asarray(numBlocks)
-            volumes = [system['cellUtility.volume.origin'] for system in population]
+            volumes = [system[f'cellUtility.volume.{self.stages[-1]}'] for system in population]
             volumes = np.asarray(volumes)
             approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
         else:
             approximateVolume = 'NA'
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         fitness = [system[applyPresetsRecursive(optimizer.optType)] for system in population]
-        order = [system['radialDistributionUtility.averageOrder.origin'] for system in population]
+        order = [system[f'radialDistributionUtility.averageOrder.{self.stages[-1]}'] for system in population]
         if np.any(np.isnan(np.asarray(fitness, dtype = float))):
             correlation = 0.0
         else:
@@ -641,8 +640,8 @@ class AtomisticRepresentation(object):
         comb = list(combinations(population, 2))
         for s1, s2 in comb:
             # if not s1['isBad'] and not s2['isBad']:
-            tmp_fing1 = s1['radialDistributionUtility.structureFingerprint.origin']
-            tmp_fing2 = s2['radialDistributionUtility.structureFingerprint.origin']
+            tmp_fing1 = s1[f'radialDistributionUtility.structureFingerprint.{self.stages[-1]}']
+            tmp_fing2 = s2[f'radialDistributionUtility.structureFingerprint.{self.stages[-1]}']
             dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
             qe += (1 - dist) * np.log(1 - dist)
         qe /= -len(comb) if comb else 1
