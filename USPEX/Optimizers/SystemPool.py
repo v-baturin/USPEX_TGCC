@@ -93,7 +93,7 @@ class SystemPool(object):
 
         """
         system.ID = self._newID
-        system.setProperty('isBad', True)
+        system.setProperty('isBad', False)
         self._newID += 1
         self.allSystems[system.ID] = system
 

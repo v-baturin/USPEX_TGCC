@@ -725,11 +725,14 @@ class AtomisticRepresentation(object):
             goodStructuresPOSCARS = {}
             for rank, front in enumerate(fronts):
                 for system in front:
-                    numBlocks = tuple(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']))
+                    numBlocks = tuple(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']))
                     if numBlocks not in goodStructures:
                         goodStructures[numBlocks] = self.getNewSystemsTable(isRank=True)
                         goodStructuresPOSCARS[numBlocks] = []
                     goodStructures[numBlocks].update(system['ID'], system, rank=rank)
+                    ID = system.ID
+                    system = system.system[str(self.stages[-1])]
+                    system['ID'] = ID
                     goodStructuresPOSCARS[numBlocks].append(system)
 
             for comp, table_gs in goodStructures.items():
@@ -742,10 +745,14 @@ class AtomisticRepresentation(object):
 
         if self.presentConvexHull:
             convexHull = []
-            for generation, opt in enumerate(optimizers):
-                convexHull = [system for system in opt.pool.uniqueSystems
-                              if np.isclose(system[applyPresetsRecursive('enthalpyCCH')], 0.0)]
-                content_convexHull += f'Generation {generation}\n'
+            for i, generation in enumerate(optimizer.pool.generations):
+                n = len(optimizer.pool.generations) - i
+                convexHull = []
+                for system in optimizer.pool.goodSystems:
+                    m = len(system.expressions[optimizer.optType])
+                    if m >= n and np.isclose(system.expressions[optimizer.optType][m-n], 0.0):
+                        convexHull.append(system)
+                content_convexHull += f'Generation {i}\n'
                 table = self.getNewSystemsTable()
                 for system in convexHull:
                     table.update(system['ID'], system)
@@ -754,33 +761,30 @@ class AtomisticRepresentation(object):
             with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
                 fp.write(content_convexHull)
 
-            extendedConvexHull = [system for system in optimizer.pool.uniqueSystems
-                                  if system[applyPresetsRecursive('enthalpyCCH')] < self.rangeECH]
-
-            frontsECH = optimizer.pool.fronts(extendedConvexHull, optimizer.optType)
-
-            for rank, front in enumerate(frontsECH):
+            for rank, front in enumerate(fronts):
                 for system in front:
                     table_extendedConvexHull.update(system['ID'], system, rank=rank)
             with open(self.RES_FOLDER/'extended_convex_hull', 'w') as fp:
                 fp.write(table_extendedConvexHull.table.get_string())
 
-            # for front in frontsECH:
-            #     for system in front:
-            #         systems_extendedConvexHullPOSCARS.append(system)
-            # self.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
-            #                            systems_extendedConvexHullPOSCARS)
+            for front in fronts:
+                for system in front:
+                    ID = system.ID
+                    system = system.system[str(self.stages[-1])]
+                    system['ID'] = ID
+                    systems_extendedConvexHullPOSCARS.append(system)
+            self.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
+                                       systems_extendedConvexHullPOSCARS)
 
             if csSize == 2:
-                self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
+                self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData, optimizer.pool.uniqueSystems)
             elif csSize == 3:
-                self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
+                self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData, optimizer.pool.uniqueSystems)
 
-        # if self.presentPareto is not None and len(self.presentPareto) == 2:
-        #     self._drawParetoFronts2(fronts, optimizer)
+        if self.presentPareto is not None and len(self.presentPareto) == 2:
+            self._drawParetoFronts2(fronts, optimizer)
 
         self._drawProperties(optimizer.pool.uniqueSystems)
-
 
     def _drawProperties(self, uniqueSystems):
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
@@ -823,31 +827,31 @@ class AtomisticRepresentation(object):
 
     def _drawExtendedConvexHull2(self, compositionSpace, convexHull, extendedConvexHull):
         if convexHull:
-            leftNumBlocks = np.asarray(compositionSpace.numBlocks(convexHull[0]['simpleMoleculeUtility.composition']), dtype = float)
+            leftNumBlocks = np.asarray(compositionSpace.numBlocks(convexHull[0]['simpleMoleculeUtility.composition.origin']), dtype = float)
             leftNumBlocksTotal = np.sum(leftNumBlocks)
             leftNumBlocks /= leftNumBlocksTotal
-            leftEnthalpy = convexHull[0]['enthalpy']/leftNumBlocksTotal
+            leftEnthalpy = convexHull[0][f'.enthalpy.{self.stages[-1]}']/leftNumBlocksTotal
             rightNumBlocks = leftNumBlocks
             rightEnthalpy = leftEnthalpy
             for system in convexHull:
-                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
+                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']), dtype = float)
                 numBlocksTotal = np.sum(numBlocks)
                 numBlocks /= numBlocksTotal
                 if numBlocks[1] < leftNumBlocks[1]:
                     leftNumBlocks = numBlocks
-                    leftEnthalpy = system['enthalpy'] / numBlocksTotal
+                    leftEnthalpy = system[f'.enthalpy.{self.stages[-1]}'] / numBlocksTotal
                 elif numBlocks[1] > rightNumBlocks[1]:
                     rightNumBlocks = numBlocks
-                    rightEnthalpy = system['enthalpy'] / numBlocksTotal
+                    rightEnthalpy = system[f'.enthalpy.{self.stages[-1]}'] / numBlocksTotal
             Xch = []
             Ych = []
             for system in convexHull:
-                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
+                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']), dtype = float)
                 numBlocksTotal = np.sum(numBlocks)
                 numBlocks /= numBlocksTotal
                 C = np.array([leftNumBlocks, rightNumBlocks])
                 E = np.array([leftEnthalpy, rightEnthalpy])
-                Enthalpy = system['enthalpy']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
+                Enthalpy = system[f'.enthalpy.{self.stages[-1]}']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
                 Xch.append(numBlocks[1])
                 Ych.append(Enthalpy)
             inds = np.argsort(Xch)
@@ -856,14 +860,15 @@ class AtomisticRepresentation(object):
             X = []
             Y = []
             for system in extendedConvexHull:
-                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
+                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']), dtype = float)
                 numBlocksTotal = np.sum(numBlocks)
                 numBlocks /= numBlocksTotal
                 C = np.array([leftNumBlocks, rightNumBlocks])
                 E = np.array([leftEnthalpy, rightEnthalpy])
-                Enthalpy = system['enthalpy']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
-                X.append(numBlocks[1])
-                Y.append(Enthalpy)
+                Enthalpy = system[f'.enthalpy.{self.stages[-1]}']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
+                if Enthalpy < self.rangeECH:
+                    X.append(numBlocks[1])
+                    Y.append(Enthalpy)
             np.savetxt(self.RES_FOLDER/'ExtendedConvexHull.csv', np.stack((X,Y), axis=-1), fmt='%6.3f', delimiter=',')
             plt.figure()
             plt.plot(X,Y,'go')
