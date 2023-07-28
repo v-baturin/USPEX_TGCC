@@ -622,16 +622,16 @@ class AtomisticRepresentation(object):
     def getPopulationSummaryBlock(population, optimizer) -> list:
         utlts = optimizer.target.utilities
         if utlts.cellUtility.getDim() == 3:
-            numBlocks = [utlts.compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']) for system in population]
+            numBlocks = [utlts.compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']) for system in population]
             numBlocks = np.asarray(numBlocks)
-            volumes = [system['cellUtility.volume'] for system in population]
+            volumes = [system['cellUtility.volume.origin'] for system in population]
             volumes = np.asarray(volumes)
             approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
         else:
             approximateVolume = 'NA'
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
-        fitness = [system[applyPresetsRecursive(optimizer.optType)] for system in population if not system['isBad']]
-        order = [system['radialDistributionUtility.averageOrder'] for system in population if not system['isBad']]
+        fitness = [system[applyPresetsRecursive(optimizer.optType)] for system in population]
+        order = [system['radialDistributionUtility.averageOrder.origin'] for system in population]
         if np.any(np.isnan(np.asarray(fitness, dtype = float))):
             correlation = 0.0
         else:
@@ -640,11 +640,11 @@ class AtomisticRepresentation(object):
         qe = 0
         comb = list(combinations(population, 2))
         for s1, s2 in comb:
-            if not s1['isBad'] and not s2['isBad']:
-                tmp_fing1 = s1['radialDistributionUtility.structureFingerprint']
-                tmp_fing2 = s2['radialDistributionUtility.structureFingerprint']
-                dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
-                qe += (1 - dist) * np.log(1 - dist)
+            # if not s1['isBad'] and not s2['isBad']:
+            tmp_fing1 = s1['radialDistributionUtility.structureFingerprint.origin']
+            tmp_fing2 = s2['radialDistributionUtility.structureFingerprint.origin']
+            dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
+            qe += (1 - dist) * np.log(1 - dist)
         qe /= -len(comb) if comb else 1
 
         block = [ '    Generation Summary',
@@ -653,7 +653,7 @@ class AtomisticRepresentation(object):
                  f'      Quasi entropy          : {qe:.4}']
 
         if not utlts.compositionSpace.isFixedComposition:
-            numIons = [utlts.compositionSpace.numIons(system['simpleMoleculeUtility.composition']) for system in population]
+            numIons = [utlts.compositionSpace.numIons(system['simpleMoleculeUtility.composition.origin']) for system in population]
             numIons = np.asarray(numIons)
             comps = numIons/np.sum(numIons, axis=1).reshape((-1,1))
             combs = list(combinations(comps, 2))

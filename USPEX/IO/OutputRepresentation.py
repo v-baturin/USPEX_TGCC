@@ -128,17 +128,18 @@ class OutputRepresentation(object):
 
             output += createHeader_wrap(['Generations block'], 'center')
 
-            # for generation, (population, opt) in enumerate(zip_longest(populations, optimizers)):
-            #     opt = optimizer if opt is None else opt
-            #     output.append(' Generation {0:4d}'.format(generation))
-            #     output += self.selectionRepresentation.getPopulationCreationBlock(population, opt, self.targetRepresentation)
-            #     output.append('    Optimization results')
-            #     table = self.targetRepresentation.getNewSystemsTable()
-            #     for system in population:
-            #         table.update(system['ID'], system)
-            #     output.append(table.table.get_string())
-            #     output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
-            #     output.append('')
+            for i, generation in enumerate(optimizer.pool.generations):
+                population = generation['allSystems']
+                output.append(' Generation {0:4d}'.format(i))
+                output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer,
+                                                                                  self.targetRepresentation)
+                output.append('    Optimization results')
+                table = self.targetRepresentation.getNewSystemsTable()
+                for system in population:
+                    table.update(system['ID'], system)
+                output.append(table.table.get_string())
+                output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
+                output.append('')
 
 
             if final:

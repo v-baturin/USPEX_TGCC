@@ -62,7 +62,7 @@ class USPEXClassicRepresentation(object):
 
         amounts = Counter()
         for system in population:
-            amounts[system['howCome']] += 1
+            amounts[system['.howCome.origin']] += 1
         seedsAmount = amounts.pop('Seeds') if 'Seeds' in amounts else 0
         total = sum(amounts.values())
 
