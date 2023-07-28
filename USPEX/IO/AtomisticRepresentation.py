@@ -134,21 +134,27 @@ class AtomisticRepresentation(object):
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            # systems_gatheredPOSCARS_unrelaxed.append(system[0])
+            unrelaxed = system.system['origin']
+            unrelaxed['ID'] = system.ID
+            systems_gatheredPOSCARS_unrelaxed.append(unrelaxed)
             content_origin += f"{ID} {system['.howCome.origin']} {system['.parent.origin']}\n"
 
             content_enthalpies += ','.join([f"{system[f'.enthalpy.{stage}']:6.3f}"
                                             for stage in self.stages if f'.enthalpy.{stage}' in system]) + '\n'
 
             table_Individuals.update(ID, system)
-            # systems_gatheredPOSCARS.append(system[numStages])
+
+            if str(self.stages[-1]) in system.system:
+                final = system.system[str(self.stages[-1])]
+                final['ID'] = system.ID
+                systems_gatheredPOSCARS.append(final)
 
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
 
-        # self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS_unrelaxed',
-        #                            systems_gatheredPOSCARS_unrelaxed)
-        # self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS',
-        #                            systems_gatheredPOSCARS)
+        self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS_unrelaxed',
+                                   systems_gatheredPOSCARS_unrelaxed)
+        self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS',
+                                   systems_gatheredPOSCARS)
         with open(self.RES_FOLDER/'Individuals', 'w') as f:
             f.write(table_Individuals.table.get_string() + '\n')
         with open(self.RES_FOLDER/'origin', 'w') as f:
@@ -333,8 +339,8 @@ class AtomisticRepresentation(object):
         descriptions = []
         printUSPEX = False
         for i, system in enumerate(systems):
-            structure = system.getAtomicStructure() # vacuumSize=10.0
-            disassembler = system['disassembler']
+            structure = system['atomistic.structure'] # vacuumSize=10.0
+            disassembler = system['atomistic.disassembler']
             atomTypes = structure.getAtomTypes()
             coordinates = structure.getCartesianCoordinates()
             sortIndices = np.argsort(atomTypes)
@@ -343,7 +349,7 @@ class AtomisticRepresentation(object):
             structures.append(structure)
             labels.append(f"EA{system['ID']}")
             d = {'filename': filename.name, 'index': i}
-            pbc = system['cell'].getPBC()
+            pbc = system['atomistic.cell'].getPBC()
             if pbc != (1, 1, 1):
                 d['pbc'] = ' '.join(f'{c}' for c in pbc)
                 printUSPEX = True
@@ -354,7 +360,7 @@ class AtomisticRepresentation(object):
                     printUSPEX = True
             if molecules:
                 d['molecules'] = molecules
-            if 'environments' in system and len(system['environments']):
+            if 'atomistic.environments' in system and len(system['atomistic.environments']):
                 printUSPEX = True
                 d['environments'] = []
                 for eInds in disassembler.envIndices:
@@ -690,11 +696,13 @@ class AtomisticRepresentation(object):
         with open(self.RES_FOLDER/'BESTIndividuals', 'w') as fp:
             fp.write(content_BESTIndividuals)
 
-        # for opt in optimizers:
-        #     pool = opt.pool
-        #     for ID in opt.best:
-        #         systems__BESTgatheredPOSCARS.append(pool.allSystems[ID])
-        # self.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)
+        for gen in optimizer.pool.generations:
+            best = gen['bestSystems']
+            for ID in best:
+                system = optimizer.pool.allSystems[ID].system[str(self.stages[-1])]
+                system['ID'] = ID
+                systems__BESTgatheredPOSCARS.append(system)
+        self.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)
 
         compositionSpace = optimizer.target.utilities.compositionSpace
         csSize = len(compositionSpace.blocks)
@@ -704,11 +712,13 @@ class AtomisticRepresentation(object):
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, rank=rank)
-                    # systems_goodStructuresPOSCARS.append(system)
+                    s = system.system[str(self.stages[-1])]
+                    s['ID'] = system.ID
+                    systems_goodStructuresPOSCARS.append(s)
             with open(self.RES_FOLDER/'goodStructures', 'w') as fp:
                 fp.write(table_goodStructures.table.get_string() + '\n')
 
-            # self.writeAtomicStructures(self.RES_FOLDER/'goodStructures_POSCARS', systems_goodStructuresPOSCARS)
+            self.writeAtomicStructures(self.RES_FOLDER/'goodStructures_POSCARS', systems_goodStructuresPOSCARS)
         else:
             goodStructresFolder = self.RES_FOLDER/'goodStructures'
             goodStructresFolder.mkdir(parents=True, exist_ok=True)
