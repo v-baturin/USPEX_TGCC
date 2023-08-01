@@ -116,9 +116,12 @@ class CoreAdsorbantRandomGenerator:
     def checkDocking(self, tmp_molecules, ads_attempt, npCoreAssembler, offspringFactory):
         docked = False
         cell = self.cellType.initFromCellParameters((0, 0, 0))
-        tmp_offspring = offspringFactory(molecules=tmp_molecules + [ads_attempt], cell=cell,
-                                         environments=npCoreAssembler.assemble(tmp_molecules + [ads_attempt]))
-        tmp_struct = tmp_offspring.getAtomicStructure()
+        system = {
+            'atomistic.molecules': tmp_molecules + [ads_attempt],
+            'atomistic.cell': cell,
+            'atomistic.environments': npCoreAssembler.assemble(tmp_molecules + [ads_attempt])}
+        tmp_offspring = offspringFactory(**system)
+        tmp_struct = tmp_offspring.getProperty('structure', prefix='atomistic', suffix='origin')
         tmp_minDistMatrix = self.bondUtility.getDistances(tmp_struct.getAtomTypes(),
                                                           self.conditions.externalPressure)
         # tmp_atomDistances = tmp_struct.getAllDistances()
