@@ -34,10 +34,11 @@ class AtomisticStage:
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
         
+        system.system['intermediate'] = disassembler.disassemble(structure)
         system.setProperty('vacuumSize', self.vacuumSize, suffix='intermediate')
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
+
+        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
         system.setProperty('disassembler', disassembler, prefix='atomistic', suffix=self.tag)
-        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
 
         await self.executor.run(system)
         self.systemCheckAndFix(system)
