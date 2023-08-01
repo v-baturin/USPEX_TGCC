@@ -56,7 +56,8 @@ class Substrate:
 
     def assemble(self, molecules, cell, structure=None, **kwargs):
         structure = structure if structure is not None else self._structure
-        sysStructure, disassembler = Substrate.atomicDisassemblerType.assemble(molecules, cell)
+        sysStructure, disassembler = Substrate.atomicDisassemblerType.assemble({'atomistic.molecules': molecules,
+                                                                                'atomistic.cell': cell})
         intermediateStructure = structure.makeSupercell(structure.getCell().decomposeCell(sysStructure.getCell()))
         envCell = intermediateStructure.getCell()
         fracCoordinates = envCell.cartesianToFractional(sysStructure.getCartesianCoordinates())

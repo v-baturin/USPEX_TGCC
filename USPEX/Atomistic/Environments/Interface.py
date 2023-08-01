@@ -122,7 +122,8 @@ class Interface:
         """
         lowerStructure = lowerStructure if lowerStructure is not None else self._structures[0]
         upperStructure = upperStructure if upperStructure is not None else self._structures[1]
-        structure, disassembler = Interface.atomicDisassemblerType.assemble(molecules, cell)
+        structure, disassembler = Interface.atomicDisassemblerType.assemble({'atomistic.molecules': molecules,
+                                                                                'atomistic.cell': cell})
         lowerOffset = self._calculateLowerOffset(structure.getFractionalCoordinates(), cell.getPBC())
         upperOffset = self._calculateUpperOffset(structure.getCartesianCoordinates(), cell.getPBC()) - lowerOffset
         lowerStructure = Interface.structureType(lowerStructure.getAtomTypes(),
