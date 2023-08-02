@@ -187,12 +187,13 @@ class RandSym:
                 cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons), baseCell=envCell)
                 for i in range(self.attemptsRotation):
                     offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
-                    molecules = offspring['molecules']
-                    cell = offspring['cell']
+                    molecules = offspring['atomistic.molecules.origin']
+                    cell = offspring['atomistic.cell.origin']
                     if envAssembler is not None:
                         offspring.setProperty('environments',
-                                              envAssembler.assemble(molecules, cell))
-                    structure = offspring.getAtomicStructure()
+                                              envAssembler.assemble(molecules, cell),
+                                              prefix='atomistic')
+                    structure = offspring.getProperty('structure', prefix='atomistic')
                     minDistMatrix = self.bondUtility.getDistances(
                         structure.getAtomTypes(), self.conditions.externalPressure)
                     if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):

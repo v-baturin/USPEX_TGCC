@@ -59,9 +59,6 @@ class GenerationController(object):
         self.numberStableGenerations = 0
         self.state = ControllerState.createPopulation
         self.population = None
-        self.populations = []
-        self.optimizers = []
-        self.systems = {}
         self.save()
 
     @staticmethod
@@ -93,14 +90,14 @@ class GenerationController(object):
         return controller
 
     async def run(self):
-        self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
+        self.outputRepresentation.presentOutput(self.optimizer)
         while (self.generation < self.numGenerations and
                self.numberStableGenerations < self.stopCrit and
                not self.optimizer.isGoalReached):
 
             if self.state is ControllerState.createPopulation:
                 self.population = self.optimizer.createPopulation()
-                self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
+                self.outputRepresentation.presentOutput(self.optimizer)
                 self.state = ControllerState.processPopulation
                 self.save()
             if self.state is ControllerState.processPopulation:
@@ -109,19 +106,16 @@ class GenerationController(object):
                 population, sc = self.populationProcessorType.initializePopulation('USPEX_stages', self.population)
                 await self.populationProcessorType.processPopulation(self.stages, population, self.numParallelCalcs,
                                                                      self.optimizer.target,
-                                                                     self.systems,
                                                                      sc)
-                self.population = [system[-1] for system in population.values()]
+                self.population = list(population.values())
                 self.doPresentSystems = False
                 await asyncio.wait({task})
-                self.populations.append(copy(self.population))
-                # self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
+                self.outputRepresentation.presentOutput(self.optimizer)
                 self.state = ControllerState.updateOptimizer
                 self.save()
             if self.state is ControllerState.updateOptimizer:
                 await self.optimizer.update(self.population)
-                self.optimizers.append(copy(self.optimizer))
-                self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer)
+                self.outputRepresentation.presentOutput(self.optimizer)
                 self.state = ControllerState.runControllerLogic
                 self.save()
             if self.state is ControllerState.runControllerLogic:
@@ -132,7 +126,7 @@ class GenerationController(object):
                     self.numberStableGenerations = 0
                 self.state = ControllerState.createPopulation
                 self.save()
-        self.outputRepresentation.presentOutput(self.populations, self.optimizers, self.optimizer, final=True)
+        self.outputRepresentation.presentOutput(self.optimizer, final=True)
         with open('USPEX_IS_DONE', 'wt') as f:
             f.write('')
         logger.info('Calculation finished.')
@@ -142,10 +136,10 @@ class GenerationController(object):
         while self.doPresentSystems:
             n -= 1
             if n < 0:
-                self.outputRepresentation.presentSystems(self.systems, self.optimizer)
+                self.outputRepresentation.presentSystems(self.optimizer)
                 n = self.outputRefreshDelay
             await asyncio.sleep(1)
-        self.outputRepresentation.presentSystems(self.systems, self.optimizer)
+        self.outputRepresentation.presentSystems(self.optimizer)
 
     def save(self):
         if GenerationController.DUMP_FILENAME.exists():

@@ -59,7 +59,7 @@ class PowderSpectrumAnalyzer(object):
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
-        structure = system.getAtomicStructure()
+        structure = system['atomistic.structure']
 
         # pure hydrogen gets low agreement
         elementList = list(structure.getComposition().keys())
@@ -87,8 +87,8 @@ class PowderSpectrumAnalyzer(object):
         if not result.success:
             raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
 
-        system.setProperty('powderSpectrumAnalyzer.xraydistance', result.fun)
-        system.setProperty('powderSpectrumAnalyzer.k', result.x[0])
+        system['powderSpectrumAnalyzer.xraydistance'] = result.fun
+        system['powderSpectrumAnalyzer.k'] = result.x[0]
 
     @staticmethod
     def parse(filename: str):

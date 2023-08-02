@@ -94,13 +94,13 @@ class LAMMPS_Interface:
         :param calcFolder:
         """
 
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
-        self.adapter.write(structure, system['disassembler'].allFixedIndices, f"EA{system['ID']}", self.specorder,
-                           calcFolder)
+        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+        self.adapter.write(structure, disassembler.allFixedIndices, f"EA{system['ID']}", self.specorder, calcFolder)
 
         with open(self.lammps_in, 'r') as f:
             content = f.readlines()
@@ -190,24 +190,24 @@ class LAMMPS_Interface:
         aseData = self.adapter.read(calcFolder, self.specorder, pbc)
         properties = self.readProperties(calcFolder)
         if 'structure' in self.targetProperties:
-            system.updateAtomicStructure(aseData['structure'])
+            system.setProperty('structure', aseData['structure'], prefix='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             if properties is not None:
-                system.setProperty('enthalpy', properties['Enthalpy'])
+                system.setProperty('enthalpy', properties['Enthalpy'], suffix=self.tag)
             elif aseData is not None:
-                system.setProperty('enthalpy', aseData['results'].getEnthalpy(system['externalPressure']))
+                system.setProperty('enthalpy', aseData['results'].getEnthalpy(system['externalPressure']), suffix=self.tag)
             else:
                 raise RuntimeError("Bad lammps output.")
         if 'energy' in self.targetProperties:
             if properties is not None:
                 system.setProperty('energy', properties['TotEng'])
             elif aseData is not None:
-                system.setProperty('energy', aseData['results'].results['energy'])
+                system.setProperty('energy', aseData['results'].results['energy'], suffix=self.tag)
             else:
                 raise RuntimeError("Bad lammps output.")
         if 'forces' in self.targetProperties:
             if aseData is not None:
-                system.setProperty('forces', aseData['results'].results['forces'])
+                system.setProperty('forces', aseData['results'].results['forces'], suffix=self.tag)
             else:
                 raise RuntimeError("Bad lammps output.")
 
@@ -220,16 +220,16 @@ class LAMMPS_Interface:
                 stressTensor[0][1] = stressTensor[1][0] = properties['Pxy']
                 stressTensor[0][2] = stressTensor[2][0] = properties['Pxz']
                 stressTensor[1][2] = stressTensor[2][1] = properties['Pyz']
-                system.setProperty('stressTensor', stressTensor)
+                system.setProperty('stressTensor', stressTensor, suffix=self.tag)
             else:
                 raise RuntimeError("Bad lammps output.")
 
         if 'trajectory' in self.targetProperties:
             sample = self.atomisticRepresentationType.readMLIPsample(calcFolder/self.mlip_sample, self.specorder)
-            for subsystem in sample:
-                subsystem['disassembler'] = system['disassembler']
-                subsystem['externalPressure'] = system['externalPressure']
-            system.setProperty('trajectory', sample)
+            # for subsystem in sample:
+            #     subsystem['disassembler'] = system['disassembler']
+            #     subsystem['externalPressure'] = system['externalPressure']
+            system.setProperty('trajectory', sample, suffix=self.tag)
 
         # TODO move to constraints
         # BAD_SYSTEM_ENERGY_PER_ATOM_THRESHOLD = 1e3

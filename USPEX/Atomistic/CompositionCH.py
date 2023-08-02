@@ -1,23 +1,22 @@
 from USPEX.Expressions.ConvexHull import ConvexHull
 from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
 from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
-from ..Optimizers.SystemPool import SystemPool
 from .CompositionSpace import CompositionSpace
 
 
 class CompositionCH(ConvexHull):
     def __init__(self, systems: list, compositionSpace: CompositionSpace):
         self.systems = systems
-        pool = SystemPool()
-        pool.update(self.systems)
         self.compositionSpace = compositionSpace
         extensions = dict(
             basic=BasicFunctions(),
             compositionSpace=compositionSpace.expressionExtension(compositionSpace),
         )
-        super().__init__(ExpressionEvaluator(pool.uniqueSystems, extensions).evaluate(('getRelativeCHSpace',
-                                                                                      ('compositionSpace.numBlocksFromCompositions',
-                                                              'simpleMoleculeUtility.composition'), 'enthalpy')))
+        expression = ('getRelativeCHSpace',
+                      ('compositionSpace.numBlocksFromCompositions', 'simpleMoleculeUtility.composition.origin'),
+                      '.enthalpy.origin'
+                      )
+        super().__init__(ExpressionEvaluator(self.systems, extensions).evaluate(expression))
 
     @property
     def lower_bound(self):
@@ -37,13 +36,12 @@ class CompositionCH(ConvexHull):
 
     def extend(self, systems: list):
         self.systems.extend(systems)
-        pool = SystemPool()
-        pool.update(self.systems)
         extensions = dict(
             basic=BasicFunctions(),
             compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
         )
-
-        super().__init__(ExpressionEvaluator(pool.uniqueSystems, extensions).evaluate(('getRelativeCHSpace',
-                                                                                      ('compositionSpace.numBlocksFromCompositions',
-                                                              'simpleMoleculeUtility.composition'), 'enthalpy')))
+        expression = ('getRelativeCHSpace',
+                      ('compositionSpace.numBlocksFromCompositions', 'simpleMoleculeUtility.composition.origin'),
+                      '.enthalpy.origin'
+                      )
+        super().__init__(ExpressionEvaluator(self.systems, extensions).evaluate(expression))

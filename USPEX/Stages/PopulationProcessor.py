@@ -12,20 +12,21 @@ logger = logging.getLogger(__name__)
 
 class PopulationProcessor:
 
-    def __init__(self, tag, inputKey, **kwargs):
+    def __init__(self, tag, source, inputKey, **kwargs):
         self.tag = tag
         self.inputKey = inputKey
+        self.source = source
         self.kwargs = kwargs
 
-    async def run(self, source, sink):
-        initial = source[self.inputKey]
+    async def run(self, system):
+        initial = system.getProperty(self.inputKey, suffix=self.source)
         for i, system in enumerate(initial):
             if 'ID' not in system:
                 system['ID'] = f'{self.tag}_{i}'
         population, sc = self.initializePopulation(self.tag, initial)
         await self.processPopulation(population=population, **self.kwargs, saveCallback=sc)
         final = [system[-1] for system in population.values()]
-        sink.setProperty(self.inputKey, final)
+        system.setProperty(self.inputKey, final, suffix=self.tag)
 
     @staticmethod
     def initializePopulation(tag, initial):
@@ -33,38 +34,29 @@ class PopulationProcessor:
         return pd.population, pd.save
 
     @staticmethod
-    async def processPopulation(stages, population, numParallelCalcs, target=None, systems=None, saveCallback=None):
+    async def processPopulation(stages, population, numParallelCalcs, target=None, saveCallback=None):
         stages = [Stages.createStage(**stage, target=target) for stage in stages]
-        for ID, system in population.items():
-            if systems is not None:
-                systems[ID] = system[0:1]
         sem = asyncio.Semaphore(numParallelCalcs)
-        await asyncio.gather(*(PopulationProcessor.life(system, stages, systems, sem, saveCallback)
+        await asyncio.gather(*(PopulationProcessor.life(system, stages, sem, saveCallback)
                                for system in population.values()))
 
     @staticmethod
-    async def life(processedSystems, stages, systems, sem, saveCallback):
+    async def life(system, stages, sem, saveCallback):
         await sem.acquire()
-        ID = processedSystems[0]['ID']
-        for i, stage in enumerate(stages):
-            assert i < len(processedSystems)
-            if i + 1 == len(processedSystems):
-                source = processedSystems[-1]
-                sink = type(source)(extensions=source.extensions, isBad=False)
+        ID = system['ID']
+        for stage in stages:
+            if stage.tag not in system.system:
+                system.setProperty('isBad', False, suffix=stage.tag)
                 try:
-                    await stage.run(source, sink)
+                    await stage.run(system)
                 except Exception as ex:
                     logger.warning(f'system {ID} error in relaxation:')
                     logger.exception(ex)
-                    sink.setProperty('isBad', True)
-                if sink['isBad']:
-                    break
-                processedSystems.append(deepcopy(sink))
-            if systems is not None:
-                systems[ID].append(processedSystems[i+1])
+                    system.setProperty('isBad', True, suffix=stage.tag)
+                # if system.getProperty('isBad', suffix=stage.tag):
+                #     break
             if saveCallback is not None:
                 saveCallback()
-            # self.populationDump.save()
         sem.release()
 
 
@@ -92,7 +84,7 @@ class PopulationDump:
         for system in population:
             ID = system['ID']
             if ID not in systems:
-                systems[ID] = [deepcopy(system)]
+                systems[ID] = system
         return PopulationDump(systems, dumpFilename)
 
     def save(self):

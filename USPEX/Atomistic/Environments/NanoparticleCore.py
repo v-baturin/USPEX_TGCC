@@ -75,8 +75,8 @@ class NanoparticleCore:
         return f"<CoreAssembler {self._structure.getFormula()}>"
 
     def assemble(self, molecules, **kwargs):
-        wholeSysStruct, _ = NanoparticleCore.atomicDisassemblerType.assemble(molecules + [self._structure],
-                                                                       cell=self._structure.getCell())
+        system = {'atomistic.molecules': molecules + [self._structure], 'atomistic.cell': self._structure.getCell()}
+        wholeSysStruct, _ = NanoparticleCore.atomicDisassemblerType.assemble(system)
         newCell = self.getCell().getEnvelopeCell(wholeSysStruct.getCartesianCoordinates())
         newEnvStructure = NanoparticleCore.structureType(self._structure.getAtomTypes(),
                                                            self._structure.getCartesianCoordinates(),

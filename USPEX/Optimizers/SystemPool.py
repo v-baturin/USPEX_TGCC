@@ -28,6 +28,7 @@ class SystemPool(object):
         self.extensions = {}
         self.allSystems = {}
         self.generations = []
+        self.goodSystemIDs = []
         self._newID = 0
 
     def __copy__(self):
@@ -39,22 +40,18 @@ class SystemPool(object):
 
     @property
     def goodSystems(self):
-        return tuple(system for system in self.allSystems.values() if not system['isBad'])
-
-    @property
-    def goodSystemIDs(self):
-        return tuple(ID for ID, system in self.allSystems.items() if not system['isBad'])
+        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs)
 
     @property
     def uniqueSystems(self):
-        return tuple(system for system in self.allSystems.values() if 'originalID' not in system and not system['isBad'])
+        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs if self.allSystems[ID].originalID is None)
 
     @property
     def uniqueSystemIDs(self):
         """
         :return: list of IDs of unique structures.
         """
-        return tuple(ID for ID, system in self.allSystems.items() if 'originalID' not in system and not system['isBad'])
+        return tuple(ID for ID in self.goodSystemIDs if self.allSystems[ID].originalID is None)
 
     def __hash__(self):
         return hash(self.uniqueSystemIDs)
@@ -82,7 +79,7 @@ class SystemPool(object):
             if original['ID'] not in newIDs:
                 newGeneration['allSystems'].append(original)
                 newIDs.append(original['ID'])
-                if 'duplicates' not in original or set(original['duplicates']) <= IDs:
+                if set(original.duplicates) <= IDs:
                     logger.debug(f'add new system {system["ID"]} to list of unique systems')
                     newGeneration['newSystems'].append(original)
         self.generations.append(newGeneration)
@@ -95,10 +92,10 @@ class SystemPool(object):
         :param system: system to be labeled with ID.
 
         """
-        system.setProperty('ID', self._newID)
-        system.setProperty('isBad', True)
+        system.ID = self._newID
+        system.setProperty('isBad', False)
         self._newID += 1
-        self.allSystems[system['ID']] = system
+        self.allSystems[system.ID] = system
 
     def getOriginalID(self, ID):
         """
@@ -109,7 +106,7 @@ class SystemPool(object):
         :return: ID of original system.
         """
         system = self.allSystems[ID]
-        return system['originalID'] if 'originalID' in system else ID
+        return system.originalID if system.originalID is not None else ID
 
     @staticmethod
     def fronts(pool, expression):

@@ -5,13 +5,14 @@ _TRANS_ATTEMPTS = 1000
 
 class Transmutation:
 
-    def __init__(self, utilities, howManyTrans = 5, transAttempts = _TRANS_ATTEMPTS):
+    def __init__(self, utilities, suffix='4', howManyTrans = 5, transAttempts = _TRANS_ATTEMPTS):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
+        self.suffix = suffix
         # if self.simpleMoleculeUtility.isTrueMolecular:
         #     raise RuntimeError("Transmutation does not currently work in molecular regime.")
         self.specificTrans = []
@@ -19,11 +20,11 @@ class Transmutation:
         self.transAttempts = transAttempts
 
     def __call__(self, system, offspringFactory=None):
-        molecules = system['molecules']
-        cell = system['cell']
-        structure, disassembler = system.atomicDisassemblerType.assemble(molecules, cell)
+        molecules = system.getProperty('molecules', prefix='atomistic', suffix=self.suffix)
+        cell = system.getProperty('cell', prefix='atomistic', suffix=self.suffix)
+        structure = system.getProperty('structure', prefix='atomistic', suffix=self.suffix)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
-            symbolsIn = system['simpleMoleculeUtility.moleculeTypes']
+            symbolsIn = system['simpleMoleculeUtility.moleculeTypes.origin']
             symbolsOut = self.compositionSpace.symbols
 
             trans = np.array([(i,sOut) for i, sIn in enumerate(symbolsIn) for sOut in symbolsOut if sIn != sOut],
@@ -45,11 +46,15 @@ class Transmutation:
                         operations[s] = [[[np.copy(operation)]]]
 
                 offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                offspring['molecules'][0:0] = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
-                if 'environments' in system:
-                    offspring['environments'] = system['environments']
+                offspring['atomistic.molecules'][0:0] = [molecule for i, molecule in enumerate(molecules) if i not in excluded]
                 offspring = offspringFactory(**offspring)
-                structure = offspring.getAtomicStructure()
+                try:
+                    offspring.setProperty('environments',
+                                          system.getProperty('environments', prefix='atomistic', suffix=self.suffix),
+                                          prefix='atomistic')
+                except Exception:
+                    pass
+                structure = offspring.getProperty('structure', prefix='atomistic')
                 minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
                                                               self.conditions.externalPressure)
                 if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):

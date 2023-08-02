@@ -51,9 +51,11 @@ class NanoparticleCore_Test(unittest.TestCase):
         adsorbantmol = self.moleculesNDI[adsName]
         dockingTransf = assembler.sites[2].dockTransformation(adsorbantSites[0], np.pi / 2)
         new_ads_struct = dockingTransf.transform(adsorbantmol)
-        structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
-                                                              cell=Cell.initFromCellVectors((0,0,0)),
-                                                              environment=assembler.assemble([new_ads_struct]))
+        system = {'atomistic.molecules': [new_ads_struct],
+                  'atomistic.cell': Cell.initFromCellVectors((0, 0, 0)),
+                  'atomistic.environments': assembler.assemble([new_ads_struct])
+                  }
+        structure, disassembler = AtomicDisassembler.assemble(system)
         AtomisticRepresentation.writeXYZ(self.TEST_FILES_DIR/'outNDI.xyz', structure)
 
     def test_dock_Alpha(self):
@@ -66,9 +68,11 @@ class NanoparticleCore_Test(unittest.TestCase):
         assembler.getSitesByType(jtype)
         dockingTransf = assembler.sites[coreSiteNo].dockTransformation(adsorbantSites[0], np.pi / 2)
         new_ads_struct = dockingTransf.transform(adsorbantmol)
-        structure, disassembler = AtomicDisassembler.assemble(molecules=[new_ads_struct],
-                                                              cell=Cell.initFromCellVectors((0, 0, 0)),
-                                                              environment=assembler.assemble([new_ads_struct]))
+        system = {'atomistic.molecules': [new_ads_struct],
+                  'atomistic.cell': Cell.initFromCellVectors((0, 0, 0)),
+                  'atomistic.environments': assembler.assemble([new_ads_struct])
+                  }
+        structure, disassembler = AtomicDisassembler.assemble(system)
         AtomisticRepresentation.writeXYZ(self.TEST_FILES_DIR/'outAlpha.xyz', structure)
 
 def json2dict(fname):

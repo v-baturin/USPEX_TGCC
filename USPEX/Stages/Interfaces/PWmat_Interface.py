@@ -76,7 +76,7 @@ class PWmat_Interface:
         :param system: our system
         :return:
         '''
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -123,11 +123,12 @@ class PWmat_Interface:
                 fp.write(INPSP)
                 tmp_i += 1
         # set IN.RELAXOPT
-        if system['externalPressure']:
+        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        if externalPressure:
             with open(calcFolder/'etot.input', 'a') as fp:
                 fp.write('IN.RELAXOPT = T\n')
             with open(calcFolder/'IN.RELAXOPT', 'a') as fp:
-                fp.write('PSTRESS_EXTERNAL= %10f\n' % (system['externalPressure']))
+                fp.write('PSTRESS_EXTERNAL= %10f\n' % (externalPressure))
 
 
 
@@ -227,16 +228,17 @@ class PWmat_Interface:
         structure = self.structureType(atomTypes, coor, cell=cell)
 
         if 'structure' in self.targetProperties:
-            system.updateAtomicStructure(structure)
+            system.setProperty('structure', structure, prefix='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.REPORT, 'r') as fp:
                 content = fp.readlines()
-            system.setProperty('enthalpy', self.readEnergy(content) +
-                               cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA)
+            P = system.getProperty('externalPressure', suffix='origin')
+            V = cell.getVolume()
+            system.setProperty('enthalpy', self.readEnergy(content) + P*V*EV_PER_CUBIC_ANGSTREM_PER_GPA, suffix=self.tag)
         if 'stressTensor' in self.targetProperties:
             with open(calcFolder/self.MOVEMENT, 'r') as fp:
                 content = fp.readlines()
-            system.setProperty('stressTensor', self.readPressureTensor(content))
+            system.setProperty('stressTensor', self.readPressureTensor(content), suffix=self.tag)
 
     def readPressureTensor(self, content, index=-1):
         '''

@@ -64,7 +64,7 @@ class QE_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
         cell = structure.getCell()
 
         # Copying pseudopotentials to calc folder
@@ -84,7 +84,8 @@ class QE_Interface:
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
-        self.adapter.write(structure, system['disassembler'].allFixedIndices, kPoints, self.pseudopotentials, calcFolder)
+        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+        self.adapter.write(structure, disassembler.allFixedIndices, kPoints, self.pseudopotentials, calcFolder)
 
         return ''
 
@@ -104,18 +105,19 @@ class QE_Interface:
             pbc = tuple(int(c) for c in f.read().split())
         aseData = self.adapter.read(calcFolder, pbc)
         if 'structure' in self.targetProperties:
-            system.updateAtomicStructure(aseData['structure'])
+            system.setProperty('structure', aseData['structure'], prefix='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
-            system.setProperty('enthalpy', aseData['results'].getEnthalpy(system['externalPressure']))
+            externalPressure = system.getProperty('externalPressure', suffix='origin')
+            system.setProperty('enthalpy', aseData['results'].getEnthalpy(externalPressure), suffix=self.tag)
         if 'energy' in self.targetProperties:
-            system.setProperty('energy', aseData['results'].results['energy'])
+            system.setProperty('energy', aseData['results'].results['energy'], suffix=self.tag)
         if 'forces' in self.targetProperties:
-            system.setProperty('forces', aseData['results'].results['forces'])
+            system.setProperty('forces', aseData['results'].results['forces'], suffix=self.tag)
 
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
         if 'stressTensor' in self.targetProperties:
-            system.setProperty('stressTensor', self.readStressTensor(content))
+            system.setProperty('stressTensor', self.readStressTensor(content), suffix=self.tag)
 
     def readStressTensor(self, content):
         stressTensor = np.zeros((3, 3), dtype=float)

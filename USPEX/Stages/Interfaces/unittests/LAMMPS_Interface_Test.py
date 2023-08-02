@@ -6,7 +6,8 @@ import filecmp
 
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, LAMMPS_Interface, AtomisticPoolEntry
+from ....Optimizers.PoolEntry import PoolEntry
+from ....components import AtomisticRepresentation, LAMMPS_Interface, Atomistic
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'lammpsSpecific'
@@ -21,16 +22,20 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
         lammps = LAMMPS_Interface(tag='0',
                                   libs=[SPECIFICPATH/'SiC.tersoff'], lammps_in=SPECIFICPATH/'lammps.in_1',
                                   specorder=['C'])
+        atomistic = Atomistic()
+        extensions = dict(
+            atomistic=atomistic.propertyExtension(atomistic)
+        )
 
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            system = AtomisticPoolEntry(
-                ID=ID,
-                structure=structure,
-                disassembler=AtomisticRepresentation.atomicDisassemblerType(
-                    np.arange(len(structure)).reshape((-1, 1))),
-                externalPressure=100.0
-            )
+            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            system = PoolEntry(extensions=extensions, ID=ID)
+            system.setProperty('externalPressure', 100.0)
+            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
+            system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+
             WORKPATH.mkdir(parents=True, exist_ok=True)
             lammps.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
@@ -45,7 +50,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
             lammps.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-            structure = system.getAtomicStructure()
+            structure = system.getProperty('structure', prefix='atomistic', suffix='0')
             cell = structure.getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(),
@@ -61,17 +66,21 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         # Only output will be parsed and properties checked
         interface = LAMMPS_Interface(tag='0', libs=[SPECIFICPATH/'SiC.tersoff'],
                                      lammps_in=SPECIFICPATH/'lammps.in_1', specorder=['C'])
-        structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-        system = AtomisticPoolEntry(
-            ID=ID,
-            structure=structure,
-            disassembler=AtomisticRepresentation.atomicDisassemblerType(
-                np.arange(len(structure)).reshape((-1, 1))),
-            ase={'pbc': (1, 1, 1)},
-            externalPressure=0.0
+        atomistic = Atomistic()
+        extensions = dict(
+            atomistic=atomistic.propertyExtension(atomistic)
         )
+
+        structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        system = PoolEntry(extensions=extensions, ID=ID)
+        system.setProperty('externalPressure', 0.0)
+        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
+        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+
         interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
-        self.assertTrue(np.isclose(system['enthalpy'], -102.64364))
+        self.assertTrue(np.isclose(system['.enthalpy.0'], -102.64364))
 
 
 class LAMMPS_MLIP_Test(unittest.TestCase):
@@ -81,15 +90,18 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
                                           mlip_in=HOMEPATH/'LAMMPS_MLIP_SAMPLE/mlip.ini',
                                           mlip=HOMEPATH/'LAMMPS_MLIP_SAMPLE/p.mtp',
                                           specorder=['Li', 'B', 'H'], targetProperties=['trajectory'])
+        atomistic = Atomistic()
+        self.extensions = dict(
+            atomistic=atomistic.propertyExtension(atomistic)
+        )
 
     def test_init(self):
         structure = AtomisticRepresentation.readPOSCAR(HOMEPATH/'LAMMPS_MLIP_SAMPLE/Li_B_H_POSCAR', (1, 1, 1))
-        system = AtomisticPoolEntry(
-            ID=0,
-            structure=structure,
-            disassembler=AtomisticRepresentation.atomicDisassemblerType(
-                np.arange(len(structure)).reshape((-1, 1))),
-        )
+        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        system = PoolEntry(extensions=self.extensions, ID=0)
+        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
+        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
         calcFolder = HOMEPATH/'LAMMPS_MLIP_INIT'
         calcFolder.mkdir()
         self.interface.prepareLocalCalculation(system=system, calcFolder=calcFolder)
@@ -103,12 +115,8 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
 
 
     def test_sample(self):
-        system = AtomisticPoolEntry(
-            disassembler=None,
-            externalPressure=0.0
-        )
-
+        system = PoolEntry(extensions=self.extensions, ID=0)
         self.interface.readOutput(system=system, calcFolder=HOMEPATH/'LAMMPS_MLIP_SAMPLE')
-        self.assertEqual(len(system['trajectory']), 1805)
-        for system in system['trajectory']:
+        self.assertEqual(len(system['.trajectory.0']), 1805)
+        for system in system['.trajectory.0']:
             self.assertEqual(len(system['structure']), 104)

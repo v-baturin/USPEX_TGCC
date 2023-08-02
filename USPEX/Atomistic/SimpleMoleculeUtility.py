@@ -81,7 +81,7 @@ class SimpleMoleculeUtility(object):
                     position = optimizedCell.getWrapedCartesianCoordinates(position)
                     transformation = Transformation(matrix, position)
                     molecules.append(transformation.transform(molecule))
-        return {'molecules': molecules, 'cell': optimizedCell}
+        return {'atomistic.molecules': molecules, 'atomistic.cell': optimizedCell}
 
     def determineMoleculeType(self, molecule):
         """
@@ -134,10 +134,10 @@ class SimpleMoleculeUtility(object):
         #     if not inMolecule: return False
         # return True
 
-        molecules = entry['molecules']
-        cell = entry['cell']
-        structure = entry.getAtomicStructure()
-        disassembler = entry['disassembler']
+        molecules = entry.getProperty('molecules', prefix='atomistic')
+        cell = entry.getProperty('cell', prefix='atomistic')
+        structure = entry.getProperty('structure', prefix='atomistic')
+        disassembler = entry.getProperty('disassembler', prefix='atomistic')
         actualDistances = structure.getAllDistances()
         eye = np.eye(3)[np.nonzero(cell.getPBC())]
         constNeighbours = np.vstack([eye, -eye])

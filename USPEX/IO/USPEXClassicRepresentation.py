@@ -12,13 +12,14 @@ class USPEXClassicRepresentation(object):
     def __init__(self, RES_FOLDER: Path, **params):
         self.RES_FOLDER = RES_FOLDER
 
-    def presentFractions(self, populations):
+    def presentFractions(self, optimizer):
         allOperators = set()
         allAmountsAndTotals = []
-        for population in populations:
+        for generation in optimizer.pool.generations:
+            population = generation['allSystems']
             amounts = Counter()
             for system in population:
-                amounts[system['howCome']] += 1
+                amounts[system['.howCome.origin']] += 1
             total = sum(amounts.values())
             allOperators.update(amounts.keys())
             allAmountsAndTotals.append((amounts, total))
@@ -61,7 +62,7 @@ class USPEXClassicRepresentation(object):
 
         amounts = Counter()
         for system in population:
-            amounts[system['howCome']] += 1
+            amounts[system['.howCome.origin']] += 1
         seedsAmount = amounts.pop('Seeds') if 'Seeds' in amounts else 0
         total = sum(amounts.values())
 
