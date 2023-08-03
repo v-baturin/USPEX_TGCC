@@ -29,9 +29,9 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
             system = PoolEntry(extensions=extensions, ID=ID)
             system.setProperty('externalPressure', 0.0)
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
-            system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
+            system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
             WORKPATH.mkdir(parents=True, exist_ok=True)
             mopac.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
@@ -46,6 +46,6 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             mopac.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (0, 0, 0))
-            structure = system.getProperty('structure', prefix='atomistic', suffix='0')
+            structure = system.getProperty('structure', extension='atomistic', suffix='0')
             self.assertTrue(np.allclose(structure.getCartesianCoordinates(), structureRef.getCartesianCoordinates()))
 

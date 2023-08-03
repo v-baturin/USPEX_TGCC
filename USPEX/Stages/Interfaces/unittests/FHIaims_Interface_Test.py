@@ -44,9 +44,9 @@ class VASP_CalculatorTest2(unittest.TestCase):
             disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
             system = PoolEntry(extensions=extensions, ID=ID)
             system.setProperty('externalPressure', 0.0001)
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='1')
-            system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, extension='atomistic', suffix='1')
+            system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
             WORKPATH.mkdir(parents=True, exist_ok=True)
             aims.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
@@ -61,7 +61,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
             aims.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-            structure = system.getProperty('structure', prefix='atomistic', suffix='1')
+            structure = system.getProperty('structure', extension='atomistic', suffix='1')
             cell = structure.getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(),

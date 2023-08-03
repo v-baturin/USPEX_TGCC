@@ -26,9 +26,9 @@ class Permutation:
         self.swapAttempts = swapAttempts
 
     def __call__(self, system, offspringFactory=None):
-        molecules = system.getProperty('molecules', prefix='atomistic', suffix=self.suffix)
-        cell = system.getProperty('cell', prefix='atomistic', suffix=self.suffix)
-        structure = system.getProperty('structure', prefix='atomistic', suffix=self.suffix)
+        molecules = system.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        structure = system.getProperty('structure', extension='atomistic', suffix=self.suffix)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             symbols = system['simpleMoleculeUtility.moleculeTypes.origin']
 
@@ -53,11 +53,11 @@ class Permutation:
                     offspring = offspringFactory(**offspring)
                     try:
                         offspring.setProperty('environments',
-                                              system.getProperty('environments', prefix='atomistic', suffix=self.suffix),
-                                              prefix='atomistic')
+                                              system.getProperty('environments', extension='atomistic', suffix=self.suffix),
+                                              extension='atomistic')
                     except Exception:
                         pass
-                    structure = offspring.getProperty('structure', prefix='atomistic')
+                    structure = offspring.getProperty('structure', extension='atomistic')
                     minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
                                                                   self.conditions.externalPressure)
                     if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):

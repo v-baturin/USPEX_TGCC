@@ -76,7 +76,7 @@ class PWmat_Interface:
         :param system: our system
         :return:
         '''
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -228,7 +228,7 @@ class PWmat_Interface:
         structure = self.structureType(atomTypes, coor, cell=cell)
 
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', structure, prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', structure, extension='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.REPORT, 'r') as fp:
                 content = fp.readlines()

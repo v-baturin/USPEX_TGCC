@@ -82,7 +82,7 @@ class GULP_Interface:
 
         """
 
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
 
         files_to_delete = [Path.cwd()/'output', Path.cwd()/'optimized.structure']
         for f in files_to_delete:
@@ -146,7 +146,7 @@ class GULP_Interface:
                               tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
                                                                precision=6) for c in coord)
             if cell.dim == 2:
-                if i in system.getProperty('disassembler', prefix='atomistic', suffix='intermediate').allFixedIndices:
+                if i in system.getProperty('disassembler', extension='atomistic', suffix='intermediate').allFixedIndices:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 1 1 1\n' % tuple_to_format
                 else:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 0 0 0\n' % tuple_to_format
@@ -212,7 +212,7 @@ class GULP_Interface:
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.readStructure(content, pbc), prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', self.readStructure(content, pbc), extension='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             system.setProperty('enthalpy', self.readEnergy(content), suffix=self.tag)
         if 'stressTensor' in self.targetProperties:

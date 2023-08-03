@@ -94,12 +94,12 @@ class LAMMPS_Interface:
         :param calcFolder:
         """
 
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
         self.adapter.write(structure, disassembler.allFixedIndices, f"EA{system['ID']}", self.specorder, calcFolder)
 
         with open(self.lammps_in, 'r') as f:
@@ -190,7 +190,7 @@ class LAMMPS_Interface:
         aseData = self.adapter.read(calcFolder, self.specorder, pbc)
         properties = self.readProperties(calcFolder)
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', aseData['structure'], prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', aseData['structure'], extension='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             if properties is not None:
                 system.setProperty('enthalpy', properties['Enthalpy'], suffix=self.tag)

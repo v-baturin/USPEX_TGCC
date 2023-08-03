@@ -52,7 +52,7 @@ def read_structures_and_energies(symbols, folder: Path):
         system['isBad'] = False
         system['.enthalpy'] = enthalpy
         system = PoolEntry(extensions=extensions, **system)
-        system.getProperty('structure', prefix='atomistic')
+        system.getProperty('structure', extension='atomistic')
         systems.append(system)
     all_systems = systems
 

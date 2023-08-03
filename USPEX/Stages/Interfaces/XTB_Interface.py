@@ -54,14 +54,14 @@ class XTB_Interface:
 
     def prepareLocalCalculation(self, system, calcFolder : Path):
 
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
         self.adapter.write_structure(structure, self.geometry_file, calcFolder)
 
         content_to_write = ''
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
         fixedIndices = disassembler.allFixedIndices
         if np.any(fixedIndices):
             content_to_write += '$fix\n'
@@ -102,7 +102,7 @@ class XTB_Interface:
             with open(calcFolder / 'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
             system.setProperty('structure', self.adapter.read_structure(self.out_geometry_file, calcFolder, pbc),
-                               prefix='atomistic', suffix=self.tag)
+                               extension='atomistic', suffix=self.tag)
 
         if 'energy' in self.targetProperties:
             system.setProperty('energy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV, suffix=self.tag)

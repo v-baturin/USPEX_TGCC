@@ -67,7 +67,7 @@ class DFTBplus_Interface:
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
 
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
@@ -98,7 +98,7 @@ class DFTBplus_Interface:
             else:
                 f.write("")
 
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
         fixedIndices = disassembler.allFixedIndices
         if np.any(fixedIndices):
             moved_atoms_string = 'MovedAtoms = !('
@@ -140,7 +140,7 @@ class DFTBplus_Interface:
 
         results = {}
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', new_structure, prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', new_structure, extension='atomistic', suffix=self.tag)
         if 'energy' in self.targetProperties:
             system.setProperty('energy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
         if 'enthalpy' in self.targetProperties:

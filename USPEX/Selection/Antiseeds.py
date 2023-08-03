@@ -44,9 +44,9 @@ class Antiseeds:
                     dist = fingerprintUtility.dist(ref_system, system)
                     correction = system[f'antiseeds.corrections.{suffix}']
                     system.setProperty('corrections', correction + self.max * np.exp(-dist ** 2 / (2 * sigma ** 2)),
-                                       prefix='antiseeds', suffix=suffix)
+                                       extension='antiseeds', suffix=suffix)
             else:
-                system.setProperty('corrections', 0, prefix='antiseeds', suffix=suffix)
+                system.setProperty('corrections', 0, extension='antiseeds', suffix=suffix)
 
     def corrections(self, system):
         """

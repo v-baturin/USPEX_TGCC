@@ -24,9 +24,9 @@ class XTB_InterfaceTest(unittest.TestCase):
         disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
         system = PoolEntry(extensions=extensions, ID=ID)
         system.setProperty('externalPressure', 0.0)
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
-        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
+        system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
 
         interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
         self.assertTrue(np.isclose(system['.enthalpy.0'], -1003.116))

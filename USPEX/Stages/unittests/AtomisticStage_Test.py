@@ -32,12 +32,12 @@ class AtomisticStage_Test(unittest.TestCase):
     @staticmethod
     def checkWrapped(system):
         mol_no = 0
-        cell = system.getProperty('cell', prefix='atomistic', suffix='origin')
-        for i, molSource in enumerate(system.getProperty('molecules', prefix='atomistic', suffix='origin')):
+        cell = system.getProperty('cell', extension='atomistic', suffix='origin')
+        for i, molSource in enumerate(system.getProperty('molecules', extension='atomistic', suffix='origin')):
             if len(molSource) > 1:
                 # print(f"\nMolecule {mol_no}")
                 mol_no += 1
-                molSink = system.getProperty('molecules', prefix='atomistic', suffix='0')[i]
+                molSink = system.getProperty('molecules', extension='atomistic', suffix='0')[i]
                 distMatSource = {}
                 distMatSink = {}
                 diff = {}

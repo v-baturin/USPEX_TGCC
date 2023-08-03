@@ -38,18 +38,18 @@ class Heredity:
             self.correlation = 0
 
     def __call__(self, system1, system2, offspringFactory=None):
-        molecules1 = system1.getProperty('molecules', prefix='atomistic', suffix=self.suffix)
-        cell1 = system1.getProperty('cell', prefix='atomistic', suffix=self.suffix)
-        composition1 = system1.getProperty('composition', prefix='simpleMoleculeUtility', suffix='origin')
-        order1 = system1.getProperty('order', prefix='radialDistributionUtility', suffix=self.suffix)
-        molecules2 = system2.getProperty('molecules', prefix='atomistic', suffix=self.suffix)
-        cell2 = system2.getProperty('cell', prefix='atomistic', suffix=self.suffix)
-        composition2 = system2.getProperty('composition', prefix='simpleMoleculeUtility', suffix='origin')
-        order2 = system2.getProperty('order', prefix='radialDistributionUtility', suffix=self.suffix)
+        molecules1 = system1.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell1 = system1.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        composition1 = system1.getProperty('composition', extension='simpleMoleculeUtility', suffix='origin')
+        order1 = system1.getProperty('order', extension='radialDistributionUtility', suffix=self.suffix)
+        molecules2 = system2.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell2 = system2.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        composition2 = system2.getProperty('composition', extension='simpleMoleculeUtility', suffix='origin')
+        order2 = system2.getProperty('order', extension='radialDistributionUtility', suffix=self.suffix)
         try:
             system = np.random.choice((system1, system2))
-            outputCell = system.getProperty('cell', prefix='atomistic', suffix=self.suffix)
-            parentEnv = system.getProperty('environments', prefix='atomistic', suffix=self.suffix)
+            outputCell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
+            parentEnv = system.getProperty('environments', extension='atomistic', suffix=self.suffix)
         except Exception:
             parentEnv = None
             outputCell = None
@@ -129,8 +129,8 @@ class Heredity:
                     offspring = {'atomistic.molecules': molecules, 'atomistic.cell': outputCell}
                     offspring = offspringFactory(**offspring)
                     if parentEnv is not None:
-                        offspring.setProperty('environments', parentEnv, prefix='atomistic')
-                    structure = offspring.getProperty('structure', prefix='atomistic')
+                        offspring.setProperty('environments', parentEnv, extension='atomistic')
+                    structure = offspring.getProperty('structure', extension='atomistic')
                     minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
                                                                   self.conditions.externalPressure)
                     if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):

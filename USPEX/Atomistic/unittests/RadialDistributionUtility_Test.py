@@ -19,11 +19,11 @@ class RadialDistributionUtility_Test(unittest.TestCase):
         )
 
         self.systemRDU1 = PoolEntry(extensions=extensions, ID=0, **AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/"systemRDU1.POSCAR"))
-        self.systemRDU1.getProperty('structure', prefix='atomistic')
+        self.systemRDU1.getProperty('structure', extension='atomistic')
         self.systemRDU2 = PoolEntry(extensions=extensions, ID=1, **AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/"systemRDU2.POSCAR"))
-        self.systemRDU2.getProperty('structure', prefix='atomistic')
+        self.systemRDU2.getProperty('structure', extension='atomistic')
         self.systemRDU3 = PoolEntry(extensions=extensions, ID=2, **AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/"systemRDU3.POSCAR"))
-        self.systemRDU3.getProperty('structure', prefix='atomistic')
+        self.systemRDU3.getProperty('structure', extension='atomistic')
 
     def test_structureOrder(self):
         self.assertAlmostEqual(self.systemRDU1['radialDistributionUtility.structureOrder.origin'], 0.207, places=3)

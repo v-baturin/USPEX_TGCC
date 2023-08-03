@@ -48,9 +48,9 @@ else:
                 disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
                 system = PoolEntry(extensions=extensions, ID=ID)
                 system.setProperty('externalPressure', 130)
-                system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-                system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
-                system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+                system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+                system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
+                system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
                 WORKPATH.mkdir(parents=True, exist_ok=True)
                 abinit.prepareLocalCalculation(system, WORKPATH)
                 folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"

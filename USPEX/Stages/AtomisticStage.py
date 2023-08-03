@@ -3,6 +3,9 @@ import logging
 import numpy as np
 from ase.geometry import get_distances
 
+
+from ..Optimizers.PoolEntry import PoolEntry
+
 logger = logging.getLogger(__name__)
 
 class AtomisticStage:
@@ -22,10 +25,10 @@ class AtomisticStage:
         self.vacuumSize = vacuumSize
         self.executor = self.executorType(tag=tag, **kwargs)
 
-    async def run(self, system):
+    async def run(self, system: PoolEntry):
         if self.environmentStyle != 'noEnvironment':
-            structure = system.getProperty('structure', prefix='atomistic', suffix=self.source)
-            disassembler = system.getProperty('disassembler', prefix='atomistic', suffix=self.source)
+            structure = system.getProperty('structure', extension='atomistic', suffix=self.source)
+            disassembler = system.getProperty('disassembler', extension='atomistic', suffix=self.source)
         else:
             structure, disassembler = system.atomicDisassemblerType.assemble({
                 'atomistic.molecules': system[f'atomistic.molecules.{self.source}'],
@@ -34,11 +37,11 @@ class AtomisticStage:
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
         
-        system.system['intermediate'] = disassembler.disassemble(structure)
+        system.system['intermediate'] = system.flavourFactory(**disassembler.disassemble(structure))
         system.setProperty('vacuumSize', self.vacuumSize, suffix='intermediate')
 
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix=self.tag)
+        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix=self.tag)
 
         await self.executor.run(system)
         self.systemCheckAndFix(system)
@@ -50,8 +53,8 @@ class AtomisticStage:
         If it does, make surtain adjustments, like align the system along required axis.
         :param system: system to be checked and fixed
         """
-        structure = system.getProperty('structure', prefix='atomistic', suffix=self.tag)
-        cell = system.getProperty('cell', prefix='atomistic', suffix=self.tag)
+        structure = system.getProperty('structure', extension='atomistic', suffix=self.tag)
+        cell = system.getProperty('cell', extension='atomistic', suffix=self.tag)
         minDistMatrix = self.target.utilities.bondUtility.getDistances(structure.getAtomTypes(),
                                                       self.target.utilities.conditions.externalPressure)
         goodStructure = self.target.utilities.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix)\
@@ -64,15 +67,15 @@ class AtomisticStage:
             if self.target.utilities.cellUtility.getDim() == 1 or self.target.utilities.cellUtility.getDim() == 2:
                 cell = cell.getAlignedCell(self.target.utilities.cellUtility.getAxis())
             structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell)
-            system.setProperty('structure', structure, prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', structure, extension='atomistic', suffix=self.tag)
         system.setProperty('isBad', not goodStructure, suffix=self.tag)
 
     def checkAndFixMolecules(self, system):
         correctorDict = dict()
-        moleculesSink = system.getProperty('molecules', prefix='atomistic', suffix=self.tag)
-        moleculesSource = system.getProperty('molecules', prefix='atomistic', suffix=self.source)
-        cellSink = system.getProperty('cell', prefix='atomistic', suffix=self.tag)
-        cellSource = system.getProperty('cell', prefix='atomistic', suffix=self.source)
+        moleculesSink = system.getProperty('molecules', extension='atomistic', suffix=self.tag)
+        moleculesSource = system.getProperty('molecules', extension='atomistic', suffix=self.source)
+        cellSink = system.getProperty('cell', extension='atomistic', suffix=self.tag)
+        cellSource = system.getProperty('cell', extension='atomistic', suffix=self.source)
         for i, molSink in enumerate(moleculesSink):
             if len(molSink) > 1:
                 molSource = moleculesSource[i]
@@ -102,7 +105,7 @@ class AtomisticStage:
                                              cell = badMol.getCell(),
                                              zmatrixConfig = badMol.getZmatrixConfig())
         if correctorDict:
-            system.setProperty('molecules', moleculesSink, prefix='atomistic', suffix=self.tag)
+            system.setProperty('molecules', moleculesSink, extension='atomistic', suffix=self.tag)
 
 
 

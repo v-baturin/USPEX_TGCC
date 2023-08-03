@@ -1,7 +1,6 @@
 from .Atomistic.Element import Element
 from .Atomistic.CellUtility import Cell
 from .Atomistic.AtomicPrimitives import AtomicStructure
-from USPEX.Optimizers.PoolEntry import EntryFactory
 from .Atomistic.Atomistic import Atomistic, AtomicDisassembler
 Atomistic.registerTypes(AtomicStructure, Element, Cell)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
@@ -47,14 +46,13 @@ from .Atomistic.Operators.Seeds import Seeds
 from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
 Seeds.registerTypes(AtomisticRepresentation)
 GlobalOptimizer.registerTarget('Atomistic',
-                      utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
+                               utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
                                  EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
                                  PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
-                      hybridizations=[Heredity],
-                      mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
-                      creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
-                      entry=EntryFactory,
-                      seeds=Seeds)
+                               hybridizations=[Heredity],
+                               mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
+                               creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
+                               seeds=Seeds)
 from .Stages.Executor import Executor
 from .Stages.Interfaces.ASEInterfaceAdapter import ASEInterfaceAdapter
 ASEInterfaceAdapter.registerTypes(AtomicStructure, Element, Cell)

@@ -84,11 +84,11 @@ class Output_Test(unittest.TestCase):
                                 assert value == system.ID
                                 continue
                             prefix, prop = key.split('.')
-                            system.setProperty(prop, value, prefix=prefix, suffix=str(j+1))
+                            system.setProperty(prop, value, extension=prefix, suffix=str(j+1))
                     except FileNotFoundError:
                         break
-                system.getProperty('structure', prefix='atomistic', suffix='5')
-                system.getProperty('structure', prefix='atomistic', suffix='origin')
+                system.getProperty('structure', extension='atomistic', suffix='5')
+                system.getProperty('structure', extension='atomistic', suffix='origin')
             with open(TESTPATH/f"output_data/analisis{gen}", "r") as f:
                 infos.append(json.load(f))
             with open(TESTPATH/f"output_data/targetState{gen}", "r") as f:

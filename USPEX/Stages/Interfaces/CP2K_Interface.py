@@ -64,7 +64,7 @@ class CP2K_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -94,7 +94,7 @@ class CP2K_Interface:
                 fp.write('{0:2s}  {1:15.8f} {2:15.8f} {3:15.8f} \n'.format(symbol.short_name, *coord))
 
         with open(calcFolder/self.fixedIndices_file, 'wt') as fp:
-            disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+            disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
             fixedIndices = disassembler.allFixedIndices
             fp.write('LIST  ')
             for i in fixedIndices:
@@ -135,7 +135,7 @@ class CP2K_Interface:
         EnergyHa = self.readEnergy(calcFolder)
 
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', new_structure, prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', new_structure, extension='atomistic', suffix=self.tag)
         if 'energy' in self.targetProperties:
             system.setProperty('energy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
         if 'enthalpy' in self.targetProperties:

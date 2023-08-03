@@ -84,7 +84,7 @@ class ABINIT_Interface:
         :param calcFolder:
         :return:
         """
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -289,7 +289,7 @@ class ABINIT_Interface:
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.readStructure(gsr, pbc), prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', self.readStructure(gsr, pbc), extension='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             V = np.linalg.det(gsr.structure.lattice.matrix)
             P = system.getProperty('externalPressure', suffix='origin')

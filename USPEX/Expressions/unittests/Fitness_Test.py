@@ -226,7 +226,7 @@ class FitnessXray_Test(unittest.TestCase):
             system['ID'] = ID
             system['.enthalpy'] = enthalpies[ID]
             self.systems[ID] = PoolEntry(extensions=propertyExtensions, **system)
-            self.systems[ID].getProperty('structure', prefix='atomistic')
+            self.systems[ID].getProperty('structure', extension='atomistic')
 
         self.fitness = ExpressionEvaluator(tuple(self.systems), expressionExtensions)
 

@@ -51,7 +51,7 @@ class FHIaims_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -83,7 +83,7 @@ class FHIaims_Interface:
                 if self.fixCell:
                     fp.write('constrain_relaxation .true.\n')
 
-            disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+            disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
             fixedIndices = disassembler.allFixedIndices
             for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
                 fp.write('atom  {1:15.8f} {2:15.8f} {3:15.8f} {0:2s}\n'.format(symbol.short_name, *coord))
@@ -124,7 +124,7 @@ class FHIaims_Interface:
                 content = f.read()
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.readStructure(content, pbc), prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', self.readStructure(content, pbc), extension='atomistic', suffix=self.tag)
 
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.outputFile, 'r') as f:

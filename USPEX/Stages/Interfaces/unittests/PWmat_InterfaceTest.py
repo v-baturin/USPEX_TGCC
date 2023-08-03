@@ -45,9 +45,9 @@ class PWmat_InterfaceTest(unittest.TestCase):
         disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
         system = PoolEntry(extensions=extensions, ID=0)
         system.setProperty('externalPressure', 0.00001)
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='s0')
-        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='s0')
+        system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
         cls.testSystem = system
         cls.CALC_FOLDER = HOMEPATH/CALC_FOLDER_TEMPLATE.format(0, 's0')
         cls.REFERENCE_FOLDER = HOMEPATH/'PWmatReference/'
@@ -102,7 +102,7 @@ class PWmat_InterfaceTest(unittest.TestCase):
         self.vcEmpty.readOutput(self.testSystem, self.CALC_FOLDER)
         #self.vcEmpty.clean(self.testSystem)
 
-        structure = self.testSystem.getProperty('structure', prefix='atomistic', suffix='s0')
+        structure = self.testSystem.getProperty('structure', extension='atomistic', suffix='s0')
 
         self.assertTrue(np.allclose(self.POSITIONS_FINAL, structure.getCartesianCoordinates(), atol=1.0e-3))
         self.assertTrue(np.allclose(self.LATTICE_FINAL, structure.getCell().getCellVectors(), atol=1.0e-3))

@@ -104,7 +104,7 @@ class VASP_Interface:
         with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
@@ -112,7 +112,7 @@ class VASP_Interface:
 
         ############################# POSCAR ##################################
 
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
         self.adapter.write(structure, disassembler.allFixedIndices, f"EA{system['ID']}", calcFolder)
 
         ############################## INCAR ##################################
@@ -254,7 +254,7 @@ class VASP_Interface:
         aseResults = trajectory[-1]['results']
         results = {}
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', trajectory[-1]['structure'], prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', trajectory[-1]['structure'], extension='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             externalPressure = system.getProperty('externalPressure', suffix='origin')
             system.setProperty('enthalpy', aseResults.getEnthalpy(externalPressure), suffix=self.tag)
