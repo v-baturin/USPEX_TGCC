@@ -34,12 +34,10 @@ class MLIP_Interface:
 
     DEFAULT_SLEEP_TIME = 10
     atomisticRepresentation = None
-    atomicDisassemblerType = None
 
     @classmethod
-    def registerTypes(cls, atomisticRepresentation, atomicDisassemblerType):
+    def registerTypes(cls, atomisticRepresentation):
         cls.atomisticRepresentation = atomisticRepresentation
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, tag: str,
                        mode: str,

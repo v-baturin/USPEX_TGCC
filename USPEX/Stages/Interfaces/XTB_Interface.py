@@ -19,9 +19,6 @@ class XTB_Interface:
     Local running
     """
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
 
     inputFile, outputFile, errorFile = 'xtb.inp', 'output', 'error'
     geometry_file = 'uspex.gen'
@@ -32,10 +29,7 @@ class XTB_Interface:
     aseAdapterType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, aseAdapterType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
+    def registerTypes(cls, aseAdapterType):
         cls.aseAdapterType = aseAdapterType
 
     def __init__(self, tag: str, xtb_input: str = None, targetProperties: list = None, **kwargs):

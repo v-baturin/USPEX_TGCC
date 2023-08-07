@@ -22,7 +22,7 @@ class EntryFlavour:
     def getProperty(self, prop, extension=''):
         if f'{extension}.{prop}' not in self._properties:
             if extension in self.extensions:
-                self._properties[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self._properties)
+                self._properties[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
             else:
                 raise KeyError(f'Can not evaluate property {extension}.{prop} for {self._properties}.')
         return self._properties[f'{extension}.{prop}']
@@ -30,7 +30,7 @@ class EntryFlavour:
     def setProperty(self, prop, value, extension=''):
         self._properties[f'{extension}.{prop}'] = value
         if extension in self.extensions and hasattr(self.extensions[extension], 'set'):
-            self.extensions[extension].set(self._properties, prop, value)
+            self._properties.update(self.extensions[extension].set(self._properties, prop, value))
 
     def delProperty(self, prop, extension=''):
         del self._properties[f'{extension}.{prop}']

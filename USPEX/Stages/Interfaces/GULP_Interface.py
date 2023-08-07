@@ -24,15 +24,6 @@ class GULP_Interface:
 
     DEFAULT_SLEEP_TIME = 10
     inputFile, outputFile, errorFile = 'input', 'output', 'error'
-    structureType = None
-    atomType = None
-    cellType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
 
     def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: List[str] = None,
                  moleculeSpecifics: dict = None, fixCell: bool = False, targetProperties: list = None, **kwargs):
@@ -206,13 +197,14 @@ class GULP_Interface:
         # TODO: implement http://qsh.ess.sunysb.edu:8000/trac/changeset/1255
         # Improve the GULP reader in case optimized_structure file is broken
         # Now ready to use parallel GULP  (applied to EX18-ZnOH)
+        atomistic = system.flavourFactory.extensions['atomistic'].utility
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
 
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.readStructure(content, pbc), extension='atomistic', suffix=self.tag)
+            system.setProperty('structure', self.readStructure(atomistic, content, pbc), extension='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             system.setProperty('enthalpy', self.readEnergy(content), suffix=self.tag)
         if 'stressTensor' in self.targetProperties:
@@ -226,7 +218,8 @@ class GULP_Interface:
         if 'elasticConstants' in self.targetProperties:
             system.setProperty('elasticMatrix', self.readElasticMatrix(content), suffix=self.tag)
 
-    def readStructure(self, content, pbc):
+    @staticmethod
+    def readStructure(atomistic, content, pbc):
         # This routine is to read crystal structure from GULP output
         # File: output
         # fractional for bulk
@@ -249,7 +242,7 @@ class GULP_Interface:
                     element, _, *xyz = content[s].split()[1:6]
                     XYZ = [float(x) for x in xyz]
                     positions.append(XYZ)
-                    atomTypes.append(self.atomType(element))
+                    atomTypes.append(atomistic.atomType(element))
                 positions = np.array(positions)
 
             elif line.find('Final Cartesian lattice vectors') != -1:
@@ -259,7 +252,7 @@ class GULP_Interface:
                     temp = content[j].split()
                     for k in range(3):
                         lattice_vectors[j - s][k] = float(temp[k])
-                cell = self.cellType(lattice_vectors, pbc=pbc)
+                cell = atomistic.cellType(lattice_vectors, pbc=pbc)
                 if fractional_coordinates is not None:
                     positions = cell.fractionalToCartesian(fractional_coordinates)
 
@@ -270,7 +263,7 @@ class GULP_Interface:
                     temp = content[j].split()
                     for k in range(3):
                         lattice_vectors[j - s][k] = float(temp[k])
-                cell = self.cellType(lattice_vectors, pbc=pbc)
+                cell = atomistic.cellType(lattice_vectors, pbc=pbc)
                 if fractional_coordinates is not None:
                     positions = cell.fractionalToCartesian(fractional_coordinates)
 
@@ -287,10 +280,10 @@ class GULP_Interface:
                     element, _, *xyz = content[s].split()[1:6]
                     XYZ = [float(x) for x in xyz]
                     scaled_positions.append(XYZ)
-                    atomTypes.append(self.atomType(element))
+                    atomTypes.append(atomistic.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
                 positions = cell.fractionalToCartesian(fractional_coordinates)
-        return self.structureType(atomTypes, positions, cell=cell)
+        return atomistic.structureType(atomTypes, positions, cell=cell)
 
     def readEnergy(self, content) -> float:
         energy_enthalpy = np.inf

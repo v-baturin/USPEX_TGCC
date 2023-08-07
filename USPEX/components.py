@@ -27,9 +27,7 @@ SimpleMoleculeUtility.registerTypes(AtomicStructure, Element)
 from .Atomistic.JunctionUtility import JunctionUtility
 from .Atomistic.Conditions import Conditions
 from .Atomistic.BondUtility import BondUtility
-BondUtility.registerTypes(Element, AtomicDisassembler)
 from .Atomistic.ElasticML import ElasticML
-ElasticML.registerTypes(AtomicDisassembler)
 from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
@@ -57,19 +55,15 @@ from .Stages.Executor import Executor
 from .Stages.Interfaces.ASEInterfaceAdapter import ASEInterfaceAdapter
 ASEInterfaceAdapter.registerTypes(AtomicStructure, Element, Cell)
 from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
-ABINIT_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('abinit', ABINIT_Interface)
 from .Stages.Interfaces.GULP_Interface import GULP_Interface
-GULP_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('gulp', GULP_Interface)
 from .Stages.Interfaces.LAMMPS_Interface import LAMMPS_Interface
 LAMMPS_Interface.registerTypes(AtomisticRepresentation, ASEInterfaceAdapter.LAMMPS)
 Executor.registerInterface('lammps', LAMMPS_Interface)
 from .Stages.Interfaces.MLIP_Interface import MLIP_Interface
-MLIP_Interface.registerTypes(AtomisticRepresentation, AtomicDisassembler)
+MLIP_Interface.registerTypes(AtomisticRepresentation)
 Executor.registerInterface('mlip', MLIP_Interface)
-from .Stages.Interfaces.PWmat_Interface import PWmat_Interface
-PWmat_Interface.registerTypes(AtomicStructure, Element, Cell)
 from .Stages.Interfaces.QE_Interface import QE_Interface
 QE_Interface.registerTypes(ASEInterfaceAdapter.QE)
 Executor.registerInterface('qe', QE_Interface)
@@ -77,19 +71,16 @@ from .Stages.Interfaces.VASP_Interface import VASP_Interface
 VASP_Interface.registerTypes(ASEInterfaceAdapter.VASP)
 Executor.registerInterface('vasp', VASP_Interface)
 from .Stages.Interfaces.MOPAC_Interface import MOPAC_Interface
-MOPAC_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('mopac', MOPAC_Interface)
 from .Stages.Interfaces.FHIaims_Interface import FHIaims_Interface
-FHIaims_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('aims', FHIaims_Interface)
 from .Stages.Interfaces.XTB_Interface import XTB_Interface
-XTB_Interface.registerTypes(AtomicStructure, Element, Cell, ASEInterfaceAdapter.GEN)
+XTB_Interface.registerTypes(ASEInterfaceAdapter.GEN)
 Executor.registerInterface('xtb', XTB_Interface)
 from .Stages.Interfaces.DFTBplus_Interface import DFTBplus_Interface
-DFTBplus_Interface.registerTypes(AtomicStructure, Element, Cell, ASEInterfaceAdapter.GEN)
+DFTBplus_Interface.registerTypes(ASEInterfaceAdapter.GEN)
 Executor.registerInterface('dftb', DFTBplus_Interface)
 from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
-CP2K_Interface.registerTypes(AtomicStructure, Element, Cell)
 Executor.registerInterface('cp2k', CP2K_Interface)
 from .Stages.TaskManagers.BSUB import BSUB
 Executor.registerTaskManager('BSUB', BSUB)

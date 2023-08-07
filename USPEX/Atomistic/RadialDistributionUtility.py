@@ -395,12 +395,12 @@ class RadialDistributionUtility(object):
                 if len(comb) > 0:
                     sQE += weight[i] * tmp / len(comb)
 
-        system['radialDistribitionUtility.order'] = molOrder
-        system['radialDistribitionUtility.averageOrder'] = a_order
-        system['radialDistribitionUtility.structureOrder'] = s_order
-        system['radialDistribitionUtility.structureFingerprint'] = fingerprint
-        system['radialDistribitionUtility.complexFingerprint'] = complexFingerprint
-        system['radialDistribitionUtility.quasientropy'] = -sQE
+        system.setProperty('order', molOrder, extension='radialDistribitionUtility')
+        system.setProperty('averageOrder', a_order, extension='radialDistribitionUtility')
+        system.setProperty('structureOrder', s_order, extension='radialDistribitionUtility')
+        system.setProperty('structureFingerprint', fingerprint, extension='radialDistribitionUtility')
+        system.setProperty('complexFingerprint', complexFingerprint, extension='radialDistribitionUtility')
+        system.setProperty('quasientropy', -sQE, extension='radialDistribitionUtility')
 
     def dist(self, system1, system2):
         """

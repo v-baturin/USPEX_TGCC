@@ -1,12 +1,11 @@
 import logging
-
 import numpy as np
 from ase.geometry import get_distances
-
 
 from ..Optimizers.PoolEntry import PoolEntry
 
 logger = logging.getLogger(__name__)
+
 
 class AtomisticStage:
 
@@ -30,9 +29,10 @@ class AtomisticStage:
             structure = system.getProperty('structure', extension='atomistic', suffix=self.source)
             disassembler = system.getProperty('disassembler', extension='atomistic', suffix=self.source)
         else:
-            structure, disassembler = system.atomicDisassemblerType.assemble({
-                'atomistic.molecules': system[f'atomistic.molecules.{self.source}'],
-                'atomistic.cell': system[f'atomistic.cell.{self.source}']
+            source = system.system[self.source]
+            structure, disassembler = source.extensions['atomistic'].atomicDisassemblerType.assemble({
+                'atomistic.molecules': source[f'atomistic.molecules'],
+                'atomistic.cell': source[f'atomistic.cell']
             })
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
@@ -40,6 +40,7 @@ class AtomisticStage:
         system.system['intermediate'] = system.flavourFactory(**disassembler.disassemble(structure))
         system.setProperty('vacuumSize', self.vacuumSize, suffix='intermediate')
 
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
         disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix=self.tag)
 

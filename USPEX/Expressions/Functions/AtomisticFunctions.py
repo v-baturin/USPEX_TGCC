@@ -8,14 +8,16 @@ class AtomisticFunctions:
 
     def structure(self, system):
         structure, disassembler = self.utility.atomicDisassemblerType.assemble(system)
-        system['atomistic.disassembler'] = disassembler
+        system.setProperty('disassembler', disassembler, extension='atomistic')
         return structure
 
     def disassembler(self, system):
         structure, disassembler = self.utility.atomicDisassemblerType.assemble(system)
-        system['atomistic.structure'] = structure
+        system.setProperty('structure', structure, extension='atomistic')
         return disassembler
 
-    def set(self, system, prop, value):
+    def set(self, system, prop: str, value):
         if prop == 'structure':
-            system.update(system['atomistic.disassembler'].disassemble(value))
+            return system['atomistic.disassembler'].disassemble(value)
+        else:
+            return {}
