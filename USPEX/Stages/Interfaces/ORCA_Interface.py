@@ -117,11 +117,12 @@ class ORCA_Interface:
         if 'structure' in self.targetProperties:
             with open(calcFolder / 'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.updateAtomicStructure(self.adapter.read_structure(self.out_geometry_file, calcFolder, pbc))
+            new_structure = self.adapter.read_structure(self.out_geometry_file, calcFolder, pbc)
+            system.setProperty('structure', new_structure, prefix='atomistic', suffix=self.tag)
         if 'energy' in self.targetProperties:
-            system.setProperty('energy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV)
+            system.setProperty('energy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV, suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
-            system.setProperty('enthalpy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV)
+            system.setProperty('enthalpy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV, suffix=self.tag)
 
     def readEnergyHa(self, calcFolder: Path):
 
