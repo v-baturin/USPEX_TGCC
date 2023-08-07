@@ -13,7 +13,7 @@ import filecmp
 
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry
+from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
 from ....components import AtomisticRepresentation, MLIP_Interface, Atomistic
 
 
@@ -71,7 +71,7 @@ class MLIP_train_Test(unittest.TestCase):
 
     def test_init(self):
         trajectory = AtomisticRepresentation.readMLIPsample(SPECIFICPATH/'configurations.cfg', specorder=['Mo', 'S'])
-        system = PoolEntry(extensions=self.extensions, ID=0)
+        system = PoolEntry(0, EntryFlavour(extensions=self.extensions))
         system.setProperty('trajectory', trajectory, suffix='intermediate')
         calcFolder = HOMEPATH/'MLIP_INIT'
         calcFolder.mkdir(exist_ok=True)
@@ -82,7 +82,7 @@ class MLIP_train_Test(unittest.TestCase):
 
 
     def test_sample(self):
-        system = PoolEntry(extensions=self.extensions, ID=0)
+        system = PoolEntry(0, EntryFlavour(extensions=self.extensions))
         calcFolder=HOMEPATH/'MLIP_REF'
         self.interface.readOutput(system=system, calcFolder=calcFolder)
         self.assertTrue(filecmp.cmp(self.trainFolder/'ts.cfg', calcFolder/'input.cfg'))

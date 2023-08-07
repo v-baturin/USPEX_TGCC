@@ -6,7 +6,7 @@ import filecmp
 
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry
+from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
 from ....components import AtomisticRepresentation, LAMMPS_Interface, Atomistic
 
 HOMEPATH = Path(__file__).parent
@@ -30,7 +30,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
             disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-            system = PoolEntry(extensions=extensions, ID=ID)
+            system = PoolEntry(ID, EntryFlavour(extensions=extensions))
             system.setProperty('externalPressure', 100.0)
             system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
             system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
@@ -73,7 +73,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
 
         structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
         disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-        system = PoolEntry(extensions=extensions, ID=ID)
+        system = PoolEntry(ID, EntryFlavour(extensions=extensions))
         system.setProperty('externalPressure', 0.0)
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
@@ -98,7 +98,7 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
     def test_init(self):
         structure = AtomisticRepresentation.readPOSCAR(HOMEPATH/'LAMMPS_MLIP_SAMPLE/Li_B_H_POSCAR', (1, 1, 1))
         disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-        system = PoolEntry(extensions=self.extensions, ID=0)
+        system = PoolEntry(0, EntryFlavour(extensions=self.extensions))
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
         system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
@@ -115,7 +115,7 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
 
 
     def test_sample(self):
-        system = PoolEntry(extensions=self.extensions, ID=0)
+        system = PoolEntry(0, EntryFlavour(extensions=self.extensions))
         self.interface.readOutput(system=system, calcFolder=HOMEPATH/'LAMMPS_MLIP_SAMPLE')
         self.assertEqual(len(system['.trajectory.0']), 1805)
         for system in system['.trajectory.0']:

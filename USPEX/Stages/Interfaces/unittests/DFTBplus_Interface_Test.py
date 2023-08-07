@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry
+from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
 from ....components import AtomisticRepresentation, DFTBplus_Interface, Atomistic
 
 HOMEPATH = Path(__file__).parent
@@ -21,7 +21,7 @@ class DFTBplus_InterfaceTest(unittest.TestCase):
         )
         structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
         disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-        system = PoolEntry(extensions=extensions, ID=ID)
+        system = PoolEntry(ID, EntryFlavour(extensions=extensions))
         system.setProperty('externalPressure', 0.0)
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')

@@ -5,7 +5,7 @@ import shutil
 
 from pathlib import Path
 
-from ...Optimizers.PoolEntry import PoolEntry
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
 from ...components import GlobalOptimizer, AtomisticRepresentation
 from ..OutputRepresentation import OutputRepresentation
 
@@ -72,7 +72,7 @@ class Output_Test(unittest.TestCase):
                     structure = json.load(f)
                 structure.update(AtomisticRepresentation.readAtomicStructure(
                     TESTPATH / f"output_data/system{gen * popSize + i}s0.vasp"))
-                system = PoolEntry(extensions=extensions, **structure)
+                system = PoolEntry(structure['ID'], EntryFlavour(extensions=extensions, **structure))
                 optimizer.pool.allSystems[system.ID] = system
                 for j in range(numStages):
                     try:

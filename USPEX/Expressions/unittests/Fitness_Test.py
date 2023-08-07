@@ -15,7 +15,7 @@ from os.path import join as pj
 
 from ..ExpressionEvaluator import ExpressionEvaluator
 from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
-from ...Optimizers.PoolEntry import PoolEntry
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
 from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation, Atomistic
 from ...Atomistic.AtomicPrimitives import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint
@@ -62,7 +62,7 @@ class Fitness_Test(unittest.TestCase):
         propertyExtensions = dict(
             simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility)
         )
-        self.systems = [PoolEntry(extensions=propertyExtensions, **system) for system in self.systems]
+        self.systems = [PoolEntry(system['ID'], EntryFlavour(extensions=propertyExtensions, **system)) for system in self.systems]
 
         self.fitness = ExpressionEvaluator(tuple(self.systems), expressionExtensions)
 
@@ -223,9 +223,8 @@ class FitnessXray_Test(unittest.TestCase):
             powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.propertyExtension(self.powderSpectrumAnalyzer),
         )
         for ID, system in enumerate(self.systems):
-            system['ID'] = ID
             system['.enthalpy'] = enthalpies[ID]
-            self.systems[ID] = PoolEntry(extensions=propertyExtensions, **system)
+            self.systems[ID] = PoolEntry(ID, EntryFlavour(extensions=propertyExtensions, **system))
             self.systems[ID].getProperty('structure', extension='atomistic')
 
         self.fitness = ExpressionEvaluator(tuple(self.systems), expressionExtensions)

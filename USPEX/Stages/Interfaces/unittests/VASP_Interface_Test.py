@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ....Optimizers.PoolEntry import PoolEntry
+from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
 from ....components import AtomisticRepresentation, VASP_Interface, Atomistic
 
 
@@ -44,7 +44,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
             disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-            system = PoolEntry(extensions=extensions, ID=ID)
+            system = PoolEntry(ID, EntryFlavour(extensions=extensions))
             system.setProperty('externalPressure', 0.0001)
             system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
             system.setProperty('disassembler', disassembler, extension='atomistic', suffix='1')
@@ -121,7 +121,7 @@ class VASP_interface_MD_Test(unittest.TestCase):
             atomistic=atomistic.propertyExtension(atomistic)
         )
 
-        system = PoolEntry(extensions=extensions, ID=0)
+        system = PoolEntry(0, EntryFlavour(extensions=extensions))
         self.interface.readOutput(system, wd)
         self.assertGreater(len(system['.trajectory.1']), 1)
         for data in system['.trajectory.1']:

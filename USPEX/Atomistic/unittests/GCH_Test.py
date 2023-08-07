@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 from ..GCH import GeneralizedConvexHull
-from ...Optimizers.PoolEntry import PoolEntry
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
 from ...components import AtomisticRepresentation, RadialDistributionUtility, CompositionSpace, Atomistic
 
 TESTPATH = Path(__file__).parent
@@ -51,7 +51,7 @@ def read_structures_and_energies(symbols, folder: Path):
         system['ID'] = ID
         system['isBad'] = False
         system['.enthalpy'] = enthalpy
-        system = PoolEntry(extensions=extensions, **system)
+        system = PoolEntry(ID, EntryFlavour(extensions=extensions, **system))
         system.getProperty('structure', extension='atomistic')
         systems.append(system)
     all_systems = systems

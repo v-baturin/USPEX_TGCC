@@ -16,7 +16,7 @@ import filecmp
 
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry
+from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
 from ....components import AtomisticRepresentation, GULP_Interface, Atomistic
 
 
@@ -40,7 +40,7 @@ class GULP_CalculatorTest(unittest.TestCase):
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
             disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-            system = PoolEntry(extensions=extensions, ID=ID)
+            system = PoolEntry(ID, EntryFlavour(extensions=extensions))
             system.setProperty('externalPressure', 100)
             system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
             system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
@@ -85,7 +85,7 @@ class GULP_InterfaceTest(unittest.TestCase):
 
         structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
         disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-        system = PoolEntry(extensions=extensions, ID=ID)
+        system = PoolEntry(ID, EntryFlavour(extensions=extensions))
         system.setProperty('externalPressure', 100)
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='1')

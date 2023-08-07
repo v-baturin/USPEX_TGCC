@@ -169,6 +169,7 @@ class BondUtility_TestGraph(unittest.TestCase):
         self.CURRENT_DIR = Path(__file__).parent
         self.cellType = AtomisticRepresentation.cellType
         self.structureType = AtomisticRepresentation.structureType
+        self.atomType = AtomisticRepresentation.atomType
 
     def test_diamond(self):
         system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'diamond.POSCAR')
@@ -178,7 +179,7 @@ class BondUtility_TestGraph(unittest.TestCase):
     def test_1(self):
         scaled_positions = np.array([[0., 0., 0.], [0.33333, 0.66667, 0.], [0., 0., 0.5], [0.66667, 0.33334, 0.5]])
         cell = self.cellType(np.array([[2.456, 0., 0.], [-1.228, 2.126958, 0.], [0., 0., 6.696]]), (1, 1, 1))
-        system = self.structureType([BondUtility.atomType(s) for s in 4 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        system = self.structureType([self.atomType(s) for s in 4 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
 
         bonds_ref = []
         bonds_ref.append((2, 3, -0.10204218, 0, -1., -1., 0.))
@@ -241,7 +242,7 @@ class BondUtility_TestGraph(unittest.TestCase):
                                      [0.833335, 0.16667, 0.75],
                                      [0.833335, 0.66667, 0.75]])
 
-        system = self.structureType([BondUtility.atomType(s) for s in 32 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        system = self.structureType([self.atomType(s) for s in 32 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
 
         bonds_ref = []
 
@@ -358,7 +359,7 @@ class BondUtility_TestGraph(unittest.TestCase):
                                      [0.313428, 0.183023, 0.690758],
                                      [0.903796, 0.748461, 0.862665],
                                      [0.527341, 0.851466, 0.140968]])
-        system = self.structureType([BondUtility.atomType(s) for s in composition], cell.fractionalToCartesian(scaled_positions),
+        system = self.structureType([self.atomType(s) for s in composition], cell.fractionalToCartesian(scaled_positions),
                                  cell=cell)
 
         bonds_ref = []
@@ -812,7 +813,7 @@ class BondUtility_TestGraph(unittest.TestCase):
                                      [0.1501313, 0.1671769, 0.1373762],
                                      [0.8067350, 0.6081254, 0.1830761]])
 
-        system = self.structureType([BondUtility.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        system = self.structureType([self.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
         bonds = BondUtility(goodBonds={frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'Al')): 0.14142136,
                                        frozenset(('Mg', 'O')): 0.17320508, frozenset(('Al', 'Al')): 0.2,
                                        frozenset(('Al', 'O')): 0.24494897, frozenset(('O', 'O')): 0.3})
@@ -834,7 +835,7 @@ class BondUtility_TestGraph(unittest.TestCase):
                                      [0.0, 0.0, 0.5],
                                      [0.5, 0.5, 0.5]])
 
-        system = self.structureType([BondUtility.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        system = self.structureType([self.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
         bonds = BondUtility(goodBonds={frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'O')): 0.17320508,
                                        frozenset(('O', 'O')): 0.3})
         bond_in = bonds.getMinimalGraphBonds(system)
@@ -902,8 +903,8 @@ class BondUtility_TestCheckConnectivity(unittest.TestCase):
     def test_cluster(self):
         bonds = BondUtility()
         system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'P11H3_badstruct.POSCARS', pbc=(0, 0, 0))
-        covalentLengths = {(s1.short_name, s2.short_name): bonds.atomType(s1.short_name).covalent_radius +
-                                                           bonds.atomType(s2.short_name).covalent_radius
+        covalentLengths = {(s1.short_name, s2.short_name): s1.covalent_radius +
+                                                           s2.covalent_radius
                            for s1, s2 in combinations_with_replacement(system.getAtomTypes(), 2)}
         bonds = BondUtility()
         x = 2
@@ -914,8 +915,8 @@ class BondUtility_TestCheckConnectivity(unittest.TestCase):
     def test_graphite(self):
         bonds = BondUtility()
         system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
-        covalentLengths = {(s1.short_name, s2.short_name): bonds.atomType(s1.short_name).covalent_radius +
-                                                           bonds.atomType(s2.short_name).covalent_radius
+        covalentLengths = {(s1.short_name, s2.short_name): s1.covalent_radius +
+                                                           s2.covalent_radius
                            for s1, s2 in combinations_with_replacement(system.getAtomTypes(), 2)}
         bonds = BondUtility()
         x = 2
