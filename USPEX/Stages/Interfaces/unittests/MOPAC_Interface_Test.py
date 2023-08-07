@@ -6,7 +6,8 @@ import filecmp
 
 from pathlib import Path
 
-from USPEX.components import AtomisticRepresentation, MOPAC_Interface, AtomisticPoolEntry
+from ....Optimizers.PoolEntry import PoolEntry
+from USPEX.components import AtomisticRepresentation, MOPAC_Interface, Atomistic
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'mopacSpecific'
@@ -18,16 +19,19 @@ class MOPAC_CalculatorTest(unittest.TestCase):
 
     def test_life(self):
         mopac = MOPAC_Interface(tag='0', mop_input=SPECIFICPATH/'mop_1')
+        atomistic = Atomistic()
+        extensions = dict(
+            atomistic=atomistic.propertyExtension(atomistic)
+        )
 
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (0, 0, 0))
-            system = AtomisticPoolEntry(
-                ID=ID,
-                structure=structure,
-                disassembler=AtomisticRepresentation.atomicDisassemblerType(
-                    np.arange(len(structure)).reshape((-1, 1))),
-                externalPressure=0.0
-            )
+            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            system = PoolEntry(extensions=extensions, ID=ID)
+            system.setProperty('externalPressure', 0.0)
+            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
+            system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
             WORKPATH.mkdir(parents=True, exist_ok=True)
             mopac.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
@@ -42,6 +46,6 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             mopac.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (0, 0, 0))
-            self.assertTrue(np.allclose(system.getAtomicStructure().getCartesianCoordinates(),
-                                        structureRef.getCartesianCoordinates()))
+            structure = system.getProperty('structure', prefix='atomistic', suffix='0')
+            self.assertTrue(np.allclose(structure.getCartesianCoordinates(), structureRef.getCartesianCoordinates()))
 

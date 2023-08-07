@@ -1,13 +1,14 @@
 from .Atomistic.Element import Element
 from .Atomistic.CellUtility import Cell
-from .Atomistic.AtomicPrimitives import AtomicStructure, AtomicDisassembler
-from .Atomistic.AtomisticPoolEntry import AtomisticPoolEntry
-AtomisticPoolEntry.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+from .Atomistic.AtomicPrimitives import AtomicStructure
+from USPEX.Optimizers.PoolEntry import EntryFactory
+from .Atomistic.Atomistic import Atomistic, AtomicDisassembler
+Atomistic.registerTypes(AtomicStructure, Element, Cell)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
-from .Fitness.Fitness import Fitness
-GlobalOptimizer.setFitnessType(Fitness)
+from .Expressions.ExpressionEvaluator import ExpressionEvaluator
+GlobalOptimizer.setExpressionEvaluatorType(ExpressionEvaluator)
 from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
@@ -30,7 +31,6 @@ from .Atomistic.BondUtility import BondUtility
 BondUtility.registerTypes(Element, AtomicDisassembler)
 from .Atomistic.ElasticML import ElasticML
 ElasticML.registerTypes(AtomicDisassembler)
-from .Atomistic.Constraints import Constraints
 from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
@@ -47,13 +47,13 @@ from .Atomistic.Operators.Seeds import Seeds
 from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
 Seeds.registerTypes(AtomisticRepresentation)
 GlobalOptimizer.registerTarget('Atomistic',
-                      utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
-                                 SimpleMoleculeUtility, Conditions, BondUtility, Constraints, ElasticML,
+                      utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
+                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
                                  PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
-                      entry=AtomisticPoolEntry,
+                      entry=EntryFactory,
                       seeds=Seeds)
 from .Stages.Executor import Executor
 from .Stages.Interfaces.ASEInterfaceAdapter import ASEInterfaceAdapter
@@ -108,8 +108,8 @@ from .Optimizers.ModelOptimizer import ModelOptimizer, External
 External.setExecutorType(Executor)
 ModelOptimizer.registerModel(External)
 ModelOptimizer.registerTarget('Atomistic',
-                      utilities=[CompositionSpace, RadialDistributionUtility, CellUtility, EnvironmentUtility,
-                                 SimpleMoleculeUtility, Conditions, BondUtility, Constraints, ElasticML,
+                      utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
+                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
                                  PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],

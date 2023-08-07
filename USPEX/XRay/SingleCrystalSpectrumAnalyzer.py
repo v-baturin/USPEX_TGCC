@@ -12,9 +12,12 @@ import numpy as np
 from pymatgen.core.structure import Structure
 
 from .get_reflections import get_reflections
+from USPEX.Expressions.Functions.SingleCrystalSpectrumAnalyzerFunctions import SingleCrystalSpectrumAnalyzerFunctions
 
 
 class SingleCrystalSpectrumAnalyzer(object):
+
+    propertyExtension = SingleCrystalSpectrumAnalyzerFunctions
 
     def __init__(self, expReflections: list, cellParameters: tuple):
         """
@@ -37,7 +40,7 @@ class SingleCrystalSpectrumAnalyzer(object):
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
-        structure = system.getAtomicStructure()
+        structure = system['atomistic.structure']
         elementList = list(structure.getComposition().keys())
 
         # cannot compute xraydistance if cell parameters differ from reference
@@ -87,13 +90,7 @@ class SingleCrystalSpectrumAnalyzer(object):
                 denominator += (1 / sigma_hkl ** 2) * i_hkl ** 2
 
             wR = np.sqrt(numerator / denominator)       # weighted R-factor
-            system.setProperty('singleCrystalSpectrumAnalyzer.xraydistance', wR)
-
-    def xraydistance(self, system):
-        if 'singleCrystalSpectrumAnalyzer.xraydistance' not in system:
-            self.analyze(system)
-        assert 'singleCrystalSpectrumAnalyzer.xraydistance' in system
-        return system['singleCrystalSpectrumAnalyzer.xraydistance']
+            system['singleCrystalSpectrumAnalyzer.xraydistance'] = wR
 
     @staticmethod
     def parse(hklFile: str):

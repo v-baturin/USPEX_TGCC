@@ -14,7 +14,8 @@ import unittest
 from pathlib import Path
 
 from ..GCH import GeneralizedConvexHull
-from ...components import AtomisticRepresentation, RadialDistributionUtility, CompositionSpace, AtomisticPoolEntry
+from ...Optimizers.PoolEntry import PoolEntry
+from ...components import AtomisticRepresentation, RadialDistributionUtility, CompositionSpace, Atomistic
 
 TESTPATH = Path(__file__).parent
 
@@ -27,7 +28,12 @@ def read_structures_and_energies(symbols, folder: Path):
         info = fp.readlines()[2:]
     all_systems = AtomisticRepresentation.readAtomicStructures(folder/'gatheredPOSCARS')
     assert all_systems
-    radialDistributionUtility = RadialDistributionUtility(symbols=symbols)
+    radialDistributionUtility = RadialDistributionUtility(symbols=symbols, suffix='origin')
+    atomistic = Atomistic()
+    extensions = dict(
+        atomistic=Atomistic.propertyExtension(atomistic),
+        radialDistributionUtility=radialDistributionUtility.propertyExtension(radialDistributionUtility)
+    )
 
     generations = []
     IDs = []
@@ -44,9 +50,9 @@ def read_structures_and_energies(symbols, folder: Path):
         IDs.append(ID)
         system['ID'] = ID
         system['isBad'] = False
-        system['enthalpy'] = enthalpy
-        system = AtomisticPoolEntry(**system)
-        system.setProperty('fingerprint', radialDistributionUtility.structureFingerprint(system))
+        system['.enthalpy'] = enthalpy
+        system = PoolEntry(extensions=extensions, **system)
+        system.getProperty('structure', prefix='atomistic')
         systems.append(system)
     all_systems = systems
 
@@ -78,7 +84,7 @@ class GenConvexHull_Si_Test(unittest.TestCase):
     def test_is_on_CH1(self):
         init_systems = self.populations[0]
         self.convexHull_1 = GeneralizedConvexHull([system for system in init_systems], config=self.config)
-        indices = np.argsort(np.fromiter((x['enthalpy'] for x in init_systems), dtype=float))
+        indices = np.argsort(np.fromiter((x['.enthalpy.origin'] for x in init_systems), dtype=float))
         lowest_energy_structure_index = indices[0]
         highest_energy_structure_index = indices[-1]
         self.assertEqual(self.convexHull_1.height[lowest_energy_structure_index], 0)
@@ -88,7 +94,7 @@ class GenConvexHull_Si_Test(unittest.TestCase):
 
     def test_is_on_CH(self):
         self.convexHull = GeneralizedConvexHull([x for x in self.all_systems], config=self.config)
-        indices = np.argsort(np.fromiter((x['enthalpy'] for x in self.all_systems), dtype=float))
+        indices = np.argsort(np.fromiter((x['.enthalpy.origin'] for x in self.all_systems), dtype=float))
         lowest_energy_structure_index = indices[0]
         highest_energy_structure_index = indices[-1]
         self.assertEqual(self.convexHull.height[lowest_energy_structure_index], 0)
@@ -114,7 +120,7 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
     def test_is_on_CH1(self):
         init_systems = self.populations[0]
         self.convexHull_1 = GeneralizedConvexHull([system for system in init_systems], config=self.config)
-        indices = np.argsort(np.fromiter((x['enthalpy'] for x in init_systems), dtype=float))
+        indices = np.argsort(np.fromiter((x['.enthalpy.origin'] for x in init_systems), dtype=float))
         lowest_energy_structure_index = indices[0]
         highest_energy_structure_index = indices[-1]
         self.assertEqual(self.convexHull_1.height[lowest_energy_structure_index], 0)
@@ -124,7 +130,7 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
 
     def test_is_on_CH(self):
         self.convexHull = GeneralizedConvexHull([x for x in self.all_systems], config=self.config)
-        indices = np.argsort(np.fromiter((x['enthalpy'] for x in self.all_systems), dtype=float))
+        indices = np.argsort(np.fromiter((x['.enthalpy.origin'] for x in self.all_systems), dtype=float))
         lowest_energy_structure_index = indices[0]
         highest_energy_structure_index = indices[-1]
         self.assertEqual(self.convexHull.height[lowest_energy_structure_index], 0)

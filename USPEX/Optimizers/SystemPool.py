@@ -6,8 +6,10 @@ USPEX.SystemPool
 
 
 import logging
+import numpy as np
 from copy import copy
-from itertools import chain
+
+from USPEX.Expressions.Functions.presets import applyPresetsRecursive
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +25,10 @@ class SystemPool(object):
     entryFactory = None
 
     def __init__(self):
+        self.extensions = {}
         self.allSystems = {}
         self.generations = []
+        self.goodSystemIDs = []
         self._newID = 0
 
     def __copy__(self):
@@ -36,22 +40,18 @@ class SystemPool(object):
 
     @property
     def goodSystems(self):
-        return tuple(system for system in self.allSystems.values() if not system['isBad'])
-
-    @property
-    def goodSystemIDs(self):
-        return tuple(ID for ID, system in self.allSystems.items() if not system['isBad'])
+        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs)
 
     @property
     def uniqueSystems(self):
-        return tuple(system for system in self.allSystems.values() if 'originalID' not in system and not system['isBad'])
+        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs if self.allSystems[ID].originalID is None)
 
     @property
     def uniqueSystemIDs(self):
         """
         :return: list of IDs of unique structures.
         """
-        return tuple(ID for ID, system in self.allSystems.items() if 'originalID' not in system and not system['isBad'])
+        return tuple(ID for ID in self.goodSystemIDs if self.allSystems[ID].originalID is None)
 
     def __hash__(self):
         return hash(self.uniqueSystemIDs)
@@ -67,23 +67,19 @@ class SystemPool(object):
         for system in population:
             self.allSystems[system['ID']] = system
 
-    def append(self, population, fitness):
+    def append(self, population):
         """
-        Inserts fitness object into last generation record.
-
-        :param fitness: fitness object.
-
         """
         logger.debug('Updating target: list of unique systems.')
         IDs = set(system['ID'] for system in population)
         newIDs = []
-        newGeneration = {'allSystems': [], 'newSystems': [], 'fitness': fitness}
+        newGeneration = {'allSystems': [], 'newSystems': []}
         for system in population:
             original = self.allSystems[self.getOriginalID(system['ID'])]
             if original['ID'] not in newIDs:
                 newGeneration['allSystems'].append(original)
                 newIDs.append(original['ID'])
-                if 'duplicates' not in original or set(original['duplicates']) <= IDs:
+                if set(original.duplicates) <= IDs:
                     logger.debug(f'add new system {system["ID"]} to list of unique systems')
                     newGeneration['newSystems'].append(original)
         self.generations.append(newGeneration)
@@ -96,10 +92,10 @@ class SystemPool(object):
         :param system: system to be labeled with ID.
 
         """
-        system.setProperty('ID', self._newID)
-        system.setProperty('isBad', True)
+        system.ID = self._newID
+        system.setProperty('isBad', False)
         self._newID += 1
-        self.allSystems[system['ID']] = system
+        self.allSystems[system.ID] = system
 
     def getOriginalID(self, ID):
         """
@@ -110,4 +106,11 @@ class SystemPool(object):
         :return: ID of original system.
         """
         system = self.allSystems[ID]
-        return system['originalID'] if 'originalID' in system else ID
+        return system.originalID if system.originalID is not None else ID
+
+    @staticmethod
+    def fronts(pool, expression):
+        expression = applyPresetsRecursive(expression)
+        values = [s[expression] for s in pool]
+        return [[pool[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
+

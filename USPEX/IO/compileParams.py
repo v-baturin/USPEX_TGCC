@@ -9,6 +9,8 @@ def compileParams(main: dict) -> dict:
             stages[i]['tag'] = str(i+1)
         if 'stageType' not in stage:
             stage['stageType'] = 'atomistic'
+        if 'source' not in stage:
+            stage['source'] = str(i) if i>0 else 'origin'
 
     if 'optimizer' in main and 'target' in main['optimizer']:
         optimizer = main['optimizer']
@@ -39,9 +41,15 @@ def compileParams(main: dict) -> dict:
                 molecules[symbol['name']] = structure
                 symbols[i] = symbol['name']
                 elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
-        target['junctionUtility'] = {'molSitesMapping': molSitesMapping}
+        if 'junctionUtility' in target:
+            target['junctionUtility']['molSitesMapping'] = molSitesMapping
+        else:
+            target['junctionUtility'] = {'molSitesMapping': molSitesMapping}
         if molecules:
-            target['simpleMoleculeUtility'] = {'molecules': molecules}
+            if 'simpleMoleculeUtility' in target:
+                target['simpleMoleculeUtility']['molecules'] = molecules
+            else:
+                target['simpleMoleculeUtility'] = {'molecules': molecules}
         if 'selection' in optimizer:
             selection = optimizer['selection']
             if len(target['compositionSpace']['blocks']) > 1:

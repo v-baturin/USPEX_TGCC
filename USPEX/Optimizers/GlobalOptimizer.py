@@ -10,9 +10,13 @@ Class implementing global optimizer
 import logging
 from copy import copy
 from typing import List
+from itertools import chain
 
 from .SystemPool import SystemPool
 from .Target import Target, TargetType
+from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
+from USPEX.Expressions.Functions.presets import applyPresetsRecursive
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +30,14 @@ class GlobalOptimizer(object):
 
     """
 
-    Fitness = None
+    ExpressionEvaluator = None
     entryType = None
     knownSelectionTypes = {}
     knownTargetTypes = {}
 
     @classmethod
-    def setFitnessType(cls, FitnessType: type):
-        cls.Fitness = FitnessType
+    def setExpressionEvaluatorType(cls, ExpressionEvaluatorType: type):
+        cls.ExpressionEvaluator = ExpressionEvaluatorType
 
     @classmethod
     def registerSelection(cls, selectionType: type):
@@ -76,11 +80,13 @@ class GlobalOptimizer(object):
         """
 
         self.pool = SystemPool()
-        self.pool.entryFactory = self.entryType
+        self.pool.extensions['basic'] = BasicFunctions()
         self.target = Target(self.knownTargetTypes[target['type']], **target)
+        self.pool.extensions.update(**self.target.expressionExtensions)
+        self.entryFactory = self.entryType(self.target.propertyExtensions)
+        self.pool.entryFactory = self.entryFactory
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = list(extraData)
-        self.fitness = self.Fitness(self.pool.uniqueSystems, self.target.utilities, self.extraData)
         self.selectionConfig = selection
         self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target,
                                                                             self.fingerprintUtility, **selection)
@@ -93,6 +99,10 @@ class GlobalOptimizer(object):
         else:
             self.stopSystems = None
 
+        self.goodSystemsSuffixes = set(
+            prop.split('.')[-1] for prop in _extract(self.optType) + _extract(self.createPopulation.optType)
+        )
+
         self.best = set()
         self._isStable = False
         self._isGoalReached = False
@@ -101,8 +111,6 @@ class GlobalOptimizer(object):
         other = GlobalOptimizer.__new__(GlobalOptimizer)
         other.pool = copy(self.pool)
         other.target = copy(self.target)
-        other.fitness = other.pool.generations[-1]['fitness']\
-            if other.pool.generations and 'fitness' in other.pool.generations[-1] else self.fitness
         other.selectionConfig = self.selectionConfig
         other.createPopulation = copy(self.createPopulation)
         other.optType = self.optType
@@ -120,26 +128,33 @@ class GlobalOptimizer(object):
         :type population: list
         :param population: list of systems which allows to update our knowledge about target space.
         """
-        self.pool.update(population)
-        self.fitness = self.Fitness.calculate(self.pool.goodSystems, self.optType,
-                                              self.target.utilities, self.extraData)
-        population = [system for system in population if not system['isBad']]
+        goodSystems = []
+        for system in population:
+            for suffix in self.goodSystemsSuffixes:
+                if system[f'.isBad.{suffix}']:
+                    break
+            else:
+                self.pool.goodSystemIDs.append(system.ID)
+                goodSystems.append(system)
+        self.ExpressionEvaluator.calculate(self.optType, self.pool.goodSystems, self.pool.extensions)
+        self.ExpressionEvaluator.calculate(self.createPopulation.optType, self.pool.goodSystems, self.pool.extensions)
+        population = goodSystems
         assert population, 'All systems in population failed relaxation.'
         self._markDuplicates(population)
-        self.pool.append(population, self.fitness)
-        allFitnesses = self.fitness.getAllFitnesses(self.optType)
+        self.pool.append(population)
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
-                VO.tune(population, allFitnesses)
-        best = set(system['ID'] for system in self.fitness.sort(list(self.pool.uniqueSystems), allFitnesses)[0])
+                VO.tune(population, applyPresetsRecursive(self.optType))
+        best = set(system['ID'] for system in self.pool.fronts(self.pool.uniqueSystems, self.optType)[0])
         if best == self.best:
             self._isStable = True
         else:
             self._isStable = False
             self.best = best
+        self.pool.generations[-1]['bestSystems'] = self.best
         if self.stopFitness is not None:
             for ID in self.best:
-                if round(self.fitness.getFitnessByID(self.optType, self.pool.getOriginalID(ID)), ndigits=3)\
+                if round(self.pool.allSystems[self.pool.getOriginalID(ID)][self.optType], ndigits=3)\
                         <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
                     break
@@ -166,26 +181,19 @@ class GlobalOptimizer(object):
             for i, ref_system in enumerate(self.pool.uniqueSystems):
                 if self.fingerprintUtility.equal(system, ref_system) and system['ID'] != ref_system['ID']:
                     logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
-                    if self.fitness.getFitnessByID(self.optType, system['ID']) < \
-                            self.fitness.getFitnessByID(self.optType, ref_system['ID']):
+                    if system[applyPresetsRecursive(self.optType)] < ref_system[applyPresetsRecursive(self.optType)]:
                         self.fingerprintUtility.clean(ref_system)
                         ref_system.setProperty('originalID', system['ID'])
-                        if 'duplicates' in ref_system:
-                            system.setProperty('duplicates', ref_system['duplicates'])
-                            ref_system.delProperty('duplicates')
-                            for ID in system['duplicates']:
-                                self.pool.allSystems[ID].setProperty('originalID', system['ID'])
-                            if ref_system['ID'] not in system['duplicates']:
-                                system['duplicates'].append(ref_system['ID'])
-                        else:
-                            system.setProperty('duplicates', [ref_system['ID']])
+                        system.duplicates = ref_system.duplicates
+                        for ID in system.duplicates:
+                            self.pool.allSystems[ID].originalID = system['ID']
+                        if ref_system['ID'] not in system.duplicates:
+                            system.duplicates.append(ref_system['ID'])
                     else:
                         self.fingerprintUtility.clean(system)
                         system.setProperty('originalID', ref_system['ID'])
-                        if 'duplicates' in ref_system and system['ID'] not in ref_system['duplicates']:
-                            ref_system['duplicates'].append(system['ID'])
-                        else:
-                            ref_system.setProperty('duplicates', [system['ID']])
+                        if system['ID'] not in ref_system.duplicates:
+                            ref_system.duplicates.append(system['ID'])
                     break
 
     @property
@@ -195,3 +203,13 @@ class GlobalOptimizer(object):
     @property
     def isGoalReached(self):
         return self._isGoalReached
+
+
+def _extract(expression):
+    if isinstance(expression, str):
+        return [expression]
+    if isinstance(expression, tuple):
+        func, *arguments = expression
+        return list(set(chain(*[_extract(arg) for arg in arguments])))
+    else:
+        return []

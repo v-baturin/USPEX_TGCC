@@ -16,10 +16,12 @@ class CoreAdsorbantRandomGenerator:
     def __init__(self, utilities, debug = False):
         self.junctionUtility = utilities.junctionUtility
         self.environmentUtility = utilities.environmentUtility
+        self.cellUtility = utilities.cellUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.cellType = type(self.cellUtility.getRandomCell(1, np.empty(0)))
         self.angle_indices = np.arange(TOTAL_ROTATION_STEPS)
 
         if debug:
@@ -113,10 +115,13 @@ class CoreAdsorbantRandomGenerator:
 
     def checkDocking(self, tmp_molecules, ads_attempt, npCoreAssembler, offspringFactory):
         docked = False
-        cell = offspringFactory.cellType.initFromCellParameters((0, 0, 0))
-        tmp_offspring = offspringFactory(molecules=tmp_molecules + [ads_attempt], cell=cell,
-                                         environments=npCoreAssembler.assemble(tmp_molecules + [ads_attempt]))
-        tmp_struct = tmp_offspring.getAtomicStructure()
+        cell = self.cellType.initFromCellParameters((0, 0, 0))
+        system = {
+            'atomistic.molecules': tmp_molecules + [ads_attempt],
+            'atomistic.cell': cell,
+            'atomistic.environments': npCoreAssembler.assemble(tmp_molecules + [ads_attempt])}
+        tmp_offspring = offspringFactory(**system)
+        tmp_struct = tmp_offspring.getProperty('structure', prefix='atomistic', suffix='origin')
         tmp_minDistMatrix = self.bondUtility.getDistances(tmp_struct.getAtomTypes(),
                                                           self.conditions.externalPressure)
         # tmp_atomDistances = tmp_struct.getAllDistances()

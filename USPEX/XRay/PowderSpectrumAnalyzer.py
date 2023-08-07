@@ -16,7 +16,12 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 
+from USPEX.Expressions.Functions.PowderSpectrumAnalyzerFunctions import PowderSpectrumAnalyzerFunctions
+
+
 class PowderSpectrumAnalyzer(object):
+
+    propertyExtension = PowderSpectrumAnalyzerFunctions
 
     def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
                  exp_angles: list, exp_intensities: list):
@@ -54,7 +59,7 @@ class PowderSpectrumAnalyzer(object):
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
-        structure = system.getAtomicStructure()
+        structure = system['atomistic.structure']
 
         # pure hydrogen gets low agreement
         elementList = list(structure.getComposition().keys())
@@ -82,20 +87,8 @@ class PowderSpectrumAnalyzer(object):
         if not result.success:
             raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
 
-        system.setProperty('powderSpectrumAnalyzer.xraydistance', result.fun)
-        system.setProperty('powderSpectrumAnalyzer.k', result.x[0])
-
-    def xraydistance(self, system):
-        if 'powderSpectrumAnalyzer.xraydistance' not in system:
-            self.analyze(system)
-        assert 'powderSpectrumAnalyzer.xraydistance' in system
-        return system['powderSpectrumAnalyzer.xraydistance']
-
-    def k(self, system):
-        if 'powderSpectrumAnalyzer.k' not in system:
-            self.analyze(system)
-        assert 'powderSpectrumAnalyzer.k' in system
-        return system['powderSpectrumAnalyzer.k']
+        system['powderSpectrumAnalyzer.xraydistance'] = result.fun
+        system['powderSpectrumAnalyzer.k'] = result.x[0]
 
     @staticmethod
     def parse(filename: str):

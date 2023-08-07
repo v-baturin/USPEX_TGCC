@@ -2,7 +2,8 @@ import unittest
 import numpy as np
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, DFTBplus_Interface, AtomisticPoolEntry
+from ....Optimizers.PoolEntry import PoolEntry
+from ....components import AtomisticRepresentation, DFTBplus_Interface, Atomistic
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'dftbSpecific'
@@ -14,14 +15,16 @@ class DFTBplus_InterfaceTest(unittest.TestCase):
         # HERE what is written in dftb_in.hsd does not make sense.
         # Only output will be parsed and properties checked
         interface = DFTBplus_Interface(tag='0', dftb_input=SPECIFICPATH/'dftb_in.hsd_1', kresol=0.04)
-        structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-        system = AtomisticPoolEntry(
-            ID=ID,
-            structure=structure,
-            disassembler=AtomisticRepresentation.atomicDisassemblerType(
-                np.arange(len(structure)).reshape((-1, 1))),
-            ase={'pbc': (1, 1, 1)},
-            externalPressure=0.0
+        atomistic = Atomistic()
+        extensions = dict(
+            atomistic=atomistic.propertyExtension(atomistic)
         )
+        structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        system = PoolEntry(extensions=extensions, ID=ID)
+        system.setProperty('externalPressure', 0.0)
+        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
+        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
         interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
-        self.assertTrue(np.isclose(system['enthalpy'], -395.547))
+        self.assertTrue(np.isclose(system['.enthalpy.0'], -395.547))

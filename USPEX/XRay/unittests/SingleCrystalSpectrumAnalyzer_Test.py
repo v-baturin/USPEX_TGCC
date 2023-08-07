@@ -11,7 +11,7 @@ import unittest
 
 from pathlib import Path
 
-from ...components import AtomisticRepresentation, AtomisticPoolEntry
+from ...components import AtomisticRepresentation, Atomistic
 from ..SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 
 PATH_WITH_TESTS = Path(__file__).parent
@@ -21,7 +21,7 @@ class SpectrumAnalyzer_Test(unittest.TestCase):
     def setUp(self):
         self.system = AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/'Mg4O12Si4.vasp')
         self.system['ID'] = 1
-        self.system = AtomisticPoolEntry(**self.system)
+        self.system['atomistic.structure'], self.system['atomistic.disassembler'] = Atomistic.atomicDisassemblerType.assemble(self.system)
 
     def test(self):
         hklFile = PATH_WITH_TESTS/'test_P1.hkl'

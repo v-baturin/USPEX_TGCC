@@ -10,16 +10,17 @@ Objects and methods for handling chemical bonds
 
 import logging
 import numpy as np
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Tuple, Union
 from ase.atoms import Atom, Atoms
 from ase.neighborlist import primitive_neighbor_list
-from itertools import chain, combinations_with_replacement
+from itertools import combinations_with_replacement
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial.distance import cdist
 from scipy.stats import gmean
 from itertools import chain
 
 from .VolumeEstimator import VolumeEstimator
+from USPEX.Expressions.Functions.BondFunctions import BondFunctions
 
 
 logger = logging.getLogger(__name__)
@@ -101,6 +102,7 @@ class BondUtility:
 
     atomType = None
     disassemblerType = None
+    propertyExtension = BondFunctions
 
     @classmethod
     def registerTypes(cls, atomType, disassemblerType):
@@ -245,7 +247,7 @@ class BondUtility:
             # TODO Why we had this less 0.5A and not more than 5A (usually)
             if dist < self.lowerBond or j < i:
                 continue
-            bonds.append(Bond(atom1=atoms[i], atom2=atoms[j], dir2=dir))
+            bonds.append(Bond(atom1=atoms[i], atom2=atoms[j], dir2=tuple(dir)))
 
         tmp_bonds = sorted(bonds, key=lambda x: x.delta)
 
@@ -516,13 +518,6 @@ class BondUtility:
         freq, eigvector = list(freq[IX]), list(np.real(eigvector[:, IX]).T)
 
         return freq, eigvector
-
-    def hardness(self, system):
-        if 'bondUtility.hardness' not in system:
-            structure, disassembler = self.disassemblerType.assembe(**system)
-            bonds = self.getMinimalGraphBonds(structure)
-            system['bondUtility.hardness'] = self.calcHardness(structure, bonds)
-        return system['bondUtility.hardness']
 
     @staticmethod
     def calcCoordinationNumbers(structure):

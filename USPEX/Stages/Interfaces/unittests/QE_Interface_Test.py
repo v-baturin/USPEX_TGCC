@@ -4,7 +4,8 @@ import unittest
 import numpy as np
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, QE_Interface, AtomisticPoolEntry
+from ....Optimizers.PoolEntry import PoolEntry
+from ....components import AtomisticRepresentation, QE_Interface, Atomistic
 
 
 HOMEPATH = Path(__file__).parent
@@ -20,16 +21,20 @@ class QE_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         qe = QE_Interface(tag='1', kresol=0.16, options=SPECIFICPATH/'qEspresso_options_1',
                           pseudopotentials={'C': SPECIFICPATH/'C.pbe-van_bm.upf'})
+        atomistic = Atomistic()
+        extensions = dict(
+            atomistic=atomistic.propertyExtension(atomistic)
+        )
+
 
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            system = AtomisticPoolEntry(
-                ID=ID,
-                structure=structure,
-                disassembler=AtomisticRepresentation.atomicDisassemblerType(
-                    np.arange(len(structure)).reshape((-1, 1))),
-                externalPressure=0.0001
-            )
+            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            system = PoolEntry(extensions=extensions, ID=ID)
+            system.setProperty('externalPressure', 0.0001)
+            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='1')
+            system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
             WORKPATH.mkdir(parents=True, exist_ok=True)
             qe.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
@@ -44,7 +49,7 @@ class QE_CalculatorTest2(unittest.TestCase):
             qe.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
             structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-            structure = system.getAtomicStructure()
+            structure = system.getProperty('structure', prefix='atomistic', suffix='1')
             cell = structure.getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(), cellRef.getCellVectors(), atol=1.0e-5))

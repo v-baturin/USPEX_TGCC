@@ -14,7 +14,8 @@ import numpy as np
 
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, ABINIT_Interface, AtomisticPoolEntry
+from ....Optimizers.PoolEntry import PoolEntry
+from ....components import AtomisticRepresentation, ABINIT_Interface, Atomistic
 
 
 HOMEPATH = Path(__file__).parent
@@ -37,17 +38,19 @@ else:
                                       in_file=SPECIFICPATH/'abinit.in_1',
                                       kresol=0.13,
                                       pp_files=[SPECIFICPATH/'H.psp8', SPECIFICPATH/'Eu.psp8'])
-
+            atomistic = Atomistic()
+            extensions = dict(
+                atomistic=atomistic.propertyExtension(atomistic)
+            )
 
             for ID in range(10):
                 structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-                system = AtomisticPoolEntry(
-                    ID=ID,
-                    structure=structure,
-                    disassembler=AtomisticRepresentation.atomicDisassemblerType(
-                        np.arange(len(structure)).reshape((-1, 1))),
-                    externalPressure=130.0
-                )
+                disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+                system = PoolEntry(extensions=extensions, ID=ID)
+                system.setProperty('externalPressure', 130)
+                system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
+                system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
+                system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
                 WORKPATH.mkdir(parents=True, exist_ok=True)
                 abinit.prepareLocalCalculation(system, WORKPATH)
                 folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
@@ -62,7 +65,7 @@ else:
                 abinit.readOutput(system, WORKPATH)
                 shutil.rmtree(WORKPATH)
                 structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-                cell = system['cell']
+                cell = system['atomistic.structure.0'].getCell()
                 cellRef = structureRef.getCell()
                 self.assertTrue(np.allclose(cell.getCellVectors(),
                                             cellRef.getCellVectors()))

@@ -32,8 +32,8 @@ class Autofrac(object):
         self.weightsLast = copy(weightsLast)
         self.weightsBest = Counter()
         for system in best:
-            if system['howCome'] != 'Seeds' and system in newFoundSystems:
-                self.weightsBest[system['howCome']] += 1
+            if system['.howCome.origin'] != 'Seeds' and system in newFoundSystems:
+                self.weightsBest[system['.howCome.origin']] += 1
 
         self.initWeights = {}
         self.minFracs = {}
@@ -93,7 +93,7 @@ class USPEXClassic(object):
         self.pool = pool
         self.target = target
         antiseeds = {} if antiseeds is None else antiseeds
-        self.target.utilities.antiseeds = Antiseeds(**antiseeds)
+        self.pool.entryFactory.extensions['antiseeds'] = Antiseeds(**antiseeds)
         self.fingerprintUtility = fingerprintUtility
         self.optType = optType
         self.fractions = fractions
@@ -105,7 +105,7 @@ class USPEXClassic(object):
         else:
             self.initialPopSize = popSize
         self.bestFrac = bestFrac
-        self.howManyDiverse = howManyDiverse if howManyDiverse else np.round(0.15*self.popSize)
+        self.howManyDiverse = howManyDiverse if howManyDiverse else int(np.round(0.15*self.popSize))
         self.diversityTolerance = diversityTolerance
         self.globalParentsPool = globalParentsPool
         self._mostDiverse = []
@@ -125,15 +125,14 @@ class USPEXClassic(object):
         """
 
         if self.pool.generations:
-            if self.target.utilities.antiseeds.legacy:
-                self.target.utilities.antiseeds.payPenalties(self.pool.generations[-1]['allSystems'],
+            if self.pool.entryFactory.extensions['antiseeds'].legacy:
+                self.pool.entryFactory.extensions['antiseeds'].payPenalties(self.pool.generations[-1]['allSystems'],
                                                              self.pool.uniqueSystems, self.fingerprintUtility)
 
             population = list(self.pool.uniqueSystems) if self.globalParentsPool else \
                 self.pool.generations[-1]['allSystems'] + self._mostDiverse
             newStructures = self.pool.generations[-1]['newSystems']
-            fitness = self.pool.generations[-1]['fitness']
-            fronts = fitness.sort(population, fitness.getAllFitnesses(self.optType))
+            fronts = self.pool.fronts(population, self.optType)
             sortedPopulation = []
             tournament = []
             for i, front in enumerate(fronts):
@@ -176,8 +175,8 @@ class USPEXClassic(object):
                             self.pool.assignID(offspring)
                             offspring.setProperty('howCome', howCome)
                             offspring.setProperty('parent', f"{parent['ID']}")
-                            logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
-                                        f"from {offspring['parent']} parent.")
+                            logger.info(f"System {offspring['ID']} successfully created by {offspring['.howCome.origin']} operator "
+                                        f"from {offspring['.parent.origin']} parent.")
                         population.extend(offsprings)
                         howMany -= len(offsprings)
                         actualParents.append(parent)
@@ -210,8 +209,8 @@ class USPEXClassic(object):
                             self.pool.assignID(offspring)
                             offspring.setProperty('howCome', howCome)
                             offspring.setProperty('parent', f"{parent1['ID']} {parent2['ID']}")
-                            logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
-                                        f"from {offspring['parent']} parents.")
+                            logger.info(f"System {offspring['ID']} successfully created by {offspring['.howCome.origin']} operator "
+                                        f"from {offspring['.parent.origin']} parents.")
                         population.extend(offsprings)
                         howMany -= len(offsprings)
                         actualParents.extend([parent1, parent2])
@@ -238,7 +237,7 @@ class USPEXClassic(object):
                         self.pool.assignID(offspring)
                         offspring.setProperty('howCome', howCome)
                         offspring.setProperty('parent', "None")
-                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator.")
+                        logger.info(f"System {offspring['ID']} successfully created by {offspring['.howCome.origin']} operator.")
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                 except RuntimeError as e:
@@ -248,8 +247,8 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        if not self.target.utilities.antiseeds.legacy:
-            self.target.utilities.antiseeds.payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
+        if not self.pool.entryFactory.extensions['antiseeds'].legacy:
+            self.pool.entryFactory.extensions['antiseeds'].payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
 
         if self.target.seeds is not None:
             seeds = self.target.seeds(self.pool.entryFactory)
@@ -257,7 +256,7 @@ class USPEXClassic(object):
                 self.pool.assignID(seed)
                 seed.setProperty('howCome', 'Seeds')
                 seed.setProperty('parent', "None")
-                logger.info(f"Structure {seed['ID']} created from seed {seed['filename']}.")
+                logger.info(f"Structure {seed['ID']} created from seed {seed['.filename.origin']}.")
             population.extend(seeds)
 
         return population
