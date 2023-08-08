@@ -39,12 +39,10 @@ class LAMMPS_Interface:
     
     DEFAULT_SLEEP_TIME = 30
 
-    atomisticRepresentationType = None
     aseAdapterType = None
 
     @classmethod
-    def registerTypes(cls, atomisticRepresentationType, aseAdapterType):
-        cls.atomisticRepresentationType = atomisticRepresentationType
+    def registerTypes(cls, aseAdapterType):
         cls.aseAdapterType = aseAdapterType
 
     def __init__(self, tag: str, specorder: List[str], lammps_in: str = None, mlip_in: str = None, mlip: str = None,
@@ -225,7 +223,8 @@ class LAMMPS_Interface:
                 raise RuntimeError("Bad lammps output.")
 
         if 'trajectory' in self.targetProperties:
-            sample = self.atomisticRepresentationType.readMLIPsample(calcFolder/self.mlip_sample, self.specorder)
+            atomistic = system.flavourFactory.extensions['atomistic'].utility
+            sample = atomistic.AtomicStructureRepresentation.readMLIPsample(calcFolder/self.mlip_sample, self.specorder)
             # for subsystem in sample:
             #     subsystem['disassembler'] = system['disassembler']
             #     subsystem['externalPressure'] = system['externalPressure']

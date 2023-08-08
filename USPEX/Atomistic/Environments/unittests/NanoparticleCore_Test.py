@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 import numpy as np
 
-from ....components import AtomicStructureRepresentation, NanoparticleCore, JunctionUtility, AtomicDisassembler, Cell
+from ....components import AtomicStructureRepresentation, NanoparticleCore, JunctionUtility, Cell
 
 
 class NanoparticleCore_Test(unittest.TestCase):
@@ -55,7 +55,7 @@ class NanoparticleCore_Test(unittest.TestCase):
                   'atomistic.cell': Cell.initFromCellVectors((0, 0, 0)),
                   'atomistic.environments': assembler.assemble([new_ads_struct])
                   }
-        structure, disassembler = AtomicDisassembler.assemble(system)
+        structure, disassembler = NanoparticleCore.Atomistic.atomicDisassemblerType.assemble(system)
         AtomicStructureRepresentation.writeXYZ(self.TEST_FILES_DIR/'outNDI.xyz', structure)
 
     def test_dock_Alpha(self):
@@ -72,7 +72,7 @@ class NanoparticleCore_Test(unittest.TestCase):
                   'atomistic.cell': Cell.initFromCellVectors((0, 0, 0)),
                   'atomistic.environments': assembler.assemble([new_ads_struct])
                   }
-        structure, disassembler = AtomicDisassembler.assemble(system)
+        structure, disassembler = NanoparticleCore.Atomistic.atomicDisassemblerType.assemble(system)
         AtomicStructureRepresentation.writeXYZ(self.TEST_FILES_DIR/'outAlpha.xyz', structure)
 
 def json2dict(fname):

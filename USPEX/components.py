@@ -60,10 +60,9 @@ Executor.registerInterface('abinit', ABINIT_Interface)
 from .Stages.Interfaces.GULP_Interface import GULP_Interface
 Executor.registerInterface('gulp', GULP_Interface)
 from .Stages.Interfaces.LAMMPS_Interface import LAMMPS_Interface
-LAMMPS_Interface.registerTypes(AtomicStructureRepresentation, ASEInterfaceAdapter.LAMMPS)
+LAMMPS_Interface.registerTypes(ASEInterfaceAdapter.LAMMPS)
 Executor.registerInterface('lammps', LAMMPS_Interface)
 from .Stages.Interfaces.MLIP_Interface import MLIP_Interface
-MLIP_Interface.registerTypes(AtomicStructureRepresentation)
 Executor.registerInterface('mlip', MLIP_Interface)
 from .Stages.Interfaces.QE_Interface import QE_Interface
 QE_Interface.registerTypes(ASEInterfaceAdapter.QE)
