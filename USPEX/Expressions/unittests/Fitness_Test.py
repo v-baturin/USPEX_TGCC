@@ -17,7 +17,7 @@ from ..ExpressionEvaluator import ExpressionEvaluator
 from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
 from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation, Atomistic
-from ...Atomistic.AtomicPrimitives import AtomicStructure
+from USPEX.Atomistic.Primitives.AtomicPrimitives import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint
 from ...XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 

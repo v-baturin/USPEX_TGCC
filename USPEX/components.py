@@ -1,6 +1,6 @@
-from .Atomistic.Element import Element
-from .Atomistic.CellUtility import Cell
-from .Atomistic.AtomicPrimitives import AtomicStructure
+from .Atomistic.Primitives.Element import Element
+from .Atomistic.Primitives.Cell import Cell
+from .Atomistic.Primitives.AtomicStructure import AtomicStructure
 from .Atomistic.Atomistic import Atomistic, AtomicDisassembler
 Atomistic.registerTypes(AtomicStructure, Element, Cell)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
