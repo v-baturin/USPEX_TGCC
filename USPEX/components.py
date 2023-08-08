@@ -1,12 +1,11 @@
 from .Atomistic.Primitives.Element import Element
 from .Atomistic.Primitives.Cell import Cell
 from .Atomistic.Primitives.AtomicStructure import AtomicStructure
-from .Atomistic.Atomistic import Atomistic, AtomicDisassembler
-Atomistic.registerTypes(AtomicStructure, Element, Cell)
 from .IO.AtomicStructureRepresentation import AtomicStructureRepresentation
-AtomicStructureRepresentation.registerTypes(AtomicStructure, Element, Cell)
+from .Atomistic.Atomistic import Atomistic, AtomicDisassembler
+Atomistic.registerTypes(AtomicStructure, Element, Cell, AtomicStructureRepresentation)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
-AtomisticRepresentation.registerTypes(AtomicDisassembler)
+AtomisticRepresentation.registerTypes(Atomistic)
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
 from .Expressions.ExpressionEvaluator import ExpressionEvaluator
 GlobalOptimizer.setExpressionEvaluatorType(ExpressionEvaluator)
@@ -61,10 +60,10 @@ Executor.registerInterface('abinit', ABINIT_Interface)
 from .Stages.Interfaces.GULP_Interface import GULP_Interface
 Executor.registerInterface('gulp', GULP_Interface)
 from .Stages.Interfaces.LAMMPS_Interface import LAMMPS_Interface
-LAMMPS_Interface.registerTypes(AtomisticRepresentation, ASEInterfaceAdapter.LAMMPS)
+LAMMPS_Interface.registerTypes(AtomicStructureRepresentation, ASEInterfaceAdapter.LAMMPS)
 Executor.registerInterface('lammps', LAMMPS_Interface)
 from .Stages.Interfaces.MLIP_Interface import MLIP_Interface
-MLIP_Interface.registerTypes(AtomisticRepresentation)
+MLIP_Interface.registerTypes(AtomicStructureRepresentation)
 Executor.registerInterface('mlip', MLIP_Interface)
 from .Stages.Interfaces.QE_Interface import QE_Interface
 QE_Interface.registerTypes(ASEInterfaceAdapter.QE)

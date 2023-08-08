@@ -15,7 +15,7 @@ from pathlib import Path
 
 from ..GCH import GeneralizedConvexHull
 from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ...components import AtomisticRepresentation, RadialDistributionUtility, CompositionSpace, Atomistic
+from ...components import RadialDistributionUtility, CompositionSpace, Atomistic
 
 TESTPATH = Path(__file__).parent
 
@@ -26,7 +26,7 @@ FeC_gch_path = TESTPATH/'FeC_gch_test'
 def read_structures_and_energies(symbols, folder: Path):
     with open(folder/'Individuals', 'r') as fp:
         info = fp.readlines()[2:]
-    all_systems = AtomisticRepresentation.readAtomicStructures(folder/'gatheredPOSCARS')
+    all_systems = Atomistic.readAtomicStructures(folder/'gatheredPOSCARS')
     assert all_systems
     radialDistributionUtility = RadialDistributionUtility(symbols=symbols, suffix='origin')
     atomistic = Atomistic()

@@ -16,7 +16,7 @@ from os.path import join as pj
 from ..ExpressionEvaluator import ExpressionEvaluator
 from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation, Atomistic
+from ...components import CompositionSpace, SimpleMoleculeUtility, Atomistic
 from USPEX.Atomistic.Primitives.AtomicStructure import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint
 from ...XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
@@ -204,7 +204,7 @@ class FitnessXray_Test(unittest.TestCase):
     def setUp(self) -> None:
         # 'externalPressure': 135,
         filename = pj(HOMEPATH,'XRay_POSCARS')
-        self.systems = AtomisticRepresentation.readAtomicStructures(filename)
+        self.systems = Atomistic.readAtomicStructures(filename)
         enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
 
         self.compositionSpace = CompositionSpace(symbols=['Ba', 'H'], blocks=[[1, 12]], range=[[4, 4]])
