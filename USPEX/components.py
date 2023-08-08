@@ -2,7 +2,7 @@ from .Atomistic.Primitives.Element import Element
 from .Atomistic.Primitives.Cell import Cell
 from .Atomistic.Primitives.AtomicStructure import AtomicStructure
 from .IO.AtomicStructureRepresentation import AtomicStructureRepresentation
-from .Atomistic.Atomistic import Atomistic, AtomicDisassembler
+from .Atomistic.Atomistic import Atomistic
 Atomistic.registerTypes(AtomicStructure, Element, Cell, AtomicStructureRepresentation)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(Atomistic)
@@ -14,13 +14,13 @@ GlobalOptimizer.registerSelection(USPEXClassic)
 from .Atomistic.CompositionSpace import CompositionSpace
 from .Atomistic.EnvironmentUtility import EnvironmentUtility
 from .Atomistic.Environments.Interface import Interface
-Interface.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+Interface.registerTypes(Atomistic)
 from .Atomistic.Environments.Substrate import Substrate
-Substrate.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+Substrate.registerTypes(Atomistic)
 from .Atomistic.Environments.Bulk import Bulk
-Bulk.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+Bulk.registerTypes(Atomistic)
 from .Atomistic.Environments.NanoparticleCore import NanoparticleCore
-NanoparticleCore.registerTypes(AtomisticRepresentation, AtomicStructure, Element, Cell, AtomicDisassembler)
+NanoparticleCore.registerTypes(Atomistic)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from .Atomistic.CellUtility import CellUtility
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility

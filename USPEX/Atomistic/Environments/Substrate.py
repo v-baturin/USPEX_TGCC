@@ -18,27 +18,14 @@ class Substrate:
     Class representing part of structure which is not being altered via variation operators.
     I.e. it acts as environment for individual.
     """
-    structureRepresentation = None
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
+    Atomistic = None
 
     @classmethod
-    def registerTypes(cls,representationType, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, Atomistic):
         """
         Register types used by this utility.
-
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
         """
-        cls.structureRepresentation = representationType
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
+        cls.Atomistic = Atomistic
 
     def __init__(self, structure, bufferThickness: float = None, gap: float = None,
                  maxMisfitStrain: float = None, maxEnvironmentArea: float = None, **kwargs):
@@ -56,7 +43,7 @@ class Substrate:
 
     def assemble(self, molecules, cell, structure=None, **kwargs):
         structure = structure if structure is not None else self._structure
-        sysStructure, disassembler = Substrate.atomicDisassemblerType.assemble({'atomistic.molecules': molecules,
+        sysStructure, disassembler = Substrate.Atomistic.atomicDisassemblerType.assemble({'atomistic.molecules': molecules,
                                                                                 'atomistic.cell': cell})
         intermediateStructure = structure.makeSupercell(structure.getCell().decomposeCell(sysStructure.getCell()))
         envCell = intermediateStructure.getCell()
@@ -72,7 +59,7 @@ class Substrate:
             elif not cell.getPBC()[idx]:
                 offset += currAxis * (1 - (fracCoordinates[:, idx].min() + fracCoordinates[:, idx].max())) / 2
 
-        finalStructure = Substrate.structureType(intermediateStructure.getAtomTypes(),
+        finalStructure = Substrate.Atomistic.structureType(intermediateStructure.getAtomTypes(),
                                                           envCoordinates - offset, envCell)
         coordinates = finalStructure.getCartesianCoordinates()[:, self._axis]
         upperBound = coordinates.max() - self._thickness if self._thickness is not None else coordinates.min()
@@ -84,7 +71,7 @@ class Substrate:
         """
         Builds the environment objects for a given description.
         """
-        structure = Substrate.structureRepresentation.readPOSCAR(file, pbc)
+        structure = Substrate.Atomistic.AtomicStructureRepresentation.readPOSCAR(file, pbc)
         if build:
             structure = constructSurfaceSlab(structure, pbc, plane, slabThickness)
         environment = dict(
