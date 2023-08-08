@@ -17,7 +17,7 @@ import numpy as np
 from pathlib import Path
 
 from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ....components import AtomisticRepresentation, FHIaims_Interface, Atomistic
+from ....components import AtomicStructureRepresentation, FHIaims_Interface, Atomistic
 
 
 HOMEPATH = Path(__file__).parent
@@ -40,8 +40,8 @@ class VASP_CalculatorTest2(unittest.TestCase):
         )
 
         for ID in range(10):
-            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+            disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
             system = PoolEntry(ID, EntryFlavour(extensions=extensions))
             system.setProperty('externalPressure', 0.0001)
             system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
@@ -60,7 +60,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
             aims.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
+            structureRef = AtomicStructureRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
             structure = system.getProperty('structure', extension='atomistic', suffix='1')
             cell = structure.getCell()
             cellRef = structureRef.getCell()

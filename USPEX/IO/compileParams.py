@@ -1,4 +1,4 @@
-from ..components import AtomisticRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
+from ..components import AtomicStructureRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
     EnvironmentUtility, JunctionUtility
 
 
@@ -25,7 +25,7 @@ def compileParams(main: dict) -> dict:
             if not isinstance(symbol, dict):
                 elementalSymbols.add(symbol)
             elif 'type' in symbol and symbol.pop('type') == 'adsorbant':
-                structure = AtomisticRepresentation.readXYZ(symbol['filename'])
+                structure = AtomicStructureRepresentation.readXYZ(symbol['filename'])
                 molecules[symbol['name']] = structure
                 symbols[i] = symbol['name']
                 for site in symbol['sites']:
@@ -37,7 +37,7 @@ def compileParams(main: dict) -> dict:
             else:
                 defaultVolumeType = 0.5
                 cutoffVDW = True
-                structure = AtomisticRepresentation.readMol(symbol['filename'])
+                structure = AtomicStructureRepresentation.readMol(symbol['filename'])
                 molecules[symbol['name']] = structure
                 symbols[i] = symbol['name']
                 elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])

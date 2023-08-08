@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 
 from ..CompositionCH import CompositionCH
-from USPEX.Atomistic.Primitives.AtomicPrimitives import AtomicStructure
+from USPEX.Atomistic.Primitives.AtomicStructure import AtomicStructure
 from ...Optimizers.PoolEntry import EntryFlavour, PoolEntry
 from ...components import CompositionSpace, SimpleMoleculeUtility
 

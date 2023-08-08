@@ -3,8 +3,10 @@ from .Atomistic.Primitives.Cell import Cell
 from .Atomistic.Primitives.AtomicStructure import AtomicStructure
 from .Atomistic.Atomistic import Atomistic, AtomicDisassembler
 Atomistic.registerTypes(AtomicStructure, Element, Cell)
+from .IO.AtomicStructureRepresentation import AtomicStructureRepresentation
+AtomicStructureRepresentation.registerTypes(AtomicStructure, Element, Cell)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
-AtomisticRepresentation.registerTypes(AtomicStructure, Element, Cell, AtomicDisassembler)
+AtomisticRepresentation.registerTypes(AtomicDisassembler)
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
 from .Expressions.ExpressionEvaluator import ExpressionEvaluator
 GlobalOptimizer.setExpressionEvaluatorType(ExpressionEvaluator)

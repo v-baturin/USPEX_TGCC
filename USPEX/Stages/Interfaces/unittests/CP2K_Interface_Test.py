@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 
 from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ....components import AtomisticRepresentation, CP2K_Interface, Atomistic
+from ....components import AtomicStructureRepresentation, CP2K_Interface, Atomistic
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'cp2kSpecific'
@@ -20,8 +20,8 @@ class CP2K_InterfaceTest(unittest.TestCase):
             atomistic=atomistic.propertyExtension(atomistic)
         )
 
-        structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+        disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
         system = PoolEntry(ID, EntryFlavour(extensions=extensions))
         system.setProperty('externalPressure', 0.0)
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')

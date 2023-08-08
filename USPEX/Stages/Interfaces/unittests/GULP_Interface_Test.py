@@ -17,7 +17,7 @@ import filecmp
 from pathlib import Path
 
 from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ....components import AtomisticRepresentation, GULP_Interface, Atomistic
+from ....components import AtomicStructureRepresentation, GULP_Interface, Atomistic
 
 
 HOMEPATH = Path(__file__).parent
@@ -38,8 +38,8 @@ class GULP_CalculatorTest(unittest.TestCase):
         )
 
         for ID in range(10):
-            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+            disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
             system = PoolEntry(ID, EntryFlavour(extensions=extensions))
             system.setProperty('externalPressure', 100)
             system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
@@ -58,7 +58,7 @@ class GULP_CalculatorTest(unittest.TestCase):
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
             gulp.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
+            structureRef = AtomicStructureRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
             structure = system.getProperty('structure', extension='atomistic', suffix='0')
             cell = structure.getCell()
             cellRef = structureRef.getCell()
@@ -83,8 +83,8 @@ class GULP_InterfaceTest(unittest.TestCase):
         # with open(GATHEREDPATH/f'input/system{ID}', 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
 
-        structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+        disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
         system = PoolEntry(ID, EntryFlavour(extensions=extensions))
         system.setProperty('externalPressure', 100)
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')

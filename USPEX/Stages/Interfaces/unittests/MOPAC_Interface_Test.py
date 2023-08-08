@@ -26,7 +26,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
 
         for ID in range(10):
             structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (0, 0, 0))
-            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
             system = PoolEntry(ID, EntryFlavour(extensions=extensions))
             system.setProperty('externalPressure', 0.0)
             system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')

@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ....components import AtomisticRepresentation, Atomistic
+from ....components import AtomicStructureRepresentation, Atomistic
 from ..PWmat_Interface import PWmat_Interface
 
 
@@ -42,8 +42,8 @@ class PWmat_InterfaceTest(unittest.TestCase):
         )
 
         cls.vcEmpty = PWmat_Interface(**params)
-        structure = AtomisticRepresentation.readPOSCAR(HOMEPATH/'Si4System.vasp', pbc=(1, 1, 1))
-        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        structure = AtomicStructureRepresentation.readPOSCAR(HOMEPATH/'Si4System.vasp', pbc=(1, 1, 1))
+        disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
         system = PoolEntry(0, EntryFlavour(extensions=extensions))
         system.setProperty('externalPressure', 0.00001)
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')

@@ -1,13 +1,8 @@
-import io
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import shutil
 import yaml
 
-from ase.atoms import Atoms
-from ase.io.vasp import write_vasp, read_vasp
-from ase.io import read, write
 from copy import copy
 from collections import Counter
 from collections.abc import Mapping
@@ -16,7 +11,7 @@ from pathlib import Path
 from prettytable import PrettyTable
 
 from .formatters import createHeader_wrap
-from .read_molecule import read_molecule
+from ..components import AtomicStructureRepresentation
 from ..Expressions.Functions.presets import presetFitness, applyPresetsRecursive
 
 matplotlib.use('Agg')
@@ -101,16 +96,10 @@ class SystemsTable(object):
 
 class AtomisticRepresentation(object):
 
-    structureType = None
-    atomType = None
-    cellType = None
     atomicDisassemblerType = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
+    def registerTypes(cls, atomicDisassemblerType):
         cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, RES_FOLDER: str, columns, stages, toDraw, presentConvexHull: bool, presentPareto,
@@ -184,148 +173,6 @@ class AtomisticRepresentation(object):
             plt.savefig(self.RES_FOLDER/'E_series.svg')
             plt.close()
 
-    @classmethod
-    def readMLIPcfg(cls, file, specorder=None):
-        lat = np.zeros((3, 3))
-        types = None
-        pos = None
-        energy = None
-        forces = None
-        stresses = None
-        size = -1
-        mode = -1
-        line = file.readline()
-        while line:
-            line = line.upper()
-            line = line.strip()
-            if mode == 0:
-                if line.startswith('SIZE'):
-                    line = file.readline()
-                    size = int(line.strip())
-                    types = np.zeros(size, dtype=int).tolist()
-                    pos = np.zeros((size, 3))
-                elif line.startswith('SUPERCELL'):
-                    line = file.readline()
-                    vals = line.strip().split()
-                    lat[0, :] = vals[0:3]
-                    line = file.readline()
-                    vals = line.strip().split()
-                    lat[1, :] = vals[0:3]
-                    line = file.readline()
-                    vals = line.strip().split()
-                    lat[2, :] = vals[0:3]
-                elif line.startswith('ATOMDATA'):
-                    if line.endswith('FZ'):
-                        forces = np.zeros((size, 3))
-                    for i in range(size):
-                        line = file.readline()
-                        vals = line.strip().split()
-                        types[i] = int(vals[1])
-                        pos[i, :] = vals[2:5]
-                        if forces is not None:
-                            forces[i, :] = vals[5:8]
-                elif line.startswith('ENERGY'):
-                    line = file.readline()
-                    energy = float(line.strip())
-                elif line.startswith('PLUSSTRESS'):
-                    line = file.readline()
-                    vals = line.strip().split()
-                    stresses = np.zeros(6)
-                    stresses[:] = vals[0:6]
-            if line.startswith('BEGIN_CFG'):
-                mode = 0
-            elif line.startswith('END_CFG'):
-                break
-            line = file.readline()
-
-        cell = cls.cellType(lat, (1, 1, 1))
-        if specorder is not None:
-            types = [specorder[n] for n in types]
-        return dict(
-            structure=cls.structureType([cls.atomType(n) for n in types], pos, cell=cell),
-            energy=energy,
-            forces=forces,
-            stresses=stresses
-        )
-
-    @classmethod
-    def readMLIPsample(cls, filename, specorder):
-        all_systems = []
-        with open(filename, 'r') as f:
-            while True:
-                try:
-                    all_systems.append(cls.readMLIPcfg(f, specorder))
-                except Exception:
-                    break
-        return all_systems
-
-    @staticmethod
-    def saveMLIPcfg(f, specorder, structure, forces=None, energy=None, stresses=None, **kwargs):
-        atstr1 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z           fx          fy          fz\n'
-        atstr2 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z\n'
-        size = len(structure)
-        f.write('BEGIN_CFG\n')
-        f.write('Size\n')
-        f.write(f'   {size}\n')
-        f.write('SuperCell\n')
-        for i in range(3):
-            lat = structure.getCell().getCellVectors()
-            f.write(' %13f %13f %13f\n' % (lat[i, 0], lat[i, 1], lat[i, 2]))
-        if forces is not None:
-            f.write(atstr1)
-        else:
-            f.write(atstr2)
-        atomTypes = [specorder.index(el.short_name) for el in structure.getAtomTypes()]
-        positions = structure.getCartesianCoordinates()
-        for i in range(size):
-            if forces is not None:
-                f.write('         %4d %4d %13f %13f %13f %11.8e %11.8e %11.8e\n' %
-                        (i + 1, atomTypes[i], positions[i, 0], positions[i, 1], positions[i, 2],
-                         forces[i, 0], forces[i, 1], forces[i, 2]))
-            else:
-                f.write('         %4d %4d %13f %13f %13f\n' %
-                        (i + 1, atomTypes[i], positions[i, 0], positions[i, 1], positions[i, 2]))
-        if energy is not None:
-            f.write(' Energy\n   %20f\n' % energy)
-        if stresses is not None:
-            f.write(' PlusStress:  xx           yy           zz           yz           xz           xy\n')
-            f.write('         %11f %11f %11f %11f %11f %11f\n' %
-                    (stresses[0], stresses[1], stresses[2],
-                     stresses[3], stresses[4], stresses[5]))
-        f.write('END_CFG\n')
-
-    @classmethod
-    def saveMLIPsample(cls, filename, specorder, sample):
-        content = io.StringIO('')
-        for system in sample:
-            cls.saveMLIPcfg(content, specorder, **system)
-        content.seek(0)
-        with open(filename, "wt") as f:
-            shutil.copyfileobj(content, f)
-
-    @classmethod
-    def writePOSCAR(cls, filename, structure, label):
-        structure = structure.getTrigonalizedCellStructure()
-        coordinates = structure.getCartesianCoordinates()
-        cell = structure.getCell().getEnvelopeCell(coordinates, 10)
-        coordinates = cell.center(coordinates)
-        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
-        write_vasp(filename, atoms, label=label, direct=True, vasp5=True, long_format=False)
-
-    @classmethod
-    def writePOSCARS(cls, filename, structures, labels):
-        content = io.StringIO('')
-        for structure, label in zip(structures, labels):
-            cls.writePOSCAR(content, structure, label)
-        content.seek(0)
-        with open(filename, "wt") as f:
-            shutil.copyfileobj(content, f)
-
-    @classmethod
-    def writeXYZ(cls, filename, structure, label=''):
-        coordinates = structure.getCartesianCoordinates()
-        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=None)
-        write(filename, atoms, format='xyz', comment=label)
 
     @classmethod
     def writeAtomicStructure(cls, filename, system: dict):
@@ -345,7 +192,7 @@ class AtomisticRepresentation(object):
             coordinates = structure.getCartesianCoordinates()
             sortIndices = np.argsort(atomTypes)
             reversedIndices = np.argsort(sortIndices)
-            structure = cls.structureType(atomTypes[sortIndices], coordinates[sortIndices], structure.getCell())
+            structure = AtomicStructureRepresentation.structureType(atomTypes[sortIndices], coordinates[sortIndices], structure.getCell())
             structures.append(structure)
             labels.append(system['.label'])
             d = {'filename': filename.name, 'index': i}
@@ -367,58 +214,10 @@ class AtomisticRepresentation(object):
                     d['environments'].append(' '.join(f'{ind}' for ind in eInds))
                 d['fixed'] = ' '.join(f'{ind}' for ind in disassembler.allFixedIndices)
             descriptions.append(d)
-        cls.writePOSCARS(filename, structures, labels)
+        AtomicStructureRepresentation.writePOSCARS(filename, structures, labels)
         if printUSPEX:
             with open(f'{filename}.uspex', 'wt') as f:
                 f.write(yaml.safe_dump(descriptions))
-
-
-    @classmethod
-    def readPOSCAR(cls, filename, pbc=(1, 1, 1)):
-        atoms = read_vasp(filename)
-        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
-        cell = cls.cellType(atoms.get_cell().array, pbc)
-        coordinates = atoms.get_positions()
-        return cls.structureType(atomTypes, coordinates, cell)
-
-    @classmethod
-    def readPOSCARS(cls, filename):
-        all_systems = []
-        with open(filename, 'rt') as f:
-            while True:
-                try:
-                    all_systems.append(AtomisticRepresentation.readPOSCAR(f))
-                except Exception:
-                    break
-        return all_systems
-
-    @classmethod
-    def readMol(cls, filename):
-        molDct = read_molecule(filename)
-        atomTypes = [cls.atomType(s) for s in molDct['symbols']]
-        coordinates = molDct['positions']
-        zmatrixConfig = molDct['configZMatrix']
-        return cls.structureType(atomTypes, coordinates, zmatrixConfig=zmatrixConfig)
-
-
-    @classmethod
-    def readXYZ(cls, filename):
-        atoms = read(filename, format='xyz')
-        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
-        coordinates = atoms.get_positions()
-        cell = cls.cellType.initFromCellParameters((0, 0, 0)).getEnvelopeCell(coordinates)
-        return cls.structureType(atomTypes, coordinates, cell)
-
-    @classmethod
-    def readXYZs(cls, filename):
-        all_atoms = read(filename, index=':', format='xyz')
-        all_systems = []
-        dummy_cell = cls.cellType.initFromCellParameters((0, 0, 0))
-        for atoms in all_atoms:
-            all_systems.append(cls.structureType([cls.atomType(s) for s in atoms.get_chemical_symbols()],
-                                                 atoms.get_positions(),
-                                                 dummy_cell.getEnvelopeCell(atoms.get_positions())))
-        return all_systems
 
     @classmethod
     def readAtomicStructure(cls, filename) -> dict:
@@ -431,7 +230,7 @@ class AtomisticRepresentation(object):
         if filename.suffix == '.uspex':
             with open(filename) as f:
                 descriptions = yaml.safe_load(f.read())
-            files = {name: cls.readPOSCARS(directory/name)
+            files = {name: AtomicStructureRepresentation.readPOSCARS(directory/name)
                      for name in np.unique([s['filename'] for s in descriptions])}
             systems = []
             for d in descriptions:
@@ -462,7 +261,7 @@ class AtomisticRepresentation(object):
                 systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
         else:
             systems = [cls.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))).disassemble(structure)
-                       for structure in cls.readPOSCARS(filename)]
+                       for structure in AtomicStructureRepresentation.readPOSCARS(filename)]
         return systems
 
     @classmethod
