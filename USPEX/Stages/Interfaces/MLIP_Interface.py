@@ -76,14 +76,15 @@ class MLIP_Interface:
         with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
-        if 'trajectory' in system:
-            sample = system['trajectory']
-        elif 'population' in system:
-            sample = []
-            for individual in system['population']:
-                sample.extend(s for s in individual['trajectory'] if not s['isBad'])
-        else:
-            raise RuntimeError('No mlip sample in system.')
+        sample = system.getProperty('trajectory', suffix='intermediate')
+        # if 'trajectory' in system:
+        #     sample = system['trajectory']
+        # elif 'population' in system:
+        #     sample = []
+        #     for individual in system['population']:
+        #         sample.extend(s for s in individual['trajectory'] if not s['isBad'])
+        # else:
+        #     raise RuntimeError('No mlip sample in system.')
         self.atomisticRepresentation.saveMLIPsample(calcFolder/self.in_cfg_file, self.specorder, sample)
 
         shutil.copy2(self.potential, calcFolder)
@@ -116,7 +117,7 @@ class MLIP_Interface:
     def readOutput(self, system, calcFolder: Path):
         if 'sample' in self.targetProperties:
             sample = self.atomisticRepresentation.readMLIPsample(calcFolder/self.out_cfg_file, self.specorder)
-            system.setProperty('sample', sample)
+            system.setProperty('sample', sample, suffix=self.tag)
         if 'potential' in self.targetProperties:
             shutil.copy2(calcFolder/self.potential.name, self.potential)
         with open(calcFolder/self.in_cfg_file, 'r') as f:

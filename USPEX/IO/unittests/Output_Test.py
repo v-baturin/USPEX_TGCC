@@ -5,7 +5,8 @@ import shutil
 
 from pathlib import Path
 
-from ...components import GlobalOptimizer, AtomisticRepresentation, AtomisticPoolEntry
+from ...Optimizers.PoolEntry import PoolEntry
+from ...components import GlobalOptimizer, AtomisticRepresentation
 from ..OutputRepresentation import OutputRepresentation
 
 TESTPATH = Path(__file__).parent
@@ -22,13 +23,13 @@ class Output_Test(unittest.TestCase):
                                       'compositionSpace': {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]],
                                                            'range': [[1, 1]]},
                                       'cellUtility': {'pbc': (1,1,1)},
-                                      'radialDistributionUtility': {'symbols': ['Mg', 'Al', 'O']}
+                                      'radialDistributionUtility': {'symbols': ['Mg', 'Al', 'O'], 'suffix': 5}
                                       },
                            'fingerprintUtility': 'radialDistributionUtility',
-                           'optType': 'enthalpy',
+                           'optType': '.enthalpy.5',
                            'stopFitness': -655.062,
                            'selection': {'type': 'USPEXClassic', 'popSize': 10,
-                                         'optType': ('aging', 'enthalpy'),
+                                         'optType': ('aging', '.enthalpy.5'),
                                          'fractions': {'heredity': [0.0, 1.0, 0.5],
                                                        'twinning': [0.0, 1.0, 0.1],
                                                        'softmodemutation': [0.0, 1.0, 0.1],
@@ -45,44 +46,64 @@ class Output_Test(unittest.TestCase):
         stopCrit = 3
         numParallelCalcs = 2
         output = {
+            'stages': ['1', '2', '3', '4', '5'],
             'columns': [
-                ('enthalpy', 'Enthalpy (eV)'),
-                ('cellUtility.volume', 'Volume (A^3)'),
-                ('cellUtility.symmetry', 'SYMMETRY (N)')
+                ('.enthalpy.5', 'Enthalpy (eV)'),
+                ('cellUtility.volume.5', 'Volume (A^3)'),
+                ('cellUtility.symmetry.5', 'SYMMETRY (N)'),
+            ],
+            'presentConvexHull': False,
+            'presentPareto': (),
+            'toDraw': [
+                ('dep', '.enthalpy.5', 'per_atom', 'ID', 'raw'),
+                ('dep', '.enthalpy.5', 'raw', 'ID', 'raw'),
+                ('dep', '.enthalpy.5', 'per_atom', 'cellUtility.volume.5', 'per_atom'),
+                ('stat', '.enthalpy.5', 'per_atom', '', ''),
             ]
         }
 
         infos = []
-        optimizers = []
-        populations = []
-        systems = {}
-        extensions = GlobalOptimizer(**optimizerConfig).target.propertyExtensions
+        optimizer = GlobalOptimizer(**optimizerConfig)
+        extensions = optimizer.target.propertyExtensions
+
         for gen in range(numGenerations):
             for i in range(popSize):
-                system = []
-                for j in range(numStages + 1):
+                with open(TESTPATH / f"output_data/system{gen * popSize + i}s0", "r") as f:
+                    structure = json.load(f)
+                structure.update(AtomisticRepresentation.readAtomicStructure(
+                    TESTPATH / f"output_data/system{gen * popSize + i}s0.vasp"))
+                system = PoolEntry(extensions=extensions, **structure)
+                optimizer.pool.allSystems[system.ID] = system
+                for j in range(numStages):
                     try:
-                        with open(TESTPATH/f"output_data/system{gen * popSize + i}s{j}", "r") as f:
+                        with open(TESTPATH/f"output_data/system{gen * popSize + i}s{j+1}", "r") as f:
                             structure = json.load(f)
-                        structure.update(AtomisticRepresentation.readAtomicStructure(TESTPATH/f"output_data/system{gen*popSize+i}s{j}.vasp"))
-                        structure = AtomisticPoolEntry(extensions=extensions, **structure)
-                        system.append(structure)
+                        structure.update(AtomisticRepresentation.readAtomicStructure(TESTPATH/f"output_data/system{gen*popSize+i}s{j+1}.vasp"))
+                        for key, value in structure.items():
+                            if key == 'ID':
+                                assert value == system.ID
+                                continue
+                            prefix, prop = key.split('.')
+                            system.setProperty(prop, value, prefix=prefix, suffix=str(j+1))
                     except FileNotFoundError:
                         break
-                systems[system[0]['ID']] = system
+                system.getProperty('structure', prefix='atomistic', suffix='5')
+                system.getProperty('structure', prefix='atomistic', suffix='origin')
             with open(TESTPATH/f"output_data/analisis{gen}", "r") as f:
                 infos.append(json.load(f))
             with open(TESTPATH/f"output_data/targetState{gen}", "r") as f:
                 targetState = json.load(f)
-                optimizer = GlobalOptimizer(**optimizerConfig)
                 for ID in targetState[1]:
-                    system = systems[ID][-1]
-                    optimizer.pool.allSystems[ID] = system
-                    system.setProperty('isBad', False)
+                    optimizer.pool.allSystems[ID].setProperty('isBad', False, suffix='5')
+                    if ID not in optimizer.pool.goodSystemIDs:
+                        optimizer.pool.goodSystemIDs.append(ID)
                 optimizer.best = set(targetState[0])
-                optimizers.append(optimizer)
             with open(TESTPATH/f"output_data/population{gen}", "r") as f:
-                populations.append([systems[ID][-1] for ID in json.load(f)])
+                population = [optimizer.pool.allSystems[ID] for ID in json.load(f)]
+            optimizer.pool.generations.append(dict(
+                bestSystems=optimizer.best,
+                allSystems=population
+            ))
 
         representation = OutputRepresentation(optimizer, optimizer=optimizerConfig,
                                               stages=stages, numParallelCalcs=numParallelCalcs,
@@ -90,8 +111,8 @@ class Output_Test(unittest.TestCase):
                                               path=TESTPATH/folder_name,
                                               output=output)
 
-        representation.presentSystems(systems, optimizers[-1])
-        representation.presentOutput(populations, optimizers, optimizers[-1], printDate=False)
+        representation.presentSystems(optimizer)
+        representation.presentOutput(optimizer, printDate=False)
 
         dcmp = filecmp.dircmp(TESTPATH/folder_name_ref, TESTPATH/folder_name)
         self.assertEqual(len(dcmp.diff_files), 0)

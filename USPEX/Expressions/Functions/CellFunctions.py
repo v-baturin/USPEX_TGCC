@@ -14,7 +14,7 @@ class CellFunctions:
 
         :return: calculated volume of system.
         """
-        return system['cell'].getVolume()
+        return system['atomistic.cell'].getVolume()
 
     @staticmethod
     def area(system):
@@ -25,7 +25,7 @@ class CellFunctions:
 
         :return: calculated area of system.
         """
-        return system['cell'].getArea()
+        return system['atomistic.cell'].getArea()
     
     @staticmethod
     def length(system):
@@ -36,7 +36,7 @@ class CellFunctions:
 
         :return: calculated length of system.
         """
-        return system['cell'].getLength()
+        return system['atomistic.cell'].getLength()
 
     def symmetry(self, system):
         """
@@ -46,7 +46,7 @@ class CellFunctions:
 
         :return: calculated symmetry of system.
         """
-        structure = system.getAtomicStructure()
+        structure = system['atomistic.structure']
         cell = structure.getCell()
         lattice = cell.getCellVectors()
         coordinates = structure.getFractionalCoordinates()

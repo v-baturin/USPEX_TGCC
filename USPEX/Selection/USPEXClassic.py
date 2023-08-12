@@ -32,8 +32,8 @@ class Autofrac(object):
         self.weightsLast = copy(weightsLast)
         self.weightsBest = Counter()
         for system in best:
-            if system['howCome'] != 'Seeds' and system in newFoundSystems:
-                self.weightsBest[system['howCome']] += 1
+            if system['.howCome.origin'] != 'Seeds' and system in newFoundSystems:
+                self.weightsBest[system['.howCome.origin']] += 1
 
         self.initWeights = {}
         self.minFracs = {}
@@ -105,7 +105,7 @@ class USPEXClassic(object):
         else:
             self.initialPopSize = popSize
         self.bestFrac = bestFrac
-        self.howManyDiverse = howManyDiverse if howManyDiverse else np.round(0.15*self.popSize)
+        self.howManyDiverse = howManyDiverse if howManyDiverse else int(np.round(0.15*self.popSize))
         self.diversityTolerance = diversityTolerance
         self.globalParentsPool = globalParentsPool
         self._mostDiverse = []
@@ -175,8 +175,8 @@ class USPEXClassic(object):
                             self.pool.assignID(offspring)
                             offspring.setProperty('howCome', howCome)
                             offspring.setProperty('parent', f"{parent['ID']}")
-                            logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
-                                        f"from {offspring['parent']} parent.")
+                            logger.info(f"System {offspring['ID']} successfully created by {offspring['.howCome.origin']} operator "
+                                        f"from {offspring['.parent.origin']} parent.")
                         population.extend(offsprings)
                         howMany -= len(offsprings)
                         actualParents.append(parent)
@@ -209,8 +209,8 @@ class USPEXClassic(object):
                             self.pool.assignID(offspring)
                             offspring.setProperty('howCome', howCome)
                             offspring.setProperty('parent', f"{parent1['ID']} {parent2['ID']}")
-                            logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator "
-                                        f"from {offspring['parent']} parents.")
+                            logger.info(f"System {offspring['ID']} successfully created by {offspring['.howCome.origin']} operator "
+                                        f"from {offspring['.parent.origin']} parents.")
                         population.extend(offsprings)
                         howMany -= len(offsprings)
                         actualParents.extend([parent1, parent2])
@@ -237,7 +237,7 @@ class USPEXClassic(object):
                         self.pool.assignID(offspring)
                         offspring.setProperty('howCome', howCome)
                         offspring.setProperty('parent', "None")
-                        logger.info(f"System {offspring['ID']} successfully created by {offspring['howCome']} operator.")
+                        logger.info(f"System {offspring['ID']} successfully created by {offspring['.howCome.origin']} operator.")
                     population.extend(offsprings)
                     howMany -= len(offsprings)
                 except RuntimeError as e:
@@ -256,7 +256,7 @@ class USPEXClassic(object):
                 self.pool.assignID(seed)
                 seed.setProperty('howCome', 'Seeds')
                 seed.setProperty('parent', "None")
-                logger.info(f"Structure {seed['ID']} created from seed {seed['filename']}.")
+                logger.info(f"Structure {seed['ID']} created from seed {seed['.filename.origin']}.")
             population.extend(seeds)
 
         return population

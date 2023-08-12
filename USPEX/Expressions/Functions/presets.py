@@ -1,10 +1,10 @@
 presetFitness = {
     ('aging', 'values'): ('plus', 'values', ('multiply', ('minus', ('mean', 'values'), ('min', 'values')),
-                                             'antiseeds.corrections')),
+                                             'antiseeds.corrections.origin')),
     ('getRelCCHSpace', 'values'): ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
-                                                          'simpleMoleculeUtility.composition'), 'values'),
+                                                          'simpleMoleculeUtility.composition.origin'), 'values'),
     ('getAbsCCHSpace', 'values'): ('getAbsoluteCHSpace', ('compositionSpace.numBlocksFromCompositions',
-                                                          'simpleMoleculeUtility.composition'), 'values'),
+                                                          'simpleMoleculeUtility.composition.origin'), 'values'),
     ('heightCCH', 'values'): ('convexHullHeight', ('getRelCCHSpace', 'values')),
     ('heightCS', 'values'): ('simpleHeight', ('getRelCCHSpace', 'values')),
     'energyCCH': ('heightCCH', 'energy'),

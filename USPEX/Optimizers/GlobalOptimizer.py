@@ -10,6 +10,7 @@ Class implementing global optimizer
 import logging
 from copy import copy
 from typing import List
+from itertools import chain
 
 from .SystemPool import SystemPool
 from .Target import Target, TargetType
@@ -98,6 +99,10 @@ class GlobalOptimizer(object):
         else:
             self.stopSystems = None
 
+        self.goodSystemsSuffixes = set(
+            prop.split('.')[-1] for prop in _extract(self.optType) + _extract(self.createPopulation.optType)
+        )
+
         self.best = set()
         self._isStable = False
         self._isGoalReached = False
@@ -123,10 +128,17 @@ class GlobalOptimizer(object):
         :type population: list
         :param population: list of systems which allows to update our knowledge about target space.
         """
-        self.pool.update(population)
+        goodSystems = []
+        for system in population:
+            for suffix in self.goodSystemsSuffixes:
+                if system[f'.isBad.{suffix}']:
+                    break
+            else:
+                self.pool.goodSystemIDs.append(system.ID)
+                goodSystems.append(system)
         self.ExpressionEvaluator.calculate(self.optType, self.pool.goodSystems, self.pool.extensions)
         self.ExpressionEvaluator.calculate(self.createPopulation.optType, self.pool.goodSystems, self.pool.extensions)
-        population = [system for system in population if not system['isBad']]
+        population = goodSystems
         assert population, 'All systems in population failed relaxation.'
         self._markDuplicates(population)
         self.pool.append(population)
@@ -139,6 +151,7 @@ class GlobalOptimizer(object):
         else:
             self._isStable = False
             self.best = best
+        self.pool.generations[-1]['bestSystems'] = self.best
         if self.stopFitness is not None:
             for ID in self.best:
                 if round(self.pool.allSystems[self.pool.getOriginalID(ID)][self.optType], ndigits=3)\
@@ -171,22 +184,16 @@ class GlobalOptimizer(object):
                     if system[applyPresetsRecursive(self.optType)] < ref_system[applyPresetsRecursive(self.optType)]:
                         self.fingerprintUtility.clean(ref_system)
                         ref_system.setProperty('originalID', system['ID'])
-                        if 'duplicates' in ref_system:
-                            system.setProperty('duplicates', ref_system['duplicates'])
-                            ref_system.delProperty('duplicates')
-                            for ID in system['duplicates']:
-                                self.pool.allSystems[ID].setProperty('originalID', system['ID'])
-                            if ref_system['ID'] not in system['duplicates']:
-                                system['duplicates'].append(ref_system['ID'])
-                        else:
-                            system.setProperty('duplicates', [ref_system['ID']])
+                        system.duplicates = ref_system.duplicates
+                        for ID in system.duplicates:
+                            self.pool.allSystems[ID].originalID = system['ID']
+                        if ref_system['ID'] not in system.duplicates:
+                            system.duplicates.append(ref_system['ID'])
                     else:
                         self.fingerprintUtility.clean(system)
                         system.setProperty('originalID', ref_system['ID'])
-                        if 'duplicates' in ref_system and system['ID'] not in ref_system['duplicates']:
-                            ref_system['duplicates'].append(system['ID'])
-                        else:
-                            ref_system.setProperty('duplicates', [system['ID']])
+                        if system['ID'] not in ref_system.duplicates:
+                            ref_system.duplicates.append(system['ID'])
                     break
 
     @property
@@ -196,3 +203,13 @@ class GlobalOptimizer(object):
     @property
     def isGoalReached(self):
         return self._isGoalReached
+
+
+def _extract(expression):
+    if isinstance(expression, str):
+        return [expression]
+    if isinstance(expression, tuple):
+        func, *arguments = expression
+        return list(set(chain(*[_extract(arg) for arg in arguments])))
+    else:
+        return []

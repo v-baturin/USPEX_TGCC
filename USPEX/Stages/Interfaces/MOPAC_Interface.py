@@ -64,7 +64,7 @@ class MOPAC_Interface:
         :param system:
         :param calcFolder:
         """
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -81,7 +81,8 @@ class MOPAC_Interface:
             tuple_to_format = (symbol.short_name, ) +\
                               tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
                                                                precision=6) for c in coord)
-            if i in system['disassembler'].allFixedIndices:
+            disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+            if i in disassembler.allFixedIndices:
                 content_to_write += '%4s %12s 0 %12s 0 %12s 0\n' % tuple_to_format
             else:
                 content_to_write += '%4s %12s 1 %12s 1 %12s 1\n' % tuple_to_format
@@ -90,8 +91,9 @@ class MOPAC_Interface:
             if dim:
                 content_to_write += 'Tv %12.6f 1 %12.6f 1 %12.6f 1\n' % tuple(cell.getCellVectors()[i])
 
-        if system['externalPressure'] >= 0.05:
-            self.mop_input += f" P={system['externalPressure']:.2f}Gpa\n"
+        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        if externalPressure >= 0.05:
+            self.mop_input += f" P={externalPressure:.2f}Gpa\n"
 
         total_content = self.mop_input + '\n' + content_to_write + '\n'
 
@@ -122,13 +124,14 @@ class MOPAC_Interface:
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.updateAtomicStructure(self.readStructure(content, pbc))
+            system.setProperty('structure', self.readStructure(content, pbc), prefix='atomistic', suffix=self.tag)
+
 
         if 'enthalpy' in self.targetProperties:
             for line in content:
                 if 'TOTAL ENERGY' in line:
                     e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
-                    system.setProperty('enthalpy', float(e.group(1)))
+                    system.setProperty('enthalpy', float(e.group(1)), suffix=self.tag)
                     break
             else:
                 raise RuntimeError('Can not read enthalpy.')

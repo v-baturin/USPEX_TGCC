@@ -40,7 +40,7 @@ class SingleCrystalSpectrumAnalyzer(object):
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
-        structure = system.getAtomicStructure()
+        structure = system['atomistic.structure']
         elementList = list(structure.getComposition().keys())
 
         # cannot compute xraydistance if cell parameters differ from reference
@@ -90,7 +90,7 @@ class SingleCrystalSpectrumAnalyzer(object):
                 denominator += (1 / sigma_hkl ** 2) * i_hkl ** 2
 
             wR = np.sqrt(numerator / denominator)       # weighted R-factor
-            system.setProperty('singleCrystalSpectrumAnalyzer.xraydistance', wR)
+            system['singleCrystalSpectrumAnalyzer.xraydistance'] = wR
 
     @staticmethod
     def parse(hklFile: str):

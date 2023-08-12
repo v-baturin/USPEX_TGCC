@@ -82,7 +82,7 @@ class GULP_Interface:
 
         """
 
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
 
         files_to_delete = [Path.cwd()/'output', Path.cwd()/'optimized.structure']
         for f in files_to_delete:
@@ -146,7 +146,7 @@ class GULP_Interface:
                               tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
                                                                precision=6) for c in coord)
             if cell.dim == 2:
-                if i in system['disassembler'].allFixedIndices:
+                if i in system.getProperty('disassembler', prefix='atomistic', suffix='intermediate').allFixedIndices:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 1 1 1\n' % tuple_to_format
                 else:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 0 0 0\n' % tuple_to_format
@@ -155,8 +155,9 @@ class GULP_Interface:
 
         # Write part:
         total_content = self.goptions + '\n' + content_to_write + self.ginput + '\n'
-        if system['externalPressure'] >= 0.05:
-            total_content += f"pressure {system['externalPressure']:.1f}\n"
+        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        if externalPressure >= 0.05:
+            total_content += f"pressure {externalPressure:.1f}\n"
         total_content += 'dump every optimized.structure\n'
 
         with open(calcFolder/self.inputFile, 'wt') as f:
@@ -208,23 +209,22 @@ class GULP_Interface:
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
 
-        results = {}
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.updateAtomicStructure(self.readStructure(content, pbc))
+            system.setProperty('structure', self.readStructure(content, pbc), prefix='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
-            system.setProperty('enthalpy', self.readEnergy(content))
+            system.setProperty('enthalpy', self.readEnergy(content), suffix=self.tag)
         if 'stressTensor' in self.targetProperties:
-            system.setProperty('stressTensor', self.readStressTensor(content))
+            system.setProperty('stressTensor', self.readStressTensor(content), suffix=self.tag)
         if 'strains' in self.targetProperties:
-            system.setProperty('strains', self.readStrains(content))
+            system.setProperty('strains', self.readStrains(content), suffix=self.tag)
         if 'forces' in self.targetProperties:
-            system.setProperty('forces', self.readForces(content, len(system['molecules'])))
+            system.setProperty('forces', self.readForces(content, len(system['molecules'])), suffix=self.tag)
         if 'dielectricTensor' in self.targetProperties:
-            system.setProperty('dielectricTensor', self.readDielectricProperties(content))
+            system.setProperty('dielectricTensor', self.readDielectricProperties(content), suffix=self.tag)
         if 'elasticConstants' in self.targetProperties:
-            system.setProperty('elasticMatrix', self.readElasticMatrix(content))
+            system.setProperty('elasticMatrix', self.readElasticMatrix(content), suffix=self.tag)
 
     def readStructure(self, content, pbc):
         # This routine is to read crystal structure from GULP output

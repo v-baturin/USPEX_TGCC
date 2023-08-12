@@ -247,7 +247,7 @@ class BondUtility:
             # TODO Why we had this less 0.5A and not more than 5A (usually)
             if dist < self.lowerBond or j < i:
                 continue
-            bonds.append(Bond(atom1=atoms[i], atom2=atoms[j], dir2=dir))
+            bonds.append(Bond(atom1=atoms[i], atom2=atoms[j], dir2=tuple(dir)))
 
         tmp_bonds = sorted(bonds, key=lambda x: x.delta)
 

@@ -13,7 +13,8 @@ import filecmp
 
 from pathlib import Path
 
-from ....components import AtomisticRepresentation, MLIP_Interface, AtomisticPoolEntry
+from ....Optimizers.PoolEntry import PoolEntry
+from ....components import AtomisticRepresentation, MLIP_Interface, Atomistic
 
 
 HOMEPATH = Path(__file__).parent
@@ -62,13 +63,16 @@ class MLIP_train_Test(unittest.TestCase):
         self.interface = MLIP_Interface(tag='0', mode='train', potential=self.trainFolder/'24g.mtp',
                                         specorder=['Mo', 'S'], trainingSet=self.trainFolder/'ts.cfg',
                                         args=SPECIFICPATH/'mlip_args_0')
+        atomistic = Atomistic()
+        self.extensions = dict(
+            atomistic=atomistic.propertyExtension(atomistic)
+        )
+
 
     def test_init(self):
-        system = AtomisticPoolEntry(
-            ID=0,
-            trajectory = AtomisticRepresentation.readMLIPsample(SPECIFICPATH/'configurations.cfg',
-                                                                specorder=['Mo', 'S'])
-        )
+        trajectory = AtomisticRepresentation.readMLIPsample(SPECIFICPATH/'configurations.cfg', specorder=['Mo', 'S'])
+        system = PoolEntry(extensions=self.extensions, ID=0)
+        system.setProperty('trajectory', trajectory, suffix='intermediate')
         calcFolder = HOMEPATH/'MLIP_INIT'
         calcFolder.mkdir(exist_ok=True)
         args = self.interface.prepareLocalCalculation(system=system, calcFolder=calcFolder)
@@ -78,9 +82,7 @@ class MLIP_train_Test(unittest.TestCase):
 
 
     def test_sample(self):
-        system = AtomisticPoolEntry(
-        )
-
+        system = PoolEntry(extensions=self.extensions, ID=0)
         calcFolder=HOMEPATH/'MLIP_REF'
         self.interface.readOutput(system=system, calcFolder=calcFolder)
         self.assertTrue(filecmp.cmp(self.trainFolder/'ts.cfg', calcFolder/'input.cfg'))
