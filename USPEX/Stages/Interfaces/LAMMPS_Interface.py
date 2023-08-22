@@ -11,6 +11,7 @@ import shutil
 
 from pathlib import Path
 from typing import List
+from ase.io import read
 
 
 logger = logging.getLogger(__name__)
@@ -39,11 +40,11 @@ class LAMMPS_Interface:
     
     DEFAULT_SLEEP_TIME = 30
 
-    aseAdapterType = None
+    AtomicStructureRepresentation = None
 
     @classmethod
-    def registerTypes(cls, aseAdapterType):
-        cls.aseAdapterType = aseAdapterType
+    def registerTypes(cls, AtomicStructureRepresentation):
+        cls.AtomicStructureRepresentation = AtomicStructureRepresentation
 
     def __init__(self, tag: str, specorder: List[str], lammps_in: str = None, mlip_in: str = None, mlip: str = None,
                  libs: List[str] = None, targetProperties: list = None, **kwargs):
@@ -82,7 +83,6 @@ class LAMMPS_Interface:
         self.libs = [] if libs is None else [Path(lib) for lib in libs]
         assert all([lib.exists() for lib in self.libs])
 
-        self.adapter = self.aseAdapterType()
         self.failedSystems = []
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
@@ -97,8 +97,14 @@ class LAMMPS_Interface:
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
-        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
-        self.adapter.write(structure, disassembler.allFixedIndices, f"EA{system['ID']}", self.specorder, calcFolder)
+        atoms = self.AtomicStructureRepresentation.toAtoms(structure)
+        filename = calcFolder / self.data_file
+        atoms.write(filename, format='lammps-data', specorder=self.specorder)
+        with open(filename, 'rt') as f:
+            content = f.readlines()
+        content[0] = f"EA{system['ID']}\n"
+        with open(filename, 'wt') as f:
+            f.writelines(content)
 
         with open(self.lammps_in, 'r') as f:
             content = f.readlines()
@@ -185,27 +191,39 @@ class LAMMPS_Interface:
     def readOutput(self, system, calcFolder: Path):
         with open(calcFolder / 'pbc', 'rt') as f:
             pbc = tuple(int(c) for c in f.read().split())
-        aseData = self.adapter.read(calcFolder, self.specorder, pbc)
+        if calcFolder.joinpath(self.dump_file).exists():
+            atoms = read(calcFolder / self.dump_file, format='lammps-dump-text')
+            atoms.set_pbc(pbc)
+            atoms.set_chemical_symbols(self.specorder[i - 1] for i in atoms.get_atomic_numbers())
+            structure = self.AtomicStructureRepresentation.fromAtoms(atoms)
+            results = atoms.get_calculator().results
+        else:
+            results = None
+            structure = None
+
         properties = self.readProperties(calcFolder)
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', aseData['structure'], extension='atomistic', suffix=self.tag)
+            system.setProperty('structure', structure, extension='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             if properties is not None:
                 system.setProperty('enthalpy', properties['Enthalpy'], suffix=self.tag)
-            elif aseData is not None:
-                system.setProperty('enthalpy', aseData['results'].getEnthalpy(system['externalPressure']), suffix=self.tag)
+            elif results is not None:
+                if 'enthalpy' in results:
+                    system.setProperty('enthalpy', results['energy'], suffix=self.tag)
+                else:
+                    system.setProperty('energy', results['energy'], suffix=self.tag)
             else:
                 raise RuntimeError("Bad lammps output.")
         if 'energy' in self.targetProperties:
             if properties is not None:
                 system.setProperty('energy', properties['TotEng'])
-            elif aseData is not None:
-                system.setProperty('energy', aseData['results'].results['energy'], suffix=self.tag)
+            elif results is not None:
+                system.setProperty('energy', results['energy'], suffix=self.tag)
             else:
                 raise RuntimeError("Bad lammps output.")
         if 'forces' in self.targetProperties:
-            if aseData is not None:
-                system.setProperty('forces', aseData['results'].results['forces'], suffix=self.tag)
+            if results is not None:
+                system.setProperty('forces', results['forces'], suffix=self.tag)
             else:
                 raise RuntimeError("Bad lammps output.")
 

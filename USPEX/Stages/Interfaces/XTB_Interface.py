@@ -5,13 +5,17 @@ USPEX.Stages.XTB_Interface
 """
 
 import logging
-from pathlib import Path
 import numpy as np
+
+from pathlib import Path
+from ase.io.gen import read_gen, write_gen
+
 
 logger = logging.getLogger(__name__)
 HARTREE_TO_EV = 27.211386245988 #https://physics.nist.gov/cgi-bin/cuu/Value?hrev
 GPA_TO_AU = 1.0/29421.015697
 ANGSTROM_TO_BOHR = 1.0/0.529177210903
+
 
 class XTB_Interface:
     """
@@ -26,11 +30,11 @@ class XTB_Interface:
 
     out_geometry_file = 'xtbopt.gen'
 
-    aseAdapterType = None
+    AtomicStructureRepresentation = None
 
     @classmethod
-    def registerTypes(cls, aseAdapterType):
-        cls.aseAdapterType = aseAdapterType
+    def registerTypes(cls, AtomicStructureRepresentation):
+        cls.AtomicStructureRepresentation = AtomicStructureRepresentation
 
     def __init__(self, tag: str, xtb_input: str = None, targetProperties: list = None, **kwargs):
 
@@ -43,7 +47,6 @@ class XTB_Interface:
         with open(xtb_input, 'r') as f:
             self.xtb_input = f.read()
 
-        self.adapter = self.aseAdapterType()
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : Path):
@@ -52,7 +55,8 @@ class XTB_Interface:
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
-        self.adapter.write_structure(structure, self.geometry_file, calcFolder)
+        atoms = self.AtomicStructureRepresentation.toAtoms(structure)
+        write_gen(calcFolder / self.geometry_file, atoms)
 
         content_to_write = ''
         disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
@@ -95,7 +99,9 @@ class XTB_Interface:
         if 'structure' in self.targetProperties:
             with open(calcFolder / 'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.adapter.read_structure(self.out_geometry_file, calcFolder, pbc),
+            atoms = read_gen(calcFolder / self.geometry_file)
+            atoms.set_pbc(pbc)
+            system.setProperty('structure', self.AtomicStructureRepresentation.fromAtoms(atoms),
                                extension='atomistic', suffix=self.tag)
 
         if 'energy' in self.targetProperties:

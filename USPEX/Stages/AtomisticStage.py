@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 class AtomisticStage:
 
+    EV_PER_CUBIC_ANGSTREM_PER_GPA = 1 / 160.21766208
+
     executorType = None
 
     @classmethod
@@ -22,6 +24,7 @@ class AtomisticStage:
         self.target = target
         self.environmentStyle = environmentStyle
         self.vacuumSize = vacuumSize
+        self.targetProperties = kwargs['targetProperties']
         self.executor = self.executorType(tag=tag, **kwargs)
 
     async def run(self, system: PoolEntry):
@@ -47,6 +50,14 @@ class AtomisticStage:
         await self.executor.run(system)
         self.systemCheckAndFix(system)
         self.checkAndFixMolecules(system)
+        if 'enthalpy' in self.targetProperties and 'enthalpy' not in system.system[self.tag]:
+            structure = system.getProperty('structure', extension='atomistic', suffix=self.tag)
+            pressure = system.getProperty('externalPressure', suffix='origin')
+            energy = system.getProperty('energy', suffix=self.tag)
+            enthalpy = energy + structure.getVolume() * pressure * self.EV_PER_CUBIC_ANGSTREM_PER_GPA
+            system.setProperty('enthalpy', enthalpy, suffix=self.tag)
+
+
 
     def systemCheckAndFix(self, system):
         """

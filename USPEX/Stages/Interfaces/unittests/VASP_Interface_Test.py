@@ -126,5 +126,5 @@ class VASP_interface_MD_Test(unittest.TestCase):
         self.assertGreater(len(system['.trajectory.1']), 1)
         for data in system['.trajectory.1']:
             self.assertTrue(len(data['structure']) == 3)
-            self.assertTrue('energy' in data['results'].results)
-            self.assertTrue('forces' in data['results'].results)
+            self.assertTrue('energy' in data['results'])
+            self.assertTrue('forces' in data['results'])

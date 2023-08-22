@@ -208,3 +208,20 @@ class AtomicStructureRepresentation:
                                                  atoms.get_positions(),
                                                  dummy_cell.getEnvelopeCell(atoms.get_positions())))
         return all_systems
+
+    @staticmethod
+    def toAtoms(structure) -> Atoms:
+        cell = structure.getCell()
+        return Atoms(symbols=[el.short_name for el in structure.getAtomTypes()],
+                     positions=structure.getCartesianCoordinates(),
+                     cell=cell.getCellVectors(), pbc=cell.getPBC())
+
+    @classmethod
+    def fromAtoms(cls, atoms: Atoms):
+        cellVectors = atoms.get_cell().array
+        pbc = atoms.get_pbc()
+        if np.allclose(cellVectors, 0) and sum(pbc) == 0:
+            cellVectors = np.eye(3)
+        return cls.structureType(atomTypes=[cls.atomType(s) for s in atoms.get_chemical_symbols()],
+                                 coordinates=atoms.get_positions(),
+                                 cell=cls.cellType(cellVectors, pbc))
