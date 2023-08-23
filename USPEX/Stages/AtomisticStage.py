@@ -24,7 +24,7 @@ class AtomisticStage:
         self.target = target
         self.environmentStyle = environmentStyle
         self.vacuumSize = vacuumSize
-        self.targetProperties = kwargs['targetProperties']
+        self.kwargs = kwargs
         self.executor = self.executorType(tag=tag, **kwargs)
 
     async def run(self, system: PoolEntry):
@@ -50,7 +50,8 @@ class AtomisticStage:
         await self.executor.run(system)
         self.systemCheckAndFix(system)
         self.checkAndFixMolecules(system)
-        if 'enthalpy' in self.targetProperties and 'enthalpy' not in system.system[self.tag]:
+        if 'targetProperties' in self.kwargs and 'enthalpy' in self.kwargs['targetProperties'] \
+                and 'enthalpy' not in system.system[self.tag]:
             structure = system.getProperty('structure', extension='atomistic', suffix=self.tag)
             pressure = system.getProperty('externalPressure', suffix='origin')
             energy = system.getProperty('energy', suffix=self.tag)
