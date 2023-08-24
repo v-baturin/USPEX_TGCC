@@ -14,6 +14,8 @@ from typing import Dict
 from collections import Counter
 
 from .Antiseeds import Antiseeds
+from ..Expressions.Functions.presets import applyPresetsRecursive
+
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +95,7 @@ class USPEXClassic(object):
         self.pool = pool
         self.target = target
         antiseeds = {} if antiseeds is None else antiseeds
-        self.pool.entryFactory.extensions['antiseeds'] = Antiseeds(**antiseeds)
+        self.pool.flavourFactory.extensions['antiseeds'] = Antiseeds(**antiseeds)
         self.fingerprintUtility = fingerprintUtility
         self.optType = optType
         self.fractions = fractions
@@ -125,8 +127,8 @@ class USPEXClassic(object):
         """
 
         if self.pool.generations:
-            if self.pool.entryFactory.extensions['antiseeds'].legacy:
-                self.pool.entryFactory.extensions['antiseeds'].payPenalties(self.pool.generations[-1]['allSystems'],
+            if self.pool.flavourFactory.extensions['antiseeds'].legacy:
+                self.pool.flavourFactory.extensions['antiseeds'].payPenalties(self.pool.generations[-1]['allSystems'],
                                                              self.pool.uniqueSystems, self.fingerprintUtility)
 
             population = list(self.pool.uniqueSystems) if self.globalParentsPool else \
@@ -151,6 +153,9 @@ class USPEXClassic(object):
         else:
             newStructures, parentsPool, tournament, popSize = [], [], [], self.initialPopSize
 
+        for VO in self.target.variationOperators:
+            if hasattr(VO, 'tune'):
+                VO.tune(parentsPool, applyPresetsRecursive(self.optType))
         autofrac = Autofrac(self.fractions, self.weightsLast, parentsPool, newStructures, self.target.variationOperators)
 
         population = []
@@ -170,14 +175,12 @@ class USPEXClassic(object):
                         break
                     try:
                         logger.debug(f"Trying {parent['ID']} parent.")
-                        offsprings = mutation(parent, self.pool.entryFactory)
+                        offsprings = mutation(parent, self.pool.flavourFactory)
                         for offspring in offsprings:
-                            self.pool.assignID(offspring)
                             offspring.setProperty('howCome', howCome)
                             offspring.setProperty('parent', f"{parent['ID']}")
-                            logger.info(f"System {offspring['ID']} successfully created by {offspring['.howCome.origin']} operator "
-                                        f"from {offspring['.parent.origin']} parent.")
-                        population.extend(offsprings)
+                            offspring.setProperty('isBad', False)
+                            population.append(self.pool.newEntry(offspring))
                         howMany -= len(offsprings)
                         actualParents.append(parent)
                     except RuntimeError as e:
@@ -204,14 +207,12 @@ class USPEXClassic(object):
                         break
                     try:
                         logger.debug(f"Trying {parent1['ID']} {parent2['ID']} parents.")
-                        offsprings = hybridization(parent1, parent2, self.pool.entryFactory)
+                        offsprings = hybridization(parent1, parent2, self.pool.flavourFactory)
                         for offspring in offsprings:
-                            self.pool.assignID(offspring)
                             offspring.setProperty('howCome', howCome)
                             offspring.setProperty('parent', f"{parent1['ID']} {parent2['ID']}")
-                            logger.info(f"System {offspring['ID']} successfully created by {offspring['.howCome.origin']} operator "
-                                        f"from {offspring['.parent.origin']} parents.")
-                        population.extend(offsprings)
+                            offspring.setProperty('isBad', False)
+                            population.append(self.pool.newEntry(offspring))
                         howMany -= len(offsprings)
                         actualParents.extend([parent1, parent2])
                     except RuntimeError as e:
@@ -232,13 +233,12 @@ class USPEXClassic(object):
                 if howMany <= 0:
                     break
                 try:
-                    offsprings = creation(self.pool.entryFactory)
+                    offsprings = creation(self.pool.flavourFactory)
                     for offspring in offsprings:
-                        self.pool.assignID(offspring)
                         offspring.setProperty('howCome', howCome)
                         offspring.setProperty('parent', "None")
-                        logger.info(f"System {offspring['ID']} successfully created by {offspring['.howCome.origin']} operator.")
-                    population.extend(offsprings)
+                        offspring.setProperty('isBad', False)
+                        population.append(self.pool.newEntry(offspring))
                     howMany -= len(offsprings)
                 except RuntimeError as e:
                     logger.debug(e, exc_info=True)
@@ -247,17 +247,17 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        if not self.pool.entryFactory.extensions['antiseeds'].legacy:
-            self.pool.entryFactory.extensions['antiseeds'].payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
+        if not self.pool.flavourFactory.extensions['antiseeds'].legacy:
+            self.pool.flavourFactory.extensions['antiseeds'].payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
 
         if self.target.seeds is not None:
-            seeds = self.target.seeds(self.pool.entryFactory)
+            seeds = self.target.seeds(self.pool.flavourFactory)
             for seed in seeds:
-                self.pool.assignID(seed)
                 seed.setProperty('howCome', 'Seeds')
                 seed.setProperty('parent', "None")
-                logger.info(f"Structure {seed['ID']} created from seed {seed['.filename.origin']}.")
-            population.extend(seeds)
+                seed.setProperty('isBad', False)
+                population.append(self.pool.newEntry(seed))
+                logger.info(f"Seed filename is {seed['.filename']}.")
 
         return population
 

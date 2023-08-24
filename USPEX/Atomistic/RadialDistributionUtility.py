@@ -174,17 +174,17 @@ class RadialDistributionUtility(object):
 
         """
         if f'radialDistribitionUtility.structureFingerprint.{self.suffix}' in system:
-            system.delProperty('structureFingerprint', prefix='radialDistribitionUtility', suffix=self.suffix)
+            system.delProperty('structureFingerprint', extension='radialDistribitionUtility', suffix=self.suffix)
         if f'radialDistribitionUtility.complexFingerprint.{self.suffix}' in system:
-            system.delProperty('complexFingerprint', prefix='radialDistribitionUtility', suffix=self.suffix)
+            system.delProperty('complexFingerprint', extension='radialDistribitionUtility', suffix=self.suffix)
         if f'radialDistribitionUtility.structureOrder.{self.suffix}' in system:
-            system.delProperty('structureOrder', prefix='radialDistribitionUtility', suffix=self.suffix)
+            system.delProperty('structureOrder', extension='radialDistribitionUtility', suffix=self.suffix)
         if f'radialDistribitionUtility.atomFingerprints.{self.suffix}' in system:
-            system.delProperty('atomFingerprints', prefix='radialDistribitionUtility', suffix=self.suffix)
+            system.delProperty('atomFingerprints', extension='radialDistribitionUtility', suffix=self.suffix)
         if f'radialDistribitionUtility.order.{self.suffix}' in system:
-            system.delProperty('order', prefix='radialDistribitionUtility', suffix=self.suffix)
+            system.delProperty('order', extension='radialDistribitionUtility', suffix=self.suffix)
         if f'radialDistribitionUtility.quasientropy.{self.suffix}' in system:
-            system.delProperty('quasientropy', prefix='radialDistribitionUtility', suffix=self.suffix)
+            system.delProperty('quasientropy', extension='radialDistribitionUtility', suffix=self.suffix)
 
     def calcFingerprint(self, system):
         """
@@ -395,12 +395,12 @@ class RadialDistributionUtility(object):
                 if len(comb) > 0:
                     sQE += weight[i] * tmp / len(comb)
 
-        system['radialDistribitionUtility.order'] = molOrder
-        system['radialDistribitionUtility.averageOrder'] = a_order
-        system['radialDistribitionUtility.structureOrder'] = s_order
-        system['radialDistribitionUtility.structureFingerprint'] = fingerprint
-        system['radialDistribitionUtility.complexFingerprint'] = complexFingerprint
-        system['radialDistribitionUtility.quasientropy'] = -sQE
+        system.setProperty('order', molOrder, extension='radialDistribitionUtility')
+        system.setProperty('averageOrder', a_order, extension='radialDistribitionUtility')
+        system.setProperty('structureOrder', s_order, extension='radialDistribitionUtility')
+        system.setProperty('structureFingerprint', fingerprint, extension='radialDistribitionUtility')
+        system.setProperty('complexFingerprint', complexFingerprint, extension='radialDistribitionUtility')
+        system.setProperty('quasientropy', -sQE, extension='radialDistribitionUtility')
 
     def dist(self, system1, system2):
         """

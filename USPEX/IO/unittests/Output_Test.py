@@ -5,8 +5,8 @@ import shutil
 
 from pathlib import Path
 
-from ...Optimizers.PoolEntry import PoolEntry
-from ...components import GlobalOptimizer, AtomisticRepresentation
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...components import GlobalOptimizer, Atomistic
 from ..OutputRepresentation import OutputRepresentation
 
 TESTPATH = Path(__file__).parent
@@ -70,25 +70,25 @@ class Output_Test(unittest.TestCase):
             for i in range(popSize):
                 with open(TESTPATH / f"output_data/system{gen * popSize + i}s0", "r") as f:
                     structure = json.load(f)
-                structure.update(AtomisticRepresentation.readAtomicStructure(
+                structure.update(Atomistic.readAtomicStructure(
                     TESTPATH / f"output_data/system{gen * popSize + i}s0.vasp"))
-                system = PoolEntry(extensions=extensions, **structure)
+                system = PoolEntry(structure['ID'], EntryFlavour(extensions=extensions, **structure))
                 optimizer.pool.allSystems[system.ID] = system
                 for j in range(numStages):
                     try:
                         with open(TESTPATH/f"output_data/system{gen * popSize + i}s{j+1}", "r") as f:
                             structure = json.load(f)
-                        structure.update(AtomisticRepresentation.readAtomicStructure(TESTPATH/f"output_data/system{gen*popSize+i}s{j+1}.vasp"))
+                        structure.update(Atomistic.readAtomicStructure(TESTPATH/f"output_data/system{gen*popSize+i}s{j+1}.vasp"))
                         for key, value in structure.items():
                             if key == 'ID':
                                 assert value == system.ID
                                 continue
                             prefix, prop = key.split('.')
-                            system.setProperty(prop, value, prefix=prefix, suffix=str(j+1))
+                            system.setProperty(prop, value, extension=prefix, suffix=str(j+1))
                     except FileNotFoundError:
                         break
-                system.getProperty('structure', prefix='atomistic', suffix='5')
-                system.getProperty('structure', prefix='atomistic', suffix='origin')
+                system.getProperty('structure', extension='atomistic', suffix='5')
+                system.getProperty('structure', extension='atomistic', suffix='origin')
             with open(TESTPATH/f"output_data/analisis{gen}", "r") as f:
                 infos.append(json.load(f))
             with open(TESTPATH/f"output_data/targetState{gen}", "r") as f:

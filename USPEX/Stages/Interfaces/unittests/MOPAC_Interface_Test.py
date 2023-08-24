@@ -6,8 +6,8 @@ import filecmp
 
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry
-from USPEX.components import AtomisticRepresentation, MOPAC_Interface, Atomistic
+from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from USPEX.components import AtomicStructureRepresentation, MOPAC_Interface, Atomistic
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'mopacSpecific'
@@ -25,13 +25,13 @@ class MOPAC_CalculatorTest(unittest.TestCase):
         )
 
         for ID in range(10):
-            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (0, 0, 0))
-            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-            system = PoolEntry(extensions=extensions, ID=ID)
+            structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (0, 0, 0))
+            disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            system = PoolEntry(ID, EntryFlavour(extensions=extensions))
             system.setProperty('externalPressure', 0.0)
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
-            system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
+            system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
             WORKPATH.mkdir(parents=True, exist_ok=True)
             mopac.prepareLocalCalculation(system, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
@@ -45,7 +45,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
             mopac.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (0, 0, 0))
-            structure = system.getProperty('structure', prefix='atomistic', suffix='0')
+            structureRef = AtomicStructureRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (0, 0, 0))
+            structure = system.getProperty('structure', extension='atomistic', suffix='0')
             self.assertTrue(np.allclose(structure.getCartesianCoordinates(), structureRef.getCartesianCoordinates()))
 

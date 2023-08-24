@@ -38,16 +38,6 @@ class PWmat_Interface:
     RELAXSTEPS = 'RELAXSTEPS'
     FINAL_CONFIG = 'final.config'
 
-    structureType = None
-    atomType = None
-    cellType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-
     def __init__(self, tag, etot_input, potcars, kresol, targetProperties: list = None, **kwargs):
         '''
         :param params: dictionary with parameters:
@@ -76,7 +66,7 @@ class PWmat_Interface:
         :param system: our system
         :return:
         '''
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -214,6 +204,7 @@ class PWmat_Interface:
         lat = []
         coor = []
         atomTypes = []
+        atomistic = system.flavourFactory.extensions['atomistic'].utility
         for n, line in enumerate(content):
             if 'lattice' in line.lower():
                 for i in range(3):
@@ -222,13 +213,13 @@ class PWmat_Interface:
             if 'position' in line.lower():
                 for i in range(atoms):
                     temp = content[n + 1 + i].split()
-                    atomTypes.append(self.atomType(int(temp[0])))
+                    atomTypes.append(atomistic.atomType(int(temp[0])))
                     coor += [[float(temp[1]), float(temp[2]), float(temp[3])]]
-        cell = self.cellType(lat, pbc)
-        structure = self.structureType(atomTypes, coor, cell=cell)
+        cell = atomistic.cellType(lat, pbc)
+        structure = atomistic.structureType(atomTypes, coor, cell=cell)
 
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', structure, prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', structure, extension='atomistic', suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.REPORT, 'r') as fp:
                 content = fp.readlines()

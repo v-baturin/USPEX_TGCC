@@ -24,9 +24,6 @@ class CP2K_Interface:
     Local running
     """
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
 
     inputFile, outputFile, errorFile = 'cp2k.inp', 'output', 'error'
     cell_file = 'cell.uspex'
@@ -39,12 +36,6 @@ class CP2K_Interface:
 
     out_geometry_file = 'USPEX-pos-1.xyz'
     out_cell_file = 'USPEX-1.cell'
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
 
     def __init__(self, tag: str, kresol: float = None, cp2k_in: str = None, fixCell: bool = False,
                  targetProperties: list = None, **kwargs):
@@ -64,7 +55,7 @@ class CP2K_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -94,7 +85,7 @@ class CP2K_Interface:
                 fp.write('{0:2s}  {1:15.8f} {2:15.8f} {3:15.8f} \n'.format(symbol.short_name, *coord))
 
         with open(calcFolder/self.fixedIndices_file, 'wt') as fp:
-            disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+            disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
             fixedIndices = disassembler.allFixedIndices
             fp.write('LIST  ')
             for i in fixedIndices:
@@ -135,7 +126,7 @@ class CP2K_Interface:
         EnergyHa = self.readEnergy(calcFolder)
 
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', new_structure, prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', new_structure, extension='atomistic', suffix=self.tag)
         if 'energy' in self.targetProperties:
             system.setProperty('energy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
         if 'enthalpy' in self.targetProperties:
@@ -148,6 +139,8 @@ class CP2K_Interface:
                 system.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
 
     def readStructure(self, system, calcFolder: Path):
+        atomistic = system.flavourFactory.extensions['atomistic'].utility
+
         with open(calcFolder / 'pbc', 'rt') as f:
             pbc = tuple(int(c) for c in f.read().split())
 
@@ -156,7 +149,7 @@ class CP2K_Interface:
                 content_list = f.readlines()
                 lattice = [float(x) for x in content_list[-1].split()[2:11]]
                 lat = np.array([lattice[0:3], lattice[3:6], lattice[6:9]])
-                cell = self.cellType(lat, pbc)
+                cell = atomistic.cellType(lat, pbc)
         else:
             with open(calcFolder/self.outputFile, 'rt') as f:
                content = f.read()
@@ -170,18 +163,18 @@ class CP2K_Interface:
                     if ' CELL| Vector c' in line:
                         lattice_c = [float(x) for x in line.split()[4:7]]
                 lat = np.array([lattice_a, lattice_b, lattice_c])
-                cell = self.cellType(lat, pbc)
+                cell = atomistic.cellType(lat, pbc)
 
         if calcFolder.joinpath(self.out_geometry_file).exists():
             ase_struct = read(calcFolder/self.out_geometry_file, index='-1')
             atomTypes = []
             for i in ase_struct.get_chemical_symbols():
-                atomTypes.append(self.atomType(i))
+                atomTypes.append(atomistic.atomType(i))
             positions = ase_struct.get_positions()
-            new_structure = self.structureType(atomTypes, positions, cell=cell)
+            new_structure = atomistic.structureType(atomTypes, positions, cell=cell)
         else:
             structure = system['structure']
-            new_structure = self.structureType(structure.getAtomTypes(), structure.getCartesianCoordinates(), cell=cell)
+            new_structure = atomistic.structureType(structure.getAtomTypes(), structure.getCartesianCoordinates(), cell=cell)
 
         return new_structure
 

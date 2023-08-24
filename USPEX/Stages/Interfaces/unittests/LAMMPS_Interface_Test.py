@@ -6,8 +6,8 @@ import filecmp
 
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry
-from ....components import AtomisticRepresentation, LAMMPS_Interface, Atomistic
+from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ....components import AtomicStructureRepresentation, LAMMPS_Interface, Atomistic
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'lammpsSpecific'
@@ -28,13 +28,13 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
         )
 
         for ID in range(10):
-            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-            system = PoolEntry(extensions=extensions, ID=ID)
+            structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+            disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            system = PoolEntry(ID, EntryFlavour(extensions=extensions))
             system.setProperty('externalPressure', 100.0)
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
-            system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+            system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
+            system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
 
             WORKPATH.mkdir(parents=True, exist_ok=True)
             lammps.prepareLocalCalculation(system, WORKPATH)
@@ -49,8 +49,8 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
             shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
             lammps.readOutput(system, WORKPATH)
             shutil.rmtree(WORKPATH)
-            structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-            structure = system.getProperty('structure', prefix='atomistic', suffix='0')
+            structureRef = AtomicStructureRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
+            structure = system.getProperty('structure', extension='atomistic', suffix='0')
             cell = structure.getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(),
@@ -71,13 +71,13 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
             atomistic=atomistic.propertyExtension(atomistic)
         )
 
-        structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-        system = PoolEntry(extensions=extensions, ID=ID)
+        structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+        disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        system = PoolEntry(ID, EntryFlavour(extensions=extensions))
         system.setProperty('externalPressure', 0.0)
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
-        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
+        system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
 
         interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
         self.assertTrue(np.isclose(system['.enthalpy.0'], -102.64364))
@@ -96,12 +96,12 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
         )
 
     def test_init(self):
-        structure = AtomisticRepresentation.readPOSCAR(HOMEPATH/'LAMMPS_MLIP_SAMPLE/Li_B_H_POSCAR', (1, 1, 1))
-        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-        system = PoolEntry(extensions=self.extensions, ID=0)
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
-        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+        structure = AtomicStructureRepresentation.readPOSCAR(HOMEPATH/'LAMMPS_MLIP_SAMPLE/Li_B_H_POSCAR', (1, 1, 1))
+        disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        system = PoolEntry(0, EntryFlavour(extensions=self.extensions))
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
+        system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
         calcFolder = HOMEPATH/'LAMMPS_MLIP_INIT'
         calcFolder.mkdir()
         self.interface.prepareLocalCalculation(system=system, calcFolder=calcFolder)
@@ -115,7 +115,7 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
 
 
     def test_sample(self):
-        system = PoolEntry(extensions=self.extensions, ID=0)
+        system = PoolEntry(0, EntryFlavour(extensions=self.extensions))
         self.interface.readOutput(system=system, calcFolder=HOMEPATH/'LAMMPS_MLIP_SAMPLE')
         self.assertEqual(len(system['.trajectory.0']), 1805)
         for system in system['.trajectory.0']:

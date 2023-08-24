@@ -33,13 +33,6 @@ class MLIP_Interface:
     out_sampled_file = 'sampled.cfg_0'
 
     DEFAULT_SLEEP_TIME = 10
-    atomisticRepresentation = None
-    atomicDisassemblerType = None
-
-    @classmethod
-    def registerTypes(cls, atomisticRepresentation, atomicDisassemblerType):
-        cls.atomisticRepresentation = atomisticRepresentation
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, tag: str,
                        mode: str,
@@ -85,7 +78,8 @@ class MLIP_Interface:
         #         sample.extend(s for s in individual['trajectory'] if not s['isBad'])
         # else:
         #     raise RuntimeError('No mlip sample in system.')
-        self.atomisticRepresentation.saveMLIPsample(calcFolder/self.in_cfg_file, self.specorder, sample)
+        atomistic = system.flavourFactory.extensions['atomistic'].utility
+        atomistic.AtomicStructureRepresentation.saveMLIPsample(calcFolder/self.in_cfg_file, self.specorder, sample)
 
         shutil.copy2(self.potential, calcFolder)
 
@@ -116,7 +110,8 @@ class MLIP_Interface:
 
     def readOutput(self, system, calcFolder: Path):
         if 'sample' in self.targetProperties:
-            sample = self.atomisticRepresentation.readMLIPsample(calcFolder/self.out_cfg_file, self.specorder)
+            atomistic = system.flavourFactory.extensions['atomistic'].utility
+            sample = atomistic.AtomicStructureRepresentation.readMLIPsample(calcFolder/self.out_cfg_file, self.specorder)
             system.setProperty('sample', sample, suffix=self.tag)
         if 'potential' in self.targetProperties:
             shutil.copy2(calcFolder/self.potential.name, self.potential)

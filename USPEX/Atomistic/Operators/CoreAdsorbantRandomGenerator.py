@@ -121,7 +121,7 @@ class CoreAdsorbantRandomGenerator:
             'atomistic.cell': cell,
             'atomistic.environments': npCoreAssembler.assemble(tmp_molecules + [ads_attempt])}
         tmp_offspring = offspringFactory(**system)
-        tmp_struct = tmp_offspring.getProperty('structure', prefix='atomistic', suffix='origin')
+        tmp_struct = tmp_offspring.getProperty('structure', extension='atomistic', suffix='origin')
         tmp_minDistMatrix = self.bondUtility.getDistances(tmp_struct.getAtomTypes(),
                                                           self.conditions.externalPressure)
         # tmp_atomDistances = tmp_struct.getAllDistances()

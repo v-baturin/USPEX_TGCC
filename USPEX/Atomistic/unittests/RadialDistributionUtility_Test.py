@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 
 from ..RadialDistributionUtility import RadialDistributionUtility
-from ...Optimizers.PoolEntry import PoolEntry
-from ...components import AtomisticRepresentation, Atomistic
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...components import Atomistic
 
 PATH_WITH_TESTS = Path(__file__).parent
 
@@ -18,12 +18,12 @@ class RadialDistributionUtility_Test(unittest.TestCase):
             radialDistributionUtility=self.utility.propertyExtension(self.utility)
         )
 
-        self.systemRDU1 = PoolEntry(extensions=extensions, ID=0, **AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/"systemRDU1.POSCAR"))
-        self.systemRDU1.getProperty('structure', prefix='atomistic')
-        self.systemRDU2 = PoolEntry(extensions=extensions, ID=1, **AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/"systemRDU2.POSCAR"))
-        self.systemRDU2.getProperty('structure', prefix='atomistic')
-        self.systemRDU3 = PoolEntry(extensions=extensions, ID=2, **AtomisticRepresentation.readAtomicStructure(PATH_WITH_TESTS/"systemRDU3.POSCAR"))
-        self.systemRDU3.getProperty('structure', prefix='atomistic')
+        self.systemRDU1 = PoolEntry(0, EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU1.POSCAR")))
+        self.systemRDU1.getProperty('structure', extension='atomistic')
+        self.systemRDU2 = PoolEntry(1, EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU2.POSCAR")))
+        self.systemRDU2.getProperty('structure', extension='atomistic')
+        self.systemRDU3 = PoolEntry(2, EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU3.POSCAR")))
+        self.systemRDU3.getProperty('structure', extension='atomistic')
 
     def test_structureOrder(self):
         self.assertAlmostEqual(self.systemRDU1['radialDistributionUtility.structureOrder.origin'], 0.207, places=3)

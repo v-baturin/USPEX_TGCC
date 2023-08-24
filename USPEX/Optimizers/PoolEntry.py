@@ -1,44 +1,70 @@
 from typing import Union
 
 
-class EntryFactory:
+class FlavourFactory:
 
     def __init__(self, extensions):
         self.extensions = extensions
 
     def __call__(self, **kwargs):
-        return PoolEntry(extensions=self.extensions, **kwargs)
+        return EntryFlavour(extensions=self.extensions, **kwargs)
+
+
+class EntryFlavour:
+    
+    def __init__(self, extensions=None, **properties):
+        self.extensions = extensions if extensions is not None else {}
+        self._properties = properties
+
+    def getFactory(self):
+        return FlavourFactory(self.extensions)
+
+    def getProperty(self, prop, extension=''):
+        if f'{extension}.{prop}' not in self._properties:
+            if extension in self.extensions:
+                self._properties[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
+            else:
+                raise KeyError(f'Can not evaluate property {extension}.{prop} for {self._properties}.')
+        return self._properties[f'{extension}.{prop}']
+
+    def setProperty(self, prop, value, extension=''):
+        self._properties[f'{extension}.{prop}'] = value
+        if extension in self.extensions and hasattr(self.extensions[extension], 'set'):
+            self._properties.update(self.extensions[extension].set(self._properties, prop, value))
+
+    def delProperty(self, prop, extension=''):
+        del self._properties[f'{extension}.{prop}']
+
+    def __getitem__(self, item: str):
+        extension, prop, *other = item.split('.')
+        assert not other, f'Too complex property name {item}.'
+        return self.getProperty(prop, extension=extension)
+
+    def __contains__(self, item: str):
+        return item in self._properties
+
 
 class PoolEntry:
 
-    def __init__(self, extensions=None, ID=None,  **system):
+    def __init__(self, ID,  system: EntryFlavour):
         self.ID = ID
         self.originalID = None
         self.duplicates = []
-        self.system = dict(origin=system)
         self.expressions = {}
-        self.extensions = extensions if extensions is not None else {}
+        self.flavourFactory = system.getFactory()
+        self.system = dict(origin=system)
 
-    def getProperty(self, prop, prefix='', suffix='origin'):
-        system = self.system[suffix]
-        if f'{prefix}.{prop}' not in system:
-            if prefix in self.extensions:
-                system[f'{prefix}.{prop}'] = getattr(self.extensions[prefix], prop)(system)
-            else:
-                raise KeyError(f'Extension {prefix} is not set for {self}.')
-        return system[f'{prefix}.{prop}']
+    def getProperty(self, prop, extension='', suffix='origin'):
+        return self.system[suffix].getProperty(prop, extension=extension)
 
-    def setProperty(self, prop, value, prefix='', suffix='origin'):
+    def setProperty(self, prop, value, extension='', suffix='origin'):
         if suffix not in self.system:
-            self.system[suffix] = {}
-        system = self.system[suffix]
-        system[f'{prefix}.{prop}'] = value
-        if prefix in self.extensions and hasattr(self.extensions[prefix], 'set'):
-            self.extensions[prefix].set(system, prop, value)
+            self.system[suffix] = self.flavourFactory()
+        self.system[suffix].setProperty(prop, value, extension=extension)
 
-    def delProperty(self, prop, prefix='', suffix='origin'):
+    def delProperty(self, prop, extension='', suffix='origin'):
         if suffix in self.system:
-            del self.system[suffix][f'{prefix}.{prop}']
+            self.system[suffix].delProperty(prop, extension=extension)
 
     def setExpression(self, expression: tuple, value):
         if expression not in self.expressions:
@@ -65,6 +91,6 @@ class PoolEntry:
         elif isinstance(item, str):
             prefix, prop, suffix, *other = item.split('.')
             assert not other, f'Too complex property name {item}.'
-            return suffix in self.system and '.'.join((prefix, prop)) in self.system[suffix]
+            return suffix in self.system and f'{prefix}.{prop}' in self.system[suffix]
         else:
             raise KeyError(f'Property {item} is not valid.')

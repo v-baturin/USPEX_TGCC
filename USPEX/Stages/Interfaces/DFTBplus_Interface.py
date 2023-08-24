@@ -8,6 +8,8 @@ import logging
 import numpy as np
 
 from pathlib import Path
+from ase.io.gen import read_gen, write_gen
+
 
 from .KPoints import KPoints, BadKPoints
 
@@ -24,9 +26,6 @@ class DFTBplus_Interface:
     Local running
     """
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
 
     inputFile, outputFile, errorFile = 'dftb_in.hsd', 'output', 'error'
     geometry_file = 'uspex.gen'
@@ -37,14 +36,11 @@ class DFTBplus_Interface:
 
     out_geometry_file = 'geo_end.gen'
 
-    aseAdapterType = None
+    AtomicStructureRepresentation = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, aseAdapterType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.aseAdapterType = aseAdapterType
+    def registerTypes(cls, AtomicStructureRepresentation):
+        cls.AtomicStructureRepresentation = AtomicStructureRepresentation
 
     def __init__(self, tag: str,
                        kresol: float = None,
@@ -61,18 +57,18 @@ class DFTBplus_Interface:
         with open(dftb_input, 'r') as f:
             self.dftb_input = f.read()
 
-        self.adapter = self.aseAdapterType()
         self.kPoints = KPoints(kresol) if kresol is not None else None
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
 
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
-        self.adapter.write_structure(structure, self.geometry_file, calcFolder)
+        atoms = self.AtomicStructureRepresentation.toAtoms(structure)
+        write_gen(calcFolder / self.geometry_file, atoms)
 
         if self.kPoints is None or cell.dim == 0:
             with open(calcFolder/self.kpoints_file, 'wt') as f:
@@ -98,7 +94,7 @@ class DFTBplus_Interface:
             else:
                 f.write("")
 
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
         fixedIndices = disassembler.allFixedIndices
         if np.any(fixedIndices):
             moved_atoms_string = 'MovedAtoms = !('
@@ -135,12 +131,14 @@ class DFTBplus_Interface:
     def readOutput(self, system, calcFolder: Path):
         with open(calcFolder / 'pbc', 'rt') as f:
             pbc = tuple(int(c) for c in f.read().split())
-        new_structure = self.adapter.read_structure(self.out_geometry_file, calcFolder, pbc)
+        atoms = read_gen(calcFolder / self.geometry_file)
+        atoms.set_pbc(pbc)
+        new_structure = self.AtomicStructureRepresentation.fromAtoms(atoms)
+
         EnergyHa = self.readEnergyHa(calcFolder)
 
-        results = {}
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', new_structure, prefix='atomistic', suffix=self.tag)
+            system.setProperty('structure', new_structure, extension='atomistic', suffix=self.tag)
         if 'energy' in self.targetProperties:
             system.setProperty('energy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
         if 'enthalpy' in self.targetProperties:

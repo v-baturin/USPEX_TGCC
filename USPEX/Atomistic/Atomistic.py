@@ -1,4 +1,7 @@
 import numpy as np
+import yaml
+from pathlib import Path
+from copy import copy
 
 from USPEX.Expressions.Functions.AtomisticFunctions import AtomisticFunctions
 from .Transformation import Transformation
@@ -146,12 +149,105 @@ class Atomistic:
     structureType = None
     atomType = None
     cellType = None
+    AtomicStructureRepresentation = None
     atomicDisassemblerType = AtomicDisassembler
 
     propertyExtension = AtomisticFunctions
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
+    def registerTypes(cls, structureType, atomType, cellType, AtomicStructureRepresentation):
         cls.structureType = structureType
         cls.atomType = atomType
         cls.cellType = cellType
+        cls.AtomicStructureRepresentation = AtomicStructureRepresentation
+        AtomicStructureRepresentation.registerTypes(structureType, atomType, cellType)
+
+    @classmethod
+    def writeAtomicStructure(cls, filename, system: dict):
+        filename = Path(filename)
+        cls.writeAtomicStructures(filename, [system])
+
+    @classmethod
+    def writeAtomicStructures(cls, filename: Path, systems: list):
+        structures = []
+        labels = []
+        descriptions = []
+        printUSPEX = False
+        for i, system in enumerate(systems):
+            structure = system['atomistic.structure'] # vacuumSize=10.0
+            disassembler = system['atomistic.disassembler']
+            atomTypes = structure.getAtomTypes()
+            coordinates = structure.getCartesianCoordinates()
+            sortIndices = np.argsort(atomTypes)
+            reversedIndices = np.argsort(sortIndices)
+            structure = cls.structureType(atomTypes[sortIndices], coordinates[sortIndices], structure.getCell())
+            structures.append(structure)
+            labels.append(system['.label'])
+            d = {'filename': filename.name, 'index': i}
+            pbc = system['atomistic.cell'].getPBC()
+            if pbc != (1, 1, 1):
+                d['pbc'] = ' '.join(f'{c}' for c in pbc)
+                printUSPEX = True
+            molecules = []
+            for indices in disassembler.indices:
+                if len(indices) > 1:
+                    molecules.append(' '.join(f'{ind}' for ind in reversedIndices[indices]))
+                    printUSPEX = True
+            if molecules:
+                d['molecules'] = molecules
+            if 'atomistic.environments' in system and len(system['atomistic.environments']):
+                printUSPEX = True
+                d['environments'] = []
+                for eInds in disassembler.envIndices:
+                    d['environments'].append(' '.join(f'{ind}' for ind in eInds))
+                d['fixed'] = ' '.join(f'{ind}' for ind in disassembler.allFixedIndices)
+            descriptions.append(d)
+        cls.AtomicStructureRepresentation.writePOSCARS(filename, structures, labels)
+        if printUSPEX:
+            with open(f'{filename}.uspex', 'wt') as f:
+                f.write(yaml.safe_dump(descriptions))
+
+    @classmethod
+    def readAtomicStructure(cls, filename) -> dict:
+        return cls.readAtomicStructures(filename)[0]
+
+    @classmethod
+    def readAtomicStructures(cls, filename) -> list:
+        filename = Path(filename)
+        directory = filename.parent
+        if filename.suffix == '.uspex':
+            with open(filename) as f:
+                descriptions = yaml.safe_load(f.read())
+            files = {name: cls.AtomicStructureRepresentation.readPOSCARS(directory/name)
+                     for name in np.unique([s['filename'] for s in descriptions])}
+            systems = []
+            for d in descriptions:
+                d = copy(d)
+                structure = files[d.pop('filename')][d.pop('index')]
+                allIndSet = set(range(len(structure)))
+                d['indices'] = []
+                if 'pbc' in d:
+                    d['pbc'] = tuple(int(c) for c in d.pop('pbc').split(' '))
+                if 'molecules' in d:
+                    d['indices'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
+                    molIndSet = set(np.concatenate(d['indices']))
+                else:
+                    molIndSet = set()
+                fixed = np.array(d.pop('fixed').split(' '), dtype=int) if 'fixed' in d else np.empty(0, dtype=int)
+                if 'environments' in d:
+                    d['envIndices'] = []
+                    d['fixedIndices'] = []
+                    for eInds in d.pop('environments'):
+                        eInds = np.array(eInds.split(' '), dtype=int)
+                        fInds = np.argwhere(eInds.reshape((-1, 1)) == fixed.reshape((1, -1)))[:, 0]
+                        d['envIndices'].append(eInds)
+                        d['fixedIndices'].append(fInds)
+                    envIndSet = set(np.concatenate(d['envIndices']))
+                else:
+                    envIndSet = set()
+                d['indices'].extend(np.fromiter(allIndSet - envIndSet - molIndSet, dtype=int).reshape((-1, 1)))
+                systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
+        else:
+            systems = [cls.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))).disassemble(structure)
+                       for structure in cls.AtomicStructureRepresentation.readPOSCARS(filename)]
+        return systems

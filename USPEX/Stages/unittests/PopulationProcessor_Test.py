@@ -4,7 +4,7 @@ import os
 
 
 from ..PopulationProcessor import PopulationProcessor, Stages
-from ...Optimizers.PoolEntry import PoolEntry
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
 
 
 class Stage1:
@@ -35,7 +35,7 @@ class PopulationProcessor_Test(unittest.TestCase):
         stages = [{'stageType': 'stage1', 'tag': '1'},
                   {'stageType': 'stage1', 'tag': '2'},
                   {'stageType': 'stage1', 'tag': '3'}]
-        initial = [PoolEntry(ID=i) for i in range(20)]
+        initial = [PoolEntry(i, EntryFlavour()) for i in range(20)]
         population, sc = PopulationProcessor.initializePopulation('USPEX_stages', initial)
         asyncio.get_event_loop().run_until_complete(PopulationProcessor.processPopulation(stages, population, 10,
                                                                                           saveCallback=sc))

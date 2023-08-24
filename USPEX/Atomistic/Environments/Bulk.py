@@ -6,14 +6,10 @@ logger = logging.getLogger(__name__)
 
 
 class Bulk:
-    structureRepresentation = None
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
+    Atomistic = None
 
     @classmethod
-    def registerTypes(cls,representationType, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, Atomistic):
         """
         Register types used by this utility.
 
@@ -22,12 +18,7 @@ class Bulk:
         :param cellType: type representing unit cell.
         :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
         """
-        cls.structureRepresentation = representationType
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
-
+        cls.Atomistic = Atomistic
 
     def __init__(self, structure, isFixed: bool = True, **kwargs):
         self._structure = structure
@@ -48,7 +39,7 @@ class Bulk:
         """
         Builds the environment objects for a given description.
         """
-        structure = Bulk.structureRepresentation.readPOSCAR(file)
+        structure = Bulk.Atomistic.AtomicStructureRepresentation.readPOSCAR(file)
         environment = dict(
             structure=structure,
         )

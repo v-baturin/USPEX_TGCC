@@ -13,7 +13,7 @@ import numpy as np
 from copy import copy
 
 from .AtomicStructure import AtomicStructure
-from ..Atomistic.Element import Element
+from USPEX.Atomistic.Primitives.Element import Element
 
 
 # A minimal angle between any two vectors defining the lattice.
