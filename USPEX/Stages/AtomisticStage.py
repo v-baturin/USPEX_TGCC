@@ -32,7 +32,7 @@ class AtomisticStage:
             structure = system.getProperty('structure', extension='atomistic', suffix=self.source)
             disassembler = system.getProperty('disassembler', extension='atomistic', suffix=self.source)
         else:
-            source = system.system[self.source]
+            source = system.getFlavour(self.source)
             structure, disassembler = source.extensions['atomistic'].atomicDisassemblerType.assemble({
                 'atomistic.molecules': source[f'atomistic.molecules'],
                 'atomistic.cell': source[f'atomistic.cell']
@@ -40,18 +40,17 @@ class AtomisticStage:
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
         
-        system.system['intermediate'] = system.flavourFactory(**disassembler.disassemble(structure))
+        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
+        system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
         system.setProperty('vacuumSize', self.vacuumSize, suffix='intermediate')
 
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
-        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
         system.setProperty('disassembler', disassembler, extension='atomistic', suffix=self.tag)
 
         await self.executor.run(system)
         self.systemCheckAndFix(system)
         self.checkAndFixMolecules(system)
         if 'targetProperties' in self.kwargs and 'enthalpy' in self.kwargs['targetProperties'] \
-                and 'enthalpy' not in system.system[self.tag]:
+                and '.enthalpy' not in system.getFlavour(self.tag):
             structure = system.getProperty('structure', extension='atomistic', suffix=self.tag)
             pressure = system.getProperty('externalPressure', suffix='origin')
             energy = system.getProperty('energy', suffix=self.tag)
