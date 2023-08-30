@@ -119,18 +119,18 @@ class AtomisticRepresentation(object):
         content_origin = ''
         content_enthalpies = ''
         for ID, system in sorted(systems.items()):
-            unrelaxed = system.system['origin']
+            unrelaxed = system.getFlavour('origin')
             unrelaxed.setProperty('label', f"EA{ID}")
             systems_gatheredPOSCARS_unrelaxed.append(unrelaxed)
-            content_origin += f"{ID} {system['.howCome.origin']} {system['.parent.origin']}\n"
+            content_origin += f"{ID} {unrelaxed['.howCome']} {unrelaxed['.parent']}\n"
 
             content_enthalpies += ','.join([f"{system[f'.enthalpy.{stage}']:6.3f}"
                                             for stage in self.stages if f'.enthalpy.{stage}' in system]) + '\n'
 
             table_Individuals.update(ID, system)
 
-            if str(self.stages[-1]) in system.system:
-                final = system.system[str(self.stages[-1])]
+            if str(self.stages[-1]) in system.flavours:
+                final = system.getFlavour(str(self.stages[-1]))
                 final.setProperty('label', f"EA{system.ID}")
                 systems_gatheredPOSCARS.append(final)
 
@@ -402,7 +402,7 @@ class AtomisticRepresentation(object):
         for gen in optimizer.pool.generations:
             best = gen['bestSystems']
             for ID in best:
-                system = optimizer.pool.allSystems[ID].system[str(self.stages[-1])]
+                system = optimizer.pool.allSystems[ID].getFlavour(str(self.stages[-1]))
                 system.setProperty('label', f"EA{ID}")
                 systems__BESTgatheredPOSCARS.append(system)
         self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)
@@ -415,7 +415,7 @@ class AtomisticRepresentation(object):
             for rank, front in enumerate(fronts):
                 for system in front:
                     table_goodStructures.update(system['ID'], system, rank=rank)
-                    s = system.system[str(self.stages[-1])]
+                    s = system.getFlavour(str(self.stages[-1]))
                     s.setProperty('label', f"EA{ID}")
                     systems_goodStructuresPOSCARS.append(s)
             with open(self.RES_FOLDER/'goodStructures', 'w') as fp:
@@ -435,7 +435,7 @@ class AtomisticRepresentation(object):
                         goodStructuresPOSCARS[numBlocks] = []
                     goodStructures[numBlocks].update(system['ID'], system, rank=rank)
                     ID = system.ID
-                    system = system.system[str(self.stages[-1])]
+                    system = system.getFlavour(str(self.stages[-1]))
                     system['ID'] = ID
                     goodStructuresPOSCARS[numBlocks].append(system)
 
@@ -474,7 +474,7 @@ class AtomisticRepresentation(object):
             for front in fronts:
                 for system in front:
                     ID = system.ID
-                    system = system.system[str(self.stages[-1])]
+                    system = system.getFlavour(str(self.stages[-1]))
                     system['ID'] = ID
                     systems_extendedConvexHullPOSCARS.append(system)
             self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
