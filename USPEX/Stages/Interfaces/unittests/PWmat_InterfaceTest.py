@@ -31,6 +31,7 @@ class PWmat_InterfaceTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        PoolEntry.createEngine(':memory:')
 
         cls.knownSystemEnergy = -858.0749767374361
 

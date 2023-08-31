@@ -13,6 +13,10 @@ TESTPATH = Path(__file__).parent
 
 
 class Output_Test(unittest.TestCase):
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_1(self):
         folder_name = 'output_results'
         folder_name_ref = 'output_reference'

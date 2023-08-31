@@ -10,6 +10,10 @@ SPECIFICPATH = HOMEPATH/'xtbSpecific'
 GATHEREDPATH = HOMEPATH/'xtbGatheredData'
 
 class XTB_InterfaceTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_read_output(self):
         ID = 0
         # HERE what is written in xtb.inp does not make sense.

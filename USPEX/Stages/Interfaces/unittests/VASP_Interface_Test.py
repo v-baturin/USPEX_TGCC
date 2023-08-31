@@ -31,6 +31,10 @@ class VASP_CalculatorTest2(unittest.TestCase):
     """
     Checking correct parsing properties
     """
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_life(self):
         vasp = VASP_Interface(tag='1', 
                               incar=SPECIFICPATH/'INCAR_1',
@@ -77,6 +81,7 @@ class VASP_interfaceTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        PoolEntry.createEngine(':memory:')
         cls.working_dir = HOMEPATH/'wierd_vasp'
 
     def test1(self):
@@ -95,6 +100,10 @@ class VASP_interfaceTest(unittest.TestCase):
 
 class VASP_interface_elastic_Test(unittest.TestCase):
 
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
+
     def test1(self):
         elasticMatrix_ref = [[11184.5135,   609.9831,  1016.7341,  -519.9028,  -109.7639,   -17.9217],
                              [  609.9831,  6321.3677,  1366.9666,   326.5026,   269.2209,    66.3167],
@@ -111,6 +120,10 @@ class VASP_interface_elastic_Test(unittest.TestCase):
         self.assertTrue(np.allclose(elasticMatrix, elasticMatrix_ref))
 
 class VASP_interface_MD_Test(unittest.TestCase):
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
 
     def test1(self):
         wd = HOMEPATH/'AIMD_AlB2'

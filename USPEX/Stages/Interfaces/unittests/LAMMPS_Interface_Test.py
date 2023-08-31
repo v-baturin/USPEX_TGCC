@@ -18,6 +18,10 @@ WORKPATH = HOMEPATH/'C_lammps'
 class LAMMPS_CalculatorTest(unittest.TestCase):
 
 
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
+
     def test_life(self):
         lammps = LAMMPS_Interface(tag='0',
                                   libs=[SPECIFICPATH/'SiC.tersoff'], lammps_in=SPECIFICPATH/'lammps.in_1',
@@ -60,6 +64,10 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
 
 
 class LAMMPS_InterfaceTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_read_output(self):
         ID = 0
         # HERE what is written in ginput and goption no make sense.
@@ -86,6 +94,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
 class LAMMPS_MLIP_Test(unittest.TestCase):
 
     def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
         self.interface = LAMMPS_Interface(tag='0', lammps_in=HOMEPATH/'LAMMPS_MLIP_SAMPLE'/'lammps.in',
                                           mlip_in=HOMEPATH/'LAMMPS_MLIP_SAMPLE/mlip.ini',
                                           mlip=HOMEPATH/'LAMMPS_MLIP_SAMPLE/p.mtp',

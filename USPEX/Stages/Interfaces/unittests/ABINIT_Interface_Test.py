@@ -33,6 +33,9 @@ else:
         Checking correct parsing properties
         """
 
+        def setUp(self) -> None:
+            PoolEntry.createEngine(':memory:')
+
         def test_life(self):
             abinit = ABINIT_Interface(tag='0',
                                       in_file=SPECIFICPATH/'abinit.in_1',

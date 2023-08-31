@@ -10,6 +10,10 @@ SPECIFICPATH = HOMEPATH/'cp2kSpecific'
 GATHEREDPATH = HOMEPATH/'cp2kGatheredData'
 
 class CP2K_InterfaceTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_read_output(self):
         ID = 0
         # HERE what is written in cp2k.inp does not make sense.

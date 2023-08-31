@@ -31,6 +31,9 @@ Stages.registerStage('stage2', Stage2)
 
 class PopulationProcessor_Test(unittest.TestCase):
 
+    def setUp(self) -> None:
+        PoolEntry.createEngine(":memory:")
+
     def test_life(self):
         stages = [{'stageType': 'stage1', 'tag': '1'},
                   {'stageType': 'stage1', 'tag': '2'},
@@ -56,7 +59,6 @@ class PopulationProcessor_Test(unittest.TestCase):
             self.assertEqual(system['.result.4'], '4_Buy!')
             self.assertEqual(system['.result.5'], '5_Buy!')
             self.assertEqual(system['.result.6'], '6_Buy!')
-        os.remove('uspex.db')
 
 
 if __name__ == '__main__':

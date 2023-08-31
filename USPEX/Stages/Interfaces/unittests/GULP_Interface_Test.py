@@ -29,6 +29,10 @@ WORKPATH = HOMEPATH/'Mg4Al8O16_gulp'
 class GULP_CalculatorTest(unittest.TestCase):
 
 
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_life(self):
 
         gulp = GULP_Interface(tag='0', goptions=SPECIFICPATH/'goptions', ginput=SPECIFICPATH/'ginput_1')
@@ -69,6 +73,10 @@ class GULP_CalculatorTest(unittest.TestCase):
 
 
 class GULP_InterfaceTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_read_output(self):
         ID = 0
         # HERE what is written in ginput and goption no make sense.

@@ -1,23 +1,8 @@
+import os
 import pickle as pcl
 
 from typing import Union
 from sqlalchemy import MetaData, Table, Column, Integer, String, create_engine, insert, update, select, and_
-
-
-engine = create_engine("sqlite+pysqlite:///uspex.db")
-
-metadata_obj = MetaData()
-
-flavours = Table(
-    "flavours",
-    metadata_obj,
-    Column("id", Integer, primary_key=True),
-    Column("sID", Integer, nullable=False),
-    Column("name", String, nullable=False),
-    Column("content", String, nullable=False),
-)
-
-metadata_obj.create_all(engine)
 
 
 class FlavourFactory:
@@ -68,6 +53,29 @@ class EntryFlavour:
 
 class PoolEntry:
 
+    engine = None
+    filename = None
+    pool = None
+
+    @classmethod
+    def createEngine(cls, filename):
+        cls.filename = filename
+        cls.engine = create_engine(f"sqlite+pysqlite:///{filename}")
+        metadata_obj = MetaData()
+        cls.pool = Table(
+            "flavours",
+            metadata_obj,
+            Column("id", Integer, primary_key=True),
+            Column("sID", Integer, nullable=False),
+            Column("name", String, nullable=False),
+            Column("content", String, nullable=False),
+        )
+        metadata_obj.create_all(cls.engine)
+
+    @classmethod
+    def cleanDB(cls):
+        os.remove(cls.filename)
+
     def __init__(self, ID: int,  system: EntryFlavour):
         self.ID = ID
         self.originalID = None
@@ -80,13 +88,13 @@ class PoolEntry:
     def addFlavour(self, name: str, flavour: EntryFlavour):
         assert name not in self.flavours, f'Flavour {name} already in system {self.ID}'
         self.flavours.append(name)
-        with engine.connect() as conn:
-            conn.execute(insert(flavours), [{"sID": self.ID, "name": name, "content": flavour.serialize()}])
+        with self.engine.connect() as conn:
+            conn.execute(insert(self.pool), [{"sID": self.ID, "name": name, "content": flavour.serialize()}])
             conn.commit()
 
     def getFlavour(self, name: str) -> EntryFlavour:
-        stmt = select(flavours.c.content).where(and_(flavours.c.sID == self.ID, flavours.c.name == name))
-        with engine.connect() as conn:
+        stmt = select(self.pool.c.content).where(and_(self.pool.c.sID == self.ID, self.pool.c.name == name))
+        with self.engine.connect() as conn:
             result = conn.execute(stmt)
         rows = result.all()
         assert len(rows) == 1
@@ -94,8 +102,8 @@ class PoolEntry:
 
     def setFlavour(self, name, flavour: EntryFlavour):
         content = flavour.serialize()
-        stmt = update(flavours).where(and_(flavours.c.sID == self.ID, flavours.c.name == name)).values(content=content)
-        with engine.connect() as conn:
+        stmt = update(self.pool).where(and_(self.pool.c.sID == self.ID, self.pool.c.name == name)).values(content=content)
+        with self.engine.connect() as conn:
             conn.execute(stmt)
             conn.commit()
 

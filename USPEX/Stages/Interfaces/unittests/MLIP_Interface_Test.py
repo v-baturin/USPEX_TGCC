@@ -57,6 +57,7 @@ WORKPATH = HOMEPATH/'NaCl_mlip'
 class MLIP_train_Test(unittest.TestCase):
 
     def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
         self.trainFolder = HOMEPATH/'MLIP_TRAIN'
         self.trainFolder.mkdir()
         shutil.copy(SPECIFICPATH/'24g.mtp', self.trainFolder)

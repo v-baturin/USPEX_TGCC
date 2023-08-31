@@ -30,6 +30,10 @@ class VASP_CalculatorTest2(unittest.TestCase):
     """
     Checking correct parsing properties
     """
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_life(self):
         aims = FHIaims_Interface(tag='1',
                                  control=SPECIFICPATH/'aims_control_1',

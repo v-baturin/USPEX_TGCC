@@ -10,6 +10,10 @@ SPECIFICPATH = HOMEPATH/'dftbSpecific'
 GATHEREDPATH = HOMEPATH/'dftbGatheredData'
 
 class DFTBplus_InterfaceTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_read_output(self):
         ID = 0
         # HERE what is written in dftb_in.hsd does not make sense.

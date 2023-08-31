@@ -18,6 +18,10 @@ class QE_CalculatorTest2(unittest.TestCase):
     """
     Checking correct parsing properties
     """
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_life(self):
         qe = QE_Interface(tag='1', kresol=0.16, options=SPECIFICPATH/'qEspresso_options_1',
                           pseudopotentials={'C': SPECIFICPATH/'C.pbe-van_bm.upf'})
