@@ -164,15 +164,13 @@ class PoolEntry:
             result = conn.execute(insert(pool), [{"sID": self.ID, "name": name}])
             conn.commit()
         ID = result.inserted_primary_key[0]
-        self.flavours[name] = ID
+        self.flavours[name] = flavour
         flavour.setID(ID)
         for prop, value in flavour.getProperties().items():
             flavour.setPropertyBD(prop, value)
 
     def getFlavour(self, name: str) -> EntryFlavour:
-        flavour = self.flavourFactory()
-        flavour.setID(self.flavours[name])
-        return flavour
+        return self.flavours[name]
 
     def getProperty(self, prop, extension='', suffix='origin'):
         return self.getFlavour(suffix).getProperty(prop, extension=extension)
