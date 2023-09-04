@@ -73,7 +73,7 @@ class GULP_Interface:
 
         """
 
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
 
         files_to_delete = [Path.cwd()/'output', Path.cwd()/'optimized.structure']
         for f in files_to_delete:
@@ -137,7 +137,7 @@ class GULP_Interface:
                               tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
                                                                precision=6) for c in coord)
             if cell.dim == 2:
-                if i in system.getProperty('disassembler', extension='atomistic', suffix='intermediate').allFixedIndices:
+                if i in system.getProperty('disassembler', extension='atomistic').allFixedIndices:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 1 1 1\n' % tuple_to_format
                 else:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 0 0 0\n' % tuple_to_format
@@ -146,7 +146,7 @@ class GULP_Interface:
 
         # Write part:
         total_content = self.goptions + '\n' + content_to_write + self.ginput + '\n'
-        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        externalPressure = system.getProperty('externalPressure')
         if externalPressure >= 0.05:
             total_content += f"pressure {externalPressure:.1f}\n"
         total_content += 'dump every optimized.structure\n'
@@ -197,26 +197,29 @@ class GULP_Interface:
         # TODO: implement http://qsh.ess.sunysb.edu:8000/trac/changeset/1255
         # Improve the GULP reader in case optimized_structure file is broken
         # Now ready to use parallel GULP  (applied to EX18-ZnOH)
-        atomistic = system.flavourFactory.extensions['atomistic'].utility
+        factory = system.getFactory()
+        atomistic = factory.extensions['atomistic'].utility
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
 
+        result = factory()
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.readStructure(atomistic, content, pbc), extension='atomistic', suffix=self.tag)
+            result.setProperty('structure', self.readStructure(atomistic, content, pbc), extension='atomistic')
         if 'enthalpy' in self.targetProperties:
-            system.setProperty('enthalpy', self.readEnergy(content), suffix=self.tag)
+            result.setProperty('enthalpy', self.readEnergy(content))
         if 'stressTensor' in self.targetProperties:
-            system.setProperty('stressTensor', self.readStressTensor(content), suffix=self.tag)
+            result.setProperty('stressTensor', self.readStressTensor(content))
         if 'strains' in self.targetProperties:
-            system.setProperty('strains', self.readStrains(content), suffix=self.tag)
+            result.setProperty('strains', self.readStrains(content))
         if 'forces' in self.targetProperties:
-            system.setProperty('forces', self.readForces(content, len(system['molecules'])), suffix=self.tag)
+            result.setProperty('forces', self.readForces(content, len(system['molecules'])))
         if 'dielectricTensor' in self.targetProperties:
-            system.setProperty('dielectricTensor', self.readDielectricProperties(content), suffix=self.tag)
+            result.setProperty('dielectricTensor', self.readDielectricProperties(content))
         if 'elasticConstants' in self.targetProperties:
-            system.setProperty('elasticMatrix', self.readElasticMatrix(content), suffix=self.tag)
+            result.setProperty('elasticMatrix', self.readElasticMatrix(content))
+        return result
 
     @staticmethod
     def readStructure(atomistic, content, pbc):

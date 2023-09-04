@@ -34,7 +34,7 @@ class PopulationProcessor:
         await sem.acquire()
         for stage in stages:
             if stage.tag not in system.flavours:
-                system.setProperty('isBad', False, suffix=stage.tag)
+                # system.setProperty('isBad', False, suffix=stage.tag)
                 try:
                     await stage.run(system)
                 except Exception as ex:
