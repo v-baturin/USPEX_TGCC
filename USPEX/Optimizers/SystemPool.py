@@ -30,7 +30,6 @@ class SystemPool(object):
         self.goodSystemIDs = []
         self._newID = 0
         self.flavourFactory = flavourFactory
-        PoolEntry.createEngine("uspex.db")
 
     def __copy__(self):
         other = SystemPool(self.flavourFactory)

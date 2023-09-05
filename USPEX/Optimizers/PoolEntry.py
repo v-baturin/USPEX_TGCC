@@ -154,12 +154,23 @@ class PoolEntry:
         self.duplicates = []
         self.expressions = {}
         self.flavourFactory = system.getFactory()
-        self.flavours = {}
+        self._flavours = {}
         self.properties = {}
         self.addFlavour('origin', system)
 
+    @property
+    def flavours(self):
+        with self.engine.connect() as conn:
+            result = conn.execute(select(pool.c.id, pool.c.name).where(pool.c.sID == self.ID)).all()
+        if len(result) != len(self._flavours):
+            self._flavours = {}
+            for fID, flavour in result:
+                self._flavours[flavour] = self.flavourFactory()
+                self._flavours[flavour].setID(fID)
+        return self._flavours
+
     def addFlavour(self, name: str, flavour: EntryFlavour):
-        assert name not in self.flavours, f'Flavour {name} already in system {self.ID}'
+        # assert name not in self.flavours, f'Flavour {name} already in system {self.ID}'
         with self.engine.connect() as conn:
             result = conn.execute(insert(pool), [{"sID": self.ID, "name": name}])
             conn.commit()
