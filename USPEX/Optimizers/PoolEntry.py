@@ -136,7 +136,15 @@ class EntryFlavour:
         return self.getProperty(prop, extension=extension)
 
     def __contains__(self, item: str):
-        return item in self._properties
+        extension, prop, *other = item.split('.')
+        assert not other, f'Too complex property name {item}.'
+        try:
+            self.getProperty(prop, extension=extension)
+        except Exception:
+            result = False
+        else:
+            result = True
+        return result
 
 
 class PoolEntry:
