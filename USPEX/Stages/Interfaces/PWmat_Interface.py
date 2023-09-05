@@ -66,7 +66,7 @@ class PWmat_Interface:
         :param system: our system
         :return:
         '''
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -113,7 +113,7 @@ class PWmat_Interface:
                 fp.write(INPSP)
                 tmp_i += 1
         # set IN.RELAXOPT
-        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        externalPressure = system.getProperty('externalPressure')
         if externalPressure:
             with open(calcFolder/'etot.input', 'a') as fp:
                 fp.write('IN.RELAXOPT = T\n')
@@ -204,7 +204,9 @@ class PWmat_Interface:
         lat = []
         coor = []
         atomTypes = []
-        atomistic = system.flavourFactory.extensions['atomistic'].utility
+        factory = system.getFactory()
+        result = factory()
+        atomistic = factory.extensions['atomistic'].utility
         for n, line in enumerate(content):
             if 'lattice' in line.lower():
                 for i in range(3):
@@ -219,17 +221,18 @@ class PWmat_Interface:
         structure = atomistic.structureType(atomTypes, coor, cell=cell)
 
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', structure, extension='atomistic', suffix=self.tag)
+            result.setProperty('structure', structure, extension='atomistic')
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.REPORT, 'r') as fp:
                 content = fp.readlines()
-            P = system.getProperty('externalPressure', suffix='origin')
+            P = system.getProperty('externalPressure')
             V = cell.getVolume()
-            system.setProperty('enthalpy', self.readEnergy(content) + P*V*EV_PER_CUBIC_ANGSTREM_PER_GPA, suffix=self.tag)
+            result.setProperty('enthalpy', self.readEnergy(content) + P*V*EV_PER_CUBIC_ANGSTREM_PER_GPA)
         if 'stressTensor' in self.targetProperties:
             with open(calcFolder/self.MOVEMENT, 'r') as fp:
                 content = fp.readlines()
-            system.setProperty('stressTensor', self.readPressureTensor(content), suffix=self.tag)
+            result.setProperty('stressTensor', self.readPressureTensor(content))
+        return result
 
     def readPressureTensor(self, content, index=-1):
         '''

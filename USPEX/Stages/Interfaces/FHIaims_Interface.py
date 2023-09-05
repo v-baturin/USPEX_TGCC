@@ -42,7 +42,7 @@ class FHIaims_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -74,7 +74,7 @@ class FHIaims_Interface:
                 if self.fixCell:
                     fp.write('constrain_relaxation .true.\n')
 
-            disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
+            disassembler = system.getProperty('disassembler', extension='atomistic')
             fixedIndices = disassembler.allFixedIndices
             for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
                 fp.write('atom  {1:15.8f} {2:15.8f} {3:15.8f} {0:2s}\n'.format(symbol.short_name, *coord))
@@ -106,7 +106,9 @@ class FHIaims_Interface:
         # USPEX creates very good structures which are the same with the relaxed one
         # and FHI finishes without changing the relaxed structure, thus
         # geometry.in.next_step won't be created.
-        atomistic = system.flavourFactory.extensions['atomistic'].utility
+        factory = system.getFactory()
+        atomistic = factory.extensions['atomistic'].utility
+        result = factory()
 
         if 'structure' in self.targetProperties:
             geometry_file = calcFolder/self.out_geometry_file
@@ -116,15 +118,16 @@ class FHIaims_Interface:
                 content = f.read()
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.readStructure(atomistic, content, pbc), extension='atomistic', suffix=self.tag)
+            result.setProperty('structure', self.readStructure(atomistic, content, pbc), extension='atomistic')
 
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.outputFile, 'r') as f:
                 content = f.readlines()
             for line in content:
                 if 'Total energy corrected' in line:
-                    system.setProperty('enthalpy', float(line.split()[5]), suffix=self.tag)
+                    result.setProperty('enthalpy', float(line.split()[5]))
                     break
+        return result
 
     @staticmethod
     def readStructure(atomistic, content, pbc):

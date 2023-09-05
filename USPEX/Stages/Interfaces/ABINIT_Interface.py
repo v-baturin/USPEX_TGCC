@@ -75,7 +75,7 @@ class ABINIT_Interface:
         :param calcFolder:
         :return:
         """
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -84,7 +84,7 @@ class ABINIT_Interface:
         atomTypes = structure.getAtomTypes()
 
 
-        atomistic = system.flavourFactory.extensions['atomistic'].utility
+        atomistic = system.getFactory().extensions['atomistic'].utility
 
         ############################# FILES FILE ################################
         for pp_file_path in self.pp_files:
@@ -128,7 +128,7 @@ class ABINIT_Interface:
         with open(calcFolder/self.in_file_name, 'wt') as f:
             f.write(clean_in_file)
 
-        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        externalPressure = system.getProperty('externalPressure')
         if externalPressure:
             with open(calcFolder/self.in_file_name, 'a') as myfile:
                 abipressure = -1 * externalPressure * GPA_TO_HARTREE_PER_CUBIC_BOHR
@@ -190,7 +190,7 @@ class ABINIT_Interface:
             f.write('\n# Definition of the atoms\n')
             f.write('xred\n')
             for pos in cell.cartesianToFractional(coordinates):
-                f.write('%18.14f %18.14f %18.14f\n' % tuple(pos))
+                f.write('%18.14f %18.14f %18.14f\n' % tuple(round(p, ndigits=14) + 0.0 for p in pos))
 
         return ''
 
@@ -280,20 +280,23 @@ class ABINIT_Interface:
 
         from abipy import abilab
         gsr = abilab.abiopen(calcFolder/self.gsr_file_name)
-        atomistic = system.flavourFactory.extensions['atomistic'].utility
+        factory = system.getFactory()
+        atomistic = factory.extensions['atomistic'].utility
+        result = factory()
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.readStructure(atomistic, gsr, pbc), extension='atomistic', suffix=self.tag)
+            result.setProperty('structure', self.readStructure(atomistic, gsr, pbc), extension='atomistic')
         if 'enthalpy' in self.targetProperties:
-            V = np.linalg.det(gsr.structure.lattice.matrix)
-            P = system.getProperty('externalPressure', suffix='origin')
-            enthalpy = float(gsr.energy) + P*V*EV_PER_CUBIC_ANGSTREM_PER_GPA
-            system.setProperty('enthalpy', enthalpy, suffix=self.tag)
+            # V = np.linalg.det(gsr.structure.lattice.matrix)
+            # P = system.getProperty('externalPressure', suffix='origin')
+            # enthalpy = float(gsr.energy) + P*V*EV_PER_CUBIC_ANGSTREM_PER_GPA
+            result.setProperty('energy', float(gsr.energy))
         if 'forces' in self.targetProperties:
-            system.setProperty('forces', np.copy(gsr.cart_forces), suffix=self.tag)
+            result.setProperty('forces', np.copy(gsr.cart_forces))
         if 'stressTensor' in self.targetProperties:
-            system.setProperty('stressTensor', np.copy(gsr.cart_stress_tensor), suffix=self.tag)
+            result.setProperty('stressTensor', np.copy(gsr.cart_stress_tensor))
+        return result
 
     @staticmethod
     def readStructure(atomistic, gsr, pbc):

@@ -13,8 +13,15 @@ import filecmp
 
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ....components import AtomicStructureRepresentation, MLIP_Interface, Atomistic
+from ..MLIP_Interface import MLIP_Interface
+from ....Optimizers.PoolEntry import EntryFlavour
+from ....Atomistic.Primitives.Element import Element
+from ....Atomistic.Primitives.Cell import Cell
+from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
+from ....IO.AtomicStructureRepresentation import AtomicStructureRepresentation
+from ....Atomistic.Atomistic import Atomistic
+Atomistic.registerTypes(AtomicStructure, Element, Cell, AtomicStructureRepresentation)
+
 
 
 HOMEPATH = Path(__file__).parent
@@ -57,7 +64,6 @@ WORKPATH = HOMEPATH/'NaCl_mlip'
 class MLIP_train_Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        PoolEntry.createEngine(':memory:')
         self.trainFolder = HOMEPATH/'MLIP_TRAIN'
         self.trainFolder.mkdir()
         shutil.copy(SPECIFICPATH/'24g.mtp', self.trainFolder)
@@ -72,20 +78,20 @@ class MLIP_train_Test(unittest.TestCase):
 
     def test_init(self):
         trajectory = AtomicStructureRepresentation.readMLIPsample(SPECIFICPATH/'configurations.cfg', specorder=['Mo', 'S'])
-        system = PoolEntry(0, EntryFlavour(extensions=self.extensions))
-        system.setProperty('trajectory', trajectory, suffix='intermediate')
+        intermediate = {'.trajectory': trajectory}
+        intermediate = EntryFlavour(extensions=self.extensions, **intermediate)
         calcFolder = HOMEPATH/'MLIP_INIT'
         calcFolder.mkdir(exist_ok=True)
-        args = self.interface.prepareLocalCalculation(system=system, calcFolder=calcFolder)
+        args = self.interface.prepareLocalCalculation(intermediate, calcFolder=calcFolder)
         self.assertEqual(args, 'train 24g.mtp input.cfg --weight_scaling=2 --weight_scaling_forces=1')
         self.assertTrue(not filecmp.dircmp(HOMEPATH/'MLIP_REF', calcFolder).diff_files)
         shutil.rmtree(calcFolder)
 
 
     def test_sample(self):
-        system = PoolEntry(0, EntryFlavour(extensions=self.extensions))
+        intermediate = EntryFlavour(extensions=self.extensions)
         calcFolder=HOMEPATH/'MLIP_REF'
-        self.interface.readOutput(system=system, calcFolder=calcFolder)
+        result = self.interface.readOutput(intermediate, calcFolder=calcFolder)
         self.assertTrue(filecmp.cmp(self.trainFolder/'ts.cfg', calcFolder/'input.cfg'))
 
     def tearDown(self) -> None:

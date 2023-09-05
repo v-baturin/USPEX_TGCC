@@ -69,7 +69,7 @@ class MLIP_Interface:
         with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
-        sample = system.getProperty('trajectory', suffix='intermediate')
+        sample = system.getProperty('trajectory')
         # if 'trajectory' in system:
         #     sample = system['trajectory']
         # elif 'population' in system:
@@ -78,7 +78,7 @@ class MLIP_Interface:
         #         sample.extend(s for s in individual['trajectory'] if not s['isBad'])
         # else:
         #     raise RuntimeError('No mlip sample in system.')
-        atomistic = system.flavourFactory.extensions['atomistic'].utility
+        atomistic = system.getFactory().extensions['atomistic'].utility
         atomistic.AtomicStructureRepresentation.saveMLIPsample(calcFolder/self.in_cfg_file, self.specorder, sample)
 
         shutil.copy2(self.potential, calcFolder)
@@ -109,18 +109,21 @@ class MLIP_Interface:
         return self.mode == 'train'
 
     def readOutput(self, system, calcFolder: Path):
+        factory = system.getFactory()
+        result = factory()
         if 'sample' in self.targetProperties:
-            atomistic = system.flavourFactory.extensions['atomistic'].utility
+            atomistic = factory.extensions['atomistic'].utility
             sample = atomistic.AtomicStructureRepresentation.readMLIPsample(calcFolder/self.out_cfg_file, self.specorder)
-            system.setProperty('sample', sample, suffix=self.tag)
+            result.setProperty('sample', sample)
         if 'potential' in self.targetProperties:
             shutil.copy2(calcFolder/self.potential.name, self.potential)
         with open(calcFolder/self.in_cfg_file, 'r') as f:
             content = f.read()
-        system.setProperty('isStable', len(content) == 0)
+        result.setProperty('isStable', len(content) == 0)
         if 'trainingSet' in self.targetProperties:
             with open(self.trainingSet, 'a') as f:
                 f.write(content)
+        return result
 
         # if 'stressTensor' in self.targetProperties:
         #     stress_tensor = np.zeros((3, 3))

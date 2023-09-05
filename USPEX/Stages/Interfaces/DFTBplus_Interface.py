@@ -62,7 +62,7 @@ class DFTBplus_Interface:
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
 
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
@@ -87,14 +87,14 @@ class DFTBplus_Interface:
                 f.write(f'0  0  {kPoints[2]}\n')
                 f.write('0.0 0.0 0.0\n}\n')
 
-        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        externalPressure = system.getProperty('externalPressure')
         with open(calcFolder/self.pressure_file, 'wt') as f:
             if externalPressure:
                 f.write(f"Pressure [Pa] = {externalPressure*10.0**9:10f}\n")
             else:
                 f.write("")
 
-        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
+        disassembler = system.getProperty('disassembler', extension='atomistic')
         fixedIndices = disassembler.allFixedIndices
         if np.any(fixedIndices):
             moved_atoms_string = 'MovedAtoms = !('
@@ -136,19 +136,22 @@ class DFTBplus_Interface:
         new_structure = self.AtomicStructureRepresentation.fromAtoms(atoms)
 
         EnergyHa = self.readEnergyHa(calcFolder)
+        factory = system.getFactory()
+        result = factory()
 
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', new_structure, extension='atomistic', suffix=self.tag)
+            result.setProperty('structure', new_structure, extension='atomistic')
         if 'energy' in self.targetProperties:
-            system.setProperty('energy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
+            result.setProperty('energy', EnergyHa * HARTREE_TO_EV)
         if 'enthalpy' in self.targetProperties:
             if new_structure.getCell().dim == 3:
                 V = new_structure.getCell().getVolume()
-                P = system.getProperty('externalPressure', suffix='origin')
+                P = system.getProperty('externalPressure')
                 enthalpy = (EnergyHa + P*V*(ANGSTROM_TO_BOHR**3.0)*GPA_TO_AU) * HARTREE_TO_EV
-                system.setProperty('enthalpy', enthalpy, suffix=self.tag)
+                result.setProperty('enthalpy', enthalpy)
             else:
-                system.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
+                result.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV)
+        return result
 
     def readEnergyHa(self, calcFolder: Path) -> float:
         with open(calcFolder/self.outputFile, 'rt') as f:

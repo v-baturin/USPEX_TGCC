@@ -2,17 +2,22 @@ import unittest
 import numpy as np
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ....components import AtomicStructureRepresentation, XTB_Interface, Atomistic
+from ..XTB_Interface import XTB_Interface
+from ....Optimizers.PoolEntry import EntryFlavour
+from ....Atomistic.Primitives.Element import Element
+from ....Atomistic.Primitives.Cell import Cell
+from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
+from ....IO.AtomicStructureRepresentation import AtomicStructureRepresentation
+from ....Atomistic.Atomistic import Atomistic
+Atomistic.registerTypes(AtomicStructure, Element, Cell, AtomicStructureRepresentation)
+XTB_Interface.registerTypes(AtomicStructureRepresentation)
+
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'xtbSpecific'
 GATHEREDPATH = HOMEPATH/'xtbGatheredData'
 
 class XTB_InterfaceTest(unittest.TestCase):
-
-    def setUp(self) -> None:
-        PoolEntry.createEngine(':memory:')
 
     def test_read_output(self):
         ID = 0
@@ -26,11 +31,9 @@ class XTB_InterfaceTest(unittest.TestCase):
 
         structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (0, 0, 0))
         disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-        system = PoolEntry(ID, EntryFlavour(extensions=extensions))
-        system.setProperty('externalPressure', 0.0)
-        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
-        system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
-
-        interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
-        self.assertTrue(np.isclose(system['.enthalpy.0'], -1003.116))
+        intermediate = disassembler.disassemble(structure)
+        intermediate['.externalPressure'] = 0.0
+        intermediate['atomistic.disassembler'] = disassembler
+        intermediate = EntryFlavour(extensions=extensions, **intermediate)
+        result = interface.readOutput(intermediate, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
+        self.assertTrue(np.isclose(result['.enthalpy'], -1003.116))

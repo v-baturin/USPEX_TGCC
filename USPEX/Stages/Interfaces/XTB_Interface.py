@@ -51,7 +51,7 @@ class XTB_Interface:
 
     def prepareLocalCalculation(self, system, calcFolder : Path):
 
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
@@ -59,7 +59,7 @@ class XTB_Interface:
         write_gen(calcFolder / self.geometry_file, atoms)
 
         content_to_write = ''
-        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
+        disassembler = system.getProperty('disassembler', extension='atomistic')
         fixedIndices = disassembler.allFixedIndices
         if np.any(fixedIndices):
             content_to_write += '$fix\n'
@@ -96,18 +96,20 @@ class XTB_Interface:
 
     def readOutput(self, system, calcFolder: Path):
 
+        factory = system.getFactory()
+        result = factory()
         if 'structure' in self.targetProperties:
             with open(calcFolder / 'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
             atoms = read_gen(calcFolder / self.geometry_file)
             atoms.set_pbc(pbc)
-            system.setProperty('structure', self.AtomicStructureRepresentation.fromAtoms(atoms),
-                               extension='atomistic', suffix=self.tag)
+            result.setProperty('structure', self.AtomicStructureRepresentation.fromAtoms(atoms), extension='atomistic')
 
         if 'energy' in self.targetProperties:
-            system.setProperty('energy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV, suffix=self.tag)
+            result.setProperty('energy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV)
         if 'enthalpy' in self.targetProperties:
-            system.setProperty('enthalpy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV, suffix=self.tag)
+            result.setProperty('enthalpy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV)
+        return result
 
     def readEnergyHa(self, calcFolder: Path):
 
