@@ -55,7 +55,7 @@ class CP2K_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -85,13 +85,13 @@ class CP2K_Interface:
                 fp.write('{0:2s}  {1:15.8f} {2:15.8f} {3:15.8f} \n'.format(symbol.short_name, *coord))
 
         with open(calcFolder/self.fixedIndices_file, 'wt') as fp:
-            disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
+            disassembler = system.getProperty('disassembler', extension='atomistic')
             fixedIndices = disassembler.allFixedIndices
             fp.write('LIST  ')
             for i in fixedIndices:
                 fp.write('{} '.format(i + 1))
 
-        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        externalPressure = system.getProperty('externalPressure')
         with open(calcFolder/self.pressure_file, 'wt') as f:
             if externalPressure:
                 f.write(f"EXTERNAL_PRESSURE [GPa] {externalPressure:10f}\n")
@@ -124,22 +124,25 @@ class CP2K_Interface:
     def readOutput(self, system, calcFolder: Path):
         new_structure = self.readStructure(system, calcFolder)
         EnergyHa = self.readEnergy(calcFolder)
+        factory = system.getFactory()
+        result = factory()
 
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', new_structure, extension='atomistic', suffix=self.tag)
+            result.setProperty('structure', new_structure, extension='atomistic')
         if 'energy' in self.targetProperties:
-            system.setProperty('energy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
+            result.setProperty('energy', EnergyHa * HARTREE_TO_EV)
         if 'enthalpy' in self.targetProperties:
             if new_structure.getCell().dim == 3:
                 V = new_structure.getCell().getVolume()
-                P = system.getProperty('externalPressure', suffix='origin')
+                P = system.getProperty('externalPressure')
                 enthalpy = (EnergyHa + P*V*(ANGSTROM_TO_BOHR**3.0)*GPA_TO_AU) * HARTREE_TO_EV
-                system.setProperty('enthalpy', enthalpy, suffix=self.tag)
+                result.setProperty('enthalpy', enthalpy)
             else:
-                system.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
+                result.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
+        return result
 
     def readStructure(self, system, calcFolder: Path):
-        atomistic = system.flavourFactory.extensions['atomistic'].utility
+        atomistic = system.getFactory().extensions['atomistic'].utility
 
         with open(calcFolder / 'pbc', 'rt') as f:
             pbc = tuple(int(c) for c in f.read().split())

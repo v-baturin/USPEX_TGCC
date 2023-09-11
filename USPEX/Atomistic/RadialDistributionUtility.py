@@ -173,18 +173,19 @@ class RadialDistributionUtility(object):
         :param system: dictionary describing system.
 
         """
-        if f'radialDistribitionUtility.structureFingerprint.{self.suffix}' in system:
-            system.delProperty('structureFingerprint', extension='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.complexFingerprint.{self.suffix}' in system:
-            system.delProperty('complexFingerprint', extension='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.structureOrder.{self.suffix}' in system:
-            system.delProperty('structureOrder', extension='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.atomFingerprints.{self.suffix}' in system:
-            system.delProperty('atomFingerprints', extension='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.order.{self.suffix}' in system:
-            system.delProperty('order', extension='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.quasientropy.{self.suffix}' in system:
-            system.delProperty('quasientropy', extension='radialDistribitionUtility', suffix=self.suffix)
+        systemFlavour = system.getFlavour(self.suffix)
+        if f'radialDistribitionUtility.structureFingerprint' in systemFlavour:
+            systemFlavour.delProperty('structureFingerprint', extension='radialDistribitionUtility')
+        if f'radialDistribitionUtility.complexFingerprint' in systemFlavour:
+            systemFlavour.delProperty('complexFingerprint', extension='radialDistribitionUtility')
+        if f'radialDistribitionUtility.structureOrder' in systemFlavour:
+            systemFlavour.delProperty('structureOrder', extension='radialDistribitionUtility')
+        if f'radialDistribitionUtility.atomFingerprints' in systemFlavour:
+            systemFlavour.delProperty('atomFingerprints', extension='radialDistribitionUtility')
+        if f'radialDistribitionUtility.order' in systemFlavour:
+            systemFlavour.delProperty('order', extension='radialDistribitionUtility')
+        if f'radialDistribitionUtility.quasientropy' in systemFlavour:
+            systemFlavour.delProperty('quasientropy', extension='radialDistribitionUtility')
 
     def calcFingerprint(self, system):
         """

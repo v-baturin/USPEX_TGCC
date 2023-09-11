@@ -67,6 +67,7 @@ def read_structures_and_energies(symbols, folder: Path):
 class GenConvexHull_Si_Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        PoolEntry.createEngine(':memory:')
         cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Si'], folder=Si_gch_path)
         cls.config = CompositionSpace(symbols=['Si'], blocks=[[8]], range=[[1, 1]])
         # All systems will be added to the convex hull at one moment.
@@ -106,6 +107,7 @@ class GenConvexHull_Si_Test(unittest.TestCase):
 class GenConvexHull_FeC_Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        PoolEntry.createEngine(':memory:')
         cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Fe', 'C'], folder=FeC_gch_path)
         cls.config = CompositionSpace(symbols=['Fe', 'C'], blocks=[[3,1]], range=[[1, 10]], minAt=4, maxAt=40)
 

@@ -29,6 +29,10 @@ class FakeTarget:
 class AtomisticStage_Test(unittest.TestCase):
     '''
     '''
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(":memory:")
+
     @staticmethod
     def checkWrapped(system):
         mol_no = 0
@@ -69,14 +73,14 @@ class AtomisticStage_Test(unittest.TestCase):
         badWrappingFilePath = PATH_WITH_TESTS/'mol_wrapping_POSCARS.uspex'
         systemSource, systemSink = Atomistic.readAtomicStructures(badWrappingFilePath)
         system = PoolEntry(0, EntryFlavour(extensions=extensions, **systemSource))
-        system.system['0'] = EntryFlavour(extensions=extensions, **systemSink)
+        system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink))
         self.assertTrue(self.checkWrapped(system))
         atomisticStage.checkAndFixMolecules(system)
         self.assertFalse(self.checkWrapped(system))
         brokenMolFilePath = PATH_WITH_TESTS / 'mol_wrapping_POSCARS_brokenMol.uspex'
         systemSource, systemSink = Atomistic.readAtomicStructures(brokenMolFilePath)
-        system = PoolEntry(0, EntryFlavour(extensions=extensions, **systemSource))
-        system.system['0'] = EntryFlavour(extensions=extensions, **systemSink)
+        system = PoolEntry(1, EntryFlavour(extensions=extensions, **systemSource))
+        system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink))
         atomisticStage.checkAndFixMolecules(system)
         self.assertTrue(system.getProperty('isBad', suffix='0'))
 

@@ -85,8 +85,8 @@ class Executor(object):
 
         self.submittedTasks = {}
 
-    async def run(self, system):
-        ID = system['ID']
+    async def run(self, ID, system):
+        # ID = system['ID']
         tag = self.tag
         calcFolder = self.workingDirectory/self.CALC_FOLDER_TEMPLATE.format(ID, tag)
         for attempt in range(self._ATTEMPTS):
@@ -115,10 +115,10 @@ class Executor(object):
 
             if self._interface.isConverged(calcFolder):
                 logger.debug('System converged. Proceeding update.')
-                self._interface.readOutput(system, calcFolder)
+                result = self._interface.readOutput(system, calcFolder)
                 logger.info(f'system {ID} with tag {tag} relaxation successful.')
                 if not self.keepFolders:
                     shutil.rmtree(calcFolder, ignore_errors=True)
-                break
+                return result
         else:
             raise RuntimeError(f'Task failed {self._ATTEMPTS} times')

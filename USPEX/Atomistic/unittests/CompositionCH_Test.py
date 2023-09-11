@@ -8,6 +8,10 @@ from ...components import CompositionSpace, SimpleMoleculeUtility
 
 
 class CompostionCH_Test(unittest.TestCase):
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_unocomponent(self):
         compositionSpace = CompositionSpace(symbols=['Mo'], blocks=[[1]], range=[[1, 18]])
         simpleMoleculeUtility = SimpleMoleculeUtility()

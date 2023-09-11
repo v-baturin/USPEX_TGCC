@@ -11,6 +11,7 @@ PATH_WITH_TESTS = Path(__file__).parent
 
 class RadialDistributionUtility_Test(unittest.TestCase):
     def setUp(self):
+        PoolEntry.createEngine(':memory:')
         self.utility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'], suffix='origin')
         atomistic = Atomistic()
         extensions = dict(

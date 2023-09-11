@@ -3,8 +3,29 @@ class AtomisticFunctions:
     def __init__(self, utility) -> None:
         self.utility = utility
 
+    @staticmethod
+    def _setDisassembled(system):
+        structure = system.getProperty('structure', extension='atomistic')
+        disassembler = system.getProperty('disassembler', extension='atomistic')
+        for key, value in disassembler.disassemble(structure).items():
+            extension, prop, *other = key.split('.')
+            assert len(other) == 0, f'Too complex property name {key}.'
+            system.setProperty(prop, value, extension=extension)
+
+    def cell(self, system):
+        self._setDisassembled(system)
+        return system.getProperty('cell', extension='atomistic')
+
+    def molecules(self, system):
+        self._setDisassembled(system)
+        return system.getProperty('molecules', extension='atomistic')
+
     def environments(self, system):
-        return None
+        if 'atomistic.cell' not in system and 'atomistic.molecules' not in system:
+            self._setDisassembled(system)
+            return system.getProperty('environments', extension='atomistic')
+        else:
+            return []
 
     def structure(self, system):
         structure, disassembler = self.utility.atomicDisassemblerType.assemble(system)
@@ -15,9 +36,3 @@ class AtomisticFunctions:
         structure, disassembler = self.utility.atomicDisassemblerType.assemble(system)
         system.setProperty('structure', structure, extension='atomistic')
         return disassembler
-
-    def set(self, system, prop: str, value):
-        if prop == 'structure':
-            return system['atomistic.disassembler'].disassemble(value)
-        else:
-            return {}

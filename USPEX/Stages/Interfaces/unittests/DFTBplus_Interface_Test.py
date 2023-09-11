@@ -2,14 +2,23 @@ import unittest
 import numpy as np
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ....components import AtomicStructureRepresentation, DFTBplus_Interface, Atomistic
+from ..DFTBplus_Interface import DFTBplus_Interface
+from ....Optimizers.PoolEntry import EntryFlavour
+from ....Atomistic.Primitives.Element import Element
+from ....Atomistic.Primitives.Cell import Cell
+from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
+from ....IO.AtomicStructureRepresentation import AtomicStructureRepresentation
+from ....Atomistic.Atomistic import Atomistic
+Atomistic.registerTypes(AtomicStructure, Element, Cell, AtomicStructureRepresentation)
+DFTBplus_Interface.registerTypes(AtomicStructureRepresentation)
+
 
 HOMEPATH = Path(__file__).parent
 SPECIFICPATH = HOMEPATH/'dftbSpecific'
 GATHEREDPATH = HOMEPATH/'dftbGatheredData'
 
 class DFTBplus_InterfaceTest(unittest.TestCase):
+
     def test_read_output(self):
         ID = 0
         # HERE what is written in dftb_in.hsd does not make sense.
@@ -21,10 +30,9 @@ class DFTBplus_InterfaceTest(unittest.TestCase):
         )
         structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
         disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-        system = PoolEntry(ID, EntryFlavour(extensions=extensions))
-        system.setProperty('externalPressure', 0.0)
-        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, extension='atomistic', suffix='0')
-        system.setProperty('structure', structure, extension='atomistic', suffix='intermediate')
-        interface.readOutput(system=system, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
-        self.assertTrue(np.isclose(system['.enthalpy.0'], -395.547))
+        intermediate = disassembler.disassemble(structure)
+        intermediate['.externalPressure'] = 0.0
+        intermediate['atomistic.disassembler'] = disassembler
+        intermediate = EntryFlavour(extensions=extensions, **intermediate)
+        result = interface.readOutput(intermediate, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
+        self.assertTrue(np.isclose(result['.enthalpy'], -395.547))

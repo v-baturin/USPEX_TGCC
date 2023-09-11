@@ -32,31 +32,31 @@ class AtomisticStage:
             structure = system.getProperty('structure', extension='atomistic', suffix=self.source)
             disassembler = system.getProperty('disassembler', extension='atomistic', suffix=self.source)
         else:
-            source = system.system[self.source]
+            source = system.getFlavour(self.source)
             structure, disassembler = source.extensions['atomistic'].atomicDisassemblerType.assemble({
                 'atomistic.molecules': source[f'atomistic.molecules'],
                 'atomistic.cell': source[f'atomistic.cell']
             })
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
-        
-        system.system['intermediate'] = system.flavourFactory(**disassembler.disassemble(structure))
-        system.setProperty('vacuumSize', self.vacuumSize, suffix='intermediate')
+        intermediate = disassembler.disassemble(structure)
+        intermediate['.vacuumSize'] = self.vacuumSize
+        intermediate['.externalPressure'] = system.getProperty('externalPressure', suffix='origin')
+        intermediate['atomistic.disassembler'] = disassembler
+        intermediate = system.flavourFactory(**intermediate)
 
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
-        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, extension='atomistic', suffix=self.tag)
-
-        await self.executor.run(system)
-        self.systemCheckAndFix(system)
-        self.checkAndFixMolecules(system)
+        result = await self.executor.run(system.ID, intermediate)
+        result.setProperty('disassembler', disassembler, extension='atomistic')
+        self.systemCheckAndFix(result)
         if 'targetProperties' in self.kwargs and 'enthalpy' in self.kwargs['targetProperties'] \
-                and 'enthalpy' not in system.system[self.tag]:
-            structure = system.getProperty('structure', extension='atomistic', suffix=self.tag)
+                and '.enthalpy' not in system.getFlavour(self.tag):
+            structure = result.getProperty('structure', extension='atomistic')
             pressure = system.getProperty('externalPressure', suffix='origin')
-            energy = system.getProperty('energy', suffix=self.tag)
+            energy = result.getProperty('energy')
             enthalpy = energy + structure.getVolume() * pressure * self.EV_PER_CUBIC_ANGSTREM_PER_GPA
-            system.setProperty('enthalpy', enthalpy, suffix=self.tag)
+            result.setProperty('enthalpy', enthalpy)
+        system.addFlavour(self.tag, result)
+        self.checkAndFixMolecules(system)
 
 
 
@@ -66,8 +66,8 @@ class AtomisticStage:
         If it does, make surtain adjustments, like align the system along required axis.
         :param system: system to be checked and fixed
         """
-        structure = system.getProperty('structure', extension='atomistic', suffix=self.tag)
-        cell = system.getProperty('cell', extension='atomistic', suffix=self.tag)
+        structure = system.getProperty('structure', extension='atomistic')
+        cell = system.getProperty('cell', extension='atomistic')
         minDistMatrix = self.target.utilities.bondUtility.getDistances(structure.getAtomTypes(),
                                                       self.target.utilities.conditions.externalPressure)
         goodStructure = self.target.utilities.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix)\
@@ -80,8 +80,8 @@ class AtomisticStage:
             if self.target.utilities.cellUtility.getDim() == 1 or self.target.utilities.cellUtility.getDim() == 2:
                 cell = cell.getAlignedCell(self.target.utilities.cellUtility.getAxis())
             structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell)
-            system.setProperty('structure', structure, extension='atomistic', suffix=self.tag)
-        system.setProperty('isBad', not goodStructure, suffix=self.tag)
+            system.setProperty('structure', structure, extension='atomistic')
+        system.setProperty('isBad', not goodStructure)
 
     def checkAndFixMolecules(self, system):
         correctorDict = dict()

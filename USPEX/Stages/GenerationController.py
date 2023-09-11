@@ -103,11 +103,8 @@ class GenerationController(object):
             if self.state is ControllerState.processPopulation:
                 self.doPresentSystems = True
                 task = asyncio.ensure_future(self.presentSystems())
-                population, sc = self.populationProcessorType.initializePopulation('USPEX_stages', self.population)
-                await self.populationProcessorType.processPopulation(self.stages, population, self.numParallelCalcs,
-                                                                     self.optimizer.target,
-                                                                     sc)
-                self.population = list(population.values())
+                await self.populationProcessorType.processPopulation(self.stages, self.population,
+                                                                     self.numParallelCalcs, self.optimizer.target)
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.outputRepresentation.presentOutput(self.optimizer)

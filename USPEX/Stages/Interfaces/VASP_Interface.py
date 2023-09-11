@@ -109,7 +109,7 @@ class VASP_Interface:
         with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
-        structure = system.getProperty('structure', extension='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
@@ -117,13 +117,13 @@ class VASP_Interface:
 
         ############################# POSCAR ##################################
 
-        disassembler = system.getProperty('disassembler', extension='atomistic', suffix='intermediate')
-        self.write(structure, disassembler.allFixedIndices, f"EA{system['ID']}", calcFolder)
+        disassembler = system.getProperty('disassembler', extension='atomistic')
+        self.write(structure, disassembler.allFixedIndices, f"EA{system['.ID']}", calcFolder)
 
         ############################## INCAR ##################################
         shutil.copy2(self.incar, calcFolder/self.incar_file)
 
-        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        externalPressure = system.getProperty('externalPressure')
         if externalPressure:
             with open(calcFolder/self.incar_file, 'a') as myfile:
                 myfile.write(f"\nPSTRESS={10 * externalPressure:10f}\n")
@@ -257,35 +257,39 @@ class VASP_Interface:
             pbc = tuple(int(c) for c in f.read().split())
         trajectory = self.read(calcFolder, pbc)
         results = trajectory[-1]['results']
+        factory = system.getFactory()
+        result = factory()
+
         if 'structure' in self.targetProperties:
-            system.setProperty('structure', trajectory[-1]['structure'], extension='atomistic', suffix=self.tag)
+            result.setProperty('structure', trajectory[-1]['structure'], extension='atomistic')
         if 'enthalpy' in self.targetProperties:
             if 'enthalpy' in results:
-                system.setProperty('enthalpy', results['energy'], suffix=self.tag)
+                result.setProperty('enthalpy', results['energy'])
             else:
-                system.setProperty('energy', results['energy'], suffix=self.tag)
+                result.setProperty('energy', results['energy'])
         if 'energy' in self.targetProperties:
-            system.setProperty('energy', results['energy'], suffix=self.tag)
+            result.setProperty('energy', results['energy'])
         if 'forces' in self.targetProperties:
-            system.setProperty('forces', results['forces'], suffix=self.tag)
+            result.setProperty('forces', results['forces'])
         if 'trajectory' in self.targetProperties:
             # for subsystem in trajectory:
             #     subsystem['disassembler'] = system['disassembler']
             #     subsystem['externalPressure'] = system['externalPressure']
-            system.setProperty('trajectory', trajectory, suffix=self.tag)
+            result.setProperty('trajectory', trajectory)
 
         with open(calcFolder/self.outcar_file, 'rt') as fp:
             content = fp.readlines()
         if 'stressTensor' in self.targetProperties:
-            system.setProperty('stressTensor', self.readPressureTensor(content), suffix=self.tag)
+            result.setProperty('stressTensor', self.readPressureTensor(content))
         if 'dielectricTensor' in self.targetProperties:
-            system.setProperty('dielectricTensor', self.readDielectricProperties(content), suffix=self.tag)
+            result.setProperty('dielectricTensor', self.readDielectricProperties(content))
         if 'dipoleMoment' in self.targetProperties:
-            system.setProperty('dipoleMoment', self.readDipoleMoment(content), suffix=self.tag)
+            result.setProperty('dipoleMoment', self.readDipoleMoment(content))
         if 'energyFermi' in self.targetProperties:
-            system.setProperty('energyFermi', self.readFermi(content), suffix=self.tag)
+            result.setProperty('energyFermi', self.readFermi(content))
         if 'elasticConstants' in self.targetProperties:
-            system.setProperty('elasticConstants', self.readElasticMatrix(content), suffix=self.tag)
+            result.setProperty('elasticConstants', self.readElasticMatrix(content))
+        return result
 
     def readPressureTensor(self, content, index=-1):
         target = []
