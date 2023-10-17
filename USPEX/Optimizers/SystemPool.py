@@ -53,25 +53,3 @@ class SystemPool(object):
         :return: list of IDs of unique structures.
         """
         return tuple(ID for ID in self.goodSystemIDs if self.allSystems[ID].originalID is None)
-
-    def newEntry(self, system: EntryFlavour) -> PoolEntry:
-        """
-        Assign ID to system.
-
-        :type system:
-        :param system: system to be labeled with ID.
-
-        """
-        entry = PoolEntry(self._newID, system)
-        self._newID += 1
-        self.allSystems[entry.ID] = entry
-        logger.info(f"System {entry.ID} successfully created by {entry['.howCome.origin']} operator"
-                    f" from {entry['.parent.origin']} parents.")
-        return entry
-
-    @staticmethod
-    def fronts(pool, expression):
-        expression = applyPresetsRecursive(expression)
-        values = [s[expression] for s in pool]
-        return [[pool[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
-

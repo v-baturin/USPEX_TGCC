@@ -19,6 +19,15 @@ from USPEX.Expressions.Functions.presets import applyPresetsRecursive
 logger = logging.getLogger(__name__)
 
 
+class Expression:
+
+    def __init__(self, expression, pool):
+        self._expression = expression
+        self._pool = pool
+
+    def __hash__(self):
+        return hash((self._expression, self._pool))
+
 class ExpressionEvaluator:
 
     @staticmethod
@@ -74,4 +83,4 @@ class ExpressionEvaluator:
         for expression, values in self._storedData.items():
             for s, value in zip(self._pool, values):
                 if isinstance(expression, tuple):
-                    s.setExpression(expression, value)
+                    s.setExpression(Expression(expression, self._pool), value)

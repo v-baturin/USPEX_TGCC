@@ -15,6 +15,7 @@ from itertools import chain
 from .SystemPool import SystemPool
 from .PoolEntry import FlavourFactory
 from .Target import Target, TargetType
+from ..Selection.Antiseeds import Antiseeds
 from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 from USPEX.Expressions.Functions.presets import applyPresetsRecursive
 
@@ -68,7 +69,7 @@ class GlobalOptimizer(object):
                                                 mutations=mutations, creations=creations, seeds=seeds)
 
     def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None,
-                 extraData=(), **kwargs):
+                 extraData=(), antiseeds: dict = None, **kwargs):
         """
         Initializes the class.
 
@@ -85,8 +86,8 @@ class GlobalOptimizer(object):
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = list(extraData)
         self.selectionConfig = selection
-        self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target,
-                                                                            self.fingerprintUtility, **selection)
+        self._createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target,
+                                                                             self.fingerprintUtility, **selection)
 
         self.optType = optType
         self.stopFitness = stopFitness
@@ -97,8 +98,10 @@ class GlobalOptimizer(object):
             self.stopSystems = None
 
         self.goodSystemsSuffixes = set(
-            prop.split('.')[-1] for prop in _extract(self.optType) + _extract(self.createPopulation.optType)
+            prop.split('.')[-1] for prop in _extract(self.optType) + _extract(self._createPopulation.optType)
         )
+
+        self._mostDiverse = []
 
         self.best = set()
         self._isStable = False
@@ -118,6 +121,15 @@ class GlobalOptimizer(object):
         other._isGoalReached = self._isGoalReached
         return other
 
+    def createPopulation(self):
+        if self.antiseeds.legacy:
+            self.antiseeds.payPenalties(self.pool.generations[-1]['allSystems'],
+                                        self.pool.uniqueSystems, self.fingerprintUtility)
+        population = list(self.pool.uniqueSystems) if self.globalParentsPool else self.pool.generations[-1]['allSystems']
+        offsprings = []
+        self._createPopulation(population, offsprings)
+        return offsprings
+
     async def update(self, population: list):
         """
         Updates state of optimized structures.
@@ -134,7 +146,7 @@ class GlobalOptimizer(object):
                 self.pool.goodSystemIDs.append(system.ID)
                 goodSystems.append(system)
         self.ExpressionEvaluator.calculate(self.optType, self.pool.goodSystems, self.extensions)
-        self.ExpressionEvaluator.calculate(self.createPopulation.optType, self.pool.goodSystems, self.extensions)
+        self.ExpressionEvaluator.calculate(self._createPopulation.optType, self.pool.goodSystems, self.extensions)
         population = goodSystems
         assert population, 'All systems in population failed relaxation.'
         self._markDuplicates(population)

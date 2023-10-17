@@ -1,10 +1,18 @@
+import logging
 import pickle as pcl
+import numpy as np
 
 from typing import Union
 from sqlalchemy import MetaData, ForeignKey, Table, Column, Integer, Float, String, create_engine, insert, select, and_
 
+from ..Expressions.Functions.presets import applyPresetsRecursive
+
+
+logger = logging.getLogger(__name__)
+
+
 metadata_obj = MetaData()
-pool = Table(
+flavours = Table(
     "flavours",
     metadata_obj,
     Column("id", Integer, primary_key=True),
@@ -42,6 +50,13 @@ propertiesObj = Table(
     Column("fID", ForeignKey("flavours.id"), nullable=False),
     Column("prop", String(30), nullable=False),
     Column("value", String, nullable=False),
+)
+poolMap = Table(
+    "poolMap",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("entryID", Integer, nullable=False),
+    Column("poolID", Integer, nullable=False),
 )
 
 
@@ -156,20 +171,19 @@ class PoolEntry:
         cls.engine = create_engine(f"sqlite+pysqlite:///{filename}")
         metadata_obj.create_all(cls.engine)
 
-    def __init__(self, ID: int,  system: EntryFlavour):
+    def __init__(self, ID: int,  flavourFactory: FlavourFactory):
         self.ID = ID
         self.originalID = None
         self.duplicates = []
         self.expressions = {}
-        self.flavourFactory = system.getFactory()
+        self.flavourFactory = flavourFactory
         self._flavours = {}
         self.properties = {}
-        self.addFlavour('origin', system)
 
     @property
     def flavours(self):
         with self.engine.connect() as conn:
-            result = conn.execute(select(pool.c.id, pool.c.name).where(pool.c.sID == self.ID)).all()
+            result = conn.execute(select(flavours.c.id, flavours.c.name).where(flavours.c.sID == self.ID)).all()
         if len(result) != len(self._flavours):
             self._flavours = {}
             for fID, flavour in result:
@@ -180,7 +194,7 @@ class PoolEntry:
     def addFlavour(self, name: str, flavour: EntryFlavour):
         # assert name not in self.flavours, f'Flavour {name} already in system {self.ID}'
         with self.engine.connect() as conn:
-            result = conn.execute(insert(pool), [{"sID": self.ID, "name": name}])
+            result = conn.execute(insert(flavours), [{"sID": self.ID, "name": name}])
             conn.commit()
         ID = result.inserted_primary_key[0]
         self.flavours[name] = flavour
@@ -202,22 +216,18 @@ class PoolEntry:
             flavour = self.getFlavour(suffix)
         flavour.setProperty(prop, value, extension=extension)
 
-    def setExpression(self, expression: tuple, value):
-        if expression not in self.expressions:
-            self.expressions[expression] = []
-        self.expressions[expression].append(value)
+    def setExpression(self, expression, value):
+        self.expressions[expression] = value
 
-    def __getitem__(self, item: Union[str, tuple]):
+    def getExpression(self, expression):
+        return self.expressions[expression]
+
+    def __getitem__(self, item: str):
         if item == 'ID':
             return self.ID
-        elif isinstance(item, tuple):
-            return self.expressions[item][-1]
-        elif isinstance(item, str):
-            prefix, prop, suffix, *other = item.split('.')
-            assert not other, f'Too complex property name {item}.'
-            return self.getProperty(prop, prefix, suffix)
-        else:
-            raise KeyError(f'Property {item} is not valid.')
+        prefix, prop, suffix, *other = item.split('.')
+        assert not other, f'Too complex property name {item}.'
+        return self.getProperty(prop, prefix, suffix)
 
     def __contains__(self, item: Union[str, tuple]):
         if item == 'ID':
@@ -230,3 +240,62 @@ class PoolEntry:
             return suffix in self.flavours and f'{prefix}.{prop}' in self.getFlavour(suffix)
         else:
             raise KeyError(f'Property {item} is not valid.')
+
+class Pool:
+
+    _newPoolID: int = 0
+    _newEntryID: int = 0
+
+    @classmethod
+    def createPool(cls, flavourfactory: FlavourFactory):
+        pool = cls(cls._newPoolID, flavourfactory)
+        cls._newPoolID += 1
+        return pool
+
+    def __init__(self, ID: int, flavourfactory: FlavourFactory):
+        self.ID = ID
+        self.flavourFactory = flavourfactory
+        self._cache = []
+
+    def __hash__(self):
+        return hash(self.ID)
+
+    def newEntry(self, flavour: EntryFlavour):
+        """
+        Assign ID to system.
+
+        :type system:
+        :param system: system to be labeled with ID.
+
+        """
+        entry = PoolEntry(self._newEntryID, self.flavourFactory)
+        entry.addFlavour('origin', flavour)
+        self._newEntryID += 1
+        logger.info(f"Entry {entry.ID} successfully created by {entry['.howCome.origin']} operator"
+                    f" from {entry['.parent.origin']} parents.")
+        self.addEntry(entry)
+        return entry.ID
+
+    def addEntry(self, entry: PoolEntry):
+        self._cache[entry.ID] = entry
+        with PoolEntry.engine.connect() as conn:
+            conn.execute(insert(poolMap), [{"poolID": self.ID, "entryID": entry.ID}])
+            conn.commit()
+
+    def getIDs(self):
+        with PoolEntry.engine.connect() as conn:
+            IDs = conn.execute(select(poolMap.c.entryID).where(poolMap.c.poolID == self.ID)).all()
+        return IDs
+
+    def getEntry(self, ID: int):
+        assert ID in self.getIDs()
+        if ID not in self._cache:
+            self._cache[ID] = PoolEntry(ID, self.flavourFactory)
+        return self._cache[ID]
+
+    def fronts(self, expression):
+        expression = applyPresetsRecursive(expression)
+        entries = [self.getEntry(ID) for ID in self.getIDs()]
+        values = [entry[expression] if isinstance(expression, str) else entry.getExpression(expression)
+                  for entry in entries]
+        return [[entries[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
