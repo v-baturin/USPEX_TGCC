@@ -12,7 +12,6 @@ from copy import copy
 from typing import Dict
 from collections import Counter
 
-from .Antiseeds import Antiseeds
 from ..Expressions.Functions.presets import applyPresetsRecursive
 
 
@@ -80,18 +79,15 @@ class Autofrac(object):
 
 class USPEXClassic(object):
 
-    def __init__(self, flavourFactory, target, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
-                 initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False,
-                 antiseeds: dict = None, globalParentsPool: bool = False, **kwargs):
+    def __init__(self, target, fingerprintUtility, optType, popSize: int, fractions: Dict[str, tuple],
+                 initialPopSize: int = None, bestFrac: float=0.7, howManyDiverse: int = None,
+                 diversityTolerance: float = 0.5, globalParentsPool: bool = False, debug=False, **kwargs):
         """
         :param target: reference to configuration space object
         :param params: dictionary contains following parameters:
         popSize : int - size of population
         """
         self.target = target
-        antiseeds = {} if antiseeds is None else antiseeds
-        self.antiseeds = Antiseeds(**antiseeds)
-        flavourFactory.extensions['antiseeds'] = self.antiseeds
         self.fingerprintUtility = fingerprintUtility
         self.optType = optType
         self.fractions = fractions
@@ -142,7 +138,7 @@ class USPEXClassic(object):
             parentsPool, tournament, popSize = [], [], self.initialPopSize
 
         if not self.globalParentsPool:
-            self._mostDiverse = self.determineMostDiverse(parentsPool, self.howManyDiverse, self.diversityTolerance)
+            self._mostDiverse = self.determineMostDiverse(parentsPool)
 
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
@@ -239,9 +235,6 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        if not self.antiseeds.legacy:
-            self.antiseeds.payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
-
         if self.target.seeds is not None:
             seeds = self.target.seeds(offsprings.flavourFactory)
             for seed in seeds:
@@ -252,7 +245,10 @@ class USPEXClassic(object):
                 self._newIDs.append(ID)
                 logger.info(f"Seed filename is {seed['.filename']}.")
 
-    def determineMostDiverse(self, population : list, howManyDiverse: int, tolerance: float):
+        # if not self.antiseeds.legacy:
+        #     self.antiseeds.payPenalties(actualParents)
+
+    def determineMostDiverse(self, population: list):
         """
         Here we perform clusterization in terms of distances between systems, assuming such distance is defined.
         For example atomic structures defines cosine distance in space of fingerprints.
@@ -268,6 +264,7 @@ class USPEXClassic(object):
         :param tolerance: Starting point for the threshold.
         :return:
         """
+        tolerance = self.diversityTolerance
         deltaTol = tolerance / 2
         mostDiverse = []
         while deltaTol > 0.000001:
@@ -277,15 +274,15 @@ class USPEXClassic(object):
                         break
                 else:
                     mostDiverse.append(system)
-            if len(mostDiverse) < howManyDiverse:
+            if len(mostDiverse) < self.howManyDiverse:
                 tolerance -= deltaTol
-            elif len(mostDiverse) > howManyDiverse:
+            elif len(mostDiverse) > self.howManyDiverse:
                 tolerance += deltaTol
             else:
                 return mostDiverse
             deltaTol /= 2
             mostDiverse = []
-        logger.debug(f"Can't clusterize population into {howManyDiverse} fractions.")
+        logger.debug(f"Can't clusterize population into {self.howManyDiverse} fractions.")
         return mostDiverse
 
     def getMostDiverse(self) -> list:
