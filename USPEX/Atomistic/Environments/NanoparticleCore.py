@@ -17,27 +17,15 @@ class NanoparticleCore:
     Assembler -- the factory that creates the NanoparticleCore objects and has the utilities that create, store and
     select docking Sites, store the history of processed combinations of core sites and adsorbants
     """
-    structureRepresentation = None
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
+    Atomistic = None
 
     @classmethod
-    def registerTypes(cls,representationType, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, Atomistic):
         """
         Register types used by this utility.
 
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
         """
-        cls.structureRepresentation = representationType
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
+        cls.Atomistic = Atomistic
 
     def __init__(self, structure, sites=None, isFixed: bool = True, **kwargs):
         self._structure = structure
@@ -75,10 +63,10 @@ class NanoparticleCore:
         return f"<CoreAssembler {self._structure.getFormula()}>"
 
     def assemble(self, molecules, **kwargs):
-        wholeSysStruct, _ = NanoparticleCore.atomicDisassemblerType.assemble(molecules + [self._structure],
-                                                                       cell=self._structure.getCell())
+        system = {'atomistic.molecules': molecules + [self._structure], 'atomistic.cell': self._structure.getCell()}
+        wholeSysStruct, _ = NanoparticleCore.Atomistic.atomicDisassemblerType.assemble(system)
         newCell = self.getCell().getEnvelopeCell(wholeSysStruct.getCartesianCoordinates())
-        newEnvStructure = NanoparticleCore.structureType(self._structure.getAtomTypes(),
+        newEnvStructure = NanoparticleCore.Atomistic.structureType(self._structure.getAtomTypes(),
                                                            self._structure.getCartesianCoordinates(),
                                                            newCell)
         return [(newEnvStructure, self._indices)]
@@ -168,7 +156,7 @@ class NanoparticleCore:
 
     @staticmethod
     def build(filename, **kwargs):
-        structure = NanoparticleCore.structureRepresentation.readXYZ(filename)
+        structure = NanoparticleCore.Atomistic.AtomicStructureRepresentation.readXYZ(filename)
         environment = dict(
             structure=structure,
         )

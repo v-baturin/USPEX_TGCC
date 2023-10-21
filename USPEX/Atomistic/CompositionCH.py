@@ -1,22 +1,22 @@
-from types import SimpleNamespace
-
-from ..Fitness.ConvexHull import ConvexHull
-from ..Fitness.Fitness import Fitness
-from ..Optimizers.SystemPool import SystemPool
+from USPEX.Expressions.ConvexHull import ConvexHull
+from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
+from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 from .CompositionSpace import CompositionSpace
 
 
 class CompositionCH(ConvexHull):
-    def __init__(self, systems: list, compositionSpace: CompositionSpace, simpleMoleculeUtility):
+    def __init__(self, systems: list, compositionSpace: CompositionSpace):
         self.systems = systems
-        pool = SystemPool()
-        pool.update(self.systems)
         self.compositionSpace = compositionSpace
-        self.simpleMoleculeUtility = simpleMoleculeUtility
-        utilities = SimpleNamespace(compositionSpace = compositionSpace, simpleMoleculeUtility = simpleMoleculeUtility)
-        super().__init__(Fitness(pool.uniqueSystems, utilities).calcFitness(('getRelativeCHSpace',
-                                                               ('compositionSpace.numBlocksFromCompositions',
-                                                              'simpleMoleculeUtility.composition'), 'enthalpy')))
+        extensions = dict(
+            basic=BasicFunctions(),
+            compositionSpace=compositionSpace.expressionExtension(compositionSpace),
+        )
+        expression = ('getRelativeCHSpace',
+                      ('compositionSpace.numBlocksFromCompositions', 'simpleMoleculeUtility.composition.origin'),
+                      '.enthalpy.origin'
+                      )
+        super().__init__(ExpressionEvaluator(self.systems, extensions).evaluate(expression))
 
     @property
     def lower_bound(self):
@@ -36,9 +36,12 @@ class CompositionCH(ConvexHull):
 
     def extend(self, systems: list):
         self.systems.extend(systems)
-        pool = SystemPool()
-        pool.update(self.systems)
-        utilities = SimpleNamespace(compositionSpace = self.compositionSpace, simpleMoleculeUtility = self.simpleMoleculeUtility)
-        super().__init__(Fitness(pool.uniqueSystems, utilities).calcFitness(('getRelativeCHSpace',
-                                                               ('compositionSpace.numBlocksFromCompositions',
-                                                              'simpleMoleculeUtility.composition'), 'enthalpy')))
+        extensions = dict(
+            basic=BasicFunctions(),
+            compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
+        )
+        expression = ('getRelativeCHSpace',
+                      ('compositionSpace.numBlocksFromCompositions', 'simpleMoleculeUtility.composition.origin'),
+                      '.enthalpy.origin'
+                      )
+        super().__init__(ExpressionEvaluator(self.systems, extensions).evaluate(expression))

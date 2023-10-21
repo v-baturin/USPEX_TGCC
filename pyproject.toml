@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "uspex"
 requires-python = ">=3.8"
-dependencies = ["ase", "pymatgen", "abipy", "asyncssh", "pandas", "scikit-learn", "prettytable", "parsec", "pyxtal", "torch", "alphashape"]
+dependencies = ["ase", "pymatgen", "abipy", "asyncssh", "pandas", "scikit-learn", "prettytable", "parsec", "pyxtal", "torch", "alphashape", "sqlalchemy"]
 dynamic = ["version"]
 
 [project.scripts]
@@ -15,7 +15,8 @@ uspex="USPEX.main:main"
 version = {attr = "USPEX.__version__"}
 
 [tool.setuptools]
-packages = ['USPEX', 'USPEX.IO', 'USPEX.Stages', 'USPEX.Stages.Interfaces', 'USPEX.Stages.TaskManagers']
+packages = ['USPEX', 'USPEX.IO', 'USPEX.Stages', 'USPEX.Stages.Interfaces', 'USPEX.Stages.TaskManagers',
+    'USPEX.Expressions.Functions']
 include-package-data = false
 
 [tool.setuptools.package-data]

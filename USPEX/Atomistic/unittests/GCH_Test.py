@@ -14,7 +14,8 @@ import unittest
 from pathlib import Path
 
 from ..GCH import GeneralizedConvexHull
-from ...components import AtomisticRepresentation, RadialDistributionUtility, CompositionSpace, AtomisticPoolEntry
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...components import RadialDistributionUtility, CompositionSpace, Atomistic
 
 TESTPATH = Path(__file__).parent
 
@@ -25,9 +26,14 @@ FeC_gch_path = TESTPATH/'FeC_gch_test'
 def read_structures_and_energies(symbols, folder: Path):
     with open(folder/'Individuals', 'r') as fp:
         info = fp.readlines()[2:]
-    all_systems = AtomisticRepresentation.readAtomicStructures(folder/'gatheredPOSCARS')
+    all_systems = Atomistic.readAtomicStructures(folder/'gatheredPOSCARS')
     assert all_systems
-    radialDistributionUtility = RadialDistributionUtility(symbols=symbols)
+    radialDistributionUtility = RadialDistributionUtility(symbols=symbols, suffix='origin')
+    atomistic = Atomistic()
+    extensions = dict(
+        atomistic=Atomistic.propertyExtension(atomistic),
+        radialDistributionUtility=radialDistributionUtility.propertyExtension(radialDistributionUtility)
+    )
 
     generations = []
     IDs = []
@@ -44,9 +50,9 @@ def read_structures_and_energies(symbols, folder: Path):
         IDs.append(ID)
         system['ID'] = ID
         system['isBad'] = False
-        system['enthalpy'] = enthalpy
-        system = AtomisticPoolEntry(**system)
-        system.setProperty('fingerprint', radialDistributionUtility.structureFingerprint(system))
+        system['.enthalpy'] = enthalpy
+        system = PoolEntry(ID, EntryFlavour(extensions=extensions, **system))
+        system.getProperty('structure', extension='atomistic')
         systems.append(system)
     all_systems = systems
 
@@ -61,6 +67,7 @@ def read_structures_and_energies(symbols, folder: Path):
 class GenConvexHull_Si_Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        PoolEntry.createEngine(':memory:')
         cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Si'], folder=Si_gch_path)
         cls.config = CompositionSpace(symbols=['Si'], blocks=[[8]], range=[[1, 1]])
         # All systems will be added to the convex hull at one moment.
@@ -78,7 +85,7 @@ class GenConvexHull_Si_Test(unittest.TestCase):
     def test_is_on_CH1(self):
         init_systems = self.populations[0]
         self.convexHull_1 = GeneralizedConvexHull([system for system in init_systems], config=self.config)
-        indices = np.argsort(np.fromiter((x['enthalpy'] for x in init_systems), dtype=float))
+        indices = np.argsort(np.fromiter((x['.enthalpy.origin'] for x in init_systems), dtype=float))
         lowest_energy_structure_index = indices[0]
         highest_energy_structure_index = indices[-1]
         self.assertEqual(self.convexHull_1.height[lowest_energy_structure_index], 0)
@@ -88,7 +95,7 @@ class GenConvexHull_Si_Test(unittest.TestCase):
 
     def test_is_on_CH(self):
         self.convexHull = GeneralizedConvexHull([x for x in self.all_systems], config=self.config)
-        indices = np.argsort(np.fromiter((x['enthalpy'] for x in self.all_systems), dtype=float))
+        indices = np.argsort(np.fromiter((x['.enthalpy.origin'] for x in self.all_systems), dtype=float))
         lowest_energy_structure_index = indices[0]
         highest_energy_structure_index = indices[-1]
         self.assertEqual(self.convexHull.height[lowest_energy_structure_index], 0)
@@ -100,6 +107,7 @@ class GenConvexHull_Si_Test(unittest.TestCase):
 class GenConvexHull_FeC_Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        PoolEntry.createEngine(':memory:')
         cls.populations, cls.all_systems = read_structures_and_energies(symbols=['Fe', 'C'], folder=FeC_gch_path)
         cls.config = CompositionSpace(symbols=['Fe', 'C'], blocks=[[3,1]], range=[[1, 10]], minAt=4, maxAt=40)
 
@@ -114,7 +122,7 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
     def test_is_on_CH1(self):
         init_systems = self.populations[0]
         self.convexHull_1 = GeneralizedConvexHull([system for system in init_systems], config=self.config)
-        indices = np.argsort(np.fromiter((x['enthalpy'] for x in init_systems), dtype=float))
+        indices = np.argsort(np.fromiter((x['.enthalpy.origin'] for x in init_systems), dtype=float))
         lowest_energy_structure_index = indices[0]
         highest_energy_structure_index = indices[-1]
         self.assertEqual(self.convexHull_1.height[lowest_energy_structure_index], 0)
@@ -124,7 +132,7 @@ class GenConvexHull_FeC_Test(unittest.TestCase):
 
     def test_is_on_CH(self):
         self.convexHull = GeneralizedConvexHull([x for x in self.all_systems], config=self.config)
-        indices = np.argsort(np.fromiter((x['enthalpy'] for x in self.all_systems), dtype=float))
+        indices = np.argsort(np.fromiter((x['.enthalpy.origin'] for x in self.all_systems), dtype=float))
         lowest_energy_structure_index = indices[0]
         highest_energy_structure_index = indices[-1]
         self.assertEqual(self.convexHull.height[lowest_energy_structure_index], 0)

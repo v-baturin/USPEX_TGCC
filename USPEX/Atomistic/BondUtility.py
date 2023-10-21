@@ -10,16 +10,17 @@ Objects and methods for handling chemical bonds
 
 import logging
 import numpy as np
-from typing import Dict, List, Tuple, Union
-from ase.atoms import Atom, Atoms
+from typing import Dict, Tuple, Union
+from ase.atoms import Atoms
 from ase.neighborlist import primitive_neighbor_list
-from itertools import chain, combinations_with_replacement
+from itertools import combinations_with_replacement
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial.distance import cdist
 from scipy.stats import gmean
 from itertools import chain
 
 from .VolumeEstimator import VolumeEstimator
+from USPEX.Expressions.Functions.BondFunctions import BondFunctions
 
 
 logger = logging.getLogger(__name__)
@@ -42,37 +43,31 @@ class Bond(object):
     * delta (float): distance between atoms - (R_val_1 + R_val_2), in Angstroms
     """
 
-    def __init__(self, atom1: Atom, atom2: Atom, dir1: Tuple[int] = (0, 0, 0), dir2: Tuple[int] = (0, 0, 0)):
+    def __init__(self, type1, position1, index1, type2, position2, index2, dir1, dir2, cell):
         """
-        :type atom1: Atom
-        :param atom1: reference to the first atom in bond.
-        :type atom2: Atom
-        :param atom2: reference to the second atom in bond.
-        :type direction: list
-        :param direction: bond direction with respect to cell parameters.
         """
-        assert atom1.atoms == atom2.atoms
         assert 3 == len(dir1) == len(dir2)
-        self._cell = atom1.atoms.get_cell()
-        self._atom1, self._atom2 = atom1, atom2
+        self._cell = cell
+        self._type1, self._position1, self._index1 = type1, position1, index1
+        self._type2, self._position2, self._index2 = type2, position2, index2
         self._dir1 = np.asarray(dir1, dtype=int)
         self._dir2 = np.asarray(dir2, dtype=int)
 
     @property
     def indicies(self) -> Tuple[int, int]:
-        return self._atom1.index, self._atom2.index
+        return self._index1, self._index2
 
     @property
     def direction(self):
         return self._dir2 - self._dir1
 
     @property
-    def symbols(self) -> Tuple[str, str]:
-        return self._atom1.symbol, self._atom2.symbol
+    def types(self):
+        return self._type1, self._type2
 
     @property
     def vector(self):
-        return self._atom2.position - self._atom1.position + np.dot(self._dir2 - self._dir1, self._cell)
+        return self._position2 - self._position1 + np.dot(self._dir2 - self._dir1, self._cell)
 
     @property
     def distance(self) -> float:
@@ -80,40 +75,17 @@ class Bond(object):
 
     @property
     def delta(self):
-        R_val = lambda symbol: BondUtility.atomType(symbol).covalent_radius
-        return self.distance - R_val(self._atom1.symbol) - R_val(self._atom2.symbol)
-
-    @property
-    def atoms(self):
-        """
-        :rtype: tuple
-        :return: indices of origin and end atoms in bond.
-        """
-        return self._atom1, self._atom2
+        return self.distance - self._type1.covalent_radius - self._type2.covalent_radius
 
     def isClose(self, other, threshold):
-        isEqualSymbols = self.symbols == other.symbols or self.symbols == reversed(other.symbols)
+        isEqualSymbols = set(self.types) == set(other.types)
         isEqualDistance = np.abs(self.distance - other.distance) < threshold
         return isEqualSymbols and isEqualDistance
 
 
 class BondUtility:
 
-    atomType = None
-    disassemblerType = None
-
-    @classmethod
-    def registerTypes(cls, atomType, disassemblerType):
-        """
-        Register types used by this utility.
-
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
-        """
-        cls.atomType = atomType
-        cls.disassemblerType = disassemblerType
+    propertyExtension = BondFunctions
 
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
                  cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, ionDistances=None):
@@ -194,16 +166,14 @@ class BondUtility:
         if isinstance(cutoff, (dict, float, int)):
             return cutoff
 
-        covalentLengths = {frozenset((s1.short_name, s2.short_name)): self.atomType(s1.short_name).covalent_radius +
-                                                                      self.atomType(s2.short_name).covalent_radius
+        covalentLengths = {frozenset((s1.short_name, s2.short_name)): s1.covalent_radius + s2.covalent_radius
                            for s1, s2 in combinations_with_replacement(structure.getAtomTypes(), 2)}
 
         if cutoff == 'strong':
             strongMaxDelta = self._strongBondsMaxDelta(structure)
             cutoff = {key: val + strongMaxDelta[key] for key, val in covalentLengths.items()}
         elif cutoff == 'vdw':
-            cutoff = {frozenset((s1.short_name, s2.short_name)): self.atomType(s1.short_name).vanderWaals_radius +
-                                                                 self.atomType(s2.short_name).vanderWaals_radius
+            cutoff = {frozenset((s1.short_name, s2.short_name)): s1.vanderWaals_radius + s2.vanderWaals_radius
                       for s1, s2 in combinations_with_replacement(structure.getAtomTypes(), 2)}
         else:
             raise ValueError('Unsupported cutoffType')
@@ -228,10 +198,11 @@ class BondUtility:
         @return: (strongBonds: List, weakBonds: List) (separated according to goodBonds-based criteria)
         """
 
-        atoms = Atoms(symbols=[s.short_name for s in structure.getAtomTypes()],
-                          positions=structure.getCartesianCoordinates(),
-                          cell=structure.getCell().getCellVectors(),
-                          pbc=structure.getCell().getPBC())
+        atomTypes = structure.getAtomTypes()
+        positions = structure.getCartesianCoordinates()
+        cell = structure.getCell()
+        atoms = Atoms(symbols=[s.short_name for s in atomTypes], positions=positions,
+                      cell=cell.getCellVectors(), pbc=cell.getPBC())
 
         # 1. Calculate bonds within cutoff.
         bonds = []
@@ -245,7 +216,9 @@ class BondUtility:
             # TODO Why we had this less 0.5A and not more than 5A (usually)
             if dist < self.lowerBond or j < i:
                 continue
-            bonds.append(Bond(atom1=atoms[i], atom2=atoms[j], dir2=dir))
+            bonds.append(Bond(type1=atomTypes[i], position1=positions[i], index1=i,
+                              type2=atomTypes[j], position2=positions[j], index2=j,
+                              dir1=(0, 0, 0), dir2=tuple(dir), cell=cell.getCellVectors()))
 
         tmp_bonds = sorted(bonds, key=lambda x: x.delta)
 
@@ -265,8 +238,8 @@ class BondUtility:
                 else:
                     bonds_remain.append(b)
             tmp_bonds = bonds_remain
-            a, b = bonds_one_type[0].symbols
-            if min([bond.delta for bond in bonds_one_type]) < strongBondMaxDelta[frozenset((a, b))]:
+            a, b = bonds_one_type[0].types
+            if min([bond.delta for bond in bonds_one_type]) < strongBondMaxDelta[frozenset((a.short_name, b.short_name))]:
                 strongBonds.append(bonds_one_type)  # Add by group
             else:
                 weakBonds.append(bonds_one_type)
@@ -396,18 +369,18 @@ class BondUtility:
             if tmp_bonds:
                 h_tmp1 = []
                 for bond in tmp_bonds:
-                    a, b = bond.symbols
+                    a, b = bond.types
 
-                    R_a = self.atomType(a).covalent_radius + bond.delta / 2
-                    R_b = self.atomType(b).covalent_radius + bond.delta / 2
+                    R_a = a.covalent_radius + bond.delta / 2
+                    R_b = b.covalent_radius + bond.delta / 2
                     nu = np.exp(-bond.delta / 0.37)
-                    EN_a = 0.481 * self.atomType(a).valence_electrons / R_a  # electronegativity
-                    EN_b = 0.481 * self.atomType(b).valence_electrons / R_b
+                    EN_a = 0.481 * a.valence_electrons / R_a  # electronegativity
+                    EN_b = 0.481 * b.valence_electrons / R_b
 
                     # Effective CN that describes the atomic valence:
                     a1, b1 = bond.indicies
-                    CN_a = self.atomType(a).valence / (nu * nu_factor[a1])
-                    CN_b = self.atomType(b).valence / (nu * nu_factor[b1])
+                    CN_a = a.valence / (nu * nu_factor[a1])
+                    CN_b = b.valence / (nu * nu_factor[b1])
 
                     f_ab = 0.25 * abs(EN_a - EN_b) / np.sqrt(EN_a * EN_b)  # ionicity indicator
                     X_ab = np.sqrt(EN_a * EN_b / (CN_a * CN_b))  # electron-holding energy
@@ -471,20 +444,19 @@ class BondUtility:
 
         for bond_group in bonds:
             for bond in bond_group:
-                s1, s2 = bond.symbols
+                s1, s2 = bond.types
                 i1, i2 = bond.indicies
-                e1, e2 = self.atomType(s1), self.atomType(s2)
                 # a = atom_type_seq[ID1]
                 # b = atom_type_seq[ID2]
-                R_val_sum = e1.covalent_radius + e2.covalent_radius
+                R_val_sum = s1.covalent_radius + s2.covalent_radius
                 R = R_val_sum + bond.delta
-                R_a = e1.covalent_radius / R_val_sum * R
-                R_b = e2.covalent_radius / R_val_sum * R
+                R_a = s1.covalent_radius / R_val_sum * R
+                R_b = s2.covalent_radius / R_val_sum * R
                 nu = np.exp(-bond.delta / 0.37)
-                EN_a = 0.481 * self.atomType(s1).valence_electrons / R_a
-                EN_b = 0.481 * self.atomType(s2).valence_electrons / R_b
-                CN_a = self.atomType(s1).valence / (nu * nu_factor[i1])
-                CN_b = self.atomType(s2).valence / (nu * nu_factor[i2])
+                EN_a = 0.481 * s1.valence_electrons / R_a
+                EN_b = 0.481 * s2.valence_electrons / R_b
+                CN_a = s1.valence / (nu * nu_factor[i1])
+                CN_b = s2.valence / (nu * nu_factor[i2])
 
                 f_ab = 0.25 * np.abs(EN_a - EN_b) / np.sqrt(EN_a * EN_b)
                 X_ab = np.sqrt(EN_a * EN_b / (CN_a * CN_b))
@@ -516,13 +488,6 @@ class BondUtility:
         freq, eigvector = list(freq[IX]), list(np.real(eigvector[:, IX]).T)
 
         return freq, eigvector
-
-    def hardness(self, system):
-        if 'bondUtility.hardness' not in system:
-            structure, disassembler = self.disassemblerType.assembe(**system)
-            bonds = self.getMinimalGraphBonds(structure)
-            system['bondUtility.hardness'] = self.calcHardness(structure, bonds)
-        return system['bondUtility.hardness']
 
     @staticmethod
     def calcCoordinationNumbers(structure):

@@ -33,13 +33,6 @@ class MLIP_Interface:
     out_sampled_file = 'sampled.cfg_0'
 
     DEFAULT_SLEEP_TIME = 10
-    atomisticRepresentation = None
-    atomicDisassemblerType = None
-
-    @classmethod
-    def registerTypes(cls, atomisticRepresentation, atomicDisassemblerType):
-        cls.atomisticRepresentation = atomisticRepresentation
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
     def __init__(self, tag: str,
                        mode: str,
@@ -76,14 +69,17 @@ class MLIP_Interface:
         with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
-        if 'trajectory' in system:
-            sample = system['trajectory']
-        elif 'population' in system:
-            sample = []
-            for individual in system['population']:
-                sample.extend(s for s in individual['trajectory'] if not s['isBad'])
-        else:
-            raise RuntimeError('No mlip sample in system.')
+        sample = system.getProperty('trajectory')
+        # if 'trajectory' in system:
+        #     sample = system['trajectory']
+        # elif 'population' in system:
+        #     sample = []
+        #     for individual in system['population']:
+        #         sample.extend(s for s in individual['trajectory'] if not s['isBad'])
+        # else:
+        #     raise RuntimeError('No mlip sample in system.')
+        atomistic = system.getFactory().extensions['atomistic'].utility
+        atomistic.AtomicStructureRepresentation.saveMLIPsample(calcFolder/self.in_cfg_file, self.specorder, sample)
 
         shutil.copy2(self.potential, calcFolder)
 
@@ -119,14 +115,18 @@ class MLIP_Interface:
         return self.mode == 'train'
 
     def readOutput(self, system, calcFolder: Path):
+        factory = system.getFactory()
+        result = factory()
         if 'sample' in self.targetProperties:
-            sample = self.atomisticRepresentation.readMLIPsample(calcFolder/self.out_cfg_file, self.specorder)
-            system.setProperty('sample', sample)
+            atomistic = factory.extensions['atomistic'].utility
+            sample = atomistic.AtomicStructureRepresentation.readMLIPsample(calcFolder/self.out_cfg_file, self.specorder)
+            result.setProperty('sample', sample)
         if 'potential' in self.targetProperties:
             shutil.copy2(calcFolder/self.potential.name, self.potential)
-            system.setProperty('isStable', not (calcFolder / self.in_cfg_file).exists())
+            result.setProperty('isStable', not (calcFolder / self.in_cfg_file).exists())
         if 'trainingSet' in self.targetProperties:
             shutil.copy2(calcFolder / self.in_cfg_file, self.trainingSet)
+        return result
 
         # if 'stressTensor' in self.targetProperties:
         #     stress_tensor = np.zeros((3, 3))

@@ -6,8 +6,11 @@ USPEX.SystemPool
 
 
 import logging
-from copy import copy
-from itertools import chain
+import numpy as np
+from copy import copy, deepcopy
+
+from USPEX.Expressions.Functions.presets import applyPresetsRecursive
+from .PoolEntry import PoolEntry, EntryFlavour
 
 logger = logging.getLogger(__name__)
 
@@ -20,75 +23,38 @@ class SystemPool(object):
     It subdivide systems into generations. Each call to *update* method creates new generation record.
     """
 
-    entryFactory = None
 
-    def __init__(self):
+    def __init__(self, flavourFactory):
         self.allSystems = {}
         self.generations = []
+        self.goodSystemIDs = []
         self._newID = 0
+        self.flavourFactory = flavourFactory
 
     def __copy__(self):
-        other = SystemPool.__new__(SystemPool)
+        other = SystemPool(self.flavourFactory)
         other.allSystems = copy(self.allSystems)
-        other.generations = copy(self.generations)
+        other.generations = deepcopy(self.generations)
+        other.goodSystemIDs = copy(self.goodSystemIDs)
         other._newID = self._newID
         return other
 
     @property
     def goodSystems(self):
-        return tuple(system for system in self.allSystems.values() if not system['isBad'])
-
-    @property
-    def goodSystemIDs(self):
-        return tuple(ID for ID, system in self.allSystems.items() if not system['isBad'])
+        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs)
 
     @property
     def uniqueSystems(self):
-        return tuple(system for system in self.allSystems.values() if 'originalID' not in system and not system['isBad'])
+        return tuple(self.allSystems[ID] for ID in self.goodSystemIDs if self.allSystems[ID].originalID is None)
 
     @property
     def uniqueSystemIDs(self):
         """
         :return: list of IDs of unique structures.
         """
-        return tuple(ID for ID, system in self.allSystems.items() if 'originalID' not in system and not system['isBad'])
+        return tuple(ID for ID in self.goodSystemIDs if self.allSystems[ID].originalID is None)
 
-    def __hash__(self):
-        return hash(self.uniqueSystemIDs)
-
-    def update(self, population: list):
-        """
-        Update information about target space in current search.
-
-        :param population: list of structures.
-
-        """
-
-        for system in population:
-            self.allSystems[system['ID']] = system
-
-    def append(self, population, fitness):
-        """
-        Inserts fitness object into last generation record.
-
-        :param fitness: fitness object.
-
-        """
-        logger.debug('Updating target: list of unique systems.')
-        IDs = set(system['ID'] for system in population)
-        newIDs = []
-        newGeneration = {'allSystems': [], 'newSystems': [], 'fitness': fitness}
-        for system in population:
-            original = self.allSystems[self.getOriginalID(system['ID'])]
-            if original['ID'] not in newIDs:
-                newGeneration['allSystems'].append(original)
-                newIDs.append(original['ID'])
-                if 'duplicates' not in original or set(original['duplicates']) <= IDs:
-                    logger.debug(f'add new system {system["ID"]} to list of unique systems')
-                    newGeneration['newSystems'].append(original)
-        self.generations.append(newGeneration)
-
-    def assignID(self, system):
+    def newEntry(self, system: EntryFlavour) -> PoolEntry:
         """
         Assign ID to system.
 
@@ -96,18 +62,16 @@ class SystemPool(object):
         :param system: system to be labeled with ID.
 
         """
-        system.setProperty('ID', self._newID)
-        system.setProperty('isBad', True)
+        entry = PoolEntry(self._newID, system)
         self._newID += 1
-        self.allSystems[system['ID']] = system
+        self.allSystems[entry.ID] = entry
+        logger.info(f"System {entry.ID} successfully created by {entry['.howCome.origin']} operator"
+                    f" from {entry['.parent.origin']} parents.")
+        return entry
 
-    def getOriginalID(self, ID):
-        """
-        If system is duplicate return ID of original system otherwise return input ID.
+    @staticmethod
+    def fronts(pool, expression):
+        expression = applyPresetsRecursive(expression)
+        values = [s[expression] for s in pool]
+        return [[pool[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
 
-        :param ID: ID of some system from this pool.
-
-        :return: ID of original system.
-        """
-        system = self.allSystems[ID]
-        return system['originalID'] if 'originalID' in system else ID

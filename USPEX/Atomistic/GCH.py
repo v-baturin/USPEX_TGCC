@@ -1,8 +1,9 @@
 import logging
 import numpy as np
 
-from ..Fitness.ConvexHull import ConvexHull
-from ..Fitness.Fitness import Fitness
+from USPEX.Expressions.ConvexHull import ConvexHull
+from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
+from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 from ..Optimizers.SystemPool import SystemPool
 
 logger = logging.getLogger(__name__)
@@ -50,12 +51,13 @@ class GeneralizedConvexHull(ConvexHull):
             self._height = np.full(size, 0.0)
             self._depth = np.full(size, 0.0)
         else:
-            pool = SystemPool()
-            pool.update(self.systems)
-            super().__init__(Fitness(pool.uniqueSystems, []).calcFitness(('getAbsoluteCHSpace',
-                                                                    ('getPrincipalComponents', self.DIMENSIONALITY - 1,
-                                                                     ('hstack', ('tabulate', 'fingerprint'))),
-                                                                    'enthalpy')))
+            extensions = {'basic': BasicFunctions()}
+            expression = ('getAbsoluteCHSpace',
+                          ('getPrincipalComponents',
+                           self.DIMENSIONALITY - 1,
+                           ('hstack', ('tabulate', 'radialDistributionUtility.structureFingerprint.origin'))),
+                          '.enthalpy.origin')
+            super().__init__(ExpressionEvaluator(self.systems, extensions).evaluate(expression))
 
     @property
     def lower_bound(self):
@@ -82,9 +84,10 @@ class GeneralizedConvexHull(ConvexHull):
             self._height = np.full(size, 0.0)
             self._depth = np.full(size, 0.0)
         else:
-            pool = SystemPool()
-            pool.update(self.systems)
-            super().__init__(Fitness(pool.uniqueSystems, []).calcFitness(('getAbsoluteCHSpace',
-                                                                    ('getPrincipalComponents', self.DIMENSIONALITY - 1,
-                                                                     ('hstack', ('tabulate', 'fingerprint'))),
-                                                                    'enthalpy')))
+            extensions = {'basic': BasicFunctions()}
+            expression = ('getAbsoluteCHSpace',
+                          ('getPrincipalComponents',
+                           self.DIMENSIONALITY - 1,
+                           ('hstack', ('tabulate', 'radialDistributionUtility.structureFingerprint.origin'))),
+                          '.enthalpy.origin')
+            super().__init__(ExpressionEvaluator(self.systems, extensions).evaluate(expression))

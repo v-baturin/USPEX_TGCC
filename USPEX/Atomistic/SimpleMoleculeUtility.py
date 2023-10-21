@@ -7,12 +7,13 @@ import numpy as np
 from collections import Counter
 
 from .Transformation import Transformation
+from USPEX.Expressions.Functions.SimpleMoleculeFunctions import SimpleMoleculeFunctions
 
 
 DENSITY_CONST = 1.660539
-INTEGRITY_TOL = {'rigid': 0.1, # maximum relative change in all distances
+INTEGRITY_TOL = {'rigid': 0.1,  # maximum relative change in all distances
                  'none': None
-                 #'soft':
+                 # 'soft':
                  }
 
 
@@ -23,6 +24,7 @@ class SimpleMoleculeUtility(object):
 
     structureType = None
     atomType = None
+    propertyExtension = SimpleMoleculeFunctions
 
     @classmethod
     def registerTypes(cls, structureType, atomType):
@@ -79,7 +81,7 @@ class SimpleMoleculeUtility(object):
                     position = optimizedCell.getWrapedCartesianCoordinates(position)
                     transformation = Transformation(matrix, position)
                     molecules.append(transformation.transform(molecule))
-        return {'molecules': molecules, 'cell': optimizedCell}
+        return {'atomistic.molecules': molecules, 'atomistic.cell': optimizedCell}
 
     def determineMoleculeType(self, molecule):
         """
@@ -91,40 +93,6 @@ class SimpleMoleculeUtility(object):
         :return: molecule symbol.
         """
         return self.formulaToTypeMap[molecule.getFormula()]
-
-    def moleculeTypes(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated or retrieve list of types of molecules of a system.
-        """
-        if 'simpleMoleculeUtility.moleculeTypes' not in system:
-            moleculeTypes = [self.determineMoleculeType(molecule) for molecule in system['molecules']]
-            system.setProperty('simpleMoleculeUtility.moleculeTypes', moleculeTypes)
-        return system['simpleMoleculeUtility.moleculeTypes']
-
-    def composition(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated or retrieve molecular composition of a system.
-        """
-        if 'simpleMoleculeUtility.composition' not in system:
-            composition = Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
-            system.setProperty('simpleMoleculeUtility.composition', composition)
-        return system['simpleMoleculeUtility.composition']
-
-    def density(self, system):
-        cell = system['cell']
-        if cell.dim == 3:
-            mass = sum(e.mass*v for e, v in self.getElementalComposition(self.composition(system)).items())
-            return mass/cell.getVolume()*DENSITY_CONST
-        else:
-            return None
 
     def getElementalComposition(self, composition):
         """
@@ -166,10 +134,10 @@ class SimpleMoleculeUtility(object):
         #     if not inMolecule: return False
         # return True
 
-        molecules = entry['molecules']
-        cell = entry['cell']
-        structure = entry.getAtomicStructure()
-        disassembler = entry['disassembler']
+        molecules = entry.getProperty('molecules', extension='atomistic')
+        cell = entry.getProperty('cell', extension='atomistic')
+        structure = entry.getProperty('structure', extension='atomistic')
+        disassembler = entry.getProperty('disassembler', extension='atomistic')
         actualDistances = structure.getAllDistances()
         eye = np.eye(3)[np.nonzero(cell.getPBC())]
         constNeighbours = np.vstack([eye, -eye])

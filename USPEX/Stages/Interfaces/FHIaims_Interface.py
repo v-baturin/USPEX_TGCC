@@ -17,21 +17,12 @@ logger = logging.getLogger(__name__)
 class FHIaims_Interface:
 
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
 
     inputFile, outputFile, errorFile = 'input', 'output', 'error'
     control_file = 'control.in'
     geometry_file = 'geometry.in'
 
     out_geometry_file = 'geometry.in.next_step'
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
 
     def __init__(self, tag: str, kresol: float = None, control: str = None, fixCell: bool = False,
                  targetProperties: list = None, **kwargs):
@@ -51,7 +42,7 @@ class FHIaims_Interface:
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', extension='atomistic')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -83,7 +74,8 @@ class FHIaims_Interface:
                 if self.fixCell:
                     fp.write('constrain_relaxation .true.\n')
 
-            fixedIndices = system['disassembler'].allFixedIndices
+            disassembler = system.getProperty('disassembler', extension='atomistic')
+            fixedIndices = disassembler.allFixedIndices
             for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
                 fp.write('atom  {1:15.8f} {2:15.8f} {3:15.8f} {0:2s}\n'.format(symbol.short_name, *coord))
                 if i in fixedIndices:
@@ -114,6 +106,9 @@ class FHIaims_Interface:
         # USPEX creates very good structures which are the same with the relaxed one
         # and FHI finishes without changing the relaxed structure, thus
         # geometry.in.next_step won't be created.
+        factory = system.getFactory()
+        atomistic = factory.extensions['atomistic'].utility
+        result = factory()
 
         if 'structure' in self.targetProperties:
             geometry_file = calcFolder/self.out_geometry_file
@@ -123,16 +118,19 @@ class FHIaims_Interface:
                 content = f.read()
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.updateAtomicStructure(self.readStructure(content, pbc))
+            result.setProperty('structure', self.readStructure(atomistic, content, pbc), extension='atomistic')
+
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.outputFile, 'r') as f:
                 content = f.readlines()
             for line in content:
                 if 'Total energy corrected' in line:
-                    system.setProperty('enthalpy', float(line.split()[5]))
+                    result.setProperty('enthalpy', float(line.split()[5]))
                     break
+        return result
 
-    def readStructure(self, content, pbc):
+    @staticmethod
+    def readStructure(atomistic, content, pbc):
         content_list = content.split('\n')
 
         lattice = []
@@ -144,7 +142,7 @@ class FHIaims_Interface:
             if 'atom' in line:
                 line = line.split()
                 coordinates.append([float(x) for x in line[1:4]])
-                atomTypes.append(self.atomType(line[4]))
+                atomTypes.append(atomistic.atomType(line[4]))
 
         coor = np.array(coordinates)
         if 'lattice_vector' in content:
@@ -163,5 +161,5 @@ class FHIaims_Interface:
             lat = np.diag(coor.max(axis=0) - coor.min(axis=0) + 10)
             coor += np.diag(lat * 0.5)
 
-        cell = self.cellType(lat, pbc)
-        return self.structureType(atomTypes, coor, cell=cell)
+        cell = atomistic.cellType(lat, pbc)
+        return atomistic.structureType(atomTypes, coor, cell=cell)

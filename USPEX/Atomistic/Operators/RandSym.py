@@ -103,7 +103,7 @@ class RandSym:
         badSymmetryCounter = 0
         startTime = time()
         centerMinDistMatrix = np.zeros((len(symbols), len(symbols)))
-        cellType = offspringFactory.cellType
+        cellType = type(self.cellUtility.getRandomCell(1, np.empty(0)))
         radii = []
         for s in symbols:
             molecule = self.simpleMoleculeUtility.molecules[s]
@@ -187,12 +187,13 @@ class RandSym:
                 cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons), baseCell=envCell)
                 for i in range(self.attemptsRotation):
                     offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
-                    molecules = offspring['molecules']
-                    cell = offspring['cell']
+                    molecules = offspring.getProperty('molecules', extension='atomistic')
+                    cell = offspring.getProperty('cell', extension='atomistic')
                     if envAssembler is not None:
                         offspring.setProperty('environments',
-                                              envAssembler.assemble(molecules, cell))
-                    structure = offspring.getAtomicStructure()
+                                              envAssembler.assemble(molecules, cell),
+                                              extension='atomistic')
+                    structure = offspring.getProperty('structure', extension='atomistic')
                     minDistMatrix = self.bondUtility.getDistances(
                         structure.getAtomTypes(), self.conditions.externalPressure)
                     if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
