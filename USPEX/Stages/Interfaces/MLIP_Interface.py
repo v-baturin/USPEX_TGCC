@@ -79,19 +79,20 @@ class MLIP_Interface:
         # else:
         #     raise RuntimeError('No mlip sample in system.')
         atomistic = system.getFactory().extensions['atomistic'].utility
-        atomistic.AtomicStructureRepresentation.saveMLIPsample(calcFolder/self.in_cfg_file, self.specorder, sample)
 
         shutil.copy2(self.potential, calcFolder)
 
         if self.mode == 'train':
             if len(sample) > 0:
                 shutil.copy2(self.trainingSet, calcFolder / self.in_cfg_file)
-                self.atomisticRepresentation.saveMLIPsample(calcFolder / self.in_cfg_file, self.specorder, sample)
+                atomistic.AtomicStructureRepresentation.saveMLIPsample(calcFolder / self.in_cfg_file, self.specorder,
+                                                                       sample)
                 args = f'train {self.potential.name} {self.in_cfg_file} {self.args}'
             else:
                 args = ''
         elif self.mode == 'select_add':
-            self.atomisticRepresentation.saveMLIPsample(calcFolder / self.in_cfg_file, self.specorder, sample)
+            atomistic.AtomicStructureRepresentation.saveMLIPsample(calcFolder / self.in_cfg_file, self.specorder,
+                                                                   sample)
             args = f'select_add {self.potential.name} {self.trainingSet.name}' \
                    f' {self.in_cfg_file} {self.out_cfg_file} {self.args}'
             shutil.copy2(self.trainingSet, calcFolder)
