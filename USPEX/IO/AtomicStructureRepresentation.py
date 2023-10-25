@@ -136,7 +136,7 @@ class AtomicStructureRepresentation:
         for system in sample:
             cls.saveMLIPcfg(content, specorder, **system)
         content.seek(0)
-        with open(filename, "wt") as f:
+        with open(filename, "at") as f:
             shutil.copyfileobj(content, f)
 
     @classmethod
