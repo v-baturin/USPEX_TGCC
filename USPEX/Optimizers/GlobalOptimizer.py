@@ -203,11 +203,12 @@ class GlobalOptimizer(object):
         """
         logger.info('Looking for duplicates.')
         if self.generations:
-            uniqueSystems = self.generations[-1].uniqueSystems
+            uniqueSystems = self.generations[-1].uniqueSystems.getIDs()
         else:
             uniqueSystems = []
         for system in population:
-            for ref_system in uniqueSystems:
+            for i, ref_system_ID in enumerate(uniqueSystems):
+                ref_system = self.allSystems.getEntry(ref_system_ID)
                 if self.fingerprintUtility.equal(system, ref_system) and system['ID'] != ref_system['ID']:
                     logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
                     if system[applyPresetsRecursive(self.optType)] < ref_system[applyPresetsRecursive(self.optType)]:
@@ -218,12 +219,15 @@ class GlobalOptimizer(object):
                             self.allSystems[ID].originalID = system['ID']
                         if ref_system['ID'] not in system.duplicates:
                             system.duplicates.append(ref_system['ID'])
+                        uniqueSystems[i] = system.ID
                     else:
                         self.fingerprintUtility.clean(system)
                         system.setProperty('originalID', ref_system['ID'])
                         if system['ID'] not in ref_system.duplicates:
                             ref_system.duplicates.append(system['ID'])
                     break
+                else:
+                    uniqueSystems.append(system.ID)
 
     def _getOriginalID(self, ID):
         """
