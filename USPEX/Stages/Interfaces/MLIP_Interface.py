@@ -48,7 +48,7 @@ class MLIP_Interface:
         self.mode = mode
         self.potential = Path(potential)
         self.specorder = specorder
-        self.trainingSet = trainingSet
+        self.trainingSet = Path(trainingSet)
         if self.mode == 'select_add':
             assert self.trainingSet is not None
         argsFile = Path(f'Specific/mlip_args_{tag}') if args is None else Path(args)
@@ -79,13 +79,20 @@ class MLIP_Interface:
         # else:
         #     raise RuntimeError('No mlip sample in system.')
         atomistic = system.getFactory().extensions['atomistic'].utility
-        atomistic.AtomicStructureRepresentation.saveMLIPsample(calcFolder/self.in_cfg_file, self.specorder, sample)
 
         shutil.copy2(self.potential, calcFolder)
 
         if self.mode == 'train':
-            args = f'train {self.potential.name} {self.in_cfg_file} {self.args}'
+            if len(sample) > 0:
+                shutil.copy2(self.trainingSet, calcFolder / self.in_cfg_file)
+                atomistic.AtomicStructureRepresentation.saveMLIPsample(calcFolder / self.in_cfg_file, self.specorder,
+                                                                       sample)
+                args = f'train {self.potential.name} {self.in_cfg_file} {self.args}'
+            else:
+                args = ''
         elif self.mode == 'select_add':
+            atomistic.AtomicStructureRepresentation.saveMLIPsample(calcFolder / self.in_cfg_file, self.specorder,
+                                                                   sample)
             args = f'select_add {self.potential.name} {self.trainingSet.name}' \
                    f' {self.in_cfg_file} {self.out_cfg_file} {self.args}'
             shutil.copy2(self.trainingSet, calcFolder)
@@ -117,12 +124,9 @@ class MLIP_Interface:
             result.setProperty('sample', sample)
         if 'potential' in self.targetProperties:
             shutil.copy2(calcFolder/self.potential.name, self.potential)
-        with open(calcFolder/self.in_cfg_file, 'r') as f:
-            content = f.read()
-        result.setProperty('isStable', len(content) == 0)
+            result.setProperty('isStable', not (calcFolder / self.in_cfg_file).exists())
         if 'trainingSet' in self.targetProperties:
-            with open(self.trainingSet, 'a') as f:
-                f.write(content)
+            shutil.copy2(calcFolder / self.in_cfg_file, self.trainingSet)
         return result
 
         # if 'stressTensor' in self.targetProperties:
