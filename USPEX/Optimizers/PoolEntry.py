@@ -222,12 +222,14 @@ class PoolEntry:
     def getExpression(self, expression):
         return self.expressions[expression]
 
-    def __getitem__(self, item: str):
-        if item == 'ID':
-            return self.ID
-        prefix, prop, suffix, *other = item.split('.')
-        assert not other, f'Too complex property name {item}.'
-        return self.getProperty(prop, prefix, suffix)
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            if item == 'ID':
+                return self.ID
+            prefix, prop, suffix, *other = item.split('.')
+            assert not other, f'Too complex property name {item}.'
+            return self.getProperty(prop, prefix, suffix)
+        return self.getExpression(item)
 
     def __contains__(self, item: Union[str, tuple]):
         if item == 'ID':
@@ -255,7 +257,7 @@ class Pool:
     def __init__(self, ID: int, flavourfactory: FlavourFactory):
         self.ID = ID
         self.flavourFactory = flavourfactory
-        self._cache = []
+        self._cache = {}
 
     def __hash__(self):
         return hash(self.ID)
@@ -285,7 +287,7 @@ class Pool:
     def getIDs(self):
         with PoolEntry.engine.connect() as conn:
             IDs = conn.execute(select(poolMap.c.entryID).where(poolMap.c.poolID == self.ID)).all()
-        return IDs
+        return np.asarray(IDs, dtype=int).flatten().tolist()
 
     def getEntry(self, ID: int):
         assert ID in self.getIDs()
@@ -294,7 +296,7 @@ class Pool:
         return self._cache[ID]
 
     def fronts(self, expression):
-        expression = applyPresetsRecursive(expression)
+        # expression = applyPresetsRecursive(expression)
         entries = [self.getEntry(ID) for ID in self.getIDs()]
         values = [entry[expression] if isinstance(expression, str) else entry.getExpression(expression)
                   for entry in entries]

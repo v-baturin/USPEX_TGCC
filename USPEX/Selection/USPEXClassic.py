@@ -89,7 +89,7 @@ class USPEXClassic(object):
         """
         self.target = target
         self.fingerprintUtility = fingerprintUtility
-        self.optType = optType
+        self.optType = applyPresetsRecursive(optType)
         self.fractions = fractions
 
         self.popSize = popSize
@@ -111,7 +111,7 @@ class USPEXClassic(object):
         else:
             logger.setLevel(logging.INFO)
 
-    def __call__(self, population, offsprings):
+    def __call__(self, population, offsprings, optType):
         """
         :param oldPopulation: generation of new
         :param best:
@@ -120,11 +120,13 @@ class USPEXClassic(object):
         :return:
         """
 
-        if not self.globalParentsPool:
-            population += self._mostDiverse
+        if not self.globalParentsPool and population is not None:
+            population = copy(population)
+            for entry in self._mostDiverse:
+                population.addEntry(entry)
 
-        if population:
-            fronts = population.fronts(self.optType)
+        if population is not None:
+            fronts = population.fronts(optType)
             parentsPool = []
             tournament = []
             for i, front in enumerate(fronts):
@@ -142,16 +144,15 @@ class USPEXClassic(object):
 
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
-                VO.tune(parentsPool, applyPresetsRecursive(self.optType))
+                VO.tune(parentsPool, optType)
         autofrac = Autofrac(self.fractions, self.weightsLast, parentsPool, self._newIDs, self.target.variationOperators)
 
-        population = []
         actualParents = []
         self._newIDs = []
 
         for mutation in self.target.mutations:
             howCome = type(mutation).__name__
-            howMany = autofrac.howMany(howCome, popSize - len(offsprings), popSize)
+            howMany = autofrac.howMany(howCome, popSize - len(offsprings.getIDs()), popSize)
             howMany = 0 if howMany < 0 else howMany
             if parentsPool:
                 self.weightsLast[howCome] = howMany
@@ -180,7 +181,7 @@ class USPEXClassic(object):
 
         for hybridization in self.target.hybridizations:
             howCome = type(hybridization).__name__
-            howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = autofrac.howMany(howCome, popSize - len(offsprings.getIDs()), popSize)
             howMany = 0 if howMany < 0 else howMany
             if parentsPool:
                 self.weightsLast[howCome] = howMany
@@ -212,7 +213,7 @@ class USPEXClassic(object):
 
         for creation in self.target.creations:
             howCome = type(creation).__name__
-            howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = autofrac.howMany(howCome, popSize - len(offsprings.getIDs()), popSize)
             howMany = 0 if howMany < 0 else howMany
             self.weightsLast[howCome] = howMany
             if hasattr(creation, 'prepare'):

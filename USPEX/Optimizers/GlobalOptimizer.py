@@ -17,6 +17,7 @@ from .Target import Target, TargetType
 from ..Expressions.Functions.BasicFunctions import BasicFunctions
 from ..Expressions.Functions.presets import applyPresetsRecursive
 from ..Expressions.Antiseeds import Antiseeds
+from ..Expressions.ExpressionEvaluator import Expression
 
 
 logger = logging.getLogger(__name__)
@@ -92,7 +93,6 @@ class GlobalOptimizer(object):
         self.flavourFactory = FlavourFactory(self.target.propertyExtensions)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = list(extraData)
-        self.selectionConfig = selection
         antiseeds = {} if antiseeds is None else antiseeds
         self.antiseeds = Antiseeds(self.fingerprintUtility, **antiseeds)
         self.flavourFactory.extensions['antiseeds'] = self.antiseeds
@@ -125,17 +125,20 @@ class GlobalOptimizer(object):
             generation = self.generations[-1]
             self.antiseeds.payPenalties(generation.uniquePopulation, generation.uniqueSystems)
             population = generation.uniqueSystems if self._createPopulation.globalParentsPool else generation.uniquePopulation
+            optType = Expression(self._createPopulation.optType, generation.goodSystems)
         else:
             population = None
+            optType = None
         offsprings = Pool.createPool(self.flavourFactory)
-        self._createPopulation(population, offsprings)
+        self._createPopulation(population, offsprings, optType)
+        for ID in offsprings.getIDs():
+            self.allSystems.addEntry(offsprings.getEntry(ID))
         return offsprings
 
     async def update(self, population):
         """
         Updates state of optimized structures.
 
-        :type population: list
         :param population: list of systems which allows to update our knowledge about target space.
         """
         generation = Generation()
@@ -145,7 +148,8 @@ class GlobalOptimizer(object):
             generation.goodSystems = copy(self.generations[-1].goodSystems)
         else:
             generation.goodSystems = Pool.createPool(self.flavourFactory)
-        for system in population:
+        for ID in population.getIDs():
+            system = population.getEntry(ID)
             for suffix in self.goodSystemsSuffixes:
                 if system[f'.isBad.{suffix}']:
                     break
@@ -154,7 +158,7 @@ class GlobalOptimizer(object):
                 generation.goodPopulation.addEntry(system)
         self.ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.extensions)
         self.ExpressionEvaluator.calculate(self._createPopulation.optType, generation.goodSystems, self.extensions)
-        assert generation.goodPopulation, 'All systems in population failed relaxation.'
+        assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
         self._markDuplicates(generation.goodPopulation)
         generation.uniqueSystems = Pool.createPool(self.flavourFactory)
         for ID in generation.goodSystems.getIDs():
@@ -164,7 +168,8 @@ class GlobalOptimizer(object):
         logger.debug('Updating target: list of unique systems.')
         newIDs = []
         generation.uniquePopulation = Pool.createPool(self.flavourFactory)
-        for system in generation.goodPopulation:
+        for ID in generation.goodPopulation.getIDs():
+            system = generation.goodSystems.getEntry(ID)
             original = self.allSystems.getEntry(self._getOriginalID(system['ID']))
             if original['ID'] not in newIDs:
                 generation.uniquePopulation.addEntry(original)
@@ -206,7 +211,8 @@ class GlobalOptimizer(object):
             uniqueSystems = self.generations[-1].uniqueSystems.getIDs()
         else:
             uniqueSystems = []
-        for system in population:
+        for system_ID in population.getIDs():
+            system = population.getEntry(system_ID)
             for i, ref_system_ID in enumerate(uniqueSystems):
                 ref_system = self.allSystems.getEntry(ref_system_ID)
                 if self.fingerprintUtility.equal(system, ref_system) and system['ID'] != ref_system['ID']:
@@ -226,8 +232,8 @@ class GlobalOptimizer(object):
                         if system['ID'] not in ref_system.duplicates:
                             ref_system.duplicates.append(system['ID'])
                     break
-                else:
-                    uniqueSystems.append(system.ID)
+            else:
+                uniqueSystems.append(system.ID)
 
     def _getOriginalID(self, ID):
         """
@@ -237,7 +243,7 @@ class GlobalOptimizer(object):
 
         :return: ID of original system.
         """
-        system = self.allSystems[ID]
+        system = self.allSystems.getEntry(ID)
         return system.originalID if system.originalID is not None else ID
 
     @property

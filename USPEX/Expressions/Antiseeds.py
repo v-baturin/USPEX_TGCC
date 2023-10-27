@@ -30,6 +30,7 @@ class Antiseeds:
         :param fingerprintUtility: utility providing **dist** method which calculates distance between systems.
         """
         suffix = self.fingerprintUtility.suffix
+        population = [population.getEntry(ID) for ID in population.getIDs()]
         comb = list(combinations(population, 2))
         if comb:
             sigma = 0
@@ -39,7 +40,8 @@ class Antiseeds:
         else:
             sigma = 1
         sigma *= self.sigma
-        for system in pool:
+        for ID in pool.getIDs():
+            system = pool.getEntry(ID)
             if f'antiseeds.corrections.{suffix}' in system:
                 for ref_system in population:
                     dist = self.fingerprintUtility.dist(ref_system, system)

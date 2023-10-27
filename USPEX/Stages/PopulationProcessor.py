@@ -26,8 +26,8 @@ class PopulationProcessor:
     async def processPopulation(stages, population, numParallelCalcs, target=None):
         stages = [Stages.createStage(**stage, target=target) for stage in stages]
         sem = asyncio.Semaphore(numParallelCalcs)
-        await asyncio.gather(*(PopulationProcessor.life(system, stages, sem)
-                               for system in population))
+        await asyncio.gather(*(PopulationProcessor.life(population.getEntry(ID), stages, sem)
+                               for ID in population.getIDs()))
 
     @staticmethod
     async def life(system, stages, sem):
