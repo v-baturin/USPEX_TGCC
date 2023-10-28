@@ -118,7 +118,8 @@ class AtomisticRepresentation(object):
         table_Individuals = self.getNewSystemsTable()
         content_origin = ''
         content_enthalpies = ''
-        for ID, system in sorted(systems.items()):
+        for ID in systems.getIDs():
+            system = systems.getEntry(ID)
             unrelaxed = system.getFlavour('origin')
             unrelaxed.setProperty('label', f"EA{ID}")
             systems_gatheredPOSCARS_unrelaxed.append(unrelaxed)
@@ -150,7 +151,8 @@ class AtomisticRepresentation(object):
 
     def drawESeries(self, systems):
         enths = []
-        for system in systems.values():
+        for ID in systems.getIDs():
+            system = systems.getEntry(ID)
             try:
                 enths.append([system[f'.enthalpy.{suffix}'] for suffix in self.stages])
             except Exception:
