@@ -176,17 +176,40 @@ class PoolEntry:
         cls.engine = create_engine(f"sqlite+pysqlite:///{filename}")
         metadata_obj.create_all(cls.engine)
 
-    def __init__(self, flavourFactory: FlavourFactory):
-        with self.engine.connect() as conn:
-            result = conn.execute(insert(systems), [{}])
-            conn.commit()
-        self.ID = result.inserted_primary_key[0]
+    def __init__(self, ID: int, flavourFactory: FlavourFactory):
+        self.ID = ID
         self.originalID = None
         self.duplicates = []
         self.expressions = {}
         self.flavourFactory = flavourFactory
         self._flavours = {}
         self.properties = {}
+
+    @staticmethod
+    def newEntry(flavour: EntryFlavour):
+        """
+        Assign ID to system.
+
+        :type system:
+        :param system: system to be labeled with ID.
+
+        """
+        with PoolEntry.engine.connect() as conn:
+            result = conn.execute(insert(systems), [{}])
+            conn.commit()
+        ID = result.inserted_primary_key[0]
+        entry = PoolEntry(ID, flavour.getFactory())
+        entry.addFlavour('origin', flavour)
+        logger.info(f"Entry {entry.ID} successfully created by {entry['.howCome.origin']} operator"
+                    f" from {entry['.parent.origin']} parents.")
+        return entry
+
+    @staticmethod
+    def getEntry(ID: int, flavourFactory: FlavourFactory):
+        with PoolEntry.engine.connect() as conn:
+            result = conn.execute(select(systems).where(systems.c.id == ID)).all()
+        assert result
+        return PoolEntry(ID, flavourFactory)
 
     @property
     def flavours(self):
@@ -269,6 +292,14 @@ class Pool:
     def __hash__(self):
         return hash(self.ID)
 
+    def __getstate__(self):
+        return dict(ID=self.ID, flavourFactory=self.flavourFactory)
+
+    def __setstate__(self, state):
+        self.ID = state['ID']
+        self.flavourFactory = state['flavourFactory']
+        self._cache = {}
+
     def newEntry(self, flavour: EntryFlavour):
         """
         Assign ID to system.
@@ -277,10 +308,7 @@ class Pool:
         :param system: system to be labeled with ID.
 
         """
-        entry = PoolEntry(self.flavourFactory)
-        entry.addFlavour('origin', flavour)
-        logger.info(f"Entry {entry.ID} successfully created by {entry['.howCome.origin']} operator"
-                    f" from {entry['.parent.origin']} parents.")
+        entry = PoolEntry.newEntry(flavour)
         self.addEntry(entry)
         return entry.ID
 
@@ -298,7 +326,7 @@ class Pool:
     def getEntry(self, ID: int):
         assert ID in self.getIDs()
         if ID not in self._cache:
-            self._cache[ID] = PoolEntry(ID, self.flavourFactory)
+            self._cache[ID] = PoolEntry.getEntry(ID, self.flavourFactory)
         return self._cache[ID]
 
     def fronts(self, expression):
