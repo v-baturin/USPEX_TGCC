@@ -162,7 +162,7 @@ class GlobalOptimizer(object):
         self._markDuplicates(generation.goodPopulation)
         generation.uniqueSystems = Pool.createPool(self.flavourFactory)
         for ID in generation.goodSystems.getIDs():
-            entry = self.allSystems.getEntry(ID)
+            entry = generation.goodSystems.getEntry(ID)
             if entry.originalID is None:
                 generation.uniqueSystems.addEntry(entry)
         logger.debug('Updating target: list of unique systems.')
@@ -222,7 +222,7 @@ class GlobalOptimizer(object):
                         ref_system.setProperty('originalID', system['ID'])
                         system.duplicates = ref_system.duplicates
                         for ID in system.duplicates:
-                            self.allSystems[ID].originalID = system['ID']
+                            self.allSystems.getEntry(ID).originalID = system['ID']
                         if ref_system['ID'] not in system.duplicates:
                             system.duplicates.append(ref_system['ID'])
                         uniqueSystems[i] = system.ID

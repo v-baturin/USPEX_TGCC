@@ -6,7 +6,6 @@ extensions = [
     Extension("USPEX.Optimizers.ModelOptimizer", ["USPEX/Optimizers/ModelOptimizer.py"]),
     Extension("USPEX.Optimizers.Target", ["USPEX/Optimizers/Target.py"]),
     Extension("USPEX.Optimizers.PoolEntry", ["USPEX/Optimizers/PoolEntry.py"]),
-    Extension("USPEX.Optimizers.SystemPool", ["USPEX/Optimizers/SystemPool.py"]),
     Extension("USPEX.Expressions.ExpressionEvaluator", ["USPEX/Expressions/ExpressionEvaluator.py"]),
     Extension("USPEX.Expressions.ConvexHull", ["USPEX/Expressions/ConvexHull.py"]),
     Extension("USPEX.Expressions.paretoRanking", ["USPEX/Expressions/paretoRanking.py"]),

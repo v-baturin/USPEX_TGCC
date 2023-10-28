@@ -12,6 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 metadata_obj = MetaData()
+systems = Table(
+    "systems",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+)
 flavours = Table(
     "flavours",
     metadata_obj,
@@ -171,8 +176,11 @@ class PoolEntry:
         cls.engine = create_engine(f"sqlite+pysqlite:///{filename}")
         metadata_obj.create_all(cls.engine)
 
-    def __init__(self, ID: int,  flavourFactory: FlavourFactory):
-        self.ID = ID
+    def __init__(self, flavourFactory: FlavourFactory):
+        with self.engine.connect() as conn:
+            result = conn.execute(insert(systems), [{}])
+            conn.commit()
+        self.ID = result.inserted_primary_key[0]
         self.originalID = None
         self.duplicates = []
         self.expressions = {}
@@ -246,7 +254,6 @@ class PoolEntry:
 class Pool:
 
     _newPoolID: int = 0
-    _newEntryID: int = 0
 
     @classmethod
     def createPool(cls, flavourfactory: FlavourFactory):
@@ -270,9 +277,8 @@ class Pool:
         :param system: system to be labeled with ID.
 
         """
-        entry = PoolEntry(self._newEntryID, self.flavourFactory)
+        entry = PoolEntry(self.flavourFactory)
         entry.addFlavour('origin', flavour)
-        self._newEntryID += 1
         logger.info(f"Entry {entry.ID} successfully created by {entry['.howCome.origin']} operator"
                     f" from {entry['.parent.origin']} parents.")
         self.addEntry(entry)
