@@ -58,6 +58,7 @@ class PopulationProcessor:
                     logger.exception(ex)
                     sink.setProperty('isBad', True)
                 if sink['isBad']:
+                    processedSystems.append(deepcopy(sink))
                     break
                 processedSystems.append(deepcopy(sink))
             if systems is not None:
