@@ -21,7 +21,7 @@ flavours = Table(
     "flavours",
     metadata_obj,
     Column("id", Integer, primary_key=True),
-    Column("sID", Integer, nullable=False),
+    Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("name", String, nullable=False),
 )
 propertiesInt = Table(
@@ -56,12 +56,56 @@ propertiesObj = Table(
     Column("prop", String(30), nullable=False),
     Column("value", String, nullable=False),
 )
+pools = Table(
+    "pools",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+)
 poolMap = Table(
     "poolMap",
     metadata_obj,
     Column("id", Integer, primary_key=True),
-    Column("entryID", Integer, nullable=False),
-    Column("poolID", Integer, nullable=False),
+    Column("entryID", ForeignKey("systems.id"), nullable=False),
+    Column("poolID", ForeignKey("pools.id"), nullable=False),
+)
+expressions = Table(
+    "expressions",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("poolID", ForeignKey("pools.id"), nullable=False),
+    Column("name", String, nullable=False),
+)
+expressionsInt = Table(
+    "expressionsInt",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("sID", ForeignKey("systems.id"), nullable=False),
+    Column("eID", ForeignKey("expressions.id"), nullable=False),
+    Column("value", Integer, nullable=False),
+)
+expressionsFlt = Table(
+    "expressionsFlt",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("sID", ForeignKey("systems.id"), nullable=False),
+    Column("eID", ForeignKey("expressions.id"), nullable=False),
+    Column("value", Float, nullable=False),
+)
+expressionsStr = Table(
+    "expressionsStr",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("sID", ForeignKey("systems.id"), nullable=False),
+    Column("eID", ForeignKey("expressions.id"), nullable=False),
+    Column("value", String, nullable=False),
+)
+expressionsObj = Table(
+    "expressionsObj",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("sID", ForeignKey("systems.id"), nullable=False),
+    Column("eID", ForeignKey("expressions.id"), nullable=False),
+    Column("value", String, nullable=False),
 )
 
 
@@ -135,7 +179,7 @@ class EntryFlavour:
         if self.ID is not None and self.getPropertyBD(f'{extension}.{prop}') is None:
             self.setPropertyBD(f'{extension}.{prop}', value)
 
-    def setPropertyBD(self, prop: str, value: Union[int, str]):
+    def setPropertyBD(self, prop: str, value):
         with PoolEntry.engine.connect() as conn:
             if isinstance(value, int):
                 conn.execute(insert(propertiesInt), [{"fID": self.ID, "prop": prop, "value": value}])
@@ -249,9 +293,53 @@ class PoolEntry:
 
     def setExpression(self, expression, value):
         self.expressions[expression] = value
+        if self.getExpressionBD(expression.ID) is None:
+            self.setExpressionBD(expression.ID, value)
+
+    def setExpressionBD(self, exprID: int, value):
+        with PoolEntry.engine.connect() as conn:
+            if isinstance(value, int):
+                conn.execute(insert(expressionsInt), [{"sID": self.ID, "eID": exprID, "value": value}])
+            elif isinstance(value, float):
+                conn.execute(insert(expressionsFlt), [{"sID": self.ID, "eID": exprID, "value": value}])
+            elif isinstance(value, str):
+                conn.execute(insert(expressionsStr), [{"sID": self.ID, "eID": exprID, "value": value}])
+            else:
+                conn.execute(insert(expressionsObj), [{"sID": self.ID, "eID": exprID, "value": pcl.dumps(value)}])
+            conn.commit()
 
     def getExpression(self, expression):
+        if expression not in self.expressions:
+            self.expressions[expression] = self.getExpressionBD(expression.ID)
         return self.expressions[expression]
+
+    def getExpressionBD(self, exprID):
+        stmt = select(expressionsInt.c.value).where(and_(expressionsInt.c.sID == self.ID, expressionsInt.c.eID == exprID))
+        with PoolEntry.engine.connect() as conn:
+            rows = conn.execute(stmt).all()
+        assert len(rows) <= 1
+        if len(rows) == 1:
+            return rows[0][0]
+        stmt = select(expressionsFlt.c.value).where(and_(expressionsFlt.c.sID == self.ID, expressionsFlt.c.eID == exprID))
+        with PoolEntry.engine.connect() as conn:
+            rows = conn.execute(stmt).all()
+        assert len(rows) <= 1
+        if len(rows) == 1:
+            return rows[0][0]
+        stmt = select(expressionsStr.c.value).where(and_(expressionsStr.c.sID == self.ID, expressionsStr.c.eID == exprID))
+        with PoolEntry.engine.connect() as conn:
+            rows = conn.execute(stmt).all()
+        assert len(rows) <= 1
+        if len(rows) == 1:
+            return rows[0][0]
+        stmt = select(expressionsObj.c.value).where(and_(expressionsObj.c.sID == self.ID, expressionsObj.c.eID == exprID))
+        with PoolEntry.engine.connect() as conn:
+            rows = conn.execute(stmt).all()
+        assert len(rows) <= 1
+        if len(rows) == 1:
+            return pcl.loads(rows[0][0])
+        return None
+
 
     def __getitem__(self, item):
         if isinstance(item, str):
@@ -273,6 +361,30 @@ class PoolEntry:
             return suffix in self.flavours and f'{prefix}.{prop}' in self.getFlavour(suffix)
         else:
             raise KeyError(f'Property {item} is not valid.')
+
+
+class Expression:
+
+    def __init__(self, expression, pool):
+        with PoolEntry.engine.connect() as conn:
+            result = conn.execute(select(expressions.c.id).where(and_(expressions.c.poolID == pool.ID),
+                                                            expressions.c.name == str(expression))).all()
+        if not result:
+            with PoolEntry.engine.connect() as conn:
+                result = conn.execute(insert(expressions), [{"poolID": pool.ID, "name": str(expression)}])
+                conn.commit()
+            self.ID = result.inserted_primary_key[0]
+        else:
+            self.ID = result[0][0]
+        self._expression = expression
+        self._pool = pool
+
+    def __hash__(self):
+        return hash(self.ID)
+
+    def __eq__(self, other):
+        return self.ID == other.ID
+
 
 class Pool:
 
@@ -335,3 +447,6 @@ class Pool:
         values = [entry[expression] if isinstance(expression, str) else entry.getExpression(expression)
                   for entry in entries]
         return [[entries[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
+
+    def createExpression(self, expression):
+        return Expression(expression, self)

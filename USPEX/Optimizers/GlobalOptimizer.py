@@ -17,7 +17,6 @@ from .Target import Target, TargetType
 from ..Expressions.Functions.BasicFunctions import BasicFunctions
 from ..Expressions.Functions.presets import applyPresetsRecursive
 from ..Expressions.Antiseeds import Antiseeds
-from ..Expressions.ExpressionEvaluator import Expression
 
 
 logger = logging.getLogger(__name__)
@@ -125,7 +124,7 @@ class GlobalOptimizer(object):
             generation = self.generations[-1]
             self.antiseeds.payPenalties(generation.uniquePopulation, generation.uniqueSystems)
             population = generation.uniqueSystems if self._createPopulation.globalParentsPool else generation.uniquePopulation
-            optType = Expression(self._createPopulation.optType, generation.goodSystems)
+            optType = generation.goodSystems.createExpression(self._createPopulation.optType)
         else:
             population = None
             optType = None
