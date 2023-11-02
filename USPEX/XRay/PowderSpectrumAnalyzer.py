@@ -87,8 +87,8 @@ class PowderSpectrumAnalyzer(object):
         if not result.success:
             raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
 
-        system['powderSpectrumAnalyzer.xraydistance'] = result.fun
-        system['powderSpectrumAnalyzer.k'] = result.x[0]
+        system.setProperty('xraydistance', result.fun, extension='powderSpectrumAnalyzer')
+        system.setProperty('k', result.x[0], extension='powderSpectrumAnalyzer')
 
     @staticmethod
     def parse(filename: str):

@@ -13,8 +13,15 @@ import filecmp
 
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry
-from ....components import AtomisticRepresentation, MLIP_Interface, Atomistic
+from ..MLIP_Interface import MLIP_Interface
+from ....Optimizers.PoolEntry import EntryFlavour
+from ....Atomistic.Primitives.Element import Element
+from ....Atomistic.Primitives.Cell import Cell
+from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
+from ....IO.AtomicStructureRepresentation import AtomicStructureRepresentation
+from ....Atomistic.Atomistic import Atomistic
+Atomistic.registerTypes(AtomicStructure, Element, Cell, AtomicStructureRepresentation)
+
 
 
 HOMEPATH = Path(__file__).parent
@@ -33,7 +40,7 @@ WORKPATH = HOMEPATH/'NaCl_mlip'
 #         radialDistributionUtility = RadialDistributionUtility(symbols=['Na', 'Cl'])
 #
 #         for ID in range(10):
-#             system = AtomisticRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
+#             system = AtomicStructureRepresentation.readAtomicStructure(pj(GATHEREDPATH, f'input/system{ID}.vasp'))
 #             system['externalPressure'] = 100
 #             system['ID'] = ID
 #             system['tmp_1'] = {}
@@ -50,7 +57,7 @@ WORKPATH = HOMEPATH/'NaCl_mlip'
 #             shutil.copytree(pj(folder, f"CalcFold{system['ID']}"), WORKPATH)
 #             mlip.readOutput(system, WORKPATH)
 #             shutil.rmtree(WORKPATH)
-#             systemRef = AtomisticRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
+#             systemRef = AtomicStructureRepresentation.readAtomicStructure(pj(folder, f"system{system['ID']}.vasp"))
 #             self.assertTrue(radialDistributionUtility.equal(system, systemRef))
 
 
@@ -60,6 +67,8 @@ class MLIP_train_Test(unittest.TestCase):
         self.trainFolder = HOMEPATH/'MLIP_TRAIN'
         self.trainFolder.mkdir()
         shutil.copy(SPECIFICPATH/'24g.mtp', self.trainFolder)
+        with open(self.trainFolder/'ts.cfg', 'wt'):
+            pass
         self.interface = MLIP_Interface(tag='0', mode='train', potential=self.trainFolder/'24g.mtp',
                                         specorder=['Mo', 'S'], trainingSet=self.trainFolder/'ts.cfg',
                                         args=SPECIFICPATH/'mlip_args_0')
@@ -70,21 +79,21 @@ class MLIP_train_Test(unittest.TestCase):
 
 
     def test_init(self):
-        trajectory = AtomisticRepresentation.readMLIPsample(SPECIFICPATH/'configurations.cfg', specorder=['Mo', 'S'])
-        system = PoolEntry(extensions=self.extensions, ID=0)
-        system.setProperty('trajectory', trajectory, suffix='intermediate')
+        trajectory = AtomicStructureRepresentation.readMLIPsample(SPECIFICPATH/'configurations.cfg', specorder=['Mo', 'S'])
+        intermediate = {'.trajectory': trajectory}
+        intermediate = EntryFlavour(extensions=self.extensions, **intermediate)
         calcFolder = HOMEPATH/'MLIP_INIT'
         calcFolder.mkdir(exist_ok=True)
-        args = self.interface.prepareLocalCalculation(system=system, calcFolder=calcFolder)
+        args = self.interface.prepareLocalCalculation(intermediate, calcFolder=calcFolder)
         self.assertEqual(args, 'train 24g.mtp input.cfg --weight_scaling=2 --weight_scaling_forces=1')
         self.assertTrue(not filecmp.dircmp(HOMEPATH/'MLIP_REF', calcFolder).diff_files)
         shutil.rmtree(calcFolder)
 
 
     def test_sample(self):
-        system = PoolEntry(extensions=self.extensions, ID=0)
+        intermediate = EntryFlavour(extensions=self.extensions)
         calcFolder=HOMEPATH/'MLIP_REF'
-        self.interface.readOutput(system=system, calcFolder=calcFolder)
+        result = self.interface.readOutput(intermediate, calcFolder=calcFolder)
         self.assertTrue(filecmp.cmp(self.trainFolder/'ts.cfg', calcFolder/'input.cfg'))
 
     def tearDown(self) -> None:

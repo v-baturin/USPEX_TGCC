@@ -13,6 +13,7 @@ from typing import List
 from itertools import chain
 
 from .SystemPool import SystemPool
+from .PoolEntry import FlavourFactory
 from .Target import Target, TargetType
 from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
 from USPEX.Expressions.Functions.presets import applyPresetsRecursive
@@ -31,7 +32,6 @@ class GlobalOptimizer(object):
     """
 
     ExpressionEvaluator = None
-    entryType = None
     knownSelectionTypes = {}
     knownTargetTypes = {}
 
@@ -46,7 +46,7 @@ class GlobalOptimizer(object):
 
     @classmethod
     def registerTarget(cls, name: str, utilities: List[type], hybridizations: List[type], mutations: List[type],
-                       creations: List[type], entry: type, seeds: type = None):
+                       creations: List[type], seeds: type = None):
         """
         Register the target as known target.
 
@@ -66,7 +66,6 @@ class GlobalOptimizer(object):
         assert name not in cls.knownTargetTypes, f'{name} is not registered as known Target'
         cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
                                                 mutations=mutations, creations=creations, seeds=seeds)
-        cls.entryType = entry
 
     def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None,
                  extraData=(), **kwargs):
@@ -79,12 +78,10 @@ class GlobalOptimizer(object):
         :param selection: name of selection to launch and its parameters; obligatory
         """
 
-        self.pool = SystemPool()
-        self.pool.extensions['basic'] = BasicFunctions()
+        self.extensions = {'basic': BasicFunctions()}
         self.target = Target(self.knownTargetTypes[target['type']], **target)
-        self.pool.extensions.update(**self.target.expressionExtensions)
-        self.entryFactory = self.entryType(self.target.propertyExtensions)
-        self.pool.entryFactory = self.entryFactory
+        self.extensions.update(**self.target.expressionExtensions)
+        self.pool = SystemPool(FlavourFactory(self.target.propertyExtensions))
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = list(extraData)
         self.selectionConfig = selection
@@ -136,15 +133,24 @@ class GlobalOptimizer(object):
             else:
                 self.pool.goodSystemIDs.append(system.ID)
                 goodSystems.append(system)
-        self.ExpressionEvaluator.calculate(self.optType, self.pool.goodSystems, self.pool.extensions)
-        self.ExpressionEvaluator.calculate(self.createPopulation.optType, self.pool.goodSystems, self.pool.extensions)
+        self.ExpressionEvaluator.calculate(self.optType, self.pool.goodSystems, self.extensions)
+        self.ExpressionEvaluator.calculate(self.createPopulation.optType, self.pool.goodSystems, self.extensions)
         population = goodSystems
         assert population, 'All systems in population failed relaxation.'
         self._markDuplicates(population)
-        self.pool.append(population)
-        for VO in self.target.variationOperators:
-            if hasattr(VO, 'tune'):
-                VO.tune(population, applyPresetsRecursive(self.optType))
+        logger.debug('Updating target: list of unique systems.')
+        IDs = set(system['ID'] for system in population)
+        newIDs = []
+        newGeneration = {'allSystems': [], 'newSystems': []}
+        for system in population:
+            original = self.pool.allSystems[self._getOriginalID(system['ID'])]
+            if original['ID'] not in newIDs:
+                newGeneration['allSystems'].append(original)
+                newIDs.append(original['ID'])
+                if set(original.duplicates) <= IDs:
+                    logger.debug(f'add new system {system["ID"]} to list of unique systems')
+                    newGeneration['newSystems'].append(original)
+        self.pool.generations.append(newGeneration)
         best = set(system['ID'] for system in self.pool.fronts(self.pool.uniqueSystems, self.optType)[0])
         if best == self.best:
             self._isStable = True
@@ -154,7 +160,7 @@ class GlobalOptimizer(object):
         self.pool.generations[-1]['bestSystems'] = self.best
         if self.stopFitness is not None:
             for ID in self.best:
-                if round(self.pool.allSystems[self.pool.getOriginalID(ID)][self.optType], ndigits=3)\
+                if round(self.pool.allSystems[self._getOriginalID(ID)][self.optType], ndigits=3)\
                         <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
                     break
@@ -195,6 +201,17 @@ class GlobalOptimizer(object):
                         if system['ID'] not in ref_system.duplicates:
                             ref_system.duplicates.append(system['ID'])
                     break
+
+    def _getOriginalID(self, ID):
+        """
+        If system is duplicate return ID of original system otherwise return input ID.
+
+        :param ID: ID of some system from this pool.
+
+        :return: ID of original system.
+        """
+        system = self.pool.allSystems[ID]
+        return system.originalID if system.originalID is not None else ID
 
     @property
     def isStable(self):

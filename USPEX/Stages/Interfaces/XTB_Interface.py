@@ -5,13 +5,17 @@ USPEX.Stages.XTB_Interface
 """
 
 import logging
-from pathlib import Path
 import numpy as np
+
+from pathlib import Path
+from ase.io.gen import read_gen, write_gen
+
 
 logger = logging.getLogger(__name__)
 HARTREE_TO_EV = 27.211386245988 #https://physics.nist.gov/cgi-bin/cuu/Value?hrev
 GPA_TO_AU = 1.0/29421.015697
 ANGSTROM_TO_BOHR = 1.0/0.529177210903
+
 
 class XTB_Interface:
     """
@@ -19,9 +23,6 @@ class XTB_Interface:
     Local running
     """
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
 
     inputFile, outputFile, errorFile = 'xtb.inp', 'output', 'error'
     geometry_file = 'uspex.gen'
@@ -29,14 +30,11 @@ class XTB_Interface:
 
     out_geometry_file = 'xtbopt.gen'
 
-    aseAdapterType = None
+    AtomicStructureRepresentation = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, aseAdapterType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.aseAdapterType = aseAdapterType
+    def registerTypes(cls, AtomicStructureRepresentation):
+        cls.AtomicStructureRepresentation = AtomicStructureRepresentation
 
     def __init__(self, tag: str, xtb_input: str = None, targetProperties: list = None, **kwargs):
 
@@ -49,19 +47,19 @@ class XTB_Interface:
         with open(xtb_input, 'r') as f:
             self.xtb_input = f.read()
 
-        self.adapter = self.aseAdapterType()
         self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
 
     def prepareLocalCalculation(self, system, calcFolder : Path):
 
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
-        self.adapter.write_structure(structure, self.geometry_file, calcFolder)
+        atoms = self.AtomicStructureRepresentation.toAtoms(structure)
+        write_gen(calcFolder / self.geometry_file, atoms)
 
         content_to_write = ''
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+        disassembler = system.getProperty('disassembler', extension='atomistic')
         fixedIndices = disassembler.allFixedIndices
         if np.any(fixedIndices):
             content_to_write += '$fix\n'
@@ -98,16 +96,20 @@ class XTB_Interface:
 
     def readOutput(self, system, calcFolder: Path):
 
+        factory = system.getFactory()
+        result = factory()
         if 'structure' in self.targetProperties:
             with open(calcFolder / 'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.adapter.read_structure(self.out_geometry_file, calcFolder, pbc),
-                               prefix='atomistic', suffix=self.tag)
+            atoms = read_gen(calcFolder / self.geometry_file)
+            atoms.set_pbc(pbc)
+            result.setProperty('structure', self.AtomicStructureRepresentation.fromAtoms(atoms), extension='atomistic')
 
         if 'energy' in self.targetProperties:
-            system.setProperty('energy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV, suffix=self.tag)
+            result.setProperty('energy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV)
         if 'enthalpy' in self.targetProperties:
-            system.setProperty('enthalpy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV, suffix=self.tag)
+            result.setProperty('enthalpy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV)
+        return result
 
     def readEnergyHa(self, calcFolder: Path):
 

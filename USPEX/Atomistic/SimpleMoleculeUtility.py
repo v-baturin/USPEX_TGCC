@@ -134,10 +134,10 @@ class SimpleMoleculeUtility(object):
         #     if not inMolecule: return False
         # return True
 
-        molecules = entry.getProperty('molecules', prefix='atomistic')
-        cell = entry.getProperty('cell', prefix='atomistic')
-        structure = entry.getProperty('structure', prefix='atomistic')
-        disassembler = entry.getProperty('disassembler', prefix='atomistic')
+        molecules = entry.getProperty('molecules', extension='atomistic')
+        cell = entry.getProperty('cell', extension='atomistic')
+        structure = entry.getProperty('structure', extension='atomistic')
+        disassembler = entry.getProperty('disassembler', extension='atomistic')
         actualDistances = structure.getAllDistances()
         eye = np.eye(3)[np.nonzero(cell.getPBC())]
         constNeighbours = np.vstack([eye, -eye])

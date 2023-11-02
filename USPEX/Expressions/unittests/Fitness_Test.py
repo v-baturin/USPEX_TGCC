@@ -15,9 +15,9 @@ from os.path import join as pj
 
 from ..ExpressionEvaluator import ExpressionEvaluator
 from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
-from ...Optimizers.PoolEntry import PoolEntry
-from ...components import CompositionSpace, SimpleMoleculeUtility, AtomisticRepresentation, Atomistic
-from ...Atomistic.AtomicPrimitives import AtomicStructure
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...components import CompositionSpace, SimpleMoleculeUtility, Atomistic
+from USPEX.Atomistic.Primitives.AtomicStructure import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint
 from ...XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
@@ -33,6 +33,7 @@ class System(object):
 
 class Fitness_Test(unittest.TestCase):
     def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
         molecules = [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mg'] * 4 + ['Al'] * 8 + ['O'] * 16]
         self.systems = [{'ID': 0, 'atomistic.molecules': molecules, '.enthalpy': -646.695,
@@ -62,7 +63,7 @@ class Fitness_Test(unittest.TestCase):
         propertyExtensions = dict(
             simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility)
         )
-        self.systems = [PoolEntry(extensions=propertyExtensions, **system) for system in self.systems]
+        self.systems = [PoolEntry(system['ID'], EntryFlavour(extensions=propertyExtensions, **system)) for system in self.systems]
 
         self.fitness = ExpressionEvaluator(tuple(self.systems), expressionExtensions)
 
@@ -202,9 +203,10 @@ class Fitness_Test(unittest.TestCase):
 
 class FitnessXray_Test(unittest.TestCase):
     def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
         # 'externalPressure': 135,
         filename = pj(HOMEPATH,'XRay_POSCARS')
-        self.systems = AtomisticRepresentation.readAtomicStructures(filename)
+        self.systems = Atomistic.readAtomicStructures(filename)
         enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
 
         self.compositionSpace = CompositionSpace(symbols=['Ba', 'H'], blocks=[[1, 12]], range=[[4, 4]])
@@ -223,10 +225,9 @@ class FitnessXray_Test(unittest.TestCase):
             powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.propertyExtension(self.powderSpectrumAnalyzer),
         )
         for ID, system in enumerate(self.systems):
-            system['ID'] = ID
             system['.enthalpy'] = enthalpies[ID]
-            self.systems[ID] = PoolEntry(extensions=propertyExtensions, **system)
-            self.systems[ID].getProperty('structure', prefix='atomistic')
+            self.systems[ID] = PoolEntry(ID, EntryFlavour(extensions=propertyExtensions, **system))
+            self.systems[ID].getProperty('structure', extension='atomistic')
 
         self.fitness = ExpressionEvaluator(tuple(self.systems), expressionExtensions)
 

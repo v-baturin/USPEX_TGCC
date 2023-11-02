@@ -16,8 +16,14 @@ import filecmp
 
 from pathlib import Path
 
-from ....Optimizers.PoolEntry import PoolEntry
-from ....components import AtomisticRepresentation, GULP_Interface, Atomistic
+from ..GULP_Interface import GULP_Interface
+from ....Optimizers.PoolEntry import EntryFlavour
+from ....Atomistic.Primitives.Element import Element
+from ....Atomistic.Primitives.Cell import Cell
+from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
+from ....IO.AtomicStructureRepresentation import AtomicStructureRepresentation
+from ....Atomistic.Atomistic import Atomistic
+Atomistic.registerTypes(AtomicStructure, Element, Cell, AtomicStructureRepresentation)
 
 
 HOMEPATH = Path(__file__).parent
@@ -28,7 +34,6 @@ WORKPATH = HOMEPATH/'Mg4Al8O16_gulp'
 
 class GULP_CalculatorTest(unittest.TestCase):
 
-
     def test_life(self):
 
         gulp = GULP_Interface(tag='0', goptions=SPECIFICPATH/'goptions', ginput=SPECIFICPATH/'ginput_1')
@@ -38,16 +43,15 @@ class GULP_CalculatorTest(unittest.TestCase):
         )
 
         for ID in range(10):
-            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-            system = PoolEntry(extensions=extensions, ID=ID)
-            system.setProperty('externalPressure', 100)
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='0')
-            system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+            structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+            disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            intermediate = disassembler.disassemble(structure)
+            intermediate['.externalPressure'] = 100
+            intermediate['atomistic.disassembler'] = disassembler
+            intermediate = EntryFlavour(extensions=extensions, **intermediate)
             WORKPATH.mkdir(parents=True, exist_ok=True)
-            gulp.prepareLocalCalculation(system, WORKPATH)
-            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
+            gulp.prepareLocalCalculation(intermediate, WORKPATH)
+            folder = GATHEREDPATH/'input'/f"CalcFold{ID}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
@@ -55,11 +59,11 @@ class GULP_CalculatorTest(unittest.TestCase):
             shutil.rmtree(WORKPATH)
             self.assertTrue(match)
             folder = GATHEREDPATH/'output'
-            shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
-            gulp.readOutput(system, WORKPATH)
+            shutil.copytree(folder/f"CalcFold{ID}", WORKPATH)
+            result = gulp.readOutput(intermediate, WORKPATH)
             shutil.rmtree(WORKPATH)
-            structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-            structure = system.getProperty('structure', prefix='atomistic', suffix='0')
+            structureRef = AtomicStructureRepresentation.readPOSCAR(folder/f"system{ID}.vasp", (1, 1, 1))
+            structure = result.getProperty('structure', extension='atomistic')
             cell = structure.getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(),
@@ -69,6 +73,7 @@ class GULP_CalculatorTest(unittest.TestCase):
 
 
 class GULP_InterfaceTest(unittest.TestCase):
+
     def test_read_output(self):
         ID = 0
         # HERE what is written in ginput and goption no make sense.
@@ -83,19 +88,18 @@ class GULP_InterfaceTest(unittest.TestCase):
         # with open(GATHEREDPATH/f'input/system{ID}', 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}
 
-        structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-        disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-        system = PoolEntry(extensions=extensions, ID=ID)
-        system.setProperty('externalPressure', 100)
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='1')
-        system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
-        interface.readOutput(system=system, calcFolder=HOMEPATH/'gulp_test')
-        self.assertTrue(np.isclose(system['.enthalpy.1'], -645.80329121))
+        structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+        disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+        intermediate = disassembler.disassemble(structure)
+        intermediate['.externalPressure'] = 100
+        intermediate['atomistic.disassembler'] = disassembler
+        intermediate = EntryFlavour(extensions=extensions, **intermediate)
+        result = interface.readOutput(intermediate, calcFolder=HOMEPATH/'gulp_test')
+        self.assertTrue(np.isclose(result['.enthalpy'], -645.80329121))
         stress_ref = np.array([[-99.960848, 0.394719, -0.211383], [0.394719,  -100.008335,  0.019149], [-0.211383,  0.019149,  -100.271584]])
-        self.assertTrue(np.allclose(system['.stressTensor.1'], stress_ref))
+        self.assertTrue(np.allclose(result['.stressTensor'], stress_ref))
         strains_ref = np.array([0.012703, -0.031870, -0.039885, -0.000385, -0.008334, 0.182955])
-        self.assertTrue(np.allclose(system['.strains.1'], strains_ref))
+        self.assertTrue(np.allclose(result['.strains'], strains_ref))
 
     def test_read_energy(self):
          with open(HOMEPATH/'gulp_test'/'output_bad_1st_SCF', 'rt') as f:
