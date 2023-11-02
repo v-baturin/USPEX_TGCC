@@ -5,8 +5,6 @@ import numpy as np
 from typing import Union
 from sqlalchemy import MetaData, ForeignKey, Table, Column, Integer, Float, String, create_engine, insert, select, and_
 
-from ..Expressions.Functions.presets import applyPresetsRecursive
-
 
 logger = logging.getLogger(__name__)
 
@@ -122,8 +120,16 @@ class EntryFlavour:
     
     def __init__(self, extensions=None, **properties):
         self.extensions = extensions if extensions is not None else {}
-        self._properties = properties
+        self._propertiesCache = properties
         self.ID = None
+
+    def __getstate__(self):
+        return dict(ID=self.ID, extensions=self.extensions)
+
+    def __setstate__(self, state):
+        self.ID = state['ID']
+        self.extensions = state['extensions']
+        self._propertiesCache = {}
 
     def setID(self, ID: int):
         self.ID = ID
@@ -132,20 +138,20 @@ class EntryFlavour:
         return FlavourFactory(self.extensions)
 
     def getProperties(self):
-        return self._properties
+        return self._propertiesCache
 
     def getProperty(self, prop, extension=''):
-        if f'{extension}.{prop}' not in self._properties:
+        if f'{extension}.{prop}' not in self._propertiesCache:
             if self.ID is not None:
                 value = self.getPropertyBD(f'{extension}.{prop}')
                 if value is not None:
-                    self._properties[f'{extension}.{prop}'] = value
-                    return self._properties[f'{extension}.{prop}']
+                    self._propertiesCache[f'{extension}.{prop}'] = value
+                    return self._propertiesCache[f'{extension}.{prop}']
             if extension in self.extensions:
-                self._properties[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
+                self._propertiesCache[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
             else:
-                raise KeyError(f'Can not evaluate property {extension}.{prop} for {self._properties}.')
-        return self._properties[f'{extension}.{prop}']
+                raise KeyError(f'Can not evaluate property {extension}.{prop} for {self._propertiesCache}.')
+        return self._propertiesCache[f'{extension}.{prop}']
 
     def getPropertyBD(self, prop):
         stmt = select(propertiesInt.c.value).where(and_(propertiesInt.c.fID == self.ID, propertiesInt.c.prop == prop))
@@ -175,7 +181,7 @@ class EntryFlavour:
         return None
 
     def setProperty(self, prop, value, extension=''):
-        self._properties[f'{extension}.{prop}'] = value
+        self._propertiesCache[f'{extension}.{prop}'] = value
         if self.ID is not None and self.getPropertyBD(f'{extension}.{prop}') is None:
             self.setPropertyBD(f'{extension}.{prop}', value)
 
@@ -192,7 +198,7 @@ class EntryFlavour:
             conn.commit()
 
     def delProperty(self, prop, extension=''):
-        del self._properties[f'{extension}.{prop}']
+        del self._propertiesCache[f'{extension}.{prop}']
 
     def __getitem__(self, item: str):
         extension, prop, *other = item.split('.')
@@ -222,12 +228,23 @@ class PoolEntry:
 
     def __init__(self, ID: int, flavourFactory: FlavourFactory):
         self.ID = ID
+        self.flavourFactory = flavourFactory
+        self._expressionsCache = {}
+        self._flavours = {}
         self.originalID = None
         self.duplicates = []
-        self.expressions = {}
-        self.flavourFactory = flavourFactory
-        self._flavours = {}
-        self.properties = {}
+
+    def __getstate__(self):
+        return dict(ID=self.ID, flavourFactory=self.flavourFactory, flavours=self._flavours,
+                    originalID=self.originalID, duplicates=self.duplicates)
+
+    def __setstate__(self, state):
+        self.ID = state['ID']
+        self.flavourFactory = state['flavourFactory']
+        self._flavours = state['flavours']
+        self._expressionsCache = {}
+        self.originalID = state['originalID']
+        self.duplicates = state['duplicates']
 
     @staticmethod
     def newEntry(flavour: EntryFlavour):
@@ -292,7 +309,7 @@ class PoolEntry:
         flavour.setProperty(prop, value, extension=extension)
 
     def setExpression(self, expression, value):
-        self.expressions[expression] = value
+        self._expressionsCache[expression] = value
         if self.getExpressionBD(expression.ID) is None:
             self.setExpressionBD(expression.ID, value)
 
@@ -309,9 +326,9 @@ class PoolEntry:
             conn.commit()
 
     def getExpression(self, expression):
-        if expression not in self.expressions:
-            self.expressions[expression] = self.getExpressionBD(expression.ID)
-        return self.expressions[expression]
+        if expression not in self._expressionsCache:
+            self._expressionsCache[expression] = self.getExpressionBD(expression.ID)
+        return self._expressionsCache[expression]
 
     def getExpressionBD(self, exprID):
         stmt = select(expressionsInt.c.value).where(and_(expressionsInt.c.sID == self.ID, expressionsInt.c.eID == exprID))
@@ -354,7 +371,7 @@ class PoolEntry:
         if item == 'ID':
             return True
         elif isinstance(item, tuple):
-            return item in self.expressions
+            return item in self._expressionsCache
         elif isinstance(item, str):
             prefix, prop, suffix, *other = item.split('.')
             assert not other, f'Too complex property name {item}.'
@@ -388,18 +405,17 @@ class Expression:
 
 class Pool:
 
-    _newPoolID: int = 0
-
-    @classmethod
-    def createPool(cls, flavourfactory: FlavourFactory):
-        pool = cls(cls._newPoolID, flavourfactory)
-        cls._newPoolID += 1
-        return pool
-
     def __init__(self, ID: int, flavourfactory: FlavourFactory):
         self.ID = ID
         self.flavourFactory = flavourfactory
         self._cache = {}
+
+    @staticmethod
+    def createPool(flavourfactory: FlavourFactory):
+        with PoolEntry.engine.connect() as conn:
+            result = conn.execute(insert(pools), [{}])
+            conn.commit()
+        return Pool(result.inserted_primary_key[0], flavourfactory)
 
     def __hash__(self):
         return hash(self.ID)
