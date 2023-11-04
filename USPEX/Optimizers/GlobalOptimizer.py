@@ -158,7 +158,8 @@ class GlobalOptimizer(object):
         self.ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.extensions)
         self.ExpressionEvaluator.calculate(self._createPopulation.optType, generation.goodSystems, self.extensions)
         assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
-        self._markDuplicates(generation.goodPopulation)
+        optType = self.optType if isinstance(self.optType, str) else generation.goodSystems.createExpression(self.optType)
+        self._markDuplicates(generation.goodPopulation, optType)
         generation.uniqueSystems = Pool.createPool(self.flavourFactory)
         for ID in generation.goodSystems.getIDs():
             entry = generation.goodSystems.getEntry(ID)
@@ -174,7 +175,7 @@ class GlobalOptimizer(object):
                 generation.uniquePopulation.addEntry(original)
                 newIDs.append(original['ID'])
         self.generations.append(generation)
-        best = set(system['ID'] for system in generation.uniqueSystems.fronts(self.optType)[0])
+        best = set(system['ID'] for system in generation.uniqueSystems.fronts(optType)[0])
         if best == self.best:
             self._isStable = True
         else:
@@ -183,7 +184,7 @@ class GlobalOptimizer(object):
         self.bestHistory.append(self.best)
         if self.stopFitness is not None:
             for ID in self.best:
-                if round(self.allSystems[self._getOriginalID(ID)][self.optType], ndigits=3)\
+                if round(self.allSystems[self._getOriginalID(ID)][optType], ndigits=3)\
                         <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
                     break
@@ -198,7 +199,7 @@ class GlobalOptimizer(object):
                     break
             self._isGoalReached = not stopSystems
 
-    def _markDuplicates(self, population):
+    def _markDuplicates(self, population, optType):
         """
         Method for cleaning duplicates.
 
@@ -216,7 +217,7 @@ class GlobalOptimizer(object):
                 ref_system = self.allSystems.getEntry(ref_system_ID)
                 if self.fingerprintUtility.equal(system, ref_system) and system['ID'] != ref_system['ID']:
                     logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
-                    if system[applyPresetsRecursive(self.optType)] < ref_system[applyPresetsRecursive(self.optType)]:
+                    if system[applyPresetsRecursive(optType)] < ref_system[applyPresetsRecursive(optType)]:
                         self.fingerprintUtility.clean(ref_system)
                         ref_system.setProperty('originalID', system['ID'])
                         system.duplicates = ref_system.duplicates

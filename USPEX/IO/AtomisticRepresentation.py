@@ -336,7 +336,11 @@ class AtomisticRepresentation(object):
         else:
             approximateVolume = 'NA'
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
-        fitness = [system[applyPresetsRecursive(optimizer.optType)] for system in population]
+        if isinstance(optimizer.optType, str):
+            optType = optimizer.optType
+        else:
+            optType = optimizer.generations[-1].goodSystems.createExpression(optimizer.optType)
+        fitness = [system[optType] for system in population]
         order = [system[f'radialDistributionUtility.averageOrder.{self.stages[-1]}'] for system in population]
         if np.any(np.isnan(np.asarray(fitness, dtype = float))):
             correlation = 0.0
@@ -413,7 +417,11 @@ class AtomisticRepresentation(object):
         csSize = len(compositionSpace.blocks)
 
         if optimizer.generations:
-            fronts = optimizer.generations[-1].uniqueSystems.fronts(optimizer.optType)
+            if isinstance(optimizer.optType, str):
+                optType = optimizer.optType
+            else:
+                optType = optimizer.generations[-1].goodSystems.createExpression(optimizer.optType)
+            fronts = optimizer.generations[-1].uniqueSystems.fronts(optType)
             if csSize == 1:
                 for rank, front in enumerate(fronts):
                     for system in front:
@@ -439,7 +447,7 @@ class AtomisticRepresentation(object):
                         goodStructures[numBlocks].update(system['ID'], system, rank=rank)
                         ID = system.ID
                         system = system.getFlavour(str(self.stages[-1]))
-                        system['ID'] = ID
+                        system.setProperty('ID', ID)
                         goodStructuresPOSCARS[numBlocks].append(system)
 
                 for comp, table_gs in goodStructures.items():
@@ -453,46 +461,50 @@ class AtomisticRepresentation(object):
             self._drawProperties(optimizer.generations[-1].uniqueSystems)
 
 
-        if self.presentConvexHull:
-            convexHull = []
-            for i, generation in enumerate(optimizer.generations):
-                n = len(optimizer.generations) - i
+            if self.presentConvexHull:
                 convexHull = []
-                for system in optimizer.pool.goodSystems:
-                    m = len(system.expressions[optimizer.optType])
-                    if m >= n and np.isclose(system.expressions[optimizer.optType][m-n], 0.0):
-                        convexHull.append(system)
-                content_convexHull += f'Generation {i}\n'
-                table = self.getNewSystemsTable()
-                for system in convexHull:
-                    table.update(system['ID'], system)
-                content_convexHull += table.table.get_string() + '\n'
+                for i, generation in enumerate(optimizer.generations):
+                    convexHull = []
+                    for ID in generation.goodSystems.getIDs():
+                        system = generation.goodSystems.getEntry(ID)
+                        try:
+                            if np.isclose(system.getExpression(optType), 0.0):
+                                convexHull.append(system)
+                        except Exception:
+                            pass
+                    content_convexHull += f'Generation {i}\n'
+                    table = self.getNewSystemsTable()
+                    for system in convexHull:
+                        table.update(system['ID'], system)
+                    content_convexHull += table.table.get_string() + '\n'
 
-            with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
-                fp.write(content_convexHull)
+                with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
+                    fp.write(content_convexHull)
 
-            for rank, front in enumerate(fronts):
-                for system in front:
-                    table_extendedConvexHull.update(system['ID'], system, rank=rank)
-            with open(self.RES_FOLDER/'extended_convex_hull', 'w') as fp:
-                fp.write(table_extendedConvexHull.table.get_string())
+                for rank, front in enumerate(fronts):
+                    for system in front:
+                        table_extendedConvexHull.update(system['ID'], system, rank=rank)
+                with open(self.RES_FOLDER/'extended_convex_hull', 'w') as fp:
+                    fp.write(table_extendedConvexHull.table.get_string())
 
-            for front in fronts:
-                for system in front:
-                    ID = system.ID
-                    system = system.getFlavour(str(self.stages[-1]))
-                    system['ID'] = ID
-                    systems_extendedConvexHullPOSCARS.append(system)
-            self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
-                                       systems_extendedConvexHullPOSCARS)
+                for front in fronts:
+                    for system in front:
+                        ID = system.ID
+                        system = system.getFlavour(str(self.stages[-1]))
+                        system.setProperty('ID', ID)
+                        systems_extendedConvexHullPOSCARS.append(system)
+                self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
+                                           systems_extendedConvexHullPOSCARS)
 
-            if csSize == 2:
-                self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData, optimizer.pool.uniqueSystems)
-            elif csSize == 3:
-                self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData, optimizer.pool.uniqueSystems)
+                if csSize == 2:
+                    self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData,
+                                                  optimizer.generations[-1].uniqueSystems)
+                elif csSize == 3:
+                    self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData,
+                                                  optimizer.generations[-1].uniqueSystems)
 
-        if self.presentPareto is not None and len(self.presentPareto) == 2:
-            self._drawParetoFronts2(fronts, optimizer)
+            if self.presentPareto is not None and len(self.presentPareto) == 2:
+                self._drawParetoFronts2(fronts, optimizer)
 
     def _drawProperties(self, uniqueSystems):
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
@@ -568,7 +580,8 @@ class AtomisticRepresentation(object):
             Ych = np.asarray(Ych)[inds]
             X = []
             Y = []
-            for system in extendedConvexHull:
+            for ID in extendedConvexHull.getIDs():
+                system = extendedConvexHull.getEntry(ID)
                 numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']), dtype = float)
                 numBlocksTotal = np.sum(numBlocks)
                 numBlocks /= numBlocksTotal
