@@ -13,7 +13,7 @@ NSLUBS = 2
 
 class Heredity:
 
-    def __init__(self, utilities, suffix='4', nslabs = None, attempts = ATTEMPTS, debug = False):
+    def __init__(self, utilities, suffix, nslabs = None, attempts = ATTEMPTS, debug = False):
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace

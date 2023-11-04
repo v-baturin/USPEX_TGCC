@@ -15,6 +15,8 @@ def compileParams(main: dict) -> dict:
     if 'optimizer' in main and 'target' in main['optimizer']:
         optimizer = main['optimizer']
         target = optimizer['target']
+        if 'defaultSuffix' not in target:
+            target['defaultSuffix'] = stages[-1]['tag']
         symbols = target['compositionSpace']['symbols']
         defaultVolumeType = 0
         cutoffVDW = False
@@ -73,6 +75,8 @@ def compileParams(main: dict) -> dict:
             target['radialDistributionUtility'] = {}
         if 'symbols' not in target['radialDistributionUtility']:
             target['radialDistributionUtility']['symbols'] = sorted(elementalSymbols)
+        if 'suffix' not in target['radialDistributionUtility']:
+            target['radialDistributionUtility']['suffix'] = target['defaultSuffix']
         if 'environmentUtility' in target:
             for environmentDesciption in target['environmentUtility']['environments']:
                 environmentDesciption.update(EnvironmentUtility.build(**environmentDesciption))
