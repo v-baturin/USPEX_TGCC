@@ -16,7 +16,7 @@ from ..IO.InputParser import read
 
 logger = logging.getLogger(__name__)
 DEFAULT_OUTPUT_REFRESH_DELAY = 120
-DEFAULT_EXECUTION_TIME = 86400  # 24h run
+DEFAULT_EXECUTION_TIME = None  # time in sec. None=infinite run
 
 class ControllerState(Enum):
     createPopulation = 0
@@ -83,7 +83,7 @@ class GenerationController(object):
             stopCrit = params['stopCrit']
             outputRefreshDelay = params['outputRefreshDelay'] if 'outputRefreshDelay' in params \
                 else DEFAULT_OUTPUT_REFRESH_DELAY
-            executionTime = params['executionTime']if 'executionTime' in params \
+            executionTime = params['executionTime'] if 'executionTime' in params \
                 else DEFAULT_EXECUTION_TIME
             if optimizer['type'] in GenerationController.knownOptimizers:
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
@@ -158,8 +158,9 @@ class GenerationController(object):
             copyfile(GenerationController.DUMP_FILENAME, GenerationController.DUMP_FILENAME_BACKUP)
         with open(GenerationController.DUMP_FILENAME, 'wb') as f:
             pcl.dump(self, f)
-        dt = time() - self.start
-        logger.debug(f"{int(dt)} seconds passed")
-        if dt >= self.executionTime:
-            logger.info("Time is up. Exiting")
-            exit()
+        if self.executionTime is not None:
+            dt = time() - self.start
+            logger.debug(f"{int(dt)} seconds passed")
+            if dt >= self.executionTime:
+                logger.info("Time is up. Exiting")
+                exit()

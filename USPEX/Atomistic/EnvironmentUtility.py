@@ -17,7 +17,7 @@ class EnvironmentUtility:
         'interface': Interface,
         'substrate': Substrate,
         'bulk': Bulk #,
-        # 'nanoparticle_core': NanoparticleCore
+        #'nanoparticle_core': NanoparticleCore
     }
 
 
