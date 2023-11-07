@@ -142,7 +142,7 @@ class OutputRepresentation(object):
             if final:
                 table = self.targetRepresentation.getNewSystemsTable()
                 for ID in optimizer.best:
-                    table.update(ID, optimizer.pool.allSystems[ID])
+                    table.update(ID, optimizer.allSystems.getEntry(ID))
                 output += createHeader_wrap(['Calculation results'], 'center')
                 output.append(table.table.get_string())
 
