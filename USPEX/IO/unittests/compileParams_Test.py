@@ -59,7 +59,8 @@ class CompileParams_Test(unittest.TestCase):
                     'conditions': {'externalPressure': 100},
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
-                    'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O']},
+                    'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O'], 'suffix': '4'},
+                    'defaultSuffix': '4',
                     'bondUtility': {'volumeType': 0},
                     'junctionUtility': {'molSitesMapping': {}}
                 },
@@ -180,7 +181,8 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['Na', 'Cl'],
                                          'blocks': [[8,24]],
                                          'range': [[1,1]]},
-                    'radialDistributionUtility': {'symbols': ['Cl', 'Na']},
+                    'radialDistributionUtility': {'symbols': ['Cl', 'Na'], 'suffix': 'origin'},
+                    'defaultSuffix': 'origin',
                     'bondUtility': {'volumeType': 0},
                     'junctionUtility': {'molSitesMapping': {}}
                 },

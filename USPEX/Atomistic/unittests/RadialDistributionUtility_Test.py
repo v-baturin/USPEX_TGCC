@@ -19,11 +19,17 @@ class RadialDistributionUtility_Test(unittest.TestCase):
             radialDistributionUtility=self.utility.propertyExtension(self.utility)
         )
 
-        self.systemRDU1 = PoolEntry(0, EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU1.POSCAR")))
+        self.systemRDU1 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,
+                                                          **{'.howCome': 'Seeds', '.parent': None},
+                                                          **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU1.POSCAR")))
         self.systemRDU1.getProperty('structure', extension='atomistic')
-        self.systemRDU2 = PoolEntry(1, EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU2.POSCAR")))
+        self.systemRDU2 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,
+                                                          **{'.howCome': 'Seeds', '.parent': None},
+                                                           **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU2.POSCAR")))
         self.systemRDU2.getProperty('structure', extension='atomistic')
-        self.systemRDU3 = PoolEntry(2, EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU3.POSCAR")))
+        self.systemRDU3 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,
+                                                          **{'.howCome': 'Seeds', '.parent': None},
+                                                           **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU3.POSCAR")))
         self.systemRDU3.getProperty('structure', extension='atomistic')
 
     def test_structureOrder(self):

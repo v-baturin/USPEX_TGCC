@@ -11,16 +11,17 @@ class Antiseeds:
     Such penalties applied not only to some system itself but to all its neighbours with gaussian distribution.
     """
 
-    def __init__(self, max=ANTISEEDS_MAX, sigma=ANTISEEDS_SIGMA, legacy=True, **kwargs):
+    def __init__(self, fingerprintUtility, max=ANTISEEDS_MAX, sigma=ANTISEEDS_SIGMA, legacy=True, **kwargs):
         """
         :param max: height of gaussian distribution.
         :param sigma: width of gaussian distribution.
         """
+        self.fingerprintUtility = fingerprintUtility
         self.max = max
         self.sigma = sigma
         self.legacy = legacy
 
-    def payPenalties(self, population, pool, fingerprintUtility):
+    def payPenalties(self, population, pool):
         """
         Calculates and stores penalties.
         :param population: list of systems to be penalized. This systems will be in centers of gaussian distributions.
@@ -28,20 +29,22 @@ class Antiseeds:
         All this systems will get penalties depending on their distance from systems in *popuation* list.
         :param fingerprintUtility: utility providing **dist** method which calculates distance between systems.
         """
-        suffix = fingerprintUtility.suffix
+        suffix = self.fingerprintUtility.suffix
+        population = [population.getEntry(ID) for ID in population.getIDs()]
         comb = list(combinations(population, 2))
         if comb:
             sigma = 0
             for s1, s2 in comb:
-                sigma += fingerprintUtility.dist(s1, s2)
+                sigma += self.fingerprintUtility.dist(s1, s2)
             sigma /= len(comb)
         else:
             sigma = 1
         sigma *= self.sigma
-        for system in pool:
+        for ID in pool.getIDs():
+            system = pool.getEntry(ID)
             if f'antiseeds.corrections.{suffix}' in system:
                 for ref_system in population:
-                    dist = fingerprintUtility.dist(ref_system, system)
+                    dist = self.fingerprintUtility.dist(ref_system, system)
                     correction = system[f'antiseeds.corrections.{suffix}']
                     system.setProperty('corrections', correction + self.max * np.exp(-dist ** 2 / (2 * sigma ** 2)),
                                        extension='antiseeds', suffix=suffix)

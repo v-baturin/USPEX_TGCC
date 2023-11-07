@@ -5,7 +5,7 @@ _TRANS_ATTEMPTS = 1000
 
 class Transmutation:
 
-    def __init__(self, utilities, suffix='4', howManyTrans = 5, transAttempts = _TRANS_ATTEMPTS):
+    def __init__(self, utilities, suffix, howManyTrans = 5, transAttempts = _TRANS_ATTEMPTS):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility

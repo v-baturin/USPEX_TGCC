@@ -6,7 +6,6 @@
             conditions: {externalPressure: 100}
             compositionSpace: {symbols: [Mg Al O]
                                blocks: [[4 8 16]]}
-            radialDistributionUtility: {suffix: '4'}
         }
         optType: '.enthalpy.4'
         selection: {

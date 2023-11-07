@@ -22,20 +22,20 @@ logger = logging.getLogger(__name__)
 class ExpressionEvaluator:
 
     @staticmethod
-    def calculate(expression: Union[str, tuple, int, float], pool: Sequence, extensions: Mapping) -> None:
+    def calculate(expression: Union[str, tuple, int, float], pool, extensions: Mapping) -> None:
         expression = applyPresetsRecursive(expression)
         calculator = ExpressionEvaluator(pool, extensions)
         calculator.evaluate(expression)
         calculator.setAllExpressions()
 
-    def __init__(self, pool: Sequence, extensions: Mapping):
+    def __init__(self, pool, extensions: Mapping):
         self._pool = pool
         self._extensions = extensions
         self._storedData = {}
 
     def evaluate(self, expression: Union[str, tuple, int, float]) -> np.ndarray:
         if expression not in self._storedData:
-            if len(self._pool) == 0:
+            if len(self._pool.getIDs()) == 0:
                 valueArray = np.empty(0)
             elif isinstance(expression, tuple):
                 funcName, *funcParams = expression
@@ -55,7 +55,7 @@ class ExpressionEvaluator:
                     raise RuntimeError(f"Too complex expression {'.'.join(expression)}.")
                 valueArray = getattr(self._extensions[extension], funcName)(*arguments)
             elif isinstance(expression, str):
-                value = [system[expression] for system in self._pool]
+                value = [self._pool.getEntry(ID)[expression] for ID in self._pool.getIDs()]
                 # value = [self.evaluateTerminal(expression, system) for system in self.pool]
                 # unfortunately simple np.asarray spoils dictionaries
                 if value and isinstance(value[0], Mapping):
@@ -72,6 +72,6 @@ class ExpressionEvaluator:
 
     def setAllExpressions(self) -> None:
         for expression, values in self._storedData.items():
-            for s, value in zip(self._pool, values):
+            for ID, value in zip(self._pool.getIDs(), values):
                 if isinstance(expression, tuple):
-                    s.setExpression(expression, value)
+                    self._pool.getEntry(ID).setExpression(self._pool.createExpression(expression), value)

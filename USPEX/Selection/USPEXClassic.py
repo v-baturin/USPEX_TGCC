@@ -8,12 +8,10 @@ USPEX.Selection.USPEXClassic
 
 import logging
 import numpy as np
-from itertools import chain
 from copy import copy
 from typing import Dict
 from collections import Counter
 
-from .Antiseeds import Antiseeds
 from ..Expressions.Functions.presets import applyPresetsRecursive
 
 
@@ -34,7 +32,7 @@ class Autofrac(object):
         self.weightsLast = copy(weightsLast)
         self.weightsBest = Counter()
         for system in best:
-            if system['.howCome.origin'] != 'Seeds' and system in newFoundSystems:
+            if system['.howCome.origin'] != 'Seeds' and system.ID in newFoundSystems:
                 self.weightsBest[system['.howCome.origin']] += 1
 
         self.initWeights = {}
@@ -78,26 +76,20 @@ class Autofrac(object):
         del self.maxFracs[howCome]
         return int(howMany)
 
-'''
-FunctionFolder/USPEX/3**/EA_3**.m
-'''
 
 class USPEXClassic(object):
 
-    def __init__(self, pool, target, fingerprintUtility, optType, popSize : int, fractions : Dict[str, tuple],
-                 initialPopSize=None, bestFrac:float=0.7, howManyDiverse=None, diversityTolerance = 0.5, debug = False,
-                 antiseeds: dict = None, globalParentsPool: bool = False, **kwargs):
+    def __init__(self, target, fingerprintUtility, optType, popSize: int, fractions: Dict[str, tuple],
+                 initialPopSize: int = None, bestFrac: float=0.7, howManyDiverse: int = None,
+                 diversityTolerance: float = 0.5, globalParentsPool: bool = False, debug=False, **kwargs):
         """
         :param target: reference to configuration space object
         :param params: dictionary contains following parameters:
         popSize : int - size of population
         """
-        self.pool = pool
         self.target = target
-        antiseeds = {} if antiseeds is None else antiseeds
-        self.pool.flavourFactory.extensions['antiseeds'] = Antiseeds(**antiseeds)
         self.fingerprintUtility = fingerprintUtility
-        self.optType = optType
+        self.optType = applyPresetsRecursive(optType)
         self.fractions = fractions
 
         self.popSize = popSize
@@ -107,17 +99,19 @@ class USPEXClassic(object):
         else:
             self.initialPopSize = popSize
         self.bestFrac = bestFrac
+        self.howManyProliferate = int(np.ceil(self.bestFrac * self.popSize))
         self.howManyDiverse = howManyDiverse if howManyDiverse else int(np.round(0.15*self.popSize))
         self.diversityTolerance = diversityTolerance
         self.globalParentsPool = globalParentsPool
         self._mostDiverse = []
         self.weightsLast = Counter()
+        self._newIDs = []
         if debug:
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
 
-    def __call__(self):
+    def __call__(self, population, offsprings, optType):
         """
         :param oldPopulation: generation of new
         :param best:
@@ -126,44 +120,39 @@ class USPEXClassic(object):
         :return:
         """
 
-        if self.pool.generations:
-            if self.pool.flavourFactory.extensions['antiseeds'].legacy:
-                self.pool.flavourFactory.extensions['antiseeds'].payPenalties(self.pool.generations[-1]['allSystems'],
-                                                             self.pool.uniqueSystems, self.fingerprintUtility)
+        if not self.globalParentsPool and population is not None:
+            population = copy(population)
+            for entry in self._mostDiverse:
+                population.addEntry(entry)
 
-            population = list(self.pool.uniqueSystems) if self.globalParentsPool else \
-                self.pool.generations[-1]['allSystems'] + self._mostDiverse
-            newStructures = self.pool.generations[-1]['newSystems']
-            fronts = self.pool.fronts(population, self.optType)
-            sortedPopulation = []
+        if population is not None:
+            fronts = population.fronts(optType)
+            parentsPool = []
             tournament = []
             for i, front in enumerate(fronts):
-                sortedPopulation.extend(front)
+                parentsPool.extend(front)
                 tournament.extend([(len(fronts) - i) ** 2] * len(front))
-
-            howManyProliferate = int(np.ceil(self.bestFrac * self.popSize))
-            parentsPool = sortedPopulation[:howManyProliferate]
-            tournament = tournament[:howManyProliferate]
+            parentsPool = parentsPool[:self.howManyProliferate]
+            tournament = tournament[:self.howManyProliferate]
             tournament /= np.sum(tournament)
-
-            if not self.globalParentsPool:
-                self._mostDiverse = self.determineMostDiverse(parentsPool, self.howManyDiverse, self.diversityTolerance)
-
             popSize = self.popSize
         else:
-            newStructures, parentsPool, tournament, popSize = [], [], [], self.initialPopSize
+            parentsPool, tournament, popSize = [], [], self.initialPopSize
+
+        if not self.globalParentsPool:
+            self._mostDiverse = self.determineMostDiverse(parentsPool)
 
         for VO in self.target.variationOperators:
             if hasattr(VO, 'tune'):
-                VO.tune(parentsPool, applyPresetsRecursive(self.optType))
-        autofrac = Autofrac(self.fractions, self.weightsLast, parentsPool, newStructures, self.target.variationOperators)
+                VO.tune(parentsPool, optType)
+        autofrac = Autofrac(self.fractions, self.weightsLast, parentsPool, self._newIDs, self.target.variationOperators)
 
-        population = []
         actualParents = []
+        self._newIDs = []
 
         for mutation in self.target.mutations:
             howCome = type(mutation).__name__
-            howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = autofrac.howMany(howCome, popSize - len(offsprings.getIDs()), popSize)
             howMany = 0 if howMany < 0 else howMany
             if parentsPool:
                 self.weightsLast[howCome] = howMany
@@ -175,13 +164,13 @@ class USPEXClassic(object):
                         break
                     try:
                         logger.debug(f"Trying {parent['ID']} parent.")
-                        offsprings = mutation(parent, self.pool.flavourFactory)
-                        for offspring in offsprings:
+                        for offspring in mutation(parent, offsprings.flavourFactory):
                             offspring.setProperty('howCome', howCome)
                             offspring.setProperty('parent', f"{parent['ID']}")
                             offspring.setProperty('isBad', False)
-                            population.append(self.pool.newEntry(offspring))
-                        howMany -= len(offsprings)
+                            ID = offsprings.newEntry(offspring)
+                            self._newIDs.append(ID)
+                            howMany -= 1
                         actualParents.append(parent)
                     except RuntimeError as e:
                         logger.debug(e, exc_info=True)
@@ -192,7 +181,7 @@ class USPEXClassic(object):
 
         for hybridization in self.target.hybridizations:
             howCome = type(hybridization).__name__
-            howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = autofrac.howMany(howCome, popSize - len(offsprings.getIDs()), popSize)
             howMany = 0 if howMany < 0 else howMany
             if parentsPool:
                 self.weightsLast[howCome] = howMany
@@ -207,13 +196,13 @@ class USPEXClassic(object):
                         break
                     try:
                         logger.debug(f"Trying {parent1['ID']} {parent2['ID']} parents.")
-                        offsprings = hybridization(parent1, parent2, self.pool.flavourFactory)
-                        for offspring in offsprings:
+                        for offspring in hybridization(parent1, parent2, offsprings.flavourFactory):
                             offspring.setProperty('howCome', howCome)
                             offspring.setProperty('parent', f"{parent1['ID']} {parent2['ID']}")
                             offspring.setProperty('isBad', False)
-                            population.append(self.pool.newEntry(offspring))
-                        howMany -= len(offsprings)
+                            ID = offsprings.newEntry(offspring)
+                            self._newIDs.append(ID)
+                            howMany -= 1
                         actualParents.extend([parent1, parent2])
                     except RuntimeError as e:
                         logger.debug(e, exc_info=True)
@@ -224,7 +213,7 @@ class USPEXClassic(object):
 
         for creation in self.target.creations:
             howCome = type(creation).__name__
-            howMany = autofrac.howMany(howCome, popSize - len(population), popSize)
+            howMany = autofrac.howMany(howCome, popSize - len(offsprings.getIDs()), popSize)
             howMany = 0 if howMany < 0 else howMany
             self.weightsLast[howCome] = howMany
             if hasattr(creation, 'prepare'):
@@ -233,13 +222,13 @@ class USPEXClassic(object):
                 if howMany <= 0:
                     break
                 try:
-                    offsprings = creation(self.pool.flavourFactory)
-                    for offspring in offsprings:
+                    for offspring in creation(offsprings.flavourFactory):
                         offspring.setProperty('howCome', howCome)
                         offspring.setProperty('parent', "None")
                         offspring.setProperty('isBad', False)
-                        population.append(self.pool.newEntry(offspring))
-                    howMany -= len(offsprings)
+                        ID = offsprings.newEntry(offspring)
+                        self._newIDs.append(ID)
+                        howMany -= 1
                 except RuntimeError as e:
                     logger.debug(e, exc_info=True)
                 except Exception as e:
@@ -247,21 +236,20 @@ class USPEXClassic(object):
             if hasattr(creation, 'standby'):
                 creation.standby()
 
-        if not self.pool.flavourFactory.extensions['antiseeds'].legacy:
-            self.pool.flavourFactory.extensions['antiseeds'].payPenalties(actualParents, self.pool.uniqueSystems, self.fingerprintUtility)
-
         if self.target.seeds is not None:
-            seeds = self.target.seeds(self.pool.flavourFactory)
+            seeds = self.target.seeds(offsprings.flavourFactory)
             for seed in seeds:
                 seed.setProperty('howCome', 'Seeds')
                 seed.setProperty('parent', "None")
                 seed.setProperty('isBad', False)
-                population.append(self.pool.newEntry(seed))
+                ID = offsprings.newEntry(seed)
+                self._newIDs.append(ID)
                 logger.info(f"Seed filename is {seed['.filename']}.")
 
-        return population
+        # if not self.antiseeds.legacy:
+        #     self.antiseeds.payPenalties(actualParents)
 
-    def determineMostDiverse(self, population : list, howManyDiverse: int, tolerance: float):
+    def determineMostDiverse(self, population: list):
         """
         Here we perform clusterization in terms of distances between systems, assuming such distance is defined.
         For example atomic structures defines cosine distance in space of fingerprints.
@@ -277,6 +265,7 @@ class USPEXClassic(object):
         :param tolerance: Starting point for the threshold.
         :return:
         """
+        tolerance = self.diversityTolerance
         deltaTol = tolerance / 2
         mostDiverse = []
         while deltaTol > 0.000001:
@@ -286,15 +275,15 @@ class USPEXClassic(object):
                         break
                 else:
                     mostDiverse.append(system)
-            if len(mostDiverse) < howManyDiverse:
+            if len(mostDiverse) < self.howManyDiverse:
                 tolerance -= deltaTol
-            elif len(mostDiverse) > howManyDiverse:
+            elif len(mostDiverse) > self.howManyDiverse:
                 tolerance += deltaTol
             else:
                 return mostDiverse
             deltaTol /= 2
             mostDiverse = []
-        logger.debug(f"Can't clusterize population into {howManyDiverse} fractions.")
+        logger.debug(f"Can't clusterize population into {self.howManyDiverse} fractions.")
         return mostDiverse
 
     def getMostDiverse(self) -> list:
