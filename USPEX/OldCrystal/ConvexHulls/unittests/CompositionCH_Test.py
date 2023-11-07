@@ -1,10 +1,10 @@
 import unittest
 import numpy as np
 
-from ..CompositionCH import CompositionCH
+from USPEX.OldCrystal.ConvexHulls.CompositionCH import CompositionCH
 from USPEX.Atomistic.Primitives.AtomicStructure import AtomicStructure
-from ...Optimizers.PoolEntry import EntryFlavour, PoolEntry
-from ...components import CompositionSpace, SimpleMoleculeUtility
+from USPEX.Optimizers.PoolEntry import EntryFlavour, PoolEntry
+from USPEX.components import CompositionSpace, SimpleMoleculeUtility
 
 
 class CompostionCH_Test(unittest.TestCase):

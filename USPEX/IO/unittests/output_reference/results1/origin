@@ -1,30 +1,30 @@
-0 SymRandom None
 1 SymRandom None
 2 SymRandom None
 3 SymRandom None
 4 SymRandom None
-5 TopRandom None
+5 SymRandom None
 6 TopRandom None
 7 TopRandom None
 8 TopRandom None
 9 TopRandom None
-10 Twinning 5
-11 Twinning 2
-12 Heredity 5 1
-13 Heredity 9 6
-14 SymRandom None
+10 TopRandom None
+11 Twinning 5
+12 Twinning 2
+13 Heredity 5 1
+14 Heredity 9 6
 15 SymRandom None
 16 SymRandom None
-17 TopRandom None
+17 SymRandom None
 18 TopRandom None
 19 TopRandom None
-20 Twinning 13
+20 TopRandom None
 21 Twinning 13
-22 Heredity 11 18
-23 Heredity 13 10
-24 SymRandom None
+22 Twinning 13
+23 Heredity 11 18
+24 Heredity 13 10
 25 SymRandom None
 26 SymRandom None
-27 TopRandom None
+27 SymRandom None
 28 TopRandom None
 29 TopRandom None
+30 TopRandom None

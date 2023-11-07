@@ -13,9 +13,9 @@ import unittest
 
 from pathlib import Path
 
-from ..GCH import GeneralizedConvexHull
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from ...components import RadialDistributionUtility, CompositionSpace, Atomistic
+from USPEX.OldCrystal.ConvexHulls.GCH import GeneralizedConvexHull
+from USPEX.Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from USPEX.components import RadialDistributionUtility, CompositionSpace, Atomistic
 
 TESTPATH = Path(__file__).parent
 
@@ -42,18 +42,18 @@ def read_structures_and_energies(symbols, folder: Path):
     for _info, system in zip(info, all_systems):
         tmp = _info.split()
         gen = int(tmp[0])
-        ID = int(tmp[1])
         _b, _e = tmp.index('['), tmp.index(']')
         # composition = [int(x) for x in tmp[_b+1:_e]]
         enthalpy = float(tmp[_e+1])
         generations.append(gen)
-        IDs.append(ID)
-        system['ID'] = ID
         system['isBad'] = False
         system['.enthalpy'] = enthalpy
-        system = PoolEntry(ID, EntryFlavour(extensions=extensions, **system))
+        system['.howCome'] = 'Seeds'
+        system['.parent'] = None
+        system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **system))
         system.getProperty('structure', extension='atomistic')
         systems.append(system)
+        IDs.append(system.ID)
     all_systems = systems
 
     generations = np.asarray(generations, dtype=int)

@@ -184,7 +184,7 @@ class GlobalOptimizer(object):
         self.bestHistory.append(self.best)
         if self.stopFitness is not None:
             for ID in self.best:
-                if round(self.allSystems[self._getOriginalID(ID)][optType], ndigits=3)\
+                if round(self.allSystems.getEntry(self._getOriginalID(ID))[optType], ndigits=3)\
                         <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
                     break
