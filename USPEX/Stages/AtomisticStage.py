@@ -72,7 +72,8 @@ class AtomisticStage:
                                                  cell = badMol.getCell(),
                                                  zmatrixConfig = badMol.getZmatrixConfig())
             sink.setProperty('molecules', sink_molecules)
-            sink.delProperty('structure')
+            if 'structure' in sink.system:
+                sink.delProperty('structure')
 
 
 
