@@ -5,7 +5,7 @@ import torch.nn as nn
 from pathlib import Path
 from pymatgen.core.structure import Structure
 
-from USPEX.Expressions.Functions.ElasticMLFunctions import ElasticMLFunctions
+from ..Expressions.Functions.ElasticMLFunctions import ElasticMLFunctions
 from ..Optimizers.PoolEntry import EntryFlavour
 
 EMBEDDINGS = [

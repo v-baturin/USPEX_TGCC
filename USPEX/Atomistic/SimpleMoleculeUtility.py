@@ -7,7 +7,7 @@ import numpy as np
 from collections import Counter
 
 from .Transformation import Transformation
-from USPEX.Expressions.Functions.SimpleMoleculeFunctions import SimpleMoleculeFunctions
+from ..Expressions.Functions.SimpleMoleculeFunctions import SimpleMoleculeFunctions
 
 
 DENSITY_CONST = 1.660539

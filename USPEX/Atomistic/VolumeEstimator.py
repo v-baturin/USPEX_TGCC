@@ -5,7 +5,7 @@ USPEX.Atomistic.VolumeEstimator
 
 import math
 
-from USPEX.Atomistic.Primitives.Element import Element
+from .Primitives.Element import Element
 
 
 def _VinetEOS(B0: float, B00: float, V0: float, x: float):

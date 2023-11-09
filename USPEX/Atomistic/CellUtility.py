@@ -7,7 +7,7 @@ import logging
 import numpy as np
 from copy import copy
 
-from USPEX.Expressions.Functions.CellFunctions import CellFunctions
+from ..Expressions.Functions.CellFunctions import CellFunctions
 from .Primitives.Cell import Cell
 
 logger = logging.getLogger(__name__)
