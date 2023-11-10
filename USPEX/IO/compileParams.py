@@ -1,4 +1,5 @@
-from ..components import AtomisticRepresentation, EnvironmentUtility, JunctionUtility # PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer
+from ..components import AtomicStructureRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
+    EnvironmentUtility, JunctionUtility
 
 
 def compileParams(main: dict) -> dict:
@@ -8,10 +9,14 @@ def compileParams(main: dict) -> dict:
             stages[i]['tag'] = str(i+1)
         if 'stageType' not in stage:
             stage['stageType'] = 'atomistic'
+        if 'source' not in stage:
+            stage['source'] = str(i) if i>0 else 'origin'
 
     if 'optimizer' in main and 'target' in main['optimizer']:
         optimizer = main['optimizer']
         target = optimizer['target']
+        if 'defaultSuffix' not in target:
+            target['defaultSuffix'] = stages[-1]['tag'] if stages else 'origin'
         symbols = target['compositionSpace']['symbols']
         defaultVolumeType = 0
         cutoffVDW = False
@@ -22,7 +27,7 @@ def compileParams(main: dict) -> dict:
             if not isinstance(symbol, dict):
                 elementalSymbols.add(symbol)
             elif 'type' in symbol and symbol.pop('type') == 'adsorbant':
-                structure = AtomisticRepresentation.readXYZ(symbol['filename'])
+                structure = AtomicStructureRepresentation.readXYZ(symbol['filename'])
                 molecules[symbol['name']] = structure
                 symbols[i] = symbol['name']
                 for site in symbol['sites']:
@@ -34,13 +39,19 @@ def compileParams(main: dict) -> dict:
             else:
                 defaultVolumeType = 0.5
                 cutoffVDW = True
-                structure = AtomisticRepresentation.readMol(symbol['filename'])
+                structure = AtomicStructureRepresentation.readMol(symbol['filename'])
                 molecules[symbol['name']] = structure
                 symbols[i] = symbol['name']
                 elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
-        target['junctionUtility'] = {'molSitesMapping': molSitesMapping}
+        if 'junctionUtility' in target:
+            target['junctionUtility']['molSitesMapping'] = molSitesMapping
+        else:
+            target['junctionUtility'] = {'molSitesMapping': molSitesMapping}
         if molecules:
-            target['simpleMoleculeUtility'] = {'molecules': molecules}
+            if 'simpleMoleculeUtility' in target:
+                target['simpleMoleculeUtility']['molecules'] = molecules
+            else:
+                target['simpleMoleculeUtility'] = {'molecules': molecules}
         if 'selection' in optimizer:
             selection = optimizer['selection']
             if len(target['compositionSpace']['blocks']) > 1:
@@ -55,15 +66,17 @@ def compileParams(main: dict) -> dict:
             target['bondUtility']['cutoff'] = 'vdw'
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
-        # if 'powderSpectrumAnalyzer' in target:
-        #     target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(target['powderSpectrumAnalyzer'])
-        # if 'singleCrystalSpectrumAnalyzer' in target:
-        #     sCS = target['singleCrystalSpectrumAnalyzer']
-        #     sCS['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(sCS.pop('hklFile'))
+        if 'powderSpectrumAnalyzer' in target:
+            target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(target['powderSpectrumAnalyzer'])
+        if 'singleCrystalSpectrumAnalyzer' in target:
+            sCS = target['singleCrystalSpectrumAnalyzer']
+            sCS['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(sCS.pop('hklFile'))
         if 'radialDistributionUtility' not in target:
             target['radialDistributionUtility'] = {}
         if 'symbols' not in target['radialDistributionUtility']:
             target['radialDistributionUtility']['symbols'] = sorted(elementalSymbols)
+        if 'suffix' not in target['radialDistributionUtility']:
+            target['radialDistributionUtility']['suffix'] = target['defaultSuffix']
         if 'environmentUtility' in target:
             for environmentDesciption in target['environmentUtility']['environments']:
                 environmentDesciption.update(EnvironmentUtility.build(**environmentDesciption))

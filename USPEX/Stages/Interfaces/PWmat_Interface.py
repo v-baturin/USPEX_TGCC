@@ -38,16 +38,6 @@ class PWmat_Interface:
     RELAXSTEPS = 'RELAXSTEPS'
     FINAL_CONFIG = 'final.config'
 
-    structureType = None
-    atomType = None
-    cellType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-
     def __init__(self, tag, etot_input, potcars, kresol, targetProperties: list = None, **kwargs):
         '''
         :param params: dictionary with parameters:
@@ -76,7 +66,7 @@ class PWmat_Interface:
         :param system: our system
         :return:
         '''
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', extension='atomistic')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -123,11 +113,12 @@ class PWmat_Interface:
                 fp.write(INPSP)
                 tmp_i += 1
         # set IN.RELAXOPT
-        if system['externalPressure']:
+        externalPressure = system.getProperty('externalPressure')
+        if externalPressure:
             with open(calcFolder/'etot.input', 'a') as fp:
                 fp.write('IN.RELAXOPT = T\n')
             with open(calcFolder/'IN.RELAXOPT', 'a') as fp:
-                fp.write('PSTRESS_EXTERNAL= %10f\n' % (system['externalPressure']))
+                fp.write('PSTRESS_EXTERNAL= %10f\n' % (externalPressure))
 
 
 
@@ -213,6 +204,9 @@ class PWmat_Interface:
         lat = []
         coor = []
         atomTypes = []
+        factory = system.getFactory()
+        result = factory()
+        atomistic = factory.extensions['atomistic'].utility
         for n, line in enumerate(content):
             if 'lattice' in line.lower():
                 for i in range(3):
@@ -221,22 +215,24 @@ class PWmat_Interface:
             if 'position' in line.lower():
                 for i in range(atoms):
                     temp = content[n + 1 + i].split()
-                    atomTypes.append(self.atomType(int(temp[0])))
+                    atomTypes.append(atomistic.atomType(int(temp[0])))
                     coor += [[float(temp[1]), float(temp[2]), float(temp[3])]]
-        cell = self.cellType(lat, pbc)
-        structure = self.structureType(atomTypes, coor, cell=cell)
+        cell = atomistic.cellType(lat, pbc)
+        structure = atomistic.structureType(atomTypes, coor, cell=cell)
 
         if 'structure' in self.targetProperties:
-            system.updateAtomicStructure(structure)
+            result.setProperty('structure', structure, extension='atomistic')
         if 'enthalpy' in self.targetProperties:
             with open(calcFolder/self.REPORT, 'r') as fp:
                 content = fp.readlines()
-            system.setProperty('enthalpy', self.readEnergy(content) +
-                               cell.getVolume() * system['externalPressure'] * EV_PER_CUBIC_ANGSTREM_PER_GPA)
+            P = system.getProperty('externalPressure')
+            V = cell.getVolume()
+            result.setProperty('enthalpy', self.readEnergy(content) + P*V*EV_PER_CUBIC_ANGSTREM_PER_GPA)
         if 'stressTensor' in self.targetProperties:
             with open(calcFolder/self.MOVEMENT, 'r') as fp:
                 content = fp.readlines()
-            system.setProperty('stressTensor', self.readPressureTensor(content))
+            result.setProperty('stressTensor', self.readPressureTensor(content))
+        return result
 
     def readPressureTensor(self, content, index=-1):
         '''

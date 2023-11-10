@@ -65,7 +65,7 @@ class Seeds(object):
                     systems = self.systemRepresentationClass.readAtomicStructures(filename)
                     for system in systems:
                         system = offspringFactory(**system)
-                        structure = system.getAtomicStructure()
+                        structure = system.getProperty('structure', extension='atomistic', suffix='origin')
                         minDistMatrix = self.bondUtility.getDistances(
                             structure.getAtomTypes(), self.conditions.externalPressure)
                         if self.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix):

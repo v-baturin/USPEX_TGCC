@@ -2,16 +2,22 @@ import unittest
 import json
 import filecmp
 import shutil
+import asyncio
 
 from pathlib import Path
 
-from ...components import GlobalOptimizer, AtomisticRepresentation, AtomisticPoolEntry
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour, Pool, FlavourFactory
+from ...components import GlobalOptimizer, Atomistic
 from ..OutputRepresentation import OutputRepresentation
 
 TESTPATH = Path(__file__).parent
 
 
 class Output_Test(unittest.TestCase):
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(':memory:')
+
     def test_1(self):
         folder_name = 'output_results'
         folder_name_ref = 'output_reference'
@@ -22,13 +28,14 @@ class Output_Test(unittest.TestCase):
                                       'compositionSpace': {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]],
                                                            'range': [[1, 1]]},
                                       'cellUtility': {'pbc': (1,1,1)},
-                                      'radialDistributionUtility': {'symbols': ['Mg', 'Al', 'O']}
+                                      'radialDistributionUtility': {'symbols': ['Mg', 'Al', 'O'], 'suffix': '5'},
+                                      'defaultSuffix': '5'
                                       },
                            'fingerprintUtility': 'radialDistributionUtility',
-                           'optType': 'enthalpy',
+                           'optType': '.enthalpy.5',
                            'stopFitness': -655.062,
                            'selection': {'type': 'USPEXClassic', 'popSize': 10,
-                                         'optType': ('aging', 'enthalpy'),
+                                         'optType': ('aging', '.enthalpy.5'),
                                          'fractions': {'heredity': [0.0, 1.0, 0.5],
                                                        'twinning': [0.0, 1.0, 0.1],
                                                        'softmodemutation': [0.0, 1.0, 0.1],
@@ -45,45 +52,65 @@ class Output_Test(unittest.TestCase):
         stopCrit = 3
         numParallelCalcs = 2
         output = {
+            'stages': ['1', '2', '3', '4', '5'],
             'columns': [
-                ('enthalpy', 'Enthalpy (eV)'),
-                ('cellUtility.volume', 'Volume (A^3)'),
-                ('cellUtility.symmetry', 'SYMMETRY (N)')
+                ('.enthalpy.5', 'Enthalpy (eV)'),
+                ('cellUtility.volume.5', 'Volume (A^3)'),
+                ('cellUtility.symmetry.5', 'SYMMETRY (N)'),
+            ],
+            'presentConvexHull': False,
+            'presentPareto': (),
+            'toDraw': [
+                ('dep', '.enthalpy.5', 'per_atom', 'ID', 'raw'),
+                ('dep', '.enthalpy.5', 'raw', 'ID', 'raw'),
+                ('dep', '.enthalpy.5', 'per_atom', 'cellUtility.volume.5', 'per_atom'),
+                ('stat', '.enthalpy.5', 'per_atom', '', ''),
             ]
         }
 
         infos = []
-        optimizers = []
-        populations = []
-        systems = {}
+        optimizer = GlobalOptimizer(**optimizerConfig)
+        extensions = optimizer.target.propertyExtensions
+
         for gen in range(numGenerations):
             for i in range(popSize):
-                system = []
-                for j in range(numStages + 1):
+                with open(TESTPATH / f"output_data/system{gen * popSize + i}s0", "r") as f:
+                    structure = json.load(f)
+                structure.update(Atomistic.readAtomicStructure(
+                    TESTPATH / f"output_data/system{gen * popSize + i}s0.vasp"))
+                ID = optimizer.allSystems.newEntry(EntryFlavour(extensions=extensions, **structure))
+                system = optimizer.allSystems.getEntry(ID)
+                for j in range(numStages):
                     try:
-                        with open(TESTPATH/f"output_data/system{gen * popSize + i}s{j}", "r") as f:
+                        with open(TESTPATH/f"output_data/system{gen * popSize + i}s{j+1}", "r") as f:
                             structure = json.load(f)
-                        structure.update(AtomisticRepresentation.readAtomicStructure(TESTPATH/f"output_data/system{gen*popSize+i}s{j}.vasp"))
-                        structure = AtomisticPoolEntry(**structure)
-                        system.append(structure)
+                        structure.update(Atomistic.readAtomicStructure(TESTPATH/f"output_data/system{gen*popSize+i}s{j+1}.vasp"))
+                        for key, value in structure.items():
+                            if key == 'ID':
+                                assert value == ID-1
+                                continue
+                            prefix, prop = key.split('.')
+                            system.setProperty(prop, value, extension=prefix, suffix=str(j+1))
                     except FileNotFoundError:
                         break
-                systems[system[0]['ID']] = system
             with open(TESTPATH/f"output_data/analisis{gen}", "r") as f:
                 infos.append(json.load(f))
             with open(TESTPATH/f"output_data/targetState{gen}", "r") as f:
                 targetState = json.load(f)
-                optimizer = GlobalOptimizer(**optimizerConfig)
                 for ID in targetState[1]:
-                    system = systems[ID][-1]
-                    optimizer.pool.allSystems[ID] = system
-                    system.setProperty('isBad', False)
+                    system = optimizer.allSystems.getEntry(ID+1)
+                    system.setProperty('isBad', False, suffix='origin')
+                    system.setProperty('isBad', False, suffix='1')
+                    system.setProperty('isBad', False, suffix='2')
+                    system.setProperty('isBad', False, suffix='3')
+                    system.setProperty('isBad', False, suffix='4')
+                    system.setProperty('isBad', False, suffix='5')
                 optimizer.best = set(targetState[0])
-                optimizer.fitness = optimizer.Fitness.calculate(optimizer.pool.uniqueSystems, optimizer.optType,
-                                                                optimizer.target.utilities)
-                optimizers.append(optimizer)
+            population = Pool.createPool(FlavourFactory(extensions=extensions))
             with open(TESTPATH/f"output_data/population{gen}", "r") as f:
-                populations.append([systems[ID][-1] for ID in json.load(f)])
+                for ID in json.load(f):
+                    population.addEntry(optimizer.allSystems.getEntry(ID+1))
+            asyncio.get_event_loop().run_until_complete(optimizer.update(population))
 
         representation = OutputRepresentation(optimizer, optimizer=optimizerConfig,
                                               stages=stages, numParallelCalcs=numParallelCalcs,
@@ -91,8 +118,8 @@ class Output_Test(unittest.TestCase):
                                               path=TESTPATH/folder_name,
                                               output=output)
 
-        representation.presentSystems(systems, optimizers[-1])
-        representation.presentOutput(populations, optimizers, optimizers[-1], printDate=False)
+        representation.presentSystems(optimizer)
+        representation.presentOutput(optimizer, printDate=False)
 
         dcmp = filecmp.dircmp(TESTPATH/folder_name_ref, TESTPATH/folder_name)
         self.assertEqual(len(dcmp.diff_files), 0)

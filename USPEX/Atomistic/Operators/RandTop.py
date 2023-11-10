@@ -128,14 +128,15 @@ class RandTop:
                                             for i in range(attemptsRotation):
                                                 offspring = offspringFactory(
                                                     **self.simpleMoleculeUtility.populateStructure(cell, operations))
-                                                molecules = offspring['molecules']
-                                                cell = offspring['cell']
+                                                molecules = offspring.getProperty('molecules', extension='atomistic')
+                                                cell = offspring.getProperty('cell', extension='atomistic')
                                                 if len(molecules) != totalAtomNumber:
                                                     continue
                                                 if envAssembler is not None:
                                                     offspring.setProperty('environments',
-                                                                          envAssembler.assemble(molecules, cell))
-                                                structure = offspring.getAtomicStructure()
+                                                                          envAssembler.assemble(molecules, cell),
+                                                                          extension='atomistic')
+                                                structure = offspring.getProperty('structure', extension='atomistic')
                                                 minDistMatrix = self.bondUtility.getDistances(
                                                     structure.getAtomTypes(), self.conditions.externalPressure)
                                                 if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
@@ -152,6 +153,7 @@ class RandTop:
 def randomPermutation(array, enumerate = False, maxSize = None):
     maxSize = maxSize if maxSize is not None else len(array)
     for i in np.random.permutation(list(range(len(array))))[0:maxSize]:
+        i = int(i)  # this is workaround for numpy int issue
         yield (i, array[i]) if enumerate else array[i]
 
 def randomPartitionSampler(itemsNumber : int, partitionsNumber : int, samplesNumber : int):

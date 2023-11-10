@@ -7,11 +7,11 @@
             compositionSpace: {symbols: [Mg Al O]
                                blocks: [[4 8 16]]}
         }
-        optType: enthalpy
+        optType: '.enthalpy.4'
         selection: {
             type: USPEXClassic
             popSize: 10
-            optType: (aging enthalpy)
+            optType: (aging '.enthalpy.4')
             fractions: {
                 heredity: (0.1 1.0 0.5)
                 softmodemutation: (0.1 1.0 0.2)
@@ -25,6 +25,27 @@
     numParallelCalcs: 2
     numGenerations: 3
     stopCrit: 3
+    output: {
+        stages: ['1' '2' '3' '4']
+        columns: [
+            ('simpleMoleculeUtility.composition.origin' 'Composition')
+            ('.enthalpy.4' 'Enthalpy (eV)')
+            ('cellUtility.volume.4' 'Volume (A^3)')
+            ('cellUtility.symmetry.4' 'SYMMETRY (N)')
+            ('radialDistributionUtility.structureOrder.4', 'Structure order')
+            ('radialDistributionUtility.averageOrder.4', 'Average order')
+            ('radialDistributionUtility.quasientropy.4', 'Quasientropy')
+        ]
+        presentConvexHull: False
+        presentPareto: ()
+        toDraw: [
+            ('dep', '.enthalpy.4', 'per_atom', 'ID', 'raw')
+            ('dep', '.enthalpy.4', 'raw', 'ID', 'raw')
+            ('dep', '.enthalpy.4', 'per_atom', 'cellUtility.volume.4', 'per_atom')
+            ('stat', '.enthalpy.4', 'per_atom', '', '')
+        ]
+    }
+
 }
 
 #define glp
