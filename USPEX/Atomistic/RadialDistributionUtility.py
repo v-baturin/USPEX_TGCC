@@ -13,7 +13,7 @@ from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
 
-from USPEX.Expressions.Functions.RadialDistributionFunctions import RadialDistributionFunctions
+from ..Expressions.Functions.RadialDistributionFunctions import RadialDistributionFunctions
 
 
 RMAX_DEFAULT = 10.0

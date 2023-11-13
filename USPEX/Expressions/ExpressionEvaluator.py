@@ -13,7 +13,7 @@ import logging
 import numpy as np
 from typing import Mapping, Sequence, Union
 
-from USPEX.Expressions.Functions.presets import applyPresetsRecursive
+from .Functions.presets import applyPresetsRecursive
 
 
 logger = logging.getLogger(__name__)

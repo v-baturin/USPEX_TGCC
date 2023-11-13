@@ -14,10 +14,10 @@ from os.path import join as pj
 
 
 from ..ExpressionEvaluator import ExpressionEvaluator
-from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
+from ..Functions.BasicFunctions import BasicFunctions
 from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour, Pool, FlavourFactory
 from ...components import CompositionSpace, SimpleMoleculeUtility, Atomistic
-from USPEX.Atomistic.Primitives.AtomicStructure import AtomicStructure
+from ...Atomistic.Primitives.AtomicStructure import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint
 from ...XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
