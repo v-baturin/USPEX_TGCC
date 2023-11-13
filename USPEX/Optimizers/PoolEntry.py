@@ -144,9 +144,11 @@ class EntryFlavour:
     def getProperty(self, prop, extension=''):
         if f'{extension}.{prop}' not in self._propertiesCache:
             if self.ID is not None:
-                value = self._getPropertyBD(f'{extension}.{prop}')
-                if value is not None:
-                    self._propertiesCache[f'{extension}.{prop}'] = value
+                try:
+                    self._propertiesCache[f'{extension}.{prop}'] = self._getPropertyBD(f'{extension}.{prop}')
+                except KeyError as e:
+                    logger.debug(e)
+                else:
                     return self._propertiesCache[f'{extension}.{prop}']
             if extension in self.extensions:
                 self._propertiesCache[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
@@ -179,12 +181,14 @@ class EntryFlavour:
         assert len(rows) <= 1
         if len(rows) == 1:
             return pcl.loads(rows[0][0])
-        return None
+        raise KeyError(f"Can't find property {prop} for flavour {self.ID} in the database.")
 
     def setProperty(self, prop, value, extension=''):
         self._propertiesCache[f'{extension}.{prop}'] = value
         if self.ID is not None:
-            if self._getPropertyBD(f'{extension}.{prop}') is None:
+            try:
+                self._getPropertyBD(f'{extension}.{prop}')
+            except KeyError:
                 self._setPropertyBD(f'{extension}.{prop}', value)
             else:
                 self._updatePropertyBD(f'{extension}.{prop}', value)

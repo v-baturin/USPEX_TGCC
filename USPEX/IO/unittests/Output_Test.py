@@ -76,6 +76,7 @@ class Output_Test(unittest.TestCase):
             for i in range(popSize):
                 with open(TESTPATH / f"output_data/system{gen * popSize + i}s0", "r") as f:
                     structure = json.load(f)
+                    del structure['ID']
                 structure.update(Atomistic.readAtomicStructure(
                     TESTPATH / f"output_data/system{gen * popSize + i}s0.vasp"))
                 ID = optimizer.allSystems.newEntry(EntryFlavour(extensions=extensions, **structure))
