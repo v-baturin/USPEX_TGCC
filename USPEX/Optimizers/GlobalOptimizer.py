@@ -99,7 +99,7 @@ class GlobalOptimizer(object):
         self._createPopulation = self.knownSelectionTypes[selection['type']](self.target, self.fingerprintUtility,
                                                                              **selection)
 
-        self.optType = optType
+        self.optType = applyPresetsRecursive(optType)
         self.stopFitness = stopFitness
         if stopSystems is not None and self.target.seeds is not None:
             seeds = type(self.target.seeds)(self.target.utilities, generations=[0], seedsFolders=[stopSystems])
@@ -159,23 +159,19 @@ class GlobalOptimizer(object):
         self.ExpressionEvaluator.calculate(self._createPopulation.optType, generation.goodSystems, self.extensions)
         assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
         optType = self.optType if isinstance(self.optType, str) else generation.goodSystems.createExpression(self.optType)
-        self._markDuplicates(generation.goodPopulation, optType)
-        generation.uniqueSystems = Pool.createPool(self.flavourFactory)
-        for ID in generation.goodSystems.getIDs():
-            entry = generation.goodSystems.getEntry(ID)
-            if entry.originalID is None:
-                generation.uniqueSystems.addEntry(entry)
+        generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, optType)
         logger.debug('Updating target: list of unique systems.')
-        newIDs = []
         generation.uniquePopulation = Pool.createPool(self.flavourFactory)
         for ID in generation.goodPopulation.getIDs():
-            system = generation.goodSystems.getEntry(ID)
-            original = self.allSystems.getEntry(self._getOriginalID(system['ID']))
-            if original['ID'] not in newIDs:
+            try:
+                originalID = self.allSystems.getEntry(ID).getProperty('originalID')
+            except KeyError:
+                originalID = ID
+            original = self.allSystems.getEntry(originalID)
+            if original.ID not in generation.uniquePopulation.getIDs():
                 generation.uniquePopulation.addEntry(original)
-                newIDs.append(original['ID'])
         self.generations.append(generation)
-        best = set(system['ID'] for system in generation.uniqueSystems.fronts(optType)[0])
+        best = set(system.ID for system in generation.uniqueSystems.fronts(optType)[0])
         if best == self.best:
             self._isStable = True
         else:
@@ -184,8 +180,7 @@ class GlobalOptimizer(object):
         self.bestHistory.append(self.best)
         if self.stopFitness is not None:
             for ID in self.best:
-                if round(self.allSystems.getEntry(self._getOriginalID(ID))[optType], ndigits=3)\
-                        <= round(self.stopFitness, ndigits=3):
+                if round(self.allSystems.getEntry(ID)[optType], ndigits=3) <= round(self.stopFitness, ndigits=3):
                     self._isGoalReached = True
                     break
         if self.stopSystems is not None and not self._isGoalReached:
@@ -215,36 +210,34 @@ class GlobalOptimizer(object):
             system = population.getEntry(system_ID)
             for i, ref_system_ID in enumerate(uniqueSystems):
                 ref_system = self.allSystems.getEntry(ref_system_ID)
-                if self.fingerprintUtility.equal(system, ref_system) and system['ID'] != ref_system['ID']:
-                    logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
-                    if system[applyPresetsRecursive(optType)] < ref_system[applyPresetsRecursive(optType)]:
+                if self.fingerprintUtility.equal(system, ref_system) and system.ID != ref_system.ID:
+                    logger.info(f"system {system.ID} coincides with system {ref_system.ID} found earlier")
+                    try:
+                        duplicates = ref_system.getProperty('duplicates')
+                    except KeyError:
+                        duplicates = []
+                    if system[optType] < ref_system[optType]:
                         self.fingerprintUtility.clean(ref_system)
-                        ref_system.setProperty('originalID', system['ID'])
-                        system.duplicates = ref_system.duplicates
-                        for ID in system.duplicates:
-                            self.allSystems.getEntry(ID).originalID = system['ID']
-                        if ref_system['ID'] not in system.duplicates:
-                            system.duplicates.append(ref_system['ID'])
+                        ref_system.setProperty('originalID', system.ID)
+                        for ID in duplicates:
+                            self.allSystems.getEntry(ID).setProperty('originalID', system.ID)
+                        if ref_system.ID not in duplicates:
+                            duplicates.append(ref_system.ID)
+                        system.setProperty('duplicates', duplicates)
                         uniqueSystems[i] = system.ID
                     else:
                         self.fingerprintUtility.clean(system)
-                        system.setProperty('originalID', ref_system['ID'])
-                        if system['ID'] not in ref_system.duplicates:
-                            ref_system.duplicates.append(system['ID'])
+                        system.setProperty('originalID', ref_system.ID)
+                        if system.ID not in duplicates:
+                            duplicates.append(system.ID)
+                        ref_system.setProperty('duplicates', duplicates)
                     break
             else:
                 uniqueSystems.append(system.ID)
-
-    def _getOriginalID(self, ID):
-        """
-        If system is duplicate return ID of original system otherwise return input ID.
-
-        :param ID: ID of some system from this pool.
-
-        :return: ID of original system.
-        """
-        system = self.allSystems.getEntry(ID)
-        return system.originalID if system.originalID is not None else ID
+        uniqueSystemsPool = Pool.createPool(self.flavourFactory)
+        for ID in uniqueSystems:
+            uniqueSystemsPool.addEntry(self.allSystems.getEntry(ID))
+        return uniqueSystemsPool
 
     @property
     def isStable(self):
