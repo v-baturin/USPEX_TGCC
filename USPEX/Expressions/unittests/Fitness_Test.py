@@ -14,10 +14,10 @@ from os.path import join as pj
 
 
 from ..ExpressionEvaluator import ExpressionEvaluator
-from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ..Functions.BasicFunctions import BasicFunctions
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour, Pool, FlavourFactory
 from ...components import CompositionSpace, SimpleMoleculeUtility, Atomistic
-from USPEX.Atomistic.Primitives.AtomicStructure import AtomicStructure
+from ...Atomistic.Primitives.AtomicStructure import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint
 from ...XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
@@ -36,24 +36,24 @@ class Fitness_Test(unittest.TestCase):
         PoolEntry.createEngine(':memory:')
         molecules = [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mg'] * 4 + ['Al'] * 8 + ['O'] * 16]
-        self.systems = [{'ID': 0, 'atomistic.molecules': molecules, '.enthalpy': -646.695,
-                         '.fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
-                        {'ID': 1, 'atomistic.molecules': molecules, '.enthalpy': -644.480,
-                         '.fingerprint': Fingerprint({'a':[0.2,-0.2]}, None, None)},
-                        {'ID': 2, 'atomistic.molecules': molecules, '.enthalpy': -650.098,
-                         '.fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
-                        {'ID': 3, 'atomistic.molecules': molecules, '.enthalpy': -649.082,
-                         '.fingerprint': Fingerprint({'b': [0.1,-0.5]}, None, None)},
-                        {'ID': 4, 'atomistic.molecules': molecules, '.enthalpy': -651.279,
-                         '.fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
-                        {'ID': 5, 'atomistic.molecules': molecules, '.enthalpy': -643.925,
-                         '.fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None, None)},
-                        {'ID': 6, 'atomistic.molecules': molecules, '.enthalpy': -652.042,
-                         '.fingerprint': Fingerprint({'b': [0.1,-0.2]}, None, None)},
-                        {'ID': 7, 'atomistic.molecules': molecules, '.enthalpy': -648.368,
-                         '.fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
-                        {'ID': 8, 'atomistic.molecules': molecules, '.enthalpy': -648.335,
-                         '.fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)}]
+        systems = [{'atomistic.molecules': molecules, '.enthalpy': -646.695,
+                    '.fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
+                    {'atomistic.molecules': molecules, '.enthalpy': -644.480,
+                     '.fingerprint': Fingerprint({'a':[0.2,-0.2]}, None, None)},
+                    {'atomistic.molecules': molecules, '.enthalpy': -650.098,
+                     '.fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
+                    {'atomistic.molecules': molecules, '.enthalpy': -649.082,
+                     '.fingerprint': Fingerprint({'b': [0.1,-0.5]}, None, None)},
+                    {'atomistic.molecules': molecules, '.enthalpy': -651.279,
+                     '.fingerprint': Fingerprint({'a':[0.3,-0.3], 'b': [0.4,-0.4]}, None, None)},
+                    {'atomistic.molecules': molecules, '.enthalpy': -643.925,
+                     '.fingerprint': Fingerprint({'a':[-0.3,-0.2], 'b': [0.7,-0.2]}, None, None)},
+                    {'atomistic.molecules': molecules, '.enthalpy': -652.042,
+                     '.fingerprint': Fingerprint({'b': [0.1,-0.2]}, None, None)},
+                    {'atomistic.molecules': molecules, '.enthalpy': -648.368,
+                     '.fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)},
+                    {'atomistic.molecules': molecules, '.enthalpy': -648.335,
+                     '.fingerprint': Fingerprint({'a':[0.2,-0.2], 'b': [0.2,-0.2]}, None, None)}]
         self.compositionSpace = CompositionSpace(symbols=['Mg', 'Al', 'O'], blocks=[[4, 8, 16]], range=[[1, 1]])
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
         expressionExtensions = dict(
@@ -63,9 +63,13 @@ class Fitness_Test(unittest.TestCase):
         propertyExtensions = dict(
             simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility)
         )
-        self.systems = [PoolEntry(system['ID'], EntryFlavour(extensions=propertyExtensions, **system)) for system in self.systems]
+        self.systems = Pool.createPool(FlavourFactory(extensions=propertyExtensions))
+        for system in systems:
+            self.systems.newEntry(EntryFlavour(extensions=propertyExtensions,
+                                               **{'.howCome': 'Seeds', '.parent': None},
+                                               **system))
 
-        self.fitness = ExpressionEvaluator(tuple(self.systems), expressionExtensions)
+        self.fitness = ExpressionEvaluator(self.systems, expressionExtensions)
 
     def test_enthalpy(self):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
@@ -206,7 +210,7 @@ class FitnessXray_Test(unittest.TestCase):
         PoolEntry.createEngine(':memory:')
         # 'externalPressure': 135,
         filename = pj(HOMEPATH,'XRay_POSCARS')
-        self.systems = Atomistic.readAtomicStructures(filename)
+        systems = Atomistic.readAtomicStructures(filename)
         enthalpies = [0.001, 0.103, 0.000, 0.033, 0.130, 0.037, 12.011, 0.054, 0.044, 0.228]
 
         self.compositionSpace = CompositionSpace(symbols=['Ba', 'H'], blocks=[[1, 12]], range=[[4, 4]])
@@ -224,12 +228,15 @@ class FitnessXray_Test(unittest.TestCase):
             simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility),
             powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.propertyExtension(self.powderSpectrumAnalyzer),
         )
-        for ID, system in enumerate(self.systems):
-            system['.enthalpy'] = enthalpies[ID]
-            self.systems[ID] = PoolEntry(ID, EntryFlavour(extensions=propertyExtensions, **system))
-            self.systems[ID].getProperty('structure', extension='atomistic')
+        self.systems = Pool.createPool(FlavourFactory(extensions=propertyExtensions))
+        for system in systems:
+            self.systems.newEntry(EntryFlavour(extensions=propertyExtensions,
+                                               **{'.howCome': 'Seeds', '.parent': None},
+                                               **system))
+        for ID in self.systems.getIDs():
+            self.systems.getEntry(ID).setProperty('enthalpy', enthalpies[ID-1])
 
-        self.fitness = ExpressionEvaluator(tuple(self.systems), expressionExtensions)
+        self.fitness = ExpressionEvaluator(self.systems, expressionExtensions)
 
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]

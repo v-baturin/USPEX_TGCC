@@ -8,7 +8,7 @@ import numpy as np
 from copy import copy
 from collections import Counter
 
-from USPEX.Expressions.Functions.CompositionSpaceFunctions import CompositionSpaceFunctions
+from ..Expressions.Functions.CompositionSpaceFunctions import CompositionSpaceFunctions
 
 logger = logging.getLogger(__name__)
 

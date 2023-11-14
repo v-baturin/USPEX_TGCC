@@ -9,7 +9,7 @@ Class for Element testing
 
 import unittest
 
-from USPEX.Atomistic.Primitives.Element import Element
+from ..Primitives.Element import Element
 
 
 class Element_Test(unittest.TestCase):

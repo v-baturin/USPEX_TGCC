@@ -43,7 +43,7 @@ class Target(object):
         list of utilities.
     """
 
-    def __init__(self, targetTypes : TargetType, **kwargs):
+    def __init__(self, targetTypes : TargetType, defaultSuffix, **kwargs):
         """
         Initializes the class.
 
@@ -77,6 +77,8 @@ class Target(object):
         for hybridizationType in targetTypes.hybridizations:
             name = hybridizationType.__name__[0].lower() + hybridizationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
+            if 'suffix' not in params:
+                params['suffix'] = defaultSuffix
             try:
                 self.hybridizations.append(hybridizationType(self.utilities, **params))
             except RuntimeError as e:
@@ -88,6 +90,8 @@ class Target(object):
         for mutationType in targetTypes.mutations:
             name = mutationType.__name__[0].lower() + mutationType.__name__[1:]
             params = kwargs[name] if name in kwargs else {}
+            if 'suffix' not in params:
+                params['suffix'] = defaultSuffix
             try:
                 self.mutations.append(mutationType(self.utilities, **params))
             except RuntimeError as e:

@@ -20,7 +20,7 @@ from scipy.stats import gmean
 from itertools import chain
 
 from .VolumeEstimator import VolumeEstimator
-from USPEX.Expressions.Functions.BondFunctions import BondFunctions
+from ..Expressions.Functions.BondFunctions import BondFunctions
 
 
 logger = logging.getLogger(__name__)

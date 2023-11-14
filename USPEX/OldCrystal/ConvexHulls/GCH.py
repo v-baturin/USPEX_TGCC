@@ -4,7 +4,6 @@ import numpy as np
 from USPEX.Expressions.ConvexHull import ConvexHull
 from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
 from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
-from ..Optimizers.SystemPool import SystemPool
 
 logger = logging.getLogger(__name__)
 # To which dimensionality we project our FP and consider

@@ -4,19 +4,19 @@ from scipy.linalg import norm
 
 
 class TeleportAtom:
-    def __init__(self, utilities):
+    def __init__(self, utilities, suffix):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
         self.bondUtility = utilities.bondUtility
+        self.suffix = suffix
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("TeleportAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
 
     def __call__(self, system, offspringFactory=None):
-        ID = system['ID']
         molecules = system['molecules']
         cell = system['cell']
         if 'tagsAddRemove' not in system:

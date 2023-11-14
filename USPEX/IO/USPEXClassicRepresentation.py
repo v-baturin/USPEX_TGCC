@@ -15,11 +15,11 @@ class USPEXClassicRepresentation(object):
     def presentFractions(self, optimizer):
         allOperators = set()
         allAmountsAndTotals = []
-        for generation in optimizer.pool.generations:
-            population = generation['allSystems']
+        for generation in optimizer.generations:
+            population = generation.population
             amounts = Counter()
-            for system in population:
-                amounts[system['.howCome.origin']] += 1
+            for ID in population.getIDs():
+                amounts[population.getEntry(ID)['.howCome.origin']] += 1
             total = sum(amounts.values())
             allOperators.update(amounts.keys())
             allAmountsAndTotals.append((amounts, total))
@@ -53,15 +53,16 @@ class USPEXClassicRepresentation(object):
     @staticmethod
     def getPopulationCreationBlock(population, optimizer, targetRepresentation) -> list:
         block = []
-        if not optimizer.createPopulation.globalParentsPool:
+        if not optimizer._createPopulation.globalParentsPool:
             block.append('     Best and diverse structures from previous generation')
             mostDiverseTable = targetRepresentation.getNewSystemsTable()
-            for system in optimizer.createPopulation.getMostDiverse():
+            for system in optimizer._createPopulation.getMostDiverse():
                 mostDiverseTable.update(system['ID'], system)
             block.append(mostDiverseTable.table.get_string())
 
         amounts = Counter()
-        for system in population:
+        for ID in population.getIDs():
+            system = population.getEntry(ID)
             amounts[system['.howCome.origin']] += 1
         seedsAmount = amounts.pop('Seeds') if 'Seeds' in amounts else 0
         total = sum(amounts.values())

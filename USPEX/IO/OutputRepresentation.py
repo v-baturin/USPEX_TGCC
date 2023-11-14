@@ -53,12 +53,9 @@ class OutputRepresentation(object):
             output = params['output']
 
         if type(optimizerInstance).__name__ == 'GlobalOptimizer':
-            if type(optimizerInstance.createPopulation).__name__ == 'USPEXClassic':
-                from .USPEXClassicRepresentation import USPEXClassicRepresentation
-                output.update(USPEXClassicRepresentation.applyPresetOutputParameters(optimizerInstance, output))
-                self.selectionRepresentation = USPEXClassicRepresentation(self.RES_FOLDER, **output)
-            else:
-                raise RuntimeError('Unknown engine type in output initialization.')
+            from .USPEXClassicRepresentation import USPEXClassicRepresentation
+            output.update(USPEXClassicRepresentation.applyPresetOutputParameters(optimizerInstance, output))
+            self.selectionRepresentation = USPEXClassicRepresentation(self.RES_FOLDER, **output)
             if optimizerInstance.target.name == 'Atomistic':
                 from .AtomisticRepresentation import AtomisticRepresentation
                 # output = dict(AtomisticRepresentation.applyPresetOutputParameters(optimizerInstance), **output)
@@ -108,7 +105,7 @@ class OutputRepresentation(object):
 
             output += formatted_rows
 
-            output += self.selectionRepresentation.getParametersBlock(optimizer.createPopulation)
+            output += self.selectionRepresentation.getParametersBlock(optimizer._createPopulation)
             output += self.targetRepresentation.getParametersBlock(optimizer.target)
 
             output += createHeader_wrap(['Ab initio calculations'], 'center')
@@ -128,15 +125,15 @@ class OutputRepresentation(object):
 
             output += createHeader_wrap(['Generations block'], 'center')
 
-            for i, generation in enumerate(optimizer.pool.generations):
-                population = generation['allSystems']
+            for i, generation in enumerate(optimizer.generations):
+                population = generation.population
                 output.append(' Generation {0:4d}'.format(i))
                 output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer,
                                                                                   self.targetRepresentation)
                 output.append('    Optimization results')
                 table = self.targetRepresentation.getNewSystemsTable()
-                for system in population:
-                    table.update(system['ID'], system)
+                for ID in population.getIDs():
+                    table.update(ID, optimizer.allSystems.getEntry(ID))
                 output.append(table.table.get_string())
                 output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
                 output.append('')
@@ -145,7 +142,7 @@ class OutputRepresentation(object):
             if final:
                 table = self.targetRepresentation.getNewSystemsTable()
                 for ID in optimizer.best:
-                    table.update(ID, optimizer.pool.allSystems[ID])
+                    table.update(ID, optimizer.allSystems.getEntry(ID))
                 output += createHeader_wrap(['Calculation results'], 'center')
                 output.append(table.table.get_string())
 

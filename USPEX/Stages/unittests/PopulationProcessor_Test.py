@@ -4,7 +4,7 @@ import os
 
 
 from ..PopulationProcessor import PopulationProcessor, Stages
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour, Pool, FlavourFactory
 
 
 class Stage1:
@@ -38,10 +38,13 @@ class PopulationProcessor_Test(unittest.TestCase):
         stages = [{'stageType': 'stage1', 'tag': '1'},
                   {'stageType': 'stage1', 'tag': '2'},
                   {'stageType': 'stage1', 'tag': '3'}]
-        population = [PoolEntry(i, EntryFlavour()) for i in range(20)]
+        population = Pool.createPool(FlavourFactory({}))
+        for i in range(20):
+            population.newEntry(EntryFlavour(**{'.howCome': None, '.parent': None}))
         asyncio.get_event_loop().run_until_complete(PopulationProcessor.processPopulation(stages, population, 10))
 
-        for system in population:
+        for ID in population.getIDs():
+            system = population.getEntry(ID)
             self.assertEqual(system['.result.1'], '1_Hello!')
             self.assertEqual(system['.result.2'], '2_Hello!')
             self.assertEqual(system['.result.3'], '3_Hello!')
@@ -52,7 +55,8 @@ class PopulationProcessor_Test(unittest.TestCase):
                   {'stageType': 'stage2', 'tag': '5'},
                   {'stageType': 'stage2', 'tag': '6'}]
         asyncio.get_event_loop().run_until_complete(PopulationProcessor.processPopulation(stages, population, 10))
-        for system in population:
+        for ID in population.getIDs():
+            system = population.getEntry(ID)
             self.assertEqual(system['.result.1'], '1_Hello!')
             self.assertEqual(system['.result.2'], '2_Hello!')
             self.assertEqual(system['.result.3'], '3_Hello!')
