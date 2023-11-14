@@ -6,6 +6,7 @@ import numpy as np
 from collections import Counter
 
 from ..Slab import Slab
+from ..Transformation import Transformation
 
 ATTEMPTS = 100
 NSLUBS = 2
@@ -13,7 +14,7 @@ NSLUBS = 2
 
 class Heredity:
 
-    def __init__(self, utilities, suffix, nslabs = None, attempts = ATTEMPTS, debug = False):
+    def __init__(self, utilities, suffix, nslabs=None, randomizeCells=True, attempts=ATTEMPTS, debug=False):
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
@@ -23,6 +24,7 @@ class Heredity:
         self.conditions = utilities.conditions
         self.suffix = suffix
         self.nslabs = nslabs
+        self.randomizeCells = randomizeCells
         self.attempts = attempts
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -48,8 +50,8 @@ class Heredity:
         order2 = system2.getProperty('order', extension='radialDistributionUtility', suffix=self.suffix)
         try:
             system = np.random.choice((system1, system2))
-            outputCell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
             parentEnv = system.getProperty('environments', extension='atomistic', suffix=self.suffix)
+            outputCell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
         except Exception:
             parentEnv = None
             outputCell = None
@@ -83,13 +85,22 @@ class Heredity:
                 else:
                     logger.debug(f"trying {outputCell.getCellParameters()} cell and {gaugesOfSlabs}-size slabs.")
 
-                slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
-                                             axis=axis, gaugesOfSlabs=gaugesOfSlabs,
-                                             order=order1, correlation=self.correlation, parity=0)
+                if self.randomizeCells:
+                    slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
+                                                 axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                                 order=order1, correlation=self.correlation, parity=0)
 
-                slabs2 = Slab.getRandomSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
-                                             axis=axis, gaugesOfSlabs=gaugesOfSlabs,
-                                             order=order2, correlation=self.correlation, parity=1)
+                    slabs2 = Slab.getRandomSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
+                                                 axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                                 order=order2, correlation=self.correlation, parity=1)
+                else:
+                    slabs1 = Slab.getSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
+                                           axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                           transformation=Transformation.fromMatrix(np.eye(3), np.zeros(3)))
+
+                    slabs2 = Slab.getSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
+                                           axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                           transformation=Transformation.fromMatrix(np.eye(3), np.zeros(3)))
 
                 goodCandidateMolecules = []
                 goodCandidateDepths = []
