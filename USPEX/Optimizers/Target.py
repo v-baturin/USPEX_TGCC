@@ -52,6 +52,7 @@ class Target(object):
         :type kwargs: dict
         :param kwargs: parameters for initializing config.
         """
+        self.defaultSuffix = defaultSuffix
         self.name = kwargs['type']
         utilities = {}
         self.expressionExtensions = {}
