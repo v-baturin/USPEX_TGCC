@@ -130,8 +130,8 @@ class AtomisticRepresentation(object):
 
             table_Individuals.update(ID, system)
 
-            if str(self.stages[-1]) in system.flavours:
-                final = system.getFlavour(str(self.stages[-1]))
+            if str(optimizer.target.defaultSuffix) in system.flavours:
+                final = system.getFlavour(str(optimizer.target.defaultSuffix))
                 final.setProperty('label', f"EA{system.ID}")
                 systems_gatheredPOSCARS.append(final)
 
@@ -330,7 +330,7 @@ class AtomisticRepresentation(object):
         if utlts.cellUtility.getDim() == 3:
             numBlocks = [utlts.compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']) for system in population]
             numBlocks = np.asarray(numBlocks)
-            volumes = [system[f'cellUtility.volume.{self.stages[-1]}'] for system in population]
+            volumes = [system[f'cellUtility.volume.{optimizer.target.defaultSuffix}'] for system in population]
             volumes = np.asarray(volumes)
             approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
         else:
@@ -341,8 +341,8 @@ class AtomisticRepresentation(object):
         else:
             optType = optimizer.generations[-1].goodSystems.createExpression(optimizer.optType)
         fitness = [system[optType] for system in population]
-        order = [system[f'radialDistributionUtility.averageOrder.{self.stages[-1]}'] for system in population]
-        if np.any(np.isnan(np.asarray(fitness, dtype = float))):
+        order = [system[f'radialDistributionUtility.averageOrder.{optimizer.target.defaultSuffix}'] for system in population]
+        if np.any(np.isnan(np.asarray(fitness, dtype=float))):
             correlation = 0.0
         else:
             correlation = np.corrcoef(order, fitness)[0, 1]
@@ -351,8 +351,8 @@ class AtomisticRepresentation(object):
         comb = list(combinations(population, 2))
         for s1, s2 in comb:
             # if not s1['isBad'] and not s2['isBad']:
-            tmp_fing1 = s1[f'radialDistributionUtility.structureFingerprint.{self.stages[-1]}']
-            tmp_fing2 = s2[f'radialDistributionUtility.structureFingerprint.{self.stages[-1]}']
+            tmp_fing1 = s1[f'radialDistributionUtility.structureFingerprint.{optimizer.fingerprintUtility.suffix}']
+            tmp_fing2 = s2[f'radialDistributionUtility.structureFingerprint.{optimizer.fingerprintUtility.suffix}']
             dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
             qe += (1 - dist) * np.log(1 - dist)
         qe /= -len(comb) if comb else 1
@@ -408,7 +408,7 @@ class AtomisticRepresentation(object):
 
         for best in optimizer.bestHistory:
             for ID in best:
-                system = optimizer.allSystems.getEntry(ID).getFlavour(str(self.stages[-1]))
+                system = optimizer.allSystems.getEntry(ID).getFlavour(str(optimizer.target.defaultSuffix))
                 system.setProperty('label', f"EA{ID}")
                 systems__BESTgatheredPOSCARS.append(system)
         self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)
@@ -426,7 +426,7 @@ class AtomisticRepresentation(object):
                 for rank, front in enumerate(fronts):
                     for system in front:
                         table_goodStructures.update(system['ID'], system, rank=rank)
-                        s = system.getFlavour(str(self.stages[-1]))
+                        s = system.getFlavour(str(optimizer.target.defaultSuffix))
                         s.setProperty('label', f"EA{ID}")
                         systems_goodStructuresPOSCARS.append(s)
                 with open(self.RES_FOLDER/'goodStructures', 'w') as fp:
@@ -446,7 +446,7 @@ class AtomisticRepresentation(object):
                             goodStructuresPOSCARS[numBlocks] = []
                         goodStructures[numBlocks].update(system['ID'], system, rank=rank)
                         ID = system.ID
-                        system = system.getFlavour(str(self.stages[-1]))
+                        system = system.getFlavour(str(optimizer.target.defaultSuffix))
                         system.setProperty('ID', ID)
                         goodStructuresPOSCARS[numBlocks].append(system)
 
@@ -490,7 +490,7 @@ class AtomisticRepresentation(object):
                 for front in fronts:
                     for system in front:
                         ID = system.ID
-                        system = system.getFlavour(str(self.stages[-1]))
+                        system = system.getFlavour(str(optimizer.target.defaultSuffix))
                         system.setProperty('ID', ID)
                         systems_extendedConvexHullPOSCARS.append(system)
                 self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
@@ -498,10 +498,10 @@ class AtomisticRepresentation(object):
 
                 if csSize == 2:
                     self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData,
-                                                  optimizer.generations[-1].uniqueSystems)
+                                                  optimizer.generations[-1].uniqueSystems, optimizer.target.defaultSuffix)
                 elif csSize == 3:
                     self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData,
-                                                  optimizer.generations[-1].uniqueSystems)
+                                                  optimizer.generations[-1].uniqueSystems, optimizer.target.defaultSuffix)
 
             if self.presentPareto is not None and len(self.presentPareto) == 2:
                 self._drawParetoFronts2(fronts, optimizer)
@@ -546,12 +546,12 @@ class AtomisticRepresentation(object):
                 plt.savefig(self.RES_FOLDER/f'{propertyY}({typeY})_statistics.svg')
                 plt.close()
 
-    def _drawExtendedConvexHull2(self, compositionSpace, convexHull, extendedConvexHull):
+    def _drawExtendedConvexHull2(self, compositionSpace, convexHull, extendedConvexHull, suffix):
         if convexHull:
             leftNumBlocks = np.asarray(compositionSpace.numBlocks(convexHull[0]['simpleMoleculeUtility.composition.origin']), dtype = float)
             leftNumBlocksTotal = np.sum(leftNumBlocks)
             leftNumBlocks /= leftNumBlocksTotal
-            leftEnthalpy = convexHull[0][f'.enthalpy.{self.stages[-1]}']/leftNumBlocksTotal
+            leftEnthalpy = convexHull[0][f'.enthalpy.{suffix}']/leftNumBlocksTotal
             rightNumBlocks = leftNumBlocks
             rightEnthalpy = leftEnthalpy
             for system in convexHull:
@@ -560,10 +560,10 @@ class AtomisticRepresentation(object):
                 numBlocks /= numBlocksTotal
                 if numBlocks[1] < leftNumBlocks[1]:
                     leftNumBlocks = numBlocks
-                    leftEnthalpy = system[f'.enthalpy.{self.stages[-1]}'] / numBlocksTotal
+                    leftEnthalpy = system[f'.enthalpy.{suffix}'] / numBlocksTotal
                 elif numBlocks[1] > rightNumBlocks[1]:
                     rightNumBlocks = numBlocks
-                    rightEnthalpy = system[f'.enthalpy.{self.stages[-1]}'] / numBlocksTotal
+                    rightEnthalpy = system[f'.enthalpy.{suffix}'] / numBlocksTotal
             Xch = []
             Ych = []
             for system in convexHull:
@@ -572,7 +572,7 @@ class AtomisticRepresentation(object):
                 numBlocks /= numBlocksTotal
                 C = np.array([leftNumBlocks, rightNumBlocks])
                 E = np.array([leftEnthalpy, rightEnthalpy])
-                Enthalpy = system[f'.enthalpy.{self.stages[-1]}']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
+                Enthalpy = system[f'.enthalpy.{suffix}']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
                 Xch.append(numBlocks[1])
                 Ych.append(Enthalpy)
             inds = np.argsort(Xch)
@@ -587,7 +587,7 @@ class AtomisticRepresentation(object):
                 numBlocks /= numBlocksTotal
                 C = np.array([leftNumBlocks, rightNumBlocks])
                 E = np.array([leftEnthalpy, rightEnthalpy])
-                Enthalpy = system[f'.enthalpy.{self.stages[-1]}']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
+                Enthalpy = system[f'.enthalpy.{suffix}']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
                 if Enthalpy < self.rangeECH:
                     X.append(numBlocks[1])
                     Y.append(Enthalpy)
@@ -605,7 +605,7 @@ class AtomisticRepresentation(object):
             plt.close()
 
 
-    def _drawExtendedConvexHull3(self, compositionSpace, convexHull, extendedConvexHull):
+    def _drawExtendedConvexHull3(self, compositionSpace, convexHull, extendedConvexHull, suffix):
         pass
     def _drawParetoFronts2(self, fronts, optimizer):
         (xProp, xLabel), (yProp, yLabel) = self.presentPareto
