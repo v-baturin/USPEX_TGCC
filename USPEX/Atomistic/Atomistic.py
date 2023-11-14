@@ -3,7 +3,7 @@ import yaml
 from pathlib import Path
 from copy import copy
 
-from USPEX.Expressions.Functions.AtomisticFunctions import AtomisticFunctions
+from ..Expressions.Functions.AtomisticFunctions import AtomisticFunctions
 from .Transformation import Transformation
 
 

@@ -13,7 +13,7 @@ from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
 
-from USPEX.Expressions.Functions.RadialDistributionFunctions import RadialDistributionFunctions
+from ..Expressions.Functions.RadialDistributionFunctions import RadialDistributionFunctions
 
 
 RMAX_DEFAULT = 10.0
@@ -174,18 +174,8 @@ class RadialDistributionUtility(object):
 
         """
         systemFlavour = system.getFlavour(self.suffix)
-        if f'radialDistribitionUtility.structureFingerprint' in systemFlavour:
-            systemFlavour.delProperty('structureFingerprint', extension='radialDistribitionUtility')
-        if f'radialDistribitionUtility.complexFingerprint' in systemFlavour:
-            systemFlavour.delProperty('complexFingerprint', extension='radialDistribitionUtility')
-        if f'radialDistribitionUtility.structureOrder' in systemFlavour:
-            systemFlavour.delProperty('structureOrder', extension='radialDistribitionUtility')
-        if f'radialDistribitionUtility.atomFingerprints' in systemFlavour:
-            systemFlavour.delProperty('atomFingerprints', extension='radialDistribitionUtility')
-        if f'radialDistribitionUtility.order' in systemFlavour:
-            systemFlavour.delProperty('order', extension='radialDistribitionUtility')
-        if f'radialDistribitionUtility.quasientropy' in systemFlavour:
-            systemFlavour.delProperty('quasientropy', extension='radialDistribitionUtility')
+        systemFlavour.delProperty('structureFingerprint', extension='radialDistribitionUtility')
+        systemFlavour.delProperty('complexFingerprint', extension='radialDistribitionUtility')
 
     def calcFingerprint(self, system):
         """
