@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+from itertools import product
 from ase.geometry import get_distances
 
 from ..Optimizers.PoolEntry import PoolEntry
@@ -119,6 +120,78 @@ class AtomisticStage:
                                              zmatrixConfig = badMol.getZmatrixConfig())
         if correctorDict:
             system.setProperty('molecules', moleculesSink, extension='atomistic', suffix=self.tag)
+
+    def checkAndFixMolecules_v2(self, system):
+        correctorDict = dict()
+        moleculesSink = system.getProperty('molecules', extension='atomistic', suffix=self.tag)
+        moleculesSource = system.getProperty('molecules', extension='atomistic', suffix=self.source)
+        cellSink = system.getProperty('cell', extension='atomistic', suffix=self.tag)
+        cellSource = system.getProperty('cell', extension='atomistic', suffix=self.source)
+        for i, molSink in enumerate(moleculesSink):
+            nAtoms = len(molSink)
+            if nAtoms > 1:
+                if self.target.utilities.simpleMoleculeUtility.checkIntegrityType == 'rigid':
+                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms) #TODO: nontrivial adjacency matrix for flexible molecules
+                molSource = moleculesSource[i]
+                distMatSource = molSource.getAllDistances() * ADJ_MAT
+                distMatSink = molSink.getAllDistances() * ADJ_MAT
+                diffMat = np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(len(distMatSource)))
+                max_diff = np.max(diffMat)
+                if max_diff > self.target.utilities.simpleMoleculeUtility.integrityTol:
+                    fractSource = cellSource.cartesianToFractional(molSource.getCartesianCoordinates())
+                    fractSink = cellSink.cartesianToFractional(molSink.getCartesianCoordinates())
+                    seenWrappings = [{(0,0,0)}] * nAtoms
+                    firstGuessWrapping = np.round(fractSink - fractSource)
+                    seenWrappings = [sw + [tuple(firstGuessWrapping[i].astype(int))] for i, sw in enumerate(seenWrappings)]
+
+
+
+
+
+
+
+
+
+
+                cartCoordsSink = molSink.getCartesianCoordinates()
+                distMatSink = get_distances(cartCoordsSink, cell=cellSink.getCellVectors(),
+                                            pbc=cellSink.getPBC())[1]
+                diff = np.max(np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(len(distMatSource))))
+                distMatSinkNoPBC = molSink.getAllDistances()
+                diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSource) /
+                                   (distMatSource + np.eye(len(distMatSource))))
+                if self.target.utilities.simpleMoleculeUtility.checkIntegrityType == 'rigid':
+                    if diff > self.target.utilities.simpleMoleculeUtility.integrityTol:
+                        logger.info(f'system {system["ID"]}: broken molecule detected')
+                        system.setProperty('isBad', True, suffix=self.tag)
+                        break
+                if diffNoPBC - diff > 1e-5:
+                    logger.debug(
+                        f'system {system["ID"]}: wrapped molecule detected, unwrapping')  # ith molecule is wrapped
+                    fractSource = cellSource.cartesianToFractional(molSource.getCartesianCoordinates())
+                    fractSink = cellSink.cartesianToFractional(molSink.getCartesianCoordinates())
+                    wrapping = np.round(fractSink - fractSource)
+                    newFractSink = fractSink - wrapping
+                    correctorDict[i] = cellSink.fractionalToCartesian(newFractSink)
+        for i, coords in correctorDict.items():
+            badMol = moleculesSink[i]
+            moleculesSink[i] = type(badMol)(atomTypes=badMol.getAtomTypes(), coordinates=coords,
+                                            cell=badMol.getCell(),
+                                            zmatrixConfig=badMol.getZmatrixConfig())
+        if correctorDict:
+            system.setProperty('molecules', moleculesSink, extension='atomistic', suffix=self.tag)
+
+    @staticmethod
+    def odometer(begin=(-1, -1, -1), end=(1, 1, 1), exceptions=((0, 0, 0))):
+        ranges = [range(i, f + 1) for i, f in zip(begin, end)]
+        for cmb in product(*ranges):
+            if cmb not in exceptions:
+                yield cmb
+    @staticmethod
+    def dewrap(self, atomicstruct, cell, wrapping):
+        pass
+
+
 
 
 
