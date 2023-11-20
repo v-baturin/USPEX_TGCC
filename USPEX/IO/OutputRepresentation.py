@@ -36,7 +36,7 @@ def newResFolderName(path: str) -> Path:
 
 
 class OutputRepresentation(object):
-    PARAMETERS_FILENAME = 'parameters.uspex'
+    PARAMETERS_FILENAME = 'parameters.yaml'
 
     def __init__(self, optimizerInstance, path: str = './', **params):
         self.RES_FOLDER = newResFolderName(path)
