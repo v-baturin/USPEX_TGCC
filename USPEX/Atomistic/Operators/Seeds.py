@@ -13,15 +13,10 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 
-from ase.io.vasp import read_vasp
 from pathlib import Path
-from time import time
-from typing import List
 
 
 class Seeds(object):
-
-    systemRepresentationClass = None
 
     def __init__(self, utilities, generations:list=None, seedsFolders:list=None):
         '''
@@ -35,6 +30,7 @@ class Seeds(object):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
+        self.atomistic = utilities.atomistic
 
         self.generations = generations if generations is not None else []
         self.seedsFolders = [Path(s) for s in seedsFolders] if seedsFolders is not None else []
@@ -62,10 +58,10 @@ class Seeds(object):
         for filename in seedsFolder.iterdir():
             if (USUF == filename.suffix) == hasDesciption:
                 if filename.is_file():
-                    systems = self.systemRepresentationClass.readAtomicStructures(filename)
+                    systems = self.atomistic.readAtomicStructures(filename)
                     for system in systems:
                         system = offspringFactory(**system)
-                        structure = system.getProperty('structure', extension='atomistic', suffix='origin')
+                        structure = system.getProperty('structure', extension='atomistic')
                         minDistMatrix = self.bondUtility.getDistances(
                             structure.getAtomTypes(), self.conditions.externalPressure)
                         if self.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix):
@@ -77,7 +73,3 @@ class Seeds(object):
 
         self.currentGeneration += 1
         return tuple(seeds)
-
-    @classmethod
-    def registerTypes(cls, systemRepresentationClass):
-        cls.systemRepresentationClass = systemRepresentationClass
