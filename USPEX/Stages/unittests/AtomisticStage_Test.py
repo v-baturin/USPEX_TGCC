@@ -101,7 +101,7 @@ class AtomisticStage_Test(unittest.TestCase):
         system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
         system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink))
         self.assertTrue(self.checkWrapped(system))
-        atomisticStage.checkAndFixMolecules_v2(system)
+        atomisticStage.checkAndFixMolecules(system)
         self.assertFalse(self.checkWrapped(system))
         brokenMolFilePath = PATH_WITH_TESTS / 'mol_wrapping_POSCARS_brokenMol.uspex'
         systemSource, systemSink = Atomistic.readAtomicStructures(brokenMolFilePath)
