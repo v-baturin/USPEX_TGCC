@@ -1,32 +1,31 @@
-{
-    optimizer: {
+main:
+    optimizer:
         type: GlobalOptimizer
-        target: {
+        target:
             type: Atomistic
-            conditions: {externalPressure: 100}
-            compositionSpace: {symbols: [Mg Al O]
-                               blocks: [[4 8 16]]}
-        }
+            conditions:
+                externalPressure: 100
+            compositionSpace:
+                symbols: (Mg Al O)
+                blocks:
+                    - (4 8 16)
         optType: enthalpy
-        selection: {
+        selection:
             type: USPEXClassic
             popSize: 40
             bestFrac: 0.6
             optType: (aging enthalpy)
-            fractions: {
+            fractions:
                 heredity: (0.1 1.0 0.5)
                 softmodemutation: (0.1 1.0 0.2)
                 randSym: (0.05 1.0 0.1)
                 randTop: (0.05 1.0 0.1)
                 permutation: (0.05 1.0 0.1)
-            }
-        }
-    }
-    stages: [glp glp glp glp]
+    stages: (glp glp glp glp)
     numParallelCalcs: 20
     numGenerations: 60
     stopCrit: 30
-}
 
-#define glp
-{type : gulp, commandExecutable : 'gulp'}
+glp:
+    type : gulp
+    commandExecutable : 'gulp'
