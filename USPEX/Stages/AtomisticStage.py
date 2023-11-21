@@ -60,8 +60,8 @@ class AtomisticStage:
 
     def systemCheckAndFix(self, system):
         """
-        Checks if given system complies set up constraints.
-        If it does, make surtain adjustments, like align the system along required axis.
+        Checks if given system complies with set up constraints.
+        If it does, make certain adjustments, like align the system along required axis.
         :param system: system to be checked and fixed
         """
         structure = system.getProperty('structure', extension='atomistic')
@@ -117,7 +117,7 @@ class AtomisticStage:
                                             zmatrixConfig=badMol.getZmatrixConfig())
         if correctorDict:
             logger.debug(
-                f'system {system["ID"]}: unwrapped {len(correctorDict)} molecule{"s" if len(correctorDict) // 10 != 1 else ""}')
+                f'system {system["ID"]}: unwrapped {len(correctorDict)} molecules')
             system.setProperty('molecules', moleculesSink, extension='atomistic', suffix=self.tag)
 
     def unwrapper(self, cellSource, molSource, distMatSource, cellSink, molSink, adjMatrix, newCoords):
