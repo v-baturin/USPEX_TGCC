@@ -93,13 +93,10 @@ class AtomisticStage:
             if nAtoms > 1:
                 molSource = moleculesSource[i]
                 if self.target.utilities.simpleMoleculeUtility.checkIntegrityType == 'rigid':
-                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(
-                        nAtoms)  # TODO: nontrivial ADJ_MAT for flexible molecules
+                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms)  # TODO: nontrivial ADJ_MAT for flexible mols
                 distMatSource = molSource.getAllDistances() * ADJ_MAT
-                newCoords = molSink.getCartesianCoordinates()
-                tryToUnwrap = self.unwrapper(cellSource, molSource, distMatSource, cellSink, molSink, ADJ_MAT,
-                                             newCoords)
-                for k_try, newCoords in enumerate(tryToUnwrap):
+                checkedAndFixedGen = self.checkAndFixWrap(cellSource, molSource, distMatSource, cellSink, molSink, ADJ_MAT)
+                for k_try, newCoords in enumerate(checkedAndFixedGen):
                     if np.all(np.abs(get_distances(newCoords)[1] * ADJ_MAT - distMatSource) /
                               (distMatSource + np.eye(nAtoms)) <
                               self.target.utilities.simpleMoleculeUtility.integrityTol):
@@ -120,10 +117,11 @@ class AtomisticStage:
                 f'system {system["ID"]}: unwrapped {len(correctorDict)} molecules')
             system.setProperty('molecules', moleculesSink, extension='atomistic', suffix=self.tag)
 
-    def unwrapper(self, cellSource, molSource, distMatSource, cellSink, molSink, adjMatrix, newCoords):
-        yield newCoords
+    def checkAndFixWrap(self, cellSource, molSource, distMatSource, cellSink, molSink, adjMatrix):
+        newMolSinkCoords = molSink.getCartesianCoordinates()
+        yield newMolSinkCoords
         fractSource = cellSource.cartesianToFractional(molSource.getCartesianCoordinates())
-        fractSink = cellSink.cartesianToFractional(molSink.getCartesianCoordinates())
+        fractSink = cellSink.cartesianToFractional(newMolSinkCoords)
         wrapping = np.round(fractSink - fractSource)
         newFractSink = fractSink - wrapping
         yield cellSink.fractionalToCartesian(newFractSink)  # first guess: dewrap if xfrac changes more than by 0.5
@@ -133,17 +131,17 @@ class AtomisticStage:
         isBadDist = relativeDiff >= self.target.utilities.simpleMoleculeUtility.integrityTol
         for idxBadDistA in range(len(molSource)):
             for idxBadDistB in np.where(isBadDist[idxBadDistA, idxBadDistA:])[0]:
-                coordA = newCoords[idxBadDistA]
-                coordB = newCoords[idxBadDistB]
+                coordA = newMolSinkCoords[idxBadDistA]
+                coordB = newMolSinkCoords[idxBadDistB]
                 sourceDist = distMatSource[idxBadDistA, idxBadDistB]
                 newCoordsB = self.dewrapAtomB(coordA, coordB, sourceDist, cellSink)
                 if newCoordsB is not None:
-                    newCoords[idxBadDistB] = newCoordsB
+                    newMolSinkCoords[idxBadDistB] = newCoordsB
                     isBadDist[idxBadDistB] = False
                     isBadDist[:, idxBadDistB] = False
                 else:
                     return
-        yield newCoords
+        yield newMolSinkCoords
 
     def dewrapAtomB(self, coordA, coordB, sourceDist, cellSink):
         allwrappings = np.array(list(product(*[range(i, f + 1) for i, f in zip((-1, -1, -1), (1, 1, 1))])))
