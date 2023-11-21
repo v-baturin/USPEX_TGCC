@@ -92,12 +92,11 @@ class AtomisticStage:
             if nAtoms > 1:
                 molSource = moleculesSource[i]
                 if self.target.utilities.simpleMoleculeUtility.checkIntegrityType == 'rigid':
-                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(
-                        nAtoms)  # TODO: nontrivial adjacency matrix for flexible molecules
+                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms)  # TODO: nontrivial ADJ_MAT for flexible molecules
                 distMatSource = molSource.getAllDistances() * ADJ_MAT
                 newCoords = molSink.getCartesianCoordinates()
-                tryToUnwrap = self.unwrapper(cellSource, molSource, distMatSource, cellSink, molSink, ADJ_MAT)
                 isUnwrapped = False
+                tryToUnwrap = self.unwrapper(cellSource, molSource, distMatSource, cellSink, molSink, ADJ_MAT, newCoords)
                 while np.any(np.abs(get_distances(newCoords)[1] * ADJ_MAT - distMatSource) /
                              (distMatSource + np.eye(nAtoms)) >=
                              self.target.utilities.simpleMoleculeUtility.integrityTol):
@@ -121,13 +120,12 @@ class AtomisticStage:
                 f'system {system["ID"]}: unwrapped {len(correctorDict)} molecule{"s" if len(correctorDict) // 10 != 1 else ""}')
             system.setProperty('molecules', moleculesSink, extension='atomistic', suffix=self.tag)
 
-    def unwrapper(self, cellSource, molSource, distMatSource, cellSink, molSink, adjMatrix):
+    def unwrapper(self, cellSource, molSource, distMatSource, cellSink, molSink, adjMatrix, newCoords):
         fractSource = cellSource.cartesianToFractional(molSource.getCartesianCoordinates())
         fractSink = cellSink.cartesianToFractional(molSink.getCartesianCoordinates())
         wrapping = np.round(fractSink - fractSource)
         newFractSink = fractSink - wrapping
         yield cellSink.fractionalToCartesian(newFractSink)  # first guess: dewrap if xfrac changes more than by 0.5
-        newCoords = molSink.getCartesianCoordinates()
         nAtoms = len(molSource)
         distMatSink = molSink.getAllDistances() * adjMatrix
         relativeDiff = np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(nAtoms))
