@@ -24,13 +24,13 @@ class InputParser_Test(unittest.TestCase):
                     'type': 'USPEXClassic',
                     'popSize': 40,
                     'bestFrac': 0.6,
-                    'optType': ('aging', 'enthalpy'),
+                    'optType': ['aging', 'enthalpy'],
                     'fractions': {
-                        'heredity': (0.1, 1.0, 0.5),
-                        'softmodemutation': (0.1, 1.0, 0.2),
-                        'randSym': (0.05, 1.0, 0.1),
-                        'randTop': (0.05, 1.0, 0.1),
-                        'permutation': (0.05, 1.0, 0.1)
+                        'heredity': [0.1, 1.0, 0.5],
+                        'softmodemutation': [0.1, 1.0, 0.2],
+                        'randSym': [0.05, 1.0, 0.1],
+                        'randTop': [0.05, 1.0, 0.1],
+                        'permutation': [0.05, 1.0, 0.1]
                     }
                 }
             },
@@ -46,11 +46,11 @@ class InputParser_Test(unittest.TestCase):
 
 
     def test_read(self):
-        self.assertEqual(read(HOMEPATH/'input1.uspex'), self.params_ref)
+        self.assertEqual(read(HOMEPATH/'input1.yaml'), self.params_ref)
 
     def test_write_read(self):
         filename = HOMEPATH/'input_test.uspex'
-        write(filename, self.params_ref)
+        write(filename, {'main': self.params_ref})
         definitions = read(filename)
         self.assertEqual(definitions, self.params_ref)
         filename.unlink()
@@ -67,11 +67,11 @@ class InputParser_Test(unittest.TestCase):
                 },
                 'optType': 'enthalpy',
                 'selection': {'type': 'USPEXClassic',
-                              'optType': ('aging', 'enthalpy'),
+                              'optType': ['aging', 'enthalpy'],
                               'popSize': 20,
-                              'fractions': {'heredity': (0.1, 1.0, 0.5),
-                                             'softmodemutation': (0.1, 1.0, 0.3),
-                                              'randTop': (0.1, 1.0, 0.2),
+                              'fractions': {'heredity': [0.1, 1.0, 0.5],
+                                             'softmodemutation': [0.1, 1.0, 0.3],
+                                              'randTop': [0.1, 1.0, 0.2],
                                           }
                               }
             },
@@ -80,4 +80,4 @@ class InputParser_Test(unittest.TestCase):
             'numGenerations': 30,
             'stopCrit': 6,
         }
-        self.assertEqual(read(HOMEPATH/'input2.uspex'), params_ref)
+        self.assertEqual(read(HOMEPATH/'input2.yaml'), params_ref)

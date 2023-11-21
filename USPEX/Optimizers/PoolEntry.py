@@ -3,7 +3,8 @@ import pickle as pcl
 import numpy as np
 
 from typing import Union
-from sqlalchemy import MetaData, ForeignKey, Table, Column, Integer, Float, String, create_engine, insert, select, and_
+from sqlalchemy import MetaData, ForeignKey, Table, Column, Integer, Float, String, create_engine,\
+    insert, select, update, delete, and_
 
 
 logger = logging.getLogger(__name__)
@@ -118,10 +119,10 @@ class FlavourFactory:
 
 class EntryFlavour:
     
-    def __init__(self, extensions=None, **properties):
+    def __init__(self, ID=None, extensions=None, **properties):
         self.extensions = extensions if extensions is not None else {}
         self._propertiesCache = properties
-        self.ID = None
+        self.ID = ID
 
     def __getstate__(self):
         return dict(ID=self.ID, extensions=self.extensions)
@@ -132,20 +133,22 @@ class EntryFlavour:
         self._propertiesCache = {}
 
     def setID(self, ID: int):
+        assert self.ID is None
         self.ID = ID
+        for prop, value in self._propertiesCache.items():
+            self._setPropertyBD(prop, value)
 
     def getFactory(self):
         return FlavourFactory(self.extensions)
 
-    def getProperties(self):
-        return self._propertiesCache
-
     def getProperty(self, prop, extension=''):
         if f'{extension}.{prop}' not in self._propertiesCache:
             if self.ID is not None:
-                value = self.getPropertyBD(f'{extension}.{prop}')
-                if value is not None:
-                    self._propertiesCache[f'{extension}.{prop}'] = value
+                try:
+                    self._propertiesCache[f'{extension}.{prop}'] = self._getPropertyBD(f'{extension}.{prop}')
+                except KeyError as e:
+                    logger.debug(e)
+                else:
                     return self._propertiesCache[f'{extension}.{prop}']
             if extension in self.extensions:
                 self._propertiesCache[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
@@ -153,7 +156,7 @@ class EntryFlavour:
                 raise KeyError(f'Can not evaluate property {extension}.{prop} for {self._propertiesCache}.')
         return self._propertiesCache[f'{extension}.{prop}']
 
-    def getPropertyBD(self, prop):
+    def _getPropertyBD(self, prop):
         stmt = select(propertiesInt.c.value).where(and_(propertiesInt.c.fID == self.ID, propertiesInt.c.prop == prop))
         with PoolEntry.engine.connect() as conn:
             rows = conn.execute(stmt).all()
@@ -178,14 +181,19 @@ class EntryFlavour:
         assert len(rows) <= 1
         if len(rows) == 1:
             return pcl.loads(rows[0][0])
-        return None
+        raise KeyError(f"Can't find property {prop} for flavour {self.ID} in the database.")
 
     def setProperty(self, prop, value, extension=''):
         self._propertiesCache[f'{extension}.{prop}'] = value
-        if self.ID is not None and self.getPropertyBD(f'{extension}.{prop}') is None:
-            self.setPropertyBD(f'{extension}.{prop}', value)
+        if self.ID is not None:
+            try:
+                self._getPropertyBD(f'{extension}.{prop}')
+            except KeyError:
+                self._setPropertyBD(f'{extension}.{prop}', value)
+            else:
+                self._updatePropertyBD(f'{extension}.{prop}', value)
 
-    def setPropertyBD(self, prop: str, value):
+    def _setPropertyBD(self, prop: str, value):
         with PoolEntry.engine.connect() as conn:
             if isinstance(value, int):
                 conn.execute(insert(propertiesInt), [{"fID": self.ID, "prop": prop, "value": value}])
@@ -197,8 +205,37 @@ class EntryFlavour:
                 conn.execute(insert(propertiesObj), [{"fID": self.ID, "prop": prop, "value": pcl.dumps(value)}])
             conn.commit()
 
+    def _updatePropertyBD(self, prop: str, value):
+        with PoolEntry.engine.connect() as conn:
+            if isinstance(value, int):
+                conn.execute(update(propertiesInt).where(and_(propertiesInt.c.fID == self.ID, propertiesInt.c.prop == prop)).values(value=value))
+            elif isinstance(value, float):
+                conn.execute(update(propertiesFlt).where(and_(propertiesFlt.c.fID == self.ID, propertiesFlt.c.prop == prop)).values(value=value))
+            elif isinstance(value, str):
+                conn.execute(update(propertiesStr).where(and_(propertiesStr.c.fID == self.ID, propertiesStr.c.prop == prop)).values(value=value))
+            else:
+                conn.execute(update(propertiesObj).where(and_(propertiesObj.c.fID == self.ID, propertiesObj.c.prop == prop)).values(value=pcl.dumps(value)))
+            conn.commit()
+
     def delProperty(self, prop, extension=''):
-        del self._propertiesCache[f'{extension}.{prop}']
+        if f'{extension}.{prop}' in self._propertiesCache:
+            del self._propertiesCache[f'{extension}.{prop}']
+        if self.ID is not None:
+            value = self._getPropertyBD(f'{extension}.{prop}')
+            if value is not None:
+                self._delPropertyBD(f'{extension}.{prop}', value)
+
+    def _delPropertyBD(self, prop, value):
+        with PoolEntry.engine.connect() as conn:
+            if isinstance(value, int):
+                conn.execute(delete(propertiesInt).where(and_(propertiesInt.c.fID == self.ID, propertiesInt.c.prop == prop)))
+            elif isinstance(value, float):
+                conn.execute(delete(propertiesFlt).where(and_(propertiesFlt.c.fID == self.ID, propertiesFlt.c.prop == prop)))
+            elif isinstance(value, str):
+                conn.execute(delete(propertiesStr).where(and_(propertiesStr.c.fID == self.ID, propertiesStr.c.prop == prop)))
+            else:
+                conn.execute(delete(propertiesObj).where(and_(propertiesObj.c.fID == self.ID, propertiesObj.c.prop == prop)))
+            conn.commit()
 
     def __getitem__(self, item: str):
         extension, prop, *other = item.split('.')
@@ -231,20 +268,15 @@ class PoolEntry:
         self.flavourFactory = flavourFactory
         self._expressionsCache = {}
         self._flavours = {}
-        self.originalID = None
-        self.duplicates = []
 
     def __getstate__(self):
-        return dict(ID=self.ID, flavourFactory=self.flavourFactory, flavours=self._flavours,
-                    originalID=self.originalID, duplicates=self.duplicates)
+        return dict(ID=self.ID, flavourFactory=self.flavourFactory, flavours=self._flavours)
 
     def __setstate__(self, state):
         self.ID = state['ID']
         self.flavourFactory = state['flavourFactory']
         self._flavours = state['flavours']
         self._expressionsCache = {}
-        self.originalID = state['originalID']
-        self.duplicates = state['duplicates']
 
     @staticmethod
     def newEntry(flavour: EntryFlavour):
@@ -279,8 +311,7 @@ class PoolEntry:
         if len(result) != len(self._flavours):
             self._flavours = {}
             for fID, flavour in result:
-                self._flavours[flavour] = self.flavourFactory()
-                self._flavours[flavour].setID(fID)
+                self._flavours[flavour] = self.flavourFactory(ID=fID)
         return self._flavours
 
     def addFlavour(self, name: str, flavour: EntryFlavour):
@@ -288,11 +319,7 @@ class PoolEntry:
         with self.engine.connect() as conn:
             result = conn.execute(insert(flavours), [{"sID": self.ID, "name": name}])
             conn.commit()
-        ID = result.inserted_primary_key[0]
-        self.flavours[name] = flavour
-        flavour.setID(ID)
-        for prop, value in flavour.getProperties().items():
-            flavour.setPropertyBD(prop, value)
+        flavour.setID(result.inserted_primary_key[0])
 
     def getFlavour(self, name: str) -> EntryFlavour:
         return self.flavours[name]
@@ -417,6 +444,12 @@ class Pool:
             conn.commit()
         return Pool(result.inserted_primary_key[0], flavourfactory)
 
+    def __copy__(self):
+        newPool = Pool.createPool(self.flavourFactory)
+        for ID in self.getIDs():
+            newPool.addEntry(self.getEntry(ID))
+        return newPool
+
     def __hash__(self):
         return hash(self.ID)
 
@@ -446,7 +479,7 @@ class Pool:
             conn.execute(insert(poolMap), [{"poolID": self.ID, "entryID": entry.ID}])
             conn.commit()
 
-    def getIDs(self):
+    def getIDs(self) -> list:
         with PoolEntry.engine.connect() as conn:
             IDs = conn.execute(select(poolMap.c.entryID).where(poolMap.c.poolID == self.ID)).all()
         return np.asarray(IDs, dtype=int).flatten().tolist()

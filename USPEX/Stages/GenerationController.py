@@ -25,7 +25,7 @@ class ControllerState(Enum):
 
 class GenerationController(object):
 
-    INPUT_FILENAME = Path('input.uspex')
+    INPUT_FILENAME = Path('input.yaml')
     DUMP_FILENAME = Path("controller.dump")
     DUMP_FILENAME_BACKUP = Path("controller.dump.back")
     knownOptimizers = {}

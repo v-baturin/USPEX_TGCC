@@ -1,0 +1,115 @@
+numGenerations: 3
+numParallelCalcs: 2
+optimizer:
+  fingerprintUtility: radialDistributionUtility
+  optType: .enthalpy.5
+  selection:
+    fractions:
+      heredity:
+      - 0.0
+      - 1.0
+      - 0.5
+      permutation:
+      - 0.0
+      - 1.0
+      - 0.1
+      randSym:
+      - 0.0
+      - 1.0
+      - 0.1
+      randTop:
+      - 0.0
+      - 1.0
+      - 0.1
+      softmodemutation:
+      - 0.0
+      - 1.0
+      - 0.1
+      twinning:
+      - 0.0
+      - 1.0
+      - 0.1
+    optType:
+    - aging
+    - .enthalpy.5
+    popSize: 10
+    type: USPEXClassic
+  stopFitness: -655.062
+  target:
+    cellUtility:
+      pbc:
+      - 1
+      - 1
+      - 1
+    compositionSpace:
+      blocks:
+      - - 4
+        - 8
+        - 16
+      range:
+      - - 1
+        - 1
+      symbols:
+      - Mg
+      - Al
+      - O
+    conditions:
+      externalPressure: 100
+    defaultSuffix: '5'
+    radialDistributionUtility:
+      suffix: '5'
+      symbols:
+      - Mg
+      - Al
+      - O
+    type: Atomistic
+  type: GlobalOptimizer
+output:
+  columns:
+  - - .enthalpy.5
+    - Enthalpy (eV)
+  - - cellUtility.volume.5
+    - Volume (A^3)
+  - - cellUtility.symmetry.5
+    - SYMMETRY (N)
+  presentConvexHull: false
+  presentPareto: []
+  stages:
+  - '1'
+  - '2'
+  - '3'
+  - '4'
+  - '5'
+  toDraw:
+  - - dep
+    - .enthalpy.5
+    - per_atom
+    - ID
+    - raw
+  - - dep
+    - .enthalpy.5
+    - raw
+    - ID
+    - raw
+  - - dep
+    - .enthalpy.5
+    - per_atom
+    - cellUtility.volume.5
+    - per_atom
+  - - stat
+    - .enthalpy.5
+    - per_atom
+    - ''
+    - ''
+stages:
+- tag: '1'
+  type: gulp
+- tag: '2'
+  type: gulp
+- tag: '3'
+  type: gulp
+- tag: '4'
+  type: gulp
+- tag: '5'
+  type: gulp
+stopCrit: 3
