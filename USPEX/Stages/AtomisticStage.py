@@ -17,7 +17,8 @@ class AtomisticStage:
     def registerTypes(cls, executorType):
         cls.executorType = executorType
 
-    def __init__(self, tag, source=None, perturbate: bool = False, target=None, environmentStyle=None, vacuumSize=0, **kwargs):
+    def __init__(self, tag, source=None, perturbate: bool = False, target=None, environmentStyle=None, vacuumSize=0,
+                 **kwargs):
         self.tag = tag
         self.source = source
         self.perturbate = perturbate
@@ -92,23 +93,22 @@ class AtomisticStage:
             if nAtoms > 1:
                 molSource = moleculesSource[i]
                 if self.target.utilities.simpleMoleculeUtility.checkIntegrityType == 'rigid':
-                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms)  # TODO: nontrivial ADJ_MAT for flexible molecules
+                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(
+                        nAtoms)  # TODO: nontrivial ADJ_MAT for flexible molecules
                 distMatSource = molSource.getAllDistances() * ADJ_MAT
                 newCoords = molSink.getCartesianCoordinates()
-                isUnwrapped = False
-                tryToUnwrap = self.unwrapper(cellSource, molSource, distMatSource, cellSink, molSink, ADJ_MAT, newCoords)
-                while np.any(np.abs(get_distances(newCoords)[1] * ADJ_MAT - distMatSource) /
-                             (distMatSource + np.eye(nAtoms)) >=
-                             self.target.utilities.simpleMoleculeUtility.integrityTol):
-                    isUnwrapped = True
-                    try:
-                        newCoords = next(tryToUnwrap)
-                    except StopIteration:
-                        logger.info(f'system {system["ID"]}: broken molecule detected')
-                        system.setProperty('isBad', True, suffix=self.tag)
-                        return
-                if isUnwrapped:
-                    correctorDict[i] = newCoords
+                tryToUnwrap = self.unwrapper(cellSource, molSource, distMatSource, cellSink, molSink, ADJ_MAT,
+                                             newCoords)
+                for k_try, newCoords in enumerate(tryToUnwrap):
+                    if np.all(np.abs(get_distances(newCoords)[1] * ADJ_MAT - distMatSource) /
+                              (distMatSource + np.eye(nAtoms)) <
+                              self.target.utilities.simpleMoleculeUtility.integrityTol):
+                        if k_try > 0:
+                            correctorDict[i] = newCoords
+                        break
+                else:
+                    logger.info(f'system {system["ID"]}: broken molecule detected')
+                    system.setProperty('isBad', True, suffix=self.tag)
 
         for i, coords in correctorDict.items():
             badMol = moleculesSink[i]
@@ -121,6 +121,7 @@ class AtomisticStage:
             system.setProperty('molecules', moleculesSink, extension='atomistic', suffix=self.tag)
 
     def unwrapper(self, cellSource, molSource, distMatSource, cellSink, molSink, adjMatrix, newCoords):
+        yield newCoords
         fractSource = cellSource.cartesianToFractional(molSource.getCartesianCoordinates())
         fractSink = cellSink.cartesianToFractional(molSink.getCartesianCoordinates())
         wrapping = np.round(fractSink - fractSource)
