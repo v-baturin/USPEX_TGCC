@@ -42,6 +42,7 @@ class AtomisticStage:
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
         intermediate = disassembler.disassemble(structure)
+        intermediate['.ID'] = system.ID
         intermediate['.vacuumSize'] = self.vacuumSize
         intermediate['.externalPressure'] = system.getProperty('externalPressure', suffix='origin')
         intermediate['atomistic.disassembler'] = disassembler

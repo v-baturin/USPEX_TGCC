@@ -40,7 +40,6 @@ from .Atomistic.Operators.RemoveAtom import RemoveAtom
 from .Atomistic.Operators.TeleportAtom import TeleportAtom
 from .Atomistic.Operators.Seeds import Seeds
 from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
-Seeds.registerTypes(AtomicStructureRepresentation)
 # --------------------------------------------- Optimizers ----------------------------------------------------------
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
 from .Expressions.ExpressionEvaluator import ExpressionEvaluator
