@@ -16,8 +16,8 @@ from .Atomistic.Environments.Substrate import Substrate
 Substrate.registerTypes(Atomistic)
 from .Atomistic.Environments.Bulk import Bulk
 Bulk.registerTypes(Atomistic)
-# from .Atomistic.Environments.NanoparticleCore import NanoparticleCore
-# NanoparticleCore.registerTypes(Atomistic)
+from .Atomistic.Environments.NanoparticleCore import NanoparticleCore
+NanoparticleCore.registerTypes(Atomistic)
 from .Atomistic.RadialDistributionUtility import RadialDistributionUtility
 from .Atomistic.CellUtility import CellUtility
 from .Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
@@ -39,7 +39,7 @@ from .Atomistic.Operators.AddAtom import AddAtom
 from .Atomistic.Operators.RemoveAtom import RemoveAtom
 from .Atomistic.Operators.TeleportAtom import TeleportAtom
 from .Atomistic.Operators.Seeds import Seeds
-# from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
+from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
 Seeds.registerTypes(AtomicStructureRepresentation)
 # --------------------------------------------- Optimizers ----------------------------------------------------------
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
@@ -49,26 +49,26 @@ from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
 GlobalOptimizer.registerTarget('Atomistic',
                                utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
-                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility,
-                                          # ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility
+                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, JunctionUtility
+                                          # ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,
                                           ],
                                hybridizations=[Heredity],
                                mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                                creations=[RandTop, RandSym, RandSymPyXtal,
-                                          # CoreAdsorbantRandomGenerator
+                                          CoreAdsorbantRandomGenerator
                                           ],
                                seeds=Seeds)
 from .Optimizers.ModelOptimizer import ModelOptimizer, External
 ModelOptimizer.registerModel(External)
 ModelOptimizer.registerTarget('Atomistic',
                       utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
-                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility,
-                                 # ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility
+                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, JunctionUtility
+                                 # ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer
                                  ],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal,
-                                 # CoreAdsorbantRandomGenerator
+                                 CoreAdsorbantRandomGenerator
                                  ],
                       seeds=Seeds)
 from .Stages.Executor import Executor

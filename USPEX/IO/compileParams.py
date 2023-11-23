@@ -1,5 +1,5 @@
-from ..components import (AtomicStructureRepresentation, EnvironmentUtility,
-                          # PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility
+from ..components import (AtomicStructureRepresentation, EnvironmentUtility, JunctionUtility
+                          # PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,
                           )
 
 
@@ -27,16 +27,16 @@ def compileParams(main: dict) -> dict:
         for i, symbol in enumerate(symbols):
             if not isinstance(symbol, dict):
                 elementalSymbols.add(symbol)
-            # elif 'type' in symbol and symbol.pop('type') == 'adsorbant':
-            #     structure = AtomicStructureRepresentation.readXYZ(symbol['filename'])
-            #     molecules[symbol['name']] = structure
-            #     symbols[i] = symbol['name']
-            #     for site in symbol['sites']:
-            #         site['junctionTypes'] =\
-            #             JunctionUtility.calculateJunctionTypes(structure,
-            #                                                    junctionsDescription=site['junctionTypes'])
-            #     molSitesMapping[symbol['name']] = symbol['sites']
-            #     elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
+            elif 'type' in symbol and symbol.pop('type') == 'adsorbant':
+                structure = AtomicStructureRepresentation.readXYZ(symbol['filename'])
+                molecules[symbol['name']] = structure
+                symbols[i] = symbol['name']
+                for site in symbol['sites']:
+                    site['junctionTypes'] =\
+                        JunctionUtility.calculateJunctionTypes(structure,
+                                                               junctionsDescription=site['junctionTypes'])
+                molSitesMapping[symbol['name']] = symbol['sites']
+                elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
             else:
                 defaultVolumeType = 0.5
                 cutoffVDW = True
