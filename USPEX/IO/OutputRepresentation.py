@@ -68,7 +68,7 @@ class OutputRepresentation(object):
         else:
             raise RuntimeError('Unknown optimizer type in output initialization.')
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
-        write(self.RES_FOLDER/self.PARAMETERS_FILENAME, params)
+        # write(self.RES_FOLDER/self.PARAMETERS_FILENAME, params)
 
     def presentSystems(self, optimizer):
         if self.targetRepresentation is not None:
