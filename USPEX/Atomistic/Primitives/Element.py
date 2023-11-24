@@ -224,6 +224,14 @@ class Element(object):
     def __hash__(self):
         return hash(self.z)
 
+    def extendedRepresentation(self):
+        rep = f'name: {self.short_name}'
+        if self.charge is not None:
+            rep += f', charge: {self.charge}'
+        for key, value in self.extra.items():
+            rep += f', {key}: {value}'
+        return f'{{{rep}}}'
+
     @staticmethod
     def all_elements() -> list:
         return [Element(x.z) for x in _ELEMENTS_LIST]

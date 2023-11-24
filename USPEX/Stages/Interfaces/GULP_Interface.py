@@ -8,6 +8,7 @@ import logging
 import numpy as np
 import re
 import shutil
+import yaml
 
 from pathlib import Path
 from typing import List
@@ -148,6 +149,8 @@ class GULP_Interface:
             else:
                 content_to_write += '%4s %12s %12s %12s\n' % tuple_to_format
 
+        with open(calcFolder/'extenededAtomTypes', 'wt') as f:
+            f.write(''.join(f'- {element.extendedRepresentation()} \n' for element in structure.getAtomTypes()))
 
         # Write part:
         total_content = self.goptions + '\n' + content_to_write + self.ginput + '\n'
@@ -207,11 +210,16 @@ class GULP_Interface:
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
 
+        with open(calcFolder/'extenededAtomTypes', 'rt') as f:
+            extendedAtomTypes = yaml.safe_load(f.read())
+        atomTypes = [atomistic.atomType(elementRep.pop('name'), **elementRep) for elementRep in extendedAtomTypes]
+
         result = factory()
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            result.setProperty('structure', self.readStructure(atomistic, content, pbc), extension='atomistic')
+            result.setProperty('structure', self.readStructure(atomTypes, atomistic, content, pbc),
+                               extension='atomistic')
         if 'enthalpy' in self.targetProperties:
             result.setProperty('enthalpy', self.readEnergy(content))
         if 'stressTensor' in self.targetProperties:
@@ -227,7 +235,7 @@ class GULP_Interface:
         return result
 
     @staticmethod
-    def readStructure(atomistic, content, pbc):
+    def readStructure(atomTypes, atomistic, content, pbc):
         # This routine is to read crystal structure from GULP output
         # File: output
         # fractional for bulk
@@ -240,7 +248,7 @@ class GULP_Interface:
             if line.find('Final cartesian coordinates of atoms') != -1:
                 s = i + 5
                 positions = []
-                atomTypes = []
+                # atomTypes = []
                 while True:
                     s = s + 1
                     if content[s].find("------------") != -1:
@@ -250,7 +258,7 @@ class GULP_Interface:
                     element, _, *xyz = content[s].split()[1:6]
                     XYZ = [float(x) for x in xyz]
                     positions.append(XYZ)
-                    atomTypes.append(atomistic.atomType(element))
+                    # atomTypes.append(atomistic.atomType(element))
                 positions = np.array(positions)
 
             elif line.find('Final Cartesian lattice vectors') != -1:
@@ -278,7 +286,7 @@ class GULP_Interface:
             elif line.find('Final fractional coordinates of atoms') != -1:
                 s = i + 5
                 scaled_positions = []
-                atomTypes = []
+                # atomTypes = []
                 while True:
                     s = s + 1
                     if content[s].find("------------") != -1:
@@ -289,7 +297,7 @@ class GULP_Interface:
                     XYZ = [float(x) for x in xyz]
                     scaled_positions.append(XYZ)
 
-                    atomTypes.append(atomistic.atomType(element))
+                    # atomTypes.append(atomistic.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
                 positions = cell.fractionalToCartesian(fractional_coordinates)
         return atomistic.structureType(atomTypes, positions, cell=cell)
