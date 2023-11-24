@@ -411,7 +411,7 @@ class VASP_Interface:
         order = np.argsort(symbols)
         atoms = Atoms(symbols[order], structure.getCartesianCoordinates()[order], cell=cell.getCellVectors())
         if len(fixedIndices) > 0:
-            atoms.set_constraint(FixAtoms(indices=fixedIndices))
+            atoms.set_constraint(FixAtoms(indices=np.argsort(order)[fixedIndices]))
         write_vasp(calcFolder/self.poscar_file, atoms, label=label, direct=True, vasp5=True, long_format=False)
         with open(calcFolder/'symbolsOrder', 'wt') as f:
             f.write(' '.join(f'{c}' for c in order))
@@ -435,7 +435,6 @@ class VASP_Interface:
                 atomTypes[i] = self.AtomicStructureRepresentation.atomType(symbol)
             cell = self.AtomicStructureRepresentation.cellType(atoms.get_cell().array, pbc)
             structure = self.AtomicStructureRepresentation.structureType(atomTypes, positions, cell=cell)
-            structure = self.AtomicStructureRepresentation.fromAtoms(atoms)
 
             trajectory.append(dict(
                 structure=structure,

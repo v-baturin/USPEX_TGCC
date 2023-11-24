@@ -13,15 +13,10 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 
-from ase.io.vasp import read_vasp
 from pathlib import Path
-from time import time
-from typing import List
 
 
 class Seeds(object):
-
-    systemRepresentationClass = None
 
     def __init__(self, utilities, generations:list=None, seedsFolders:list=None):
         '''
@@ -78,4 +73,3 @@ class Seeds(object):
 
         self.currentGeneration += 1
         return tuple(seeds)
-
