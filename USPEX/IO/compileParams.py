@@ -26,22 +26,19 @@ def compileParams(main: dict) -> dict:
         for i, symbol in enumerate(symbols):
             if not isinstance(symbol, dict):
                 elementalSymbols.add(symbol)
-            elif 'type' in symbol and symbol.pop('type') == 'adsorbant':
-                structure = AtomicStructureRepresentation.readXYZ(symbol['filename'])
-                molecules[symbol['name']] = structure
-                symbols[i] = symbol['name']
-                for site in symbol['sites']:
-                    site['junctionTypes'] =\
-                        JunctionUtility.calculateJunctionTypes(structure,
-                                                               junctionsDescription=site['junctionTypes'])
-                molSitesMapping[symbol['name']] = symbol['sites']
-                elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
             else:
-                defaultVolumeType = 0.5
-                cutoffVDW = True
-                structure = AtomicStructureRepresentation.readMol(symbol['filename'])
+                structure = AtomicStructureRepresentation.readXYZ(**symbol)
                 molecules[symbol['name']] = structure
                 symbols[i] = symbol['name']
+                if 'sites' in symbol:
+                    for site in symbol['sites']:
+                        site['junctionTypes'] =\
+                            JunctionUtility.calculateJunctionTypes(structure,
+                                                                   junctionsDescription=site['junctionTypes'])
+                    molSitesMapping[symbol['name']] = symbol['sites']
+                else:
+                    defaultVolumeType = 0.5
+                    cutoffVDW = True
                 elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
         if 'junctionUtility' in target:
             target['junctionUtility']['molSitesMapping'] = molSitesMapping

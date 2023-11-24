@@ -73,7 +73,7 @@ class Slab:
         Nmax = inputCell.getMaxNumSlabs(axis, len(molecules))
         N = int(round(Nmax / (1 + (Nmax - 1) * (np.cos(correlation * np.pi / 2)) ** 2)))
         slabsCandidates = [Slab.getSlabs(molecules, inputCell, outputCell, axis, gaugesOfSlabs,
-                                         transformation = inputCell.randomTransformation()) for i in range(N)]
+                                         transformation=inputCell.randomTransformation()) for i in range(N)]
         candidatesCharacteristic = np.argsort(sum(order[slab.indices].sum()*((i+parity)%2) for i, slab in enumerate(slabs))
                                               for slabs in slabsCandidates)
         return slabsCandidates[candidatesCharacteristic[0]] if correlation > 0 else slabsCandidates[candidatesCharacteristic[-1]]

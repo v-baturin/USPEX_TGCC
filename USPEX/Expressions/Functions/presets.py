@@ -40,6 +40,8 @@ def applyPresets(optType):
     return optType
 
 def applyPresetsRecursive(optType):
+    if isinstance(optType, list):
+        optType = tuple(optType)
     optType = applyPresets(optType)
     if isinstance(optType, tuple):
         optType = (optType[0], *(applyPresetsRecursive(param) for param in optType[1:]))

@@ -1,24 +1,35 @@
+import logging
+import yaml
+import sys
 from copy import copy
-from pprint import pformat
 
-from .RawParser import parse
+from .RawParser import parse, ParseError
+
+
+logger = logging.getLogger(__name__)
 
 
 def read(filename):
     with open(filename, 'rt') as f:
-        sections = f.read().split('#define ')
-    definitions = {}
-    for section in sections[1:]:
-        name, definition = section.split('\n', 1)
-        name = name.strip()
-        definitions[name] = parse(definition)
-        definitions[name]['name'] = name
-    return _process(parse(sections[0]), definitions)
+        definitions = yaml.safe_load(f.read())
+    main = definitions.pop('main')
+    for name, definition in definitions.items():
+        definition['name'] = name
+    return _process(main, definitions)
 
 
 def _process(input, definitions: dict):
-    if isinstance(input, str) and input in definitions:
-        input = copy(definitions[input])
+    if isinstance(input, str):
+        if input in definitions:
+            input = copy(definitions[input])
+        elif len(input) > 1 and input[0] == '(' and input[-1] == ')':
+            try:
+                input = list(parse(input))
+            except ParseError as e:
+                logger.error(f'Error while parsing {input}')
+                exc_info = sys.exc_info()
+                raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
+
     if isinstance(input, list):
         items = enumerate(input)
     elif isinstance(input, dict):
@@ -32,6 +43,5 @@ def _process(input, definitions: dict):
 
 
 def write(filename, params):
-    content = f"{pformat(params, width=120)}\n"
     with open(filename, 'wt') as f:
-        f.write(content)
+        f.write(yaml.safe_dump(params))

@@ -1,3 +1,4 @@
+import shutil
 from datetime import datetime
 from itertools import zip_longest
 from pathlib import Path
@@ -36,7 +37,7 @@ def newResFolderName(path: str) -> Path:
 
 
 class OutputRepresentation(object):
-    PARAMETERS_FILENAME = 'parameters.uspex'
+    PARAMETERS_FILENAME = 'parameters.yaml'
 
     def __init__(self, optimizerInstance, path: str = './', **params):
         self.RES_FOLDER = newResFolderName(path)
@@ -68,7 +69,8 @@ class OutputRepresentation(object):
         else:
             raise RuntimeError('Unknown optimizer type in output initialization.')
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
-        write(self.RES_FOLDER/self.PARAMETERS_FILENAME, params)
+        if (Path.cwd()/'input.yaml').exists():
+            shutil.copyfile(Path.cwd()/'input.yaml', self.RES_FOLDER/self.PARAMETERS_FILENAME)
 
     def presentSystems(self, optimizer):
         if self.targetRepresentation is not None:
