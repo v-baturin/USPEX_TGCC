@@ -133,7 +133,8 @@ class GULP_Interface:
         # else:
 
         for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getFractionalCoordinates())):
-            tuple_to_format = (symbol.short_name, ) +\
+            name = symbol.extra['gulpType'] if 'gulpType' in symbol.extra else symbol.short_name
+            tuple_to_format = (name, ) +\
                               tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
                                                                precision=6) for c in coord)
             if cell.dim == 2:
@@ -141,8 +142,12 @@ class GULP_Interface:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 1 1 1\n' % tuple_to_format
                 else:
                     content_to_write += '%4s %12s %12s %12s 1 1 0 0 0 0\n' % tuple_to_format
+            elif symbol.charge is not None:
+                tuple_to_format += (f'{symbol.charge:.3f}', )
+                content_to_write += '%4s %12s %12s %12s core %8s\n' % tuple_to_format
             else:
                 content_to_write += '%4s %12s %12s %12s\n' % tuple_to_format
+
 
         # Write part:
         total_content = self.goptions + '\n' + content_to_write + self.ginput + '\n'
@@ -283,6 +288,7 @@ class GULP_Interface:
                     element, _, *xyz = content[s].split()[1:6]
                     XYZ = [float(x) for x in xyz]
                     scaled_positions.append(XYZ)
+
                     atomTypes.append(atomistic.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
                 positions = cell.fractionalToCartesian(fractional_coordinates)

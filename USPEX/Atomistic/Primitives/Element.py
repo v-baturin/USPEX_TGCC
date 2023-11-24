@@ -168,7 +168,7 @@ class Element(object):
     good_bonds = None
     mass = None
 
-    def __init__(self, input: Union[str, int]):
+    def __init__(self, input: Union[str, int], charge=None, **kwargs):
         """
         Initializes the class.
 
@@ -208,6 +208,8 @@ class Element(object):
         self.vanderWaals_radius = _ELEMENTS_LIST[pos].R_vdW
         self.good_bonds = _ELEMENTS_LIST[pos].good_bonds
         self.mass = _ELEMENTS_LIST[pos].mass
+        self.charge = charge
+        self.extra = kwargs
 
 
     def __lt__(self, other):
