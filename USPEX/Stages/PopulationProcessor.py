@@ -33,16 +33,8 @@ class PopulationProcessor:
     async def life(system, stages, sem):
         await sem.acquire()
         for stage in stages:
-            if stage.tag not in system.flavours:
-                # system.setProperty('isBad', False, suffix=stage.tag)
-                try:
-                    await stage.run(system)
-                except Exception as ex:
-                    logger.warning(f'system {system.ID} error in relaxation:')
-                    logger.exception(ex)
-                    system.setProperty('isBad', True, suffix=stage.tag)
-                # if system.getProperty('isBad', suffix=stage.tag):
-                #     break
+            if stage.tag not in system.flavours and not system.getProperty('isBad', suffix=stage.source):
+                await stage.run(system)
         sem.release()
 
 class Stages:

@@ -45,7 +45,13 @@ class AtomisticStage:
         intermediate['atomistic.disassembler'] = disassembler
         intermediate = system.flavourFactory(**intermediate)
 
-        result = await self.executor.run(system.ID, intermediate)
+        try:
+            result = await self.executor.run(system.ID, intermediate)
+        except Exception as ex:
+            logger.warning(f'system {system.ID} error in relaxation:')
+            logger.exception(ex)
+            system.setProperty('isBad', True, suffix=self.tag)
+            return
         result.setProperty('disassembler', disassembler, extension='atomistic')
         self.systemCheckAndFix(result)
         if 'targetProperties' in self.kwargs and 'enthalpy' in self.kwargs['targetProperties'] \
