@@ -42,7 +42,6 @@ class AtomisticStage:
         intermediate = disassembler.disassemble(structure)
         intermediate['.vacuumSize'] = self.vacuumSize
         intermediate['.externalPressure'] = system.getProperty('externalPressure', suffix='origin')
-        intermediate['atomistic.disassembler'] = disassembler
         intermediate = system.flavourFactory(**intermediate)
 
         try:
@@ -52,6 +51,7 @@ class AtomisticStage:
             logger.exception(ex)
             system.setProperty('isBad', True, suffix=self.tag)
             return
+        disassembler = intermediate.getProperty('disassembler', extension='atomistic')
         result.setProperty('disassembler', disassembler, extension='atomistic')
         self.systemCheckAndFix(result)
         if 'targetProperties' in self.kwargs and 'enthalpy' in self.kwargs['targetProperties'] \
