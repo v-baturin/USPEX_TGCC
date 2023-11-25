@@ -67,7 +67,7 @@ class ABINIT_Interface:
 
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
         """

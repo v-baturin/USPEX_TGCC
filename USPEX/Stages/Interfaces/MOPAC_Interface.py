@@ -45,7 +45,7 @@ class MOPAC_Interface:
         #     self.moleculeSpecifics = moleculeSpecifics
         # else:
         #     self.moleculeSpecifics = {}
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
         logger.debug('MOPAC calculator created.')
 
