@@ -39,7 +39,7 @@ class FHIaims_Interface:
         self.kPoints = KPoints(kresol) if kresol is not None else None
 
         self.fixCell = fixCell
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
         structure = system.getProperty('structure', extension='atomistic')

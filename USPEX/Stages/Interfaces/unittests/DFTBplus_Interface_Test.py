@@ -23,7 +23,8 @@ class DFTBplus_InterfaceTest(unittest.TestCase):
         ID = 0
         # HERE what is written in dftb_in.hsd does not make sense.
         # Only output will be parsed and properties checked
-        interface = DFTBplus_Interface(tag='0', dftb_input=SPECIFICPATH/'dftb_in.hsd_1', kresol=0.04)
+        interface = DFTBplus_Interface(tag='0', dftb_input=SPECIFICPATH/'dftb_in.hsd_1', kresol=0.04,
+                                      targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)
