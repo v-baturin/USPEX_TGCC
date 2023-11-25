@@ -29,7 +29,8 @@ class QE_CalculatorTest2(unittest.TestCase):
 
     def test_life(self):
         qe = QE_Interface(tag='1', kresol=0.16, options=SPECIFICPATH/'qEspresso_options_1',
-                          pseudopotentials={'C': SPECIFICPATH/'C.pbe-van_bm.upf'})
+                          pseudopotentials={'C': SPECIFICPATH/'C.pbe-van_bm.upf'},
+                          targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)

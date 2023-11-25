@@ -43,7 +43,8 @@ else:
             abinit = ABINIT_Interface(tag='0',
                                       in_file=SPECIFICPATH/'abinit.in_1',
                                       kresol=0.13,
-                                      pp_files=[SPECIFICPATH/'H.psp8', SPECIFICPATH/'Eu.psp8'])
+                                      pp_files=[SPECIFICPATH/'H.psp8', SPECIFICPATH/'Eu.psp8'],
+                                      targetProperties=['structure', 'enthalpy'])
             atomistic = Atomistic()
             extensions = dict(
                 atomistic=atomistic.propertyExtension(atomistic)
