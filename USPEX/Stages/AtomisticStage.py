@@ -86,7 +86,8 @@ class AtomisticStage:
             coordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())
             if self.target.utilities.cellUtility.getDim() == 1 or self.target.utilities.cellUtility.getDim() == 2:
                 cell = cell.getAlignedCell(self.target.utilities.cellUtility.getAxis())
-            structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell)
+            structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell,
+                                                                      edges=structure.edges)
             system.setProperty('structure', structure, extension='atomistic')
         system.setProperty('isBad', not goodStructure)
 
@@ -120,7 +121,7 @@ class AtomisticStage:
             badMol = moleculesSink[i]
             moleculesSink[i] = type(badMol)(atomTypes=badMol.getAtomTypes(), coordinates=coords,
                                             cell=badMol.getCell(),
-                                            zmatrixConfig=badMol.getZmatrixConfig())
+                                            edges=badMol.edges)
         if correctorDict:
             logger.debug(
                 f'system {system["ID"]}: unwrapped {len(correctorDict)} molecules')

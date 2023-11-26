@@ -24,7 +24,6 @@ class AtomicStructure:
         :param coordinates: array of coordinates of atoms. Its first dimension must coincide with size of atomTypes.
         :param cell: optional **Cell** object for periodic structures.
             Is expected to provide **getCellVectors** and **getPBC** methods.
-        :param zmatrixConfig: TODO remove
 
         """
         assert len(atomTypes) == len(coordinates)
@@ -35,17 +34,16 @@ class AtomicStructure:
         self.faces = np.asarray(faces, dtype=int) if faces is not None else np.empty(0)
 
     @staticmethod
-    def initFromFractionalCoordinates(atomTypes, coordinates, cell, zmatrixConfig = None):
+    def initFromFractionalCoordinates(atomTypes, coordinates, cell, edges=None, faces=None):
         """
         Alternative constructor. Calculates cartesian coordinates from fractional coordinate and given **Cell** object.
 
         :param atomTypes: list of types of atoms in structure.
         :param coordinates: array of fractional coordinates of atoms. Its first dimension must coincide with size of atomTypes.
         :param cell: **Cell** object for periodic structures.
-        :param zmatrixConfig: TODO remove
 
         """
-        return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, zmatrixConfig)
+        return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, edges, faces)
 
     def getAligned(self, axis):
         """

@@ -313,7 +313,7 @@ class GULP_Interface:
             for line in extra:
                 if 'connect' in line:
                     _, i, j, *_other = line.split()
-                    bonds.append((i-1, j-1))
+                    bonds.append((int(i)-1, int(j)-1))
         else:
             bonds = None
         return atomistic.structureType(atomTypes, positions, cell=cell, edges=bonds)
