@@ -137,7 +137,7 @@ class OutputRepresentation(object):
                 for ID in population.getIDs():
                     table.update(ID, optimizer.allSystems.getEntry(ID))
                 output.append(table.table.get_string())
-                output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
+                output += self.targetRepresentation.getPopulationSummaryBlock(generation.goodPopulation, optimizer)
                 output.append('')
 
 
