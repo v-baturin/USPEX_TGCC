@@ -191,7 +191,7 @@ class AtomicStructureRepresentation:
         return cls.structureType(atomTypes, coordinates, zmatrixConfig=zmatrixConfig)
 
     @classmethod
-    def readXYZ(cls, filename, extendedAtomTypes=None, **kwargs):
+    def readXYZ(cls, filename, extendedAtomTypes=None, bonds=None, **kwargs):
         atoms = read(filename, format='xyz')
         if extendedAtomTypes is not None:
             atomTypes = []
@@ -205,7 +205,7 @@ class AtomicStructureRepresentation:
             atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
         coordinates = atoms.get_positions()
         cell = cls.cellType.initFromCellParameters((0, 0, 0)).getEnvelopeCell(coordinates)
-        return cls.structureType(atomTypes, coordinates, cell)
+        return cls.structureType(atomTypes, coordinates, cell, edges=bonds)
 
     @classmethod
     def readXYZs(cls, filename):

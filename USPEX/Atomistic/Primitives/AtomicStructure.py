@@ -15,7 +15,7 @@ class AtomicStructure:
     includes cell object which describes periodicity.
     """
 
-    def __init__(self, atomTypes, coordinates, cell = None, zmatrixConfig = None):
+    def __init__(self, atomTypes, coordinates, cell=None, edges=None, faces=None):
         """
 
         :param atomTypes: list of types of atoms in structure. There are no no specific requirements to the data type of
@@ -31,7 +31,8 @@ class AtomicStructure:
         self._atomTypes = np.asarray(atomTypes)
         self._coordinates = np.asarray(coordinates)
         self._cell = copy(cell)
-        self.zmatrixConfig = copy(zmatrixConfig)
+        self.edges = np.asarray(edges, dtype=int) if edges is not None else np.empty(0)
+        self.faces = np.asarray(faces, dtype=int) if faces is not None else np.empty(0)
 
     @staticmethod
     def initFromFractionalCoordinates(atomTypes, coordinates, cell, zmatrixConfig = None):
@@ -72,12 +73,6 @@ class AtomicStructure:
         :return: copy of associated **Cell** object.
         """
         return copy(self._cell)
-
-    def getZmatrixConfig(self):
-        """
-        TODO remove
-        """
-        return self.zmatrixConfig
 
     def getCartesianCoordinates(self):
         """
@@ -176,7 +171,6 @@ class AtomicStructure:
 
         :return: new **AtomicStructure** object.
         """
-        assert not self.zmatrixConfig  # still not configured for these attributes
         atomTypes = copy(self._atomTypes)
         coordinates = copy(self._coordinates)
         cell = copy(self._cell)

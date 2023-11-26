@@ -160,4 +160,4 @@ class AtomisticStage:
         if len(good_wrap_idx) == 1:
             return wrappingsOfB[good_wrap_idx[0]]
         elif len(good_wrap_idx) > 1:
-            logger.warning(f"atom with frac coords {cellSink.cartesianToFractional(coordB):.3f}: ambiguous dewrapping")
+            logger.warning("atom with frac coords {:.3f} {:.3f} {:.3f}: ambiguous dewrapping".format(*cellSink.cartesianToFractional(coordB)))
