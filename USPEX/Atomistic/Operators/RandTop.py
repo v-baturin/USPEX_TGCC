@@ -92,7 +92,7 @@ class RandTop:
                                         coordinates = []
                                         operations = []
                                         for atomNumber in np.argsort(permutationAtoms):
-                                            nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=np.int)
+                                            nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=int)
                                             coordinates.append(flavour.group(flavour.sites[nodeIndices]))
                                             operations.append([flavour.operations[ind] for ind in nodeIndices])
                                         cell = np.asarray(params['cell']) * np.asarray(supercell)
