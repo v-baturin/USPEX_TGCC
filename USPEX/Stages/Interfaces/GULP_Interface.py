@@ -214,7 +214,8 @@ class GULP_Interface:
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
         if (calcFolder / self.optimizedStructure).exists():
-            extra = f.readlines()
+            with open(calcFolder / self.optimizedStructure, 'rt') as f:
+                extra = f.readlines()
         else:
             extra = None
         with open(calcFolder/'extenededAtomTypes', 'rt') as f:
