@@ -65,7 +65,7 @@ class GULP_Interface:
             self.moleculeSpecifics = {}
 
         self.fixCell = fixCell
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
         logger.debug('GULP calculator created.')
 

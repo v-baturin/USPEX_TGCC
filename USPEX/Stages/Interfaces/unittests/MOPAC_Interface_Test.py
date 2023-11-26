@@ -25,7 +25,7 @@ WORKPATH = HOMEPATH/'Si7O14_mopac'
 class MOPAC_CalculatorTest(unittest.TestCase):
 
     def test_life(self):
-        mopac = MOPAC_Interface(tag='0', mop_input=SPECIFICPATH/'mop_1')
+        mopac = MOPAC_Interface(tag='0', mop_input=SPECIFICPATH/'mop_1', targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)

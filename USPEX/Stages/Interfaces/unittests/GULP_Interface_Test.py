@@ -36,7 +36,8 @@ class GULP_CalculatorTest(unittest.TestCase):
 
     def test_life(self):
 
-        gulp = GULP_Interface(tag='0', goptions=SPECIFICPATH/'goptions', ginput=SPECIFICPATH/'ginput_1')
+        gulp = GULP_Interface(tag='0', goptions=SPECIFICPATH/'goptions', ginput=SPECIFICPATH/'ginput_1',
+                              targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)

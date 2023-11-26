@@ -58,7 +58,7 @@ class DFTBplus_Interface:
             self.dftb_input = f.read()
 
         self.kPoints = KPoints(kresol) if kresol is not None else None
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
 

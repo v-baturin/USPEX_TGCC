@@ -68,7 +68,7 @@ class QE_Interface:
         if 'system' not in data:
             raise KeyError('Required section &SYSTEM not found.')
         self.data = data
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
         structure = system.getProperty('structure', extension='atomistic')

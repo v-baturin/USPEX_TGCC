@@ -114,6 +114,7 @@ class AtomisticStage:
                 else:
                     logger.info(f'system {system["ID"]}: broken molecule detected')
                     system.setProperty('isBad', True, suffix=self.tag)
+                    break
 
         for i, coords in correctorDict.items():
             badMol = moleculesSink[i]
@@ -156,5 +157,7 @@ class AtomisticStage:
         wrappingsOfB = coordB - allwrappings @ cellSink.getCellVectors()
         good_wrap_idx = np.where(np.abs(get_distances(wrappingsOfB, coordA)[1] - sourceDist) / sourceDist <
                                  self.target.utilities.simpleMoleculeUtility.integrityTol)[0]
-        if len(good_wrap_idx):
+        if len(good_wrap_idx) == 1:
             return wrappingsOfB[good_wrap_idx[0]]
+        elif len(good_wrap_idx) > 1:
+            logger.warning(f"atom with frac coords {cellSink.cartesianToFractional(coordB):.3f}: ambiguous dewrapping")

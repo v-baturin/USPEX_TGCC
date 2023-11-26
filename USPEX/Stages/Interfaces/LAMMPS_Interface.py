@@ -84,7 +84,7 @@ class LAMMPS_Interface:
         assert all([lib.exists() for lib in self.libs])
 
         self.failedSystems = []
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
         """
