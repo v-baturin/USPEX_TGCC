@@ -149,8 +149,8 @@ class GULP_Interface:
             else:
                 content_to_write += '%4s %12s %12s %12s\n' % tuple_to_format
 
-        with open(calcFolder/'extenededAtomTypes', 'wt') as f:
-            f.write(''.join(f'- {element.extendedRepresentation()} \n' for element in structure.getAtomTypes()))
+        for i, j in structure.edges:
+            content_to_write += f'connect    {i+1}   {j+1} \n'
 
         # Write part:
         total_content = self.goptions + '\n' + content_to_write + self.ginput + '\n'
@@ -161,6 +161,10 @@ class GULP_Interface:
 
         with open(calcFolder/self.inputFile, 'wt') as f:
             f.write(total_content)
+
+        with open(calcFolder/'extenededAtomTypes', 'wt') as f:
+            f.write(''.join(f'- {element.extendedRepresentation()} \n' for element in structure.getAtomTypes()))
+
         for lib in self.libs:
             if lib.exists():
                 shutil.copy(lib, calcFolder)
@@ -209,7 +213,11 @@ class GULP_Interface:
         atomistic = factory.extensions['atomistic'].utility
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
-
+        if (calcFolder / self.optimizedStructure).exists():
+            with open(calcFolder / self.optimizedStructure, 'rt') as f:
+                extra = f.readlines()
+        else:
+            extra = None
         with open(calcFolder/'extenededAtomTypes', 'rt') as f:
             extendedAtomTypes = yaml.safe_load(f.read())
         atomTypes = [atomistic.atomType(elementRep.pop('name'), **elementRep) for elementRep in extendedAtomTypes]
@@ -218,7 +226,7 @@ class GULP_Interface:
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            result.setProperty('structure', self.readStructure(atomTypes, atomistic, content, pbc),
+            result.setProperty('structure', self.readStructure(atomTypes, atomistic, content, pbc, extra),
                                extension='atomistic')
         if 'enthalpy' in self.targetProperties:
             result.setProperty('enthalpy', self.readEnergy(content))
@@ -235,7 +243,7 @@ class GULP_Interface:
         return result
 
     @staticmethod
-    def readStructure(atomTypes, atomistic, content, pbc):
+    def readStructure(atomTypes, atomistic, content, pbc, extra=None):
         # This routine is to read crystal structure from GULP output
         # File: output
         # fractional for bulk
@@ -300,7 +308,15 @@ class GULP_Interface:
                     # atomTypes.append(atomistic.atomType(element))
                 fractional_coordinates = np.asarray(scaled_positions)
                 positions = cell.fractionalToCartesian(fractional_coordinates)
-        return atomistic.structureType(atomTypes, positions, cell=cell)
+        if extra is not None:
+            bonds = []
+            for line in extra:
+                if 'connect' in line:
+                    _, i, j, *_other = line.split()
+                    bonds.append((int(i)-1, int(j)-1))
+        else:
+            bonds = None
+        return atomistic.structureType(atomTypes, positions, cell=cell, edges=bonds)
 
     def readEnergy(self, content) -> float:
         energy_enthalpy = np.inf

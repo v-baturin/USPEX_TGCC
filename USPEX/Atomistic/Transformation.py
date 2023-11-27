@@ -83,7 +83,7 @@ class Transformation:
         """
         coord = self.transformCoordinates(structure.getCartesianCoordinates())
         cell = self.transformCell(structure.getCell()) if structure.getCell() is not None else None
-        return type(structure)(structure.getAtomTypes(), coord, cell = cell, zmatrixConfig = structure.getZmatrixConfig())
+        return type(structure)(structure.getAtomTypes(), coord, cell=cell, edges=structure.edges)
 
     @staticmethod
     def randomRotVector():

@@ -15,7 +15,7 @@ class AtomicStructure:
     includes cell object which describes periodicity.
     """
 
-    def __init__(self, atomTypes, coordinates, cell = None, zmatrixConfig = None):
+    def __init__(self, atomTypes, coordinates, cell=None, edges=None, faces=None):
         """
 
         :param atomTypes: list of types of atoms in structure. There are no no specific requirements to the data type of
@@ -24,27 +24,26 @@ class AtomicStructure:
         :param coordinates: array of coordinates of atoms. Its first dimension must coincide with size of atomTypes.
         :param cell: optional **Cell** object for periodic structures.
             Is expected to provide **getCellVectors** and **getPBC** methods.
-        :param zmatrixConfig: TODO remove
 
         """
         assert len(atomTypes) == len(coordinates)
         self._atomTypes = np.asarray(atomTypes)
         self._coordinates = np.asarray(coordinates)
         self._cell = copy(cell)
-        self.zmatrixConfig = copy(zmatrixConfig)
+        self.edges = np.asarray(edges, dtype=int) if edges is not None else np.empty(0)
+        self.faces = np.asarray(faces, dtype=int) if faces is not None else np.empty(0)
 
     @staticmethod
-    def initFromFractionalCoordinates(atomTypes, coordinates, cell, zmatrixConfig = None):
+    def initFromFractionalCoordinates(atomTypes, coordinates, cell, edges=None, faces=None):
         """
         Alternative constructor. Calculates cartesian coordinates from fractional coordinate and given **Cell** object.
 
         :param atomTypes: list of types of atoms in structure.
         :param coordinates: array of fractional coordinates of atoms. Its first dimension must coincide with size of atomTypes.
         :param cell: **Cell** object for periodic structures.
-        :param zmatrixConfig: TODO remove
 
         """
-        return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, zmatrixConfig)
+        return AtomicStructure(atomTypes, cell.fractionalToCartesian(coordinates), cell, edges, faces)
 
     def getAligned(self, axis):
         """
@@ -72,12 +71,6 @@ class AtomicStructure:
         :return: copy of associated **Cell** object.
         """
         return copy(self._cell)
-
-    def getZmatrixConfig(self):
-        """
-        TODO remove
-        """
-        return self.zmatrixConfig
 
     def getCartesianCoordinates(self):
         """
@@ -176,7 +169,6 @@ class AtomicStructure:
 
         :return: new **AtomicStructure** object.
         """
-        assert not self.zmatrixConfig  # still not configured for these attributes
         atomTypes = copy(self._atomTypes)
         coordinates = copy(self._coordinates)
         cell = copy(self._cell)
