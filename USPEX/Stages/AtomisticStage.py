@@ -158,8 +158,8 @@ class AtomisticStage:
         distMatSink = molSink.getAllDistances() * adjMatrix
         relativeDiff = np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(nAtoms))
         isBadDist = relativeDiff >= self.target.utilities.simpleMoleculeUtility.integrityTol
-        for idxBadDistA in range(len(molSource)):
-            for idxBadDistB in np.where(isBadDist[idxBadDistA, idxBadDistA:])[0]:
+        for idxBadDistA in np.where(isBadDist)[0]:
+            for idxBadDistB in idxBadDistA + np.where(isBadDist[idxBadDistA, idxBadDistA:])[0]:
                 coordA = newMolSinkCoords[idxBadDistA]
                 coordB = newMolSinkCoords[idxBadDistB]
                 sourceDist = distMatSource[idxBadDistA, idxBadDistB]
