@@ -1,5 +1,5 @@
 from ..components import AtomicStructureRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
-    EnvironmentUtility, JunctionUtility
+    EnvironmentUtility, JunctionUtility, SimpleMoleculeUtility
 
 
 def compileParams(main: dict) -> dict:
@@ -27,19 +27,21 @@ def compileParams(main: dict) -> dict:
             if not isinstance(symbol, dict):
                 elementalSymbols.add(symbol)
             else:
-                structure = AtomicStructureRepresentation.readXYZ(**symbol)
-                molecules[symbol['name']] = structure
+                molecule = AtomicStructureRepresentation.readXYZ(**symbol)
+                if not len(molecule.edges):
+                    molecule = SimpleMoleculeUtility.detectBonds(molecule)
+                molecules[symbol['name']] = molecule
                 symbols[i] = symbol['name']
                 if 'sites' in symbol:
                     for site in symbol['sites']:
                         site['junctionTypes'] =\
-                            JunctionUtility.calculateJunctionTypes(structure,
+                            JunctionUtility.calculateJunctionTypes(molecule,
                                                                    junctionsDescription=site['junctionTypes'])
                     molSitesMapping[symbol['name']] = symbol['sites']
                 else:
                     defaultVolumeType = 0.5
                     cutoffVDW = True
-                elementalSymbols |= set([x.short_name for x in structure.getAtomTypes()])
+                elementalSymbols |= set([x.short_name for x in molecule.getAtomTypes()])
         if 'junctionUtility' in target:
             target['junctionUtility']['molSitesMapping'] = molSitesMapping
         else:
