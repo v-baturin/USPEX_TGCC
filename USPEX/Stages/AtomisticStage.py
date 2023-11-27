@@ -98,7 +98,7 @@ class AtomisticStage:
             goodStructureInc = self.target.utilities.bondUtility.isConnected(structure)
             goodStructure = goodStructure and goodStructureInc
             if not goodStructureInc:
-                logger.info(f'system {ID} falls into isolated components')
+                logger.info(f'system {ID} is broken into isolated components')
         if goodStructure:
             cell = structure.getRectifiedCell()
             coordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())
