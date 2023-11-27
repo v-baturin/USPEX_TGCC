@@ -138,8 +138,9 @@ class AtomisticStage:
         distMatSink = molSink.getAllDistances() * adjMatrix
         relativeDiff = np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(nAtoms))
         isBadDist = relativeDiff >= self.target.utilities.simpleMoleculeUtility.integrityTol
-        for idxBadDistA in range(len(molSource)):
-            for idxBadDistB in np.where(isBadDist[idxBadDistA, idxBadDistA:])[0]:
+        badIdx = np.where(isBadDist)[0]
+        for idxBadDistA in badIdx:
+            for idxBadDistB in idxBadDistA + np.where(isBadDist[idxBadDistA,idxBadDistA:])[0]:
                 coordA = newMolSinkCoords[idxBadDistA]
                 coordB = newMolSinkCoords[idxBadDistB]
                 sourceDist = distMatSource[idxBadDistA, idxBadDistB]
@@ -160,4 +161,4 @@ class AtomisticStage:
         if len(good_wrap_idx) == 1:
             return wrappingsOfB[good_wrap_idx[0]]
         elif len(good_wrap_idx) > 1:
-            logger.warning(f"atom with frac coords {cellSink.cartesianToFractional(coordB):.3f}: ambiguous dewrapping")
+            logger.warning(f"atom with frac coords {cellSink.cartesianToFractional(coordB)}: ambiguous dewrapping")
