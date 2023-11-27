@@ -70,14 +70,14 @@ class AtomisticStage_Test(unittest.TestCase):
                                         vacuumSize=0)
         atomistic = Atomistic()
         extensions = {'atomistic': atomistic.propertyExtension(atomistic)}
-        # badWrappingFilePath = PATH_WITH_TESTS/'mol_wrapping_POSCARS.uspex'
-        badWrappingFilePath = PATH_WITH_TESTS / 'dewrapping_POSCAR.uspex'
-        systemSource, systemSink = Atomistic.readAtomicStructures(badWrappingFilePath)
-        system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
-        system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink))
-        self.assertTrue(self.checkWrapped(system))
-        atomisticStage.checkAndFixMolecules(system)
-        self.assertFalse(self.checkWrapped(system))
+        for badWrappingFilePath in [PATH_WITH_TESTS / 'dewrapping_POSCAR.uspex',
+                                    PATH_WITH_TESTS/'mol_wrapping_POSCARS.uspex']:
+            systemSource, systemSink = Atomistic.readAtomicStructures(badWrappingFilePath)
+            system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
+            system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink))
+            self.assertTrue(self.checkWrapped(system))
+            atomisticStage.checkAndFixMolecules(system)
+            self.assertFalse(self.checkWrapped(system))
         brokenMolFilePath = PATH_WITH_TESTS / 'mol_wrapping_POSCARS_brokenMol.uspex'
         systemSource, systemSink = Atomistic.readAtomicStructures(brokenMolFilePath)
         system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
