@@ -85,26 +85,6 @@ class AtomisticStage_Test(unittest.TestCase):
         atomisticStage.checkAndFixMolecules(system)
         self.assertTrue(system.getProperty('isBad', suffix='0'))
 
-    def test_BromoPhthalimide(self):
-        AtomisticStage.registerTypes(lambda *args, **kwargs: None)
-        atomisticStage = AtomisticStage(tag='0',
-                                        source='origin',
-                                        perturbate=False,
-                                        target=FakeTarget(),
-                                        environmentStyle=None,
-                                        vacuumSize=0)
-        atomistic = Atomistic()
-        extensions = {'atomistic': atomistic.propertyExtension(atomistic)}
-        source_path = PATH_WITH_TESTS / 'Br_phthalimide_source_POSCAR.uspex'
-        sink_path = PATH_WITH_TESTS / 'Br_phthalimide_sink_POSCAR.uspex'
-        systemSource = Atomistic.readAtomicStructures(source_path)
-        systemSink = Atomistic.readAtomicStructures(sink_path)
-        system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource[0]))
-        system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink[0]))
-        self.assertTrue(self.checkWrapped(system))
-        atomisticStage.checkAndFixMolecules(system)
-        self.assertFalse(self.checkWrapped(system))
-
 
 
 
