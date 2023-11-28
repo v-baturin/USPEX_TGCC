@@ -51,12 +51,16 @@ class AtomicDisassembler:
         atomTypes = []
         coordinates = []
         indices = []
+        edges = []
         lowerBound = 0
         for molecule in molecules:
             atomTypes.extend(molecule.getAtomTypes())
             coordinates.extend(molecule.getCartesianCoordinates())
             size = len(molecule)
-            indices.append(list(range(lowerBound, lowerBound + size)))
+            inds = np.arange(lowerBound, lowerBound + size)
+            indices.append(inds)
+            for edge in molecule.edges:
+                edges.append(inds[edge])
             lowerBound += size
         envIndices = []
         fixedIndices = []
@@ -72,7 +76,8 @@ class AtomicDisassembler:
         if vacuumSize > 0:
             cell = cell.getEnvelopeCell(coordinates, vacuumSize, intrinsic=True)
             coordinates = cell.center(coordinates)
-        return Atomistic.structureType(atomTypes, coordinates, cell), AtomicDisassembler(indices, envIndices, fixedIndices, pbc)
+        return (Atomistic.structureType(atomTypes, coordinates, cell, edges=edges),
+                AtomicDisassembler(indices, envIndices, fixedIndices, pbc))
 
     def disassemble(self, structure):
         """
@@ -88,14 +93,21 @@ class AtomicDisassembler:
         sysCoordinates = coordinates[self.sysIndices]
         sysCell = type(cell)(cell.getCellVectors(), pbc=self.pbc).getEnvelopeCell(sysCoordinates, vacuumSize=1.0)
         offset = np.mean(sysCell.center(sysCoordinates) - sysCoordinates, axis=0)
-        system = {
-            'atomistic.molecules': [Atomistic.structureType(atomTypes[inds], coordinates[inds] + offset) for inds in
-                                    self.indices], 'atomistic.cell': sysCell, 'atomistic.environments': []}
+        molecules = []
+        for inds in self.indices:
+            edges = []
+            for i, j in structure.edges:
+                ii = np.where(inds == i)[0]
+                jj = np.where(inds == j)[0]
+                if len(ii) == 1 and len(jj) == 1:
+                    edges.append((ii[0], jj[0]))
+            molecules.append(Atomistic.structureType(atomTypes[inds], coordinates[inds] + offset, edges=edges))
+        environments = []
         for eInds, fInds in zip(self.envIndices, self.fixedIndices):
             envStructure = Atomistic.structureType(atomTypes[eInds], coordinates[eInds] + offset, cell)
             indices = np.argwhere(eInds.reshape((-1, 1)) == fInds.reshape((1, -1)))[:, 0]
-            system['atomistic.environments'].append((envStructure, indices))
-        return system
+            environments.append((envStructure, indices))
+        return {'atomistic.molecules': molecules, 'atomistic.cell': sysCell, 'atomistic.environments': environments}
 
     def decomposeDisplacements(self, displacements, structure):
         """

@@ -174,8 +174,8 @@ class RadialDistributionUtility(object):
 
         """
         systemFlavour = system.getFlavour(self.suffix)
-        systemFlavour.delProperty('structureFingerprint', extension='radialDistribitionUtility')
-        systemFlavour.delProperty('complexFingerprint', extension='radialDistribitionUtility')
+        systemFlavour.delProperty('structureFingerprint', extension='radialDistributionUtility')
+        systemFlavour.delProperty('complexFingerprint', extension='radialDistributionUtility')
 
     def calcFingerprint(self, system):
         """
@@ -386,12 +386,12 @@ class RadialDistributionUtility(object):
                 if len(comb) > 0:
                     sQE += weight[i] * tmp / len(comb)
 
-        system.setProperty('order', molOrder, extension='radialDistribitionUtility')
-        system.setProperty('averageOrder', a_order, extension='radialDistribitionUtility')
-        system.setProperty('structureOrder', s_order, extension='radialDistribitionUtility')
-        system.setProperty('structureFingerprint', fingerprint, extension='radialDistribitionUtility')
-        system.setProperty('complexFingerprint', complexFingerprint, extension='radialDistribitionUtility')
-        system.setProperty('quasientropy', -sQE, extension='radialDistribitionUtility')
+        system.setProperty('order', molOrder, extension='radialDistributionUtility')
+        system.setProperty('averageOrder', a_order, extension='radialDistributionUtility')
+        system.setProperty('structureOrder', s_order, extension='radialDistributionUtility')
+        system.setProperty('structureFingerprint', fingerprint, extension='radialDistributionUtility')
+        system.setProperty('complexFingerprint', complexFingerprint, extension='radialDistributionUtility')
+        system.setProperty('quasientropy', -sQE, extension='radialDistributionUtility')
 
     def dist(self, system1, system2):
         """

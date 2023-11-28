@@ -3,12 +3,15 @@ USPEX.Atomistic.SimpleMoleculeUtility
 =====================================
 """
 
+import logging
 import numpy as np
 from collections import Counter
 
 from .Transformation import Transformation
 from ..Expressions.Functions.SimpleMoleculeFunctions import SimpleMoleculeFunctions
 
+
+logger = logging.getLogger(__name__)
 
 DENSITY_CONST = 1.660539
 INTEGRITY_TOL = {'rigid': 0.1,  # maximum relative change in all distances
@@ -205,8 +208,20 @@ class SimpleMoleculeUtility(object):
         :return: array of coordination numbers.
         """
         radiu = np.array([atom.covalent_radius for atom in molecule.getAtomTypes()])
-        CN = np.fromiter((len(neighbours) for neighbours in _find_pair(molecule.getCartesianCoordinates(), radiu)), dtype=int)
+        CN = np.fromiter((len(neighbours) for neighbours in cls.find_pair(molecule.getCartesianCoordinates(), radiu)),
+                         dtype=int)
         return CN
+
+    @staticmethod
+    def detectBonds(molecule):
+        atomTypes = molecule.getAtomTypes()
+        coordinates = molecule.getCartesianCoordinates()
+        cell = molecule.getCell()
+        radii = np.array([atom.covalent_radius for atom in atomTypes])
+        bonds = []
+        for i, neighbours in enumerate(SimpleMoleculeUtility.find_pair(coordinates, radii)):
+            bonds.extend((i, j) for j in neighbours if j > i)
+        return type(molecule)(atomTypes, coordinates, cell=cell, edges=bonds)
 
     @staticmethod
     def zmatrixToCoord(zmatrix, fmt):
@@ -300,38 +315,39 @@ class SimpleMoleculeUtility(object):
         Zmatrix = np.real(Zmatrix)
         return Zmatrix
 
-def _find_pair(coor, radii):
-    """
-    This function checks all the atom pairs and constructs the neighbor list.
-    The bond length is estimated by the covalent radii of the atoms.
+    @staticmethod
+    def find_pair(coor, radii):
+        """
+        This function checks all the atom pairs and constructs the neighbor list.
+        The bond length is estimated by the covalent radii of the atoms.
 
-    :type coor: numpy array
-    :param coor: Nx3 array of atomic coordinates.
-    :type radii: numpy array
-    :param radii: Nx1 array of atomic radii.
+        :type coor: numpy array
+        :param coor: Nx3 array of atomic coordinates.
+        :type radii: numpy array
+        :param radii: Nx1 array of atomic radii.
 
-    :rtype: list of list of int
-    :return: list with the indices of neighboring atoms for each atom.
-    """
-    n_atom = len(radii)
-    # maximum 6 coordination, 7 gives the coordination number
-    # pair = np.zeros((n_atom, N_max), dtype=int)
-    pair = [[] for x in radii]
+        :rtype: list of list of int
+        :return: list with the indices of neighboring atoms for each atom.
+        """
+        n_atom = len(radii)
+        # maximum 6 coordination, 7 gives the coordination number
+        # pair = np.zeros((n_atom, N_max), dtype=int)
+        pair = [[] for x in radii]
 
-    for i in range(n_atom):
-        for j in range(i + 1, n_atom):
-            if np.linalg.norm(coor[i] - coor[j]) < 1.2 * (radii[i] + radii[j]):
-                pair[i].append(j)
-                pair[j].append(i)
-
-    # we assume there is no isolated atom
-    if n_atom > 1:
         for i in range(n_atom):
-            if len(pair[i]) == 0:
-                print('atom_{} is not connected to any other atom'.format(i))
-                print('Please check your MOL file again. Serious WARNING.... ')
+            for j in range(i + 1, n_atom):
+                if np.linalg.norm(coor[i] - coor[j]) < 1.2 * (radii[i] + radii[j]):
+                    pair[i].append(j)
+                    pair[j].append(i)
 
-    return pair
+        # we assume there is no isolated atom
+        if n_atom > 1:
+            for i in range(n_atom):
+                if len(pair[i]) == 0:
+                    logger.warning(f'Atom_{i} is not connected to any other atom. '
+                                   f'Please check your MOL file again. Serious WARNING....')
+
+        return pair
 
 def _GetAngle(a1, a2, a3):
     """
