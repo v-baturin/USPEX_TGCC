@@ -43,7 +43,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
         vasp = VASP_Interface(tag='1', 
                               incar=SPECIFICPATH/'INCAR_1',
                               potcarsPath=SPECIFICPATH,
-                              kresol=0.13)
+                              kresol=0.13, targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)
@@ -93,7 +93,8 @@ class VASP_interfaceTest(unittest.TestCase):
         self.interface = VASP_Interface(tag='1',
                                         incar=wd/'Specific/INCAR_1',
                                         potcarsPath=wd/'Specific',
-                                        kresol=0.05)
+                                        kresol=0.05,
+                                        targetProperties=['structure', 'enthalpy'])
 
         with open(outcar, 'rt') as f:
             content = f.readlines()

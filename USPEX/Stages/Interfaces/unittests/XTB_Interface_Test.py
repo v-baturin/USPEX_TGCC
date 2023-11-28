@@ -23,7 +23,8 @@ class XTB_InterfaceTest(unittest.TestCase):
         ID = 0
         # HERE what is written in xtb.inp does not make sense.
         # Only output will be parsed and properties checked
-        interface = XTB_Interface(tag='0', xtb_input=SPECIFICPATH/'xtb.inp_1')
+        interface = XTB_Interface(tag='0', xtb_input=SPECIFICPATH/'xtb.inp_1',
+                                  targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)

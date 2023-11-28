@@ -29,7 +29,8 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
     def test_life(self):
         lammps = LAMMPS_Interface(tag='0',
                                   libs=[SPECIFICPATH/'SiC.tersoff'], lammps_in=SPECIFICPATH/'lammps.in_1',
-                                  specorder=['C'])
+                                  specorder=['C'],
+                                  targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)
@@ -74,7 +75,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         # HERE what is written in ginput and goption no make sense.
         # Only output will be parsed and properties checked
         interface = LAMMPS_Interface(tag='0', libs=[SPECIFICPATH/'SiC.tersoff'],
-                                     lammps_in=SPECIFICPATH/'lammps.in_1', specorder=['C'])
+                                     lammps_in=SPECIFICPATH/'lammps.in_1', specorder=['C'], targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)

@@ -256,10 +256,10 @@ class AtomisticRepresentation(object):
                   *(f'        <{symbol}> -- {mol.getFormula()}' for symbol, mol in zip(molSymbols, molecules)),
                      '    Please see the MOL_* files for the details.',
                      '']
-            for symbol, molecule in zip(molSymbols, molecules):
-                rows += [f'    The calculated Zmatrix for {symbol} is:',
-                         cls.getZmatrixRepresentation(molecule, ut.simpleMoleculeUtility),
-                         '']
+            # for symbol, molecule in zip(molSymbols, molecules):
+            #     rows += [f'    The calculated Zmatrix for {symbol} is:',
+            #              cls.getZmatrixRepresentation(molecule, ut.simpleMoleculeUtility),
+            #              '']
             header += rows
 
         # ---------------------------------------------------------------------------

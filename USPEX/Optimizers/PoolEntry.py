@@ -498,4 +498,7 @@ class Pool:
         return [[entries[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
 
     def createExpression(self, expression):
-        return Expression(expression, self)
+        if isinstance(expression, str):
+            return expression
+        else:
+            return Expression(expression, self)

@@ -22,7 +22,8 @@ class CP2K_InterfaceTest(unittest.TestCase):
         ID = 0
         # HERE what is written in cp2k.inp does not make sense.
         # Only output will be parsed and properties checked
-        interface = CP2K_Interface(tag='0', cp2k_in=SPECIFICPATH/'cp2k.inp_1', kresol=0.12)
+        interface = CP2K_Interface(tag='0', cp2k_in=SPECIFICPATH/'cp2k.inp_1', kresol=0.12,
+                                      targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)

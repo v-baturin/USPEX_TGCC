@@ -41,7 +41,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
     def test_life(self):
         aims = FHIaims_Interface(tag='1',
                                  control=SPECIFICPATH/'aims_control_1',
-                                 kresol=0.14)
+                                 kresol=0.14, targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)

@@ -57,7 +57,7 @@ class PWmat_Interface:
         assert np.all([potcar.exists() for potcar in potcars])
 
         self.kPoints = KPoints(kresol)
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
         self.failedSystems = []
 
 
