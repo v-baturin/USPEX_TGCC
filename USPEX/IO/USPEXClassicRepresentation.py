@@ -55,7 +55,7 @@ class USPEXClassicRepresentation(object):
         block = []
         if not optimizer._createPopulation.globalParentsPool:
             block.append('     Best and diverse structures from previous generation')
-            mostDiverseTable = targetRepresentation.getNewSystemsTable()
+            mostDiverseTable = targetRepresentation.getNewSystemsTable(optimizer.generations[-1].goodSystems)
             for system in optimizer._createPopulation.getMostDiverse():
                 mostDiverseTable.update(system['ID'], system)
             block.append(mostDiverseTable.table.get_string())

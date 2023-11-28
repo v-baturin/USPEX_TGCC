@@ -87,7 +87,11 @@ class CompileParams_Test(unittest.TestCase):
                 {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '4', 'source': '3'}],
             'numParallelCalcs': 20,
             'numGenerations': 60,
-            'stopCrit': 30
+            'stopCrit': 30,
+            'output': {
+                'stages': ['1', '2', '3', '4']
+            }
+
         }
         params = compileParams(definitions)
         self.assertEqual(params, params_ref)
@@ -194,6 +198,9 @@ class CompileParams_Test(unittest.TestCase):
             'numParallelCalcs': 2,
             'numGenerations': 3,
             'stopCrit': 3,
+            'output': {
+                'stages': []
+            }
         }
         params = compileParams(definitions)
         self.assertEqual(params, params_ref)
