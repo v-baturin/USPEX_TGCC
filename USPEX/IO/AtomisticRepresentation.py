@@ -36,8 +36,9 @@ EXTENDED_CONVEX_HULL_ENERGY_RANGE = 0.5
 
 presetLabels = {
     '.enthalpy': 'Enthalpy (eV)',
-    'enthalpyCCH': 'Enthalpy above CH (eV/block)',
-    'enthalpyCS': 'Enthalpy above the best for composition(eV/block)',
+    '.energy': 'Energy (eV)',
+    # 'enthalpyCCH': 'Enthalpy above CH (eV/block)',
+    # 'enthalpyCS': 'Enthalpy above the best for composition(eV/block)',
     'simpleMoleculeUtility.composition': 'Composition',
     'simpleMoleculeUtility.density': 'Density (g/cm^3)',
     'cellUtility.volume': 'Volume (A^3)',
@@ -105,7 +106,7 @@ class AtomisticRepresentation(object):
     def registerTypes(cls, Atomistic):
         cls.Atomistic = Atomistic
 
-    def __init__(self, RES_FOLDER: str, columns, stages, toDraw, presentConvexHull: bool, presentPareto,
+    def __init__(self, RES_FOLDER: str, columns, stages, toDraw, presentConvexHull=False, presentPareto=(),
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = Path(RES_FOLDER)
         self.columns = [applyPresetsRecursive(column) for column in columns]
