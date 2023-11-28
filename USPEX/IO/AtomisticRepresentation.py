@@ -522,12 +522,12 @@ class AtomisticRepresentation(object):
                 self._drawParetoFronts2(fronts, optimizer)
 
     def _drawProperties(self, uniqueSystems):
-        # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         uniqueSystems = [uniqueSystems.getEntry(ID) for ID in uniqueSystems.getIDs()]
-        for type, propertyY, typeY, propertyX, typeX in self.toDraw:
-            suffixX = propertyX.split('.')[-1]
-            suffixY = propertyY.split('.')[-1]
+        for type, *arguments in self.toDraw:
             if type == 'dep':
+                propertyY, typeY, propertyX, typeX = arguments
+                suffixX = propertyX.split('.')[-1]
+                suffixY = propertyY.split('.')[-1]
                 Y = []
                 X = []
                 for system in uniqueSystems:
@@ -548,6 +548,8 @@ class AtomisticRepresentation(object):
                 plt.savefig(self.RES_FOLDER/f'{propertyY}({typeY})_vs_{propertyX}({typeX}).svg')
                 plt.close()
             elif type == 'stat':
+                propertyY, typeY = arguments
+                suffixY = propertyY.split('.')[-1]
                 Y = []
                 for system in uniqueSystems:
                     value = system[propertyY]
