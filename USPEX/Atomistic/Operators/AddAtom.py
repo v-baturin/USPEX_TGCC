@@ -4,25 +4,25 @@ from copy import deepcopy
 
 
 class AddAtom:
-    def __init__(self, utilities):
+    def __init__(self, utilities, suffix):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
+        self.suffix = suffix
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("AddAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
 
-    def __call__(self, system):
-        ID = system['ID']
+    def __call__(self, system, offspringFactory=None):
         molecules = system['molecules']
         cell = system['cell']
         if 'tagsAddRemove' not in system:
             system['tagsAddRemove'] = [[] for _ in range(len(molecules))]
         tagsAddRemove = system['tagsAddRemove']
-        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(molecules, cell)  # ,environment)
+        structure, disassembler = offspringFactory.atomicDisassemblerType.assemble(molecules, cell)  # ,environment)
         atomTypes = structure.getAtomTypes()
         species = np.unique(atomTypes)
         coordinates = structure.getCartesianCoordinates()
@@ -89,21 +89,19 @@ class AddAtom:
             operations = {newAtomType.short_name: [[[operation]]]}
             offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
             offspring['molecules'][0:0] = molecules
-            atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-            minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-            for inds in disassembler.envIndices:
-                atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
-                    tuple(np.meshgrid(inds, inds))]
-            composition = self.simpleMoleculeUtility.composition(offspring)
-            if np.all(atomDistances >= minDistMatrix) and self.compositionSpace.isGoodComposition(composition):
-                if 'environments' in system:
-                    offspring['environments'] = system['environments']
+            if 'environments' in system:
+                offspring['environments'] = system['environments']
+            offspring = offspringFactory(**offspring)
+            structure = offspring.getAtomicStructure()
+            minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
+                                                          self.conditions.externalPressure)
+            if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix) \
+                    and self.compositionSpace.isGoodComposition(self.simpleMoleculeUtility.composition(offspring)):
                 self.conditions.putConditions(offspring)
                 tagsAddRemove[mol1Ind].append(f'added_{newAtomType}')
                 tagsAddRemove[mol2Ind].append(f'added_{newAtomType}')
-                offspring['tagsAddRemove'] = deepcopy(tagsAddRemove)
+                offspring.setProperty('tagsAddRemove', deepcopy(tagsAddRemove))
                 offspring['tagsAddRemove'].append([])
-                # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
                 # if self.bonds.isConnected(structure):
                 return offspring,
 

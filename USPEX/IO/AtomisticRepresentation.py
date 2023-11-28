@@ -1,23 +1,15 @@
-import io
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import shutil
-import yaml
-
-from ase.atoms import Atoms
-from ase.io.vasp import write_vasp, read_vasp
-from ase.io import read, write
-from copy import copy
 from collections import Counter
 from collections.abc import Mapping
 from itertools import combinations, chain
 from pathlib import Path
 from prettytable import PrettyTable
+from itertools import zip_longest
 
 from .formatters import createHeader_wrap
-from ..presets import presetFitness
-from .read_molecule import read_molecule
+from ..Expressions.Functions.presets import presetFitness, applyPresetsRecursive
 
 matplotlib.use('Agg')
 
@@ -44,9 +36,10 @@ EXTENDED_CONVEX_HULL_ENERGY_RANGE = 0.5
 
 
 presetLabels = {
-    'enthalpy': 'Enthalpy (eV)',
-    'enthalpyCCH': 'Enthalpy above CH (eV/block)',
-    'enthalpyCS': 'Enthalpy above the best for composition(eV/block)',
+    '.enthalpy': 'Enthalpy (eV)',
+    '.energy': 'Energy (eV)',
+    # 'enthalpyCCH': 'Enthalpy above CH (eV/block)',
+    # 'enthalpyCS': 'Enthalpy above the best for composition(eV/block)',
     'simpleMoleculeUtility.composition': 'Composition',
     'simpleMoleculeUtility.density': 'Density (g/cm^3)',
     'cellUtility.volume': 'Volume (A^3)',
@@ -66,32 +59,37 @@ presetLabels = {
     'elasticML.fractureToughness': 'ML Fracture Toughness (MPa*m^1/2)'
 }
 
+def getPresetLables(expression):
+    if isinstance(expression, str):
+        ext, prop, suffix = expression.split('.')
+        if f'{ext}.{prop}' in presetLabels:
+            return presetLabels[f'{ext}.{prop}']
+    return ''
+
 
 class SystemsTable(object):
 
-    def __init__(self, columns, isRank=False):
-        self.columns = columns
+    def __init__(self, columns, pool, isRank=False):
+        self.columns = [pool.createExpression(column) for column in columns]
         self.isRank = isRank
         columnNames = ['ID', 'Origin']
         if self.isRank:
             columnNames.insert(1, 'Rank')
-        for column, columnName in self.columns:
-            columnNames.append(columnName)
+        for column in self.columns:
+            columnNames.append(getPresetLables(column))
 
         self.table = PrettyTable(columnNames)
 
 
-    def update(self, ID: int, system, fitness, rank=None):
-        row = [ID, system['howCome']]
+    def update(self, ID: int, system, rank=None):
+        row = [ID, system['.howCome.origin']]
         if self.isRank:
             row.insert(1, rank)
-        for column, columnName in self.columns:
-            value = fitness.getFitnessByID(column, ID)
-            if value is None:
-                try:
-                    value = fitness.getFitnessDirect(column, system)
-                except Exception:
-                    pass
+        for column in self.columns:
+            try:
+                value = system[column]
+            except Exception:
+                value = None
             if isinstance(value, float):
                 value = f'{value: 6.3f}'
             elif isinstance(value, Mapping):
@@ -103,52 +101,57 @@ class SystemsTable(object):
 
 class AtomisticRepresentation(object):
 
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
+    Atomistic = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
+    def registerTypes(cls, Atomistic):
+        cls.Atomistic = Atomistic
 
-    def __init__(self, RES_FOLDER: str, columns, toDraw, presentConvexHull: bool, presentPareto,
+    def __init__(self, RES_FOLDER: str, columns, stages, toDraw, presentConvexHull=None, presentPareto=(),
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = Path(RES_FOLDER)
-        self.columns = columns
+        self.columns = [applyPresetsRecursive(column) for column in columns]
+        self.stages = stages
         self.toDraw = toDraw
-        self.presentConvexHull = presentConvexHull
-        self.presentPareto = presentPareto
+        self.presentConvexHull = applyPresetsRecursive(presentConvexHull)
+        self.presentPareto = [applyPresetsRecursive(expr) for expr in presentPareto]
         self.rangeECH = rangeECH
 
-    def getNewSystemsTable(self, isRank=False):
-        return SystemsTable(self.columns, isRank)
+    def getNewSystemsTable(self, pool, isRank=False):
+        return SystemsTable(self.columns, pool, isRank)
 
-    def presentSystems(self, systems: dict, optimizer, numStages):
+    def presentSystems(self, optimizer):
+        systems = optimizer.allSystems
         systems_gatheredPOSCARS = []
         systems_gatheredPOSCARS_unrelaxed = []
-        table_Individuals = self.getNewSystemsTable()
+        if optimizer.generations:
+            table_Individuals = self.getNewSystemsTable(optimizer.generations[-1].goodSystems)
+        else:
+            table_Individuals = self.getNewSystemsTable(optimizer.allSystems)
         content_origin = ''
         content_enthalpies = ''
-        for ID, system in sorted(systems.items()):
-            systems_gatheredPOSCARS_unrelaxed.append(system[0])
-            content_origin += f"{ID} {system[0]['howCome']} {system[0]['parent']}\n"
+        for ID in systems.getIDs():
+            system = systems.getEntry(ID)
+            unrelaxed = system.getFlavour('origin')
+            unrelaxed.setProperty('label', f"EA{ID}")
+            systems_gatheredPOSCARS_unrelaxed.append(unrelaxed)
+            content_origin += f"{ID} {unrelaxed['.howCome']} {unrelaxed['.parent']}\n"
 
-            if len(system) > 1:
-                content_enthalpies += ','.join([f"{sys['enthalpy']:6.3f}" for sys in system[1:]]) + '\n'
+            content_enthalpies += ','.join([f"{system[f'.enthalpy.{stage}']:6.3f}"
+                                            for stage in self.stages if f'.enthalpy.{stage}' in system]) + '\n'
 
-            if len(system) == numStages + 1:
-                table_Individuals.update(ID, system[-1], optimizer.fitness)
-                systems_gatheredPOSCARS.append(system[numStages])
+            table_Individuals.update(ID, system)
+
+            if str(optimizer.target.defaultSuffix) in system.flavours:
+                final = system.getFlavour(str(optimizer.target.defaultSuffix))
+                final.setProperty('label', f"EA{system.ID}")
+                systems_gatheredPOSCARS.append(final)
 
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
 
-        self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS_unrelaxed',
+        self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS_unrelaxed',
                                    systems_gatheredPOSCARS_unrelaxed)
-        self.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS',
+        self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'gatheredPOSCARS',
                                    systems_gatheredPOSCARS)
         with open(self.RES_FOLDER/'Individuals', 'w') as f:
             f.write(table_Individuals.table.get_string() + '\n')
@@ -156,13 +159,16 @@ class AtomisticRepresentation(object):
             f.write(content_origin)
         with open(self.RES_FOLDER/'enthalpies_complete.csv', 'w') as f:
             f.write(content_enthalpies)
-        self.drawESeries(systems, numStages)
+        self.drawESeries(systems)
 
-    def drawESeries(self, systems, numStages):
+    def drawESeries(self, systems):
         enths = []
-        for system_stages in systems.values():
-            if len(system_stages) == numStages + 1:
-                enths.append([system['enthalpy'] for system in system_stages[1:]])
+        for ID in systems.getIDs():
+            system = systems.getEntry(ID)
+            try:
+                enths.append([system[f'.enthalpy.{suffix}'] for suffix in self.stages])
+            except Exception:
+                pass
         if enths:
             enths = np.asarray(enths, dtype=float)
             plt.figure()
@@ -176,286 +182,6 @@ class AtomisticRepresentation(object):
                 plt.xlabel(f'E{i+1}')
             plt.savefig(self.RES_FOLDER/'E_series.svg')
             plt.close()
-
-    @classmethod
-    def readMLIPcfg(cls, file, specorder=None):
-        lat = np.zeros((3, 3))
-        types = None
-        pos = None
-        energy = None
-        forces = None
-        stresses = None
-        size = -1
-        mode = -1
-        line = file.readline()
-        while line:
-            line = line.upper()
-            line = line.strip()
-            if mode == 0:
-                if line.startswith('SIZE'):
-                    line = file.readline()
-                    size = int(line.strip())
-                    types = np.zeros(size, dtype=int).tolist()
-                    pos = np.zeros((size, 3))
-                elif line.startswith('SUPERCELL'):
-                    line = file.readline()
-                    vals = line.strip().split()
-                    lat[0, :] = vals[0:3]
-                    line = file.readline()
-                    vals = line.strip().split()
-                    lat[1, :] = vals[0:3]
-                    line = file.readline()
-                    vals = line.strip().split()
-                    lat[2, :] = vals[0:3]
-                elif line.startswith('ATOMDATA'):
-                    if line.endswith('FZ'):
-                        forces = np.zeros((size, 3))
-                    for i in range(size):
-                        line = file.readline()
-                        vals = line.strip().split()
-                        types[i] = int(vals[1])
-                        pos[i, :] = vals[2:5]
-                        if forces is not None:
-                            forces[i, :] = vals[5:8]
-                elif line.startswith('ENERGY'):
-                    line = file.readline()
-                    energy = float(line.strip())
-                elif line.startswith('PLUSSTRESS'):
-                    line = file.readline()
-                    vals = line.strip().split()
-                    stresses = np.zeros(6)
-                    stresses[:] = vals[0:6]
-            if line.startswith('BEGIN_CFG'):
-                mode = 0
-            elif line.startswith('END_CFG'):
-                break
-            line = file.readline()
-
-        cell = cls.cellType(lat, (1, 1, 1))
-        if specorder is not None:
-            types = [specorder[n-1] for n in types]
-        return dict(
-            structure=cls.structureType([cls.atomType(n) for n in types], pos, cell=cell),
-            energy=energy,
-            forces=forces,
-            stresses=stresses
-        )
-
-    @classmethod
-    def readMLIPsample(cls, filename, specorder):
-        all_systems = []
-        with open(filename, 'r') as f:
-            while True:
-                try:
-                    all_systems.append(cls.readMLIPcfg(f, specorder))
-                except Exception:
-                    break
-        return all_systems
-
-    @staticmethod
-    def saveMLIPcfg(f, specorder, structure, forces=None, energy=None, stresses=None, **kwargs):
-        atstr1 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z           fx          fy          fz\n'
-        atstr2 = 'AtomData:  id type      cartes_x      cartes_y      cartes_z\n'
-        size = len(structure)
-        f.write('BEGIN_CFG\n')
-        f.write('Size\n')
-        f.write(f'   {size}\n')
-        f.write('SuperCell\n')
-        for i in range(3):
-            lat = structure.getCell().getCellVectors()
-            f.write(' %13f %13f %13f\n' % (lat[i, 0], lat[i, 1], lat[i, 2]))
-        if forces is not None:
-            f.write(atstr1)
-        else:
-            f.write(atstr2)
-        atomTypes =  [specorder.index(el.short_name) for el in structure.getAtomTypes()]
-        positions = structure.getCartesianCoordinates()
-        for i in range(size):
-            if forces is not None:
-                f.write('         %4d %4d %13f %13f %13f %11.8e %11.8e %11.8e\n' %
-                        (i + 1, atomTypes[i], positions[i, 0], positions[i, 1], positions[i, 2],
-                         forces[i, 0], forces[i, 1], forces[i, 2]))
-            else:
-                f.write('         %4d %4d %13f %13f %13f\n' %
-                        (i + 1, atomTypes[i], positions[i, 0], positions[i, 1], positions[i, 2]))
-        if energy is not None:
-            f.write(' Energy\n   %20f\n' % energy)
-        if stresses is not None:
-            f.write(' PlusStress:  xx           yy           zz           yz           xz           xy\n')
-            f.write('         %11f %11f %11f %11f %11f %11f\n' %
-                    (stresses[0], stresses[1], stresses[2],
-                     stresses[3], stresses[4], stresses[5]))
-        f.write('END_CFG\n')
-
-    @classmethod
-    def saveMLIPsample(cls, filename, specorder, sample):
-        content = io.StringIO('')
-        for system in sample:
-            cls.saveMLIPcfg(content, specorder, **system)
-        content.seek(0)
-        with open(filename, "wt") as f:
-            shutil.copyfileobj(content, f)
-
-    @classmethod
-    def writePOSCAR(cls, filename, structure, label):
-        structure = structure.getTrigonalizedCellStructure()
-        coordinates = structure.getCartesianCoordinates()
-        cell = structure.getCell().getEnvelopeCell(coordinates, 10)
-        coordinates = cell.center(coordinates)
-        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
-        write_vasp(filename, atoms, label=label, sort=True, direct=True, vasp5=True, long_format=False)
-
-    @classmethod
-    def writePOSCARS(cls, filename, structures, labels):
-        content = io.StringIO('')
-        for structure, label in zip(structures, labels):
-            cls.writePOSCAR(content, structure, label)
-        content.seek(0)
-        with open(filename, "wt") as f:
-            shutil.copyfileobj(content, f)
-
-    @classmethod
-    def writeXYZ(cls, filename, structure, label=''):
-        coordinates = structure.getCartesianCoordinates()
-        atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=None)
-        write(filename, atoms, format='xyz', comment=label)
-
-    @classmethod
-    def writeAtomicStructure(cls, filename, system: dict):
-        filename = Path(filename)
-        cls.writeAtomicStructures(filename, [system])
-
-    @classmethod
-    def writeAtomicStructures(cls, filename: Path, systems: list):
-        structures = []
-        labels = []
-        descriptions = []
-        printUSPEX = False
-        for i, system in enumerate(systems):
-            structure, disassembler = cls.atomicDisassemblerType.assemble(**system, vacuumSize=10.0)
-            atomTypes = structure.getAtomTypes()
-            coordinates = structure.getCartesianCoordinates()
-            sortIndices = np.argsort(atomTypes)
-            reversedIndices = np.argsort(sortIndices)
-            structure = cls.structureType(atomTypes[sortIndices], coordinates[sortIndices], structure.getCell())
-            structures.append(structure)
-            labels.append(f"EA{system['ID']}")
-            d = {'filename': filename.name, 'index': i}
-            pbc = system['cell'].getPBC()
-            if pbc != (1, 1, 1):
-                d['pbc'] = ' '.join(f'{c}' for c in pbc)
-                printUSPEX = True
-            molecules = []
-            for indices in disassembler.indices:
-                if len(indices) > 1:
-                    molecules.append(' '.join(f'{ind}' for ind in reversedIndices[indices]))
-                    printUSPEX = True
-            if molecules:
-                d['molecules'] = molecules
-            if 'environments' in system and len(system['environments']):
-                printUSPEX = True
-                d['environments'] = []
-                for eInds in disassembler.envIndices:
-                    d['environments'].append(' '.join(f'{ind}' for ind in eInds))
-                d['fixed'] = ' '.join(f'{ind}' for ind in disassembler.allFixedIndices)
-            descriptions.append(d)
-        cls.writePOSCARS(filename, structures, labels)
-        if printUSPEX:
-            with open(f'{filename}.uspex', 'wt') as f:
-                f.write(yaml.safe_dump(descriptions))
-
-
-    @classmethod
-    def readPOSCAR(cls, filename, pbc=(1, 1, 1)):
-        atoms = read_vasp(filename)
-        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
-        cell = cls.cellType(atoms.get_cell().array, pbc)
-        coordinates = atoms.get_positions()
-        return cls.structureType(atomTypes, coordinates, cell)
-
-    @classmethod
-    def readPOSCARS(cls, filename):
-        all_systems = []
-        with open(filename, 'rt') as f:
-            while True:
-                try:
-                    all_systems.append(AtomisticRepresentation.readPOSCAR(f))
-                except Exception:
-                    break
-        return all_systems
-
-    @classmethod
-    def readMol(cls, filename):
-        molDct = read_molecule(filename)
-        atomTypes = [cls.atomType(s) for s in molDct['symbols']]
-        coordinates = molDct['positions']
-        zmatrixConfig = molDct['configZMatrix']
-        return cls.structureType(atomTypes, coordinates, zmatrixConfig=zmatrixConfig)
-
-
-    @classmethod
-    def readXYZ(cls, filename):
-        atoms = read(filename, format='xyz')
-        atomTypes = [cls.atomType(s) for s in atoms.get_chemical_symbols()]
-        coordinates = atoms.get_positions()
-        cell = cls.cellType.initFromCellParameters((0, 0, 0)).getEnvelopeCell(coordinates)
-        return cls.structureType(atomTypes, coordinates, cell)
-
-    @classmethod
-    def readXYZs(cls, filename):
-        all_atoms = read(filename, index=':', format='xyz')
-        all_systems = []
-        dummy_cell = cls.cellType.initFromCellParameters((0, 0, 0))
-        for atoms in all_atoms:
-            all_systems.append(cls.structureType([cls.atomType(s) for s in atoms.get_chemical_symbols()],
-                                                 atoms.get_positions(),
-                                                 dummy_cell.getEnvelopeCell(atoms.get_positions())))
-        return all_systems
-
-    @classmethod
-    def readAtomicStructure(cls, filename) -> dict:
-        return cls.readAtomicStructures(filename)[0]
-
-    @classmethod
-    def readAtomicStructures(cls, filename) -> list:
-        filename = Path(filename)
-        directory = filename.parent
-        if filename.suffix == '.uspex':
-            with open(filename) as f:
-                descriptions = yaml.safe_load(f.read())
-            files = {name: cls.readPOSCARS(directory/name)
-                     for name in np.unique([s['filename'] for s in descriptions])}
-            systems = []
-            for d in descriptions:
-                d = copy(d)
-                structure = files[d.pop('filename')][d.pop('index')]
-                allIndSet = set(range(len(structure)))
-                d['indices'] = []
-                if 'pbc' in d:
-                    d['pbc'] = tuple(int(c) for c in d.pop('pbc').split(' '))
-                if 'molecules' in d:
-                    d['indices'] = [np.array(mol.split(' '), dtype=int) for mol in d.pop('molecules')]
-                    molIndSet = set(np.concatenate(d['indices']))
-                else:
-                    molIndSet = set()
-                fixed = np.array(d.pop('fixed').split(' '), dtype=int) if 'fixed' in d else np.empty(0, dtype=int)
-                if 'environments' in d:
-                    d['envIndices'] = []
-                    d['fixedIndices'] = []
-                    for eInds in d.pop('environments'):
-                        eInds = np.array(eInds.split(' '), dtype=int)
-                        fInds = np.argwhere(eInds.reshape((-1, 1)) == fixed.reshape((1, -1)))[:, 0]
-                        d['envIndices'].append(eInds)
-                        d['fixedIndices'].append(fInds)
-                    envIndSet = set(np.concatenate(d['envIndices']))
-                else:
-                    envIndSet = set()
-                d['indices'].extend(np.fromiter(allIndSet - envIndSet - molIndSet, dtype=int).reshape((-1, 1)))
-                systems.append(cls.atomicDisassemblerType(**d).disassemble(structure))
-        else:
-            systems = [cls.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))).disassemble(structure)
-                       for structure in cls.readPOSCARS(filename)]
-        return systems
 
     @classmethod
     def getZmatrixRepresentation(cls, molecule, utility) -> str:
@@ -542,10 +268,10 @@ class AtomisticRepresentation(object):
                   *(f'        <{symbol}> -- {mol.getFormula()}' for symbol, mol in zip(molSymbols, molecules)),
                      '    Please see the MOL_* files for the details.',
                      '']
-            for symbol, molecule in zip(molSymbols, molecules):
-                rows += [f'    The calculated Zmatrix for {symbol} is:',
-                         cls.getZmatrixRepresentation(molecule, ut.simpleMoleculeUtility),
-                         '']
+            # for symbol, molecule in zip(molSymbols, molecules):
+            #     rows += [f'    The calculated Zmatrix for {symbol} is:',
+            #              cls.getZmatrixRepresentation(molecule, ut.simpleMoleculeUtility),
+            #              '']
             header += rows
 
         # ---------------------------------------------------------------------------
@@ -610,21 +336,25 @@ class AtomisticRepresentation(object):
         return header
 
 
-    @staticmethod
-    def getPopulationSummaryBlock(population, optimizer) -> list:
+    def getPopulationSummaryBlock(self, population, optimizer) -> list:
         utlts = optimizer.target.utilities
+        population = [population.getEntry(ID) for ID in population.getIDs()]
         if utlts.cellUtility.getDim() == 3:
-            numBlocks = [utlts.compositionSpace.numBlocks(utlts.simpleMoleculeUtility.composition(system)) for system in population]
+            numBlocks = [utlts.compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']) for system in population]
             numBlocks = np.asarray(numBlocks)
-            volumes = [optimizer.fitness.getFitnessDirect('cellUtility.volume', system) for system in population]
+            volumes = [system[f'cellUtility.volume.{optimizer.target.defaultSuffix}'] for system in population]
             volumes = np.asarray(volumes)
             approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
         else:
             approximateVolume = 'NA'
-        originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
-        fitness = [optimizer.fitness.getFitnessByID(optimizer.optType, originalID(system)) for system in population if not system['isBad']]
-        order = [optimizer.target.utilities.radialDistributionUtility.averageOrder(system) for system in population if not system['isBad']]
-        if np.any(np.isnan(np.asarray(fitness, dtype = float))):
+        # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
+        if isinstance(optimizer.optType, str):
+            optType = optimizer.optType
+        else:
+            optType = optimizer.generations[-1].goodSystems.createExpression(optimizer.optType)
+        fitness = [system[optType] for system in population]
+        order = [system[f'radialDistributionUtility.averageOrder.{optimizer.target.defaultSuffix}'] for system in population]
+        if np.any(np.isnan(np.asarray(fitness, dtype=float))):
             correlation = 0.0
         else:
             correlation = np.corrcoef(order, fitness)[0, 1]
@@ -632,11 +362,11 @@ class AtomisticRepresentation(object):
         qe = 0
         comb = list(combinations(population, 2))
         for s1, s2 in comb:
-            if not s1['isBad'] and not s2['isBad']:
-                tmp_fing1 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s1)
-                tmp_fing2 = optimizer.target.utilities.radialDistributionUtility.structureFingerprint(s2)
-                dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
-                qe += (1 - dist) * np.log(1 - dist)
+            # if not s1['isBad'] and not s2['isBad']:
+            tmp_fing1 = s1[f'radialDistributionUtility.structureFingerprint.{optimizer.fingerprintUtility.suffix}']
+            tmp_fing2 = s2[f'radialDistributionUtility.structureFingerprint.{optimizer.fingerprintUtility.suffix}']
+            dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
+            qe += (1 - dist) * np.log(1 - dist)
         qe /= -len(comb) if comb else 1
 
         block = [ '    Generation Summary',
@@ -645,7 +375,7 @@ class AtomisticRepresentation(object):
                  f'      Quasi entropy          : {qe:.4}']
 
         if not utlts.compositionSpace.isFixedComposition:
-            numIons = [utlts.compositionSpace.numIons(utlts.simpleMoleculeUtility.composition(system)) for system in population]
+            numIons = [utlts.compositionSpace.numIons(system['simpleMoleculeUtility.composition.origin']) for system in population]
             numIons = np.asarray(numIons)
             comps = numIons/np.sum(numIons, axis=1).reshape((-1,1))
             combs = list(combinations(comps, 2))
@@ -667,133 +397,151 @@ class AtomisticRepresentation(object):
 
         return block
 
-    def presentOptimizer(self, optimizers, optimizer):
-        originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
+    def presentOptimizer(self, optimizer):
+        # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
+        if not optimizer.generations:
+            return
         content_BESTIndividuals = ''
         content_convexHull = ''
-        table_goodStructures = self.getNewSystemsTable(isRank=True)
-        table_extendedConvexHull = self.getNewSystemsTable( isRank=True)
+        table_goodStructures = self.getNewSystemsTable(optimizer.generations[-1].goodSystems, isRank=True)
+        table_extendedConvexHull = self.getNewSystemsTable(optimizer.generations[-1].goodSystems, isRank=True)
         systems__BESTgatheredPOSCARS = []
         systems_goodStructuresPOSCARS = []
         systems_extendedConvexHullPOSCARS = []
 
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
 
-        fitness = optimizer.optType
-
-        for generation, opt in enumerate(optimizers):
-            content_BESTIndividuals += f'Generation {generation}\n'
-            pool = opt.pool
-            table = self.getNewSystemsTable()
-            for ID in opt.best:
-                table.update(ID, pool.allSystems[ID], opt.fitness)
+        for i, best in enumerate(optimizer.bestHistory):
+            content_BESTIndividuals += f'Generation {i}\n'
+            table = self.getNewSystemsTable(optimizer.generations[i].goodSystems)
+            for ID in best:
+                table.update(ID, optimizer.allSystems.getEntry(ID))
             content_BESTIndividuals += table.table.get_string() + '\n'
         with open(self.RES_FOLDER/'BESTIndividuals', 'w') as fp:
             fp.write(content_BESTIndividuals)
 
-        for opt in optimizers:
-            pool = opt.pool
-            for ID in opt.best:
-                systems__BESTgatheredPOSCARS.append(pool.allSystems[ID])
-        self.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)
+        for best in optimizer.bestHistory:
+            for ID in best:
+                system = optimizer.allSystems.getEntry(ID).getFlavour(str(optimizer.target.defaultSuffix))
+                system.setProperty('label', f"EA{ID}")
+                systems__BESTgatheredPOSCARS.append(system)
+        self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)
 
         compositionSpace = optimizer.target.utilities.compositionSpace
         csSize = len(compositionSpace.blocks)
 
-        allFitnesses = optimizer.fitness.getAllFitnesses(fitness)
-        fronts = optimizer.fitness.sort(list(optimizer.pool.uniqueSystems), allFitnesses)
-        if csSize == 1:
-            for rank, front in enumerate(fronts):
-                for system in front:
-                    table_goodStructures.update(system['ID'], system, optimizer.fitness, rank=rank)
-                    systems_goodStructuresPOSCARS.append(system)
-            with open(self.RES_FOLDER/'goodStructures', 'w') as fp:
-                fp.write(table_goodStructures.table.get_string() + '\n')
+        if optimizer.generations:
+            if isinstance(optimizer.optType, str):
+                optType = optimizer.optType
+            else:
+                optType = optimizer.generations[-1].goodSystems.createExpression(optimizer.optType)
+            fronts = optimizer.generations[-1].uniqueSystems.fronts(optType)
+            if csSize == 1:
+                for rank, front in enumerate(fronts):
+                    for system in front:
+                        ID = system.ID
+                        table_goodStructures.update(ID, system, rank=rank)
+                        s = system.getFlavour(str(optimizer.target.defaultSuffix))
+                        s.setProperty('label', f"EA{ID}")
+                        systems_goodStructuresPOSCARS.append(s)
+                with open(self.RES_FOLDER/'goodStructures', 'w') as fp:
+                    fp.write(table_goodStructures.table.get_string() + '\n')
 
-            self.writeAtomicStructures(self.RES_FOLDER/'goodStructures_POSCARS', systems_goodStructuresPOSCARS)
-        else:
-            goodStructresFolder = self.RES_FOLDER/'goodStructures'
-            goodStructresFolder.mkdir(parents=True, exist_ok=True)
-            goodStructures = {}
-            goodStructuresPOSCARS = {}
-            for rank, front in enumerate(fronts):
-                for system in front:
-                    numBlocks = tuple(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']))
-                    if numBlocks not in goodStructures:
-                        goodStructures[numBlocks] = self.getNewSystemsTable(isRank=True)
-                        goodStructuresPOSCARS[numBlocks] = []
-                    goodStructures[numBlocks].update(system['ID'], system, optimizer.fitness, rank=rank)
-                    goodStructuresPOSCARS[numBlocks].append(system)
+                self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'goodStructures_POSCARS', systems_goodStructuresPOSCARS)
+            else:
+                goodStructresFolder = self.RES_FOLDER/'goodStructures'
+                goodStructresFolder.mkdir(parents=True, exist_ok=True)
+                goodStructures = {}
+                goodStructuresPOSCARS = {}
+                for rank, front in enumerate(fronts):
+                    for system in front:
+                        numBlocks = tuple(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']))
+                        if numBlocks not in goodStructures:
+                            goodStructures[numBlocks] = self.getNewSystemsTable(optimizer.generations[-1].goodSystems,
+                                                                                isRank=True)
+                            goodStructuresPOSCARS[numBlocks] = []
+                        ID = system.ID
+                        goodStructures[numBlocks].update(ID, system, rank=rank)
+                        s = system.getFlavour(str(optimizer.target.defaultSuffix))
+                        s.setProperty('label', f"EA{ID}")
+                        goodStructuresPOSCARS[numBlocks].append(s)
 
-            for comp, table_gs in goodStructures.items():
-                with open(goodStructresFolder/f'{"_".join(str(x) for x in comp)}', 'w') as fp:
-                    fp.write(table_gs.table.get_string() + '\n')
+                for comp, table_gs in goodStructures.items():
+                    with open(goodStructresFolder/f'{"_".join(str(x) for x in comp)}', 'w') as fp:
+                        fp.write(table_gs.table.get_string() + '\n')
 
-            for comp, systems_gs_POSCARS in goodStructuresPOSCARS.items():
-                self.writeAtomicStructures(goodStructresFolder/f'{"_".join(str(x) for x in comp)}_POSCARS',
-                                           systems_gs_POSCARS)
+                for comp, systems_gs_POSCARS in goodStructuresPOSCARS.items():
+                    self.Atomistic.writeAtomicStructures(goodStructresFolder/f'{"_".join(str(x) for x in comp)}_POSCARS',
+                                               systems_gs_POSCARS)
 
-        if self.presentConvexHull:
-            convexHull = []
-            for generation, opt in enumerate(optimizers):
-                convexHull = [system for system in opt.pool.uniqueSystems
-                              if np.isclose(opt.fitness.getFitnessByID('enthalpyCCH', originalID(system)), 0.0)]
-                content_convexHull += f'Generation {generation}\n'
-                table = self.getNewSystemsTable()
-                for system in convexHull:
-                    table.update(system['ID'], system, opt.fitness)
-                content_convexHull += table.table.get_string() + '\n'
+            self._drawProperties(optimizer.generations[-1].uniqueSystems)
 
-            with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
-                fp.write(content_convexHull)
+            if self.presentConvexHull is not None:
+                convexHull = []
+                for i, generation in enumerate(optimizer.generations):
+                    expr = generation.goodSystems.createExpression(self.presentConvexHull)
+                    convexHull = []
+                    for ID in generation.uniqueSystems.getIDs():
+                        system = generation.uniqueSystems.getEntry(ID)
+                        try:
+                            if np.isclose(system.getExpression(expr), 0.0):
+                                convexHull.append(system)
+                        except Exception:
+                            pass
+                    content_convexHull += f'Generation {i}\n'
+                    table = self.getNewSystemsTable(optimizer.generations[i].goodSystems)
+                    for system in convexHull:
+                        table.update(system.ID, system)
+                    content_convexHull += table.table.get_string() + '\n'
 
-            extendedConvexHull = [system for system in optimizer.pool.uniqueSystems
-                                  if optimizer.fitness.getFitnessByID('enthalpyCCH', originalID(system)) < self.rangeECH]
+                with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
+                    fp.write(content_convexHull)
 
-            allFitnesses = {system['ID']: optimizer.pool.generations[-1]['fitness'].getFitnessByID(fitness, originalID(system))
-                            for system in extendedConvexHull}
-            frontsECH = optimizer.fitness.sort(extendedConvexHull, allFitnesses)
+                for rank, front in enumerate(fronts):
+                    for system in front:
+                        table_extendedConvexHull.update(system.ID, system, rank=rank)
+                with open(self.RES_FOLDER/'extended_convex_hull', 'w') as fp:
+                    fp.write(table_extendedConvexHull.table.get_string())
 
-            for rank, front in enumerate(frontsECH):
-                for system in front:
-                    table_extendedConvexHull.update(system['ID'], system, optimizer.fitness, rank=rank)
-            with open(self.RES_FOLDER/'extended_convex_hull', 'w') as fp:
-                fp.write(table_extendedConvexHull.table.get_string())
+                for front in fronts:
+                    for system in front:
+                        ID = system.ID
+                        system = system.getFlavour(str(optimizer.target.defaultSuffix))
+                        system.setProperty('ID', ID)
+                        systems_extendedConvexHullPOSCARS.append(system)
+                self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
+                                           systems_extendedConvexHullPOSCARS)
 
-            for front in frontsECH:
-                for system in front:
-                    systems_extendedConvexHullPOSCARS.append(system)
-            self.writeAtomicStructures(self.RES_FOLDER/'extended_convex_hull_POSCARS',
-                                       systems_extendedConvexHullPOSCARS)
+                if csSize == 2:
+                    self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData,
+                                                  optimizer.generations[-1].uniqueSystems, optimizer.target.defaultSuffix)
+                elif csSize == 3:
+                    self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData,
+                                                  optimizer.generations[-1].uniqueSystems, optimizer.target.defaultSuffix)
 
-            if csSize == 2:
-                self._drawExtendedConvexHull2(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
-            elif csSize == 3:
-                self._drawExtendedConvexHull3(compositionSpace, convexHull + optimizer.extraData, extendedConvexHull)
+            if self.presentPareto is not None and len(self.presentPareto) == 2:
+                self._drawParetoFronts2(fronts, optimizer)
 
-        if self.presentPareto is not None and len(self.presentPareto) == 2:
-            self._drawParetoFronts2(fronts, optimizer)
-
-        self._drawProperties(optimizer.pool.uniqueSystems, optimizer.fitness)
-
-
-    def _drawProperties(self, uniqueSystems, fitness):
-        originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
-        for type, propertyY, typeY, propertyX, typeX in self.toDraw:
+    def _drawProperties(self, uniqueSystems):
+        uniqueSystems = [uniqueSystems.getEntry(ID) for ID in uniqueSystems.getIDs()]
+        for type, *arguments in self.toDraw:
             if type == 'dep':
+                propertyY, typeY, propertyX, typeX = arguments
+                suffixX = propertyX.split('.')[-1]
+                suffixY = propertyY.split('.')[-1]
                 Y = []
                 X = []
                 for system in uniqueSystems:
-                    valueX = fitness.getFitnessByID(propertyX, originalID(system))
-                    valueY = fitness.getFitnessByID(propertyY, originalID(system))
+                    valueX = system[propertyX]
+                    valueY = system[propertyY]
                     if typeY == 'raw':
                         Y.append(valueY)
                     elif typeY == 'per_atom':
-                        Y.append(valueY/len(system['molecules']))
+                        Y.append(valueY/len(system[f'atomistic.molecules.{suffixY}']))
                     if typeX == 'raw':
                         X.append(valueX)
                     elif typeX == 'per_atom':
-                        X.append(valueX/len(system['molecules']))
+                        X.append(valueX/len(system[f'atomistic.molecules.{suffixX}']))
                 plt.figure()
                 plt.plot(X,Y,'go')
                 plt.ylabel(f'{propertyY}({typeY})')
@@ -801,46 +549,48 @@ class AtomisticRepresentation(object):
                 plt.savefig(self.RES_FOLDER/f'{propertyY}({typeY})_vs_{propertyX}({typeX}).svg')
                 plt.close()
             elif type == 'stat':
+                propertyY, typeY = arguments
+                suffixY = propertyY.split('.')[-1]
                 Y = []
                 for system in uniqueSystems:
-                    value = fitness.getFitnessByID(propertyY, originalID(system))
+                    value = system[propertyY]
                     if not np.isinf(value):
                         if typeY == 'raw':
                             Y.append(value)
                         elif typeY == 'per_atom':
-                            Y.append(value/len(system['molecules']))
+                            Y.append(value/len(system[f'atomistic.molecules.{suffixY}']))
                 plt.figure()
                 plt.hist(Y, len(Y)//10+1, facecolor='g', alpha=0.75)
                 plt.savefig(self.RES_FOLDER/f'{propertyY}({typeY})_statistics.svg')
                 plt.close()
 
-    def _drawExtendedConvexHull2(self, compositionSpace, convexHull, extendedConvexHull):
+    def _drawExtendedConvexHull2(self, compositionSpace, convexHull, extendedConvexHull, suffix):
         if convexHull:
-            leftNumBlocks = np.asarray(compositionSpace.numBlocks(convexHull[0]['simpleMoleculeUtility.composition']), dtype = float)
+            leftNumBlocks = np.asarray(compositionSpace.numBlocks(convexHull[0]['simpleMoleculeUtility.composition.origin']), dtype = float)
             leftNumBlocksTotal = np.sum(leftNumBlocks)
             leftNumBlocks /= leftNumBlocksTotal
-            leftEnthalpy = convexHull[0]['enthalpy']/leftNumBlocksTotal
+            leftEnthalpy = convexHull[0][f'.enthalpy.{suffix}']/leftNumBlocksTotal
             rightNumBlocks = leftNumBlocks
             rightEnthalpy = leftEnthalpy
             for system in convexHull:
-                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
+                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']), dtype = float)
                 numBlocksTotal = np.sum(numBlocks)
                 numBlocks /= numBlocksTotal
                 if numBlocks[1] < leftNumBlocks[1]:
                     leftNumBlocks = numBlocks
-                    leftEnthalpy = system['enthalpy'] / numBlocksTotal
+                    leftEnthalpy = system[f'.enthalpy.{suffix}'] / numBlocksTotal
                 elif numBlocks[1] > rightNumBlocks[1]:
                     rightNumBlocks = numBlocks
-                    rightEnthalpy = system['enthalpy'] / numBlocksTotal
+                    rightEnthalpy = system[f'.enthalpy.{suffix}'] / numBlocksTotal
             Xch = []
             Ych = []
             for system in convexHull:
-                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
+                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']), dtype = float)
                 numBlocksTotal = np.sum(numBlocks)
                 numBlocks /= numBlocksTotal
                 C = np.array([leftNumBlocks, rightNumBlocks])
                 E = np.array([leftEnthalpy, rightEnthalpy])
-                Enthalpy = system['enthalpy']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
+                Enthalpy = system[f'.enthalpy.{suffix}']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
                 Xch.append(numBlocks[1])
                 Ych.append(Enthalpy)
             inds = np.argsort(Xch)
@@ -848,15 +598,17 @@ class AtomisticRepresentation(object):
             Ych = np.asarray(Ych)[inds]
             X = []
             Y = []
-            for system in extendedConvexHull:
-                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition']), dtype = float)
+            for ID in extendedConvexHull.getIDs():
+                system = extendedConvexHull.getEntry(ID)
+                numBlocks = np.asarray(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']), dtype = float)
                 numBlocksTotal = np.sum(numBlocks)
                 numBlocks /= numBlocksTotal
                 C = np.array([leftNumBlocks, rightNumBlocks])
                 E = np.array([leftEnthalpy, rightEnthalpy])
-                Enthalpy = system['enthalpy']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
-                X.append(numBlocks[1])
-                Y.append(Enthalpy)
+                Enthalpy = system[f'.enthalpy.{suffix}']/numBlocksTotal - np.dot(np.linalg.lstsq(C.T, numBlocks)[0], E)
+                if Enthalpy < self.rangeECH:
+                    X.append(numBlocks[1])
+                    Y.append(Enthalpy)
             np.savetxt(self.RES_FOLDER/'ExtendedConvexHull.csv', np.stack((X,Y), axis=-1), fmt='%6.3f', delimiter=',')
             plt.figure()
             plt.plot(X,Y,'go')
@@ -870,33 +622,30 @@ class AtomisticRepresentation(object):
             plt.savefig(self.RES_FOLDER/'ExtendedConvexHull.svg')
             plt.close()
 
-
-    def _drawExtendedConvexHull3(self, compositionSpace, convexHull, extendedConvexHull):
+    def _drawExtendedConvexHull3(self, compositionSpace, convexHull, extendedConvexHull, suffix):
         pass
+
     def _drawParetoFronts2(self, fronts, optimizer):
-        (xProp, xLabel), (yProp, yLabel) = self.presentPareto
+        pool = optimizer.generations[-1].goodSystems
+        xProp = pool.createExpression(self.presentPareto[0])
+        yProp = pool.createExpression(self.presentPareto[1])
+        xLabel = getPresetLables(xProp)
+        yLabel = getPresetLables(yProp)
+        data = []
+        for front in fronts:
+            values = np.asarray([(system[xProp], system[yProp]) for system in front], dtype=float)
+            data.append(values[np.argsort(values[:, 0])])
         plt.figure()
-        for front, c in zip(fronts, ['k', 'b', 'r', 'm', 'c']):
-            values = np.asarray([(optimizer.fitness.getFitnessByID(xProp, system['ID']),
-                                  optimizer.fitness.getFitnessByID(yProp, system['ID'])) for system in front],
-                                dtype=float)
-            values = values[np.argsort(values[:, 0])]
-            plt.plot(*values.T, f'{c}-o')
-        if len(fronts) > 5:
-            for front in fronts[5:]:
-                values = np.asarray([(optimizer.fitness.getFitnessByID(xProp, system['ID']),
-                                      optimizer.fitness.getFitnessByID(yProp, system['ID'])) for system in front],
-                                    dtype=float)
-                values = values[np.argsort(values[:, 0])]
-                plt.plot(*values.T, 'go')
+        for values, c in zip_longest(data, ['k-o', 'b-o', 'r-o', 'm-o', 'c-o'], fillvalue='go'):
+            plt.plot(*values.T, c)
         plt.xlabel(xLabel)
         plt.ylabel(yLabel)
-        plt.savefig(self.RES_FOLDER/f'Pareto_{xProp}_{yProp}.svg')
+        plt.savefig(self.RES_FOLDER/f'Pareto_{xLabel}_{yLabel}.svg')
         plt.close()
 
     @staticmethod
     def applyPresetOutputParameters(optimizer):
-        columns = AtomisticRepresentation._extract(optimizer.optType)
+        columns = [column.split('.')[1] for column in  AtomisticRepresentation._extract(optimizer.optType)]
         if len(columns) > 1:
             presentPareto = columns
         else:

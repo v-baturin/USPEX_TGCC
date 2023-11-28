@@ -59,7 +59,8 @@ class CompileParams_Test(unittest.TestCase):
                     'conditions': {'externalPressure': 100},
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
-                    'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O']},
+                    'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O'], 'suffix': '4'},
+                    'defaultSuffix': '4',
                     'bondUtility': {'volumeType': 0},
                     'junctionUtility': {'molSitesMapping': {}}
                 },
@@ -80,13 +81,17 @@ class CompileParams_Test(unittest.TestCase):
                 }
             },
             'stages': [
-                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1'},
-                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '2'},
-                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '3'},
-                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '4'}],
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1', 'source': 'origin'},
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '2', 'source': '1'},
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '3', 'source': '2'},
+                {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '4', 'source': '3'}],
             'numParallelCalcs': 20,
             'numGenerations': 60,
-            'stopCrit': 30
+            'stopCrit': 30,
+            'output': {
+                'stages': ['1', '2', '3', '4']
+            }
+
         }
         params = compileParams(definitions)
         self.assertEqual(params, params_ref)
@@ -180,7 +185,8 @@ class CompileParams_Test(unittest.TestCase):
                     'compositionSpace': {'symbols': ['Na', 'Cl'],
                                          'blocks': [[8,24]],
                                          'range': [[1,1]]},
-                    'radialDistributionUtility': {'symbols': ['Cl', 'Na']},
+                    'radialDistributionUtility': {'symbols': ['Cl', 'Na'], 'suffix': 'origin'},
+                    'defaultSuffix': 'origin',
                     'bondUtility': {'volumeType': 0},
                     'junctionUtility': {'molSitesMapping': {}}
                 },
@@ -192,6 +198,9 @@ class CompileParams_Test(unittest.TestCase):
             'numParallelCalcs': 2,
             'numGenerations': 3,
             'stopCrit': 3,
+            'output': {
+                'stages': []
+            }
         }
         params = compileParams(definitions)
         self.assertEqual(params, params_ref)

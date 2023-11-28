@@ -7,8 +7,14 @@ USPEX.Stages.VASP_Interface
 import logging
 import numpy as np
 import shutil
+
 from pathlib import Path
 from typing import List
+from ase.io.vasp import iread_vasp_out, read_vasp_xml, write_vasp
+from ase.io import ParseError
+from ase.atoms import Atoms
+from ase.constraints import FixAtoms
+
 
 from .KPoints import KPoints, BadKPoints
 
@@ -61,11 +67,11 @@ class VASP_Interface:
 
     DEFAULT_SLEEP_TIME = 30
 
-    aseAdapterType = None
+    AtomicStructureRepresentation = None
 
     @classmethod
-    def registerTypes(cls, aseAdapterType):
-        cls.aseAdapterType = aseAdapterType
+    def registerTypes(cls, AtomicStructureRepresentation):
+        cls.AtomicStructureRepresentation = AtomicStructureRepresentation
 
     def __init__(self, tag: str,
                        kresol: float,
@@ -82,17 +88,17 @@ class VASP_Interface:
         :param step: int of current step
         '''
 
+        self.tag = tag
         self.incar = Path(incar) if incar is not None else Path.cwd()/f'Specific/INCAR_{tag}'
         assert self.incar.exists()
 
         self.potcarsPath = Path(potcarsPath) if potcarsPath is not None else Path.cwd()/'Specific'
         assert self.potcarsPath.exists()
 
-        self.adapter = self.aseAdapterType()
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
 
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
         '''
@@ -103,19 +109,24 @@ class VASP_Interface:
         with open(calcFolder/self.inputFile, 'wt') as f:
             pass
 
-        structure = system['structure']
+        structure = system.getProperty('structure', extension='atomistic')
+        cell = structure.getCell()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
+
 
         ############################# POSCAR ##################################
 
-        system['ase'] = self.adapter.write(structure, system['disassembler'].allFixedIndices, f"EA{system['ID']}",
-                                           calcFolder)
+        disassembler = system.getProperty('disassembler', extension='atomistic')
+        self.write(structure, disassembler.allFixedIndices, f"EA{system['.ID']}", calcFolder)
 
         ############################## INCAR ##################################
         shutil.copy2(self.incar, calcFolder/self.incar_file)
 
-        if system['externalPressure']:
+        externalPressure = system.getProperty('externalPressure')
+        if externalPressure:
             with open(calcFolder/self.incar_file, 'a') as myfile:
-                myfile.write(f"\nPSTRESS={10 * system['externalPressure']:10f}\n")
+                myfile.write(f"\nPSTRESS={10 * externalPressure:10f}\n")
         if calcFolder in self.failedSystems:
             with open(calcFolder/self.incar_file, 'a') as myfile:
                 myfile.write('ISYM=0\n')
@@ -242,36 +253,43 @@ class VASP_Interface:
     ############reading part
 
     def readOutput(self, system, calcFolder: Path):
-        trajectory = self.adapter.read(calcFolder, **system.pop('ase'))
-        aseResults = trajectory[-1]['results']
-        results = {}
+        with open(calcFolder / 'pbc', 'rt') as f:
+            pbc = tuple(int(c) for c in f.read().split())
+        trajectory = self.read(calcFolder, pbc)
+        results = trajectory[-1]['results']
+        factory = system.getFactory()
+        result = factory()
+
         if 'structure' in self.targetProperties:
-            results['structure'] = trajectory[-1]['structure']
+            result.setProperty('structure', trajectory[-1]['structure'], extension='atomistic')
         if 'enthalpy' in self.targetProperties:
-            results['enthalpy'] = aseResults.getEnthalpy(system['externalPressure'])
+            if 'enthalpy' in results:
+                result.setProperty('enthalpy', results['energy'])
+            else:
+                result.setProperty('energy', results['energy'])
         if 'energy' in self.targetProperties:
-            results['energy'] = aseResults.results['energy']
+            result.setProperty('energy', results['energy'])
         if 'forces' in self.targetProperties:
-            results['forces'] = aseResults.results['forces']
+            result.setProperty('forces', results['forces'])
         if 'trajectory' in self.targetProperties:
-            for subsystem in trajectory:
-                subsystem['disassembler'] = system['disassembler']
-                subsystem['externalPressure'] = system['externalPressure']
-            results['trajectory'] = trajectory
+            # for subsystem in trajectory:
+            #     subsystem['disassembler'] = system['disassembler']
+            #     subsystem['externalPressure'] = system['externalPressure']
+            result.setProperty('trajectory', trajectory)
 
         with open(calcFolder/self.outcar_file, 'rt') as fp:
             content = fp.readlines()
         if 'stressTensor' in self.targetProperties:
-            results['stressTensor'] = self.readPressureTensor(content)
+            result.setProperty('stressTensor', self.readPressureTensor(content))
         if 'dielectricTensor' in self.targetProperties:
-            results['dielectricTensor'] = self.readDielectricProperties(content)
+            result.setProperty('dielectricTensor', self.readDielectricProperties(content))
         if 'dipoleMoment' in self.targetProperties:
-            results['dipoleMoment'] = self.readDipoleMoment(content)
+            result.setProperty('dipoleMoment', self.readDipoleMoment(content))
         if 'energyFermi' in self.targetProperties:
-            results['energyFermi'] = self.readFermi(content)
+            result.setProperty('energyFermi', self.readFermi(content))
         if 'elasticConstants' in self.targetProperties:
-            results['elasticConstants'] = self.readElasticMatrix(content)
-        return results
+            result.setProperty('elasticConstants', self.readElasticMatrix(content))
+        return result
 
     def readPressureTensor(self, content, index=-1):
         target = []
@@ -385,3 +403,41 @@ class VASP_Interface:
                 for j, row in enumerate(content[i + 3: i + 9]):
                     elasticMatrix[j, :] = np.array(row.split()[1: 7], dtype=float)
         return elasticMatrix
+
+
+    def write(self, structure, fixedIndices, label, calcFolder: Path):
+        cell = structure.getCell()
+        symbols = np.asarray([el.short_name for el in structure.getAtomTypes()])
+        order = np.argsort(symbols)
+        atoms = Atoms(symbols[order], structure.getCartesianCoordinates()[order], cell=cell.getCellVectors())
+        if len(fixedIndices) > 0:
+            atoms.set_constraint(FixAtoms(indices=np.argsort(order)[fixedIndices]))
+        write_vasp(calcFolder/self.poscar_file, atoms, label=label, direct=True, vasp5=True, long_format=False)
+        with open(calcFolder/'symbolsOrder', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in order))
+
+    def read(self, calcFolder: Path, pbc):
+        with open(calcFolder/'symbolsOrder', 'rt') as f:
+            symbolsOrder = tuple(int(c) for c in f.read().split())
+        try:
+            with open(calcFolder/self.outcar_file) as f:
+                trajectoryAtoms = list(iread_vasp_out(f, None))
+        except (KeyError, ParseError):
+            with open(calcFolder/self.xml_file) as f:
+                trajectoryAtoms = list(read_vasp_xml(f))
+        trajectory = []
+        for atoms in trajectoryAtoms:
+            size = len(atoms)
+            positions = np.empty((size, 3), dtype=float)
+            atomTypes = np.empty(size, dtype=self.AtomicStructureRepresentation.atomType)
+            for i, symbol, position in zip(symbolsOrder, atoms.get_chemical_symbols(), atoms.get_positions()):
+                positions[i] = position
+                atomTypes[i] = self.AtomicStructureRepresentation.atomType(symbol)
+            cell = self.AtomicStructureRepresentation.cellType(atoms.get_cell().array, pbc)
+            structure = self.AtomicStructureRepresentation.structureType(atomTypes, positions, cell=cell)
+
+            trajectory.append(dict(
+                structure=structure,
+                results=atoms.get_calculator().results
+            ))
+        return trajectory

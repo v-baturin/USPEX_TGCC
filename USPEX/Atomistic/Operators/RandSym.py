@@ -91,7 +91,7 @@ class RandSym:
 
         self.fixRndSeed = False
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, offspringFactory=None):
         composition = self.compositionSpace.randomComposition()
 
         symbols = list(composition.keys())
@@ -103,7 +103,7 @@ class RandSym:
         badSymmetryCounter = 0
         startTime = time()
         centerMinDistMatrix = np.zeros((len(symbols), len(symbols)))
-        cellType = self.simpleMoleculeUtility.cellType
+        cellType = type(self.cellUtility.getRandomCell(1, np.empty(0)))
         radii = []
         for s in symbols:
             molecule = self.simpleMoleculeUtility.molecules[s]
@@ -176,7 +176,7 @@ class RandSym:
                     if self.cellUtility.getDim() == 0:
                         randcell = np.random.random(3)
                         randcell *= (estimatedVolume / np.prod(randcell)) ** (1 / 3)
-                        rand_orthog_cell = self.cellUtility.cellType.initFromCellVectors((1, 1, 1), np.diag(randcell))
+                        rand_orthog_cell = cellType.initFromCellVectors((1, 1, 1), np.diag(randcell))
                         candidate, lat = symope_cluster(distCoeff * centerMinDistMatrix, nsym,
                                                         numIons_tmp, rand_orthog_cell)
                     else:
@@ -186,16 +186,18 @@ class RandSym:
                 operations = dict(zip(symbols, operations))
                 cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons), baseCell=envCell)
                 for i in range(self.attemptsRotation):
-                    offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
+                    offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
+                    molecules = offspring.getProperty('molecules', extension='atomistic')
+                    cell = offspring.getProperty('cell', extension='atomistic')
                     if envAssembler is not None:
-                        offspring['environments'] = envAssembler.assemble(**offspring)
-                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                    for inds in disassembler.envIndices:
-                        atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                    if np.all(atomDistances >= distCoeff * minDistMatrix):
+                        offspring.setProperty('environments',
+                                              envAssembler.assemble(molecules, cell),
+                                              extension='atomistic')
+                    structure = offspring.getProperty('structure', extension='atomistic')
+                    minDistMatrix = self.bondUtility.getDistances(
+                        structure.getAtomTypes(), self.conditions.externalPressure)
+                    if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
                         self.conditions.putConditions(offspring)
-                        structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(**offspring)
                         if self.bondUtility.isConnected(structure):
                             return offspring,
             except Exception as e:

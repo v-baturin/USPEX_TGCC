@@ -17,7 +17,7 @@ from copy import copy
 from time import time
 
 from .VarOperator import VarOperator, VOFailed
-from ..Atomistic.Element import Element
+from USPEX.Atomistic.Primitives.Element import Element
 
 class TwinningException(Exception):
     pass

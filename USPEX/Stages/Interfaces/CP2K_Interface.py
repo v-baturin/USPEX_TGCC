@@ -24,9 +24,6 @@ class CP2K_Interface:
     Local running
     """
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
 
     inputFile, outputFile, errorFile = 'cp2k.inp', 'output', 'error'
     cell_file = 'cell.uspex'
@@ -39,12 +36,6 @@ class CP2K_Interface:
 
     out_geometry_file = 'USPEX-pos-1.xyz'
     out_cell_file = 'USPEX-1.cell'
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
 
     def __init__(self, tag: str, kresol: float = None, cp2k_in: str = None, fixCell: bool = False,
                  targetProperties: list = None, **kwargs):
@@ -61,13 +52,14 @@ class CP2K_Interface:
         self.kPoints = KPoints(kresol) if kresol is not None else None
 
         self.fixCell = fixCell
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
-        structure = system['structure']
+        structure = system.getProperty('structure', extension='atomistic')
 
         cell = structure.getCell()
-        system['pbc'] = cell.getPBC()
+        with open(calcFolder/'pbc', 'wt') as f:
+            f.write(' '.join(f'{c}' for c in cell.getPBC()))
 
         with open(calcFolder/self.inputFile, 'wt') as dest:
             dest.write(self.cp2k_in)
@@ -93,15 +85,16 @@ class CP2K_Interface:
                 fp.write('{0:2s}  {1:15.8f} {2:15.8f} {3:15.8f} \n'.format(symbol.short_name, *coord))
 
         with open(calcFolder/self.fixedIndices_file, 'wt') as fp:
-            fixedIndices = system['disassembler'].envIndices[
-                system['environment'].getFixedIndices()] if 'environment' in system else []
+            disassembler = system.getProperty('disassembler', extension='atomistic')
+            fixedIndices = disassembler.allFixedIndices
             fp.write('LIST  ')
             for i in fixedIndices:
                 fp.write('{} '.format(i + 1))
 
+        externalPressure = system.getProperty('externalPressure')
         with open(calcFolder/self.pressure_file, 'wt') as f:
-            if system['externalPressure']:
-                f.write(f"EXTERNAL_PRESSURE [GPa] {system['externalPressure']:10f}\n")
+            if externalPressure:
+                f.write(f"EXTERNAL_PRESSURE [GPa] {externalPressure:10f}\n")
             else:
                 f.write("")
 
@@ -131,33 +124,35 @@ class CP2K_Interface:
     def readOutput(self, system, calcFolder: Path):
         new_structure = self.readStructure(system, calcFolder)
         EnergyHa = self.readEnergy(calcFolder)
+        factory = system.getFactory()
+        result = factory()
 
-        results = {}
         if 'structure' in self.targetProperties:
-            results['structure'] = new_structure
+            result.setProperty('structure', new_structure, extension='atomistic')
         if 'energy' in self.targetProperties:
-            results['energy'] = EnergyHa * HARTREE_TO_EV
+            result.setProperty('energy', EnergyHa * HARTREE_TO_EV)
         if 'enthalpy' in self.targetProperties:
-            if system['structure'].getCell().dim == 3:
-                results['enthalpy'] = (EnergyHa + \
-                                       new_structure.getCell().getVolume() * system['externalPressure'] * \
-                                      ANGSTROM_TO_BOHR**3.0 * GPA_TO_AU) * HARTREE_TO_EV
+            if new_structure.getCell().dim == 3:
+                V = new_structure.getCell().getVolume()
+                P = system.getProperty('externalPressure')
+                enthalpy = (EnergyHa + P*V*(ANGSTROM_TO_BOHR**3.0)*GPA_TO_AU) * HARTREE_TO_EV
+                result.setProperty('enthalpy', enthalpy)
             else:
-                results['enthalpy'] = EnergyHa * HARTREE_TO_EV
-
-        return results
+                result.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
+        return result
 
     def readStructure(self, system, calcFolder: Path):
-        structure = system['structure']
-        cell = structure.getCell()
-        pbc = cell.getPBC()
+        atomistic = system.getFactory().extensions['atomistic'].utility
+
+        with open(calcFolder / 'pbc', 'rt') as f:
+            pbc = tuple(int(c) for c in f.read().split())
 
         if calcFolder.joinpath(self.out_cell_file).exists():
             with open(calcFolder/self.out_cell_file, 'rt') as f:
                 content_list = f.readlines()
                 lattice = [float(x) for x in content_list[-1].split()[2:11]]
                 lat = np.array([lattice[0:3], lattice[3:6], lattice[6:9]])
-                cell = self.cellType(lat, pbc)
+                cell = atomistic.cellType(lat, pbc)
         else:
             with open(calcFolder/self.outputFile, 'rt') as f:
                content = f.read()
@@ -171,17 +166,18 @@ class CP2K_Interface:
                     if ' CELL| Vector c' in line:
                         lattice_c = [float(x) for x in line.split()[4:7]]
                 lat = np.array([lattice_a, lattice_b, lattice_c])
-                cell = self.cellType(lat, pbc)
+                cell = atomistic.cellType(lat, pbc)
 
         if calcFolder.joinpath(self.out_geometry_file).exists():
             ase_struct = read(calcFolder/self.out_geometry_file, index='-1')
             atomTypes = []
             for i in ase_struct.get_chemical_symbols():
-                atomTypes.append(self.atomType(i))
+                atomTypes.append(atomistic.atomType(i))
             positions = ase_struct.get_positions()
-            new_structure = self.structureType(atomTypes, positions, cell=cell)
+            new_structure = atomistic.structureType(atomTypes, positions, cell=cell)
         else:
-            new_structure = self.structureType(structure.getAtomTypes(), structure.getCartesianCoordinates(), cell=cell)
+            structure = system['structure']
+            new_structure = atomistic.structureType(structure.getAtomTypes(), structure.getCartesianCoordinates(), cell=cell)
 
         return new_structure
 

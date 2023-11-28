@@ -11,7 +11,6 @@ import logging
 from copy import copy
 from typing import List
 
-from .SystemPool import SystemPool
 from .Target import Target, TargetType
 
 
@@ -87,7 +86,6 @@ class ModelOptimizer(object):
         """
 
         self.target = Target(self.knownTargetTypes[target['type']], **target)
-        self.pool = SystemPool()
         self.model = self.knownModelTypes[model['type']](**model)
         self.popSize = popSize
         self.initialPopSize = initialPopSize

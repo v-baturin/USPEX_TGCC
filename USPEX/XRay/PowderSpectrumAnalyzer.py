@@ -16,27 +16,12 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 
+from ..Expressions.Functions.PowderSpectrumAnalyzerFunctions import PowderSpectrumAnalyzerFunctions
+
+
 class PowderSpectrumAnalyzer(object):
 
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        """
-        Register types used by this utility.
-
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
-        """
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
+    propertyExtension = PowderSpectrumAnalyzerFunctions
 
     def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
                  exp_angles: list, exp_intensities: list):
@@ -74,7 +59,7 @@ class PowderSpectrumAnalyzer(object):
         :rtype: float
         :return: a fitness denoting how much the theoretical spectrum differs from the experiment.
         """
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system)
+        structure = system['atomistic.structure']
 
         # pure hydrogen gets low agreement
         elementList = list(structure.getComposition().keys())
@@ -102,20 +87,8 @@ class PowderSpectrumAnalyzer(object):
         if not result.success:
             raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
 
-        system['powderSpectrumAnalyzer.xraydistance'] = result.fun
-        system['powderSpectrumAnalyzer.k'] = result.x[0]
-
-    def xraydistance(self, system):
-        if 'powderSpectrumAnalyzer.xraydistance' not in system:
-            self.analyze(system)
-        assert 'powderSpectrumAnalyzer.xraydistance' in system
-        return system['powderSpectrumAnalyzer.xraydistance']
-
-    def k(self, system):
-        if 'powderSpectrumAnalyzer.k' not in system:
-            self.analyze(system)
-        assert 'powderSpectrumAnalyzer.k' in system
-        return system['powderSpectrumAnalyzer.k']
+        system.setProperty('xraydistance', result.fun, extension='powderSpectrumAnalyzer')
+        system.setProperty('k', result.x[0], extension='powderSpectrumAnalyzer')
 
     @staticmethod
     def parse(filename: str):

@@ -42,7 +42,7 @@ class RandTop:
         self.arxiv = {}
         signal.signal(signal.SIGALRM, signal_handler)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, offspringFactory):
         composition = self.compositionSpace.randomComposition()
         envAssembler = np.random.choice(self.environmentUtility.environments) if self.environmentUtility.environments \
             else None
@@ -92,7 +92,7 @@ class RandTop:
                                         coordinates = []
                                         operations = []
                                         for atomNumber in np.argsort(permutationAtoms):
-                                            nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=np.int)
+                                            nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=int)
                                             coordinates.append(flavour.group(flavour.sites[nodeIndices]))
                                             operations.append([flavour.operations[ind] for ind in nodeIndices])
                                         cell = np.asarray(params['cell']) * np.asarray(supercell)
@@ -117,33 +117,30 @@ class RandTop:
                                         all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                         attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
 
-                                        for i in range(attemptsRotation):
-                                            offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
-                                            molecules = offspring['molecules']
-                                            cell = offspring['cell']
-                                            if len(molecules) != totalAtomNumber:
-                                                continue
-                                            if envAssembler is not None:
-                                                offspring['environments'] = envAssembler.assemble(**offspring)
-                                            atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(
-                                                **offspring)
-                                            minDistMatrix = self.bondUtility.getDistances(atomSymbols,
-                                                                                          self.conditions.externalPressure)
-                                            for inds in disassembler.envIndices:
-                                                atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
-                                                    tuple(np.meshgrid(inds, inds))]
-                                            if np.all(atomDistances >= minDistMatrix):
-                                                if name not in self.arxiv:
-                                                    self.arxiv[name] = []
-                                                for arxivCoordinates in self.arxiv[name]:
-                                                    if (all_coordinates.shape == arxivCoordinates.shape) and \
-                                                            np.allclose(all_coordinates, arxivCoordinates):
-                                                        break
-                                                else:
-                                                    self.arxiv[name].append(all_coordinates)
+                                        if name not in self.arxiv:
+                                            self.arxiv[name] = []
+                                        for arxivCoordinates in self.arxiv[name]:
+                                            if (all_coordinates.shape == arxivCoordinates.shape) and \
+                                                    np.allclose(all_coordinates, arxivCoordinates):
+                                                break
+                                        else:
+                                            self.arxiv[name].append(all_coordinates)
+                                            for i in range(attemptsRotation):
+                                                offspring = offspringFactory(
+                                                    **self.simpleMoleculeUtility.populateStructure(cell, operations))
+                                                molecules = offspring.getProperty('molecules', extension='atomistic')
+                                                cell = offspring.getProperty('cell', extension='atomistic')
+                                                if len(molecules) != totalAtomNumber:
+                                                    continue
+                                                if envAssembler is not None:
+                                                    offspring.setProperty('environments',
+                                                                          envAssembler.assemble(molecules, cell),
+                                                                          extension='atomistic')
+                                                structure = offspring.getProperty('structure', extension='atomistic')
+                                                minDistMatrix = self.bondUtility.getDistances(
+                                                    structure.getAtomTypes(), self.conditions.externalPressure)
+                                                if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
                                                     self.conditions.putConditions(offspring)
-                                                    structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(
-                                                        **offspring)
                                                     if self.bondUtility.isConnected(structure):
                                                         signal.alarm(0)
                                                         return offspring,
@@ -156,6 +153,7 @@ class RandTop:
 def randomPermutation(array, enumerate = False, maxSize = None):
     maxSize = maxSize if maxSize is not None else len(array)
     for i in np.random.permutation(list(range(len(array))))[0:maxSize]:
+        i = int(i)  # this is workaround for numpy int issue
         yield (i, array[i]) if enumerate else array[i]
 
 def randomPartitionSampler(itemsNumber : int, partitionsNumber : int, samplesNumber : int):

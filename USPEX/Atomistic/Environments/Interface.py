@@ -19,27 +19,15 @@ class Interface:
     Class representing part of structure which is not being altered via variation operators.
     I.e. it acts as environment for individual.
     """
-    structureRepresentation = None
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
+    Atomistic = None
 
     @classmethod
-    def registerTypes(cls,representationType, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, Atomistic):
         """
         Register types used by this utility.
 
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
         """
-        cls.structureRepresentation = representationType
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
+        cls.Atomistic = Atomistic
 
     def __init__(self, lowerStructure, upperStructure, bufferThickness: float = None, gap: float = None,
                  maxMisfitStrain: float = None, maxEnvironmentArea: float = None, **kwargs):
@@ -122,13 +110,14 @@ class Interface:
         """
         lowerStructure = lowerStructure if lowerStructure is not None else self._structures[0]
         upperStructure = upperStructure if upperStructure is not None else self._structures[1]
-        structure, disassembler = Interface.atomicDisassemblerType.assemble(molecules, cell)
+        structure, disassembler = Interface.Atomistic.atomicDisassemblerType.assemble({'atomistic.molecules': molecules,
+                                                                                'atomistic.cell': cell})
         lowerOffset = self._calculateLowerOffset(structure.getFractionalCoordinates(), cell.getPBC())
         upperOffset = self._calculateUpperOffset(structure.getCartesianCoordinates(), cell.getPBC()) - lowerOffset
-        lowerStructure = Interface.structureType(lowerStructure.getAtomTypes(),
+        lowerStructure = Interface.Atomistic.structureType(lowerStructure.getAtomTypes(),
                                                           lowerStructure.getCartesianCoordinates() - lowerOffset,
                                                           lowerStructure.getCell())
-        upperStructure = Interface.structureType(upperStructure.getAtomTypes(),
+        upperStructure = Interface.Atomistic.structureType(upperStructure.getAtomTypes(),
                                                           upperStructure.getCartesianCoordinates() + upperOffset,
                                                           upperStructure.getCell())
         coordinates = lowerStructure.getCartesianCoordinates()[:, self._axis]
@@ -147,13 +136,13 @@ class Interface:
         """
         if lowerFile == upperFile and sigma is not None:
             logger.debug(f'Proceeding with Grain Boundary mode')
-            initStructure = Interface.structureRepresentation.readPOSCAR(lowerFile, pbc=(1, 1, 1))
+            initStructure = Interface.Atomistic.AtomicStructureRepresentation.readPOSCAR(lowerFile, pbc=(1, 1, 1))
             lowerStructure, upperStructure = constructGrainsSlabs(initStructure, pbc, sigma, plane, rotAxis, slabThickness)
             logger.debug('Grains are successfully created')
         else:
             logger.debug(f'Proceeding with Heterostructure mode')
-            initLowerStructure = Interface.structureRepresentation.readPOSCAR(lowerFile, pbc=(1, 1, 1))
-            initUpperStructure = Interface.structureRepresentation.readPOSCAR(upperFile, pbc=(1, 1, 1))
+            initLowerStructure = Interface.Atomistic.AtomicStructureRepresentation.readPOSCAR(lowerFile, pbc=(1, 1, 1))
+            initUpperStructure = Interface.Atomistic.AtomicStructureRepresentation.readPOSCAR(upperFile, pbc=(1, 1, 1))
             lowerStructure = constructSurfaceSlab(initLowerStructure, pbc, lowerPlane, slabThickness)
             upperStructure = constructSurfaceSlab(initUpperStructure, pbc, upperPlane, slabThickness)
             logger.debug('Surface Slabs are successfully created')

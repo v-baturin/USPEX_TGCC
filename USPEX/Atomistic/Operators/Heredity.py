@@ -6,6 +6,7 @@ import numpy as np
 from collections import Counter
 
 from ..Slab import Slab
+from ..Transformation import Transformation
 
 ATTEMPTS = 100
 NSLUBS = 2
@@ -13,7 +14,7 @@ NSLUBS = 2
 
 class Heredity:
 
-    def __init__(self, utilities, nslabs = None, attempts = ATTEMPTS, debug = False):
+    def __init__(self, utilities, suffix, nslabs=None, randomizeCells=True, attempts=ATTEMPTS, debug=False):
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
@@ -21,7 +22,9 @@ class Heredity:
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
+        self.suffix = suffix
         self.nslabs = nslabs
+        self.randomizeCells = randomizeCells
         self.attempts = attempts
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -29,29 +32,33 @@ class Heredity:
             logger.setLevel(logging.INFO)
         self.correlation = 0
 
-    def tune(self, population, allFitnesses):
-        fitness = [allFitnesses[s['ID']] for s in population if not s['isBad']]
-        order = [self.radialDistributionUtility.averageOrder(system) for system in population if not system['isBad']]
-        self.correlation = np.corrcoef(order, fitness)[0,1]
+    def tune(self, population, optType):
+        fitness = [s[optType] for s in population]
+        order = [system[f'radialDistributionUtility.averageOrder.{self.suffix}'] for system in population]
+        self.correlation = np.corrcoef(order, fitness)[0, 1]
         if np.isnan(self.correlation):
             self.correlation = 0
 
-    def __call__(self, system1, system2):
-        cell1 = system1['cell']
-        molecules1 = system1['molecules']
-        composition1 = self.simpleMoleculeUtility.composition(system1)
-        order1 = self.radialDistributionUtility.order(system1)
-        cell2 = system2['cell']
-        molecules2 = system2['molecules']
-        composition2 = self.simpleMoleculeUtility.composition(system2)
-        order2 = self.radialDistributionUtility.order(system2)
-
-        parentEnv = np.random.choice((system1, system2)) \
-            if 'environments' in system1 and 'environments' in system2 else None
+    def __call__(self, system1, system2, offspringFactory=None):
+        molecules1 = system1.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell1 = system1.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        composition1 = system1.getProperty('composition', extension='simpleMoleculeUtility', suffix='origin')
+        order1 = system1.getProperty('order', extension='radialDistributionUtility', suffix=self.suffix)
+        molecules2 = system2.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell2 = system2.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        composition2 = system2.getProperty('composition', extension='simpleMoleculeUtility', suffix='origin')
+        order2 = system2.getProperty('order', extension='radialDistributionUtility', suffix=self.suffix)
+        try:
+            system = np.random.choice((system1, system2))
+            parentEnv = system.getProperty('environments', extension='atomistic', suffix=self.suffix)
+            outputCell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        except Exception:
+            parentEnv = None
+            outputCell = None
 
         for i in range(self.attempts):
-            outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell() \
-                if parentEnv is None else parentEnv['cell']
+            if outputCell is None:
+                outputCell = self.cellUtility.getHybridCell(cell1, cell2, fraction=np.random.rand()).getOptimizedCell()
             if self.cellUtility.isGoodCell(outputCell):
                 axis = np.random.randint(3)
                 if self.nslabs is None:
@@ -78,13 +85,22 @@ class Heredity:
                 else:
                     logger.debug(f"trying {outputCell.getCellParameters()} cell and {gaugesOfSlabs}-size slabs.")
 
-                slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
-                                             axis=axis, gaugesOfSlabs=gaugesOfSlabs,
-                                             order=order1, correlation=self.correlation, parity=0)
+                if self.randomizeCells:
+                    slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
+                                                 axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                                 order=order1, correlation=self.correlation, parity=0)
 
-                slabs2 = Slab.getRandomSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
-                                             axis=axis, gaugesOfSlabs=gaugesOfSlabs,
-                                             order=order2, correlation=self.correlation, parity=1)
+                    slabs2 = Slab.getRandomSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
+                                                 axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                                 order=order2, correlation=self.correlation, parity=1)
+                else:
+                    slabs1 = Slab.getSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
+                                           axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                           transformation=Transformation.fromMatrix(np.eye(3), np.zeros(3)))
+
+                    slabs2 = Slab.getSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
+                                           axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                           transformation=Transformation.fromMatrix(np.eye(3), np.zeros(3)))
 
                 goodCandidateMolecules = []
                 goodCandidateDepths = []
@@ -121,16 +137,15 @@ class Heredity:
                 moleculeTypes = [self.simpleMoleculeUtility.determineMoleculeType(molecule) for molecule in molecules]
                 composition = Counter(dict(zip(*np.unique(moleculeTypes, return_counts=True))))
                 if composition == desiredComposition:
-                    offspring = {'molecules': molecules, 'cell': outputCell}
+                    offspring = {'atomistic.molecules': molecules, 'atomistic.cell': outputCell}
+                    offspring = offspringFactory(**offspring)
                     if parentEnv is not None:
-                        offspring['environments'] = parentEnv['environments']
-                    atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**offspring)
-                    minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                    for inds in disassembler.envIndices:
-                        atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                    if np.all(atomDistances >= minDistMatrix):
+                        offspring.setProperty('environments', parentEnv, extension='atomistic')
+                    structure = offspring.getProperty('structure', extension='atomistic')
+                    minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
+                                                                  self.conditions.externalPressure)
+                    if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
                         self.conditions.putConditions(offspring)
-                        # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
                         # if self.bonds.isConnected(structure):
                         return offspring,
 

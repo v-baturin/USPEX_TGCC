@@ -14,20 +14,20 @@ MAX_SITE_SAMPLES_TRY = 1000
 
 class CoreAdsorbantRandomGenerator:
     def __init__(self, utilities, debug = False):
-        self.cellUtility = utilities.cellUtility
         self.junctionUtility = utilities.junctionUtility
         self.environmentUtility = utilities.environmentUtility
+        self.cellUtility = utilities.cellUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.cellType = type(self.cellUtility.getRandomCell(1, np.empty(0)))
         self.angle_indices = np.arange(TOTAL_ROTATION_STEPS)
-        self.cell = self.cellUtility.cellType.initFromCellParameters((0, 0, 0))
 
         if debug:
             logger.setLevel(logging.DEBUG)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, offspringFactory=None):
         # Choice of active centers
         # Reorienting adsorbants according to chosen active centers in core
         composition = self.compositionSpace.randomComposition()  # {symbol : numbers, ...}
@@ -77,7 +77,8 @@ class CoreAdsorbantRandomGenerator:
 
                                 dockingTransfmn = site.dockTransformation(np.random.choice(adsSites), angle)
                                 dock_attempt = dockingTransfmn.transform(adsorbant)
-                                tmp_offspring, isDocked = self.checkDocking(sample_molecules, dock_attempt, npCoreAssembler)
+                                tmp_offspring, isDocked = self.checkDocking(sample_molecules, dock_attempt,
+                                                                            npCoreAssembler, offspringFactory)
                                 if isDocked:
                                     sample_molecules.append(dock_attempt)
                                     break  # from angles loop, to the next site
@@ -103,7 +104,7 @@ class CoreAdsorbantRandomGenerator:
                 if not npCoreAssembler.isMapAlreadySeen(goodAdsorptionmap):
                     npCoreAssembler.addSeenAdsorbtion(goodAdsorptionmap)
                     logger.debug(f"Adsorption {adsMapString} sucessfully created")
-                    tmp_offspring['adsorption_map'] = goodAdsorptionmap
+                    tmp_offspring.setProperty('adsorption_map', goodAdsorptionmap)
                     return tmp_offspring,
                 else:
                     logger.debug(f"Adsorption {adsMapString} already seen")
@@ -112,23 +113,28 @@ class CoreAdsorbantRandomGenerator:
                 logger.debug(e, exc_info=True)
             failCounter += 1
 
-    def checkDocking(self, tmp_molecules, ads_attempt, npCoreAssembler):
+    def checkDocking(self, tmp_molecules, ads_attempt, npCoreAssembler, offspringFactory):
         docked = False
-        tmp_offspring = {'molecules': tmp_molecules + [ads_attempt], 'cell': self.cell,
-                         'environments': npCoreAssembler.assemble(tmp_molecules + [ads_attempt])}
-        tmp_struct, _ = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(
-            **tmp_offspring)
+        cell = self.cellType.initFromCellParameters((0, 0, 0))
+        system = {
+            'atomistic.molecules': tmp_molecules + [ads_attempt],
+            'atomistic.cell': cell,
+            'atomistic.environments': npCoreAssembler.assemble(tmp_molecules + [ads_attempt])}
+        tmp_offspring = offspringFactory(**system)
+        tmp_struct = tmp_offspring.getProperty('structure', extension='atomistic')
         tmp_minDistMatrix = self.bondUtility.getDistances(tmp_struct.getAtomTypes(),
                                                           self.conditions.externalPressure)
-        tmp_atomDistances = tmp_struct.getAllDistances()
-        np.fill_diagonal(tmp_atomDistances, 10.)
-        if np.all(tmp_atomDistances >= tmp_minDistMatrix):  # check if docking is good
+        # tmp_atomDistances = tmp_struct.getAllDistances()
+        # np.fill_diagonal(tmp_atomDistances, 10.)
+        # if np.all(tmp_atomDistances >= tmp_minDistMatrix):  # check if docking is good
+        if self.simpleMoleculeUtility.checkMinDistances(tmp_offspring, tmp_minDistMatrix):
             self.conditions.putConditions(tmp_offspring)
-            structure, disassembler = self.simpleMoleculeUtility.atomicDisassemblerType.assemble(
-                **tmp_offspring)
-            if self.bondUtility.isConnected(structure):
+            if self.bondUtility.isConnected(tmp_struct):
                 docked = True
         return tmp_offspring, docked
+
+
+
 
 def select_compatible_sites(ligand, adsTypesSitesDiGraph):
     return list([adsTypesSitesDiGraph.successors(y) for y in adsTypesSitesDiGraph.successors(ligand)][0])

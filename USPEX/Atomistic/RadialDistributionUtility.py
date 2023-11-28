@@ -8,11 +8,12 @@ USPEX.Atomistic.RadialDistributionUtility
 import numpy as np
 from typing import Dict, Tuple
 from collections.abc import Mapping
-from collections import Counter
 
 from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
+
+from ..Expressions.Functions.RadialDistributionFunctions import RadialDistributionFunctions
 
 
 RMAX_DEFAULT = 10.0
@@ -141,27 +142,10 @@ class RadialDistributionUtility(object):
     """
     Utility for working with radial distribution related properties of systems.
     """
-    structureType = None
-    atomType = None
-    cellType = None
-    atomicDisassemblerType = None
 
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
-        """
-        Register types used by this utility.
+    propertyExtension = RadialDistributionFunctions
 
-        :param structureType: type representing atomic structure.
-        :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
-        """
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
-
-    def __init__(self, symbols, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
+    def __init__(self, symbols, suffix, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
                  legacy=False):
         """
         :type Rmax: float
@@ -174,88 +158,13 @@ class RadialDistributionUtility(object):
         :param tolerance: tolerance within which systems considered the same.
         """
         self.symbols=symbols
+        self.suffix = suffix
         self.Rmax = Rmax
         self.sigma = sigma
         self.delta = delta
         self.tolerance = tolerance
         self.legacy = legacy
         self.distances = {}
-
-    def structureFingerprint(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculate or retrieve structure fingerprint of a system.
-        """
-        if not 'radialDistribitionUtility.structureFingerprint' in system:
-            self._calcFingerprint(system)
-        return system['radialDistribitionUtility.structureFingerprint']
-
-    def complexFingerprint(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculate or retrieve structure fingerprint of a system.
-        """
-        if not 'radialDistribitionUtility.complexFingerprint' in system:
-            self._calcFingerprint(system)
-        return system['radialDistribitionUtility.complexFingerprint']
-
-    def order(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculate or retrieve list of atomic *local orders* of a system.
-            *Local order* is a measure of atom surrounding being regular.
-        """
-        if not 'radialDistribitionUtility.order' in system:
-            self._calcFingerprint(system)
-        return system['radialDistribitionUtility.order']
-
-    def averageOrder(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculate or retrieve average atomic *local order* of a system.
-            *Local order* is a measure of atom surrounding being regular.
-        """
-        if not 'radialDistribitionUtility.averageOrder' in system:
-            self._calcFingerprint(system)
-        return system['radialDistribitionUtility.averageOrder']
-
-    def structureOrder(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculate or retrieve *structure order* of a system.
-            *Structure order* is a measure of structure being regular.
-        """
-        if not 'radialDistribitionUtility.structureOrder' in system:
-            self._calcFingerprint(system)
-        return system['radialDistribitionUtility.structureOrder']
-
-    def quasientropy(self, system):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculate quasientropy of structure.
-        """
-
-        if not 'radialDistribitionUtility.quasientropy' in system:
-            self._calcFingerprint(system)
-        return system['radialDistribitionUtility.quasientropy']
 
     def clean(self, system):
         """
@@ -264,24 +173,16 @@ class RadialDistributionUtility(object):
         :param system: dictionary describing system.
 
         """
-        if 'radialDistribitionUtility.structureFingerprint' in system:
-            del system['radialDistribitionUtility.structureFingerprint']
-        if 'radialDistribitionUtility.complexFingerprint' in system:
-            del system['radialDistribitionUtility.complexFingerprint']
-        if 'radialDistribitionUtility.structureOrder' in system:
-            del system['radialDistribitionUtility.structureOrder']
-        if 'radialDistribitionUtility.atomFingerprints' in system:
-            del system['radialDistribitionUtility.atomFingerprints']
-        if 'radialDistribitionUtility.order' in system:
-            del system['radialDistribitionUtility.order']
-        if 'radialDistribitionUtility.quasientropy' in system:
-            del system['radialDistribitionUtility.quasientropy']
+        systemFlavour = system.getFlavour(self.suffix)
+        systemFlavour.delProperty('structureFingerprint', extension='radialDistributionUtility')
+        systemFlavour.delProperty('complexFingerprint', extension='radialDistributionUtility')
 
-    def _calcFingerprint(self, system):
+    def calcFingerprint(self, system):
         """
         Calculates fingerprint and related things.
         """
-        structure, disassembler = self.atomicDisassemblerType.assemble(**system)
+        structure = system['atomistic.structure']
+        disassembler = system['atomistic.disassembler']
         atomTypes = structure.getAtomTypes()
         uniqueSimbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
@@ -292,10 +193,7 @@ class RadialDistributionUtility(object):
         coordinates = cell.cartesianToFractional(cartesian)[indices]
         molIndices = [revertIndices[inds] for inds in disassembler.indices]
         envIndices = revertIndices[disassembler.envIndices]
-        if 'environment' in system:
-            fp_pbc = disassembler.environment.getStructure().getCell().getPBC() # TODO is this correct?
-        else:
-            fp_pbc = structure.getCell().getPBC()
+        fp_pbc = structure.getCell().getPBC()
         lat = cell.getCellVectors()
         dist_matrix = _make_matrices(coordinates, molIndices, envIndices, lat, numIons, pbc=fp_pbc, Rmax=self.Rmax)
 
@@ -488,13 +386,12 @@ class RadialDistributionUtility(object):
                 if len(comb) > 0:
                     sQE += weight[i] * tmp / len(comb)
 
-        system['radialDistribitionUtility.order'] = molOrder
-        system['radialDistribitionUtility.averageOrder'] = a_order
-        system['radialDistribitionUtility.structureOrder'] = s_order
-        system['radialDistribitionUtility.structureFingerprint'] = fingerprint
-        system['radialDistribitionUtility.complexFingerprint'] = complexFingerprint
-        system['radialDistribitionUtility.quasientropy'] = -sQE
-
+        system.setProperty('order', molOrder, extension='radialDistributionUtility')
+        system.setProperty('averageOrder', a_order, extension='radialDistributionUtility')
+        system.setProperty('structureOrder', s_order, extension='radialDistributionUtility')
+        system.setProperty('structureFingerprint', fingerprint, extension='radialDistributionUtility')
+        system.setProperty('complexFingerprint', complexFingerprint, extension='radialDistributionUtility')
+        system.setProperty('quasientropy', -sQE, extension='radialDistributionUtility')
 
     def dist(self, system1, system2):
         """
@@ -509,10 +406,11 @@ class RadialDistributionUtility(object):
         pair = frozenset((system1['ID'], system2['ID'])) if 'ID' in system1 and 'ID' in system2 else None
         if pair not in self.distances:
             if self.legacy:
-                distance = Fingerprint.cosine_distance(self.structureFingerprint(system1),
-                                                       self.structureFingerprint(system2))
+                distance = Fingerprint.cosine_distance(system1[f'radialDistributionUtility.structureFingerprint.{self.suffix}'],
+                                                       system2[f'radialDistributionUtility.structureFingerprint.{self.suffix}'])
             else:
-                distance = ComplexFingerprint.dist(self.complexFingerprint(system1), self.complexFingerprint(system2))
+                distance = ComplexFingerprint.dist(system1[f'radialDistributionUtility.complexFingerprint.{self.suffix}'],
+                                                   system2[f'radialDistributionUtility.complexFingerprint.{self.suffix}'])
             if pair is not None:
                 self.distances[pair] = distance
         else:
@@ -610,7 +508,7 @@ def _make_matrices(coor: np.ndarray, molIndices: list, envIndices,
 
     assert isinstance(Rmax, float) and Rmax >= 0
 
-    coor = coor - np.floor(coor)  # scale it the [0 1]
+    # coor = coor - np.floor(coor)  # scale it the [0 1]
     N_atom = np.sum(numIons)
 
     types = []

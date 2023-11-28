@@ -13,15 +13,10 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 
-from ase.io.vasp import read_vasp
 from pathlib import Path
-from time import time
-from typing import List
 
 
 class Seeds(object):
-
-    systemRepresentationClass = None
 
     def __init__(self, utilities, generations:list=None, seedsFolders:list=None):
         '''
@@ -35,12 +30,13 @@ class Seeds(object):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
+        self.atomistic = utilities.atomistic
 
         self.generations = generations if generations is not None else []
         self.seedsFolders = [Path(s) for s in seedsFolders] if seedsFolders is not None else []
         self.currentGeneration = 0
 
-    def __call__(self):
+    def __call__(self, offspringFactory=None):
 
         if self.currentGeneration not in self.generations:
             logger.debug(f'No Seeds specified for generation {self.currentGeneration}.')
@@ -62,22 +58,18 @@ class Seeds(object):
         for filename in seedsFolder.iterdir():
             if (USUF == filename.suffix) == hasDesciption:
                 if filename.is_file():
-                    systems = self.systemRepresentationClass.readAtomicStructures(filename)
+                    systems = self.atomistic.readAtomicStructures(filename)
                     for system in systems:
-                        atomSymbols, atomDistances, disassembler = self.simpleMoleculeUtility.getMinDistances(**system)
-                        minDistMatrix = self.bondUtility.getDistances(atomSymbols, self.conditions.externalPressure)
-                        for inds in disassembler.envIndices:
-                            atomDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[tuple(np.meshgrid(inds, inds))]
-                        if np.all(atomDistances >= minDistMatrix):
+                        system = offspringFactory(**system)
+                        structure = system.getProperty('structure', extension='atomistic')
+                        minDistMatrix = self.bondUtility.getDistances(
+                            structure.getAtomTypes(), self.conditions.externalPressure)
+                        if self.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix):
                             self.conditions.putConditions(system)
-                            system['filename'] = filename
+                            system.setProperty('filename', filename)
                             seeds.append(system)
                         else:
                             logger.info(f"Structure created from seed {filename} violates constraints.")
 
         self.currentGeneration += 1
         return tuple(seeds)
-
-    @classmethod
-    def registerTypes(cls, systemRepresentationClass):
-        cls.systemRepresentationClass = systemRepresentationClass

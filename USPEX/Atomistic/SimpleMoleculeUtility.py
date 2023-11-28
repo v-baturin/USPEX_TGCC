@@ -3,13 +3,21 @@ USPEX.Atomistic.SimpleMoleculeUtility
 =====================================
 """
 
+import logging
 import numpy as np
 from collections import Counter
 
 from .Transformation import Transformation
+from ..Expressions.Functions.SimpleMoleculeFunctions import SimpleMoleculeFunctions
 
+
+logger = logging.getLogger(__name__)
 
 DENSITY_CONST = 1.660539
+INTEGRITY_TOL = {'rigid': 0.1,  # maximum relative change in all distances
+                 'none': None
+                 # 'soft':
+                 }
 
 
 class SimpleMoleculeUtility(object):
@@ -19,25 +27,20 @@ class SimpleMoleculeUtility(object):
 
     structureType = None
     atomType = None
-    cellType = None
-    atomicDisassemblerType = None
+    propertyExtension = SimpleMoleculeFunctions
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, atomicDisassemblerType):
+    def registerTypes(cls, structureType, atomType):
         """
         Register types used by this utility.
 
         :param structureType: type representing atomic structure.
         :param atomType: type representing chemical element.
-        :param cellType: type representing unit cell.
-        :param atomicDisassemblerType: type representing utility used for disassembling structure into molecules.
         """
         cls.structureType = structureType
         cls.atomType = atomType
-        cls.cellType = cellType
-        cls.atomicDisassemblerType = atomicDisassemblerType
 
-    def __init__(self, molecules: dict = None, doCenterMolecule=False):
+    def __init__(self, molecules: dict = None, doCenterMolecule=False, checkIntegrityType='rigid', integrityTol=None):
         """
         :param molecules: {<name>: <definition>} dictionary of molecule definitions.
 
@@ -52,6 +55,9 @@ class SimpleMoleculeUtility(object):
                 self.molecules[symbol] = molecule
         self.formulaToTypeMap = {molecule.getFormula() : molSymbol for molSymbol, molecule in self.molecules.items()}
         # TODO: what if we have two molecules with same formula?
+        self.checkIntegrityType = checkIntegrityType
+        self.integrityTol = INTEGRITY_TOL[checkIntegrityType] if integrityTol is None else integrityTol
+
 
 
     def populateStructure(self, cell, operations):
@@ -78,7 +84,7 @@ class SimpleMoleculeUtility(object):
                     position = optimizedCell.getWrapedCartesianCoordinates(position)
                     transformation = Transformation(matrix, position)
                     molecules.append(transformation.transform(molecule))
-        return {'molecules': molecules, 'cell': optimizedCell}
+        return {'atomistic.molecules': molecules, 'atomistic.cell': optimizedCell}
 
     def determineMoleculeType(self, molecule):
         """
@@ -91,40 +97,6 @@ class SimpleMoleculeUtility(object):
         """
         return self.formulaToTypeMap[molecule.getFormula()]
 
-    def moleculeTypes(self, system : dict):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated or retrieve list of types of molecules of a system.
-        """
-        if 'simpleMoleculeUtility.moleculeTypes' not in system:
-            moleculeTypes = [self.determineMoleculeType(molecule) for molecule in system['molecules']]
-            system['simpleMoleculeUtility.moleculeTypes'] = moleculeTypes
-        return system['simpleMoleculeUtility.moleculeTypes']
-
-    def composition(self, system: dict):
-        """
-        For using in **Fitness** infrastructure
-
-        :param system: dictionary describing system.
-
-        :return: calculated or retrieve molecular composition of a system.
-        """
-        if 'simpleMoleculeUtility.composition' not in system:
-            composition = Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
-            system['simpleMoleculeUtility.composition'] = composition
-        return system['simpleMoleculeUtility.composition']
-
-    def density(self, system):
-        cell = system['cell']
-        if cell.dim == 3:
-            mass = sum(e.mass*v for e, v in self.getElementalComposition(self.composition(system)).items())
-            return mass/cell.getVolume()*DENSITY_CONST
-        else:
-            return None
-
     def getElementalComposition(self, composition):
         """
         For given molecular composition {<molecule_symbol> : <amount>} calculates elemental composition {<element> : <amount>}.
@@ -135,15 +107,11 @@ class SimpleMoleculeUtility(object):
         """
         comp = Counter()
         for symbol, amount in composition.items():
-            molecule = self.molecules[symbol]
-            if len(molecule) == 1:
-                comp[self.atomType(symbol)] += amount
-            else:
-                for symbol, value in molecule.getComposition().items():
-                    comp[symbol] += value*amount
+            for el, value in self.molecules[symbol].getComposition().items():
+                comp[el] += value*amount
         return comp
 
-    def getMinDistances(self, molecules, cell, environment=None, **kwargs):
+    def checkMinDistances(self, entry, minDistMatrix):
         """
         Calculates minimal distances between atoms excluding intramolecular distances.
 
@@ -169,9 +137,13 @@ class SimpleMoleculeUtility(object):
         #     if not inMolecule: return False
         # return True
 
-        structure, disassembler = self.atomicDisassemblerType.assemble(molecules, cell, environment)
+        molecules = entry.getProperty('molecules', extension='atomistic')
+        cell = entry.getProperty('cell', extension='atomistic')
+        structure = entry.getProperty('structure', extension='atomistic')
+        disassembler = entry.getProperty('disassembler', extension='atomistic')
         actualDistances = structure.getAllDistances()
-        constNeighbours = np.vstack([np.eye(3), -np.eye(3)])
+        eye = np.eye(3)[np.nonzero(cell.getPBC())]
+        constNeighbours = np.vstack([eye, -eye])
         for inds, molecule in zip(disassembler.indices, molecules):
             distVectorsMatrix = molecule.getAllPairVectors()
             for i, distVectorsRow in enumerate(distVectorsMatrix):
@@ -179,10 +151,16 @@ class SimpleMoleculeUtility(object):
                     vect = cell.cartesianToFractional(vect)
                     if np.all(np.abs(vect) < 1.0):
                         dists = np.linalg.norm(vect + constNeighbours, axis=1)
-                        distVectorsMatrix[i,j] = cell.fractionalToCartesian(vect + constNeighbours[np.argmin(dists)])
+                        if len(dists):
+                            distVectorsMatrix[i, j] = cell.fractionalToCartesian(vect + constNeighbours[np.argmin(dists)])
+                        else:
+                            distVectorsMatrix[i, j] = np.full(3, np.inf)
             actualDistances[tuple(np.meshgrid(inds, inds))] = np.linalg.norm(distVectorsMatrix, axis=2)
+        for inds in disassembler.envIndices:
+            actualDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
+                tuple(np.meshgrid(inds, inds))]
 
-        return structure.getAtomTypes(), actualDistances, disassembler
+        return np.all(actualDistances >= minDistMatrix)
 
     @staticmethod
     def rotationClearance(inertiaValues):
@@ -229,9 +207,21 @@ class SimpleMoleculeUtility(object):
 
         :return: array of coordination numbers.
         """
-        radiu = np.array([cls.atomType(atom).covalent_radius for atom in molecule.getAtomTypes()])
-        CN = np.fromiter((len(neighbours) for neighbours in _find_pair(molecule.getCartesianCoordinates(), radiu)), dtype=int)
+        radiu = np.array([atom.covalent_radius for atom in molecule.getAtomTypes()])
+        CN = np.fromiter((len(neighbours) for neighbours in cls.find_pair(molecule.getCartesianCoordinates(), radiu)),
+                         dtype=int)
         return CN
+
+    @staticmethod
+    def detectBonds(molecule):
+        atomTypes = molecule.getAtomTypes()
+        coordinates = molecule.getCartesianCoordinates()
+        cell = molecule.getCell()
+        radii = np.array([atom.covalent_radius for atom in atomTypes])
+        bonds = []
+        for i, neighbours in enumerate(SimpleMoleculeUtility.find_pair(coordinates, radii)):
+            bonds.extend((i, j) for j in neighbours if j > i)
+        return type(molecule)(atomTypes, coordinates, cell=cell, edges=bonds)
 
     @staticmethod
     def zmatrixToCoord(zmatrix, fmt):
@@ -325,38 +315,39 @@ class SimpleMoleculeUtility(object):
         Zmatrix = np.real(Zmatrix)
         return Zmatrix
 
-def _find_pair(coor, radii):
-    """
-    This function checks all the atom pairs and constructs the neighbor list.
-    The bond length is estimated by the covalent radii of the atoms.
+    @staticmethod
+    def find_pair(coor, radii):
+        """
+        This function checks all the atom pairs and constructs the neighbor list.
+        The bond length is estimated by the covalent radii of the atoms.
 
-    :type coor: numpy array
-    :param coor: Nx3 array of atomic coordinates.
-    :type radii: numpy array
-    :param radii: Nx1 array of atomic radii.
+        :type coor: numpy array
+        :param coor: Nx3 array of atomic coordinates.
+        :type radii: numpy array
+        :param radii: Nx1 array of atomic radii.
 
-    :rtype: list of list of int
-    :return: list with the indices of neighboring atoms for each atom.
-    """
-    n_atom = len(radii)
-    # maximum 6 coordination, 7 gives the coordination number
-    # pair = np.zeros((n_atom, N_max), dtype=int)
-    pair = [[] for x in radii]
+        :rtype: list of list of int
+        :return: list with the indices of neighboring atoms for each atom.
+        """
+        n_atom = len(radii)
+        # maximum 6 coordination, 7 gives the coordination number
+        # pair = np.zeros((n_atom, N_max), dtype=int)
+        pair = [[] for x in radii]
 
-    for i in range(n_atom):
-        for j in range(i + 1, n_atom):
-            if np.linalg.norm(coor[i] - coor[j]) < 1.2 * (radii[i] + radii[j]):
-                pair[i].append(j)
-                pair[j].append(i)
-
-    # we assume there is no isolated atom
-    if n_atom > 1:
         for i in range(n_atom):
-            if len(pair[i]) == 0:
-                print('atom_{} is not connected to any other atom'.format(i))
-                print('Please check your MOL file again. Serious WARNING.... ')
+            for j in range(i + 1, n_atom):
+                if np.linalg.norm(coor[i] - coor[j]) < 1.2 * (radii[i] + radii[j]):
+                    pair[i].append(j)
+                    pair[j].append(i)
 
-    return pair
+        # we assume there is no isolated atom
+        if n_atom > 1:
+            for i in range(n_atom):
+                if len(pair[i]) == 0:
+                    logger.warning(f'Atom_{i} is not connected to any other atom. '
+                                   f'Please check your MOL file again. Serious WARNING....')
+
+        return pair
 
 def _GetAngle(a1, a2, a3):
     """

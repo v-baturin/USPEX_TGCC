@@ -25,4 +25,4 @@ class Conditions:
         :param system: dictionary to put parameters into.
 
         """
-        system['externalPressure'] = self.externalPressure
+        system.setProperty('externalPressure', self.externalPressure)

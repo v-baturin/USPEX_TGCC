@@ -49,7 +49,7 @@ class SymmetricStructure(object):
         """
         a, b, c = supercell
         shifts = np.array([np.array((i, j, k), dtype=float) for i in range(a) for j in range(b) for k in range(c)])
-        positions = (np.stack(chain(*self.getOrbits())).reshape((-1, 1, 3))
+        positions = (np.stack(list(chain(*self.getOrbits()))).reshape((-1, 1, 3))
                      + shifts.reshape((1, -1, 3))).reshape((-1, 3)) / supercell
         return SymmetricFlavours(self.name, positions, self.group.getSupercellGroup(supercell).getAllSubgroups())
 

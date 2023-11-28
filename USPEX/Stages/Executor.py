@@ -85,10 +85,9 @@ class Executor(object):
 
         self.submittedTasks = {}
 
-    async def run(self, system):
-        ID = system['ID']
+    async def run(self, ID, system):
+        # ID = system['ID']
         tag = self.tag
-        self._gatherSystems(system, tag, ioType='input')
         calcFolder = self.workingDirectory/self.CALC_FOLDER_TEMPLATE.format(ID, tag)
         for attempt in range(self._ATTEMPTS):
             if calcFolder in self.submittedTasks:
@@ -98,7 +97,6 @@ class Executor(object):
                 shutil.rmtree(calcFolder, ignore_errors=True)
                 calcFolder.mkdir(parents=True)
                 args = self._interface.prepareLocalCalculation(system, calcFolder)
-                self._gatherData(calcFolder, ioType='input')
                 await self._connector.sync_l2r(calcFolder)
                 logger.info(f'System {ID} with tag {tag} will be submitted now.')
                 jobID = await self._taskManager.submit(f'{self.commandExecutable} {args}', f'U{ID}S{tag}',
@@ -114,39 +112,13 @@ class Executor(object):
             await self._connector.sync_r2l(calcFolder)
             await self._connector.clean(calcFolder)
             del self.submittedTasks[calcFolder]
-            self._gatherData(calcFolder, ioType='output')
 
             if self._interface.isConverged(calcFolder):
                 logger.debug('System converged. Proceeding update.')
-                results = self._interface.readOutput(system, calcFolder)
+                result = self._interface.readOutput(system, calcFolder)
                 logger.info(f'system {ID} with tag {tag} relaxation successful.')
                 if not self.keepFolders:
                     shutil.rmtree(calcFolder, ignore_errors=True)
-                break
+                return result
         else:
             raise RuntimeError(f'Task failed {self._ATTEMPTS} times')
-        self._gatherSystems(system, tag, ioType='output')
-        return results
-
-    def _gatherSystems(self, system, tag: str, ioType: str):
-        if self.gather:
-            folder = self.workingDirectory/'GatheredData'/ioType
-            folder.mkdir(exist_ok=True)
-            from ..components import AtomisticRepresentation
-            with open(folder/f"system{system['ID']}_{tag}", 'wt') as f:
-                AtomisticRepresentation.writeAtomicStructure(f, system)
-
-    def _gatherData(self, calcFolder: Path, ioType : str):
-        if self.gather:
-            copytree(calcFolder, self.workingDirectory/'GatheredData'/ioType/calcFolder.name)
-
-
-def copytree(src: Path, dst: Path, symlinks=False, ignore=None):
-    dst.mkdir(exist_ok=True, parents=True)
-    for item in src.iterdir():
-        d = dst/item.name
-        if item.is_dir():
-            shutil.copytree(item, d, symlinks, ignore)
-        else:
-            if not d.exists() or item.stat().st_mtime - d.stat().st_mtime > 1:
-                shutil.copy2(item, d)
