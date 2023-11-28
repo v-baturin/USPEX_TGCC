@@ -481,8 +481,8 @@ class AtomisticRepresentation(object):
                 for i, generation in enumerate(optimizer.generations):
                     expr = generation.goodSystems.createExpression(self.presentConvexHull)
                     convexHull = []
-                    for ID in generation.goodSystems.getIDs():
-                        system = generation.goodSystems.getEntry(ID)
+                    for ID in generation.uniqueSystems.getIDs():
+                        system = generation.uniqueSystems.getEntry(ID)
                         try:
                             if np.isclose(system.getExpression(expr), 0.0):
                                 convexHull.append(system)
