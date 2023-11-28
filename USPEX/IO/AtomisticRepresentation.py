@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from itertools import combinations, chain
 from pathlib import Path
 from prettytable import PrettyTable
+from itertools import zip_longest
 
 from .formatters import createHeader_wrap
 from ..Expressions.Functions.presets import presetFitness, applyPresetsRecursive
@@ -106,14 +107,14 @@ class AtomisticRepresentation(object):
     def registerTypes(cls, Atomistic):
         cls.Atomistic = Atomistic
 
-    def __init__(self, RES_FOLDER: str, columns, stages, toDraw, presentConvexHull=False, presentPareto=(),
+    def __init__(self, RES_FOLDER: str, columns, stages, toDraw, presentConvexHull=None, presentPareto=(),
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = Path(RES_FOLDER)
         self.columns = [applyPresetsRecursive(column) for column in columns]
         self.stages = stages
         self.toDraw = toDraw
-        self.presentConvexHull = presentConvexHull
-        self.presentPareto = presentPareto
+        self.presentConvexHull = applyPresetsRecursive(presentConvexHull)
+        self.presentPareto = [applyPresetsRecursive(expr) for expr in presentPareto]
         self.rangeECH = rangeECH
 
     def getNewSystemsTable(self, pool, isRank=False):
@@ -475,15 +476,15 @@ class AtomisticRepresentation(object):
 
             self._drawProperties(optimizer.generations[-1].uniqueSystems)
 
-
-            if self.presentConvexHull:
+            if self.presentConvexHull is not None:
                 convexHull = []
                 for i, generation in enumerate(optimizer.generations):
+                    expr = generation.goodSystems.createExpression(self.presentConvexHull)
                     convexHull = []
                     for ID in generation.goodSystems.getIDs():
                         system = generation.goodSystems.getEntry(ID)
                         try:
-                            if np.isclose(system.getExpression(optType), 0.0):
+                            if np.isclose(system.getExpression(expr), 0.0):
                                 convexHull.append(system)
                         except Exception:
                             pass
@@ -621,28 +622,25 @@ class AtomisticRepresentation(object):
             plt.savefig(self.RES_FOLDER/'ExtendedConvexHull.svg')
             plt.close()
 
-
     def _drawExtendedConvexHull3(self, compositionSpace, convexHull, extendedConvexHull, suffix):
         pass
+
     def _drawParetoFronts2(self, fronts, optimizer):
-        (xProp, xLabel), (yProp, yLabel) = self.presentPareto
+        pool = optimizer.generations[-1].goodSystems
+        xProp = pool.createExpression(self.presentPareto[0])
+        yProp = pool.createExpression(self.presentPareto[1])
+        xLabel = getPresetLables(xProp)
+        yLabel = getPresetLables(yProp)
+        data = []
+        for front in fronts:
+            values = np.asarray([(system[xProp], system[yProp]) for system in front], dtype=float)
+            data.append(values[np.argsort(values[:, 0])])
         plt.figure()
-        for front, c in zip(fronts, ['k', 'b', 'r', 'm', 'c']):
-            values = np.asarray([(optimizer.fitness.getFitnessByID(xProp, system['ID']),
-                                  optimizer.fitness.getFitnessByID(yProp, system['ID'])) for system in front],
-                                dtype=float)
-            values = values[np.argsort(values[:, 0])]
-            plt.plot(*values.T, f'{c}-o')
-        if len(fronts) > 5:
-            for front in fronts[5:]:
-                values = np.asarray([(optimizer.fitness.getFitnessByID(xProp, system['ID']),
-                                      optimizer.fitness.getFitnessByID(yProp, system['ID'])) for system in front],
-                                    dtype=float)
-                values = values[np.argsort(values[:, 0])]
-                plt.plot(*values.T, 'go')
+        for values, c in zip_longest(data, ['k-o', 'b-o', 'r-o', 'm-o', 'c-o'], fillvalue='go'):
+            plt.plot(*values.T, c)
         plt.xlabel(xLabel)
         plt.ylabel(yLabel)
-        plt.savefig(self.RES_FOLDER/f'Pareto_{xProp}_{yProp}.svg')
+        plt.savefig(self.RES_FOLDER/f'Pareto_{xLabel}_{yLabel}.svg')
         plt.close()
 
     @staticmethod
