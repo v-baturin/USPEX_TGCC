@@ -35,7 +35,7 @@ EXTENDED_CONVEX_HULL_ENERGY_RANGE = 0.5
 
 
 presetLabels = {
-    'enthalpy': 'Enthalpy (eV)',
+    '.enthalpy': 'Enthalpy (eV)',
     'enthalpyCCH': 'Enthalpy above CH (eV/block)',
     'enthalpyCS': 'Enthalpy above the best for composition(eV/block)',
     'simpleMoleculeUtility.composition': 'Composition',
@@ -57,17 +57,24 @@ presetLabels = {
     'elasticML.fractureToughness': 'ML Fracture Toughness (MPa*m^1/2)'
 }
 
+def getPresetLables(expression):
+    if isinstance(expression, str):
+        ext, prop, suffix = expression.split('.')
+        if f'{ext}.{prop}' in presetLabels:
+            return presetLabels[f'{ext}.{prop}']
+    return ''
+
 
 class SystemsTable(object):
 
-    def __init__(self, columns, isRank=False):
-        self.columns = columns
+    def __init__(self, columns, pool, isRank=False):
+        self.columns = [pool.createExpression(column) for column in columns]
         self.isRank = isRank
         columnNames = ['ID', 'Origin']
         if self.isRank:
             columnNames.insert(1, 'Rank')
-        for column, columnName in self.columns:
-            columnNames.append(columnName)
+        for column in self.columns:
+            columnNames.append(getPresetLables(column))
 
         self.table = PrettyTable(columnNames)
 
@@ -76,9 +83,9 @@ class SystemsTable(object):
         row = [ID, system['.howCome.origin']]
         if self.isRank:
             row.insert(1, rank)
-        for column, columnName in self.columns:
+        for column in self.columns:
             try:
-                value = system[applyPresetsRecursive(column)]
+                value = system[column]
             except Exception:
                 value = None
             if isinstance(value, float):
@@ -101,21 +108,24 @@ class AtomisticRepresentation(object):
     def __init__(self, RES_FOLDER: str, columns, stages, toDraw, presentConvexHull: bool, presentPareto,
                  rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
         self.RES_FOLDER = Path(RES_FOLDER)
-        self.columns = columns
+        self.columns = [applyPresetsRecursive(column) for column in columns]
         self.stages = stages
         self.toDraw = toDraw
         self.presentConvexHull = presentConvexHull
         self.presentPareto = presentPareto
         self.rangeECH = rangeECH
 
-    def getNewSystemsTable(self, isRank=False):
-        return SystemsTable(self.columns, isRank)
+    def getNewSystemsTable(self, pool, isRank=False):
+        return SystemsTable(self.columns, pool, isRank)
 
     def presentSystems(self, optimizer):
         systems = optimizer.allSystems
         systems_gatheredPOSCARS = []
         systems_gatheredPOSCARS_unrelaxed = []
-        table_Individuals = self.getNewSystemsTable()
+        if optimizer.generations:
+            table_Individuals = self.getNewSystemsTable(optimizer.generations[-1].goodSystems)
+        else:
+            table_Individuals = self.getNewSystemsTable(optimizer.allSystems)
         content_origin = ''
         content_enthalpies = ''
         for ID in systems.getIDs():
@@ -387,10 +397,12 @@ class AtomisticRepresentation(object):
 
     def presentOptimizer(self, optimizer):
         # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
+        if not optimizer.generations:
+            return
         content_BESTIndividuals = ''
         content_convexHull = ''
-        table_goodStructures = self.getNewSystemsTable(isRank=True)
-        table_extendedConvexHull = self.getNewSystemsTable( isRank=True)
+        table_goodStructures = self.getNewSystemsTable(optimizer.generations[-1].goodSystems, isRank=True)
+        table_extendedConvexHull = self.getNewSystemsTable(optimizer.generations[-1].goodSystems, isRank=True)
         systems__BESTgatheredPOSCARS = []
         systems_goodStructuresPOSCARS = []
         systems_extendedConvexHullPOSCARS = []
@@ -399,7 +411,7 @@ class AtomisticRepresentation(object):
 
         for i, best in enumerate(optimizer.bestHistory):
             content_BESTIndividuals += f'Generation {i}\n'
-            table = self.getNewSystemsTable()
+            table = self.getNewSystemsTable(optimizer.generations[i].goodSystems)
             for ID in best:
                 table.update(ID, optimizer.allSystems.getEntry(ID))
             content_BESTIndividuals += table.table.get_string() + '\n'
@@ -425,7 +437,8 @@ class AtomisticRepresentation(object):
             if csSize == 1:
                 for rank, front in enumerate(fronts):
                     for system in front:
-                        table_goodStructures.update(system['ID'], system, rank=rank)
+                        ID = system.ID
+                        table_goodStructures.update(ID, system, rank=rank)
                         s = system.getFlavour(str(optimizer.target.defaultSuffix))
                         s.setProperty('label', f"EA{ID}")
                         systems_goodStructuresPOSCARS.append(s)
@@ -442,13 +455,14 @@ class AtomisticRepresentation(object):
                     for system in front:
                         numBlocks = tuple(compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']))
                         if numBlocks not in goodStructures:
-                            goodStructures[numBlocks] = self.getNewSystemsTable(isRank=True)
+                            goodStructures[numBlocks] = self.getNewSystemsTable(optimizer.generations[-1].goodSystems,
+                                                                                isRank=True)
                             goodStructuresPOSCARS[numBlocks] = []
-                        goodStructures[numBlocks].update(system['ID'], system, rank=rank)
                         ID = system.ID
-                        system = system.getFlavour(str(optimizer.target.defaultSuffix))
-                        system.setProperty('ID', ID)
-                        goodStructuresPOSCARS[numBlocks].append(system)
+                        goodStructures[numBlocks].update(ID, system, rank=rank)
+                        s = system.getFlavour(str(optimizer.target.defaultSuffix))
+                        s.setProperty('label', f"EA{ID}")
+                        goodStructuresPOSCARS[numBlocks].append(s)
 
                 for comp, table_gs in goodStructures.items():
                     with open(goodStructresFolder/f'{"_".join(str(x) for x in comp)}', 'w') as fp:
@@ -473,9 +487,9 @@ class AtomisticRepresentation(object):
                         except Exception:
                             pass
                     content_convexHull += f'Generation {i}\n'
-                    table = self.getNewSystemsTable()
+                    table = self.getNewSystemsTable(optimizer.generations[i].goodSystems)
                     for system in convexHull:
-                        table.update(system['ID'], system)
+                        table.update(system.ID, system)
                     content_convexHull += table.table.get_string() + '\n'
 
                 with open(self.RES_FOLDER/'convex_hull', 'w') as fp:
@@ -483,7 +497,7 @@ class AtomisticRepresentation(object):
 
                 for rank, front in enumerate(fronts):
                     for system in front:
-                        table_extendedConvexHull.update(system['ID'], system, rank=rank)
+                        table_extendedConvexHull.update(system.ID, system, rank=rank)
                 with open(self.RES_FOLDER/'extended_convex_hull', 'w') as fp:
                     fp.write(table_extendedConvexHull.table.get_string())
 
