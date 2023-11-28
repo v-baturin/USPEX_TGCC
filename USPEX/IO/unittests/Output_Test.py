@@ -54,17 +54,15 @@ class Output_Test(unittest.TestCase):
         output = {
             'stages': ['1', '2', '3', '4', '5'],
             'columns': [
-                ('.enthalpy.5', 'Enthalpy (eV)'),
-                ('cellUtility.volume.5', 'Volume (A^3)'),
-                ('cellUtility.symmetry.5', 'SYMMETRY (N)'),
+                '.enthalpy.5',
+                'cellUtility.volume.5',
+                'cellUtility.symmetry.5',
             ],
-            'presentConvexHull': False,
-            'presentPareto': (),
             'toDraw': [
                 ('dep', '.enthalpy.5', 'per_atom', 'ID', 'raw'),
                 ('dep', '.enthalpy.5', 'raw', 'ID', 'raw'),
                 ('dep', '.enthalpy.5', 'per_atom', 'cellUtility.volume.5', 'per_atom'),
-                ('stat', '.enthalpy.5', 'per_atom', '', ''),
+                ('stat', '.enthalpy.5', 'per_atom'),
             ]
         }
 
