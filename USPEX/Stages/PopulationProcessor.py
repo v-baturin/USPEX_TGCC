@@ -33,7 +33,8 @@ class PopulationProcessor:
     async def life(system, stages, sem):
         await sem.acquire()
         for stage in stages:
-            if stage.tag not in system.flavours and not system.getProperty('isBad', suffix=stage.source):
+            if stage.tag not in system.flavours and stage.source in system.flavours \
+                    and not system.getProperty('isBad', suffix=stage.source):
                 await stage.run(system)
         sem.release()
 

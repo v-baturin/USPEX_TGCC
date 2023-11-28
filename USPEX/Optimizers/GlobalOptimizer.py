@@ -150,7 +150,7 @@ class GlobalOptimizer(object):
         for ID in population.getIDs():
             system = population.getEntry(ID)
             for suffix in self.goodSystemsSuffixes:
-                if system[f'.isBad.{suffix}']:
+                if suffix not in system.flavours or system[f'.isBad.{suffix}']:
                     break
             else:
                 generation.goodSystems.addEntry(system)

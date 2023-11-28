@@ -25,22 +25,19 @@ main:
     numGenerations: 3
     stopCrit: 3
     output:
-        stages: ('1' '2' '3' '4')
         columns:
-            - ('simpleMoleculeUtility.composition.origin' 'Composition')
-            - ('.enthalpy.4' 'Enthalpy (eV)')
-            - ('cellUtility.volume.4' 'Volume (A^3)')
-            - ('cellUtility.symmetry.4' 'SYMMETRY (N)')
-            - ('radialDistributionUtility.structureOrder.4' 'Structure order')
-            - ('radialDistributionUtility.averageOrder.4' 'Average order')
-            - ('radialDistributionUtility.quasientropy.4' 'Quasientropy')
-        presentConvexHull: False
-        presentPareto: ()
+            - 'simpleMoleculeUtility.composition.origin'
+            - '.enthalpy.4'
+            - 'cellUtility.volume.4'
+            - 'cellUtility.symmetry.4'
+            - 'radialDistributionUtility.structureOrder.4'
+            - 'radialDistributionUtility.averageOrder.4'
+            - 'radialDistributionUtility.quasientropy.4'
         toDraw:
-            - ('dep' '.enthalpy.4' 'per_atom' 'ID' 'raw')
-            - ('dep' '.enthalpy.4' 'raw' 'ID' 'raw')
-            - ('dep' '.enthalpy.4' 'per_atom' 'cellUtility.volume.4' 'per_atom')
-            - ('stat' '.enthalpy.4' 'per_atom' '' '')
+            - (dep '.enthalpy.4' per_atom ID raw)
+            - (dep '.enthalpy.4' raw ID raw)
+            - (dep '.enthalpy.4' per_atom 'cellUtility.volume.4' per_atom)
+            - (stat '.enthalpy.4' per_atom)
 
 glp:
     type : gulp
