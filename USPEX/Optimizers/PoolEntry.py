@@ -505,7 +505,9 @@ class Pool:
     def addEntry(self, entry: PoolEntry):
         self._cache[entry.ID] = entry
         with PoolEntry.engine.connect() as conn:
-            conn.execute(insert(poolMap), [{"poolID": self.ID, "entryID": entry.ID}])
+            stmt = insert(poolMap).values(poolID=self.ID, entryID=entry.ID)
+            stmt = stmt.on_conflict_do_nothing()
+            conn.execute(stmt)
             conn.commit()
 
     def getIDs(self) -> list:
