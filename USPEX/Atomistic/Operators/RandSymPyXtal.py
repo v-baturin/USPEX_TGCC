@@ -127,8 +127,8 @@ class RandSymPyXtal:
                         if self.bondUtility.isConnected(structure):
                             return offspring,
             else:
-                molecules, lattice = self.molecularCrystal(dim, nsym, symbols, numIons, lattice=randcell.getCellVectors())
-                cell = self.cellUtility.adjustCell(lattice, estimatedVolume, sum(numIons), baseCell=envCell)
+                molecules, lattice, volume = self.molecularCrystal(dim, nsym, symbols, numIons, lattice=randcell.getCellVectors())
+                cell = self.cellUtility.adjustCell(lattice, volume, sum(numIons), baseCell=envCell)
                 offspring = offspringFactory(**{'atomistic.molecules': molecules, 'atomistic.cell': cell})
                 molecules = offspring.getProperty('molecules', extension='atomistic')
                 cell = offspring.getProperty('cell', extension='atomistic')
@@ -155,11 +155,11 @@ class RandSymPyXtal:
             group=1,
             molecules=[toPymatgen(molecule) for molecule in molecules],
             numMols=None,
-            lattice=Lattice.from_matrix(lattice)
+            lattice=None#Lattice.from_matrix(lattice)
         )
         return [molecule.createAtNewCoordinates(mol_site.get_mol_object().cart_coords)
                 for mol_site, molecule in zip(random_crystal.mol_sites, molecules)],\
-            random_crystal.lattice.matrix
+            random_crystal.lattice.matrix, random_crystal.volume
 
 
 def parseIntSet(nputstr=""):
