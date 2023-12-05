@@ -101,7 +101,6 @@ class GenerationController(object):
 
             if self.state is ControllerState.createPopulation:
                 self.population = self.optimizer.createPopulation()
-                self.outputRepresentation.presentOutput(self.optimizer)
                 self.state = ControllerState.processPopulation
                 self.save()
             if self.state is ControllerState.processPopulation:
@@ -111,7 +110,6 @@ class GenerationController(object):
                                                                      self.numParallelCalcs, self.optimizer.target)
                 self.doPresentSystems = False
                 await asyncio.wait({task})
-                self.outputRepresentation.presentOutput(self.optimizer)
                 self.state = ControllerState.updateOptimizer
                 self.save()
             if self.state is ControllerState.updateOptimizer:

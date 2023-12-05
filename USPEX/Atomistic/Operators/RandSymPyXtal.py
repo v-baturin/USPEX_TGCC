@@ -7,6 +7,8 @@ import numpy as np
 
 from pyxtal.crystal import Lattice
 from pyxtal import pyxtal
+from pyxtal.molecular_crystal import molecular_crystal
+
 
 MAX_PYXTAL_TIME = 30
 MAX_RANDOM_TIME = 300
@@ -14,20 +16,21 @@ MAX_PYXTAL_ATTEMPTS = 10000
 LOCAL_VACUUM = 0.2
 
 class RandSymPyXtal:
-    def __init__(self, utilities, nsym=None):
+    def __init__(self, utilities, symmetries=None):
+        self.atomistic = utilities.atomistic
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
-        if self.simpleMoleculeUtility.isTrueMolecular:
-            raise RuntimeError("RandSymPyXtal does not currently work in molecular regime.")
-        if isinstance(nsym, int):
-            self.nsym = [nsym]
-        elif isinstance(nsym, str):
-            self.nsym = list(parseIntSet(nsym))
-        elif nsym is None:
+        # if self.simpleMoleculeUtility.isTrueMolecular:
+        #     raise RuntimeError("RandSymPyXtal does not currently work in molecular regime.")
+        if isinstance(symmetries, int):
+            self.nsym = [symmetries]
+        elif isinstance(symmetries, str):
+            self.nsym = list(parseIntSet(symmetries))
+        elif symmetries is None:
             dim = self.cellUtility.getDim()
             if dim == 3:
                 self.nsym = list(range(1, 231))
@@ -40,7 +43,7 @@ class RandSymPyXtal:
             else:
                 raise ValueError(f"Wrong dim {dim}.")
         else:
-            self.nsym = nsym
+            self.nsym = symmetries
         signal.signal(signal.SIGALRM, signal_handler)
 
     def __call__(self, offspringFactory=None):
@@ -94,21 +97,39 @@ class RandSymPyXtal:
             else:
                 raise ValueError(f"Wrong dim {dim}.")
 
-            structurePyxtal = pyxtal()
-            signal.alarm(MAX_PYXTAL_TIME)
-            try:
-                structurePyxtal.from_random(dim, nsym, symbols, numIons, lattice=lat)
-            except Exception as e:
+            if not self.simpleMoleculeUtility.isTrueMolecular:
+                structurePyxtal = pyxtal()
+                signal.alarm(MAX_PYXTAL_TIME)
+                try:
+                    structurePyxtal.from_random(dim, nsym, symbols, numIons, lattice=lat)
+                except Exception as e:
+                    signal.alarm(0)
+                    logger.debug(e)
+                    continue
                 signal.alarm(0)
-                logger.debug(e)
-                continue
-            signal.alarm(0)
 
-            if structurePyxtal.valid:
-                tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
-                cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons), baseCell=envCell)
-                operations = dict(zip(symbols, operations))
-                offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
+                if structurePyxtal.valid:
+                    tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
+                    cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons), baseCell=envCell)
+                    operations = dict(zip(symbols, operations))
+                    offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
+                    molecules = offspring.getProperty('molecules', extension='atomistic')
+                    cell = offspring.getProperty('cell', extension='atomistic')
+                    if envAssembler is not None:
+                        offspring.setProperty('environments',
+                                              envAssembler.assemble(molecules, cell),
+                                              extension='atomistic')
+                    structure = offspring.getProperty('structure', extension='atomistic')
+                    minDistMatrix = self.bondUtility.getDistances(
+                        structure.getAtomTypes(), self.conditions.externalPressure)
+                    if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
+                        self.conditions.putConditions(offspring)
+                        if self.bondUtility.isConnected(structure):
+                            return offspring,
+            else:
+                molecules, lattice, volume = self.molecularCrystal(dim, nsym, symbols, numIons, lattice=randcell.getCellVectors())
+                cell = self.cellUtility.adjustCell(lattice, volume, sum(numIons), baseCell=envCell)
+                offspring = offspringFactory(**{'atomistic.molecules': molecules, 'atomistic.cell': cell})
                 molecules = offspring.getProperty('molecules', extension='atomistic')
                 cell = offspring.getProperty('cell', extension='atomistic')
                 if envAssembler is not None:
@@ -124,6 +145,22 @@ class RandSymPyXtal:
                         return offspring,
 
             failCounter += 1
+
+
+    def molecularCrystal(self, dim, nsym, symbols, numIons, lattice):
+        toPymatgen = self.atomistic.AtomicStructureRepresentation.toPymatgenMolecule
+        molecules = [self.simpleMoleculeUtility.molecules[symbol] for symbol in np.repeat(symbols, numIons)]
+        random_crystal = molecular_crystal(
+            dim=dim,
+            group=1,
+            molecules=[toPymatgen(molecule) for molecule in molecules],
+            numMols=None,
+            lattice=None#Lattice.from_matrix(lattice)
+        )
+        return [molecule.createAtNewCoordinates(mol_site.get_mol_object().cart_coords)
+                for mol_site, molecule in zip(random_crystal.mol_sites, molecules)],\
+            random_crystal.lattice.matrix, random_crystal.volume
+
 
 def parseIntSet(nputstr=""):
   selection = set()

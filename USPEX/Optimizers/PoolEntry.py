@@ -3,8 +3,9 @@ import pickle as pcl
 import numpy as np
 
 from typing import Union
-from sqlalchemy import MetaData, ForeignKey, Table, Column, Integer, Float, String, create_engine,\
-    insert, select, update, delete, and_
+from sqlalchemy import MetaData, ForeignKey, UniqueConstraint, Table, Column, Integer, Float, String, create_engine,\
+    select, update, delete, and_
+from sqlalchemy.dialects.sqlite import insert
 
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ flavours = Table(
     Column("id", Integer, primary_key=True),
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("name", String, nullable=False),
+    UniqueConstraint('sID', 'name'),
 )
 propertiesInt = Table(
     "propertiesInt",
@@ -30,6 +32,7 @@ propertiesInt = Table(
     Column("fID", ForeignKey("flavours.id"), nullable=False),
     Column("prop", String(30), nullable=False),
     Column("value", Integer, nullable=False),
+    UniqueConstraint('fID', 'prop'),
 )
 propertiesFlt = Table(
     "propertiesFlt",
@@ -38,6 +41,7 @@ propertiesFlt = Table(
     Column("fID", ForeignKey("flavours.id"), nullable=False),
     Column("prop", String(30), nullable=False),
     Column("value", Float, nullable=False),
+    UniqueConstraint('fID', 'prop'),
 )
 propertiesStr = Table(
     "propertiesStr",
@@ -46,6 +50,7 @@ propertiesStr = Table(
     Column("fID", ForeignKey("flavours.id"), nullable=False),
     Column("prop", String(30), nullable=False),
     Column("value", String, nullable=False),
+    UniqueConstraint('fID', 'prop'),
 )
 propertiesObj = Table(
     "propertiesObj",
@@ -54,6 +59,7 @@ propertiesObj = Table(
     Column("fID", ForeignKey("flavours.id"), nullable=False),
     Column("prop", String(30), nullable=False),
     Column("value", String, nullable=False),
+    UniqueConstraint('fID', 'prop'),
 )
 pools = Table(
     "pools",
@@ -66,6 +72,7 @@ poolMap = Table(
     Column("id", Integer, primary_key=True),
     Column("entryID", ForeignKey("systems.id"), nullable=False),
     Column("poolID", ForeignKey("pools.id"), nullable=False),
+    UniqueConstraint('entryID', 'poolID'),
 )
 expressions = Table(
     "expressions",
@@ -73,6 +80,7 @@ expressions = Table(
     Column("id", Integer, primary_key=True),
     Column("poolID", ForeignKey("pools.id"), nullable=False),
     Column("name", String, nullable=False),
+    UniqueConstraint('poolID', 'name'),
 )
 expressionsInt = Table(
     "expressionsInt",
@@ -81,6 +89,7 @@ expressionsInt = Table(
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("eID", ForeignKey("expressions.id"), nullable=False),
     Column("value", Integer, nullable=False),
+    UniqueConstraint('sID', 'eID'),
 )
 expressionsFlt = Table(
     "expressionsFlt",
@@ -89,6 +98,7 @@ expressionsFlt = Table(
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("eID", ForeignKey("expressions.id"), nullable=False),
     Column("value", Float, nullable=False),
+    UniqueConstraint('sID', 'eID'),
 )
 expressionsStr = Table(
     "expressionsStr",
@@ -97,6 +107,7 @@ expressionsStr = Table(
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("eID", ForeignKey("expressions.id"), nullable=False),
     Column("value", String, nullable=False),
+    UniqueConstraint('sID', 'eID'),
 )
 expressionsObj = Table(
     "expressionsObj",
@@ -105,6 +116,7 @@ expressionsObj = Table(
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("eID", ForeignKey("expressions.id"), nullable=False),
     Column("value", String, nullable=False),
+    UniqueConstraint('sID', 'eID'),
 )
 
 
@@ -186,23 +198,26 @@ class EntryFlavour:
     def setProperty(self, prop, value, extension=''):
         self._propertiesCache[f'{extension}.{prop}'] = value
         if self.ID is not None:
-            try:
-                self._getPropertyBD(f'{extension}.{prop}')
-            except KeyError:
-                self._setPropertyBD(f'{extension}.{prop}', value)
-            else:
-                self._updatePropertyBD(f'{extension}.{prop}', value)
+            self._setPropertyBD(f'{extension}.{prop}', value)
 
     def _setPropertyBD(self, prop: str, value):
         with PoolEntry.engine.connect() as conn:
             if isinstance(value, int):
-                conn.execute(insert(propertiesInt), [{"fID": self.ID, "prop": prop, "value": value}])
+                stmt = insert(propertiesInt).values(fID=self.ID, prop=prop, value=value)
+                stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
+                conn.execute(stmt)
             elif isinstance(value, float):
-                conn.execute(insert(propertiesFlt), [{"fID": self.ID, "prop": prop, "value": value}])
+                stmt = insert(propertiesFlt).values(fID=self.ID, prop=prop, value=value)
+                stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
+                conn.execute(stmt)
             elif isinstance(value, str):
-                conn.execute(insert(propertiesStr), [{"fID": self.ID, "prop": prop, "value": value}])
+                stmt = insert(propertiesStr).values(fID=self.ID, prop=prop, value=value)
+                stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
+                conn.execute(stmt)
             else:
-                conn.execute(insert(propertiesObj), [{"fID": self.ID, "prop": prop, "value": pcl.dumps(value)}])
+                stmt = insert(propertiesObj).values(fID=self.ID, prop=prop, value=pcl.dumps(value))
+                stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=pcl.dumps(value)))
+                conn.execute(stmt)
             conn.commit()
 
     def _updatePropertyBD(self, prop: str, value):
@@ -221,8 +236,11 @@ class EntryFlavour:
         if f'{extension}.{prop}' in self._propertiesCache:
             del self._propertiesCache[f'{extension}.{prop}']
         if self.ID is not None:
-            value = self._getPropertyBD(f'{extension}.{prop}')
-            if value is not None:
+            try:
+                value = self._getPropertyBD(f'{extension}.{prop}')
+            except KeyError:
+                pass
+            else:
                 self._delPropertyBD(f'{extension}.{prop}', value)
 
     def _delPropertyBD(self, prop, value):
@@ -270,12 +288,12 @@ class PoolEntry:
         self._flavours = {}
 
     def __getstate__(self):
-        return dict(ID=self.ID, flavourFactory=self.flavourFactory, flavours=self._flavours)
+        return dict(ID=self.ID, flavourFactory=self.flavourFactory)
 
     def __setstate__(self, state):
         self.ID = state['ID']
         self.flavourFactory = state['flavourFactory']
-        self._flavours = state['flavours']
+        self._flavours = {}
         self._expressionsCache = {}
 
     @staticmethod
@@ -306,10 +324,9 @@ class PoolEntry:
 
     @property
     def flavours(self):
-        with self.engine.connect() as conn:
-            result = conn.execute(select(flavours.c.id, flavours.c.name).where(flavours.c.sID == self.ID)).all()
-        if len(result) != len(self._flavours):
-            self._flavours = {}
+        if not self._flavours:
+            with self.engine.connect() as conn:
+                result = conn.execute(select(flavours.c.id, flavours.c.name).where(flavours.c.sID == self.ID)).all()
             for fID, flavour in result:
                 self._flavours[flavour] = self.flavourFactory(ID=fID)
         return self._flavours
@@ -320,6 +337,7 @@ class PoolEntry:
             result = conn.execute(insert(flavours), [{"sID": self.ID, "name": name}])
             conn.commit()
         flavour.setID(result.inserted_primary_key[0])
+        self._flavours = {}
 
     def getFlavour(self, name: str) -> EntryFlavour:
         return self.flavours[name]
@@ -335,6 +353,9 @@ class PoolEntry:
             flavour = self.getFlavour(suffix)
         flavour.setProperty(prop, value, extension=extension)
 
+    def delProperty(self, prop, extension='', suffix='origin'):
+        return self.getFlavour(suffix).delProperty(prop, extension=extension)
+
     def setExpression(self, expression, value):
         self._expressionsCache[expression] = value
         if self.getExpressionBD(expression.ID) is None:
@@ -343,13 +364,21 @@ class PoolEntry:
     def setExpressionBD(self, exprID: int, value):
         with PoolEntry.engine.connect() as conn:
             if isinstance(value, int):
-                conn.execute(insert(expressionsInt), [{"sID": self.ID, "eID": exprID, "value": value}])
+                stmt = insert(expressionsInt).values(sID=self.ID, eID=exprID, value=value)
+                stmt = stmt.on_conflict_do_update(index_elements=['sID', 'eID'], set_=dict(value=value))
+                conn.execute(stmt)
             elif isinstance(value, float):
-                conn.execute(insert(expressionsFlt), [{"sID": self.ID, "eID": exprID, "value": value}])
+                stmt = insert(expressionsFlt).values(sID=self.ID, eID=exprID, value=value)
+                stmt = stmt.on_conflict_do_update(index_elements=['sID', 'eID'], set_=dict(value=value))
+                conn.execute(stmt)
             elif isinstance(value, str):
-                conn.execute(insert(expressionsStr), [{"sID": self.ID, "eID": exprID, "value": value}])
+                stmt = insert(expressionsStr).values(sID=self.ID, eID=exprID, value=value)
+                stmt = stmt.on_conflict_do_update(index_elements=['sID', 'eID'], set_=dict(value=value))
+                conn.execute(stmt)
             else:
-                conn.execute(insert(expressionsObj), [{"sID": self.ID, "eID": exprID, "value": pcl.dumps(value)}])
+                stmt = insert(expressionsObj).values(sID=self.ID, eID=exprID, value=pcl.dumps(value))
+                stmt = stmt.on_conflict_do_update(index_elements=['sID', 'eID'], set_=dict(value=pcl.dumps(value)))
+                conn.execute(stmt)
             conn.commit()
 
     def getExpression(self, expression):
@@ -476,7 +505,9 @@ class Pool:
     def addEntry(self, entry: PoolEntry):
         self._cache[entry.ID] = entry
         with PoolEntry.engine.connect() as conn:
-            conn.execute(insert(poolMap), [{"poolID": self.ID, "entryID": entry.ID}])
+            stmt = insert(poolMap).values(poolID=self.ID, entryID=entry.ID)
+            stmt = stmt.on_conflict_do_nothing()
+            conn.execute(stmt)
             conn.commit()
 
     def getIDs(self) -> list:
@@ -485,7 +516,7 @@ class Pool:
         return np.asarray(IDs, dtype=int).flatten().tolist()
 
     def getEntry(self, ID: int):
-        assert ID in self.getIDs()
+        # assert ID in self.getIDs()
         if ID not in self._cache:
             self._cache[ID] = PoolEntry.getEntry(ID, self.flavourFactory)
         return self._cache[ID]

@@ -158,18 +158,18 @@ class GlobalOptimizer(object):
         self.ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.extensions)
         self.ExpressionEvaluator.calculate(self._createPopulation.optType, generation.goodSystems, self.extensions)
         assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
-        optType = self.optType if isinstance(self.optType, str) else generation.goodSystems.createExpression(self.optType)
+        optType = generation.goodSystems.createExpression(self.optType)
         generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, optType)
         logger.debug('Updating target: list of unique systems.')
         generation.uniquePopulation = Pool.createPool(self.flavourFactory)
         for ID in generation.goodPopulation.getIDs():
+            system = self.allSystems.getEntry(ID)
             try:
-                originalID = self.allSystems.getEntry(ID).getProperty('originalID')
+                system = self.allSystems.getEntry(system.getProperty('originalID'))
             except KeyError:
-                originalID = ID
-            original = self.allSystems.getEntry(originalID)
-            if original.ID not in generation.uniquePopulation.getIDs():
-                generation.uniquePopulation.addEntry(original)
+                pass
+            if system.ID not in generation.uniquePopulation.getIDs():
+                generation.uniquePopulation.addEntry(system)
         self.generations.append(generation)
         best = set(system.ID for system in generation.uniqueSystems.fronts(optType)[0])
         if best == self.best:
@@ -217,16 +217,15 @@ class GlobalOptimizer(object):
                     except KeyError:
                         duplicates = []
                     if system[optType] < ref_system[optType]:
-                        self.fingerprintUtility.clean(ref_system)
                         ref_system.setProperty('originalID', system.ID)
                         for ID in duplicates:
                             self.allSystems.getEntry(ID).setProperty('originalID', system.ID)
                         if ref_system.ID not in duplicates:
                             duplicates.append(ref_system.ID)
                         system.setProperty('duplicates', duplicates)
+                        ref_system.delProperty('duplicates')
                         uniqueSystems[i] = system.ID
                     else:
-                        self.fingerprintUtility.clean(system)
                         system.setProperty('originalID', ref_system.ID)
                         if system.ID not in duplicates:
                             duplicates.append(system.ID)
