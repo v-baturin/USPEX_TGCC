@@ -133,7 +133,7 @@ class OutputRepresentation(object):
                 output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer,
                                                                                   self.targetRepresentation)
                 output.append('    Optimization results')
-                table = self.targetRepresentation.getNewSystemsTable()
+                table = self.targetRepresentation.getNewSystemsTable(optimizer.generations[i].goodSystems)
                 for ID in population.getIDs():
                     table.update(ID, optimizer.allSystems.getEntry(ID))
                 output.append(table.table.get_string())
@@ -142,7 +142,7 @@ class OutputRepresentation(object):
 
 
             if final:
-                table = self.targetRepresentation.getNewSystemsTable()
+                table = self.targetRepresentation.getNewSystemsTable(optimizer.generations[-1].goodSystems)
                 for ID in optimizer.best:
                     table.update(ID, optimizer.allSystems.getEntry(ID))
                 output += createHeader_wrap(['Calculation results'], 'center')
