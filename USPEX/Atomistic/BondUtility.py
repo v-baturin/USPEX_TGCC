@@ -88,7 +88,7 @@ class BondUtility:
     propertyExtension = BondFunctions
 
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
-                 cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, ionDistances=None):
+                 cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, volumeCoefficient=1., ionDistances=None):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
         self.maxBond = maxBond if maxBond is not None else MAX_BOND
         self.lowerBond = lowerBond if lowerBond is not None else LOWER_BOND
@@ -111,7 +111,7 @@ class BondUtility:
         else:
             self.cutoff = cutoff
 
-        self.volumeEstimator = VolumeEstimator(volumeType)
+        self.volumeEstimator = VolumeEstimator(volumeType, volumeCoefficient)
 
         self._distances = {}
         ionDistances = ionDistances if ionDistances is not None else {}
