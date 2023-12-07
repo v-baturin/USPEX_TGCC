@@ -21,7 +21,7 @@ def compileParams(main: dict) -> dict:
             target['defaultSuffix'] = stages[-1]['tag'] if stages else 'origin'
         symbols = target['compositionSpace']['symbols']
         defaultVolumeType = 0
-        cutoffVDW = False
+        defaultCutoffVDW = False
         molecules = {}
         molSitesMapping = {}
         elementalSymbols = set()
@@ -42,7 +42,7 @@ def compileParams(main: dict) -> dict:
                     molSitesMapping[symbol['name']] = symbol['sites']
                 else:
                     defaultVolumeType = 0.5
-                    cutoffVDW = True
+                    defaultCutoffVDW = True
                 elementalSymbols |= set([x.short_name for x in molecule.getAtomTypes()])
         if 'junctionUtility' in target:
             target['junctionUtility']['molSitesMapping'] = molSitesMapping
@@ -63,8 +63,8 @@ def compileParams(main: dict) -> dict:
             target['bondUtility'] = {}
         if 'volumeType' not in target['bondUtility']:
             target['bondUtility']['volumeType'] = defaultVolumeType
-        if cutoffVDW:
-            target['bondUtility']['cutoff'] = 'vdw'
+        if 'cutoff' not in target['bondUtility']:
+            target['bondUtility']['cutoff'] = 'vdw' if defaultCutoffVDW else 'strong'
         if 'fingerprintUtility' not in optimizer:
             optimizer['fingerprintUtility'] = 'radialDistributionUtility'
         if 'powderSpectrumAnalyzer' in target:
