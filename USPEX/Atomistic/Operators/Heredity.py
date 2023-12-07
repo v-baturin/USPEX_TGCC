@@ -48,13 +48,9 @@ class Heredity:
         cell2 = system2.getProperty('cell', extension='atomistic', suffix=self.suffix)
         composition2 = system2.getProperty('composition', extension='simpleMoleculeUtility', suffix='origin')
         order2 = system2.getProperty('order', extension='radialDistributionUtility', suffix=self.suffix)
-        try:
-            system = np.random.choice((system1, system2))
-            parentEnv = system.getProperty('environments', extension='atomistic', suffix=self.suffix)
-            outputCell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
-        except Exception:
-            parentEnv = None
-            outputCell = None
+        system = np.random.choice((system1, system2))
+        parentEnv = system.getProperty('environments', extension='atomistic', suffix=self.suffix)
+        outputCell = system.getProperty('cell', extension='atomistic', suffix=self.suffix) if parentEnv else None
 
         for i in range(self.attempts):
             if outputCell is None:
