@@ -47,14 +47,14 @@ class CoreAdsorbantRandomGenerator:
 
             try:
                 npCoreAssembler = np.random.choice(self.environmentUtility.environments)
-                adsTypesSitesDiGraph = npCoreAssembler.getAdsJuncSiteGraph(self.junctionUtility.molSitesMapping)
+                adsTypesCoreSitesDiGraph = npCoreAssembler.getAdsJuncSiteGraph(self.junctionUtility.molSitesMapping)
                 tmp_molecules = []
                 tmp_offspring = {}
                 goodAdsorptionmap = set()
                 for adsName, quantity in composition.items():
                     adsorbant = self.simpleMoleculeUtility.molecules[adsName]
                     adsSites = self.junctionUtility.molSitesMapping[adsName]
-                    compatibleSites = select_compatible_sites(adsName, adsTypesSitesDiGraph)
+                    compatibleSites = select_compatible_sites(adsName, adsTypesCoreSitesDiGraph)
 
                     # check if there is enough sites
                     if len(compatibleSites) < quantity:
@@ -92,7 +92,7 @@ class CoreAdsorbantRandomGenerator:
                             goodAdsorptionmap |= sampleAdsorptionMap
                             tmp_molecules = sample_molecules
                             for site in sites_sample_attempt:
-                                adsTypesSitesDiGraph.remove_node(site)
+                                adsTypesCoreSitesDiGraph.remove_node(site)
                             break  # we can go the next adsName
 
                         logger.debug(f"Attempt {i_sample}: bad sample, moving to next one")
