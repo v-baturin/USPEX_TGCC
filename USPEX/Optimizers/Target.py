@@ -12,6 +12,9 @@ import logging
 from types import SimpleNamespace
 from typing import List
 
+from ..Expressions.Functions.BasicFunctions import BasicFunctions
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -55,7 +58,8 @@ class Target(object):
         self.defaultSuffix = defaultSuffix
         self.name = kwargs['type']
         utilities = {}
-        self.expressionExtensions = {}
+        self.expressionExtensions = {'basic': BasicFunctions()}
+
         self.propertyExtensions = {}
         failedUtilities = []
         for utilityType in targetTypes.utilities:

@@ -17,7 +17,6 @@ import numpy as np
 from .PoolEntry import FlavourFactory, Pool
 from .Target import Target, TargetType
 from ..Expressions.ExpressionEvaluator import ExpressionEvaluator
-from ..Expressions.Functions.BasicFunctions import BasicFunctions
 from ..Expressions.Functions.presets import applyPresetsRecursive
 
 
@@ -88,15 +87,13 @@ class GlobalOptimizer(object):
         :param selection: name of selection to launch and its parameters; obligatory
         """
 
-        self.extensions = {'basic': BasicFunctions()}
         self.target = Target(self.knownTargetTypes[target['type']], **target)
-        self.extensions.update(**self.target.expressionExtensions)
         self.flavourFactory = FlavourFactory(self.target.propertyExtensions)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = list(extraData)
 
         self._createPopulation = self.knownSelectionTypes[selection['type']](self.target, self.fingerprintUtility,
-                                                                             self.extensions, **selection)
+                                                                             **selection)
 
         self.optType = applyPresetsRecursive(optType)
         self.stopFitness = stopFitness
@@ -147,7 +144,7 @@ class GlobalOptimizer(object):
             else:
                 generation.goodSystems.addEntry(system)
                 generation.goodPopulation.addEntry(system)
-        ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.extensions)
+        ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.target.expressionExtensions)
         assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
         optType = generation.goodSystems.createExpression(self.optType)
         generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, generation.goodSystems, optType)

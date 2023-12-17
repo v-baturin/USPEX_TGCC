@@ -82,7 +82,7 @@ class Autofrac(object):
 
 class USPEXClassic(object):
 
-    def __init__(self, target, fingerprintUtility, extensions, optType, popSize: int, fractions: Dict[str, tuple],
+    def __init__(self, target, fingerprintUtility, optType, popSize: int, fractions: Dict[str, tuple],
                  initialPopSize: int = None, bestFrac: float=0.7, howManyDiverse: int = None,
                  diversityTolerance: float = 0.5, antiseeds: dict = None, globalParentsPool: bool = False, debug=False,
                  **kwargs):
@@ -93,7 +93,6 @@ class USPEXClassic(object):
         """
         self.target = target
         self.fingerprintUtility = fingerprintUtility
-        self.extensions = extensions
         self.optType = applyPresetsRecursive(optType)
         self.fractions = fractions
         antiseeds = {} if antiseeds is None else antiseeds
@@ -131,7 +130,7 @@ class USPEXClassic(object):
             self.antiseeds.payPenalties(generation.uniquePopulation, generation.uniqueSystems, self.fingerprintUtility)
             population = generation.uniqueSystems if self.globalParentsPool else generation.uniquePopulation
             optType = generation.goodSystems.createExpression(self.optType)
-            ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.extensions)
+            ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.target.expressionExtensions)
 
             if not self.globalParentsPool:
                 population = copy(population)
