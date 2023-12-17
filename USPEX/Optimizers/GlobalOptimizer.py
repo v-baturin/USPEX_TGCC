@@ -12,7 +12,6 @@ from copy import copy
 
 import numpy as np
 
-from .PoolEntry import FlavourFactory, Pool
 from ..Expressions.ExpressionEvaluator import ExpressionEvaluator
 from ..Expressions.Functions.presets import applyPresetsRecursive
 
@@ -100,7 +99,7 @@ class GlobalOptimizer(object):
             else:
                 generation.goodSystems.addEntry(system)
                 generation.goodPopulation.addEntry(system)
-        ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.target.expressionExtensions)
+        generation.goodSystems.evaluate(self.optType)
         assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
         optType = generation.goodSystems.createExpression(self.optType)
         generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, generation.goodSystems, optType)

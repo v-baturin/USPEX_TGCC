@@ -157,4 +157,4 @@ class Target(object):
         self.flavourFactory = FlavourFactory(self.propertyExtensions)
 
     def createPool(self):
-        return Pool.newPool(self.flavourFactory)
+        return Pool.newPool(self.flavourFactory, self.expressionExtensions)

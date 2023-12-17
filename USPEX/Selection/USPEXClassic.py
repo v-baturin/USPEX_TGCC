@@ -129,7 +129,7 @@ class USPEXClassic(object):
             self.antiseeds.payPenalties(generation.uniquePopulation, generation.uniqueSystems, self.target.metric)
             population = generation.uniqueSystems if self.globalParentsPool else generation.uniquePopulation
             optType = generation.goodSystems.createExpression(self.optType)
-            ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.target.expressionExtensions)
+            generation.goodSystems.evaluate(self.optType)
 
             if not self.globalParentsPool:
                 population = copy(population)
@@ -259,6 +259,7 @@ class USPEXClassic(object):
 
         # if not self.antiseeds.legacy:
         #     self.antiseeds.payPenalties(actualParents, generation.uniqueSystems, self.target.metric)
+        return offsprings
 
     def determineMostDiverse(self, population: list):
         """

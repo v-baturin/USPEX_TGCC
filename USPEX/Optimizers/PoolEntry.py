@@ -8,6 +8,9 @@ from sqlalchemy import MetaData, ForeignKey, UniqueConstraint, Table, Column, In
 from sqlalchemy.dialects.sqlite import insert
 
 
+from ..Expressions.ExpressionEvaluator import ExpressionEvaluator
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -463,20 +466,21 @@ class Expression:
 
 class Pool:
 
-    def __init__(self, ID: int, flavourfactory: FlavourFactory):
+    def __init__(self, ID: int, flavourfactory: FlavourFactory, expressionExtensions):
         self.ID = ID
         self.flavourFactory = flavourfactory
+        self.expressionExtensions = expressionExtensions
         self._cache = {}
 
     @staticmethod
-    def newPool(flavourfactory: FlavourFactory):
+    def newPool(flavourfactory: FlavourFactory, expressionExtensions):
         with PoolEntry.engine.connect() as conn:
             result = conn.execute(insert(pools), [{}])
             conn.commit()
-        return Pool(result.inserted_primary_key[0], flavourfactory)
+        return Pool(result.inserted_primary_key[0], flavourfactory, expressionExtensions)
 
     def createPool(self):
-        return Pool.newPool(self.flavourFactory)
+        return Pool.newPool(self.flavourFactory, self.expressionExtensions)
 
     def __copy__(self):
         newPool = self.createPool()
@@ -538,3 +542,6 @@ class Pool:
             return expression
         else:
             return Expression(expression, self)
+
+    def evaluate(self, expression):
+        ExpressionEvaluator.calculate(expression, self)

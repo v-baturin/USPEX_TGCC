@@ -106,7 +106,7 @@ class Output_Test(unittest.TestCase):
                     system.setProperty('isBad', False, suffix='4')
                     system.setProperty('isBad', False, suffix='5')
                 optimizer.best = set(targetState[0])
-            population = Pool.newPool(FlavourFactory(extensions=extensions))
+            population = Pool.newPool(FlavourFactory(extensions=extensions), optimizer.target.expressionExtensions)
             with open(TESTPATH/f"output_data/population{gen}", "r") as f:
                 for ID in json.load(f):
                     population.addEntry(allSystems.getEntry(ID+1))
