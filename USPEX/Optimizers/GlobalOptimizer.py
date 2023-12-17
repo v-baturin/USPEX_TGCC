@@ -12,6 +12,8 @@ from copy import copy
 from typing import List
 from itertools import chain
 
+import numpy as np
+
 from .PoolEntry import FlavourFactory, Pool
 from .Target import Target, TargetType
 from ..Expressions.ExpressionEvaluator import ExpressionEvaluator
@@ -148,13 +150,13 @@ class GlobalOptimizer(object):
         ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.extensions)
         assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
         optType = generation.goodSystems.createExpression(self.optType)
-        generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, optType)
+        generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, generation.goodSystems, optType)
         logger.debug('Updating target: list of unique systems.')
         generation.uniquePopulation = Pool.createPool(self.flavourFactory)
         for ID in generation.goodPopulation.getIDs():
-            system = self.allSystems.getEntry(ID)
+            system = generation.goodPopulation.getEntry(ID)
             try:
-                system = self.allSystems.getEntry(system.getProperty('originalID'))
+                system = generation.goodPopulation.getEntry(system.getProperty('originalID'))
             except KeyError:
                 pass
             if system.ID not in generation.uniquePopulation.getIDs():
@@ -169,7 +171,8 @@ class GlobalOptimizer(object):
         self.bestHistory.append(self.best)
         if self.stopFitness is not None:
             for ID in self.best:
-                if round(self.allSystems.getEntry(ID)[optType], ndigits=3) <= round(self.stopFitness, ndigits=3):
+                value = generation.uniqueSystems.getEntry(ID)[optType]
+                if value < self.stopFitness or np.isclose(value, self.stopFitness, atol=5.e-4):
                     self._isGoalReached = True
                     break
         if self.stopSystems is not None and not self._isGoalReached:
@@ -183,7 +186,7 @@ class GlobalOptimizer(object):
                     break
             self._isGoalReached = not stopSystems
 
-    def _markDuplicates(self, population, optType):
+    def _markDuplicates(self, population, goodSystems, optType):
         """
         Method for cleaning duplicates.
 
@@ -198,7 +201,7 @@ class GlobalOptimizer(object):
         for system_ID in population.getIDs():
             system = population.getEntry(system_ID)
             for i, ref_system_ID in enumerate(uniqueSystems):
-                ref_system = self.allSystems.getEntry(ref_system_ID)
+                ref_system = goodSystems.getEntry(ref_system_ID)
                 if self.fingerprintUtility.equal(system, ref_system) and system.ID != ref_system.ID:
                     logger.info(f"system {system.ID} coincides with system {ref_system.ID} found earlier")
                     try:
@@ -208,7 +211,7 @@ class GlobalOptimizer(object):
                     if system[optType] < ref_system[optType]:
                         ref_system.setProperty('originalID', system.ID)
                         for ID in duplicates:
-                            self.allSystems.getEntry(ID).setProperty('originalID', system.ID)
+                            goodSystems.getEntry(ID).setProperty('originalID', system.ID)
                         if ref_system.ID not in duplicates:
                             duplicates.append(ref_system.ID)
                         system.setProperty('duplicates', duplicates)
@@ -224,7 +227,7 @@ class GlobalOptimizer(object):
                 uniqueSystems.append(system.ID)
         uniqueSystemsPool = Pool.createPool(self.flavourFactory)
         for ID in uniqueSystems:
-            uniqueSystemsPool.addEntry(self.allSystems.getEntry(ID))
+            uniqueSystemsPool.addEntry(goodSystems.getEntry(ID))
         return uniqueSystemsPool
 
     @property

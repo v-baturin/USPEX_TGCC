@@ -130,7 +130,7 @@ class AtomisticRepresentation(object):
         if optimizer.generations:
             table_Individuals = self.getNewSystemsTable(optimizer.generations[-1].goodSystems)
         else:
-            table_Individuals = self.getNewSystemsTable(optimizer.allSystems)
+            table_Individuals = self.getNewSystemsTable(systems)
         content_origin = ''
         content_enthalpies = ''
         for ID in systems.getIDs():
@@ -411,16 +411,17 @@ class AtomisticRepresentation(object):
 
         for i, best in enumerate(optimizer.bestHistory):
             content_BESTIndividuals += f'Generation {i}\n'
-            table = self.getNewSystemsTable(optimizer.generations[i].goodSystems)
+            goodSystems = optimizer.generations[i].goodSystems
+            table = self.getNewSystemsTable(goodSystems)
             for ID in best:
-                table.update(ID, optimizer.allSystems.getEntry(ID))
+                table.update(ID, goodSystems.getEntry(ID))
             content_BESTIndividuals += table.table.get_string() + '\n'
         with open(self.RES_FOLDER/'BESTIndividuals', 'w') as fp:
             fp.write(content_BESTIndividuals)
 
-        for best in optimizer.bestHistory:
+        for i, best in enumerate(optimizer.bestHistory):
             for ID in best:
-                system = optimizer.allSystems.getEntry(ID).getFlavour(str(optimizer.target.defaultSuffix))
+                system = optimizer.generations[i].goodSystems.getEntry(ID).getFlavour(str(optimizer.target.defaultSuffix))
                 system.setProperty('label', f"EA{ID}")
                 systems__BESTgatheredPOSCARS.append(system)
         self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)

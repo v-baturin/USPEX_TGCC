@@ -135,16 +135,17 @@ class OutputRepresentation(object):
                 output.append('    Optimization results')
                 table = self.targetRepresentation.getNewSystemsTable(optimizer.generations[i].goodSystems)
                 for ID in population.getIDs():
-                    table.update(ID, optimizer.allSystems.getEntry(ID))
+                    table.update(ID, population.getEntry(ID))
                 output.append(table.table.get_string())
                 output += self.targetRepresentation.getPopulationSummaryBlock(generation.goodPopulation, optimizer)
                 output.append('')
 
 
             if final:
-                table = self.targetRepresentation.getNewSystemsTable(optimizer.generations[-1].goodSystems)
+                goodSystems = optimizer.generations[-1].goodSystems
+                table = self.targetRepresentation.getNewSystemsTable(goodSystems)
                 for ID in optimizer.best:
-                    table.update(ID, optimizer.allSystems.getEntry(ID))
+                    table.update(ID, goodSystems.getEntry(ID))
                 output += createHeader_wrap(['Calculation results'], 'center')
                 output.append(table.table.get_string())
 
