@@ -31,7 +31,6 @@ class Output_Test(unittest.TestCase):
                                       'radialDistributionUtility': {'symbols': ['Mg', 'Al', 'O'], 'suffix': '5'},
                                       'defaultSuffix': '5'
                                       },
-                           'fingerprintUtility': 'radialDistributionUtility',
                            'optType': '.enthalpy.5',
                            'stopFitness': -655.062,
                            'selection': {'type': 'USPEXClassic', 'popSize': 10,

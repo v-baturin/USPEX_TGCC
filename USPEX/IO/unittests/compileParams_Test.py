@@ -64,7 +64,6 @@ class CompileParams_Test(unittest.TestCase):
                     'bondUtility': {'volumeType': 0, 'cutoff': 'strong'},
                     'junctionUtility': {'molSitesMapping': {}}
                 },
-                'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
                 'selection': {
                     'type': 'USPEXClassic',
@@ -138,7 +137,6 @@ class CompileParams_Test(unittest.TestCase):
     #                 'bondUtility': {'volumeType': 0.5, 'cutoff': 'strong'},
     #                 'junctionUtility': {'molSitesMapping': {}}
     #             },
-    #             'fingerprintUtility': 'radialDistributionUtility',
     #             'optType': 'enthalpy',
     #             'selection': {'type': 'USPEXClassic',
     #                           'optType': ('aging', 'enthalpy'),
@@ -190,7 +188,6 @@ class CompileParams_Test(unittest.TestCase):
                     'bondUtility': {'volumeType': 0, 'cutoff': 'strong'},
                     'junctionUtility': {'molSitesMapping': {}}
                 },
-                'fingerprintUtility': 'radialDistributionUtility',
                 'optType': 'enthalpy',
                 'selection': {'optType': 'enthalpy'}
             },

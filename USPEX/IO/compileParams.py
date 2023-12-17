@@ -65,8 +65,6 @@ def compileParams(main: dict) -> dict:
             target['bondUtility']['volumeType'] = defaultVolumeType
         if 'cutoff' not in target['bondUtility']:
             target['bondUtility']['cutoff'] = 'vdw' if defaultCutoffVDW else 'strong'
-        if 'fingerprintUtility' not in optimizer:
-            optimizer['fingerprintUtility'] = 'radialDistributionUtility'
         if 'powderSpectrumAnalyzer' in target:
             target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(target['powderSpectrumAnalyzer'])
         if 'singleCrystalSpectrumAnalyzer' in target:

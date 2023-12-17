@@ -1,7 +1,6 @@
 numGenerations: 3
 numParallelCalcs: 2
 optimizer:
-  fingerprintUtility: radialDistributionUtility
   optType: .enthalpy.5
   selection:
     fractions:

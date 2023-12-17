@@ -9,13 +9,11 @@ Class implementing global optimizer
 
 import logging
 from copy import copy
-from typing import List
 from itertools import chain
 
 import numpy as np
 
 from .PoolEntry import FlavourFactory, Pool
-from .Target import Target, TargetType
 from ..Expressions.ExpressionEvaluator import ExpressionEvaluator
 from ..Expressions.Functions.presets import applyPresetsRecursive
 
@@ -40,13 +38,8 @@ class GlobalOptimizer(object):
 
     """
 
-    ExpressionEvaluator = None
     knownSelectionTypes = {}
-    knownTargetTypes = {}
-
-    @classmethod
-    def setExpressionEvaluatorType(cls, ExpressionEvaluatorType: type):
-        cls.ExpressionEvaluator = ExpressionEvaluatorType
+    Target = None
 
     @classmethod
     def registerSelection(cls, selectionType: type):
@@ -54,29 +47,10 @@ class GlobalOptimizer(object):
         cls.knownSelectionTypes[selectionType.__name__] = selectionType
 
     @classmethod
-    def registerTarget(cls, name: str, utilities: List[type], hybridizations: List[type], mutations: List[type],
-                       creations: List[type], seeds: type = None):
-        """
-        Register the target as known target.
+    def setTarget(cls, targetType):
+        cls.Target = targetType
 
-        :type name: str
-        :param name: target name.
-        :type utilities: list
-        :param utilities: list of types of utilities.
-        :type hybridizations: list
-        :param hybridizations: list of types of hybridization operators.
-        :type mutations: list
-        :param mutations: list of types of mutation operators.
-        :type creations: list
-        :param creations: list of types of mutation operators.
-        :type seeds: type
-        :param seeds: type of Seeds operator.
-        """
-        assert name not in cls.knownTargetTypes, f'{name} is not registered as known Target'
-        cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
-                                                mutations=mutations, creations=creations, seeds=seeds)
-
-    def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None,
+    def __init__(self, target: dict, selection: dict, optType, stopFitness=None, stopSystems=None,
                  extraData=(), **kwargs):
         """
         Initializes the class.
@@ -87,13 +61,11 @@ class GlobalOptimizer(object):
         :param selection: name of selection to launch and its parameters; obligatory
         """
 
-        self.target = Target(self.knownTargetTypes[target['type']], **target)
+        self.target = self.Target(**target)
         self.flavourFactory = FlavourFactory(self.target.propertyExtensions)
-        self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = list(extraData)
 
-        self._createPopulation = self.knownSelectionTypes[selection['type']](self.target, self.fingerprintUtility,
-                                                                             **selection)
+        self._createPopulation = self.knownSelectionTypes[selection['type']](self.target, **selection)
 
         self.optType = applyPresetsRecursive(optType)
         self.stopFitness = stopFitness
@@ -176,7 +148,7 @@ class GlobalOptimizer(object):
             stopSystems = list(self.stopSystems)
             for system in generation.uniqueSystems:
                 for i, stopSystem in enumerate(stopSystems):
-                    if self.fingerprintUtility.equal(system, stopSystem):
+                    if self.target.metric.equal(system, stopSystem):
                         del stopSystems[i]
                         break
                 if not stopSystems:
@@ -199,7 +171,7 @@ class GlobalOptimizer(object):
             system = population.getEntry(system_ID)
             for i, ref_system_ID in enumerate(uniqueSystems):
                 ref_system = goodSystems.getEntry(ref_system_ID)
-                if self.fingerprintUtility.equal(system, ref_system) and system.ID != ref_system.ID:
+                if self.target.metric.equal(system, ref_system) and system.ID != ref_system.ID:
                     logger.info(f"system {system.ID} coincides with system {ref_system.ID} found earlier")
                     try:
                         duplicates = ref_system.getProperty('duplicates')

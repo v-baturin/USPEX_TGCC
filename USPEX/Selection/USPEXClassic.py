@@ -82,7 +82,7 @@ class Autofrac(object):
 
 class USPEXClassic(object):
 
-    def __init__(self, target, fingerprintUtility, optType, popSize: int, fractions: Dict[str, tuple],
+    def __init__(self, target, optType, popSize: int, fractions: Dict[str, tuple],
                  initialPopSize: int = None, bestFrac: float=0.7, howManyDiverse: int = None,
                  diversityTolerance: float = 0.5, antiseeds: dict = None, globalParentsPool: bool = False, debug=False,
                  **kwargs):
@@ -92,7 +92,6 @@ class USPEXClassic(object):
         popSize : int - size of population
         """
         self.target = target
-        self.fingerprintUtility = fingerprintUtility
         self.optType = applyPresetsRecursive(optType)
         self.fractions = fractions
         antiseeds = {} if antiseeds is None else antiseeds
@@ -127,7 +126,7 @@ class USPEXClassic(object):
         """
 
         if generation is not None:
-            self.antiseeds.payPenalties(generation.uniquePopulation, generation.uniqueSystems, self.fingerprintUtility)
+            self.antiseeds.payPenalties(generation.uniquePopulation, generation.uniqueSystems, self.target.metric)
             population = generation.uniqueSystems if self.globalParentsPool else generation.uniquePopulation
             optType = generation.goodSystems.createExpression(self.optType)
             ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.target.expressionExtensions)
@@ -258,7 +257,7 @@ class USPEXClassic(object):
                 logger.info(f"Seed filename is {seed['.filename']}.")
 
         # if not self.antiseeds.legacy:
-        #     self.antiseeds.payPenalties(actualParents, generation.uniqueSystems, self.fingerprintUtility)
+        #     self.antiseeds.payPenalties(actualParents, generation.uniqueSystems, self.target.metric)
 
     def determineMostDiverse(self, population: list):
         """
@@ -282,7 +281,7 @@ class USPEXClassic(object):
         while deltaTol > 0.000001:
             for system in population:
                 for ref_system in mostDiverse:
-                    if self.fingerprintUtility.equal(system, ref_system, tolerance):
+                    if self.target.metric.equal(system, ref_system, tolerance):
                         break
                 else:
                     mostDiverse.append(system)

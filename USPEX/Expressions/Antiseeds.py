@@ -20,21 +20,21 @@ class Antiseeds:
         self.max = max
         self.sigma = sigma
 
-    def payPenalties(self, population, pool, fingerprintUtility):
+    def payPenalties(self, population, pool, metric):
         """
         Calculates and stores penalties.
         :param population: list of systems to be penalized. This systems will be in centers of gaussian distributions.
         :param pool: list of all systems.
         All this systems will get penalties depending on their distance from systems in *popuation* list.
-        :param fingerprintUtility: utility providing **dist** method which calculates distance between systems.
+        :param metric: utility providing **dist** method which calculates distance between systems.
         """
-        suffix = fingerprintUtility.suffix
+        suffix = metric.suffix
         population = [population.getEntry(ID) for ID in population.getIDs()]
         pool = [pool.getEntry(ID) for ID in pool.getIDs()]
         comb = list(combinations(population, 2))
-        sigma = self.sigma*(np.sum(fingerprintUtility.dist(s1, s2) for s1, s2 in comb) / len(comb) if comb else 1)
+        sigma = self.sigma*(np.sum(metric.dist(s1, s2) for s1, s2 in comb) / len(comb) if comb else 1)
         for system in pool:
             correction = system.getProperty(self.prop, extension='antiseeds', suffix=suffix)
-            dists = np.fromiter((fingerprintUtility.dist(ref, system) for ref in population), dtype=float)
+            dists = np.fromiter((metric.dist(ref, system) for ref in population), dtype=float)
             correction += self.max * np.sum(np.exp(-dists ** 2 / (2 * sigma ** 2)))
             system.setProperty(self.prop, correction, extension='antiseeds', suffix=suffix)

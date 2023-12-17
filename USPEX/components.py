@@ -42,31 +42,21 @@ from .Atomistic.Operators.Seeds import Seeds
 from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
 # --------------------------------------------- Optimizers ----------------------------------------------------------
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
-from .Expressions.ExpressionEvaluator import ExpressionEvaluator
-GlobalOptimizer.setExpressionEvaluatorType(ExpressionEvaluator)
+from .Optimizers.Target import Target
 from .Selection.USPEXClassic import USPEXClassic
 GlobalOptimizer.registerSelection(USPEXClassic)
-GlobalOptimizer.registerTarget('Atomistic',
-                               utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
-                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
-                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
-                               hybridizations=[Heredity],
-                               mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
-                               creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
-                               seeds=Seeds)
-from .Optimizers.ModelOptimizer import ModelOptimizer, External
-ModelOptimizer.registerModel(External)
-ModelOptimizer.registerTarget('Atomistic',
+Target.registerTarget('Atomistic',
                       utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
-                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
-                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
+                        EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
+                        PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
-                      seeds=Seeds)
-from .Stages.Executor import Executor
-External.setExecutorType(Executor)
+                      seeds=Seeds,
+                      defaultMetric='radialDistributionUtility')
+GlobalOptimizer.setTarget(Target)
 # --------------------------------------------- Interfaces ----------------------------------------------------------
+from .Stages.Executor import Executor
 from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
 Executor.registerInterface('abinit', ABINIT_Interface)
 from .Stages.Interfaces.GULP_Interface import GULP_Interface
@@ -113,7 +103,6 @@ Stages.registerStage('populationProcessor', PopulationProcessor)
 # ---------------------------------------- Generation Controller ----------------------------------------------------
 from .Stages.GenerationController import GenerationController
 GenerationController.registerOptimizer(GlobalOptimizer)
-GenerationController.registerOptimizer(ModelOptimizer)
 GenerationController.setPopulationProcessor(PopulationProcessor)
 from .IO.compileParams import compileParams
 GenerationController.setUpcompileParams(compileParams)
