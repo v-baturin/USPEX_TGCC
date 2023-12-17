@@ -57,4 +57,4 @@ class Antiseeds:
         :param system: dictionary describing system.
         :return: retrieve antiseeds penalty of a system.
         """
-        return system['antiseeds.corrections'] if 'antiseeds.corrections' in system else 0
+        return 0

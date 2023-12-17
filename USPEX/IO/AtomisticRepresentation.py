@@ -1,3 +1,4 @@
+import logging
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,6 +13,8 @@ from .formatters import createHeader_wrap
 from ..Expressions.Functions.presets import presetFitness, applyPresetsRecursive
 
 matplotlib.use('Agg')
+
+logger = logging.getLogger(__name__)
 
 MOL_CRYSTALS_PAPERS = '''\
 Zhu Q., Oganov A.R., Glass C.W., Stokes H. (2012)
@@ -347,7 +350,6 @@ class AtomisticRepresentation(object):
             approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
         else:
             approximateVolume = 'NA'
-        # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         if isinstance(optimizer.optType, str):
             optType = optimizer.optType
         else:
@@ -362,10 +364,7 @@ class AtomisticRepresentation(object):
         qe = 0
         comb = list(combinations(population, 2))
         for s1, s2 in comb:
-            # if not s1['isBad'] and not s2['isBad']:
-            tmp_fing1 = s1[f'radialDistributionUtility.structureFingerprint.{optimizer.fingerprintUtility.suffix}']
-            tmp_fing2 = s2[f'radialDistributionUtility.structureFingerprint.{optimizer.fingerprintUtility.suffix}']
-            dist = tmp_fing1.cosine_distance(tmp_fing1, tmp_fing2)
+            dist = optimizer.target.utilities.radialDistributionUtility.dist(s1, s2, legacy=True)
             qe += (1 - dist) * np.log(1 - dist)
         qe /= -len(comb) if comb else 1
 
@@ -398,7 +397,6 @@ class AtomisticRepresentation(object):
         return block
 
     def presentOptimizer(self, optimizer):
-        # originalID = lambda system: system['originalID'] if 'originalID' in system else system['ID']
         if not optimizer.generations:
             return
         content_BESTIndividuals = ''

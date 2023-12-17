@@ -129,3 +129,7 @@ class BasicFunctions:
             for ind in front:
                 values[ind] = i
         return values
+
+    @staticmethod
+    def applyCorrections(values: np.ndarray, corrections: np.ndarray) -> np.ndarray:
+        return (values.mean() - values.min())*corrections + values

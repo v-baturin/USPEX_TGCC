@@ -57,6 +57,9 @@ class AtomicStructure:
         return AtomicStructure.initFromFractionalCoordinates(self.getAtomTypes(), self.getFractionalCoordinates(),
                                                              self.getCell().getAlignedCell(axis))
 
+    def createAtNewCoordinates(self, coordinates):
+        return AtomicStructure(self.getAtomTypes(), coordinates, cell=self.getCell(), edges=self.edges)
+
     def __len__(self):
         return len(self._atomTypes)
 

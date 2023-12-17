@@ -61,7 +61,7 @@ class CompileParams_Test(unittest.TestCase):
                                          'blocks': [[4, 8, 16]]},
                     'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O'], 'suffix': '4'},
                     'defaultSuffix': '4',
-                    'bondUtility': {'volumeType': 0},
+                    'bondUtility': {'volumeType': 0, 'cutoff': 'strong'},
                     'junctionUtility': {'molSitesMapping': {}}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
@@ -135,7 +135,7 @@ class CompileParams_Test(unittest.TestCase):
     #                 'compositionSpace': {'symbols': ['mol_h2o'],
     #                                      'blocks': [[4]]},
     #                 'radialDistributionUtility': {'symbols': ['H', 'O']},
-    #                 'bondUtility': {'volumeType': 0.5},
+    #                 'bondUtility': {'volumeType': 0.5, 'cutoff': 'strong'},
     #                 'junctionUtility': {'molSitesMapping': {}}
     #             },
     #             'fingerprintUtility': 'radialDistributionUtility',
@@ -187,7 +187,7 @@ class CompileParams_Test(unittest.TestCase):
                                          'range': [[1,1]]},
                     'radialDistributionUtility': {'symbols': ['Cl', 'Na'], 'suffix': 'origin'},
                     'defaultSuffix': 'origin',
-                    'bondUtility': {'volumeType': 0},
+                    'bondUtility': {'volumeType': 0, 'cutoff': 'strong'},
                     'junctionUtility': {'molSitesMapping': {}}
                 },
                 'fingerprintUtility': 'radialDistributionUtility',
