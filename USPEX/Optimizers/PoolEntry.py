@@ -162,7 +162,9 @@ class EntryFlavour:
                     logger.debug(e)
                 else:
                     return self._propertiesCache[f'{extension}.{prop}']
-            if extension in self.extensions:
+            if extension == 'antiseeds':
+                self._propertiesCache[f'{extension}.{prop}'] = 0
+            elif extension in self.extensions:
                 self._propertiesCache[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
             else:
                 raise KeyError(f'Can not evaluate property {extension}.{prop} for {self._propertiesCache}.')

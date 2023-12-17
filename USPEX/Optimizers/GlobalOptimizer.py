@@ -14,9 +14,9 @@ from itertools import chain
 
 from .PoolEntry import FlavourFactory, Pool
 from .Target import Target, TargetType
+from ..Expressions.ExpressionEvaluator import ExpressionEvaluator
 from ..Expressions.Functions.BasicFunctions import BasicFunctions
 from ..Expressions.Functions.presets import applyPresetsRecursive
-from ..Expressions.Antiseeds import Antiseeds
 
 
 logger = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ class GlobalOptimizer(object):
                                                 mutations=mutations, creations=creations, seeds=seeds)
 
     def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None,
-                 extraData=(), antiseeds: dict = None, **kwargs):
+                 extraData=(), **kwargs):
         """
         Initializes the class.
 
@@ -92,12 +92,9 @@ class GlobalOptimizer(object):
         self.flavourFactory = FlavourFactory(self.target.propertyExtensions)
         self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
         self.extraData = list(extraData)
-        antiseeds = {} if antiseeds is None else antiseeds
-        self.antiseeds = Antiseeds(self.fingerprintUtility, **antiseeds)
-        self.flavourFactory.extensions['antiseeds'] = self.antiseeds
 
         self._createPopulation = self.knownSelectionTypes[selection['type']](self.target, self.fingerprintUtility,
-                                                                             **selection)
+                                                                             self.extensions, **selection)
 
         self.optType = applyPresetsRecursive(optType)
         self.stopFitness = stopFitness
@@ -120,16 +117,9 @@ class GlobalOptimizer(object):
         self._isGoalReached = False
 
     def createPopulation(self):
-        if self.generations:
-            generation = self.generations[-1]
-            self.antiseeds.payPenalties(generation.uniquePopulation, generation.uniqueSystems)
-            population = generation.uniqueSystems if self._createPopulation.globalParentsPool else generation.uniquePopulation
-            optType = generation.goodSystems.createExpression(self._createPopulation.optType)
-        else:
-            population = None
-            optType = None
+        generation = self.generations[-1] if self.generations else None
         offsprings = Pool.createPool(self.flavourFactory)
-        self._createPopulation(population, offsprings, optType)
+        self._createPopulation(generation, offsprings)
         for ID in offsprings.getIDs():
             self.allSystems.addEntry(offsprings.getEntry(ID))
         return offsprings
@@ -155,8 +145,7 @@ class GlobalOptimizer(object):
             else:
                 generation.goodSystems.addEntry(system)
                 generation.goodPopulation.addEntry(system)
-        self.ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.extensions)
-        self.ExpressionEvaluator.calculate(self._createPopulation.optType, generation.goodSystems, self.extensions)
+        ExpressionEvaluator.calculate(self.optType, generation.goodSystems, self.extensions)
         assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
         optType = generation.goodSystems.createExpression(self.optType)
         generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, optType)
