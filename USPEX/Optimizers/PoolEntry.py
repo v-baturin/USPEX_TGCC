@@ -492,11 +492,12 @@ class Pool:
         return hash(self.ID)
 
     def __getstate__(self):
-        return dict(ID=self.ID, flavourFactory=self.flavourFactory)
+        return dict(ID=self.ID, flavourFactory=self.flavourFactory, expressionExtensions=self.expressionExtensions)
 
     def __setstate__(self, state):
         self.ID = state['ID']
         self.flavourFactory = state['flavourFactory']
+        self.expressionExtensions = state['expressionExtensions']
         self._cache = {}
 
     def newEntry(self, flavour: EntryFlavour):

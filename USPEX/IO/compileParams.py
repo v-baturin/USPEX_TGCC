@@ -21,6 +21,8 @@ def compileParams(main: dict) -> dict:
         target = optimizer['target']
         if 'defaultSuffix' not in target:
             target['defaultSuffix'] = stages[-1]['tag'] if stages else 'origin'
+        if 'suffix' not in main['output']:
+            main['output']['suffix'] = target['defaultSuffix']
         symbols = target['compositionSpace']['symbols']
         defaultVolumeType = 0
         defaultCutoffVDW = False

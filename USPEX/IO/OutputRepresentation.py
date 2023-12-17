@@ -72,13 +72,13 @@ class OutputRepresentation(object):
         if (Path.cwd()/'input.yaml').exists():
             shutil.copyfile(Path.cwd()/'input.yaml', self.RES_FOLDER/self.PARAMETERS_FILENAME)
 
-    def presentSystems(self, optimizer, systems):
+    def presentSystems(self, generations, systems):
         if self.targetRepresentation is not None:
-            return self.targetRepresentation.presentSystems(optimizer, systems)
+            return self.targetRepresentation.presentSystems(generations, systems)
         else:
             return None
 
-    def presentOutput(self, optimizer, printDate=True, final=False):
+    def presentOutput(self, optimizer, generations, printDate=True, final=False):
         if self.selectionRepresentation is not None and self.targetRepresentation is not None:
             self.OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -127,13 +127,13 @@ class OutputRepresentation(object):
 
             output += createHeader_wrap(['Generations block'], 'center')
 
-            for i, generation in enumerate(optimizer.generations):
+            for i, generation in enumerate(generations):
                 population = generation.population
                 output.append(' Generation {0:4d}'.format(i))
-                output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer,
+                output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer, generations,
                                                                                   self.targetRepresentation)
                 output.append('    Optimization results')
-                table = self.targetRepresentation.getNewSystemsTable(optimizer.generations[i].goodSystems)
+                table = self.targetRepresentation.getNewSystemsTable(generations[i].goodSystems)
                 for ID in population.getIDs():
                     table.update(ID, population.getEntry(ID))
                 output.append(table.table.get_string())
@@ -142,9 +142,9 @@ class OutputRepresentation(object):
 
 
             if final:
-                goodSystems = optimizer.generations[-1].goodSystems
+                goodSystems = generations[-1].goodSystems
                 table = self.targetRepresentation.getNewSystemsTable(goodSystems)
-                for ID in optimizer.best:
+                for ID in generations[-1].best:
                     table.update(ID, goodSystems.getEntry(ID))
                 output += createHeader_wrap(['Calculation results'], 'center')
                 output.append(table.table.get_string())
@@ -155,5 +155,5 @@ class OutputRepresentation(object):
                 for i in output:
                     f.write(i + '\n')
 
-            self.selectionRepresentation.presentFractions(optimizer)
-            self.targetRepresentation.presentOptimizer(optimizer)
+            self.selectionRepresentation.presentFractions(generations)
+            self.targetRepresentation.presentOptimizer(optimizer, generations)

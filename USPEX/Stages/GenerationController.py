@@ -57,9 +57,12 @@ class GenerationController(object):
         self.doPresentSystems = True
         self.generation = 0
         self.numberStableGenerations = 0
+        self.isStable = False
+        self.isGoalReached = False
         self.state = ControllerState.createPopulation
         self.population = None
         self.allSystems = self.optimizer.target.createPool()
+        self.generations = []
         self.save()
 
     @staticmethod
@@ -91,16 +94,16 @@ class GenerationController(object):
         return controller
 
     async def run(self):
-        self.outputRepresentation.presentOutput(self.optimizer)
+        self.outputRepresentation.presentOutput(self.optimizer, self.generations)
         while (self.generation < self.numGenerations and
                self.numberStableGenerations < self.stopCrit and
-               not self.optimizer.isGoalReached):
+               not self.isGoalReached):
 
             if self.state is ControllerState.createPopulation:
-                self.population = self.optimizer.createPopulation()
+                generation = self.generations[-1] if self.generations else None
+                self.population = self.optimizer.createPopulation(generation)
                 for ID in self.population.getIDs():
                     self.allSystems.addEntry(self.population.getEntry(ID))
-
                 self.state = ControllerState.processPopulation
                 self.save()
             if self.state is ControllerState.processPopulation:
@@ -113,19 +116,22 @@ class GenerationController(object):
                 self.state = ControllerState.updateOptimizer
                 self.save()
             if self.state is ControllerState.updateOptimizer:
-                await self.optimizer.update(self.population)
-                self.outputRepresentation.presentOutput(self.optimizer)
+                parents = self.generations[-1] if self.generations else None
+                generation, self.isStable, self.isGoalReached = await self.optimizer.update(self.population, parents)
+                if generation is not None:
+                    self.generations.append(generation)
+                self.outputRepresentation.presentOutput(self.optimizer, self.generations)
                 self.state = ControllerState.runControllerLogic
                 self.save()
             if self.state is ControllerState.runControllerLogic:
                 self.generation += 1
-                if self.optimizer.isStable:
+                if self.isStable:
                     self.numberStableGenerations += 1
                 else:
                     self.numberStableGenerations = 0
                 self.state = ControllerState.createPopulation
                 self.save()
-        self.outputRepresentation.presentOutput(self.optimizer, final=True)
+        self.outputRepresentation.presentOutput(self.optimizer, self.generations, final=True)
         with open('USPEX_IS_DONE', 'wt') as f:
             f.write('')
         logger.info('Calculation finished.')
@@ -135,10 +141,10 @@ class GenerationController(object):
         while self.doPresentSystems:
             n -= 1
             if n < 0:
-                self.outputRepresentation.presentSystems(self.optimizer, self.allSystems)
+                self.outputRepresentation.presentSystems(self.generations, self.allSystems)
                 n = self.outputRefreshDelay
             await asyncio.sleep(1)
-        self.outputRepresentation.presentSystems(self.optimizer, self.allSystems)
+        self.outputRepresentation.presentSystems(self.generations, self.allSystems)
 
     def save(self):
         if GenerationController.DUMP_FILENAME.exists():

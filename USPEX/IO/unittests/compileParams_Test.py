@@ -89,7 +89,8 @@ class CompileParams_Test(unittest.TestCase):
             'numGenerations': 60,
             'stopCrit': 30,
             'output': {
-                'stages': ['1', '2', '3', '4']
+                'stages': ['1', '2', '3', '4'],
+                'suffix': '4'
             }
 
         }
@@ -198,7 +199,8 @@ class CompileParams_Test(unittest.TestCase):
             'numGenerations': 3,
             'stopCrit': 3,
             'output': {
-                'stages': []
+                'stages': [],
+                'suffix': 'origin'
             }
         }
         params = compileParams(definitions)

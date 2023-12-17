@@ -12,7 +12,6 @@ from copy import copy
 
 import numpy as np
 
-from ..Expressions.ExpressionEvaluator import ExpressionEvaluator
 from ..Expressions.Functions.presets import applyPresetsRecursive
 
 
@@ -25,6 +24,7 @@ class Generation:
     uniquePopulation = None
     goodSystems = None
     uniqueSystems = None
+    best = None
 
 
 class GlobalOptimizer(object):
@@ -63,22 +63,14 @@ class GlobalOptimizer(object):
         self._createPopulation = self.knownSelectionTypes[selection['type']](self.target, **selection)
 
         self.optType = applyPresetsRecursive(optType)
+        self.goodSystemsSuffixes = goodSystemsSuffixes
         self.stopValue = stopValue
         self.stopSystems = stopSystems
-        self.goodSystemsSuffixes = goodSystemsSuffixes
 
-        self.generations: list[Generation] = []
-
-        self.best = set()
-        self.bestHistory = []
-        self._isStable = False
-        self._isGoalReached = False
-
-    def createPopulation(self):
-        generation = self.generations[-1] if self.generations else None
+    def createPopulation(self, generation):
         return self._createPopulation(generation)
 
-    async def update(self, population):
+    async def update(self, population, parentsGeneration):
         """
         Updates state of optimized structures.
 
@@ -87,10 +79,12 @@ class GlobalOptimizer(object):
         generation = Generation()
         generation.population = population
         generation.goodPopulation = population.createPool()
-        if self.generations:
-            generation.goodSystems = copy(self.generations[-1].goodSystems)
+        if parentsGeneration is not None:
+            generation.goodSystems = copy(parentsGeneration.goodSystems)
+            oldBest = parentsGeneration.best
         else:
             generation.goodSystems = population.createPool()
+            oldBest = None
         for ID in population.getIDs():
             system = population.getEntry(ID)
             for suffix in self.goodSystemsSuffixes:
@@ -102,7 +96,8 @@ class GlobalOptimizer(object):
         generation.goodSystems.evaluate(self.optType)
         assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
         optType = generation.goodSystems.createExpression(self.optType)
-        generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, generation.goodSystems, optType)
+        generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, generation.goodSystems,
+                                                        parentsGeneration, optType)
         logger.debug('Updating target: list of unique systems.')
         generation.uniquePopulation = population.createPool()
         for ID in generation.goodPopulation.getIDs():
@@ -113,21 +108,20 @@ class GlobalOptimizer(object):
                 pass
             if system.ID not in generation.uniquePopulation.getIDs():
                 generation.uniquePopulation.addEntry(system)
-        self.generations.append(generation)
         best = set(system.ID for system in generation.uniqueSystems.fronts(optType)[0])
-        if best == self.best:
-            self._isStable = True
+        if best == oldBest:
+            isStable = True
         else:
-            self._isStable = False
-            self.best = best
-        self.bestHistory.append(self.best)
+            isStable = False
+        generation.best = best
+        isGoalReached = False
         if self.stopValue is not None:
-            for ID in self.best:
+            for ID in best:
                 value = generation.uniqueSystems.getEntry(ID)[optType]
                 if value < self.stopValue or np.isclose(value, self.stopValue, atol=5.e-4):
-                    self._isGoalReached = True
+                    isGoalReached = True
                     break
-        if self.stopSystems is not None and not self._isGoalReached:
+        if self.stopSystems is not None and not isGoalReached:
             stopSystems = list(self.stopSystems)
             for system in generation.uniqueSystems:
                 for i, stopSystem in enumerate(stopSystems):
@@ -136,9 +130,10 @@ class GlobalOptimizer(object):
                         break
                 if not stopSystems:
                     break
-            self._isGoalReached = not stopSystems
+            isGoalReached = not stopSystems
+        return generation, isStable, isGoalReached
 
-    def _markDuplicates(self, population, goodSystems, optType):
+    def _markDuplicates(self, population, goodSystems, parentsGeneration, optType):
         """
         Method for cleaning duplicates.
 
@@ -146,8 +141,8 @@ class GlobalOptimizer(object):
         :param population: list of systems which allows to update our knowledge about target space.
         """
         logger.info('Looking for duplicates.')
-        if self.generations:
-            uniqueSystems = self.generations[-1].uniqueSystems.getIDs()
+        if parentsGeneration is not None:
+            uniqueSystems = parentsGeneration.uniqueSystems.getIDs()
         else:
             uniqueSystems = []
         for system_ID in population.getIDs():
@@ -181,11 +176,3 @@ class GlobalOptimizer(object):
         for ID in uniqueSystems:
             uniqueSystemsPool.addEntry(goodSystems.getEntry(ID))
         return uniqueSystemsPool
-
-    @property
-    def isStable(self):
-        return self._isStable
-
-    @property
-    def isGoalReached(self):
-        return self._isGoalReached

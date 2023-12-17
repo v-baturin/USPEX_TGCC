@@ -63,13 +63,15 @@ class Output_Test(unittest.TestCase):
                 ('dep', '.enthalpy.5', 'raw', 'ID', 'raw'),
                 ('dep', '.enthalpy.5', 'per_atom', 'cellUtility.volume.5', 'per_atom'),
                 ('stat', '.enthalpy.5', 'per_atom'),
-            ]
+            ],
+            'suffix': '5'
         }
 
         infos = []
         optimizer = GlobalOptimizer(**optimizerConfig)
         extensions = optimizer.target.propertyExtensions
         allSystems = optimizer.target.createPool()
+        generations = []
 
         for gen in range(numGenerations):
             for i in range(popSize):
@@ -105,12 +107,13 @@ class Output_Test(unittest.TestCase):
                     system.setProperty('isBad', False, suffix='3')
                     system.setProperty('isBad', False, suffix='4')
                     system.setProperty('isBad', False, suffix='5')
-                optimizer.best = set(targetState[0])
             population = Pool.newPool(FlavourFactory(extensions=extensions), optimizer.target.expressionExtensions)
             with open(TESTPATH/f"output_data/population{gen}", "r") as f:
                 for ID in json.load(f):
                     population.addEntry(allSystems.getEntry(ID+1))
-            asyncio.get_event_loop().run_until_complete(optimizer.update(population))
+            parents = generations[-1] if generations else None
+            generation, *_ = asyncio.get_event_loop().run_until_complete(optimizer.update(population, parents))
+            generations.append(generation)
 
         representation = OutputRepresentation(optimizer, optimizer=optimizerConfig,
                                               stages=stages, numParallelCalcs=numParallelCalcs,
@@ -118,8 +121,8 @@ class Output_Test(unittest.TestCase):
                                               path=TESTPATH/folder_name,
                                               output=output)
 
-        representation.presentSystems(optimizer, allSystems)
-        representation.presentOutput(optimizer, printDate=False)
+        representation.presentSystems(generations, allSystems)
+        representation.presentOutput(optimizer, generations, printDate=False)
 
         dcmp = filecmp.dircmp(TESTPATH/folder_name_ref, TESTPATH/folder_name)
         self.assertEqual(len(dcmp.diff_files), 0)
