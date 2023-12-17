@@ -186,7 +186,10 @@ class Atomistic:
         descriptions = []
         printUSPEX = False
         for i, system in enumerate(systems):
-            structure = system['atomistic.structure'] # vacuumSize=10.0
+            try:
+                structure = system['atomistic.structure'] # vacuumSize=10.0
+            except RecursionError:
+                continue
             disassembler = system['atomistic.disassembler']
             atomTypes = structure.getAtomTypes()
             coordinates = structure.getCartesianCoordinates()
