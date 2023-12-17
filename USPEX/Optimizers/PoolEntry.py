@@ -469,14 +469,17 @@ class Pool:
         self._cache = {}
 
     @staticmethod
-    def createPool(flavourfactory: FlavourFactory):
+    def newPool(flavourfactory: FlavourFactory):
         with PoolEntry.engine.connect() as conn:
             result = conn.execute(insert(pools), [{}])
             conn.commit()
         return Pool(result.inserted_primary_key[0], flavourfactory)
 
+    def createPool(self):
+        return Pool.newPool(self.flavourFactory)
+
     def __copy__(self):
-        newPool = Pool.createPool(self.flavourFactory)
+        newPool = self.createPool()
         for ID in self.getIDs():
             newPool.addEntry(self.getEntry(ID))
         return newPool

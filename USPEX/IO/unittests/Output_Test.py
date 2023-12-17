@@ -69,6 +69,7 @@ class Output_Test(unittest.TestCase):
         infos = []
         optimizer = GlobalOptimizer(**optimizerConfig)
         extensions = optimizer.target.propertyExtensions
+        allSystems = optimizer.target.createPool()
 
         for gen in range(numGenerations):
             for i in range(popSize):
@@ -77,8 +78,8 @@ class Output_Test(unittest.TestCase):
                     del structure['ID']
                 structure.update(Atomistic.readAtomicStructure(
                     TESTPATH / f"output_data/system{gen * popSize + i}s0.vasp"))
-                ID = optimizer.allSystems.newEntry(EntryFlavour(extensions=extensions, **structure))
-                system = optimizer.allSystems.getEntry(ID)
+                ID = allSystems.newEntry(EntryFlavour(extensions=extensions, **structure))
+                system = allSystems.getEntry(ID)
                 for j in range(numStages):
                     try:
                         with open(TESTPATH/f"output_data/system{gen * popSize + i}s{j+1}", "r") as f:
@@ -97,7 +98,7 @@ class Output_Test(unittest.TestCase):
             with open(TESTPATH/f"output_data/targetState{gen}", "r") as f:
                 targetState = json.load(f)
                 for ID in targetState[1]:
-                    system = optimizer.allSystems.getEntry(ID+1)
+                    system = allSystems.getEntry(ID+1)
                     system.setProperty('isBad', False, suffix='origin')
                     system.setProperty('isBad', False, suffix='1')
                     system.setProperty('isBad', False, suffix='2')
@@ -105,10 +106,10 @@ class Output_Test(unittest.TestCase):
                     system.setProperty('isBad', False, suffix='4')
                     system.setProperty('isBad', False, suffix='5')
                 optimizer.best = set(targetState[0])
-            population = Pool.createPool(FlavourFactory(extensions=extensions))
+            population = Pool.newPool(FlavourFactory(extensions=extensions))
             with open(TESTPATH/f"output_data/population{gen}", "r") as f:
                 for ID in json.load(f):
-                    population.addEntry(optimizer.allSystems.getEntry(ID+1))
+                    population.addEntry(allSystems.getEntry(ID+1))
             asyncio.get_event_loop().run_until_complete(optimizer.update(population))
 
         representation = OutputRepresentation(optimizer, optimizer=optimizerConfig,
@@ -117,7 +118,7 @@ class Output_Test(unittest.TestCase):
                                               path=TESTPATH/folder_name,
                                               output=output)
 
-        representation.presentSystems(optimizer)
+        representation.presentSystems(optimizer, allSystems)
         representation.presentOutput(optimizer, printDate=False)
 
         dcmp = filecmp.dircmp(TESTPATH/folder_name_ref, TESTPATH/folder_name)

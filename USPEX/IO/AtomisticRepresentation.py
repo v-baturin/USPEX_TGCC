@@ -123,8 +123,7 @@ class AtomisticRepresentation(object):
     def getNewSystemsTable(self, pool, isRank=False):
         return SystemsTable(self.columns, pool, isRank)
 
-    def presentSystems(self, optimizer):
-        systems = optimizer.allSystems
+    def presentSystems(self, optimizer, systems):
         systems_gatheredPOSCARS = []
         systems_gatheredPOSCARS_unrelaxed = []
         if optimizer.generations:

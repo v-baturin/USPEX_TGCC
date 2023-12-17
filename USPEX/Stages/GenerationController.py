@@ -59,6 +59,7 @@ class GenerationController(object):
         self.numberStableGenerations = 0
         self.state = ControllerState.createPopulation
         self.population = None
+        self.allSystems = self.optimizer.target.createPool()
         self.save()
 
     @staticmethod
@@ -97,6 +98,9 @@ class GenerationController(object):
 
             if self.state is ControllerState.createPopulation:
                 self.population = self.optimizer.createPopulation()
+                for ID in self.population.getIDs():
+                    self.allSystems.addEntry(self.population.getEntry(ID))
+
                 self.state = ControllerState.processPopulation
                 self.save()
             if self.state is ControllerState.processPopulation:
@@ -131,10 +135,10 @@ class GenerationController(object):
         while self.doPresentSystems:
             n -= 1
             if n < 0:
-                self.outputRepresentation.presentSystems(self.optimizer)
+                self.outputRepresentation.presentSystems(self.optimizer, self.allSystems)
                 n = self.outputRefreshDelay
             await asyncio.sleep(1)
-        self.outputRepresentation.presentSystems(self.optimizer)
+        self.outputRepresentation.presentSystems(self.optimizer, self.allSystems)
 
     def save(self):
         if GenerationController.DUMP_FILENAME.exists():

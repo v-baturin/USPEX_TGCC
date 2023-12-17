@@ -116,7 +116,7 @@ class USPEXClassic(object):
         else:
             logger.setLevel(logging.INFO)
 
-    def __call__(self, generation, offsprings):
+    def __call__(self, generation):
         """
         :param oldPopulation: generation of new
         :param best:
@@ -159,6 +159,7 @@ class USPEXClassic(object):
 
         actualParents = []
         self._newIDs = []
+        offsprings = self.target.createPool()
 
         for mutation in self.target.mutations:
             howCome = type(mutation).__name__

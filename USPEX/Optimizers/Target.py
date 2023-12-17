@@ -13,6 +13,7 @@ from types import SimpleNamespace
 from typing import List, Dict
 
 from ..Expressions.Functions.BasicFunctions import BasicFunctions
+from .PoolEntry import FlavourFactory, Pool
 
 
 logger = logging.getLogger(__name__)
@@ -153,4 +154,7 @@ class Target(object):
 
         self.variationOperators = self.hybridizations + self.mutations + self.creations
         self.metric = getattr(self.utilities, targetTypes.defaultMetric)
+        self.flavourFactory = FlavourFactory(self.propertyExtensions)
 
+    def createPool(self):
+        return Pool.newPool(self.flavourFactory)

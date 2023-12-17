@@ -61,17 +61,13 @@ class GlobalOptimizer(object):
         """
 
         self.target = self.Target(**target)
-        self.flavourFactory = FlavourFactory(self.target.propertyExtensions)
-
         self._createPopulation = self.knownSelectionTypes[selection['type']](self.target, **selection)
 
         self.optType = applyPresetsRecursive(optType)
         self.stopValue = stopValue
         self.stopSystems = stopSystems
-
         self.goodSystemsSuffixes = goodSystemsSuffixes
 
-        self.allSystems = Pool.createPool(self.flavourFactory)
         self.generations: list[Generation] = []
 
         self.best = set()
@@ -81,11 +77,7 @@ class GlobalOptimizer(object):
 
     def createPopulation(self):
         generation = self.generations[-1] if self.generations else None
-        offsprings = Pool.createPool(self.flavourFactory)
-        self._createPopulation(generation, offsprings)
-        for ID in offsprings.getIDs():
-            self.allSystems.addEntry(offsprings.getEntry(ID))
-        return offsprings
+        return self._createPopulation(generation)
 
     async def update(self, population):
         """
@@ -95,11 +87,11 @@ class GlobalOptimizer(object):
         """
         generation = Generation()
         generation.population = population
-        generation.goodPopulation = Pool.createPool(self.flavourFactory)
+        generation.goodPopulation = population.createPool()
         if self.generations:
             generation.goodSystems = copy(self.generations[-1].goodSystems)
         else:
-            generation.goodSystems = Pool.createPool(self.flavourFactory)
+            generation.goodSystems = population.createPool()
         for ID in population.getIDs():
             system = population.getEntry(ID)
             for suffix in self.goodSystemsSuffixes:
@@ -113,7 +105,7 @@ class GlobalOptimizer(object):
         optType = generation.goodSystems.createExpression(self.optType)
         generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, generation.goodSystems, optType)
         logger.debug('Updating target: list of unique systems.')
-        generation.uniquePopulation = Pool.createPool(self.flavourFactory)
+        generation.uniquePopulation = population.createPool()
         for ID in generation.goodPopulation.getIDs():
             system = generation.goodPopulation.getEntry(ID)
             try:
@@ -186,7 +178,7 @@ class GlobalOptimizer(object):
                     break
             else:
                 uniqueSystems.append(system.ID)
-        uniqueSystemsPool = Pool.createPool(self.flavourFactory)
+        uniqueSystemsPool = population.createPool()
         for ID in uniqueSystems:
             uniqueSystemsPool.addEntry(goodSystems.getEntry(ID))
         return uniqueSystemsPool

@@ -72,9 +72,9 @@ class OutputRepresentation(object):
         if (Path.cwd()/'input.yaml').exists():
             shutil.copyfile(Path.cwd()/'input.yaml', self.RES_FOLDER/self.PARAMETERS_FILENAME)
 
-    def presentSystems(self, optimizer):
+    def presentSystems(self, optimizer, systems):
         if self.targetRepresentation is not None:
-            return self.targetRepresentation.presentSystems(optimizer)
+            return self.targetRepresentation.presentSystems(optimizer, systems)
         else:
             return None
 
