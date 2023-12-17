@@ -125,8 +125,9 @@ expressionsObj = Table(
 
 class FlavourFactory:
 
-    def __init__(self, extensions):
+    def __init__(self, extensions, metric=None):
         self.extensions = extensions
+        self.metric = metric
 
     def __call__(self, **kwargs):
         return EntryFlavour(extensions=self.extensions, **kwargs)
@@ -286,23 +287,25 @@ class PoolEntry:
         cls.engine = create_engine(f"sqlite+pysqlite:///{filename}")
         metadata_obj.create_all(cls.engine)
 
-    def __init__(self, ID: int, flavourFactory: FlavourFactory):
+    def __init__(self, ID: int, flavourFactory: FlavourFactory, metric=None):
         self.ID = ID
         self.flavourFactory = flavourFactory
+        self.metric = metric
         self._expressionsCache = {}
         self._flavours = {}
 
     def __getstate__(self):
-        return dict(ID=self.ID, flavourFactory=self.flavourFactory)
+        return dict(ID=self.ID, flavourFactory=self.flavourFactory, metric=self.metric)
 
     def __setstate__(self, state):
         self.ID = state['ID']
         self.flavourFactory = state['flavourFactory']
+        self.metric = state['metric']
         self._flavours = {}
         self._expressionsCache = {}
 
     @staticmethod
-    def newEntry(flavour: EntryFlavour):
+    def newEntry(flavour: EntryFlavour, metric=None):
         """
         Assign ID to system.
 
@@ -314,18 +317,18 @@ class PoolEntry:
             result = conn.execute(insert(systems), [{}])
             conn.commit()
         ID = result.inserted_primary_key[0]
-        entry = PoolEntry(ID, flavour.getFactory())
+        entry = PoolEntry(ID, flavour.getFactory(), metric)
         entry.addFlavour('origin', flavour)
         logger.info(f"Entry {entry.ID} successfully created by {entry['.howCome.origin']} operator"
                     f" from {entry['.parent.origin']} parents.")
         return entry
 
     @staticmethod
-    def getEntry(ID: int, flavourFactory: FlavourFactory):
+    def getEntry(ID: int, flavourFactory: FlavourFactory, metric=None):
         with PoolEntry.engine.connect() as conn:
             result = conn.execute(select(systems).where(systems.c.id == ID)).all()
         assert result
-        return PoolEntry(ID, flavourFactory)
+        return PoolEntry(ID, flavourFactory, metric)
 
     @property
     def flavours(self):
@@ -440,6 +443,12 @@ class PoolEntry:
         else:
             raise KeyError(f'Property {item} is not valid.')
 
+    def __eq__(self, other):
+        if self.metric is None:
+            raise RuntimeError("Metric is not defined.")
+        else:
+            return self.metric.equal(self, other)
+
 
 class Expression:
 
@@ -466,21 +475,22 @@ class Expression:
 
 class Pool:
 
-    def __init__(self, ID: int, flavourfactory: FlavourFactory, expressionExtensions):
+    def __init__(self, ID: int, flavourfactory: FlavourFactory, expressionExtensions, metric=None):
         self.ID = ID
         self.flavourFactory = flavourfactory
+        self.metric = metric
         self.expressionExtensions = expressionExtensions
         self._cache = {}
 
     @staticmethod
-    def newPool(flavourfactory: FlavourFactory, expressionExtensions):
+    def newPool(flavourfactory: FlavourFactory, expressionExtensions, metric=None):
         with PoolEntry.engine.connect() as conn:
             result = conn.execute(insert(pools), [{}])
             conn.commit()
-        return Pool(result.inserted_primary_key[0], flavourfactory, expressionExtensions)
+        return Pool(result.inserted_primary_key[0], flavourfactory, expressionExtensions, metric)
 
     def createPool(self):
-        return Pool.newPool(self.flavourFactory, self.expressionExtensions)
+        return Pool.newPool(self.flavourFactory, self.expressionExtensions, self.metric)
 
     def __copy__(self):
         newPool = self.createPool()
@@ -492,12 +502,17 @@ class Pool:
         return hash(self.ID)
 
     def __getstate__(self):
-        return dict(ID=self.ID, flavourFactory=self.flavourFactory, expressionExtensions=self.expressionExtensions)
+        return dict(ID=self.ID,
+                    flavourFactory=self.flavourFactory,
+                    expressionExtensions=self.expressionExtensions,
+                    metric=self.metric
+                    )
 
     def __setstate__(self, state):
         self.ID = state['ID']
         self.flavourFactory = state['flavourFactory']
         self.expressionExtensions = state['expressionExtensions']
+        self.metric = state['metric']
         self._cache = {}
 
     def newEntry(self, flavour: EntryFlavour):
@@ -508,7 +523,7 @@ class Pool:
         :param system: system to be labeled with ID.
 
         """
-        entry = PoolEntry.newEntry(flavour)
+        entry = PoolEntry.newEntry(flavour, self.metric)
         self.addEntry(entry)
         return entry.ID
 
@@ -528,7 +543,7 @@ class Pool:
     def getEntry(self, ID: int):
         # assert ID in self.getIDs()
         if ID not in self._cache:
-            self._cache[ID] = PoolEntry.getEntry(ID, self.flavourFactory)
+            self._cache[ID] = PoolEntry.getEntry(ID, self.flavourFactory, self.metric)
         return self._cache[ID]
 
     def fronts(self, expression):

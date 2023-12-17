@@ -154,7 +154,7 @@ class Target(object):
 
         self.variationOperators = self.hybridizations + self.mutations + self.creations
         self.metric = getattr(self.utilities, targetTypes.defaultMetric)
-        self.flavourFactory = FlavourFactory(self.propertyExtensions)
+        self.flavourFactory = FlavourFactory(self.propertyExtensions, self.metric)
 
     def createPool(self):
-        return Pool.newPool(self.flavourFactory, self.expressionExtensions)
+        return Pool.newPool(self.flavourFactory, self.expressionExtensions, self.metric)

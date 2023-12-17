@@ -125,7 +125,7 @@ class GlobalOptimizer(object):
             stopSystems = list(self.stopSystems)
             for system in generation.uniqueSystems:
                 for i, stopSystem in enumerate(stopSystems):
-                    if self.target.metric.equal(system, stopSystem):
+                    if system == stopSystem:
                         del stopSystems[i]
                         break
                 if not stopSystems:
@@ -149,7 +149,7 @@ class GlobalOptimizer(object):
             system = population.getEntry(system_ID)
             for i, ref_system_ID in enumerate(uniqueSystems):
                 ref_system = goodSystems.getEntry(ref_system_ID)
-                if self.target.metric.equal(system, ref_system) and system.ID != ref_system.ID:
+                if system == ref_system and system.ID != ref_system.ID:
                     logger.info(f"system {system.ID} coincides with system {ref_system.ID} found earlier")
                     try:
                         duplicates = ref_system.getProperty('duplicates')
