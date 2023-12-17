@@ -163,7 +163,7 @@ class EntryFlavour:
                 else:
                     return self._propertiesCache[f'{extension}.{prop}']
             if extension == 'antiseeds':
-                self._propertiesCache[f'{extension}.{prop}'] = 0
+                self._propertiesCache[f'{extension}.{prop}'] = 0.0
             elif extension in self.extensions:
                 self._propertiesCache[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
             else:

@@ -42,7 +42,8 @@ class Output_Test(unittest.TestCase):
                                                        'randTop': [0.0, 1.0, 0.1],
                                                        'permutation': [0.0, 1.0, 0.1]
                                                        }
-                                         }
+                                         },
+                           'goodSystemsSuffixes': {'5'}
                            }
         numStages = 5
         stages = [{'tag': f'{i+1}', 'type': 'gulp'} for i in range(numStages)]

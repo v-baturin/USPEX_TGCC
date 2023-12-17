@@ -77,7 +77,8 @@ class CompileParams_Test(unittest.TestCase):
                         'randTop': (0.05, 1.0, 0.1),
                         'permutation': (0.05, 1.0, 0.1)
                     }
-                }
+                },
+                'goodSystemsSuffixes': {'enthalpy'},
             },
             'stages': [
                 {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1', 'source': 'origin'},
@@ -189,7 +190,8 @@ class CompileParams_Test(unittest.TestCase):
                     'junctionUtility': {'molSitesMapping': {}}
                 },
                 'optType': 'enthalpy',
-                'selection': {'optType': 'enthalpy'}
+                'selection': {'optType': 'enthalpy'},
+                'goodSystemsSuffixes': {'enthalpy'},
             },
             'stages': [],
             'numParallelCalcs': 2,

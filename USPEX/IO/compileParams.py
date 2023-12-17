@@ -1,5 +1,7 @@
+from itertools import chain
+
 from ..components import AtomicStructureRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
-    EnvironmentUtility, JunctionUtility, SimpleMoleculeUtility
+    EnvironmentUtility, JunctionUtility, SimpleMoleculeUtility, Atomistic
 
 
 def compileParams(main: dict) -> dict:
@@ -53,12 +55,16 @@ def compileParams(main: dict) -> dict:
                 target['simpleMoleculeUtility']['molecules'] = molecules
             else:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
+        goodSystemsSuffixes = set(prop.split('.')[-1] for prop in _extract(optimizer['optType']))
         if 'selection' in optimizer:
             selection = optimizer['selection']
             if len(target['compositionSpace']['blocks']) > 1:
                 selection['globalParentsPool'] = True
             if 'optType' not in selection:
                 selection['optType'] = optimizer['optType']
+            else:
+                goodSystemsSuffixes.update(prop.split('.')[-1] for prop in _extract(selection['optType']))
+        optimizer['goodSystemsSuffixes'] = goodSystemsSuffixes
         if 'bondUtility' not in target:
             target['bondUtility'] = {}
         if 'volumeType' not in target['bondUtility']:
@@ -79,5 +85,16 @@ def compileParams(main: dict) -> dict:
         if 'environmentUtility' in target:
             for environmentDesciption in target['environmentUtility']['environments']:
                 environmentDesciption.update(EnvironmentUtility.build(**environmentDesciption))
+        if 'stopSystems' in optimizer:
+            optimizer['stopSystems'] = Atomistic.readAtomicStructures(optimizer['stopSystems'])
 
     return main
+
+def _extract(expression):
+    if isinstance(expression, str):
+        return [expression]
+    if isinstance(expression, tuple):
+        func, *arguments = expression
+        return list(set(chain(*[_extract(arg) for arg in arguments])))
+    else:
+        return []

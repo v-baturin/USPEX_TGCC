@@ -9,7 +9,6 @@ Class implementing global optimizer
 
 import logging
 from copy import copy
-from itertools import chain
 
 import numpy as np
 
@@ -50,8 +49,8 @@ class GlobalOptimizer(object):
     def setTarget(cls, targetType):
         cls.Target = targetType
 
-    def __init__(self, target: dict, selection: dict, optType, stopFitness=None, stopSystems=None,
-                 extraData=(), **kwargs):
+    def __init__(self, target: dict, selection: dict, optType, goodSystemsSuffixes, stopValue=None, stopSystems=None,
+                 **kwargs):
         """
         Initializes the class.
 
@@ -63,21 +62,14 @@ class GlobalOptimizer(object):
 
         self.target = self.Target(**target)
         self.flavourFactory = FlavourFactory(self.target.propertyExtensions)
-        self.extraData = list(extraData)
 
         self._createPopulation = self.knownSelectionTypes[selection['type']](self.target, **selection)
 
         self.optType = applyPresetsRecursive(optType)
-        self.stopFitness = stopFitness
-        if stopSystems is not None and self.target.seeds is not None:
-            seeds = type(self.target.seeds)(self.target.utilities, generations=[0], seedsFolders=[stopSystems])
-            self.stopSystems = seeds()
-        else:
-            self.stopSystems = None
+        self.stopValue = stopValue
+        self.stopSystems = stopSystems
 
-        self.goodSystemsSuffixes = set(
-            prop.split('.')[-1] for prop in _extract(self.optType) + _extract(self._createPopulation.optType)
-        )
+        self.goodSystemsSuffixes = goodSystemsSuffixes
 
         self.allSystems = Pool.createPool(self.flavourFactory)
         self.generations: list[Generation] = []
@@ -138,10 +130,10 @@ class GlobalOptimizer(object):
             self._isStable = False
             self.best = best
         self.bestHistory.append(self.best)
-        if self.stopFitness is not None:
+        if self.stopValue is not None:
             for ID in self.best:
                 value = generation.uniqueSystems.getEntry(ID)[optType]
-                if value < self.stopFitness or np.isclose(value, self.stopFitness, atol=5.e-4):
+                if value < self.stopValue or np.isclose(value, self.stopValue, atol=5.e-4):
                     self._isGoalReached = True
                     break
         if self.stopSystems is not None and not self._isGoalReached:
@@ -206,13 +198,3 @@ class GlobalOptimizer(object):
     @property
     def isGoalReached(self):
         return self._isGoalReached
-
-
-def _extract(expression):
-    if isinstance(expression, str):
-        return [expression]
-    if isinstance(expression, tuple):
-        func, *arguments = expression
-        return list(set(chain(*[_extract(arg) for arg in arguments])))
-    else:
-        return []
