@@ -100,9 +100,9 @@ Stages.registerStage('populationProcessor', PopulationProcessor)
 from .Stages.GenerationController import GenerationController
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
 GenerationController.registerOptimizer(GlobalOptimizer)
-from .Selection.USPEXClassic import USPEXClassic
-USPEXClassic.setTarget(Target)
-GenerationController.registerGenerator(USPEXClassic)
+from .Generators.Evolution import Evolution
+Evolution.setTarget(Target)
+GenerationController.registerGenerator(Evolution)
 GenerationController.setPopulationProcessor(PopulationProcessor)
 from .IO.compileParams import compileParams
 GenerationController.setUpcompileParams(compileParams)

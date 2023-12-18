@@ -7,7 +7,7 @@ import asyncio
 from pathlib import Path
 
 from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour, Pool, FlavourFactory
-from ...components import GlobalOptimizer, Atomistic, USPEXClassic
+from ...components import GlobalOptimizer, Atomistic, Evolution
 from ..OutputRepresentation import OutputRepresentation
 
 TESTPATH = Path(__file__).parent
@@ -27,7 +27,7 @@ class Output_Test(unittest.TestCase):
                            'stopValue': -655.062,
                            'goodSystemsSuffixes': {'5'}
                            }
-        generatorConfig = {'type': 'USPEXClassic',
+        generatorConfig = {'type': 'Evolution',
                            'target': {'type': 'Atomistic',
                                       'conditions': {'externalPressure': 100},
                                       'compositionSpace': {'symbols': ['Mg', 'Al', 'O'], 'blocks': [[4, 8, 16]],
@@ -70,7 +70,7 @@ class Output_Test(unittest.TestCase):
 
         infos = []
         optimizer = GlobalOptimizer(**optimizerConfig)
-        generator = USPEXClassic(**generatorConfig)
+        generator = Evolution(**generatorConfig)
         extensions = generator.target.propertyExtensions
         allSystems = generator.target.createPool()
         generations = []

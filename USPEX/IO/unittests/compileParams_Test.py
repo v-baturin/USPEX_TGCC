@@ -20,7 +20,7 @@ class CompileParams_Test(unittest.TestCase):
     def test_stages(self):
         definitions = {
             'generator': {
-                'type': 'USPEXClassic',
+                'type': 'Evolution',
                 'target': {
                     'type': 'Atomistic',
                     'conditions': {'externalPressure': 100},
@@ -53,7 +53,7 @@ class CompileParams_Test(unittest.TestCase):
         }
         params_ref = {
             'generator': {
-                'type': 'USPEXClassic',
+                'type': 'Evolution',
                 'target': {
                     'type': 'Atomistic',
                     'conditions': {'externalPressure': 100},

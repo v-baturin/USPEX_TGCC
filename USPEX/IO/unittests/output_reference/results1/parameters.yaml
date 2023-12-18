@@ -32,7 +32,7 @@ optimizer:
     - aging
     - .enthalpy.5
     popSize: 10
-    type: USPEXClassic
+    type: Evolution
   stopFitness: -655.062
   target:
     cellUtility:

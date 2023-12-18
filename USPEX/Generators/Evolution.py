@@ -1,6 +1,6 @@
 """
-USPEX.Selection.USPEXClassic
-============================
+USPEX.Generators.Evolution
+==========================
 
 
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
@@ -80,7 +80,7 @@ class Autofrac(object):
         return int(howMany)
 
 
-class USPEXClassic(object):
+class Evolution(object):
 
     Target = None
 
