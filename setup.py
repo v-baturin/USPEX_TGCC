@@ -3,14 +3,13 @@ from Cython.Build import cythonize
 
 extensions = [
     Extension("USPEX.Optimizers.GlobalOptimizer", ["USPEX/Optimizers/GlobalOptimizer.py"]),
-    Extension("USPEX.Optimizers.ModelOptimizer", ["USPEX/Optimizers/ModelOptimizer.py"]),
-    Extension("USPEX.Optimizers.Target", ["USPEX/Optimizers/Target.py"]),
     Extension("USPEX.Optimizers.PoolEntry", ["USPEX/Optimizers/PoolEntry.py"]),
+    Extension("USPEX.Generators.Target", ["USPEX/Generators/Target.py"]),
+    Extension("USPEX.Generators.Evolution", ["USPEX/Generators/Evolution.py"]),
     Extension("USPEX.Expressions.ExpressionEvaluator", ["USPEX/Expressions/ExpressionEvaluator.py"]),
     Extension("USPEX.Expressions.ConvexHull", ["USPEX/Expressions/ConvexHull.py"]),
     Extension("USPEX.Expressions.paretoRanking", ["USPEX/Expressions/paretoRanking.py"]),
     Extension("USPEX.Expressions.Antiseeds", ["USPEX/Expressions/Antiseeds.py"]),
-    Extension("USPEX.Selection.USPEXClassic", ["USPEX/Selection/USPEXClassic.py"]),
     Extension("USPEX.SpaceGroups.SpaceGroups3D", ["USPEX/SpaceGroups/SpaceGroups3D.py"]),
     Extension("USPEX.XRay.PowderSpectrumAnalyzer", ["USPEX/XRay/PowderSpectrumAnalyzer.py"]),
     Extension("USPEX.XRay.SingleCrystalSpectrumAnalyzer", ["USPEX/XRay/SingleCrystalSpectrumAnalyzer.py"]),

@@ -41,7 +41,7 @@ from .Atomistic.Operators.TeleportAtom import TeleportAtom
 from .Atomistic.Operators.Seeds import Seeds
 from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
 # --------------------------------------------- Targets--- ----------------------------------------------------------
-from .Optimizers.Target import Target
+from .Generators.Target import Target
 Target.registerTarget('Atomistic',
                       utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
                         EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
@@ -89,17 +89,22 @@ from .Stages.TaskManagers.SBATCH import SBATCH
 Executor.registerTaskManager('SBATCH', SBATCH)
 from .Stages.TaskManagers.SHELL import SHELL
 Executor.registerTaskManager('SHELL', SHELL)
-from .Stages.AtomisticStage import AtomisticStage
 # ------------------------------------------------ Stages -----------------------------------------------------------
+from .Stages.ExternalStage import ExternalStage
+ExternalStage.registerTypes(Executor)
+from .Stages.AtomisticStage import AtomisticStage
 AtomisticStage.registerTypes(Executor)
 from .Stages.PopulationProcessor import PopulationProcessor, Stages
-Stages.registerStage('execute', Executor)
+Stages.registerStage('external', ExternalStage)
 Stages.registerStage('atomistic', AtomisticStage)
 Stages.registerStage('populationProcessor', PopulationProcessor)
 # ---------------------------------------- Generation Controller ----------------------------------------------------
 from .Stages.GenerationController import GenerationController
 from .Optimizers.GlobalOptimizer import GlobalOptimizer
 GenerationController.registerOptimizer(GlobalOptimizer)
+from .Stages.SampleOptimizer import SampleOptimizer
+SampleOptimizer.setStages(Stages)
+GenerationController.registerOptimizer(SampleOptimizer)
 from .Generators.Evolution import Evolution
 Evolution.setTarget(Target)
 GenerationController.registerGenerator(Evolution)

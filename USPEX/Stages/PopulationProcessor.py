@@ -7,20 +7,21 @@ logger = logging.getLogger(__name__)
 
 class PopulationProcessor:
 
-    def __init__(self, tag, source, inputKey, **kwargs):
+    def __init__(self, tag, source, population, stages, target, **kwargs):
         self.tag = tag
-        self.inputKey = inputKey
+        self.population = population
+        self.stages = stages
+        self.target = target
         self.source = source
         self.kwargs = kwargs
 
     async def run(self, system):
-        population = system.getProperty(self.inputKey, suffix=self.source)
-        for i, system in enumerate(population):
-            if 'ID' not in system:
-                system['ID'] = f'{self.tag}_{i}'
-        await self.processPopulation(population=population, **self.kwargs)
-        final = [system[-1] for system in population]
-        system.setProperty(self.inputKey, final, suffix=self.tag)
+        population = self.target.creatPool()
+        for system in system.getProperty(self.population, suffix=self.source):
+            population.newEntry(system)
+        await self.processPopulation(population=population, target=self.target, stages=self.stages, **self.kwargs)
+        final = [population.getEntry(ID).getFlavour(self.stages[-1].tag) for ID in population.getIDs()]
+        system.setProperty(self.population, final, suffix=self.tag)
 
     @staticmethod
     async def processPopulation(stages, population, numParallelCalcs, target=None):
