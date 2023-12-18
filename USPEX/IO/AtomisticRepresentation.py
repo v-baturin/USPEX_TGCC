@@ -339,13 +339,13 @@ class AtomisticRepresentation(object):
         return header
 
 
-    def getPopulationSummaryBlock(self, population, optimizer) -> list:
-        utlts = optimizer.target.utilities
+    def getPopulationSummaryBlock(self, population, optimizer, generator, generations) -> list:
+        utlts = generator.target.utilities
         population = [population.getEntry(ID) for ID in population.getIDs()]
         if utlts.cellUtility.getDim() == 3:
             numBlocks = [utlts.compositionSpace.numBlocks(system['simpleMoleculeUtility.composition.origin']) for system in population]
             numBlocks = np.asarray(numBlocks)
-            volumes = [system[f'cellUtility.volume.{optimizer.target.defaultSuffix}'] for system in population]
+            volumes = [system[f'cellUtility.volume.{self.suffix}'] for system in population]
             volumes = np.asarray(volumes)
             approximateVolume = ' '.join(f'{float(vol):.4} A^3' for vol in np.linalg.lstsq(numBlocks, volumes)[0])
         else:
@@ -353,9 +353,9 @@ class AtomisticRepresentation(object):
         if isinstance(optimizer.optType, str):
             optType = optimizer.optType
         else:
-            optType = optimizer.generations[-1].goodSystems.createExpression(optimizer.optType)
+            optType = generations[-1].goodSystems.createExpression(optimizer.optType)
         fitness = [system[optType] for system in population]
-        order = [system[f'radialDistributionUtility.averageOrder.{optimizer.target.defaultSuffix}'] for system in population]
+        order = [system[f'radialDistributionUtility.averageOrder.{self.suffix}'] for system in population]
         if np.any(np.isnan(np.asarray(fitness, dtype=float))):
             correlation = 0.0
         else:
@@ -364,7 +364,7 @@ class AtomisticRepresentation(object):
         qe = 0
         comb = list(combinations(population, 2))
         for s1, s2 in comb:
-            dist = optimizer.target.utilities.radialDistributionUtility.dist(s1, s2, legacy=True)
+            dist = generator.target.utilities.radialDistributionUtility.dist(s1, s2, legacy=True)
             qe += (1 - dist) * np.log(1 - dist)
         qe /= -len(comb) if comb else 1
 
@@ -396,7 +396,7 @@ class AtomisticRepresentation(object):
 
         return block
 
-    def presentOptimizer(self, optimizer, generations):
+    def presentOptimizer(self, optimizer, generator, generations):
         if not generations:
             return
         content_BESTIndividuals = ''
@@ -428,7 +428,7 @@ class AtomisticRepresentation(object):
                 systems__BESTgatheredPOSCARS.append(system)
         self.Atomistic.writeAtomicStructures(self.RES_FOLDER/'BESTgatheredPOSCARS', systems__BESTgatheredPOSCARS)
 
-        compositionSpace = optimizer.target.utilities.compositionSpace
+        compositionSpace = generator.target.utilities.compositionSpace
         csSize = len(compositionSpace.blocks)
 
         if generations:

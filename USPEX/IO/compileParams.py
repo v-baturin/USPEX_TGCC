@@ -16,9 +16,10 @@ def compileParams(main: dict) -> dict:
     if 'output' not in main:
         main['output'] = {}
     main['output']['stages'] = [stage['tag'] for stage in stages]
-    if 'optimizer' in main and 'target' in main['optimizer']:
-        optimizer = main['optimizer']
-        target = optimizer['target']
+    optimizer = main['optimizer']
+    if 'generator' in main and 'target' in main['generator']:
+        generator = main['generator']
+        target = generator['target']
         if 'defaultSuffix' not in target:
             target['defaultSuffix'] = stages[-1]['tag'] if stages else 'origin'
         if 'suffix' not in main['output']:
@@ -58,14 +59,12 @@ def compileParams(main: dict) -> dict:
             else:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
         goodSystemsSuffixes = set(prop.split('.')[-1] for prop in _extract(optimizer['optType']))
-        if 'selection' in optimizer:
-            selection = optimizer['selection']
-            if len(target['compositionSpace']['blocks']) > 1:
-                selection['globalParentsPool'] = True
-            if 'optType' not in selection:
-                selection['optType'] = optimizer['optType']
-            else:
-                goodSystemsSuffixes.update(prop.split('.')[-1] for prop in _extract(selection['optType']))
+        if len(target['compositionSpace']['blocks']) > 1:
+            generator['globalParentsPool'] = True
+        if 'optType' not in generator:
+            generator['optType'] = optimizer['optType']
+        else:
+            goodSystemsSuffixes.update(prop.split('.')[-1] for prop in _extract(generator['optType']))
         optimizer['goodSystemsSuffixes'] = goodSystemsSuffixes
         if 'bondUtility' not in target:
             target['bondUtility'] = {}

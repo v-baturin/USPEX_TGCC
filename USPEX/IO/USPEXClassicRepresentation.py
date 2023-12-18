@@ -51,12 +51,12 @@ class USPEXClassicRepresentation(object):
         return header
 
     @staticmethod
-    def getPopulationCreationBlock(population, optimizer, generations, targetRepresentation) -> list:
+    def getPopulationCreationBlock(population, optimizer, generator, generations, targetRepresentation) -> list:
         block = []
-        if not optimizer._createPopulation.globalParentsPool:
+        if not generator.globalParentsPool:
             block.append('     Best and diverse structures from previous generation')
             mostDiverseTable = targetRepresentation.getNewSystemsTable(generations[-1].goodSystems)
-            for system in optimizer._createPopulation.getMostDiverse():
+            for system in generator.getMostDiverse():
                 mostDiverseTable.update(system['ID'], system)
             block.append(mostDiverseTable.table.get_string())
 

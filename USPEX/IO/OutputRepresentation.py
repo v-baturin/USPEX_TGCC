@@ -39,7 +39,7 @@ def newResFolderName(path: str) -> Path:
 class OutputRepresentation(object):
     PARAMETERS_FILENAME = 'parameters.yaml'
 
-    def __init__(self, optimizerInstance, path: str = './', **params):
+    def __init__(self, optimizerInstance, generatorInstance, path: str = './', **params):
         self.RES_FOLDER = newResFolderName(path)
         self.OUTPUT_FILE = self.RES_FOLDER/'OUTPUT.txt'
         self.stages = params['stages']
@@ -57,7 +57,7 @@ class OutputRepresentation(object):
             from .USPEXClassicRepresentation import USPEXClassicRepresentation
             output.update(USPEXClassicRepresentation.applyPresetOutputParameters(optimizerInstance, output))
             self.selectionRepresentation = USPEXClassicRepresentation(self.RES_FOLDER, **output)
-            if optimizerInstance.target.name == 'Atomistic':
+            if generatorInstance.target.name == 'Atomistic':
                 from .AtomisticRepresentation import AtomisticRepresentation
                 # output = dict(AtomisticRepresentation.applyPresetOutputParameters(optimizerInstance), **output)
                 self.targetRepresentation = AtomisticRepresentation(self.RES_FOLDER, **output)
@@ -78,7 +78,7 @@ class OutputRepresentation(object):
         else:
             return None
 
-    def presentOutput(self, optimizer, generations, printDate=True, final=False):
+    def presentOutput(self, optimizer, generator, generations, printDate=True, final=False):
         if self.selectionRepresentation is not None and self.targetRepresentation is not None:
             self.OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -107,8 +107,8 @@ class OutputRepresentation(object):
 
             output += formatted_rows
 
-            output += self.selectionRepresentation.getParametersBlock(optimizer._createPopulation)
-            output += self.targetRepresentation.getParametersBlock(optimizer.target)
+            output += self.selectionRepresentation.getParametersBlock(generator)
+            output += self.targetRepresentation.getParametersBlock(generator.target)
 
             output += createHeader_wrap(['Ab initio calculations'], 'center')
 
@@ -130,14 +130,15 @@ class OutputRepresentation(object):
             for i, generation in enumerate(generations):
                 population = generation.population
                 output.append(' Generation {0:4d}'.format(i))
-                output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer, generations,
-                                                                                  self.targetRepresentation)
+                output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer, generator,
+                                                                                  generations, self.targetRepresentation)
                 output.append('    Optimization results')
                 table = self.targetRepresentation.getNewSystemsTable(generations[i].goodSystems)
                 for ID in population.getIDs():
                     table.update(ID, population.getEntry(ID))
                 output.append(table.table.get_string())
-                output += self.targetRepresentation.getPopulationSummaryBlock(generation.goodPopulation, optimizer)
+                output += self.targetRepresentation.getPopulationSummaryBlock(generation.goodPopulation, optimizer,
+                                                                              generator, generations)
                 output.append('')
 
 
@@ -156,4 +157,4 @@ class OutputRepresentation(object):
                     f.write(i + '\n')
 
             self.selectionRepresentation.presentFractions(generations)
-            self.targetRepresentation.presentOptimizer(optimizer, generations)
+            self.targetRepresentation.presentOptimizer(optimizer, generator, generations)

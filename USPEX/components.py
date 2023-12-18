@@ -40,11 +40,8 @@ from .Atomistic.Operators.RemoveAtom import RemoveAtom
 from .Atomistic.Operators.TeleportAtom import TeleportAtom
 from .Atomistic.Operators.Seeds import Seeds
 from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
-# --------------------------------------------- Optimizers ----------------------------------------------------------
-from .Optimizers.GlobalOptimizer import GlobalOptimizer
+# --------------------------------------------- Targets--- ----------------------------------------------------------
 from .Optimizers.Target import Target
-from .Selection.USPEXClassic import USPEXClassic
-GlobalOptimizer.registerSelection(USPEXClassic)
 Target.registerTarget('Atomistic',
                       utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
                         EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
@@ -54,7 +51,6 @@ Target.registerTarget('Atomistic',
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
                       seeds=Seeds,
                       defaultMetric='radialDistributionUtility')
-GlobalOptimizer.setTarget(Target)
 # --------------------------------------------- Interfaces ----------------------------------------------------------
 from .Stages.Executor import Executor
 from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
@@ -102,7 +98,11 @@ Stages.registerStage('atomistic', AtomisticStage)
 Stages.registerStage('populationProcessor', PopulationProcessor)
 # ---------------------------------------- Generation Controller ----------------------------------------------------
 from .Stages.GenerationController import GenerationController
+from .Optimizers.GlobalOptimizer import GlobalOptimizer
 GenerationController.registerOptimizer(GlobalOptimizer)
+from .Selection.USPEXClassic import USPEXClassic
+USPEXClassic.setTarget(Target)
+GenerationController.registerGenerator(USPEXClassic)
 GenerationController.setPopulationProcessor(PopulationProcessor)
 from .IO.compileParams import compileParams
 GenerationController.setUpcompileParams(compileParams)

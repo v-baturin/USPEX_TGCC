@@ -36,19 +36,7 @@ class GlobalOptimizer(object):
 
     """
 
-    knownSelectionTypes = {}
-    Target = None
-
-    @classmethod
-    def registerSelection(cls, selectionType: type):
-        assert selectionType.__name__ not in cls.knownSelectionTypes, f'{selectionType.__name__} is not set as known Selection type'
-        cls.knownSelectionTypes[selectionType.__name__] = selectionType
-
-    @classmethod
-    def setTarget(cls, targetType):
-        cls.Target = targetType
-
-    def __init__(self, target: dict, selection: dict, optType, goodSystemsSuffixes, stopValue=None, stopSystems=None,
+    def __init__(self, optType, goodSystemsSuffixes, stopValue=None, stopSystems=None,
                  **kwargs):
         """
         Initializes the class.
@@ -58,17 +46,10 @@ class GlobalOptimizer(object):
         :type selection: dict{type, params}
         :param selection: name of selection to launch and its parameters; obligatory
         """
-
-        self.target = self.Target(**target)
-        self._createPopulation = self.knownSelectionTypes[selection['type']](self.target, **selection)
-
         self.optType = applyPresetsRecursive(optType)
         self.goodSystemsSuffixes = goodSystemsSuffixes
         self.stopValue = stopValue
         self.stopSystems = stopSystems
-
-    def createPopulation(self, generation):
-        return self._createPopulation(generation)
 
     async def update(self, population, parentsGeneration):
         """

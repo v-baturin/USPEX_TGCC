@@ -29,6 +29,7 @@ class GenerationController(object):
     DUMP_FILENAME = Path("controller.dump")
     DUMP_FILENAME_BACKUP = Path("controller.dump.back")
     knownOptimizers = {}
+    knownGenerators = {}
     populationProcessorType = None
     compileParams = None
 
@@ -36,6 +37,11 @@ class GenerationController(object):
     def registerOptimizer(cls, optimizerType: type):
         assert optimizerType.__name__ not in cls.knownOptimizers
         cls.knownOptimizers[optimizerType.__name__] = optimizerType
+
+    @classmethod
+    def registerGenerator(cls, generatorType: type):
+        assert generatorType.__name__ not in cls.knownGenerators, f'{generatorType.__name__} is not a known Generator'
+        cls.knownGenerators[generatorType.__name__] = generatorType
 
     @classmethod
     def setPopulationProcessor(cls, populationProcessorType):
@@ -46,12 +52,13 @@ class GenerationController(object):
         cls.compileParams = compileParams
 
     def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages: list,
-                 optimizer, outputRepresentation, outputRefreshDelay):
+                 optimizer, generator, outputRepresentation, outputRefreshDelay):
         self.numGenerations = numGenerations
         self.stopCrit = stopCrit
         self.numParallelCalcs = numParallelCalcs
         self.stages = stages
         self.optimizer = optimizer
+        self.generator = generator
         self.outputRepresentation = outputRepresentation
         self.outputRefreshDelay = outputRefreshDelay
         self.doPresentSystems = True
@@ -61,7 +68,7 @@ class GenerationController(object):
         self.isGoalReached = False
         self.state = ControllerState.createPopulation
         self.population = None
-        self.allSystems = self.optimizer.target.createPool()
+        self.allSystems = self.generator.target.createPool()
         self.generations = []
         self.save()
 
@@ -74,6 +81,7 @@ class GenerationController(object):
         elif GenerationController.INPUT_FILENAME.exists():
             params = GenerationController.compileParams(read(GenerationController.INPUT_FILENAME))
             optimizer = params['optimizer']
+            generator = params['generator']
             numParallelCalcs = params['numParallelCalcs']
             numGenerations = params['numGenerations']
             stopCrit = params['stopCrit']
@@ -84,9 +92,11 @@ class GenerationController(object):
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
             else:
                 RuntimeError(f"Unknown optimizer type: {optimizer['type']}.")
+            generator = GenerationController.knownGenerators[generator['type']](**generator)
+
             stages = params['stages']
-            outputRepresentation = OutputRepresentation(optimizer, **params)
-            controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer,
+            outputRepresentation = OutputRepresentation(optimizer, generator, **params)
+            controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer, generator,
                                               outputRepresentation, outputRefreshDelay)
             logger.info('Calculation initialized from input parameters.')
         else:
@@ -94,14 +104,14 @@ class GenerationController(object):
         return controller
 
     async def run(self):
-        self.outputRepresentation.presentOutput(self.optimizer, self.generations)
+        self.outputRepresentation.presentOutput(self.optimizer, self.generator, self.generations)
         while (self.generation < self.numGenerations and
                self.numberStableGenerations < self.stopCrit and
                not self.isGoalReached):
 
             if self.state is ControllerState.createPopulation:
                 generation = self.generations[-1] if self.generations else None
-                self.population = self.optimizer.createPopulation(generation)
+                self.population = self.generator(generation)
                 for ID in self.population.getIDs():
                     self.allSystems.addEntry(self.population.getEntry(ID))
                 self.state = ControllerState.processPopulation
@@ -110,7 +120,7 @@ class GenerationController(object):
                 self.doPresentSystems = True
                 task = asyncio.ensure_future(self.presentSystems())
                 await self.populationProcessorType.processPopulation(self.stages, self.population,
-                                                                     self.numParallelCalcs, self.optimizer.target)
+                                                                     self.numParallelCalcs, self.generator.target)
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.state = ControllerState.updateOptimizer
@@ -120,7 +130,7 @@ class GenerationController(object):
                 generation, self.isStable, self.isGoalReached = await self.optimizer.update(self.population, parents)
                 if generation is not None:
                     self.generations.append(generation)
-                self.outputRepresentation.presentOutput(self.optimizer, self.generations)
+                self.outputRepresentation.presentOutput(self.optimizer, self.generator, self.generations)
                 self.state = ControllerState.runControllerLogic
                 self.save()
             if self.state is ControllerState.runControllerLogic:
@@ -131,7 +141,7 @@ class GenerationController(object):
                     self.numberStableGenerations = 0
                 self.state = ControllerState.createPopulation
                 self.save()
-        self.outputRepresentation.presentOutput(self.optimizer, self.generations, final=True)
+        self.outputRepresentation.presentOutput(self.optimizer, self.generator, self.generations, final=True)
         with open('USPEX_IS_DONE', 'wt') as f:
             f.write('')
         logger.info('Calculation finished.')

@@ -82,6 +82,12 @@ class Autofrac(object):
 
 class USPEXClassic(object):
 
+    Target = None
+
+    @classmethod
+    def setTarget(cls, targetType):
+        cls.Target = targetType
+
     def __init__(self, target, optType, popSize: int, fractions: Dict[str, tuple],
                  initialPopSize: int = None, bestFrac: float=0.7, howManyDiverse: int = None,
                  diversityTolerance: float = 0.5, antiseeds: dict = None, globalParentsPool: bool = False, debug=False,
@@ -91,7 +97,7 @@ class USPEXClassic(object):
         :param params: dictionary contains following parameters:
         popSize : int - size of population
         """
-        self.target = target
+        self.target = self.Target(**target)
         self.optType = applyPresetsRecursive(optType)
         self.fractions = fractions
         antiseeds = {} if antiseeds is None else antiseeds
