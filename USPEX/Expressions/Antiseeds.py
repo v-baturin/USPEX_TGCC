@@ -32,7 +32,7 @@ class Antiseeds:
         population = [population.getEntry(ID) for ID in population.getIDs()]
         pool = [pool.getEntry(ID) for ID in pool.getIDs()]
         comb = list(combinations(population, 2))
-        sigma = self.sigma*(np.sum(metric.dist(s1, s2) for s1, s2 in comb) / len(comb) if comb else 1)
+        sigma = self.sigma*(float(np.sum(metric.dist(s1, s2) for s1, s2 in comb)) / len(comb) if comb else 1)
         for system in pool:
             correction = system.getProperty(self.prop, extension='antiseeds', suffix=suffix)
             dists = np.fromiter((metric.dist(ref, system) for ref in population), dtype=float)
