@@ -63,7 +63,7 @@ class OutputRepresentation(object):
                 self.targetRepresentation = AtomisticRepresentation(self.RES_FOLDER, **output)
             else:
                 raise RuntimeError('Unknown target type in output initialization.')
-        elif type(optimizerInstance).__name__ == 'ModelOptimizer':
+        elif type(optimizerInstance).__name__ == 'SampleOptimizer':
             self.selectionRepresentation = None
             self.targetRepresentation = None
         else:

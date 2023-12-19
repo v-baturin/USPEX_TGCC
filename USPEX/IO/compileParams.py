@@ -61,7 +61,10 @@ def compileParams(main: dict) -> dict:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
         if len(target['compositionSpace']['blocks']) > 1:
             generator['globalParentsPool'] = True
-        optimizer['optType'] = applyPresetsRecursive(optimizer['optType'])
+        if 'optType' in optimizer:
+            optimizer['optType'] = applyPresetsRecursive(optimizer['optType'])
+        else:
+            optimizer['optType'] = None
         goodSystemsSuffixes = set(prop.split('.')[-1] for prop in _extract(optimizer['optType']))
         if 'optType' not in generator:
             generator['optType'] = optimizer['optType']
