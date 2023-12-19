@@ -2,6 +2,7 @@ from itertools import chain
 
 from ..components import AtomicStructureRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
     EnvironmentUtility, JunctionUtility, SimpleMoleculeUtility, Atomistic
+from ..Expressions.Functions.presets import applyPresetsRecursive
 
 
 def compileParams(main: dict) -> dict:
@@ -58,12 +59,14 @@ def compileParams(main: dict) -> dict:
                 target['simpleMoleculeUtility']['molecules'] = molecules
             else:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
-        goodSystemsSuffixes = set(prop.split('.')[-1] for prop in _extract(optimizer['optType']))
         if len(target['compositionSpace']['blocks']) > 1:
             generator['globalParentsPool'] = True
+        optimizer['optType'] = applyPresetsRecursive(optimizer['optType'])
+        goodSystemsSuffixes = set(prop.split('.')[-1] for prop in _extract(optimizer['optType']))
         if 'optType' not in generator:
             generator['optType'] = optimizer['optType']
         else:
+            generator['optType'] = applyPresetsRecursive(generator['optType'])
             goodSystemsSuffixes.update(prop.split('.')[-1] for prop in _extract(generator['optType']))
         optimizer['goodSystemsSuffixes'] = goodSystemsSuffixes
         if 'bondUtility' not in target:

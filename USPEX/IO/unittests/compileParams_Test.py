@@ -66,7 +66,7 @@ class CompileParams_Test(unittest.TestCase):
                 },
                 'popSize': 40,
                 'bestFrac': 0.6,
-                'optType': ('aging', 'enthalpy'),
+                'optType': ('applyCorrections', 'enthalpy', 'antiseeds.corrections.origin'),
                 'fractions': {
                     'heredity': (0.1, 1.0, 0.5),
                     'softmodemutation': (0.1, 1.0, 0.2),
@@ -78,7 +78,7 @@ class CompileParams_Test(unittest.TestCase):
             'optimizer': {
                 'type': 'GlobalOptimizer',
                 'optType': 'enthalpy',
-                'goodSystemsSuffixes': {'enthalpy'},
+                'goodSystemsSuffixes': {'enthalpy', 'origin'},
             },
             'stages': [
                 {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1', 'source': 'origin'},

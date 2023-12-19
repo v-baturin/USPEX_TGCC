@@ -12,8 +12,6 @@ from copy import copy
 from typing import Dict
 from collections import Counter
 
-from ..Expressions.ExpressionEvaluator import ExpressionEvaluator
-from ..Expressions.Functions.presets import applyPresetsRecursive
 from ..Expressions.Antiseeds import Antiseeds
 
 
@@ -98,7 +96,7 @@ class Evolution(object):
         popSize : int - size of population
         """
         self.target = self.Target(**target)
-        self.optType = applyPresetsRecursive(optType)
+        self.optType = optType
         self.fractions = fractions
         antiseeds = {} if antiseeds is None else antiseeds
         self.antiseeds = Antiseeds(**antiseeds)

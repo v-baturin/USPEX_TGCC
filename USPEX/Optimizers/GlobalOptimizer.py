@@ -12,8 +12,6 @@ from copy import copy
 
 import numpy as np
 
-from ..Expressions.Functions.presets import applyPresetsRecursive
-
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +44,7 @@ class GlobalOptimizer(object):
         :type selection: dict{type, params}
         :param selection: name of selection to launch and its parameters; obligatory
         """
-        self.optType = applyPresetsRecursive(optType)
+        self.optType = optType
         self.goodSystemsSuffixes = goodSystemsSuffixes
         self.stopValue = stopValue
         self.stopSystems = stopSystems
