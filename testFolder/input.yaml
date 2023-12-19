@@ -1,6 +1,6 @@
 main:
-    optimizer:
-        type: GlobalOptimizer
+    generator:
+        type: Evolution
         target:
             type: Atomistic
             conditions:
@@ -9,17 +9,17 @@ main:
                 symbols: (Mg Al O)
                 blocks:
                   - (4 8 16)
+        popSize: 10
+        optType: (aging '.enthalpy.4')
+        fractions:
+            heredity: (0.1 1.0 0.5)
+            softmodemutation: (0.1 1.0 0.2)
+            randSym: (0.05 1.0 0.1)
+            randTop: (0.05 1.0 0.1)
+            permutation: (0.05 1.0 0.1)
+    optimizer:
+        type: GlobalOptimizer
         optType: '.enthalpy.4'
-        selection:
-            type: USPEXClassic
-            popSize: 10
-            optType: (aging '.enthalpy.4')
-            fractions:
-                heredity: (0.1 1.0 0.5)
-                softmodemutation: (0.1 1.0 0.2)
-                randSym: (0.05 1.0 0.1)
-                randTop: (0.05 1.0 0.1)
-                permutation: (0.05 1.0 0.1)
     stages: (glp glp glp glp glp)
     numParallelCalcs: 2
     numGenerations: 3
