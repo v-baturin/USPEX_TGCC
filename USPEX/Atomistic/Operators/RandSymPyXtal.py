@@ -16,7 +16,7 @@ MAX_PYXTAL_ATTEMPTS = 10000
 LOCAL_VACUUM = 0.2
 
 class RandSymPyXtal:
-    def __init__(self, utilities, symmetries=None):
+    def __init__(self, utilities, symmetries=None, factor=1.1):
         self.atomistic = utilities.atomistic
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
@@ -44,6 +44,7 @@ class RandSymPyXtal:
                 raise ValueError(f"Wrong dim {dim}.")
         else:
             self.nsym = symmetries
+        self.factor = factor
         signal.signal(signal.SIGALRM, signal_handler)
 
     def __call__(self, offspringFactory=None):
@@ -155,6 +156,7 @@ class RandSymPyXtal:
             group=1,
             molecules=[toPymatgen(molecule) for molecule in molecules],
             numMols=None,
+            factor = self.factor,
             lattice=None#Lattice.from_matrix(lattice)
         )
         return [molecule.createAtNewCoordinates(mol_site.get_mol_object().cart_coords)

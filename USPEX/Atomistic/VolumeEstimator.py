@@ -228,7 +228,7 @@ class VolumeEstimator:
     """
 
 
-    def __init__(self, volumeType):
+    def __init__(self, volumeType, volumeCoefficient=1.):
         """
 
         :type volumeType: float
@@ -242,6 +242,7 @@ class VolumeEstimator:
         """
 
         self.volumeType = volumeType
+        self.volumeCoefficient = volumeCoefficient
 
     def calcAtomVolume(self, elementSymbol, externalPressure):
         """
@@ -269,4 +270,4 @@ class VolumeEstimator:
         :rtype: float
         :return: volume
         """
-        return sum(self.calcAtomVolume(sym, pressure) * amount for sym, amount in composition.items())
+        return self.volumeCoefficient * sum(self.calcAtomVolume(sym, pressure) * amount for sym, amount in composition.items())
