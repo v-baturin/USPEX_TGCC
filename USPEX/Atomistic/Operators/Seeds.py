@@ -25,8 +25,6 @@ class Seeds(object):
         :param generations:
         :param seedsFolders: default Seeds/POSCAR
         '''
-        self.cellUtility = utilities.cellUtility
-        self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions

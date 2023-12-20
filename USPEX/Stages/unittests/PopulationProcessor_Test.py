@@ -42,7 +42,7 @@ class PopulationProcessor_Test(unittest.TestCase):
         stages = [{'stageType': 'stage1', 'tag': '1', 'source': 'origin'},
                   {'stageType': 'stage1', 'tag': '2', 'source': '1'},
                   {'stageType': 'stage1', 'tag': '3', 'source': '2'}]
-        population = Pool.createPool(FlavourFactory({}))
+        population = Pool.newPool(FlavourFactory({}), {})
         for i in range(20):
             population.newEntry(EntryFlavour(**{'.howCome': None, '.parent': None, '.isBad': False}))
         asyncio.get_event_loop().run_until_complete(PopulationProcessor.processPopulation(stages, population, 10))

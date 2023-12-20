@@ -10,19 +10,24 @@ Class describing target space
 
 import logging
 from types import SimpleNamespace
-from typing import List
+from typing import List, Dict
+
+from ..Expressions.Functions.BasicFunctions import BasicFunctions
+from ..Optimizers.PoolEntry import FlavourFactory, Pool
+
 
 logger = logging.getLogger(__name__)
 
 
 class TargetType:
     def __init__(self, utilities: List[type], hybridizations: List[type], mutations: List[type], creations: List[type],
-                 seeds: type = None):
+                 defaultMetric: str, seeds: type = None):
         self.utilities = utilities
         self.hybridizations = hybridizations
         self.mutations = mutations
         self.creations = creations
         self.seeds = seeds
+        self.defaultMetric = defaultMetric
 
 
 class Target(object):
@@ -43,7 +48,33 @@ class Target(object):
         list of utilities.
     """
 
-    def __init__(self, targetTypes : TargetType, defaultSuffix, **kwargs):
+    knownTargetTypes: Dict[str, TargetType] = {}
+
+    @classmethod
+    def registerTarget(cls, name: str, utilities: List[type], hybridizations: List[type], mutations: List[type],
+                       creations: List[type], defaultMetric: str, seeds: type = None):
+        """
+        Register the target as known target.
+
+        :type name: str
+        :param name: target name.
+        :type utilities: list
+        :param utilities: list of types of utilities.
+        :type hybridizations: list
+        :param hybridizations: list of types of hybridization operators.
+        :type mutations: list
+        :param mutations: list of types of mutation operators.
+        :type creations: list
+        :param creations: list of types of mutation operators.
+        :type seeds: type
+        :param seeds: type of Seeds operator.
+        """
+        assert name not in cls.knownTargetTypes, f'{name} is not registered as known Target'
+        cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
+                                                mutations=mutations, creations=creations, seeds=seeds,
+                                                defaultMetric=defaultMetric)
+
+    def __init__(self, type, defaultSuffix, **kwargs):
         """
         Initializes the class.
 
@@ -52,10 +83,12 @@ class Target(object):
         :type kwargs: dict
         :param kwargs: parameters for initializing config.
         """
+        targetTypes = self.knownTargetTypes[type]
         self.defaultSuffix = defaultSuffix
-        self.name = kwargs['type']
+        self.name = type
         utilities = {}
-        self.expressionExtensions = {}
+        self.expressionExtensions = {'basic': BasicFunctions()}
+
         self.propertyExtensions = {}
         failedUtilities = []
         for utilityType in targetTypes.utilities:
@@ -120,3 +153,8 @@ class Target(object):
             self.seeds = None
 
         self.variationOperators = self.hybridizations + self.mutations + self.creations
+        self.metric = getattr(self.utilities, targetTypes.defaultMetric)
+        self.flavourFactory = FlavourFactory(self.propertyExtensions, self.metric)
+
+    def createPool(self):
+        return Pool.newPool(self.flavourFactory, self.expressionExtensions, self.metric)

@@ -63,13 +63,13 @@ class Fitness_Test(unittest.TestCase):
         propertyExtensions = dict(
             simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility)
         )
-        self.systems = Pool.createPool(FlavourFactory(extensions=propertyExtensions))
+        self.systems = Pool.newPool(FlavourFactory(extensions=propertyExtensions), expressionExtensions)
         for system in systems:
             self.systems.newEntry(EntryFlavour(extensions=propertyExtensions,
                                                **{'.howCome': 'Seeds', '.parent': None},
                                                **system))
 
-        self.fitness = ExpressionEvaluator(self.systems, expressionExtensions)
+        self.fitness = ExpressionEvaluator(self.systems)
 
     def test_enthalpy(self):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
@@ -228,7 +228,7 @@ class FitnessXray_Test(unittest.TestCase):
             simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility),
             powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.propertyExtension(self.powderSpectrumAnalyzer),
         )
-        self.systems = Pool.createPool(FlavourFactory(extensions=propertyExtensions))
+        self.systems = Pool.newPool(FlavourFactory(extensions=propertyExtensions), expressionExtensions)
         for system in systems:
             self.systems.newEntry(EntryFlavour(extensions=propertyExtensions,
                                                **{'.howCome': 'Seeds', '.parent': None},
@@ -236,7 +236,7 @@ class FitnessXray_Test(unittest.TestCase):
         for ID in self.systems.getIDs():
             self.systems.getEntry(ID).setProperty('enthalpy', enthalpies[ID-1])
 
-        self.fitness = ExpressionEvaluator(self.systems, expressionExtensions)
+        self.fitness = ExpressionEvaluator(self.systems)
 
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]
