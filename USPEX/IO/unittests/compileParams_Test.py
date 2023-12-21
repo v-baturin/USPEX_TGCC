@@ -19,28 +19,28 @@ class CompileParams_Test(unittest.TestCase):
 
     def test_stages(self):
         definitions = {
-            'optimizer': {
-                'type': 'GlobalOptimizer',
+            'generator': {
+                'type': 'Evolution',
                 'target': {
                     'type': 'Atomistic',
                     'conditions': {'externalPressure': 100},
                     'compositionSpace': {'symbols': ['Mg', 'Al', 'O'],
                                          'blocks': [[4, 8, 16]]},
                 },
-                'optType': 'enthalpy',
-                'selection': {
-                    'type': 'USPEXClassic',
-                    'popSize': 40,
-                    'bestFrac': 0.6,
-                    'optType': ('aging', 'enthalpy'),
-                    'fractions': {
-                        'heredity': (0.1, 1.0, 0.5),
-                        'softmodemutation': (0.1, 1.0, 0.2),
-                        'randSym': (0.05, 1.0, 0.1),
-                        'randTop': (0.05, 1.0, 0.1),
-                        'permutation': (0.05, 1.0, 0.1)
-                    }
+                'popSize': 40,
+                'bestFrac': 0.6,
+                'optType': ('aging', 'enthalpy'),
+                'fractions': {
+                    'heredity': (0.1, 1.0, 0.5),
+                    'softmodemutation': (0.1, 1.0, 0.2),
+                    'randSym': (0.05, 1.0, 0.1),
+                    'randTop': (0.05, 1.0, 0.1),
+                    'permutation': (0.05, 1.0, 0.1)
                 }
+            },
+            'optimizer': {
+                'type': 'GlobalOptimizer',
+                'optType': 'enthalpy',
             },
             'stages': [
                 {'name': 'glp', 'type': 'gulp', 'commandExecutable': 'gulp'},
@@ -52,8 +52,8 @@ class CompileParams_Test(unittest.TestCase):
             'stopCrit': 30
         }
         params_ref = {
-            'optimizer': {
-                'type': 'GlobalOptimizer',
+            'generator': {
+                'type': 'Evolution',
                 'target': {
                     'type': 'Atomistic',
                     'conditions': {'externalPressure': 100},
@@ -64,21 +64,21 @@ class CompileParams_Test(unittest.TestCase):
                     'bondUtility': {'volumeType': 0, 'cutoff': 'strong'},
                     'junctionUtility': {'molSitesMapping': {}}
                 },
-                'fingerprintUtility': 'radialDistributionUtility',
-                'optType': 'enthalpy',
-                'selection': {
-                    'type': 'USPEXClassic',
-                    'popSize': 40,
-                    'bestFrac': 0.6,
-                    'optType': ('aging', 'enthalpy'),
-                    'fractions': {
-                        'heredity': (0.1, 1.0, 0.5),
-                        'softmodemutation': (0.1, 1.0, 0.2),
-                        'randSym': (0.05, 1.0, 0.1),
-                        'randTop': (0.05, 1.0, 0.1),
-                        'permutation': (0.05, 1.0, 0.1)
-                    }
+                'popSize': 40,
+                'bestFrac': 0.6,
+                'optType': ('applyCorrections', 'enthalpy', 'antiseeds.corrections.origin'),
+                'fractions': {
+                    'heredity': (0.1, 1.0, 0.5),
+                    'softmodemutation': (0.1, 1.0, 0.2),
+                    'randSym': (0.05, 1.0, 0.1),
+                    'randTop': (0.05, 1.0, 0.1),
+                    'permutation': (0.05, 1.0, 0.1)
                 }
+            },
+            'optimizer': {
+                'type': 'GlobalOptimizer',
+                'optType': 'enthalpy',
+                'goodSystemsSuffixes': {'enthalpy', 'origin'},
             },
             'stages': [
                 {'name': 'glp', 'stageType': 'atomistic', 'type': 'gulp', 'commandExecutable': 'gulp', 'tag': '1', 'source': 'origin'},
@@ -89,7 +89,8 @@ class CompileParams_Test(unittest.TestCase):
             'numGenerations': 60,
             'stopCrit': 30,
             'output': {
-                'stages': ['1', '2', '3', '4']
+                'stages': ['1', '2', '3', '4'],
+                'suffix': '4'
             }
 
         }
@@ -138,7 +139,6 @@ class CompileParams_Test(unittest.TestCase):
     #                 'bondUtility': {'volumeType': 0.5, 'cutoff': 'strong'},
     #                 'junctionUtility': {'molSitesMapping': {}}
     #             },
-    #             'fingerprintUtility': 'radialDistributionUtility',
     #             'optType': 'enthalpy',
     #             'selection': {'type': 'USPEXClassic',
     #                           'optType': ('aging', 'enthalpy'),
@@ -157,18 +157,19 @@ class CompileParams_Test(unittest.TestCase):
 
     def test_XRay(self):
         definitions = {
-                'optimizer': {
+            'generator': {
+                'target': {
+                    'type': 'Atomistic',
+                    'conditions': {'externalPressure': 100},
+                    'powderSpectrumAnalyzer': 'spectrum.txt',
+                    'compositionSpace': {'symbols': ['Na', 'Cl'],
+                                         'blocks': [[8, 24]],
+                                         'range': [[1, 1]]},
+                },
+            },
+            'optimizer': {
                     'type': 'GlobalOptimizer',
-                    'target': {
-                        'type': 'Atomistic',
-                        'conditions': {'externalPressure': 100},
-                        'powderSpectrumAnalyzer': 'spectrum.txt',
-                        'compositionSpace': {'symbols': ['Na', 'Cl'],
-                                             'blocks': [[8,24]],
-                                             'range': [[1,1]]},
-                    },
                     'optType': 'enthalpy',
-                    'selection': {}
                 },
                 'stages': [],
                 'numParallelCalcs': 2,
@@ -176,30 +177,33 @@ class CompileParams_Test(unittest.TestCase):
                 'stopCrit': 3
         }
         params_ref = {
-            'optimizer': {
-                'type': 'GlobalOptimizer',
+            'generator': {
                 'target': {
                     'type': 'Atomistic',
                     'conditions': {'externalPressure': 100},
                     'powderSpectrumAnalyzer': PowderSpectrumAnalyzer.parse('spectrum.txt'),
                     'compositionSpace': {'symbols': ['Na', 'Cl'],
-                                         'blocks': [[8,24]],
-                                         'range': [[1,1]]},
+                                         'blocks': [[8, 24]],
+                                         'range': [[1, 1]]},
                     'radialDistributionUtility': {'symbols': ['Cl', 'Na'], 'suffix': 'origin'},
                     'defaultSuffix': 'origin',
                     'bondUtility': {'volumeType': 0, 'cutoff': 'strong'},
                     'junctionUtility': {'molSitesMapping': {}}
                 },
-                'fingerprintUtility': 'radialDistributionUtility',
+                'optType': 'enthalpy'
+            },
+            'optimizer': {
+                'type': 'GlobalOptimizer',
                 'optType': 'enthalpy',
-                'selection': {'optType': 'enthalpy'}
+                'goodSystemsSuffixes': {'enthalpy'},
             },
             'stages': [],
             'numParallelCalcs': 2,
             'numGenerations': 3,
             'stopCrit': 3,
             'output': {
-                'stages': []
+                'stages': [],
+                'suffix': 'origin'
             }
         }
         params = compileParams(definitions)

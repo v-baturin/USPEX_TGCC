@@ -63,7 +63,7 @@ class QE_Interface:
         assert kresol > 0
         self.kPoints = KPoints(kresol)
 
-        with open(options) as fp:
+        with open(self.options) as fp:
             data, card_lines = read_fortran_namelist(fp)
         if 'system' not in data:
             raise KeyError('Required section &SYSTEM not found.')

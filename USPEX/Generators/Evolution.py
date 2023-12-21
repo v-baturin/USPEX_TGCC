@@ -1,6 +1,6 @@
 """
-USPEX.Selection.USPEXClassic
-============================
+USPEX.Generators.Evolution
+==========================
 
 
 .. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
@@ -12,7 +12,8 @@ from copy import copy
 from typing import Dict
 from collections import Counter
 
-from ..Expressions.Functions.presets import applyPresetsRecursive
+from ..Expressions.Antiseeds import Antiseeds
+
 
 
 logger = logging.getLogger(__name__)
@@ -77,20 +78,28 @@ class Autofrac(object):
         return int(howMany)
 
 
-class USPEXClassic(object):
+class Evolution(object):
 
-    def __init__(self, target, fingerprintUtility, optType, popSize: int, fractions: Dict[str, tuple],
+    Target = None
+
+    @classmethod
+    def setTarget(cls, targetType):
+        cls.Target = targetType
+
+    def __init__(self, target, optType, popSize: int, fractions: Dict[str, tuple],
                  initialPopSize: int = None, bestFrac: float=0.7, howManyDiverse: int = None,
-                 diversityTolerance: float = 0.5, globalParentsPool: bool = False, debug=False, **kwargs):
+                 diversityTolerance: float = 0.5, antiseeds: dict = None, globalParentsPool: bool = False, debug=False,
+                 **kwargs):
         """
         :param target: reference to configuration space object
         :param params: dictionary contains following parameters:
         popSize : int - size of population
         """
-        self.target = target
-        self.fingerprintUtility = fingerprintUtility
-        self.optType = applyPresetsRecursive(optType)
+        self.target = self.Target(**target)
+        self.optType = optType
         self.fractions = fractions
+        antiseeds = {} if antiseeds is None else antiseeds
+        self.antiseeds = Antiseeds(**antiseeds)
 
         self.popSize = popSize
 
@@ -111,7 +120,7 @@ class USPEXClassic(object):
         else:
             logger.setLevel(logging.INFO)
 
-    def __call__(self, population, offsprings, optType):
+    def __call__(self, generation):
         """
         :param oldPopulation: generation of new
         :param best:
@@ -120,12 +129,17 @@ class USPEXClassic(object):
         :return:
         """
 
-        if not self.globalParentsPool and population is not None:
-            population = copy(population)
-            for entry in self._mostDiverse:
-                population.addEntry(entry)
+        if generation is not None:
+            self.antiseeds.payPenalties(generation.uniquePopulation, generation.uniqueSystems, self.target.metric)
+            population = generation.uniqueSystems if self.globalParentsPool else generation.uniquePopulation
+            optType = generation.goodSystems.createExpression(self.optType)
+            generation.goodSystems.evaluate(self.optType)
 
-        if population is not None:
+            if not self.globalParentsPool:
+                population = copy(population)
+                for entry in self._mostDiverse:
+                    population.addEntry(entry)
+
             fronts = population.fronts(optType)
             parentsPool = []
             tournament = []
@@ -137,7 +151,7 @@ class USPEXClassic(object):
             tournament /= np.sum(tournament)
             popSize = self.popSize
         else:
-            parentsPool, tournament, popSize = [], [], self.initialPopSize
+            parentsPool, tournament, popSize, optType = [], [], self.initialPopSize, None
 
         if not self.globalParentsPool:
             self._mostDiverse = self.determineMostDiverse(parentsPool)
@@ -149,6 +163,7 @@ class USPEXClassic(object):
 
         actualParents = []
         self._newIDs = []
+        offsprings = self.target.createPool()
 
         for mutation in self.target.mutations:
             howCome = type(mutation).__name__
@@ -247,7 +262,8 @@ class USPEXClassic(object):
                 logger.info(f"Seed filename is {seed['.filename']}.")
 
         # if not self.antiseeds.legacy:
-        #     self.antiseeds.payPenalties(actualParents)
+        #     self.antiseeds.payPenalties(actualParents, generation.uniqueSystems, self.target.metric)
+        return offsprings
 
     def determineMostDiverse(self, population: list):
         """
@@ -271,7 +287,7 @@ class USPEXClassic(object):
         while deltaTol > 0.000001:
             for system in population:
                 for ref_system in mostDiverse:
-                    if self.fingerprintUtility.equal(system, ref_system, tolerance):
+                    if self.target.metric.equal(system, ref_system, tolerance):
                         break
                 else:
                     mostDiverse.append(system)

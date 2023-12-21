@@ -12,10 +12,10 @@ class USPEXClassicRepresentation(object):
     def __init__(self, RES_FOLDER: Path, **params):
         self.RES_FOLDER = RES_FOLDER
 
-    def presentFractions(self, optimizer):
+    def presentFractions(self, generations):
         allOperators = set()
         allAmountsAndTotals = []
-        for generation in optimizer.generations:
+        for generation in generations:
             population = generation.population
             amounts = Counter()
             for ID in population.getIDs():
@@ -51,12 +51,12 @@ class USPEXClassicRepresentation(object):
         return header
 
     @staticmethod
-    def getPopulationCreationBlock(population, optimizer, targetRepresentation) -> list:
+    def getPopulationCreationBlock(population, optimizer, generator, generations, targetRepresentation) -> list:
         block = []
-        if not optimizer._createPopulation.globalParentsPool:
+        if not generator.globalParentsPool:
             block.append('     Best and diverse structures from previous generation')
-            mostDiverseTable = targetRepresentation.getNewSystemsTable(optimizer.generations[-1].goodSystems)
-            for system in optimizer._createPopulation.getMostDiverse():
+            mostDiverseTable = targetRepresentation.getNewSystemsTable(generations[-1].goodSystems)
+            for system in generator.getMostDiverse():
                 mostDiverseTable.update(system['ID'], system)
             block.append(mostDiverseTable.table.get_string())
 

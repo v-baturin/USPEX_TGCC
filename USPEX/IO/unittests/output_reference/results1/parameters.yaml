@@ -1,7 +1,6 @@
 numGenerations: 3
 numParallelCalcs: 2
 optimizer:
-  fingerprintUtility: radialDistributionUtility
   optType: .enthalpy.5
   selection:
     fractions:
@@ -33,7 +32,7 @@ optimizer:
     - aging
     - .enthalpy.5
     popSize: 10
-    type: USPEXClassic
+    type: Evolution
   stopFitness: -655.062
   target:
     cellUtility:

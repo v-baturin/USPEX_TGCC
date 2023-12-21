@@ -40,39 +40,20 @@ from .Atomistic.Operators.RemoveAtom import RemoveAtom
 from .Atomistic.Operators.TeleportAtom import TeleportAtom
 from .Atomistic.Operators.Seeds import Seeds
 from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
-# --------------------------------------------- Optimizers ----------------------------------------------------------
-from .Optimizers.GlobalOptimizer import GlobalOptimizer
-from .Expressions.ExpressionEvaluator import ExpressionEvaluator
-GlobalOptimizer.setExpressionEvaluatorType(ExpressionEvaluator)
-from .Selection.USPEXClassic import USPEXClassic
-GlobalOptimizer.registerSelection(USPEXClassic)
-GlobalOptimizer.registerTarget('Atomistic',
-                               utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
-                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, JunctionUtility
-                                          # ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,
-                                          ],
-                               hybridizations=[Heredity],
-                               mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
-                               creations=[RandTop, RandSym, RandSymPyXtal,
-                                          CoreAdsorbantRandomGenerator
-                                          ],
-                               seeds=Seeds)
-from .Optimizers.ModelOptimizer import ModelOptimizer, External
-ModelOptimizer.registerModel(External)
-ModelOptimizer.registerTarget('Atomistic',
+# --------------------------------------------- Targets--- ----------------------------------------------------------
+from .Generators.Target import Target
+Target.registerTarget('Atomistic',
                       utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
-                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, JunctionUtility
-                                 # ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer
-                                 ],
+                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility,
+                                 # ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,
+                                 JunctionUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
-                      creations=[RandTop, RandSym, RandSymPyXtal,
-                                 CoreAdsorbantRandomGenerator
-                                 ],
-                      seeds=Seeds)
-from .Stages.Executor import Executor
-External.setExecutorType(Executor)
+                      creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
+                      seeds=Seeds,
+                      defaultMetric='radialDistributionUtility')
 # --------------------------------------------- Interfaces ----------------------------------------------------------
+from .Stages.Executor import Executor
 # from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
 # Executor.registerInterface('abinit', ABINIT_Interface)
 # from .Stages.Interfaces.GULP_Interface import GULP_Interface
@@ -113,15 +94,24 @@ from .Stages.TaskManagers.TGCC import TGCC
 Executor.registerTaskManager('TGCC', TGCC)
 from .Stages.AtomisticStage import AtomisticStage
 # ------------------------------------------------ Stages -----------------------------------------------------------
+from .Stages.ExternalStage import ExternalStage
+ExternalStage.registerTypes(Executor)
+from .Stages.AtomisticStage import AtomisticStage
 AtomisticStage.registerTypes(Executor)
 from .Stages.PopulationProcessor import PopulationProcessor, Stages
-Stages.registerStage('execute', Executor)
+Stages.registerStage('external', ExternalStage)
 Stages.registerStage('atomistic', AtomisticStage)
 Stages.registerStage('populationProcessor', PopulationProcessor)
 # ---------------------------------------- Generation Controller ----------------------------------------------------
 from .Stages.GenerationController import GenerationController
+from .Optimizers.GlobalOptimizer import GlobalOptimizer
 GenerationController.registerOptimizer(GlobalOptimizer)
-GenerationController.registerOptimizer(ModelOptimizer)
+from .Stages.SampleOptimizer import SampleOptimizer
+SampleOptimizer.setStages(Stages)
+GenerationController.registerOptimizer(SampleOptimizer)
+from .Generators.Evolution import Evolution
+Evolution.setTarget(Target)
+GenerationController.registerGenerator(Evolution)
 GenerationController.setPopulationProcessor(PopulationProcessor)
 from .IO.compileParams import compileParams
 GenerationController.setUpcompileParams(compileParams)
