@@ -138,4 +138,3 @@ __pycache__
 *.pyc
 *.egg-info
 /venv/
-post-push.sh
