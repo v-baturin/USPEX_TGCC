@@ -42,6 +42,11 @@ class RandTop:
         self.arxiv = {}
         signal.signal(signal.SIGALRM, signal_handler)
 
+    def __setstate__(self, state):
+        # Set up signal handler after unpickling
+        self.__dict__.update(state)
+        signal.signal(signal.SIGALRM, signal_handler)
+
     def __call__(self, offspringFactory):
         composition = self.compositionSpace.randomComposition()
         envAssembler = np.random.choice(self.environmentUtility.environments) if self.environmentUtility.environments \
