@@ -52,6 +52,10 @@ class RandSymPyXtal:
         self.__dict__.update(state)
         signal.signal(signal.SIGALRM, signal_handler)
 
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        signal.signal(signal.SIGALRM, signal_handler)
+
     def __call__(self, offspringFactory=None):
         composition = self.compositionSpace.randomComposition()
 
