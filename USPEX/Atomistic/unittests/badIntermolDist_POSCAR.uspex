@@ -1,5 +1,5 @@
 - filename: badIntermolDist_POSCAR
-  index: 5
+  index: 0
   molecules:
   - 18 10 11 0 7 6 5
   - 19 4 3 2 1 8 9
