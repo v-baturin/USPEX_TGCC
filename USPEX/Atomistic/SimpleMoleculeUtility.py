@@ -149,12 +149,11 @@ class SimpleMoleculeUtility(object):
             for i, distVectorsRow in enumerate(distVectorsMatrix):
                 for j, vect in enumerate(distVectorsRow):
                     vect = cell.cartesianToFractional(vect)
-                    if np.all(np.abs(vect) < 1.0):
-                        dists = np.linalg.norm(vect + constNeighbours, axis=1)
-                        if len(dists):
-                            distVectorsMatrix[i, j] = cell.fractionalToCartesian(vect + constNeighbours[np.argmin(dists)])
-                        else:
-                            distVectorsMatrix[i, j] = np.full(3, np.inf)
+                    dists = np.linalg.norm(vect + constNeighbours, axis=1)
+                    if len(dists):
+                        distVectorsMatrix[i, j] = cell.fractionalToCartesian(vect + constNeighbours[np.argmin(dists)])
+                    else:
+                        distVectorsMatrix[i, j] = np.full(3, np.inf)
             actualDistances[tuple(np.meshgrid(inds, inds))] = np.linalg.norm(distVectorsMatrix, axis=2)
         for inds in disassembler.envIndices:
             actualDistances[tuple(np.meshgrid(inds, inds))] = minDistMatrix[
