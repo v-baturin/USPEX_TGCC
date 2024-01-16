@@ -1,0 +1,4 @@
+- filename: badMolDist_POSCAR
+  index: 0
+  molecules:
+  - 2 0 1

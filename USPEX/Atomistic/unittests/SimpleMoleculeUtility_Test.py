@@ -16,8 +16,8 @@ class SimpleMoleculeUtility_Test(unittest.TestCase):
     def test_checkMinDistances(self):
         atomistic = Atomistic()
         extensions = {'atomistic': atomistic.propertyExtension(atomistic)}
-        badDistFilePath = PATH_WITH_TESTS / "badIntermolDist_POSCAR.uspex"
-        molPath = PATH_WITH_TESTS / "AlH6.xyz"
+        badDistFilePath = PATH_WITH_TESTS / "badMolDist_POSCAR.uspex"
+        molPath = PATH_WITH_TESTS / "AlH2.xyz"
         badDistSys = Atomistic.readAtomicStructures(badDistFilePath)
         molecules = {'mol_alh6': AtomicStructureRepresentation.readXYZ(molPath.as_posix())}
         custom_iondist = {'H H': 1.9}
@@ -27,7 +27,7 @@ class SimpleMoleculeUtility_Test(unittest.TestCase):
             EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **badDistSys[0]))
         structure = system.getProperty('structure', extension='atomistic')
         minDistMatrix = bondUtility.getDistances(structure.getAtomTypes(), 0)
-        self.assertTrue(simpleMoleculeUtility.checkMinDistances(system, minDistMatrix))
+        self.assertFalse(simpleMoleculeUtility.checkMinDistances(system, minDistMatrix))
 
 
 
