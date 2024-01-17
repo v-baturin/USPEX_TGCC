@@ -17,7 +17,7 @@ from ..Transformation import Transformation
 from ...SpaceGroups.SpaceGroups3D import Group
 
 MAX_RANDOM_FAILED_DIST = 10000
-EXIT_TIME = 600
+EXIT_TIME = 1200
 MAX_RANDOM_TIME = 300
 ATTEMPTS_ROTATION = 1
 
