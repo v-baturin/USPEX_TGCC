@@ -28,6 +28,7 @@ class FakeTarget:
 
 class AtomisticStage_Test(unittest.TestCase):
     '''
+
     '''
 
     def setUp(self) -> None:

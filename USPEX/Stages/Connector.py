@@ -177,6 +177,7 @@ class Connector(object):
         self._lock.release()
 
     async def _run(self, *args, **kwargs):
+        await self._checkConnection()
         await self.channelGuard.acquire()
         for i in range(N_TRIES):
             await self._checkConnection()
@@ -197,6 +198,7 @@ class Connector(object):
         return remote_result
 
     async def _start_sftp_session(self):
+        await self._checkConnection()
         await self.channelGuard.acquire()
         for i in range(N_TRIES):
             await self._checkConnection()

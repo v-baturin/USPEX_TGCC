@@ -22,15 +22,14 @@ logger = logging.getLogger(__name__)
 class ExpressionEvaluator:
 
     @staticmethod
-    def calculate(expression: Union[str, tuple, int, float], pool, extensions: Mapping) -> None:
+    def calculate(expression: Union[str, tuple, int, float], pool) -> None:
         expression = applyPresetsRecursive(expression)
-        calculator = ExpressionEvaluator(pool, extensions)
+        calculator = ExpressionEvaluator(pool)
         calculator.evaluate(expression)
         calculator.setAllExpressions()
 
-    def __init__(self, pool, extensions: Mapping):
+    def __init__(self, pool):
         self._pool = pool
-        self._extensions = extensions
         self._storedData = {}
 
     def evaluate(self, expression: Union[str, tuple, int, float]) -> np.ndarray:
@@ -53,7 +52,7 @@ class ExpressionEvaluator:
                     extension, funcName = funcName
                 else:
                     raise RuntimeError(f"Too complex expression {'.'.join(expression)}.")
-                valueArray = getattr(self._extensions[extension], funcName)(*arguments)
+                valueArray = getattr(self._pool.expressionExtensions[extension], funcName)(*arguments)
             elif isinstance(expression, str):
                 value = [self._pool.getEntry(ID)[expression] for ID in self._pool.getIDs()]
                 # value = [self.evaluateTerminal(expression, system) for system in self.pool]

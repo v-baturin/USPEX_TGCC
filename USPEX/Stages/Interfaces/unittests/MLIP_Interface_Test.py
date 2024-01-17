@@ -71,7 +71,7 @@ class MLIP_train_Test(unittest.TestCase):
             pass
         self.interface = MLIP_Interface(tag='0', mode='train', potential=self.trainFolder/'24g.mtp',
                                         specorder=['Mo', 'S'], trainingSet=self.trainFolder/'ts.cfg',
-                                        args=SPECIFICPATH/'mlip_args_0')
+                                        args=SPECIFICPATH/'mlip_args_0', sample='trajectory')
         atomistic = Atomistic()
         self.extensions = dict(
             atomistic=atomistic.propertyExtension(atomistic)

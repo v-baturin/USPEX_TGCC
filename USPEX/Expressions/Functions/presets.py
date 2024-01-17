@@ -1,6 +1,5 @@
 presetFitness = {
-    ('aging', 'values'): ('plus', 'values', ('multiply', ('minus', ('mean', 'values'), ('min', 'values')),
-                                             'antiseeds.corrections.origin')),
+    ('aging', 'values'): ('applyCorrections', 'values', 'antiseeds.corrections.origin'),
     ('getRelCCHSpace', 'values'): ('getRelativeCHSpace', ('compositionSpace.numBlocksFromCompositions',
                                                           'simpleMoleculeUtility.composition.origin'), 'values'),
     ('getAbsCCHSpace', 'values'): ('getAbsoluteCHSpace', ('compositionSpace.numBlocksFromCompositions',

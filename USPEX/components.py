@@ -25,9 +25,9 @@ SimpleMoleculeUtility.registerTypes(AtomicStructure, Element)
 from .Atomistic.JunctionUtility import JunctionUtility
 from .Atomistic.Conditions import Conditions
 from .Atomistic.BondUtility import BondUtility
-from .Atomistic.ElasticML import ElasticML
-from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
-from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
+# from .Atomistic.ElasticML import ElasticML
+# from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
+# from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
@@ -40,60 +40,50 @@ from .Atomistic.Operators.RemoveAtom import RemoveAtom
 from .Atomistic.Operators.TeleportAtom import TeleportAtom
 from .Atomistic.Operators.Seeds import Seeds
 from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
-# --------------------------------------------- Optimizers ----------------------------------------------------------
-from .Optimizers.GlobalOptimizer import GlobalOptimizer
-from .Expressions.ExpressionEvaluator import ExpressionEvaluator
-GlobalOptimizer.setExpressionEvaluatorType(ExpressionEvaluator)
-from .Selection.USPEXClassic import USPEXClassic
-GlobalOptimizer.registerSelection(USPEXClassic)
-GlobalOptimizer.registerTarget('Atomistic',
-                               utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
-                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
-                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
-                               hybridizations=[Heredity],
-                               mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
-                               creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
-                               seeds=Seeds)
-from .Optimizers.ModelOptimizer import ModelOptimizer, External
-ModelOptimizer.registerModel(External)
-ModelOptimizer.registerTarget('Atomistic',
+from .Atomistic.MofUtility import MofUtility
+from .Atomistic.Operators.MOF_Heredity import MOF_Heredity
+from .Atomistic.Operators.MOF_Random import MOF_Random
+# --------------------------------------------- Targets--- ----------------------------------------------------------
+from .Generators.Target import Target
+Target.registerTarget('Atomistic',
                       utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
-                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
-                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
+                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility,
+                                 # ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,
+                                 JunctionUtility, MofUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
-                      creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
-                      seeds=Seeds)
-from .Stages.Executor import Executor
-External.setExecutorType(Executor)
+                      creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator, MOF_Random],
+                      seeds=Seeds,
+                      defaultMetric='radialDistributionUtility')
 # --------------------------------------------- Interfaces ----------------------------------------------------------
-from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
-Executor.registerInterface('abinit', ABINIT_Interface)
-from .Stages.Interfaces.GULP_Interface import GULP_Interface
-Executor.registerInterface('gulp', GULP_Interface)
-from .Stages.Interfaces.LAMMPS_Interface import LAMMPS_Interface
-LAMMPS_Interface.registerTypes(AtomicStructureRepresentation)
-Executor.registerInterface('lammps', LAMMPS_Interface)
-from .Stages.Interfaces.MLIP_Interface import MLIP_Interface
-Executor.registerInterface('mlip', MLIP_Interface)
-from .Stages.Interfaces.QE_Interface import QE_Interface
-QE_Interface.registerTypes(AtomicStructureRepresentation)
-Executor.registerInterface('qe', QE_Interface)
+from .Stages.Executor import Executor
+# from .Stages.Interfaces.ABINIT_Interface import ABINIT_Interface
+# Executor.registerInterface('abinit', ABINIT_Interface)
+# from .Stages.Interfaces.GULP_Interface import GULP_Interface
+# Executor.registerInterface('gulp', GULP_Interface)
+# from .Stages.Interfaces.LAMMPS_Interface import LAMMPS_Interface
+# LAMMPS_Interface.registerTypes(AtomicStructureRepresentation)
+# Executor.registerInterface('lammps', LAMMPS_Interface)
+# from .Stages.Interfaces.MLIP_Interface import MLIP_Interface
+# Executor.registerInterface('mlip', MLIP_Interface)
+# from .Stages.Interfaces.QE_Interface import QE_Interface
+# QE_Interface.registerTypes(AtomicStructureRepresentation)
+# Executor.registerInterface('qe', QE_Interface)
 from .Stages.Interfaces.VASP_Interface import VASP_Interface
 VASP_Interface.registerTypes(AtomicStructureRepresentation)
 Executor.registerInterface('vasp', VASP_Interface)
-from .Stages.Interfaces.MOPAC_Interface import MOPAC_Interface
-Executor.registerInterface('mopac', MOPAC_Interface)
-from .Stages.Interfaces.FHIaims_Interface import FHIaims_Interface
-Executor.registerInterface('aims', FHIaims_Interface)
-from .Stages.Interfaces.XTB_Interface import XTB_Interface
-XTB_Interface.registerTypes(AtomicStructureRepresentation)
-Executor.registerInterface('xtb', XTB_Interface)
-from .Stages.Interfaces.DFTBplus_Interface import DFTBplus_Interface
-DFTBplus_Interface.registerTypes(AtomicStructureRepresentation)
-Executor.registerInterface('dftb', DFTBplus_Interface)
-from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
-Executor.registerInterface('cp2k', CP2K_Interface)
+# from .Stages.Interfaces.MOPAC_Interface import MOPAC_Interface
+# Executor.registerInterface('mopac', MOPAC_Interface)
+# from .Stages.Interfaces.FHIaims_Interface import FHIaims_Interface
+# Executor.registerInterface('aims', FHIaims_Interface)
+# from .Stages.Interfaces.XTB_Interface import XTB_Interface
+# XTB_Interface.registerTypes(AtomicStructureRepresentation)
+# Executor.registerInterface('xtb', XTB_Interface)
+# from .Stages.Interfaces.DFTBplus_Interface import DFTBplus_Interface
+# DFTBplus_Interface.registerTypes(AtomicStructureRepresentation)
+# Executor.registerInterface('dftb', DFTBplus_Interface)
+# from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
+# Executor.registerInterface('cp2k', CP2K_Interface)
 # -------------------------------------------- Task Managers --------------------------------------------------------
 from .Stages.TaskManagers.BSUB import BSUB
 Executor.registerTaskManager('BSUB', BSUB)
@@ -101,21 +91,30 @@ from .Stages.TaskManagers.QSUB import QSUB
 Executor.registerTaskManager('QSUB', QSUB)
 from .Stages.TaskManagers.SBATCH import SBATCH
 Executor.registerTaskManager('SBATCH', SBATCH)
-from .Stages.TaskManagers.TGCC import TGCC
-Executor.registerTaskManager('TGCC', TGCC)
 from .Stages.TaskManagers.SHELL import SHELL
 Executor.registerTaskManager('SHELL', SHELL)
+from .Stages.TaskManagers.TGCC import TGCC
+Executor.registerTaskManager('TGCC', TGCC)
 from .Stages.AtomisticStage import AtomisticStage
 # ------------------------------------------------ Stages -----------------------------------------------------------
+from .Stages.ExternalStage import ExternalStage
+ExternalStage.registerTypes(Executor)
+from .Stages.AtomisticStage import AtomisticStage
 AtomisticStage.registerTypes(Executor)
 from .Stages.PopulationProcessor import PopulationProcessor, Stages
-Stages.registerStage('execute', Executor)
+Stages.registerStage('external', ExternalStage)
 Stages.registerStage('atomistic', AtomisticStage)
 Stages.registerStage('populationProcessor', PopulationProcessor)
 # ---------------------------------------- Generation Controller ----------------------------------------------------
 from .Stages.GenerationController import GenerationController
+from .Optimizers.GlobalOptimizer import GlobalOptimizer
 GenerationController.registerOptimizer(GlobalOptimizer)
-GenerationController.registerOptimizer(ModelOptimizer)
+from .Stages.SampleOptimizer import SampleOptimizer
+SampleOptimizer.setStages(Stages)
+GenerationController.registerOptimizer(SampleOptimizer)
+from .Generators.Evolution import Evolution
+Evolution.setTarget(Target)
+GenerationController.registerGenerator(Evolution)
 GenerationController.setPopulationProcessor(PopulationProcessor)
 from .IO.compileParams import compileParams
 GenerationController.setUpcompileParams(compileParams)

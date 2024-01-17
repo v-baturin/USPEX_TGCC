@@ -4,6 +4,7 @@ import numpy as np
 from ase.atoms import Atoms
 from ase.io.vasp import write_vasp, read_vasp
 from ase.io import read, write
+from pymatgen.core.structure import Molecule as pymatgenMolecule
 
 from .read_molecule import read_molecule
 
@@ -234,3 +235,14 @@ class AtomicStructureRepresentation:
         return cls.structureType(atomTypes=[cls.atomType(s) for s in atoms.get_chemical_symbols()],
                                  coordinates=atoms.get_positions(),
                                  cell=cls.cellType(cellVectors, pbc))
+
+    @staticmethod
+    def toPymatgenMolecule(structure) -> pymatgenMolecule:
+        return pymatgenMolecule(species=[el.short_name for el in structure.getAtomTypes()],
+                                coords=structure.getCartesianCoordinates())
+
+    @classmethod
+    def fromPymatgenMolecule(cls, molecule: pymatgenMolecule):
+        return cls.structureType(atomTypes=[cls.atomType(s) for s in molecule.species],
+                                 coordinates=molecule.cart_coords)
+
