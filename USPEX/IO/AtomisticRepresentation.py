@@ -373,7 +373,7 @@ class AtomisticRepresentation(object):
                  f'      Approximate volume(s)  : {approximateVolume}',
                  f'      Quasi entropy          : {qe:.4}']
 
-        if not utlts.compositionSpace.isFixedComposition:
+        if not utlts.compositionSpace.isFixedComposition and len(population) > 1:
             numIons = [utlts.compositionSpace.numIons(system['simpleMoleculeUtility.composition.origin']) for system in population]
             numIons = np.asarray(numIons)
             comps = numIons/np.sum(numIons, axis=1).reshape((-1,1))
