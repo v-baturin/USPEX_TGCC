@@ -138,7 +138,7 @@ class CP2K_Interface:
                 enthalpy = (EnergyHa + P*V*(ANGSTROM_TO_BOHR**3.0)*GPA_TO_AU) * HARTREE_TO_EV
                 result.setProperty('enthalpy', enthalpy)
             else:
-                result.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV, suffix=self.tag)
+                result.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV)
         return result
 
     def readStructure(self, system, calcFolder: Path):
@@ -167,6 +167,14 @@ class CP2K_Interface:
                         lattice_c = [float(x) for x in line.split()[4:7]]
                 lat = np.array([lattice_a, lattice_b, lattice_c])
                 cell = atomistic.cellType(lat, pbc)
+            else:  
+                with open(calcFolder/self.cell_file, 'rt') as f:
+                    content_list = f.readlines()
+                    lattice_a = [float(x) for x in content_list[0].split()[1:4]]
+                    lattice_b = [float(x) for x in content_list[1].split()[1:4]]
+                    lattice_c = [float(x) for x in content_list[2].split()[1:4]]
+                    lat = np.array([lattice_a, lattice_b, lattice_c])
+                    cell = atomistic.cellType(lat, pbc)
 
         if calcFolder.joinpath(self.out_geometry_file).exists():
             ase_struct = read(calcFolder/self.out_geometry_file, index='-1')
@@ -185,9 +193,9 @@ class CP2K_Interface:
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.read()
             content_list = content.split('\n')
-        if ' ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):' in content:
+        if ' ENERGY| Total FORCE_EVAL ( QS )' in content:
             for line in content_list:
-                if ' ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):' in line:
+                if ' ENERGY| Total FORCE_EVAL ( QS )' in line:
                     energy = float(line.split()[8])
         else:
             for line in content_list:
