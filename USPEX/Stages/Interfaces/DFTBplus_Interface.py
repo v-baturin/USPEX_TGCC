@@ -131,7 +131,7 @@ class DFTBplus_Interface:
     def readOutput(self, system, calcFolder: Path):
         with open(calcFolder / 'pbc', 'rt') as f:
             pbc = tuple(int(c) for c in f.read().split())
-        atoms = read_gen(calcFolder / self.geometry_file)
+        atoms = read_gen(calcFolder / self.out_geometry_file)
         atoms.set_pbc(pbc)
         new_structure = self.AtomicStructureRepresentation.fromAtoms(atoms)
 
