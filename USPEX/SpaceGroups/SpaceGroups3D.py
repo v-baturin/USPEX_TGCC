@@ -472,7 +472,7 @@ class Subgroups(Sequence):
         # First we determine combination of generators in which range ind gets.
         combInd = (self._combinationRanges > ind).nonzero()[0][0]
         # Now redefine ind as index within subgroups corresponding determined combination.
-        ind = ind - self._combinationRanges[combInd - 1] if combInd else ind
+        ind = ind - int(self._combinationRanges[combInd - 1]) if combInd else ind
         # Get generators and their dimensions which got to the subgroup (subgroup_generators and subgroup_dimensions)
         # and those which did not get to it but will be used to modify it (remainder_generators and remainder_dimensions).
         sub_ind, rem_ind = self._combinations[combInd]
