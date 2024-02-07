@@ -94,7 +94,7 @@ class SystemsTable(object):
             except Exception:
                 value = None
             if isinstance(value, float):
-                value = f'{value: 6.3f}'
+                value = f'{value: 6.5f}'
             elif isinstance(value, Mapping):
                 value = '  '.join(f'{key}: {amount}' for key, amount in value.items())
             row.append(value)
@@ -140,7 +140,7 @@ class AtomisticRepresentation(object):
             systems_gatheredPOSCARS_unrelaxed.append(unrelaxed)
             content_origin += f"{ID} {unrelaxed['.howCome']} {unrelaxed['.parent']}\n"
 
-            content_enthalpies += ','.join([f"{system[f'.enthalpy.{stage}']:6.3f}"
+            content_enthalpies += ','.join([f"{system[f'.enthalpy.{stage}']:6.6f}"
                                             for stage in self.stages if f'.enthalpy.{stage}' in system]) + '\n'
 
             table_Individuals.update(ID, system)
