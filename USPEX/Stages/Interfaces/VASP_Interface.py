@@ -128,8 +128,18 @@ class VASP_Interface:
             with open(calcFolder/self.incar_file, 'a') as myfile:
                 myfile.write(f"\nPSTRESS={10 * externalPressure:10f}\n")
         if calcFolder in self.failedSystems:
-            with open(calcFolder/self.incar_file, 'a') as myfile:
-                myfile.write('ISYM=0\n')
+            with open(calcFolder/self.incar_file, 'r') as myfile:
+                incar_data = myfile.readlines()
+            for i, incar_line in enumerate(incar_data):
+                if 'symprec' in incar_line.casefold() and incar_line.strip()[0] != '#':
+                    current_symprec = float(incar_line.split('=')[1].strip())
+                    new_symprec = 1.5 * current_symprec
+                    incar_data[i] = f'SYMPREC   =  {new_symprec:1.1E}\n'
+                    break
+            else:
+                incar_data.append(f'SYMPREC   =  1E-4\n')
+            with open(calcFolder/self.incar_file, 'w') as myfile:
+                myfile.writelines(incar_data)
 
         ############################# POTCAR ##################################
 
@@ -221,6 +231,9 @@ class VASP_Interface:
                 calcFolder.joinpath(self.contcar_file).exists()):
             return False
 
+        # Checking the real vs reciprocal lattice inconsistency error
+
+
         # Checking whether converge
         NELM = -1
         row_number = None
@@ -230,7 +243,15 @@ class VASP_Interface:
                 if content[i].find(' F= ') >= 0:
                     row_number = i
             if row_number is None:
-                return False
+                with open(calcFolder / self.outcar_file, 'r') as outcar_fid:
+                    for line in outcar_fid:
+                        if 'Inconsistent Bravais lattice types found for crystalline and' in line:
+                            logger.error('VASP SCF is not converged.')
+                            shutil.copy2(calcFolder / self.outcar_file, calcFolder / f'ERROR-{self.outcar_file}')
+                            self.failedSystems.append(calcFolder)
+
+
+                    return False
 
             # Read previous line to check the number of SCF steps:
             vaspSCFsteps = int(content[row_number - 1].split(':')[1].split()[0].strip())

@@ -15,7 +15,7 @@ synchronize_with_servers() {
   echo "Synchronizing current directory with remote servers..."
 
   # Synchronize with remote servers using rsync and sshpass
-  sshpass -p "$PASSWORD_VB" rsync --progress --recursive --compress --exclude=".git" --exclude="uspex.egg-info/" --exclude="venv/" --exclude=".idea/" --exclude="post-push.sh" ./ "$SERVER2"
+  sshpass -p "$PASSWORD_VB" rsync --progress --recursive --compress --exclude="unittests" --exclude="testFolder" --exclude=".git" --exclude="uspex.egg-info/" --exclude="venv/" --exclude=".idea/" --exclude="post-push.sh" ./ "$SERVER2"
 #  sshpass -p "$PASSWORD2" rsync --progress --recursive --compress --exclude=".git" --exclude="uspex.egg-info/" --exclude="venv/" --exclude=".idea/" --exclude="post-push.sh" ./ "$SERVER2"
 
   echo "Current directory synchronized with remote servers successfully."
