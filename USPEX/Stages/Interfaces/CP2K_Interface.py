@@ -184,7 +184,7 @@ class CP2K_Interface:
             positions = ase_struct.get_positions()
             new_structure = atomistic.structureType(atomTypes, positions, cell=cell)
         else:
-            structure = system['structure']
+            structure = system.getProperty('structure', extension='atomistic')
             new_structure = atomistic.structureType(structure.getAtomTypes(), structure.getCartesianCoordinates(), cell=cell)
 
         return new_structure
