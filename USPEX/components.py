@@ -72,6 +72,9 @@ from .Stages.Executor import Executor
 from .Stages.Interfaces.VASP_Interface import VASP_Interface
 VASP_Interface.registerTypes(AtomicStructureRepresentation)
 Executor.registerInterface('vasp', VASP_Interface)
+from .Stages.Interfaces.PHONOPY_Interface import PHONOPY_Interface
+PHONOPY_Interface.registerTypes(AtomicStructureRepresentation)
+Executor.registerInterface('phonopy', PHONOPY_Interface)
 # from .Stages.Interfaces.MOPAC_Interface import MOPAC_Interface
 # Executor.registerInterface('mopac', MOPAC_Interface)
 # from .Stages.Interfaces.FHIaims_Interface import FHIaims_Interface
