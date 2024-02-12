@@ -4,9 +4,12 @@ USPEX.Stages.VASP_Interface
 
 """
 
+import os
 import logging
 import numpy as np
 import shutil
+import re
+import yaml
 
 from pathlib import Path
 from typing import List
@@ -75,29 +78,6 @@ class PHONOPY_Interface:
     def registerTypes(cls, AtomicStructureRepresentation):
         cls.AtomicStructureRepresentation = AtomicStructureRepresentation
 
-    def __init__(self, tag: str,
-                       kresol: float,
-                       incar: str = None,
-                       potcarsPath: str = None,
-                       targetProperties: list = None,
-                       supercellMinSize: float = None,
-                       **kwargs):
-
-        self.tag = tag
-        self.incar = Path(incar) if incar is not None else Path.cwd()/f'Specific/INCAR_{tag}'
-        assert self.incar.exists()
-
-        self.potcarsPath = Path(potcarsPath) if potcarsPath is not None else Path.cwd()/'Specific'
-        assert self.potcarsPath.exists()
-
-        self.phonopyTemplatesPath = Path.cwd()/f'Specific/phonopy_templates/'
-
-        self.kPoints = KPoints(kresol)
-        self.failedSystems = []
-
-        self.supercellMinSize = supercellMinSize
-        self.targetProperties = targetProperties
-
     def prepareLocalCalculation(self, system, calcFolder: Path):
         '''
         :param system: our system
@@ -162,117 +142,92 @@ class PHONOPY_Interface:
             fp.write('%4d %4d %4d\n' % tuple(kPoints))
 
 
-        ############################# MODIFY_PHONOPY_SCRIPTS ####################
-        supercell_dim = self.getSupercellForPhonopy(structure)
+        ############################# MODIFY_PHONOPY_SCRIPT ####################
+        supercell_dim = " ".join([str(i) for i in self.getSupercellShape(structure)])
 
-        with open(self.phonopyTemplatesPath / 'phonopy_script.sh', 'r') as file:
+        with open(self.phRunscriptTemplatePath, 'r') as file:
             filedata = file.readlines()
             for i, line in enumerate(filedata):
                 if '%DIM' in line and 'phonopy' in line:
-                    filedata[i] = f'phonopy -d --dim="{" ".join(str(i) for i in supercell_dim)}"'
+                    filedata[i] = f'phonopy -d --dim="{supercell_dim}"'
 
         # Write the file out again
-        with open('file.txt', 'w') as file:
+        with open(calcFolder / self.phRunscriptTemplatePath.name, 'w') as file:
             file.writelines(filedata)
+        os.chmod(calcFolder / self.phRunscriptTemplatePath.name, 0o777)
 
-        ############################# MODIFY_CONF_TEMPLATES ######################
+        ############################# WRITE_CONF_FILES ######################
+        with open(calcFolder / self.poscar_file, 'r') as poscar_fid:
+            atom_name = ' '.join(poscar_fid.readlines()[5].split())
 
-        supercell_dim = self.getSupercellForPhonopy(structure)
+        k_path_coords, labels = self.getKStrings(structure)
 
-
-
+        with open(calcFolder / self.meshConf, 'w') as meshconf, open(calcFolder / self.bandConf, 'w') as bandconf:
+            meshLines = [f'ATOM_NAME = {atom_name}',
+                         f'DIM = {supercell_dim}',
+                         f'MP = 40 40 40']
+            bandLines = [f'ATOM_NAME = {atom_name}',
+                         f'DIM = {supercell_dim}',
+                         f'BAND = {k_path_coords}',
+                         f'BAND_LABELS = {labels}']
+            meshconf.write('\n'.join(meshLines))
+            bandconf.writelines('\n'.join(bandLines))
         return ''
+
+    def __init__(self, tag: str,
+                       kresol: float,
+                       incar: str | os.PathLike = None,
+                       potcarsPath: str | os.PathLike = None,
+                       phRunscriptTemplatePath:  str | os.PathLike = None,
+                       targetProperties: list = None,
+                       supercellMinSize: float = None,
+                       bandConf: str | os.PathLike = None,
+                       meshConf: str | os.PathLike = None,
+                       **kwargs):
+
+        self.tag = tag
+        self.incar = Path(incar) if incar is not None else Path.cwd()/f'Specific/INCAR_{tag}'
+        assert self.incar.exists()
+
+        self.potcarsPath = Path(potcarsPath) if potcarsPath is not None else Path.cwd()/'Specific'
+        assert self.potcarsPath.exists()
+
+        self.phRunscriptTemplatePath =(
+            Path(phRunscriptTemplatePath)) if phRunscriptTemplatePath else Path.cwd() / f'Specific/script_phonopy.sh'
+        assert self.phRunscriptTemplatePath.exists()
+
+        self.bandConf = bandConf if bandConf else 'band.conf'
+        self.meshConf = meshConf if meshConf else 'mesh.conf'
+
+        self.kPoints = KPoints(kresol)
+        self.failedSystems = []
+
+        self.supercellMinSize = supercellMinSize
+        self.targetProperties = targetProperties
 
     def isConverged(self, calcFolder: Path):
         '''
         :param calcFolder:
         :return: (bool) whether system calculation converged
         '''
-
-        if not (calcFolder.joinpath(self.outcar_file).exists() and
-                calcFolder.joinpath(self.oszicar_file).exists() and
-                calcFolder.joinpath(self.contcar_file).exists()):
-            return False
-
-        # Checking the real vs reciprocal lattice inconsistency error
-
-
-        # Checking whether converge
-        NELM = -1
-        row_number = None
-        with open(calcFolder/self.oszicar_file, 'r') as f:
-            content = f.readlines()
-            for i in range(len(content)):
-                if content[i].find(' F= ') >= 0:
-                    row_number = i
-            if row_number is None:
-                with open(calcFolder / self.outcar_file, 'r') as outcar_fid:
-                    for line in outcar_fid:
-                        if 'Inconsistent Bravais lattice types found for crystalline and' in line:
-                            logger.error('VASP SCF is not converged.')
-                            shutil.copy2(calcFolder / self.outcar_file, calcFolder / f'ERROR-{self.outcar_file}')
-                            self.failedSystems.append(calcFolder)
-
-
-                    return False
-
-            # Read previous line to check the number of SCF steps:
-            vaspSCFsteps = int(content[row_number - 1].split(':')[1].split()[0].strip())
-
-        with open(calcFolder/self.outcar_file, 'r') as f:
-            for line in f:
-                if line.find(' NELM ') >= 0:
-                    NELM = int(line.split(' = ')[1].split()[0].replace(';', '').strip())
-                    break
-
-        # The calculation is considered successful in case vaspSCFsteps < NELM:
-        if vaspSCFsteps < NELM:
-            return True
-        else:
-            logger.error('VASP SCF is not converged.')
-            shutil.copy2(calcFolder/self.outcar_file, calcFolder/f'ERROR-{self.outcar_file}')
-            self.failedSystems.append(calcFolder)
-            return False
+        return Path.exists(calcFolder / 'thermal_properties.yaml')
 
     ############reading part
 
     def readOutput(self, system, calcFolder: Path):
-        with open(calcFolder / 'pbc', 'rt') as f:
-            pbc = tuple(int(c) for c in f.read().split())
-        trajectory = self.read(calcFolder, pbc)
-        results = trajectory[-1]['results']
+        with open(calcFolder / 'thermal_properties.yaml', 'r') as f:
+            ph_results = yaml.safe_load(f.read())
         factory = system.getFactory()
         result = factory()
 
-        if 'structure' in self.targetProperties:
-            result.setProperty('structure', trajectory[-1]['structure'], extension='atomistic')
-        if 'enthalpy' in self.targetProperties:
-            if 'enthalpy' in results:
-                result.setProperty('enthalpy', results['energy'])
+        for property in self.targetProperties:
+            if property == 'structure':
+                result.setProperty('structure', system.getProperty('structure', extension='atomistic'), extension='atomistic')
+            elif property.casefold() in ('zpe', 'zero_point_energy'):
+                result.setProperty('ZPE', ph_results['zero_point_energy'] * 0.01036410)
             else:
-                result.setProperty('energy', results['energy'])
-        if 'energy' in self.targetProperties:
-            result.setProperty('energy', results['energy'])
-        if 'forces' in self.targetProperties:
-            result.setProperty('forces', results['forces'])
-        if 'trajectory' in self.targetProperties:
-            # for subsystem in trajectory:
-            #     subsystem['disassembler'] = system['disassembler']
-            #     subsystem['externalPressure'] = system['externalPressure']
-            result.setProperty('trajectory', trajectory)
-
-        with open(calcFolder/self.outcar_file, 'rt') as fp:
-            content = fp.readlines()
-        if 'stressTensor' in self.targetProperties:
-            result.setProperty('stressTensor', self.readPressureTensor(content))
-        if 'dielectricTensor' in self.targetProperties:
-            result.setProperty('dielectricTensor', self.readDielectricProperties(content))
-        if 'dipoleMoment' in self.targetProperties:
-            result.setProperty('dipoleMoment', self.readDipoleMoment(content))
-        if 'energyFermi' in self.targetProperties:
-            result.setProperty('energyFermi', self.readFermi(content))
-        if 'elasticConstants' in self.targetProperties:
-            result.setProperty('elasticConstants', self.readElasticMatrix(content))
+                if f'.{property}' in system:
+                    result.setProperty(property, system[f'.{property}'])
         return result
 
     def structure2Atoms(self, structure):
@@ -289,33 +244,7 @@ class PHONOPY_Interface:
         with open(calcFolder/'symbolsOrder', 'wt') as f:
             f.write(' '.join(f'{c}' for c in order))
 
-    def read(self, calcFolder: Path, pbc):
-        with open(calcFolder/'symbolsOrder', 'rt') as f:
-            symbolsOrder = tuple(int(c) for c in f.read().split())
-        try:
-            with open(calcFolder/self.outcar_file) as f:
-                trajectoryAtoms = list(iread_vasp_out(f, None))
-        except (KeyError, ParseError):
-            with open(calcFolder/self.xml_file) as f:
-                trajectoryAtoms = list(read_vasp_xml(f))
-        trajectory = []
-        for atoms in trajectoryAtoms:
-            size = len(atoms)
-            positions = np.empty((size, 3), dtype=float)
-            atomTypes = np.empty(size, dtype=self.AtomicStructureRepresentation.atomType)
-            for i, symbol, position in zip(symbolsOrder, atoms.get_chemical_symbols(), atoms.get_positions()):
-                positions[i] = position
-                atomTypes[i] = self.AtomicStructureRepresentation.atomType(symbol)
-            cell = self.AtomicStructureRepresentation.cellType(atoms.get_cell().array, pbc)
-            structure = self.AtomicStructureRepresentation.structureType(atomTypes, positions, cell=cell)
-
-            trajectory.append(dict(
-                structure=structure,
-                results=atoms.get_calculator().results
-            ))
-        return trajectory
-
-    def getSupercellForPhonopy(self, structure):
+    def getSupercellShape(self, structure):
         if self.supercellMinSize is None:
             supercell_min_size = SUPERCELL_MIN_SIZE
         else:
@@ -325,9 +254,21 @@ class PHONOPY_Interface:
         supercell_shape = []
         vol = np.abs(np.linalg.det(cell))
         for i in range(3):
-            j, k = np.roll(np.arange(2), i)[0:2]
+            j, k = np.roll(np.arange(3), -i)[1:]
             area = np.linalg.norm(np.cross(cell[j], cell[k]))
             supercell_shape.append(int(np.ceil(supercell_min_size / (vol / area))))
 
         return supercell_shape
+
+    def getKStrings(self, structure):
+        atoms, _ = self.structure2Atoms(structure)
+        lat = atoms.cell.get_bravais_lattice()
+        special_path = lat.special_path.split(',')[0]
+        pattern = re.compile(r'([A-Z]\d*)')
+        points_sequence = pattern.findall(special_path)
+        specialKPathCoords = [lat.get_special_points()[label] for label in points_sequence]
+        kCoordsStr = '  '.join([' '.join([f'{ki:1.3f}' for ki in k]) for k in specialKPathCoords])
+        labelsString = ' '.join(points_sequence).replace('G', '$\Gamma$')
+        return kCoordsStr, labelsString
+
 
