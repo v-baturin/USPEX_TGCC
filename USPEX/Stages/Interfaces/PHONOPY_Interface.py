@@ -62,6 +62,7 @@ class PHONOPY_Interface:
     oszicar_file = 'OSZICAR'
     contcar_file = 'CONTCAR'
     xml_file = 'vasprun.xml'
+    phonopy_specific = 'phonopy_files'
 
     # working input files
     incar_file = 'INCAR'
@@ -142,7 +143,9 @@ class PHONOPY_Interface:
             fp.write('EA\n0\nGamma\n')
             fp.write('%4d %4d %4d\n' % tuple(kPoints))
 
-
+        ############################# COPY PHONOPY FILES #######################
+        shutil.copytree(self.phonopySupplemPath, calcFolder, dirs_exist_ok=True)
+        
         ############################# MODIFY_PHONOPY_SCRIPT ####################
         supercell_dim = " ".join([str(i) for i in self.getSupercellShape(structure)])
 
@@ -173,18 +176,20 @@ class PHONOPY_Interface:
                          f'BAND_LABELS = {labels}']
             meshconf.write('\n'.join(meshLines))
             bandconf.write('\n'.join(bandLines))
+        
         return ''
 
     def __init__(self, tag: str,
-                       kresol: float,
-                       incar: str | os.PathLike = None,
-                       potcarsPath: str | os.PathLike = None,
-                       phRunscriptTemplatePath:  str | os.PathLike = None,
-                       targetProperties: list = None,
-                       supercellMinSize: float = None,
-                       bandConf: str | os.PathLike = None,
-                       meshConf: str | os.PathLike = None,
-                       **kwargs):
+                 kresol: float,
+                 incar: str | os.PathLike = None,
+                 potcarsPath: str | os.PathLike = None,
+                 phRunscriptTemplatePath:  str | os.PathLike = None,
+                 targetProperties: list = None,
+                 supercellMinSize: float = None,
+                 bandConf: str | os.PathLike = None,
+                 meshConf: str | os.PathLike = None,
+                 phonopyFiles: str| os.PathLike = None,
+                 **kwargs):
 
         self.tag = tag
         self.incar = Path(incar) if incar is not None else Path.cwd()/f'Specific/INCAR_{tag}'
@@ -193,12 +198,17 @@ class PHONOPY_Interface:
         self.potcarsPath = Path(potcarsPath) if potcarsPath is not None else Path.cwd()/'Specific'
         assert self.potcarsPath.exists()
 
+        self.phonopySupplemPath = Path(phonopyFiles) if phonopyFiles else Path.cwd() / 'Specific/phonopy_files'
+        assert self.phonopySupplemPath.exists()
+        
         self.phRunscriptTemplatePath =(
-            Path(phRunscriptTemplatePath)) if phRunscriptTemplatePath else Path.cwd() / f'Specific/script_phonopy.sh'
+            Path(phRunscriptTemplatePath)) if phRunscriptTemplatePath else self.phonopySupplemPath / 'script_phonopy.sh'
         assert self.phRunscriptTemplatePath.exists()
 
         self.bandConf = bandConf if bandConf else 'band.conf'
         self.meshConf = meshConf if meshConf else 'mesh.conf'
+        
+        
 
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
@@ -222,7 +232,7 @@ class PHONOPY_Interface:
         result = factory()
         for property in self.targetProperties:
             if property.casefold() in ('zpe', 'zero_point_energy'):
-                result.setProperty('ZPE', ph_results['zero_point_energy'] * KJMOL_IN_EV0)
+                result.setProperty('ZPE', ph_results['zero_point_energy'] * KJMOL_IN_EV)
             else:
                 logger.warning('Only ZPE is available in phonopy calculation')
         return result

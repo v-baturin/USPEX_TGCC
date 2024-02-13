@@ -44,6 +44,7 @@ class PHONOPY_interfaceTest0(unittest.TestCase):
         phonopy = PHONOPY_Interface(tag='1',
                               incar=SPECIFICPATH/'INCAR_1',
                               potcarsPath=SPECIFICPATH,
+                              phonopyFiles=PHONOPYSPECIFIC,
                               phRunscriptTemplatePath=PHONOPYSPECIFIC/'script_phonopy.sh',
                               kresol=0.13,
                               targetProperties=['zpe'])
