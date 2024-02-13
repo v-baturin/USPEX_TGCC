@@ -59,7 +59,8 @@ presetLabels = {
     'elasticML.poissonsRatio': 'ML Poissons Ratio',
     'elasticML.pughsRatio': 'ML Pughs Ratio',
     'elasticML.vickersHardness': 'ML Vickers Hardness (GPa)',
-    'elasticML.fractureToughness': 'ML Fracture Toughness (MPa*m^1/2)'
+    'elasticML.fractureToughness': 'ML Fracture Toughness (MPa*m^1/2)',
+    '.ZPE': 'ZPE (eV)'
 }
 
 def getPresetLables(expression):

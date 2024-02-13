@@ -24,6 +24,7 @@ from .KPoints import KPoints, BadKPoints
 logger = logging.getLogger(__name__)
 
 SUPERCELL_MIN_SIZE = 10.
+KJMOL_IN_EV = 0.01036410
 
 def split_up_data(data: List[str], out_size:int):
     '''
@@ -171,7 +172,7 @@ class PHONOPY_Interface:
                          f'BAND = {k_path_coords}',
                          f'BAND_LABELS = {labels}']
             meshconf.write('\n'.join(meshLines))
-            bandconf.writelines('\n'.join(bandLines))
+            bandconf.write('\n'.join(bandLines))
         return ''
 
     def __init__(self, tag: str,
@@ -219,15 +220,11 @@ class PHONOPY_Interface:
             ph_results = yaml.safe_load(f.read())
         factory = system.getFactory()
         result = factory()
-
         for property in self.targetProperties:
-            if property == 'structure':
-                result.setProperty('structure', system.getProperty('structure', extension='atomistic'), extension='atomistic')
-            elif property.casefold() in ('zpe', 'zero_point_energy'):
-                result.setProperty('ZPE', ph_results['zero_point_energy'] * 0.01036410)
+            if property.casefold() in ('zpe', 'zero_point_energy'):
+                result.setProperty('ZPE', ph_results['zero_point_energy'] * KJMOL_IN_EV0)
             else:
-                if f'.{property}' in system:
-                    result.setProperty(property, system[f'.{property}'])
+                logger.warning('Only ZPE is available in phonopy calculation')
         return result
 
     def structure2Atoms(self, structure):
