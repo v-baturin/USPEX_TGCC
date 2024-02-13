@@ -7,7 +7,7 @@
 @brief       Class for testing VASP_Calculator class.
 """
 
-__author__ = 'asamtsevich'
+__author__ = 'vbaturin'
 
 import shutil
 import unittest
@@ -63,6 +63,7 @@ class PHONOPY_interfaceTest0(unittest.TestCase):
         intermediate = EntryFlavour(extensions=extensions, **intermediate)
         WORKPATH.mkdir(exist_ok=True, parents=True)
         phonopy.prepareLocalCalculation(intermediate, WORKPATH)
+        shutil.rmtree(WORKPATH)
         # folder = GATHEREDPATH/'input'/f"CalcFold{ID}"
         # dcmp = filecmp.dircmp(folder, WORKPATH)
         # match = not dcmp.diff_files
