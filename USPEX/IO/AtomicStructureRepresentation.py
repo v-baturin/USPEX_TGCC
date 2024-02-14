@@ -147,7 +147,7 @@ class AtomicStructureRepresentation:
         cell = structure.getCell().getEnvelopeCell(coordinates, 10)
         coordinates = cell.center(coordinates)
         atoms = Atoms([el.short_name for el in structure.getAtomTypes()], coordinates, cell=cell.getCellVectors())
-        write_vasp(filename, atoms, label=label, direct=True, vasp5=True, long_format=False)
+        write_vasp(filename, atoms, label=label, direct=True, vasp5=True, long_format=True)
 
     @classmethod
     def writePOSCARS(cls, filename, structures, labels):
