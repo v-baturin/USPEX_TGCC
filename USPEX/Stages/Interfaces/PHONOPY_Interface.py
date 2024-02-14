@@ -217,7 +217,7 @@ class PHONOPY_Interface:
         self.failedSystems = []
 
         self.supercellMinSize = supercellMinSize
-        self.targetProperties = targetProperties
+        self.targetProperties = targetProperties if targetProperties else 'ZPE'
 
     def isConverged(self, calcFolder: Path):
         '''
