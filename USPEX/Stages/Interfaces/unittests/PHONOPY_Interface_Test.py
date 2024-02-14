@@ -46,7 +46,7 @@ class PHONOPY_interfaceTest0(unittest.TestCase):
                               potcarsPath=SPECIFICPATH,
                               phonopyFiles=PHONOPYSPECIFIC,
                               phRunscriptTemplatePath=PHONOPYSPECIFIC/'script_phonopy.sh',
-                              kresol=0.13,
+                              kresol=0.03,
                               targetProperties=['zpe'])
         atomistic = Atomistic()
         extensions = dict(

@@ -129,11 +129,14 @@ class PHONOPY_Interface:
             for atomType in np.unique([el.short_name for el in structure.getAtomTypes()]):
                 with open(self.potcarsPath/f'POTCAR_{atomType}') as infile:
                     outfile.write(infile.read())
-
+        
+        ############################# SUPERCELL_SHAPE #########################
+        supercell_dim = self.getSupercellShape(structure)
+        
         ############################# KPOINTS #################################
 
         try:
-            kPoints = self.kPoints.build(structure.getCell())
+            kPoints = np.ceil(np.array(self.kPoints.build(structure.getCell())) / supercell_dim)
         except BadKPoints:
             # This LATTICE is extremely wrong, let's skip it from now
             logger.info('K-points cannot be built, so it\'s set as   [1, 1, 1]')
@@ -147,13 +150,13 @@ class PHONOPY_Interface:
         shutil.copytree(self.phonopySupplemPath, calcFolder, dirs_exist_ok=True)
         
         ############################# MODIFY_PHONOPY_SCRIPT ####################
-        supercell_dim = " ".join([str(i) for i in self.getSupercellShape(structure)])
+        supercell_str = " ".join([str(i) for i in supercell_dim])
 
         with open(self.phRunscriptTemplatePath, 'r') as file:
             filedata = file.readlines()
             for i, line in enumerate(filedata):
                 if '%DIM' in line and 'phonopy' in line:
-                    filedata[i] = f'phonopy -d --dim="{supercell_dim}"'
+                    filedata[i] = f'phonopy -d --dim="{supercell_str}"'
 
         # Write the file out again
         with open(calcFolder / self.phRunscriptTemplatePath.name, 'w') as file:
@@ -168,10 +171,10 @@ class PHONOPY_Interface:
 
         with open(calcFolder / self.meshConf, 'w') as meshconf, open(calcFolder / self.bandConf, 'w') as bandconf:
             meshLines = [f'ATOM_NAME = {atom_name}',
-                         f'DIM = {supercell_dim}',
+                         f'DIM = {supercell_str}',
                          f'MP = 40 40 40']
             bandLines = [f'ATOM_NAME = {atom_name}',
-                         f'DIM = {supercell_dim}',
+                         f'DIM = {supercell_str}',
                          f'BAND = {k_path_coords}',
                          f'BAND_LABELS = {labels}']
             meshconf.write('\n'.join(meshLines))
@@ -265,7 +268,7 @@ class PHONOPY_Interface:
             area = np.linalg.norm(np.cross(cell[j], cell[k]))
             supercell_shape.append(int(np.ceil(supercell_min_size / (vol / area))))
 
-        return supercell_shape
+        return np.array(supercell_shape)
 
     def getKStrings(self, structure):
         atoms, _ = self.structure2Atoms(structure)
