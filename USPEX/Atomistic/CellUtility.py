@@ -307,8 +307,8 @@ class CellUtility:
         """
         assert 0 <= fraction <= 1
         if self._cell is None:
-            cellParameters = fraction * np.asarray(cell1.getCellParameters()) + \
-                             (1 - fraction) * np.asarray(cell2.getCellParameters())
+            cellParameters = fraction * np.asarray(cell1.getCellParameters(), dtype=object) + \
+                             (1 - fraction) * np.asarray(cell2.getCellParameters(), dtype=object)
             if self._dim == 3:
                 cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis)
                 factor = np.power((fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()) / cell.getVolume(), 1. / 3.)
