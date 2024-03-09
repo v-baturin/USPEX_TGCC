@@ -560,7 +560,7 @@ def _make_matrices(coor: np.ndarray, molIndices: list, envIndices,
             for inds in molIndices:
                 if i in inds:
                     ignoreDist.update(inds + central_cell_shift)
-            to_delete = np.asarray(list(ignoreDist))
+            to_delete = np.asarray(list(ignoreDist), dtype=int)
 
         tmp_dist = np.delete(tmp_dist, to_delete, axis=1)
         tmp_type = np.delete(tmp_type, to_delete, axis=0)

@@ -57,7 +57,8 @@ class AtomisticStage:
             return
         disassembler = intermediate.getProperty('disassembler', extension='atomistic')
         result.setProperty('disassembler', disassembler, extension='atomistic')
-        self.systemCheckAndFix(system.ID, result)
+        if 'structure' in self.targetProperties:
+            self.systemCheckAndFix(system.ID, result)
         if 'enthalpy' in self.targetProperties and '.enthalpy' not in result:
             structure = result.getProperty('structure', extension='atomistic')
             pressure = system.getProperty('externalPressure', suffix='origin')
@@ -65,7 +66,8 @@ class AtomisticStage:
             enthalpy = energy + structure.getCell().getVolume() * pressure * self.EV_PER_CUBIC_ANGSTREM_PER_GPA
             result.setProperty('enthalpy', enthalpy)
         system.addFlavour(self.tag, result)
-        self.checkAndFixMolecules(system)
+        if 'structure' in self.targetProperties:
+            self.checkAndFixMolecules(system)
 
     def systemCheckAndFix(self, ID, system):
         """
