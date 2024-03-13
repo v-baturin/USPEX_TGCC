@@ -66,7 +66,7 @@ class AtomisticStage:
             enthalpy = energy + structure.getCell().getVolume() * pressure * self.EV_PER_CUBIC_ANGSTREM_PER_GPA
             result.setProperty('enthalpy', enthalpy)
         system.addFlavour(self.tag, result)
-        if 'structure' in self.targetProperties:
+        if 'structure' in self.targetProperties and self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules:
             self.checkAndFixMolecules(system)
 
     def systemCheckAndFix(self, ID, system):
@@ -122,14 +122,20 @@ class AtomisticStage:
             nAtoms = len(molSink)
             if nAtoms > 1:
                 molSource = moleculesSource[i]
-                if self.target.utilities.simpleMoleculeUtility.checkIntegrityType == 'rigid':
-                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms)  # TODO: nontrivial ADJ_MAT for flexible mols
+                if self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'all':
+                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms)
+                elif self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'edges':
+                    ADJ_MAT = np.zeros((nAtoms, nAtoms))
+                    ADJ_MAT[molSource.edges[:, 0], molSource.edges[:, 1]] = 1
+                    ADJ_MAT += ADJ_MAT.T
+                molSink.edges = molSource.edges
                 distMatSource = molSource.getAllDistances() * ADJ_MAT
-                checkedAndFixedGen = self.checkAndFixWrap(cellSource, molSource, distMatSource, cellSink, molSink, ADJ_MAT)
+                checkedAndFixedGen = self.checkAndFixWrap(cellSource, molSource, distMatSource, cellSink, molSink,
+                                                          ADJ_MAT)
                 for k_try, newCoords in enumerate(checkedAndFixedGen):
-                    if np.all(np.abs(get_distances(newCoords)[1] * ADJ_MAT - distMatSource) /
-                              (distMatSource + np.eye(nAtoms)) <
-                              self.target.utilities.simpleMoleculeUtility.integrityTol):
+                    if not np.any(np.abs(get_distances(newCoords)[1] * ADJ_MAT - distMatSource) /
+                                  (distMatSource + np.eye(nAtoms)) >=
+                                  self.target.utilities.simpleMoleculeUtility.integrityTol):
                         if k_try > 0:
                             correctorDict[i] = newCoords
                         break
@@ -182,4 +188,5 @@ class AtomisticStage:
         if len(good_wrap_idx) == 1:
             return wrappingsOfB[good_wrap_idx[0]]
         elif len(good_wrap_idx) > 1:
-            logger.warning("atom with frac coords {:.3f} {:.3f} {:.3f}: ambiguous dewrapping".format(*cellSink.cartesianToFractional(coordB)))
+            logger.warning("atom with frac coords {:.3f} {:.3f} {:.3f}: ambiguous dewrapping".format(
+                *cellSink.cartesianToFractional(coordB)))
