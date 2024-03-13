@@ -122,20 +122,19 @@ class AtomisticStage:
             nAtoms = len(molSink)
             if nAtoms > 1:
                 molSource = moleculesSource[i]
-                if self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'all':
-                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms)
-                elif self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'edges':
+                if self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'edges':
                     ADJ_MAT = np.zeros((nAtoms, nAtoms))
                     ADJ_MAT[molSource.edges[:, 0], molSource.edges[:, 1]] = 1
                     ADJ_MAT += ADJ_MAT.T
+                elif self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'all':
+                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms)
                 molSink.edges = molSource.edges
-                distMatSource = molSource.getAllDistances() * ADJ_MAT
+                distMatSource = molSource.getAllDistances()
                 checkedAndFixedGen = self.checkAndFixWrap(cellSource, molSource, distMatSource, cellSink, molSink,
                                                           ADJ_MAT)
                 for k_try, newCoords in enumerate(checkedAndFixedGen):
-                    if not np.any(np.abs(get_distances(newCoords)[1] * ADJ_MAT - distMatSource) /
-                                  (distMatSource + np.eye(nAtoms)) >=
-                                  self.target.utilities.simpleMoleculeUtility.integrityTol):
+                    if np.all(np.abs(get_distances(newCoords)[1] - distMatSource) * ADJ_MAT <=
+                              distMatSource * self.target.utilities.simpleMoleculeUtility.integrityTol):
                         if k_try > 0:
                             correctorDict[i] = newCoords
                         break
@@ -163,9 +162,9 @@ class AtomisticStage:
         newFractSink = fractSink - wrapping
         yield cellSink.fractionalToCartesian(newFractSink)  # first guess: dewrap if xfrac changes more than by 0.5
         nAtoms = len(molSource)
-        distMatSink = molSink.getAllDistances() * adjMatrix
-        relativeDiff = np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(nAtoms))
-        isBadDist = relativeDiff >= self.target.utilities.simpleMoleculeUtility.integrityTol
+        distMatSink = molSink.getAllDistances()
+        relativeDiff = np.abs(distMatSink - distMatSource) * adjMatrix / (distMatSource + np.eye(nAtoms))
+        isBadDist = relativeDiff > self.target.utilities.simpleMoleculeUtility.integrityTol
         for idxBadDistA in np.where(isBadDist)[0]:
             for idxBadDistB in idxBadDistA + np.where(isBadDist[idxBadDistA, idxBadDistA:])[0]:
                 coordA = newMolSinkCoords[idxBadDistA]
