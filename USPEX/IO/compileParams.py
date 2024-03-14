@@ -28,28 +28,41 @@ def compileParams(main: dict) -> dict:
         symbols = target['compositionSpace']['symbols']
         defaultVolumeType = 0
         defaultCutoffVDW = False
-        molecules = {}
+        presetMoleculesForFactories = {}
+        moleculeDescriptors = []
         molSitesMapping = {}
         elementalSymbols = set()
         for i, symbol in enumerate(symbols):
             if not isinstance(symbol, dict):
                 elementalSymbols.add(symbol)
-            else:
-                molecule = AtomicStructureRepresentation.readXYZ(**symbol)
-                if not len(molecule.edges):
-                    molecule = SimpleMoleculeUtility.detectBonds(molecule)
-                molecules[symbol['name']] = molecule
+            elif 'molecules' in symbol:
+                moleculeDescriptors += symbol['molecules']
                 symbols[i] = symbol['name']
-                if 'sites' in symbol:
-                    for site in symbol['sites']:
-                        site['junctionTypes'] =\
-                            JunctionUtility.calculateJunctionTypes(molecule,
-                                                                   junctionsDescription=site['junctionTypes'])
-                    molSitesMapping[symbol['name']] = symbol['sites']
-                else:
-                    defaultVolumeType = 0.5
-                    defaultCutoffVDW = True
-                elementalSymbols |= set([x.short_name for x in molecule.getAtomTypes()])
+                presetMoleculesForFactories[symbol['name']] = [x['name'] if isinstance(x, dict) else x
+                                                            for x in symbol['molecules']]
+            else:
+                moleculeDescriptors.append(symbol)
+                symbols[i] = symbol['name']
+
+        molecules = {}
+        for moleculeDescriptor in moleculeDescriptors:
+            if not isinstance(moleculeDescriptor, dict):
+                elementalSymbols.add(moleculeDescriptor)
+                continue
+            molecule = AtomicStructureRepresentation.readXYZ(**moleculeDescriptor)
+            if not len(molecule.edges):
+                molecule = SimpleMoleculeUtility.detectBonds(molecule)
+            molecules[moleculeDescriptor['name']] = molecule
+            if 'sites' in moleculeDescriptor:
+                for site in moleculeDescriptor['sites']:
+                    site['junctionTypes'] =\
+                        JunctionUtility.calculateJunctionTypes(molecule,
+                                                               junctionsDescription=site['junctionTypes'])
+                molSitesMapping[moleculeDescriptor['name']] = moleculeDescriptor['sites']
+            else:
+                defaultVolumeType = 0.5
+                defaultCutoffVDW = True
+            elementalSymbols |= set([x.short_name for x in molecule.getAtomTypes()])
         if 'junctionUtility' in target:
             target['junctionUtility']['molSitesMapping'] = molSitesMapping
         else:
@@ -59,6 +72,10 @@ def compileParams(main: dict) -> dict:
                 target['simpleMoleculeUtility']['molecules'] = molecules
             else:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
+        if 'moleculesFactoryUtility' in target:
+            target['moleculesFactoryUtility']['presetMoleculesForFactories'] = presetMoleculesForFactories
+        else:
+            target['moleculesFactoryUtility'] = {'presetMoleculesForFactories': presetMoleculesForFactories}
         if len(target['compositionSpace']['blocks']) > 1:
             generator['globalParentsPool'] = True
         if 'optType' in optimizer:
