@@ -21,6 +21,7 @@ class CoreAdsorbantRandomGenerator:
         self.conditions = utilities.conditions
         self.compositionSpace = utilities.compositionSpace
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.moleculesFactoryUtility = utilities.moleculesFactoryUtility
         self.cellType = type(self.cellUtility.getRandomCell(1, np.empty(0)))
         self.angle_indices = np.arange(TOTAL_ROTATION_STEPS)
 
@@ -51,6 +52,8 @@ class CoreAdsorbantRandomGenerator:
                 tmp_molecules = []
                 tmp_offspring = {}
                 goodAdsorptionmap = set()
+                if set(composition.keys()).issubset(self.moleculesFactoryUtility.moleculesFactories.keys()):
+                    composition = self.moleculesFactoryUtility.getRandomMolComposition(composition)
                 for adsName, quantity in composition.items():
                     adsorbant = self.simpleMoleculeUtility.molecules[adsName]
                     adsSites = self.junctionUtility.molSitesMapping[adsName]
