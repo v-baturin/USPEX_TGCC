@@ -19,7 +19,7 @@ from ...components import Atomistic
 PATH_WITH_TESTS = Path(__file__).parent
 
 class FakeSimpleMoleculeUtility:
-    checkIntegrityType = 'rigid'
+    whatToCheckInMolecules = 'all'
     integrityTol = 0.1
 class FakeUtilities:
     simpleMoleculeUtility = FakeSimpleMoleculeUtility()
