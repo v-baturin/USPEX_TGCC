@@ -113,7 +113,7 @@ class RandSymPyXtal:
                 signal.alarm(0)
 
                 if structurePyxtal.valid:
-                    tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
+                    tmp_cell, operations = convertStruc(structurePyxtal, self.cellUtility.getPBC(), symbols, LOCAL_VACUUM)
                     cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons), baseCell=envCell)
                     operations = dict(zip(symbols, operations))
                     offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
