@@ -115,8 +115,7 @@ class RandTop:
                                             estimatedVolume = self.bondUtility.volumeEstimator.calcCompositionVolume(
                                                 elementalComposition,
                                                 self.conditions.externalPressure)
-                                        cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber,
-                                                                           baseCell=envCell)
+                                        cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber) #, baseCell=envCell
                                         operations = dict(zip(symbols, operations))
                                         all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                         attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
