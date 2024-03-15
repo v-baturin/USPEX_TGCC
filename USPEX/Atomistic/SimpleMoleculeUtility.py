@@ -27,7 +27,6 @@ class SimpleMoleculeUtility(object):
 
     structureType = None
     atomType = None
-    propertyExtension = SimpleMoleculeFunctions
 
     @classmethod
     def registerTypes(cls, structureType, atomType):
@@ -58,7 +57,8 @@ class SimpleMoleculeUtility(object):
         self.whatToCheckInMolecules = whatToCheckInMolecules
         self.integrityTol = INTEGRITY_TOL[whatToCheckInMolecules] if integrityTol is None else integrityTol
 
-
+    def propertyExtension(self):
+        return SimpleMoleculeFunctions(self)
 
     def populateStructure(self, cell, operations):
         """

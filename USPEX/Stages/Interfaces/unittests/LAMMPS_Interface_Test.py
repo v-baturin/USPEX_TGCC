@@ -33,7 +33,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
                                   targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
         for ID in range(10):
@@ -78,7 +78,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
                                      lammps_in=SPECIFICPATH/'lammps.in_1', specorder=['C'], targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
         structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
@@ -101,7 +101,7 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
                                           specorder=['Li', 'B', 'H'], targetProperties=['trajectory'])
         atomistic = Atomistic()
         self.extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
     def test_init(self):

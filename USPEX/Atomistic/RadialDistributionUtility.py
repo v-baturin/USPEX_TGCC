@@ -147,8 +147,6 @@ class RadialDistributionUtility(object):
     Utility for working with radial distribution related properties of systems.
     """
 
-    propertyExtension = RadialDistributionFunctions
-
     def __init__(self, symbols, suffix, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
                  legacy=False):
         """
@@ -170,6 +168,9 @@ class RadialDistributionUtility(object):
         self.legacy = legacy
         self.distances = {}
         self.legacy_distances = {}
+
+    def propertyExtension(self):
+        return RadialDistributionFunctions(self)
 
     def clean(self, system):
         """

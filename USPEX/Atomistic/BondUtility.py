@@ -85,8 +85,6 @@ class Bond(object):
 
 class BondUtility:
 
-    propertyExtension = BondFunctions
-
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
                  cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, ionDistances=None):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
@@ -120,6 +118,9 @@ class BondUtility:
             assert np.isfinite(value)
             s1, s2 = key.split(' ')
             self._distances[(s1, s2)] = value
+
+    def propertyExtension(self):
+        return BondFunctions(self)
 
     def isConnected(self, structure, cutoff=None):
         """
