@@ -40,7 +40,7 @@ class GULP_CalculatorTest(unittest.TestCase):
                               targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
         for ID in range(10):
@@ -84,7 +84,7 @@ class GULP_InterfaceTest(unittest.TestCase):
                                    targetProperties=['structure', 'enthalpy', 'stressTensor', 'strains'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
         # with open(GATHEREDPATH/f'input/system{ID}', 'rt') as f:
         #     system = {'ID': ID, 'structure': Crystal.fromJSON(f.read())}

@@ -19,8 +19,6 @@ class CellUtility:
     Utility for working with unit cells of atomic structures.
     """
 
-    propertyExtension = CellFunctions
-
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
                  thickness=None, supercellDegree = None, symTolerance=None, debug = False):
         """
@@ -174,6 +172,9 @@ class CellUtility:
         :return: volume of unit cell if it is set or the cell is fixed, otherwise *None*.
         """
         return self._volume
+
+    def propertyExtension(self):
+        return CellFunctions(self)
 
     def adjustCell(self, cellVectors, estimatedVolume, numAtoms, baseCell=None):
         """

@@ -17,8 +17,6 @@ from ..Expressions.Functions.SingleCrystalSpectrumAnalyzerFunctions import Singl
 
 class SingleCrystalSpectrumAnalyzer(object):
 
-    propertyExtension = SingleCrystalSpectrumAnalyzerFunctions
-
     def __init__(self, expReflections: list, cellParameters: tuple):
         """
         Initializes the class.
@@ -30,6 +28,9 @@ class SingleCrystalSpectrumAnalyzer(object):
         """
         self.exp_reflections = np.array(expReflections, dtype=object)
         self.cellParameters = cellParameters
+
+    def propertyExtension(self):
+        return SingleCrystalSpectrumAnalyzerFunctions(self)
 
     def analyze(self, system):
         """

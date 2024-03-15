@@ -195,11 +195,12 @@ class ElasticML:
     MAX_NUM_NBR = 12
     STEP = 0.2
 
-    propertyExtension = ElasticMLFunctions
-
     def __init__(self):
         with open(self.MODELNAME, "rb") as f:
             self.model = torch.load(f)
+
+    def propertyExtension(self):
+        return ElasticMLFunctions(self)
 
     def predictValues(self, system: EntryFlavour):
         """
