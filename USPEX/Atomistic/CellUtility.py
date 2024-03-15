@@ -281,7 +281,7 @@ class CellUtility:
                 cell = Cell.initFromCellParameters(self._pbc)
             else:
                 raise RuntimeError(f"Wrong pbc {self._pbc}.")
-            cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms, baseCell)
+            cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms)
             if self._thickness is not None:
                 cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
         elif self._supercellDegree is not None:
