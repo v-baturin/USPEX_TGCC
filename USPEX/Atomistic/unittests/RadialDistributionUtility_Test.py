@@ -16,8 +16,8 @@ class RadialDistributionUtility_Test(unittest.TestCase):
         self.utility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'], suffix='origin')
         atomistic = Atomistic()
         extensions = dict(
-            atomistic = atomistic.propertyExtension(atomistic),
-            radialDistributionUtility=self.utility.propertyExtension(self.utility)
+            atomistic = atomistic.propertyExtension(),
+            radialDistributionUtility=self.utility.propertyExtension()
         )
 
         self.systemRDU1 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,

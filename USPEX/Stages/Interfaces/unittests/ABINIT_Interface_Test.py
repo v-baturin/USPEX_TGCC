@@ -47,7 +47,7 @@ else:
                                       targetProperties=['structure', 'enthalpy'])
             atomistic = Atomistic()
             extensions = dict(
-                atomistic=atomistic.propertyExtension(atomistic)
+                atomistic=atomistic.propertyExtension()
             )
 
             for ID in range(10):

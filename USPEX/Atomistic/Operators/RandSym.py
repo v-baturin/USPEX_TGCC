@@ -191,7 +191,7 @@ class RandSym:
                                                     estimatedVolume, self.sym_coef)
                 name, cell, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
-                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons), baseCell=envCell)
+                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons)) #, baseCell=envCell
                 for i in range(self.attemptsRotation):
                     offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
                     molecules = offspring.getProperty('molecules', extension='atomistic')
