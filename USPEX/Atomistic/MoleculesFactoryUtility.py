@@ -10,8 +10,8 @@ class MoleculeFactory:
         return np.random.choice(self.presetMolSymbols, size=n, replace=True)
 
 class MoleculesFactoryUtility:
-    def __init__(self, presetMoleculesForFactories: dict):
-        self.moleculesFactories = {k: MoleculeFactory(v) for k, v in presetMoleculesForFactories.items()}
+    def __init__(self, **factories):
+        self.moleculesFactories = {k: MoleculeFactory(v) for k, v in factories.items()}
 
     def getRandomMolComposition(self, factoryComposition):
         randMolSyms = [self.moleculesFactories[k].getRandomMolSymbols(v) for k, v in factoryComposition.items()]

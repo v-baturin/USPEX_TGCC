@@ -28,23 +28,21 @@ def compileParams(main: dict) -> dict:
         symbols = target['compositionSpace']['symbols']
         defaultVolumeType = 0
         defaultCutoffVDW = False
-        presetMoleculesForFactories = {}
+        moleculesFactories = {} if 'moleculesFactoryUtility' not in target else target['moleculesFactoryUtility']
         moleculeDescriptors = []
-        molSitesMapping = {}
         elementalSymbols = set()
         for i, symbol in enumerate(symbols):
-            if not isinstance(symbol, dict):
-                elementalSymbols.add(symbol)
-            elif 'molecules' in symbol:
-                moleculeDescriptors += symbol['molecules']
-                symbols[i] = symbol['name']
-                presetMoleculesForFactories[symbol['name']] = [x['name'] if isinstance(x, dict) else x
-                                                            for x in symbol['molecules']]
-            else:
+            if isinstance(symbol, dict):
                 moleculeDescriptors.append(symbol)
                 symbols[i] = symbol['name']
-
+            elif symbol in moleculesFactories:
+                moleculeDescriptors += moleculesFactories[symbol]
+                moleculesFactories[symbol] = [molDescriptor['name'] for molDescriptor in moleculesFactories[symbol]]
+            else:
+                elementalSymbols.add(symbol)
+        target['moleculesFactoryUtility'] = moleculesFactories
         molecules = {}
+        molSitesMapping = {}
         for moleculeDescriptor in moleculeDescriptors:
             if not isinstance(moleculeDescriptor, dict):
                 elementalSymbols.add(moleculeDescriptor)
@@ -72,10 +70,6 @@ def compileParams(main: dict) -> dict:
                 target['simpleMoleculeUtility']['molecules'] = molecules
             else:
                 target['simpleMoleculeUtility'] = {'molecules': molecules}
-        if 'moleculesFactoryUtility' in target:
-            target['moleculesFactoryUtility']['presetMoleculesForFactories'] = presetMoleculesForFactories
-        else:
-            target['moleculesFactoryUtility'] = {'presetMoleculesForFactories': presetMoleculesForFactories}
         if len(target['compositionSpace']['blocks']) > 1:
             generator['globalParentsPool'] = True
         if 'optType' in optimizer:
