@@ -210,6 +210,7 @@ class AtomisticRepresentation(object):
         ut = target.utilities
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
         isVarComp = not ut.compositionSpace.isFixedComposition
+        isVarSym = not ut.symbolsFactoryUtility.allFactoriesTrivial
         dim = ut.cellUtility.getDim()
         hasEnv = len(ut.environmentUtility.environments) > 0
         hasJunct = ut.junctionUtility.hasJunctions

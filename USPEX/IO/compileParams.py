@@ -28,19 +28,19 @@ def compileParams(main: dict) -> dict:
         symbols = target['compositionSpace']['symbols']
         defaultVolumeType = 0
         defaultCutoffVDW = False
-        moleculesFactories = {} if 'moleculesFactoryUtility' not in target else target['moleculesFactoryUtility']
+        symbolsFactories = {} if 'symbolsFactoryUtility' not in target else target['symbolsFactoryUtility']
         moleculeDescriptors = []
         elementalSymbols = set()
         for i, symbol in enumerate(symbols):
             if isinstance(symbol, dict):
                 moleculeDescriptors.append(symbol)
                 symbols[i] = symbol['name']
-            elif symbol in moleculesFactories:
-                moleculeDescriptors += moleculesFactories[symbol]
-                moleculesFactories[symbol] = [molDescriptor['name'] for molDescriptor in moleculesFactories[symbol]]
+            elif symbol in symbolsFactories:
+                moleculeDescriptors += symbolsFactories[symbol]
+                symbolsFactories[symbol] = [molDescriptor['name'] for molDescriptor in symbolsFactories[symbol]]
             else:
                 elementalSymbols.add(symbol)
-        target['moleculesFactoryUtility'] = moleculesFactories
+        target['symbolsFactoryUtility'] = symbolsFactories
         molecules = {}
         molSitesMapping = {}
         for moleculeDescriptor in moleculeDescriptors:
