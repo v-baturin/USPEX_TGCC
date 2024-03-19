@@ -74,7 +74,7 @@ class MLIP_train_Test(unittest.TestCase):
                                         args=SPECIFICPATH/'mlip_args_0', sample='trajectory')
         atomistic = Atomistic()
         self.extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
 

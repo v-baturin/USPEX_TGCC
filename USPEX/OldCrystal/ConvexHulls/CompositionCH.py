@@ -10,7 +10,7 @@ class CompositionCH(ConvexHull):
         self.compositionSpace = compositionSpace
         extensions = dict(
             basic=BasicFunctions(),
-            compositionSpace=compositionSpace.expressionExtension(compositionSpace),
+            compositionSpace=compositionSpace.expressionExtension(),
         )
         expression = ('getRelativeCHSpace',
                       ('compositionSpace.numBlocksFromCompositions', 'simpleMoleculeUtility.composition.origin'),
@@ -38,7 +38,7 @@ class CompositionCH(ConvexHull):
         self.systems.extend(systems)
         extensions = dict(
             basic=BasicFunctions(),
-            compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
+            compositionSpace=self.compositionSpace.expressionExtension(),
         )
         expression = ('getRelativeCHSpace',
                       ('compositionSpace.numBlocksFromCompositions', 'simpleMoleculeUtility.composition.origin'),

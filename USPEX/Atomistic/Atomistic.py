@@ -164,8 +164,6 @@ class Atomistic:
     AtomicStructureRepresentation = None
     atomicDisassemblerType = AtomicDisassembler
 
-    propertyExtension = AtomisticFunctions
-
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType, AtomicStructureRepresentation):
         cls.structureType = structureType
@@ -266,3 +264,6 @@ class Atomistic:
             systems = [cls.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))).disassemble(structure)
                        for structure in cls.AtomicStructureRepresentation.readPOSCARS(filename)]
         return systems
+    def propertyExtension(self):
+        return AtomisticFunctions(self)
+

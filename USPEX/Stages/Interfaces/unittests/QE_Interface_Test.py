@@ -33,7 +33,7 @@ class QE_CalculatorTest2(unittest.TestCase):
                           targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
 

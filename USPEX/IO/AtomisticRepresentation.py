@@ -63,24 +63,25 @@ presetLabels = {
     '.ZPE': 'ZPE (eV)'
 }
 
-def getPresetLables(expression):
-    if isinstance(expression, str):
-        ext, prop, suffix = expression.split('.')
-        if f'{ext}.{prop}' in presetLabels:
-            return presetLabels[f'{ext}.{prop}']
-    return ''
+def getExpressionLabel(expression, labels):
+    if expression in labels:
+        return labels[expression]
+    if isinstance(expression, str) and '.'.join(expression.split('.')[:-1]) in presetLabels:
+        return presetLabels['.'.join(expression.split('.')[:-1])]
+    else:
+        return ''
 
 
 class SystemsTable(object):
 
-    def __init__(self, columns, pool, isRank=False):
+    def __init__(self, columns, pool, labels, isRank=False):
         self.columns = [pool.createExpression(column) for column in columns]
         self.isRank = isRank
         columnNames = ['ID', 'Origin']
         if self.isRank:
             columnNames.insert(1, 'Rank')
-        for column in self.columns:
-            columnNames.append(getPresetLables(column))
+        for column in columns:
+            columnNames.append(getExpressionLabel(column, labels))
 
         self.table = PrettyTable(columnNames)
 
@@ -112,7 +113,7 @@ class AtomisticRepresentation(object):
         cls.Atomistic = Atomistic
 
     def __init__(self, RES_FOLDER: str, columns, stages, toDraw, suffix, presentConvexHull=None, presentPareto=(),
-                 rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, **kwargs):
+                 rangeECH = EXTENDED_CONVEX_HULL_ENERGY_RANGE, labels=None, **kwargs):
         self.RES_FOLDER = Path(RES_FOLDER)
         self.columns = [applyPresetsRecursive(column) for column in columns]
         self.stages = stages
@@ -121,9 +122,11 @@ class AtomisticRepresentation(object):
         self.presentConvexHull = applyPresetsRecursive(presentConvexHull)
         self.presentPareto = [applyPresetsRecursive(expr) for expr in presentPareto]
         self.rangeECH = rangeECH
+        labels = labels if labels is not None else dict()
+        self.labels = {applyPresetsRecursive(expression): label for expression, label in labels.items()}
 
     def getNewSystemsTable(self, pool, isRank=False):
-        return SystemsTable(self.columns, pool, isRank)
+        return SystemsTable(self.columns, pool, self.labels, isRank)
 
     def presentSystems(self, generations, systems):
         systems_gatheredPOSCARS = []
@@ -630,8 +633,8 @@ class AtomisticRepresentation(object):
         pool = generations[-1].goodSystems
         xProp = pool.createExpression(self.presentPareto[0])
         yProp = pool.createExpression(self.presentPareto[1])
-        xLabel = getPresetLables(xProp)
-        yLabel = getPresetLables(yProp)
+        xLabel = getExpressionLabel(xProp, self.labels)
+        yLabel = getExpressionLabel(yProp, self.labels)
         data = []
         for front in fronts:
             values = np.asarray([(system[xProp], system[yProp]) for system in front], dtype=float)
