@@ -63,12 +63,12 @@ presetLabels = {
 }
 
 def getExpressionLabel(expression, labels):
-    if isinstance(expression, str):
-        if expression in labels:
-            return labels[expression]
-        elif '.'.join(expression.split('.')[:-1]) in presetLabels:
-            return presetLabels['.'.join(expression.split('.')[:-1])]
-    return ''
+    if expression in labels:
+        return labels[expression]
+    if isinstance(expression, str) and '.'.join(expression.split('.')[:-1]) in presetLabels:
+        return presetLabels['.'.join(expression.split('.')[:-1])]
+    else:
+        return ''
 
 
 class SystemsTable(object):
@@ -79,7 +79,7 @@ class SystemsTable(object):
         columnNames = ['ID', 'Origin']
         if self.isRank:
             columnNames.insert(1, 'Rank')
-        for column in self.columns:
+        for column in columns:
             columnNames.append(getExpressionLabel(column, labels))
 
         self.table = PrettyTable(columnNames)
@@ -121,7 +121,8 @@ class AtomisticRepresentation(object):
         self.presentConvexHull = applyPresetsRecursive(presentConvexHull)
         self.presentPareto = [applyPresetsRecursive(expr) for expr in presentPareto]
         self.rangeECH = rangeECH
-        self.labels = labels if labels is not None else dict()
+        labels = labels if labels is not None else dict()
+        self.labels = {applyPresetsRecursive(expression): label for expression, label in labels.items()}
 
     def getNewSystemsTable(self, pool, isRank=False):
         return SystemsTable(self.columns, pool, self.labels, isRank)
