@@ -21,8 +21,6 @@ from ..Expressions.Functions.PowderSpectrumAnalyzerFunctions import PowderSpectr
 
 class PowderSpectrumAnalyzer(object):
 
-    propertyExtension = PowderSpectrumAnalyzerFunctions
-
     def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
                  exp_angles: list, exp_intensities: list):
         """
@@ -49,6 +47,9 @@ class PowderSpectrumAnalyzer(object):
         self.match_tol = match_tol
         self.exp_angles = np.array(exp_angles)
         self.exp_intensities = np.array(exp_intensities) / max(exp_intensities) * 100
+
+    def propertyExtension(self):
+        return PowderSpectrumAnalyzerFunctions(self)
 
     def analyze(self, system):
         """

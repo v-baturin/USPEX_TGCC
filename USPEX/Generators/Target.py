@@ -94,11 +94,12 @@ class Target(object):
         for utilityType in targetTypes.utilities:
             name = utilityType.__name__[0].lower() + utilityType.__name__[1:]
             try:
-                utilities[name] = utilityType(**kwargs[name]) if name in kwargs else utilityType()
+                utility = utilityType(**kwargs[name]) if name in kwargs else utilityType()
+                utilities[name] = utility
                 if hasattr(utilityType, 'expressionExtension'):
-                    self.expressionExtensions[name] = getattr(utilityType, 'expressionExtension')(utilities[name])
-                if hasattr(utilityType, 'propertyExtension'):
-                    self.propertyExtensions[name] = getattr(utilityType, 'propertyExtension')(utilities[name])
+                    self.expressionExtensions[name] = utility.expressionExtension()
+                if hasattr(utility, 'propertyExtension'):
+                    self.propertyExtensions[name] = utility.propertyExtension()
             except TypeError as e:
                 logger.debug(e)
                 failedUtilities.append(utilityType.__name__)

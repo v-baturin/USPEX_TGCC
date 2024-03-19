@@ -229,45 +229,37 @@ class VASP_Interface:
         if not (calcFolder.joinpath(self.outcar_file).exists() and
                 calcFolder.joinpath(self.oszicar_file).exists() and
                 calcFolder.joinpath(self.contcar_file).exists()):
+            self.failedSystems.append(calcFolder)
             return False
 
-        # Checking the real vs reciprocal lattice inconsistency error
-
-
         # Checking whether converge
-        NELM = -1
-        row_number = None
         with open(calcFolder/self.oszicar_file, 'r') as f:
             content = f.readlines()
-            for i in range(len(content)):
-                if content[i].find(' F= ') >= 0:
-                    row_number = i
-            if row_number is None:
-                with open(calcFolder / self.outcar_file, 'r') as outcar_fid:
-                    for line in outcar_fid:
-                        if 'Inconsistent Bravais lattice types found for crystalline and' in line:
-                            logger.error('VASP SCF is not converged.')
-                            shutil.copy2(calcFolder / self.outcar_file, calcFolder / f'ERROR-{self.outcar_file}')
-                            self.failedSystems.append(calcFolder)
-
-
-                    return False
-
-            # Read previous line to check the number of SCF steps:
-            vaspSCFsteps = int(content[row_number - 1].split(':')[1].split()[0].strip())
+        row_number = None
+        for i, line in enumerate(content):
+            if line.find(' F= ') >= 0:
+                row_number = i
+        if row_number is None:
+            self.failedSystems.append(calcFolder)
+            return False
+        # Read previous line to check the number of SCF steps:
+        vaspSCFsteps = int(content[row_number - 1].split(':')[1].split()[0].strip())
 
         with open(calcFolder/self.outcar_file, 'r') as f:
-            for line in f:
-                if line.find(' NELM ') >= 0:
-                    NELM = int(line.split(' = ')[1].split()[0].replace(';', '').strip())
-                    break
+            content = f.readlines()
+        for line in content:
+            if line.find(' NELM ') >= 0:
+                NELM = int(line.split(' = ')[1].split()[0].replace(';', '').strip())
+                break
+        else:
+            NELM = -1
 
         # The calculation is considered successful in case vaspSCFsteps < NELM:
         if vaspSCFsteps < NELM:
             return True
         else:
             logger.error('VASP SCF is not converged.')
-            shutil.copy2(calcFolder/self.outcar_file, calcFolder/f'ERROR-{self.outcar_file}')
+            # shutil.copy2(calcFolder/self.outcar_file, calcFolder/f'ERROR-{self.outcar_file}')
             self.failedSystems.append(calcFolder)
             return False
 
