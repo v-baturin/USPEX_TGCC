@@ -210,7 +210,7 @@ class AtomisticRepresentation(object):
         ut = target.utilities
         isMolSystem = ut.simpleMoleculeUtility.isTrueMolecular
         isVarComp = not ut.compositionSpace.isFixedComposition
-        isVarSym = not ut.symbolsFactoryUtility.allFactoriesTrivial
+        isVarSymbol = not ut.symbolsFactoryUtility.allFactoriesTrivial
         dim = ut.cellUtility.getDim()
         hasEnv = len(ut.environmentUtility.environments) > 0
         hasJunct = ut.junctionUtility.hasJunctions
@@ -225,6 +225,7 @@ class AtomisticRepresentation(object):
         row += f'    Dimension            :  {dim}\n'
         row += f'    Molecular            :  {"Yes" if isMolSystem else "No"}\n'
         row += f'    Variable composition :  {"Yes" if isVarComp else "No"}\n'
+        row += f'    Variable symbols     :  {"Yes" if isVarSymbol else "No"}\n'
         row += f'    Has environment      :  {"Yes" if hasEnv else "No"}\n'
         row += f'    Has Junctions        :  {"Yes" if hasJunct else "No"}\n'
 
@@ -238,6 +239,10 @@ class AtomisticRepresentation(object):
         for block, rng in zip(compositionSpace.blocks, compositionSpace.range):
             rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {rng}')
         rows.append('')
+        if isVarSymbol:
+            rows.append('    The composition is defined via variable symbol factories: ')
+            for sym, factory in ut.symbolsFactoryUtility.symbolsFactories.items():
+                rows.append(f'    <{sym}>: {" ".join([f"<{s}>" for s in factory.presetSymbols])}')
         header += rows
 
         cell = ut.cellUtility.getCell()
@@ -248,38 +253,43 @@ class AtomisticRepresentation(object):
                     f'        {lattice[0, 0]:.4}   {lattice[0, 1]:.4}    {lattice[0, 2]:.4}',
                     f'        {lattice[1, 0]:.4}   {lattice[1, 1]:.4}    {lattice[1, 2]:.4}',
                     f'        {lattice[2, 0]:.4}   {lattice[2, 1]:.4}    {lattice[2, 2]:.4}']
-        # else: # TODO: uncomment1
-        #     rows = ['    Volume (estimated) for blocks :']
-        #     for block in compositionSpace.blocks:
-        #         comp = Counter()
-        #         for s, b in zip(symbols, block):
-        #             comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
-        #
-        #         volume = ut.bondUtility.volumeEstimator.calcCompositionVolume(comp, ut.conditions.externalPressure)
-        #         rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
+        elif not isVarSymbol:
+            rows = ['    Volume (estimated) for blocks :']
+            for block in compositionSpace.blocks:
+                comp = Counter()
+                for s, b in zip(symbols, block):
+                    comp += ut.simpleMoleculeUtility.getElementalComposition({s:b})
+
+                volume = ut.bondUtility.volumeEstimator.calcCompositionVolume(comp, ut.conditions.externalPressure)
+                rows.append(f'        {"".join(f"<{symbols[i]}>{block[i]}" for i in np.flatnonzero(block))}  --  {volume:.4} A^3')
+        else:
+            rows = [' ']
+            # rows = ['    Volume (estimated) for all possible blocks :']  # TODO: write down volumes of all possible blocks?
 
         rows.append('')
         header += rows
 
         # ---------------------------------------------------------------------------
 
-        # if isMolSystem:
-        #     molecules = []
-        #     molSymbols = []
-        #     for symbol in symbols:
-        #         molecule = ut.simpleMoleculeUtility.molecules[symbol]
-        #         if len(molecule) > 1:
-        #             molecules.append(molecule)
-        #             molSymbols.append(symbol)
-        #     rows = [f'    There is(are) {len(molecules)} type(s) of molecules in the system: ',
-        #           *(f'        <{symbol}> -- {mol.getFormula()}' for symbol, mol in zip(molSymbols, molecules)),
-        #              '    Please see the MOL_* files for the details.',
-        #              '']
-        #     # for symbol, molecule in zip(molSymbols, molecules):
-        #     #     rows += [f'    The calculated Zmatrix for {symbol} is:',
-        #     #              cls.getZmatrixRepresentation(molecule, ut.simpleMoleculeUtility),
-        #     #              '']
-        #     header += rows
+        if isMolSystem:
+            molecules = []
+            molSymbols = []
+            if isVarSymbol:
+                symbols = ut.symbolsFactoryUtility.allSymbols
+            for symbol in symbols:
+                molecule = ut.simpleMoleculeUtility.molecules[symbol]
+                if len(molecule) > 1:
+                    molecules.append(molecule)
+                    molSymbols.append(symbol)
+            rows = [f'    There is(are) {len(molecules)} type(s) of molecules in the system: ',
+                  *(f'        <{symbol}> -- {mol.getFormula()}' for symbol, mol in zip(molSymbols, molecules)),
+                     '    Please see the MOL_* files for the details.',
+                     '']
+            # for symbol, molecule in zip(molSymbols, molecules):
+            #     rows += [f'    The calculated Zmatrix for {symbol} is:',
+            #              cls.getZmatrixRepresentation(molecule, ut.simpleMoleculeUtility),
+            #              '']
+            header += rows
 
         # ---------------------------------------------------------------------------
 
@@ -297,35 +307,39 @@ class AtomisticRepresentation(object):
         formatted_rows = createHeader_wrap(text, 'center')
         formatted_rows.append('')
 
-        # symbols = set() # TODO: uncomment2
-        # for symbol in ut.compositionSpace.symbols:
-        #     symbols.update(ut.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
-        # symbols = sorted(symbols)
-        # minDistMatrix = ut.bondUtility.getDistances(symbols, ut.conditions.externalPressure)
+        symbols = set()
+        if isVarSymbol:
+            realMolecules = ut.symbolsFactoryUtility.allSymbols
+        else:
+            realMolecules = ut.compositionSpace.symbols
+        for symbol in realMolecules:
+            symbols.update(ut.simpleMoleculeUtility.molecules[symbol].getAtomTypes())
+        symbols = sorted(symbols)
+        minDistMatrix = ut.bondUtility.getDistances(symbols, ut.conditions.externalPressure)
 
         row = '    There are %1d types of atoms in the system:' % len(symbols)
         for symbol in symbols:
             row += '%5s' % symbol
         row += '\n'
 
-        # for i, symbol in enumerate(symbols): # TODO: uncomment3
-        #     row += '    Minimum distances:                 %5s: ' % symbol
-        #     for j in range(len(symbols)):
-        #         row += '%4.2f  ' % minDistMatrix[i, j]
-        #     row += '\n'
-        # row += '\n'
+        for i, symbol in enumerate(symbols): # TODO: uncomment3
+            row += '    Minimum distances:                 %5s: ' % symbol
+            for j in range(len(symbols)):
+                row += '%4.2f  ' % minDistMatrix[i, j]
+            row += '\n'
+        row += '\n'
 
-        # for symbol1 in symbols: # TODO: uncomment4
-        #     row += '           Good Bonds:                 %5s: ' % symbol1
-        #     for symbol2 in symbols:
-        #         row += '%4.2f  ' % (symbol1.good_bonds*symbol2.good_bonds) ** 0.5
-        #     row += '\n'
-        # row += '\n'
+        for symbol1 in symbols: # TODO: uncomment4
+            row += '           Good Bonds:                 %5s: ' % symbol1
+            for symbol2 in symbols:
+                row += '%4.2f  ' % (symbol1.good_bonds*symbol2.good_bonds) ** 0.5
+            row += '\n'
+        row += '\n'
 
-        # row += '             Valences:                        ' # TODO: uncomment5
-        # for symbol in symbols:
-        #     row += '%4.2f  ' % symbol.valence
-        # row += '\n'
+        row += '             Valences:                        ' # TODO: uncomment5
+        for symbol in symbols:
+            row += '%4.2f  ' % symbol.valence
+        row += '\n'
 
         formatted_rows.append(row)
         header += formatted_rows

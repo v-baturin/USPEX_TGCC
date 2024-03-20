@@ -15,7 +15,7 @@ class SymbolsFactoryUtility:
     def __init__(self, **factories):
         self.symbolsFactories = {k: SymbolsFactory(v) for k, v in factories.items()}
         self.allFactoriesTrivial = not (True in [len(f.presetSymbols) > 1 for f in self.symbolsFactories.values()])
-
+        self.allSymbols = [s for f in self.symbolsFactories.values() for s in f.presetSymbols]
     def getRandomSymComposition(self, factoryComposition):
         randMolSyms = [self.symbolsFactories[k].getRandomSymbols(v) for k, v in factoryComposition.items()]
         randMolSymsFlat = [mol for molGroup in randMolSyms for mol in molGroup]
