@@ -52,6 +52,7 @@
     Dimension            :  3
     Molecular            :  No
     Variable composition :  No
+    Variable symbols     :  No
     Has environment      :  No
     Has Junctions        :  No
 
