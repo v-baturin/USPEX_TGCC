@@ -31,14 +31,19 @@ def _process(input, definitions: dict):
                 raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
 
     if isinstance(input, list):
-        items = enumerate(input)
+        items = list(enumerate(input))
     elif isinstance(input, dict):
-        items = input.items()
+        items = list(input.items())
     else:
         items = []
     for i, element in items:
         if i is not 'name':
-            input[i] = _process(element, definitions)
+            element = _process(element, definitions)
+        if isinstance(i, str) and len(i) > 1 and i[0] == '(' and i[-1] == ')':
+            input[parse(i)] = element
+            del input[i]
+        else:
+            input[i] = element
     return input
 
 

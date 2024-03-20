@@ -113,8 +113,8 @@ class RandSymPyXtal:
                 signal.alarm(0)
 
                 if structurePyxtal.valid:
-                    tmp_cell, operations = convertStruc(structurePyxtal, randcell.getPBC(), symbols, LOCAL_VACUUM)
-                    cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons), baseCell=envCell)
+                    tmp_cell, operations = convertStruc(structurePyxtal, self.cellUtility.getPBC(), symbols, LOCAL_VACUUM)
+                    cell = self.cellUtility.adjustCell(tmp_cell, estimatedVolume, sum(numIons)) #, baseCell=envCell
                     operations = dict(zip(symbols, operations))
                     offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
                     molecules = offspring.getProperty('molecules', extension='atomistic')
@@ -132,7 +132,7 @@ class RandSymPyXtal:
                             return offspring,
             else:
                 molecules, lattice, volume = self.molecularCrystal(dim, nsym, symbols, numIons, lattice=randcell.getCellVectors())
-                cell = self.cellUtility.adjustCell(lattice, volume, sum(numIons), baseCell=envCell)
+                cell = self.cellUtility.adjustCell(lattice, volume, sum(numIons)) #, baseCell=envCell
                 offspring = offspringFactory(**{'atomistic.molecules': molecules, 'atomistic.cell': cell})
                 molecules = offspring.getProperty('molecules', extension='atomistic')
                 cell = offspring.getProperty('cell', extension='atomistic')

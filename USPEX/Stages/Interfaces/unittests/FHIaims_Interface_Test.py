@@ -44,7 +44,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
                                  kresol=0.14, targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
         for ID in range(10):

@@ -44,7 +44,7 @@ class PWmat_InterfaceTest(unittest.TestCase):
                   'potcars': [HOMEPATH/'Specific/Si.SG15.PBE.UPF']}
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
         cls.vcEmpty = PWmat_Interface(**params)

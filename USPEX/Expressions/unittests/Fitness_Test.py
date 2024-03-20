@@ -58,10 +58,10 @@ class Fitness_Test(unittest.TestCase):
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
         expressionExtensions = dict(
             basic=BasicFunctions(),
-            compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
+            compositionSpace=self.compositionSpace.expressionExtension(),
         )
         propertyExtensions = dict(
-            simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility)
+            simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension()
         )
         self.systems = Pool.newPool(FlavourFactory(extensions=propertyExtensions), expressionExtensions)
         for system in systems:
@@ -220,13 +220,13 @@ class FitnessXray_Test(unittest.TestCase):
 
         expressionExtensions = dict(
             basic=BasicFunctions(),
-            compositionSpace=self.compositionSpace.expressionExtension(self.compositionSpace),
+            compositionSpace=self.compositionSpace.expressionExtension(),
         )
         propertyExtensions = dict(
 
-            atomistic = Atomistic.propertyExtension(self.atomistic),
-            simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(self.simpleMoleculeUtility),
-            powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.propertyExtension(self.powderSpectrumAnalyzer),
+            atomistic = Atomistic().propertyExtension(),
+            simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(),
+            powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.propertyExtension(),
         )
         self.systems = Pool.newPool(FlavourFactory(extensions=propertyExtensions), expressionExtensions)
         for system in systems:

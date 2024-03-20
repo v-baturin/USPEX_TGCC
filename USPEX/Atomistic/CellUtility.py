@@ -19,8 +19,6 @@ class CellUtility:
     Utility for working with unit cells of atomic structures.
     """
 
-    propertyExtension = CellFunctions
-
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
                  thickness=None, supercellDegree = None, symTolerance=None, debug = False):
         """
@@ -175,6 +173,9 @@ class CellUtility:
         """
         return self._volume
 
+    def propertyExtension(self):
+        return CellFunctions(self)
+
     def adjustCell(self, cellVectors, estimatedVolume, numAtoms, baseCell=None):
         """
         Adjust given unit cell according calculation parameters, provided volume and number of atoms.
@@ -281,7 +282,7 @@ class CellUtility:
                 cell = Cell.initFromCellParameters(self._pbc)
             else:
                 raise RuntimeError(f"Wrong pbc {self._pbc}.")
-            cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms, baseCell)
+            cell = self.adjustCell(cell.getCellVectors(), estimatedVolume, numAtoms)
             if self._thickness is not None:
                 cell = cell.getEnvelopeCell(vacuumSize=self._thickness)
         elif self._supercellDegree is not None:
@@ -307,8 +308,8 @@ class CellUtility:
         """
         assert 0 <= fraction <= 1
         if self._cell is None:
-            cellParameters = fraction * np.asarray(cell1.getCellParameters()) + \
-                             (1 - fraction) * np.asarray(cell2.getCellParameters())
+            cellParameters = fraction * np.asarray(cell1.getCellParameters(), dtype=object) + \
+                             (1 - fraction) * np.asarray(cell2.getCellParameters(), dtype=object)
             if self._dim == 3:
                 cell = Cell.initFromCellParameters(self._pbc, *cellParameters, axis=self._axis)
                 factor = np.power((fraction * cell1.getVolume() + (1 - fraction) * cell2.getVolume()) / cell.getVolume(), 1. / 3.)

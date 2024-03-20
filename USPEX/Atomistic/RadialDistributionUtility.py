@@ -147,8 +147,6 @@ class RadialDistributionUtility(object):
     Utility for working with radial distribution related properties of systems.
     """
 
-    propertyExtension = RadialDistributionFunctions
-
     def __init__(self, symbols, suffix, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
                  legacy=False):
         """
@@ -170,6 +168,9 @@ class RadialDistributionUtility(object):
         self.legacy = legacy
         self.distances = {}
         self.legacy_distances = {}
+
+    def propertyExtension(self):
+        return RadialDistributionFunctions(self)
 
     def clean(self, system):
         """
@@ -560,7 +561,7 @@ def _make_matrices(coor: np.ndarray, molIndices: list, envIndices,
             for inds in molIndices:
                 if i in inds:
                     ignoreDist.update(inds + central_cell_shift)
-            to_delete = np.asarray(list(ignoreDist))
+            to_delete = np.asarray(list(ignoreDist), dtype=int)
 
         tmp_dist = np.delete(tmp_dist, to_delete, axis=1)
         tmp_type = np.delete(tmp_type, to_delete, axis=0)
