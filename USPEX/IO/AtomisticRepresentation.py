@@ -322,21 +322,21 @@ class AtomisticRepresentation(object):
             row += '%5s' % symbol
         row += '\n'
 
-        for i, symbol in enumerate(symbols): # TODO: uncomment3
+        for i, symbol in enumerate(symbols):
             row += '    Minimum distances:                 %5s: ' % symbol
             for j in range(len(symbols)):
                 row += '%4.2f  ' % minDistMatrix[i, j]
             row += '\n'
         row += '\n'
 
-        for symbol1 in symbols: # TODO: uncomment4
+        for symbol1 in symbols:
             row += '           Good Bonds:                 %5s: ' % symbol1
             for symbol2 in symbols:
                 row += '%4.2f  ' % (symbol1.good_bonds*symbol2.good_bonds) ** 0.5
             row += '\n'
         row += '\n'
 
-        row += '             Valences:                        ' # TODO: uncomment5
+        row += '             Valences:                        '
         for symbol in symbols:
             row += '%4.2f  ' % symbol.valence
         row += '\n'
