@@ -25,6 +25,7 @@ SimpleMoleculeUtility.registerTypes(AtomicStructure, Element)
 from .Atomistic.JunctionUtility import JunctionUtility
 from .Atomistic.Conditions import Conditions
 from .Atomistic.BondUtility import BondUtility
+from .Atomistic.SymbolsFactoryUtility import SymbolsFactoryUtility
 from .Atomistic.ElasticML import ElasticML
 from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
@@ -44,8 +45,8 @@ from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRando
 from .Generators.Target import Target
 Target.registerTarget('Atomistic',
                       utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
-                        EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
-                        PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility],
+                                 EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility, ElasticML,
+                                 PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer, JunctionUtility, SymbolsFactoryUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],
