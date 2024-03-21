@@ -24,15 +24,6 @@ class MOPAC_Interface:
     outputFile, errorFile = 'output', 'error'
     inputFile, mopacOut, arcFile = 'calc.mop', 'calc.out', 'calc.arc'
     DEFAULT_SLEEP_TIME = 1
-    structureType = None
-    atomType = None
-    cellType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
 
     def __init__(self, tag: str, mop_input: str = None, targetProperties: list = None, **kwargs):
         """
@@ -54,7 +45,7 @@ class MOPAC_Interface:
         #     self.moleculeSpecifics = moleculeSpecifics
         # else:
         #     self.moleculeSpecifics = {}
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
         logger.debug('MOPAC calculator created.')
 
@@ -64,7 +55,7 @@ class MOPAC_Interface:
         :param system:
         :param calcFolder:
         """
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
@@ -81,7 +72,7 @@ class MOPAC_Interface:
             tuple_to_format = (symbol.short_name, ) +\
                               tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
                                                                precision=6) for c in coord)
-            disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+            disassembler = system.getProperty('disassembler', extension='atomistic')
             if i in disassembler.allFixedIndices:
                 content_to_write += '%4s %12s 0 %12s 0 %12s 0\n' % tuple_to_format
             else:
@@ -91,7 +82,7 @@ class MOPAC_Interface:
             if dim:
                 content_to_write += 'Tv %12.6f 1 %12.6f 1 %12.6f 1\n' % tuple(cell.getCellVectors()[i])
 
-        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        externalPressure = system.getProperty('externalPressure')
         if externalPressure >= 0.05:
             self.mop_input += f" P={externalPressure:.2f}Gpa\n"
 
@@ -118,25 +109,29 @@ class MOPAC_Interface:
             return 'FINAL GEOMETRY OBTAINED' in arc_content
 
     def readOutput(self, system, calcFolder: Path):
+        factory = system.getFactory()
+        atomistic = factory.extensions['atomistic'].utility
+        result = factory()
         with open(calcFolder/self.arcFile, 'rt') as arc_fid:
             content = arc_fid.readlines()
 
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.readStructure(content, pbc), prefix='atomistic', suffix=self.tag)
-
+            result.setProperty('structure', self.readStructure(atomistic, content, pbc), extension='atomistic')
 
         if 'enthalpy' in self.targetProperties:
             for line in content:
                 if 'TOTAL ENERGY' in line:
                     e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
-                    system.setProperty('enthalpy', float(e.group(1)), suffix=self.tag)
+                    result.setProperty('enthalpy', float(e.group(1)))
                     break
             else:
                 raise RuntimeError('Can not read enthalpy.')
+        return result
 
-    def readStructure(self, content, pbc):
+    @staticmethod
+    def readStructure(atomistic, content, pbc):
         atomTypes = []
         positions = []
         new_lattice = []
@@ -153,8 +148,8 @@ class MOPAC_Interface:
                             new_lattice.append(vector)
                         else:
                             positions.append(vector)
-                            atomTypes.append(self.atomType(sym))
+                            atomTypes.append(atomistic.atomType(sym))
 
                 positions = np.asarray(positions)
-                cell = self.cellType.initFromCellVectors(pbc, new_lattice)
-        return self.structureType(atomTypes, positions, cell=cell)
+                cell = atomistic.cellType.initFromCellVectors(pbc, new_lattice)
+        return atomistic.structureType(atomTypes, positions, cell=cell)

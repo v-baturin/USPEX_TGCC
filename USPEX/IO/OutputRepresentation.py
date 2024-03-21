@@ -1,3 +1,4 @@
+import shutil
 from datetime import datetime
 from itertools import zip_longest
 from pathlib import Path
@@ -36,9 +37,9 @@ def newResFolderName(path: str) -> Path:
 
 
 class OutputRepresentation(object):
-    PARAMETERS_FILENAME = 'parameters.uspex'
+    PARAMETERS_FILENAME = 'parameters.yaml'
 
-    def __init__(self, optimizerInstance, path: str = './', **params):
+    def __init__(self, optimizerInstance, generatorInstance, path: str = './', **params):
         self.RES_FOLDER = newResFolderName(path)
         self.OUTPUT_FILE = self.RES_FOLDER/'OUTPUT.txt'
         self.stages = params['stages']
@@ -53,33 +54,31 @@ class OutputRepresentation(object):
             output = params['output']
 
         if type(optimizerInstance).__name__ == 'GlobalOptimizer':
-            if type(optimizerInstance.createPopulation).__name__ == 'USPEXClassic':
-                from .USPEXClassicRepresentation import USPEXClassicRepresentation
-                output.update(USPEXClassicRepresentation.applyPresetOutputParameters(optimizerInstance, output))
-                self.selectionRepresentation = USPEXClassicRepresentation(self.RES_FOLDER, **output)
-            else:
-                raise RuntimeError('Unknown engine type in output initialization.')
-            if optimizerInstance.target.name == 'Atomistic':
+            from .USPEXClassicRepresentation import USPEXClassicRepresentation
+            output.update(USPEXClassicRepresentation.applyPresetOutputParameters(optimizerInstance, output))
+            self.selectionRepresentation = USPEXClassicRepresentation(self.RES_FOLDER, **output)
+            if generatorInstance.target.name == 'Atomistic':
                 from .AtomisticRepresentation import AtomisticRepresentation
                 # output = dict(AtomisticRepresentation.applyPresetOutputParameters(optimizerInstance), **output)
                 self.targetRepresentation = AtomisticRepresentation(self.RES_FOLDER, **output)
             else:
                 raise RuntimeError('Unknown target type in output initialization.')
-        elif type(optimizerInstance).__name__ == 'ModelOptimizer':
+        elif type(optimizerInstance).__name__ == 'SampleOptimizer':
             self.selectionRepresentation = None
             self.targetRepresentation = None
         else:
             raise RuntimeError('Unknown optimizer type in output initialization.')
         self.RES_FOLDER.mkdir(parents=True, exist_ok=True)
-        write(self.RES_FOLDER/self.PARAMETERS_FILENAME, params)
+        if (Path.cwd()/'input.yaml').exists():
+            shutil.copyfile(Path.cwd()/'input.yaml', self.RES_FOLDER/self.PARAMETERS_FILENAME)
 
-    def presentSystems(self, optimizer):
+    def presentSystems(self, generations, systems):
         if self.targetRepresentation is not None:
-            return self.targetRepresentation.presentSystems(optimizer)
+            return self.targetRepresentation.presentSystems(generations, systems)
         else:
             return None
 
-    def presentOutput(self, optimizer, printDate=True, final=False):
+    def presentOutput(self, optimizer, generator, generations, printDate=True, final=False):
         if self.selectionRepresentation is not None and self.targetRepresentation is not None:
             self.OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -108,8 +107,8 @@ class OutputRepresentation(object):
 
             output += formatted_rows
 
-            output += self.selectionRepresentation.getParametersBlock(optimizer.createPopulation)
-            output += self.targetRepresentation.getParametersBlock(optimizer.target)
+            output += self.selectionRepresentation.getParametersBlock(generator)
+            output += self.targetRepresentation.getParametersBlock(generator.target)
 
             output += createHeader_wrap(['Ab initio calculations'], 'center')
 
@@ -128,24 +127,26 @@ class OutputRepresentation(object):
 
             output += createHeader_wrap(['Generations block'], 'center')
 
-            for i, generation in enumerate(optimizer.pool.generations):
-                population = generation['allSystems']
+            for i, generation in enumerate(generations):
+                population = generation.population
                 output.append(' Generation {0:4d}'.format(i))
-                output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer,
-                                                                                  self.targetRepresentation)
+                output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer, generator,
+                                                                                  generations, self.targetRepresentation)
                 output.append('    Optimization results')
-                table = self.targetRepresentation.getNewSystemsTable()
-                for system in population:
-                    table.update(system['ID'], system)
+                table = self.targetRepresentation.getNewSystemsTable(generations[i].goodSystems)
+                for ID in population.getIDs():
+                    table.update(ID, population.getEntry(ID))
                 output.append(table.table.get_string())
-                output += self.targetRepresentation.getPopulationSummaryBlock(population, optimizer)
+                output += self.targetRepresentation.getPopulationSummaryBlock(generation.goodPopulation, optimizer,
+                                                                              generator, generations)
                 output.append('')
 
 
             if final:
-                table = self.targetRepresentation.getNewSystemsTable()
-                for ID in optimizer.best:
-                    table.update(ID, optimizer.pool.allSystems[ID])
+                goodSystems = generations[-1].goodSystems
+                table = self.targetRepresentation.getNewSystemsTable(goodSystems)
+                for ID in generations[-1].best:
+                    table.update(ID, goodSystems.getEntry(ID))
                 output += createHeader_wrap(['Calculation results'], 'center')
                 output.append(table.table.get_string())
 
@@ -155,5 +156,5 @@ class OutputRepresentation(object):
                 for i in output:
                     f.write(i + '\n')
 
-            self.selectionRepresentation.presentFractions(optimizer)
-            self.targetRepresentation.presentOptimizer(optimizer)
+            self.selectionRepresentation.presentFractions(generations)
+            self.targetRepresentation.presentOptimizer(optimizer, generator, generations)

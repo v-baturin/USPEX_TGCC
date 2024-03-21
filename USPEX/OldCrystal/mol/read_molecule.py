@@ -14,7 +14,7 @@ import os
 import numpy as np
 
 from ..AtomicStructure import AtomicStructure
-from ...Atomistic.Element import Element
+from USPEX.Atomistic.Primitives.Element import Element
 
 
 def read_molecule(filename: str):

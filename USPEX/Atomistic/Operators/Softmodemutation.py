@@ -10,7 +10,7 @@ _MIN_VALID_FREQUENCY = 5.0e-4
 
 
 class Softmodemutation:
-    def __init__(self, utilities, suffix='4', degree: float = None):
+    def __init__(self, utilities, suffix, degree: float = None):
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.bondUtility = utilities.bondUtility
         self.environmentUtility = utilities.environmentUtility
@@ -22,10 +22,10 @@ class Softmodemutation:
 
     def __call__(self, system, offspringFactory=None):
         ID = system.ID
-        molecules = system.getProperty('molecules', prefix='atomistic', suffix=self.suffix)
-        cell = system.getProperty('cell', prefix='atomistic', suffix=self.suffix)
-        structure = system.getProperty('structure', prefix='atomistic', suffix=self.suffix)
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix=self.suffix)
+        molecules = system.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        structure = system.getProperty('structure', extension='atomistic', suffix=self.suffix)
+        disassembler = system.getProperty('disassembler', extension='atomistic', suffix=self.suffix)
         if self.cellUtility.isGoodCell(cell.getEnvelopeCell(structure.getCartesianCoordinates())):
             degree = self.degree if self.degree else np.mean([el.covalent_radius for el in structure.getAtomTypes()]) * 3
             if ID in self.knownSystems:
@@ -64,11 +64,11 @@ class Softmodemutation:
                 offspring1 = offspringFactory(**offspring1)
                 try:
                     offspring1.setProperty('environments',
-                                           system.getProperty('environments', prefix='atomistic', suffix=self.suffix),
-                                           prefix='atomistic')
+                                           system.getProperty('environments', extension='atomistic', suffix=self.suffix),
+                                           extension='atomistic')
                 except Exception:
                     pass
-                structure1 = offspring1.getProperty('structure', prefix='atomistic')
+                structure1 = offspring1.getProperty('structure', extension='atomistic')
                 minDistMatrix = self.bondUtility.getDistances(structure1.getAtomTypes(),
                                                               self.conditions.externalPressure)
                 if self.simpleMoleculeUtility.checkMinDistances(offspring1, minDistMatrix):
@@ -79,11 +79,11 @@ class Softmodemutation:
                 offspring2 = offspringFactory(**offspring2)
                 try:
                     offspring2.setProperty('environments',
-                                           system.getProperty('environments', prefix='atomistic', suffix=self.suffix),
-                                           prefix='atomistic')
+                                           system.getProperty('environments', extension='atomistic', suffix=self.suffix),
+                                           extension='atomistic')
                 except Exception:
                     pass
-                structure2 = offspring2.getProperty('structure', prefix='atomistic')
+                structure2 = offspring2.getProperty('structure', extension='atomistic')
                 minDistMatrix = self.bondUtility.getDistances(structure2.getAtomTypes(),
                                                               self.conditions.externalPressure)
                 if self.simpleMoleculeUtility.checkMinDistances(offspring2, minDistMatrix):

@@ -3,25 +3,28 @@ from copy import copy, deepcopy
 
 
 class RemoveAtom:
-    def __init__(self, utilities):
+    def __init__(self, utilities, suffix):
+        self.atomistic = utilities.atomistic
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
         self.bondUtility = utilities.bondUtility
         self.conditions = utilities.conditions
         self.cellUtility = utilities.cellUtility
+        self.suffix = suffix
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("RemoveAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
 
     def __call__(self, system, offspringFactory=None):
-        ID = system['ID']
-        molecules = system['molecules']
-        cell = system['cell']
-        if 'tagsAddRemove' not in system:
-            system['tagsAddRemove'] = [[] for _ in range(len(molecules))]
-        tagsAddRemove = system['tagsAddRemove']
-        structure, disassembler = offspringFactory.atomicDisassemblerType.assemble(molecules, cell)  # ,environment)
+        molecules = system.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        environments = system.getProperty('environments', extension='atomistic', suffix=self.suffix)
+        if 'addRemove.tags.origin' not in system:
+            system.setProperty('tags', [[] for _ in range(len(molecules))], extension='addRemove', suffix='origin')
+        tagsAddRemove = system.getProperty('tags', extension='addRemove', suffix='origin')
+        structure, disassembler = self.atomistic.atomicDisassemblerType.assemble({'atomistic.molecules': molecules,
+                                                                                  'atomistic.cell': cell})
         atomTypes = structure.getAtomTypes()
         species = np.unique(atomTypes)
 
@@ -41,23 +44,20 @@ class RemoveAtom:
             else:
                 raise RuntimeError("RemoveAtom failed.")
 
-            offspring = {'molecules': [], 'cell': cell}
-            offspring['molecules'][0:0] = molecules
-            del offspring['molecules'][molInd]
-            if 'environments' in system:
-                offspring['environments'] = system['environments']
+            offspring = {'atomistic.molecules': copy(molecules), 'atomistic.cell': cell}
+            del offspring['atomistic.molecules'][molInd]
+            offspring['atomistic.environments'] = environments
             offspring = offspringFactory(**offspring)
-            structure = offspring.getAtomicStructure()
-            minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
-                                                          self.conditions.externalPressure)
+            offspringAtomTypes = offspring.getProperty('structure', extension='atomistic').getAtomTypes()
+            minDistMatrix = self.bondUtility.getDistances(offspringAtomTypes, self.conditions.externalPressure)
             if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix) \
-                    and self.compositionSpace.isGoodComposition(self.simpleMoleculeUtility.composition(offspring)):
+                    and self.compositionSpace.isGoodComposition(offspring.getProperty('composition', extension='simpleMoleculeUtility')):
                 self.conditions.putConditions(offspring)
                 tagsAddRemove[molInd].append('removed')
-                offspring.setProperty('tagsAddRemove', deepcopy(tagsAddRemove))
-                del offspring['tagsAddRemove'][molInd]
-                # structure, disassembler = self.simpleMoleculeUtility.structureType.assemble(**offspring)
-                # if self.bonds.isConnected(structure):
+                system.setProperty('tags', tagsAddRemove, extension='addRemove', suffix='origin')
+                tagsAddRemove_offspring = deepcopy(tagsAddRemove)
+                del tagsAddRemove_offspring[molInd]
+                offspring.setProperty('tags', tagsAddRemove_offspring, extension='addRemove')
                 return offspring,
 
         raise RuntimeError("RemoveAtom failed.")

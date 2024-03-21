@@ -11,11 +11,13 @@ from .symope.splitBigCell import splitBigCell
 from .symope.symope_crystal import symope_crystal
 from .symope.symope_cluster import symope_cluster
 from time import time
+import signal
 
 from ..Transformation import Transformation
 from ...SpaceGroups.SpaceGroups3D import Group
 
 MAX_RANDOM_FAILED_DIST = 10000
+EXIT_TIME = 1200
 MAX_RANDOM_TIME = 300
 ATTEMPTS_ROTATION = 1
 
@@ -88,8 +90,12 @@ class RandSym:
         self.attemptsRotation = attemptsRotation
         if debug:
             logger.setLevel(logging.DEBUG)
-
+        signal.signal(signal.SIGALRM, signal_handler)
         self.fixRndSeed = False
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        signal.signal(signal.SIGALRM, signal_handler)
 
     def __call__(self, offspringFactory=None):
         composition = self.compositionSpace.randomComposition()
@@ -123,6 +129,7 @@ class RandSym:
             centerMinDistMatrix[i, j] = centerMinDistMatrix[j, i] = (radii[i] + radii[j])
         distCoeff = 1.0
 
+        signal.alarm(EXIT_TIME)
         while True:
             envAssembler = np.random.choice(self.environmentUtility.environments) if self.environmentUtility.environments\
                 else None
@@ -184,21 +191,22 @@ class RandSym:
                                                     estimatedVolume, self.sym_coef)
                 name, cell, operations = determineOperations(lat, numIons, candidate)
                 operations = dict(zip(symbols, operations))
-                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons), baseCell=envCell)
+                cell = self.cellUtility.adjustCell(cell, estimatedVolume, sum(numIons)) #, baseCell=envCell
                 for i in range(self.attemptsRotation):
                     offspring = offspringFactory(**self.simpleMoleculeUtility.populateStructure(cell, operations))
-                    molecules = offspring['atomistic.molecules.origin']
-                    cell = offspring['atomistic.cell.origin']
+                    molecules = offspring.getProperty('molecules', extension='atomistic')
+                    cell = offspring.getProperty('cell', extension='atomistic')
                     if envAssembler is not None:
                         offspring.setProperty('environments',
                                               envAssembler.assemble(molecules, cell),
-                                              prefix='atomistic')
-                    structure = offspring.getProperty('structure', prefix='atomistic')
+                                              extension='atomistic')
+                    structure = offspring.getProperty('structure', extension='atomistic')
                     minDistMatrix = self.bondUtility.getDistances(
                         structure.getAtomTypes(), self.conditions.externalPressure)
                     if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):
                         self.conditions.putConditions(offspring)
                         if self.bondUtility.isConnected(structure):
+                            signal.alarm(0)
                             return offspring,
             except Exception as e:
                 logger.debug(e, exc_info=True)
@@ -230,3 +238,6 @@ def parseIntSet(nputstr=""):
            # not an int and not a range...
            invalid.add(i)
   return selection
+
+def signal_handler(signum, frame):
+    raise Exception("Timed out!")

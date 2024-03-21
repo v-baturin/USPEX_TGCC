@@ -16,12 +16,10 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 
-from USPEX.Expressions.Functions.PowderSpectrumAnalyzerFunctions import PowderSpectrumAnalyzerFunctions
+from ..Expressions.Functions.PowderSpectrumAnalyzerFunctions import PowderSpectrumAnalyzerFunctions
 
 
 class PowderSpectrumAnalyzer(object):
-
-    propertyExtension = PowderSpectrumAnalyzerFunctions
 
     def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
                  exp_angles: list, exp_intensities: list):
@@ -49,6 +47,9 @@ class PowderSpectrumAnalyzer(object):
         self.match_tol = match_tol
         self.exp_angles = np.array(exp_angles)
         self.exp_intensities = np.array(exp_intensities) / max(exp_intensities) * 100
+
+    def propertyExtension(self):
+        return PowderSpectrumAnalyzerFunctions(self)
 
     def analyze(self, system):
         """
@@ -87,8 +88,8 @@ class PowderSpectrumAnalyzer(object):
         if not result.success:
             raise RuntimeError('Scipy minimize could not calculate the agreement with experimental X-ray data.')
 
-        system['powderSpectrumAnalyzer.xraydistance'] = result.fun
-        system['powderSpectrumAnalyzer.k'] = result.x[0]
+        system.setProperty('xraydistance', result.fun, extension='powderSpectrumAnalyzer')
+        system.setProperty('k', result.x[0], extension='powderSpectrumAnalyzer')
 
     @staticmethod
     def parse(filename: str):

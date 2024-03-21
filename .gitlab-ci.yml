@@ -17,8 +17,10 @@ test_sources:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase1
   script:
+    - pip install pip-tools
+    - pip-compile -o requirements.txt pyproject.toml
+    - pip-sync
     - pip install nose
-    - pip install ase pymatgen abipy asyncssh pandas scikit-learn prettytable parsec pyxtal torch alphashape
     - cd USPEX
     - nosetests -v .
 
@@ -38,8 +40,10 @@ test_binaries:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase2
   script:
+    - pip install pip-tools
+    - pip-compile -o requirements.txt pyproject.toml
+    - pip-sync
     - pip install nose
-    - pip install ase pymatgen abipy asyncssh pandas scikit-learn prettytable parsec pyxtal torch alphashape
     - mkdir binaries && unzip dist/uspex-*-cp38-cp38-linux_x86_64.whl -d binaries
     - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./binaries/$(dirname {}) && mv {} ./binaries/$(dirname {})'
     - cd binaries/USPEX
@@ -49,6 +53,9 @@ test_package:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
   stage: test_phase3
   script:
+    - pip install pip-tools
+    - pip-compile -o requirements.txt pyproject.toml
+    - pip-sync
     - pip install dist/uspex-*-cp38-cp38-linux_x86_64.whl
     - cd testFolder
     - uspex -r
@@ -60,6 +67,9 @@ build_documentation:
   image: python:3.8
   stage: build_phase3
   script:
+    - pip install pip-tools
+    - pip-compile -o requirements.txt pyproject.toml
+    - pip-sync
     - pip install sphinx dist/uspex-*-cp38-cp38-linux_x86_64.whl
     - sphinx-build -b html sphinx build_docs
   artifacts:

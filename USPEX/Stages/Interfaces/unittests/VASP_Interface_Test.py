@@ -17,8 +17,15 @@ from pathlib import Path
 
 import numpy as np
 
-from ....Optimizers.PoolEntry import PoolEntry
-from ....components import AtomisticRepresentation, VASP_Interface, Atomistic
+from ..VASP_Interface import VASP_Interface
+from ....Optimizers.PoolEntry import EntryFlavour
+from ....Atomistic.Primitives.Element import Element
+from ....Atomistic.Primitives.Cell import Cell
+from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
+from ....IO.AtomicStructureRepresentation import AtomicStructureRepresentation
+from ....Atomistic.Atomistic import Atomistic
+Atomistic.registerTypes(AtomicStructure, Element, Cell, AtomicStructureRepresentation)
+VASP_Interface.registerTypes(AtomicStructureRepresentation)
 
 
 HOMEPATH = Path(__file__).parent
@@ -31,27 +38,28 @@ class VASP_CalculatorTest2(unittest.TestCase):
     """
     Checking correct parsing properties
     """
+
     def test_life(self):
         vasp = VASP_Interface(tag='1', 
                               incar=SPECIFICPATH/'INCAR_1',
                               potcarsPath=SPECIFICPATH,
-                              kresol=0.13)
+                              kresol=0.13, targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
         for ID in range(10):
-            structure = AtomisticRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
-            disassembler = AtomisticRepresentation.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
-            system = PoolEntry(extensions=extensions, ID=ID)
-            system.setProperty('externalPressure', 0.0001)
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='intermediate')
-            system.setProperty('disassembler', disassembler, prefix='atomistic', suffix='1')
-            system.setProperty('structure', structure, prefix='atomistic', suffix='intermediate')
+            structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))
+            disassembler = Atomistic.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1)))
+            intermediate = disassembler.disassemble(structure)
+            intermediate['.externalPressure'] = 0.0001
+            intermediate['.ID'] = ID
+            intermediate['atomistic.disassembler'] = disassembler
+            intermediate = EntryFlavour(extensions=extensions, **intermediate)
             WORKPATH.mkdir(exist_ok=True, parents=True)
-            vasp.prepareLocalCalculation(system, WORKPATH)
-            folder = GATHEREDPATH/'input'/f"CalcFold{system['ID']}"
+            vasp.prepareLocalCalculation(intermediate, WORKPATH)
+            folder = GATHEREDPATH/'input'/f"CalcFold{ID}"
             dcmp = filecmp.dircmp(folder, WORKPATH)
             match = not dcmp.diff_files
             for common_dir in dcmp.common_dirs:
@@ -59,11 +67,11 @@ class VASP_CalculatorTest2(unittest.TestCase):
             shutil.rmtree(WORKPATH)
             self.assertTrue(match)
             folder = GATHEREDPATH/'output'
-            shutil.copytree(folder/f"CalcFold{system['ID']}", WORKPATH)
-            vasp.readOutput(system, WORKPATH)
+            shutil.copytree(folder/f"CalcFold{ID}", WORKPATH)
+            result = vasp.readOutput(intermediate, WORKPATH)
             shutil.rmtree(WORKPATH)
-            structureRef = AtomisticRepresentation.readPOSCAR(folder/f"system{system['ID']}.vasp", (1, 1, 1))
-            structure = system.getProperty('structure', prefix='atomistic', suffix='1')
+            structureRef = AtomicStructureRepresentation.readPOSCAR(folder/f"system{ID}.vasp", (1, 1, 1))
+            structure = result.getProperty('structure', extension='atomistic')
             cell = structure.getCell()
             cellRef = structureRef.getCell()
             self.assertTrue(np.allclose(cell.getCellVectors(),
@@ -85,7 +93,8 @@ class VASP_interfaceTest(unittest.TestCase):
         self.interface = VASP_Interface(tag='1',
                                         incar=wd/'Specific/INCAR_1',
                                         potcarsPath=wd/'Specific',
-                                        kresol=0.05)
+                                        kresol=0.05,
+                                        targetProperties=['structure', 'enthalpy'])
 
         with open(outcar, 'rt') as f:
             content = f.readlines()
@@ -118,13 +127,12 @@ class VASP_interface_MD_Test(unittest.TestCase):
                                         kresol=0.06, targetProperties=['trajectory'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension(atomistic)
+            atomistic=atomistic.propertyExtension()
         )
 
-        system = PoolEntry(extensions=extensions, ID=0)
-        self.interface.readOutput(system, wd)
-        self.assertGreater(len(system['.trajectory.1']), 1)
-        for data in system['.trajectory.1']:
+        result = self.interface.readOutput(EntryFlavour(extensions=extensions), wd)
+        self.assertGreater(len(result['.trajectory']), 1)
+        for data in result['.trajectory']:
             self.assertTrue(len(data['structure']) == 3)
-            self.assertTrue('energy' in data['results'].results)
-            self.assertTrue('forces' in data['results'].results)
+            self.assertTrue('energy' in data['results'])
+            self.assertTrue('forces' in data['results'])

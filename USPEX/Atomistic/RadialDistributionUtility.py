@@ -5,6 +5,7 @@ USPEX.Atomistic.RadialDistributionUtility
     Reference: A.R. Oganov, M. Valle. How to quantify energy landscapes. J. Chem. Phys, 104504, 2009.
 """
 
+import logging
 import numpy as np
 from typing import Dict, Tuple
 from collections.abc import Mapping
@@ -13,7 +14,10 @@ from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
 
-from USPEX.Expressions.Functions.RadialDistributionFunctions import RadialDistributionFunctions
+from ..Expressions.Functions.RadialDistributionFunctions import RadialDistributionFunctions
+
+
+logger = logging.getLogger(__name__)
 
 
 RMAX_DEFAULT = 10.0
@@ -143,8 +147,6 @@ class RadialDistributionUtility(object):
     Utility for working with radial distribution related properties of systems.
     """
 
-    propertyExtension = RadialDistributionFunctions
-
     def __init__(self, symbols, suffix, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
                  legacy=False):
         """
@@ -165,6 +167,10 @@ class RadialDistributionUtility(object):
         self.tolerance = tolerance
         self.legacy = legacy
         self.distances = {}
+        self.legacy_distances = {}
+
+    def propertyExtension(self):
+        return RadialDistributionFunctions(self)
 
     def clean(self, system):
         """
@@ -173,18 +179,9 @@ class RadialDistributionUtility(object):
         :param system: dictionary describing system.
 
         """
-        if f'radialDistribitionUtility.structureFingerprint.{self.suffix}' in system:
-            system.delProperty('structureFingerprint', prefix='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.complexFingerprint.{self.suffix}' in system:
-            system.delProperty('complexFingerprint', prefix='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.structureOrder.{self.suffix}' in system:
-            system.delProperty('structureOrder', prefix='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.atomFingerprints.{self.suffix}' in system:
-            system.delProperty('atomFingerprints', prefix='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.order.{self.suffix}' in system:
-            system.delProperty('order', prefix='radialDistribitionUtility', suffix=self.suffix)
-        if f'radialDistribitionUtility.quasientropy.{self.suffix}' in system:
-            system.delProperty('quasientropy', prefix='radialDistribitionUtility', suffix=self.suffix)
+        systemFlavour = system.getFlavour(self.suffix)
+        systemFlavour.delProperty('structureFingerprint', extension='radialDistributionUtility')
+        systemFlavour.delProperty('complexFingerprint', extension='radialDistributionUtility')
 
     def calcFingerprint(self, system):
         """
@@ -395,14 +392,14 @@ class RadialDistributionUtility(object):
                 if len(comb) > 0:
                     sQE += weight[i] * tmp / len(comb)
 
-        system['radialDistribitionUtility.order'] = molOrder
-        system['radialDistribitionUtility.averageOrder'] = a_order
-        system['radialDistribitionUtility.structureOrder'] = s_order
-        system['radialDistribitionUtility.structureFingerprint'] = fingerprint
-        system['radialDistribitionUtility.complexFingerprint'] = complexFingerprint
-        system['radialDistribitionUtility.quasientropy'] = -sQE
+        system.setProperty('order', molOrder, extension='radialDistributionUtility')
+        system.setProperty('averageOrder', a_order, extension='radialDistributionUtility')
+        system.setProperty('structureOrder', s_order, extension='radialDistributionUtility')
+        system.setProperty('structureFingerprint', fingerprint, extension='radialDistributionUtility')
+        system.setProperty('complexFingerprint', complexFingerprint, extension='radialDistributionUtility')
+        system.setProperty('quasientropy', -sQE, extension='radialDistributionUtility')
 
-    def dist(self, system1, system2):
+    def dist(self, system1, system2, legacy=None):
         """
         Calculated distance between two systems. First it retrieves structure fingerprints of systems.
         Then calculates cosine distance between them.
@@ -412,17 +409,17 @@ class RadialDistributionUtility(object):
 
         :return: distance between systems.
         """
-        pair = frozenset((system1['ID'], system2['ID'])) if 'ID' in system1 and 'ID' in system2 else None
-        if pair not in self.distances:
-            if self.legacy:
-                distance = Fingerprint.cosine_distance(system1[f'radialDistributionUtility.structureFingerprint.{self.suffix}'],
-                                                       system2[f'radialDistributionUtility.structureFingerprint.{self.suffix}'])
-            else:
-                distance = ComplexFingerprint.dist(system1[f'radialDistributionUtility.complexFingerprint.{self.suffix}'],
-                                                   system2[f'radialDistributionUtility.complexFingerprint.{self.suffix}'])
-            if pair is not None:
-                self.distances[pair] = distance
+        legacy = self.legacy if legacy is None else legacy
+        pair = (system1.ID, system2.ID) if system1.ID < system2.ID else (system2.ID, system1.ID)
+        if legacy:
+            if pair not in self.legacy_distances:
+                expr = f'radialDistributionUtility.structureFingerprint.{self.suffix}'
+                self.legacy_distances[pair] = Fingerprint.cosine_distance(system1[expr], system2[expr])
+            distance = self.legacy_distances[pair]
         else:
+            if pair not in self.distances:
+                expr = f'radialDistributionUtility.complexFingerprint.{self.suffix}'
+                self.distances[pair] = ComplexFingerprint.dist(system1[expr], system2[expr])
             distance = self.distances[pair]
         return distance
 
@@ -564,7 +561,7 @@ def _make_matrices(coor: np.ndarray, molIndices: list, envIndices,
             for inds in molIndices:
                 if i in inds:
                     ignoreDist.update(inds + central_cell_shift)
-            to_delete = np.asarray(list(ignoreDist))
+            to_delete = np.asarray(list(ignoreDist), dtype=int)
 
         tmp_dist = np.delete(tmp_dist, to_delete, axis=1)
         tmp_type = np.delete(tmp_type, to_delete, axis=0)

@@ -1,11 +1,16 @@
 import logging
 
 import numpy as np
+from itertools import product
 from ase.geometry import get_distances
+
+from ..Optimizers.PoolEntry import PoolEntry
 
 logger = logging.getLogger(__name__)
 
+
 class AtomisticStage:
+    EV_PER_CUBIC_ANGSTREM_PER_GPA = 1 / 160.21766208
 
     executorType = None
 
@@ -13,97 +18,174 @@ class AtomisticStage:
     def registerTypes(cls, executorType):
         cls.executorType = executorType
 
-    def __init__(self, tag, source=None, perturbate: bool = False, target=None, environmentStyle=None, vacuumSize=0, **kwargs):
+    def __init__(self, tag, source=None, perturbate: bool = False, target=None, environmentStyle=None, vacuumSize=0,
+                 targetProperties=None, **kwargs):
         self.tag = tag
         self.source = source
         self.perturbate = perturbate
         self.target = target
         self.environmentStyle = environmentStyle
         self.vacuumSize = vacuumSize
-        self.executor = self.executorType(tag=tag, **kwargs)
+        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.kwargs = kwargs
+        self.executor = self.executorType(tag=tag, targetProperties=self.targetProperties, **kwargs)
 
-    async def run(self, system):
+    async def run(self, system: PoolEntry):
         if self.environmentStyle != 'noEnvironment':
-            structure = system.getProperty('structure', prefix='atomistic', suffix=self.source)
-            disassembler = system.getProperty('disassembler', prefix='atomistic', suffix=self.source)
+            structure = system.getProperty('structure', extension='atomistic', suffix=self.source)
+            disassembler = system.getProperty('disassembler', extension='atomistic', suffix=self.source)
         else:
-            structure, disassembler = system.atomicDisassemblerType.assemble({
-                'atomistic.molecules': system[f'atomistic.molecules.{self.source}'],
-                'atomistic.cell': system[f'atomistic.cell.{self.source}']
+            source = system.getFlavour(self.source)
+            structure, disassembler = source.extensions['atomistic'].atomicDisassemblerType.assemble({
+                'atomistic.molecules': source[f'atomistic.molecules'],
+                'atomistic.cell': source[f'atomistic.cell']
             })
         if self.perturbate:
             structure = structure.getPerturbatedStructure(disassembler.fixedIndices)
-        
-        system.system['intermediate'] = disassembler.disassemble(structure)
-        system.setProperty('vacuumSize', self.vacuumSize, suffix='intermediate')
+        intermediate = disassembler.disassemble(structure)
+        intermediate['.ID'] = system.ID
+        intermediate['.vacuumSize'] = self.vacuumSize
+        intermediate['.externalPressure'] = system.getProperty('externalPressure', suffix='origin')
+        intermediate = system.flavourFactory(**intermediate)
 
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
-        system.setProperty('disassembler', disassembler, prefix='atomistic', suffix=self.tag)
+        try:
+            result = await self.executor.run(system.ID, intermediate)
+        except Exception as ex:
+            logger.warning(f'system {system.ID} error in relaxation:')
+            logger.exception(ex)
+            system.setProperty('isBad', True, suffix=self.tag)
+            return
+        disassembler = intermediate.getProperty('disassembler', extension='atomistic')
+        result.setProperty('disassembler', disassembler, extension='atomistic')
+        if 'structure' in self.targetProperties:
+            self.systemCheckAndFix(system.ID, result)
+        if 'enthalpy' in self.targetProperties and '.enthalpy' not in result:
+            structure = result.getProperty('structure', extension='atomistic')
+            pressure = system.getProperty('externalPressure', suffix='origin')
+            energy = result.getProperty('energy')
+            enthalpy = energy + structure.getCell().getVolume() * pressure * self.EV_PER_CUBIC_ANGSTREM_PER_GPA
+            result.setProperty('enthalpy', enthalpy)
+        system.addFlavour(self.tag, result)
+        if 'structure' in self.targetProperties and self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules:
+            self.checkAndFixMolecules(system)
 
-        await self.executor.run(system)
-        self.systemCheckAndFix(system)
-        self.checkAndFixMolecules(system)
-
-    def systemCheckAndFix(self, system):
+    def systemCheckAndFix(self, ID, system):
         """
-        Checks if given system complies set up constraints.
-        If it does, make surtain adjustments, like align the system along required axis.
+        Checks if given system complies with set up constraints.
+        If it does, make certain adjustments, like align the system along required axis.
         :param system: system to be checked and fixed
         """
-        structure = system.getProperty('structure', prefix='atomistic', suffix=self.tag)
-        cell = system.getProperty('cell', prefix='atomistic', suffix=self.tag)
-        minDistMatrix = self.target.utilities.bondUtility.getDistances(structure.getAtomTypes(),
-                                                      self.target.utilities.conditions.externalPressure)
-        goodStructure = self.target.utilities.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix)\
-                        and self.target.utilities.cellUtility.isGoodCell(cell)
-        # and self.compositionSpace.isGoodComposition(self.simpleMoleculeUtility.composition(system))
+        goodStructure = True
+        structure = system.getProperty('structure', extension='atomistic')
+        # if goodStructure:
+        #     composition = self.target.utilities.simpleMoleculeUtility.composition(system)
+        #     goodStructureInc = goodStructure and self.target.utilities.compositionSpace.isGoodComposition(composition)
+        #     goodStructure = goodStructure and goodStructureInc
+        #     if not goodStructureInc:
+        #         logger.info(f'system {ID} violates composition constraints')
         if goodStructure:
-            goodStructure = goodStructure and self.target.utilities.bondUtility.isConnected(structure)
+            minDistMatrix = self.target.utilities.bondUtility.getDistances(structure.getAtomTypes(),
+                                                                           self.target.utilities.conditions.externalPressure)
+            goodStructureInc = self.target.utilities.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix)
+            goodStructure = goodStructure and goodStructureInc
+            if not goodStructureInc:
+                logger.info(f'system {ID} violates minimal distances constraints')
+        if goodStructure:
+            cell = system.getProperty('cell', extension='atomistic')
+            goodStructureInc = self.target.utilities.cellUtility.isGoodCell(cell)
+            goodStructure = goodStructure and goodStructureInc
+            if not goodStructureInc:
+                logger.info(f'system {ID} violates cell shape constraints')
+        if goodStructure:
+            goodStructureInc = self.target.utilities.bondUtility.isConnected(structure)
+            goodStructure = goodStructure and goodStructureInc
+            if not goodStructureInc:
+                logger.info(f'system {ID} is broken into isolated components')
+        if goodStructure:
             cell = structure.getRectifiedCell()
             coordinates = cell.cartesianToFractional(structure.getCartesianCoordinates())
-            if self.target.utilities.cellUtility.getDim() == 1 or self.target.utilities.cellUtility.getDim() == 2:
+            dim = self.target.utilities.cellUtility.getDim()
+            if dim == 1 or dim == 2:
                 cell = cell.getAlignedCell(self.target.utilities.cellUtility.getAxis())
-            structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell)
-            system.setProperty('structure', structure, prefix='atomistic', suffix=self.tag)
-        system.setProperty('isBad', not goodStructure, suffix=self.tag)
+            structure = type(structure).initFromFractionalCoordinates(structure.getAtomTypes(), coordinates, cell,
+                                                                      edges=structure.edges)
+            system.setProperty('structure', structure, extension='atomistic')
+        system.setProperty('isBad', not goodStructure)
 
     def checkAndFixMolecules(self, system):
         correctorDict = dict()
-        moleculesSink = system.getProperty('molecules', prefix='atomistic', suffix=self.tag)
-        moleculesSource = system.getProperty('molecules', prefix='atomistic', suffix=self.source)
-        cellSink = system.getProperty('cell', prefix='atomistic', suffix=self.tag)
-        cellSource = system.getProperty('cell', prefix='atomistic', suffix=self.source)
+        moleculesSink = system.getProperty('molecules', extension='atomistic', suffix=self.tag)
+        moleculesSource = system.getProperty('molecules', extension='atomistic', suffix=self.source)
+        cellSink = system.getProperty('cell', extension='atomistic', suffix=self.tag)
+        cellSource = system.getProperty('cell', extension='atomistic', suffix=self.source)
         for i, molSink in enumerate(moleculesSink):
-            if len(molSink) > 1:
+            nAtoms = len(molSink)
+            if nAtoms > 1:
                 molSource = moleculesSource[i]
+                if self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'edges':
+                    ADJ_MAT = np.zeros((nAtoms, nAtoms))
+                    ADJ_MAT[molSource.edges[:, 0], molSource.edges[:, 1]] = 1
+                    ADJ_MAT += ADJ_MAT.T
+                elif self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'all':
+                    ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms)
+                molSink.edges = molSource.edges
                 distMatSource = molSource.getAllDistances()
-                cartCoordsSink  =  molSink.getCartesianCoordinates()
-                distMatSink = get_distances(cartCoordsSink, cell=cellSink.getCellVectors(),
-                              pbc=cellSink.getPBC())[1]
-                diff = np.max(np.abs(distMatSink - distMatSource) / (distMatSource + np.eye(len(distMatSource))))
-                distMatSinkNoPBC = molSink.getAllDistances()
-                diffNoPBC = np.max(np.abs(distMatSinkNoPBC - distMatSource) /
-                                   (distMatSource + np.eye(len(distMatSource))))
-                if self.target.utilities.simpleMoleculeUtility.checkIntegrityType == 'rigid':
-                    if diff > self.target.utilities.simpleMoleculeUtility.integrityTol:
-                        logger.info(f'system {system["ID"]}: broken molecule detected')
-                        system.setProperty('isBad', True, suffix=self.tag)
+                checkedAndFixedGen = self.checkAndFixWrap(cellSource, molSource, distMatSource, cellSink, molSink,
+                                                          ADJ_MAT)
+                for k_try, newCoords in enumerate(checkedAndFixedGen):
+                    if np.all(np.abs(get_distances(newCoords)[1] - distMatSource) * ADJ_MAT <=
+                              distMatSource * self.target.utilities.simpleMoleculeUtility.integrityTol):
+                        if k_try > 0:
+                            correctorDict[i] = newCoords
                         break
-                if diffNoPBC - diff > 1e-5:
-                    logger.debug(f'system {system["ID"]}: wrapped molecule detected, unwrapping')# ith molecule is wrapped
-                    fractSource = cellSource.cartesianToFractional(molSource.getCartesianCoordinates())
-                    fractSink = cellSink.cartesianToFractional(molSink.getCartesianCoordinates())
-                    wrapping = np.round(fractSink - fractSource)
-                    newFractSink = fractSink - wrapping
-                    correctorDict[i] = cellSink.fractionalToCartesian(newFractSink)
+                else:
+                    logger.info(f'system {system["ID"]}: broken molecule detected')
+                    system.setProperty('isBad', True, suffix=self.tag)
+                    break
+
         for i, coords in correctorDict.items():
             badMol = moleculesSink[i]
             moleculesSink[i] = type(badMol)(atomTypes=badMol.getAtomTypes(), coordinates=coords,
-                                             cell = badMol.getCell(),
-                                             zmatrixConfig = badMol.getZmatrixConfig())
+                                            cell=badMol.getCell(),
+                                            edges=badMol.edges)
         if correctorDict:
-            system.setProperty('molecules', moleculesSink, prefix='atomistic', suffix=self.tag)
+            logger.debug(
+                f'system {system["ID"]}: unwrapped {len(correctorDict)} molecules')
+            system.setProperty('molecules', moleculesSink, extension='atomistic', suffix=self.tag)
 
+    def checkAndFixWrap(self, cellSource, molSource, distMatSource, cellSink, molSink, adjMatrix):
+        newMolSinkCoords = molSink.getCartesianCoordinates()
+        yield newMolSinkCoords
+        fractSource = cellSource.cartesianToFractional(molSource.getCartesianCoordinates())
+        fractSink = cellSink.cartesianToFractional(newMolSinkCoords)
+        wrapping = np.round(fractSink - fractSource)
+        newFractSink = fractSink - wrapping
+        yield cellSink.fractionalToCartesian(newFractSink)  # first guess: dewrap if xfrac changes more than by 0.5
+        nAtoms = len(molSource)
+        distMatSink = molSink.getAllDistances()
+        relativeDiff = np.abs(distMatSink - distMatSource) * adjMatrix / (distMatSource + np.eye(nAtoms))
+        isBadDist = relativeDiff > self.target.utilities.simpleMoleculeUtility.integrityTol
+        for idxBadDistA in np.where(isBadDist)[0]:
+            for idxBadDistB in idxBadDistA + np.where(isBadDist[idxBadDistA, idxBadDistA:])[0]:
+                coordA = newMolSinkCoords[idxBadDistA]
+                coordB = newMolSinkCoords[idxBadDistB]
+                sourceDist = distMatSource[idxBadDistA, idxBadDistB]
+                newCoordsB = self.dewrapAtomB(coordA, coordB, sourceDist, cellSink)
+                if newCoordsB is not None:
+                    newMolSinkCoords[idxBadDistB] = newCoordsB
+                    isBadDist[idxBadDistB] = False
+                    isBadDist[:, idxBadDistB] = False
+                else:
+                    return
+        yield newMolSinkCoords
 
-
-
+    def dewrapAtomB(self, coordA, coordB, sourceDist, cellSink):
+        allwrappings = np.array(list(product(*[range(i, f + 1) for i, f in zip((-1, -1, -1), (1, 1, 1))])))
+        wrappingsOfB = coordB - allwrappings @ cellSink.getCellVectors()
+        good_wrap_idx = np.where(np.abs(get_distances(wrappingsOfB, coordA)[1] - sourceDist) / sourceDist <
+                                 self.target.utilities.simpleMoleculeUtility.integrityTol)[0]
+        if len(good_wrap_idx) == 1:
+            return wrappingsOfB[good_wrap_idx[0]]
+        elif len(good_wrap_idx) > 1:
+            logger.warning("atom with frac coords {:.3f} {:.3f} {:.3f}: ambiguous dewrapping".format(
+                *cellSink.cartesianToFractional(coordB)))

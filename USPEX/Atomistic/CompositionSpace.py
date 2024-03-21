@@ -8,7 +8,7 @@ import numpy as np
 from copy import copy
 from collections import Counter
 
-from USPEX.Expressions.Functions.CompositionSpaceFunctions import CompositionSpaceFunctions
+from ..Expressions.Functions.CompositionSpaceFunctions import CompositionSpaceFunctions
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,6 @@ class CompositionSpace(object):
     """
     Describes the chemical compositions configuration space.
     """
-
-    expressionExtension = CompositionSpaceFunctions
 
     def __init__(self, symbols: list, blocks: list, range: list=None, minAt: int=None, maxAt: int=None):
         """
@@ -72,6 +70,9 @@ class CompositionSpace(object):
                 numIons *= factor
             assert numIons.sum() <= self.maxAt
             self.predefinedCompositions.append(Counter(dict(zip(self.symbols, numIons))))
+
+    def expressionExtension(self):
+        return CompositionSpaceFunctions(self)
 
     def isGoodComposition(self, composition) -> bool:
         """

@@ -42,6 +42,10 @@ class RandTop:
         self.arxiv = {}
         signal.signal(signal.SIGALRM, signal_handler)
 
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        signal.signal(signal.SIGALRM, signal_handler)
+
     def __call__(self, offspringFactory):
         composition = self.compositionSpace.randomComposition()
         envAssembler = np.random.choice(self.environmentUtility.environments) if self.environmentUtility.environments \
@@ -92,7 +96,7 @@ class RandTop:
                                         coordinates = []
                                         operations = []
                                         for atomNumber in np.argsort(permutationAtoms):
-                                            nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=np.int)
+                                            nodeIndices = np.asarray(list(nodePartition)[atomNumber], dtype=int)
                                             coordinates.append(flavour.group(flavour.sites[nodeIndices]))
                                             operations.append([flavour.operations[ind] for ind in nodeIndices])
                                         cell = np.asarray(params['cell']) * np.asarray(supercell)
@@ -111,8 +115,7 @@ class RandTop:
                                             estimatedVolume = self.bondUtility.volumeEstimator.calcCompositionVolume(
                                                 elementalComposition,
                                                 self.conditions.externalPressure)
-                                        cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber,
-                                                                           baseCell=envCell)
+                                        cell = self.cellUtility.adjustCell(cell, estimatedVolume, totalAtomNumber) #, baseCell=envCell
                                         operations = dict(zip(symbols, operations))
                                         all_coordinates = np.vstack([*itertools.chain(*coordinates)])
                                         attemptsRotation = self.attemptsRotation if self.simpleMoleculeUtility.isTrueMolecular else 1
@@ -128,15 +131,15 @@ class RandTop:
                                             for i in range(attemptsRotation):
                                                 offspring = offspringFactory(
                                                     **self.simpleMoleculeUtility.populateStructure(cell, operations))
-                                                molecules = offspring.getProperty('molecules', prefix='atomistic')
-                                                cell = offspring.getProperty('cell', prefix='atomistic')
+                                                molecules = offspring.getProperty('molecules', extension='atomistic')
+                                                cell = offspring.getProperty('cell', extension='atomistic')
                                                 if len(molecules) != totalAtomNumber:
                                                     continue
                                                 if envAssembler is not None:
                                                     offspring.setProperty('environments',
                                                                           envAssembler.assemble(molecules, cell),
-                                                                          prefix='atomistic')
-                                                structure = offspring.getProperty('structure', prefix='atomistic')
+                                                                          extension='atomistic')
+                                                structure = offspring.getProperty('structure', extension='atomistic')
                                                 minDistMatrix = self.bondUtility.getDistances(
                                                     structure.getAtomTypes(), self.conditions.externalPressure)
                                                 if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):

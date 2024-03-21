@@ -31,7 +31,7 @@ class SimpleMoleculeFunctions:
         return Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
 
     def density(self, system):
-        cell = system['cell']
+        cell = system['atomistic.cell']
         if cell.dim == 3:
             mass = sum(e.mass*v for e, v in self.utility.getElementalComposition(self.composition(system)).items())
             return mass/cell.getVolume()*DENSITY_CONST

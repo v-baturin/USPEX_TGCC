@@ -6,6 +6,7 @@ import numpy as np
 from collections import Counter
 
 from ..Slab import Slab
+from ..Transformation import Transformation
 
 ATTEMPTS = 100
 NSLUBS = 2
@@ -13,7 +14,7 @@ NSLUBS = 2
 
 class Heredity:
 
-    def __init__(self, utilities, suffix='4', nslabs = None, attempts = ATTEMPTS, debug = False):
+    def __init__(self, utilities, suffix, nslabs=None, randomizeCells=True, attempts=ATTEMPTS, debug=False):
         self.cellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
         self.compositionSpace = utilities.compositionSpace
@@ -23,6 +24,7 @@ class Heredity:
         self.conditions = utilities.conditions
         self.suffix = suffix
         self.nslabs = nslabs
+        self.randomizeCells = randomizeCells
         self.attempts = attempts
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -38,21 +40,17 @@ class Heredity:
             self.correlation = 0
 
     def __call__(self, system1, system2, offspringFactory=None):
-        molecules1 = system1.getProperty('molecules', prefix='atomistic', suffix=self.suffix)
-        cell1 = system1.getProperty('cell', prefix='atomistic', suffix=self.suffix)
-        composition1 = system1.getProperty('composition', prefix='simpleMoleculeUtility', suffix='origin')
-        order1 = system1.getProperty('order', prefix='radialDistributionUtility', suffix=self.suffix)
-        molecules2 = system2.getProperty('molecules', prefix='atomistic', suffix=self.suffix)
-        cell2 = system2.getProperty('cell', prefix='atomistic', suffix=self.suffix)
-        composition2 = system2.getProperty('composition', prefix='simpleMoleculeUtility', suffix='origin')
-        order2 = system2.getProperty('order', prefix='radialDistributionUtility', suffix=self.suffix)
-        try:
-            system = np.random.choice((system1, system2))
-            outputCell = system.getProperty('cell', prefix='atomistic', suffix=self.suffix)
-            parentEnv = system.getProperty('environments', prefix='atomistic', suffix=self.suffix)
-        except Exception:
-            parentEnv = None
-            outputCell = None
+        molecules1 = system1.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell1 = system1.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        composition1 = system1.getProperty('composition', extension='simpleMoleculeUtility', suffix='origin')
+        order1 = system1.getProperty('order', extension='radialDistributionUtility', suffix=self.suffix)
+        molecules2 = system2.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell2 = system2.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        composition2 = system2.getProperty('composition', extension='simpleMoleculeUtility', suffix='origin')
+        order2 = system2.getProperty('order', extension='radialDistributionUtility', suffix=self.suffix)
+        system = np.random.choice((system1, system2))
+        parentEnv = system.getProperty('environments', extension='atomistic', suffix=self.suffix)
+        outputCell = system.getProperty('cell', extension='atomistic', suffix=self.suffix) if parentEnv else None
 
         for i in range(self.attempts):
             if outputCell is None:
@@ -83,13 +81,22 @@ class Heredity:
                 else:
                     logger.debug(f"trying {outputCell.getCellParameters()} cell and {gaugesOfSlabs}-size slabs.")
 
-                slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
-                                             axis=axis, gaugesOfSlabs=gaugesOfSlabs,
-                                             order=order1, correlation=self.correlation, parity=0)
+                if self.randomizeCells:
+                    slabs1 = Slab.getRandomSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
+                                                 axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                                 order=order1, correlation=self.correlation, parity=0)
 
-                slabs2 = Slab.getRandomSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
-                                             axis=axis, gaugesOfSlabs=gaugesOfSlabs,
-                                             order=order2, correlation=self.correlation, parity=1)
+                    slabs2 = Slab.getRandomSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
+                                                 axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                                 order=order2, correlation=self.correlation, parity=1)
+                else:
+                    slabs1 = Slab.getSlabs(molecules=molecules1, inputCell=cell1, outputCell=outputCell,
+                                           axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                           transformation=Transformation.fromMatrix(np.eye(3), np.zeros(3)))
+
+                    slabs2 = Slab.getSlabs(molecules=molecules2, inputCell=cell2, outputCell=outputCell,
+                                           axis=axis, gaugesOfSlabs=gaugesOfSlabs,
+                                           transformation=Transformation.fromMatrix(np.eye(3), np.zeros(3)))
 
                 goodCandidateMolecules = []
                 goodCandidateDepths = []
@@ -129,8 +136,8 @@ class Heredity:
                     offspring = {'atomistic.molecules': molecules, 'atomistic.cell': outputCell}
                     offspring = offspringFactory(**offspring)
                     if parentEnv is not None:
-                        offspring.setProperty('environments', parentEnv, prefix='atomistic')
-                    structure = offspring.getProperty('structure', prefix='atomistic')
+                        offspring.setProperty('environments', parentEnv, extension='atomistic')
+                    structure = offspring.getProperty('structure', extension='atomistic')
                     minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
                                                                   self.conditions.externalPressure)
                     if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix):

@@ -12,12 +12,10 @@ import numpy as np
 from pymatgen.core.structure import Structure
 
 from .get_reflections import get_reflections
-from USPEX.Expressions.Functions.SingleCrystalSpectrumAnalyzerFunctions import SingleCrystalSpectrumAnalyzerFunctions
+from ..Expressions.Functions.SingleCrystalSpectrumAnalyzerFunctions import SingleCrystalSpectrumAnalyzerFunctions
 
 
 class SingleCrystalSpectrumAnalyzer(object):
-
-    propertyExtension = SingleCrystalSpectrumAnalyzerFunctions
 
     def __init__(self, expReflections: list, cellParameters: tuple):
         """
@@ -30,6 +28,9 @@ class SingleCrystalSpectrumAnalyzer(object):
         """
         self.exp_reflections = np.array(expReflections, dtype=object)
         self.cellParameters = cellParameters
+
+    def propertyExtension(self):
+        return SingleCrystalSpectrumAnalyzerFunctions(self)
 
     def analyze(self, system):
         """
@@ -90,7 +91,7 @@ class SingleCrystalSpectrumAnalyzer(object):
                 denominator += (1 / sigma_hkl ** 2) * i_hkl ** 2
 
             wR = np.sqrt(numerator / denominator)       # weighted R-factor
-            system['singleCrystalSpectrumAnalyzer.xraydistance'] = wR
+            system.setProperty('xraydistance', wR, 'singleCrystalSpectrumAnalyzer')
 
     @staticmethod
     def parse(hklFile: str):

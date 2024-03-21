@@ -37,15 +37,6 @@ class ABINIT_Interface:
     errorFile = 'error'
 
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
-
-    @classmethod
-    def registerTypes(cls, structureType, atomType, cellType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
 
     def __init__(self, tag: str, 
                        kresol: float,
@@ -76,7 +67,7 @@ class ABINIT_Interface:
 
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
         """
@@ -84,13 +75,16 @@ class ABINIT_Interface:
         :param calcFolder:
         :return:
         """
-        structure = system.getProperty('structure', prefix='atomistic', suffix='intermediate')
+        structure = system.getProperty('structure', extension='atomistic')
 
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
         coordinates = structure.getCartesianCoordinates()
         atomTypes = structure.getAtomTypes()
+
+
+        atomistic = system.getFactory().extensions['atomistic'].utility
 
         ############################# FILES FILE ################################
         for pp_file_path in self.pp_files:
@@ -105,7 +99,7 @@ class ABINIT_Interface:
 
             # pp files need to be ordered by increasing atomic number
             pp_files_names = [pp_file_path.name for pp_file_path in self.pp_files]
-            for pp_file_name in sorted(pp_files_names, key=lambda e: self.atomType(e.split('.')[0]).z):
+            for pp_file_name in sorted(pp_files_names, key=lambda e: atomistic.atomType(e.split('.')[0]).z):
                 f.write(f'{pp_file_name}\n')
 
         ############################## IN FILE ##################################
@@ -134,7 +128,7 @@ class ABINIT_Interface:
         with open(calcFolder/self.in_file_name, 'wt') as f:
             f.write(clean_in_file)
 
-        externalPressure = system.getProperty('externalPressure', suffix='origin')
+        externalPressure = system.getProperty('externalPressure')
         if externalPressure:
             with open(calcFolder/self.in_file_name, 'a') as myfile:
                 abipressure = -1 * externalPressure * GPA_TO_HARTREE_PER_CUBIC_BOHR
@@ -196,7 +190,7 @@ class ABINIT_Interface:
             f.write('\n# Definition of the atoms\n')
             f.write('xred\n')
             for pos in cell.cartesianToFractional(coordinates):
-                f.write('%18.14f %18.14f %18.14f\n' % tuple(pos))
+                f.write('%18.14f %18.14f %18.14f\n' % tuple(round(p, ndigits=14) + 0.0 for p in pos))
 
         return ''
 
@@ -286,26 +280,31 @@ class ABINIT_Interface:
 
         from abipy import abilab
         gsr = abilab.abiopen(calcFolder/self.gsr_file_name)
+        factory = system.getFactory()
+        atomistic = factory.extensions['atomistic'].utility
+        result = factory()
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:
                 pbc = tuple(int(c) for c in f.read().split())
-            system.setProperty('structure', self.readStructure(gsr, pbc), prefix='atomistic', suffix=self.tag)
+            result.setProperty('structure', self.readStructure(atomistic, gsr, pbc), extension='atomistic')
         if 'enthalpy' in self.targetProperties:
-            V = np.linalg.det(gsr.structure.lattice.matrix)
-            P = system.getProperty('externalPressure', suffix='origin')
-            enthalpy = float(gsr.energy) + P*V*EV_PER_CUBIC_ANGSTREM_PER_GPA
-            system.setProperty('enthalpy', enthalpy, suffix=self.tag)
+            # V = np.linalg.det(gsr.structure.lattice.matrix)
+            # P = system.getProperty('externalPressure', suffix='origin')
+            # enthalpy = float(gsr.energy) + P*V*EV_PER_CUBIC_ANGSTREM_PER_GPA
+            result.setProperty('energy', float(gsr.energy))
         if 'forces' in self.targetProperties:
-            system.setProperty('forces', np.copy(gsr.cart_forces), suffix=self.tag)
+            result.setProperty('forces', np.copy(gsr.cart_forces))
         if 'stressTensor' in self.targetProperties:
-            system.setProperty('stressTensor', np.copy(gsr.cart_stress_tensor), suffix=self.tag)
+            result.setProperty('stressTensor', np.copy(gsr.cart_stress_tensor))
+        return result
 
-    def readStructure(self, gsr, pbc):
+    @staticmethod
+    def readStructure(atomistic, gsr, pbc):
         tmp_positions = gsr.structure.cart_coords
-        atomTypes = [self.atomType(el.symbol) for el in gsr.structure.species]
+        atomTypes = [atomistic.atomType(el.symbol) for el in gsr.structure.species]
         positions = np.empty(tmp_positions.shape, dtype=float)
         atomSymbols = [el.short_name for el in atomTypes]
         for i, position in zip(np.argsort(atomSymbols), tmp_positions):
             positions[i] = position
-        cell = self.cellType(gsr.structure.lattice.matrix, pbc)
-        return self.structureType(atomTypes, positions, cell=cell)
+        cell = atomistic.cellType(gsr.structure.lattice.matrix, pbc)
+        return atomistic.structureType(atomTypes, positions, cell=cell)

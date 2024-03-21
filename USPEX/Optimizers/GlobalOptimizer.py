@@ -9,16 +9,20 @@ Class implementing global optimizer
 
 import logging
 from copy import copy
-from typing import List
-from itertools import chain
 
-from .SystemPool import SystemPool
-from .Target import Target, TargetType
-from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
-from USPEX.Expressions.Functions.presets import applyPresetsRecursive
+import numpy as np
 
 
 logger = logging.getLogger(__name__)
+
+
+class Generation:
+    population = None
+    goodPopulation = None
+    uniquePopulation = None
+    goodSystems = None
+    uniqueSystems = None
+    best = None
 
 
 class GlobalOptimizer(object):
@@ -30,46 +34,8 @@ class GlobalOptimizer(object):
 
     """
 
-    ExpressionEvaluator = None
-    entryType = None
-    knownSelectionTypes = {}
-    knownTargetTypes = {}
-
-    @classmethod
-    def setExpressionEvaluatorType(cls, ExpressionEvaluatorType: type):
-        cls.ExpressionEvaluator = ExpressionEvaluatorType
-
-    @classmethod
-    def registerSelection(cls, selectionType: type):
-        assert selectionType.__name__ not in cls.knownSelectionTypes, f'{selectionType.__name__} is not set as known Selection type'
-        cls.knownSelectionTypes[selectionType.__name__] = selectionType
-
-    @classmethod
-    def registerTarget(cls, name: str, utilities: List[type], hybridizations: List[type], mutations: List[type],
-                       creations: List[type], entry: type, seeds: type = None):
-        """
-        Register the target as known target.
-
-        :type name: str
-        :param name: target name.
-        :type utilities: list
-        :param utilities: list of types of utilities.
-        :type hybridizations: list
-        :param hybridizations: list of types of hybridization operators.
-        :type mutations: list
-        :param mutations: list of types of mutation operators.
-        :type creations: list
-        :param creations: list of types of mutation operators.
-        :type seeds: type
-        :param seeds: type of Seeds operator.
-        """
-        assert name not in cls.knownTargetTypes, f'{name} is not registered as known Target'
-        cls.knownTargetTypes[name] = TargetType(utilities=utilities, hybridizations=hybridizations,
-                                                mutations=mutations, creations=creations, seeds=seeds)
-        cls.entryType = entry
-
-    def __init__(self, target: dict, selection: dict, optType, fingerprintUtility, stopFitness=None, stopSystems=None,
-                 extraData=(), **kwargs):
+    def __init__(self, optType, goodSystemsSuffixes, stopValue=None, stopSystems=None,
+                 **kwargs):
         """
         Initializes the class.
 
@@ -78,98 +44,75 @@ class GlobalOptimizer(object):
         :type selection: dict{type, params}
         :param selection: name of selection to launch and its parameters; obligatory
         """
-
-        self.pool = SystemPool()
-        self.pool.extensions['basic'] = BasicFunctions()
-        self.target = Target(self.knownTargetTypes[target['type']], **target)
-        self.pool.extensions.update(**self.target.expressionExtensions)
-        self.entryFactory = self.entryType(self.target.propertyExtensions)
-        self.pool.entryFactory = self.entryFactory
-        self.fingerprintUtility = getattr(self.target.utilities, fingerprintUtility)
-        self.extraData = list(extraData)
-        self.selectionConfig = selection
-        self.createPopulation = self.knownSelectionTypes[selection['type']](self.pool, self.target,
-                                                                            self.fingerprintUtility, **selection)
-
         self.optType = optType
-        self.stopFitness = stopFitness
-        if stopSystems is not None and self.target.seeds is not None:
-            seeds = type(self.target.seeds)(self.target.utilities, generations=[0], seedsFolders=[stopSystems])
-            self.stopSystems = seeds()
-        else:
-            self.stopSystems = None
+        self.goodSystemsSuffixes = goodSystemsSuffixes
+        self.stopValue = stopValue
+        self.stopSystems = stopSystems
 
-        self.goodSystemsSuffixes = set(
-            prop.split('.')[-1] for prop in _extract(self.optType) + _extract(self.createPopulation.optType)
-        )
-
-        self.best = set()
-        self._isStable = False
-        self._isGoalReached = False
-
-    def __copy__(self):
-        other = GlobalOptimizer.__new__(GlobalOptimizer)
-        other.pool = copy(self.pool)
-        other.target = copy(self.target)
-        other.selectionConfig = self.selectionConfig
-        other.createPopulation = copy(self.createPopulation)
-        other.optType = self.optType
-        other.stopFitness = self.stopFitness
-        other.stopSystems = self.stopSystems
-        other.best = self.best
-        other._isStable = self._isStable
-        other._isGoalReached = self._isGoalReached
-        return other
-
-    async def update(self, population: list):
+    async def update(self, population, parentsGeneration):
         """
         Updates state of optimized structures.
 
-        :type population: list
         :param population: list of systems which allows to update our knowledge about target space.
         """
-        goodSystems = []
-        for system in population:
+        generation = Generation()
+        generation.population = population
+        generation.goodPopulation = population.createPool()
+        if parentsGeneration is not None:
+            generation.goodSystems = copy(parentsGeneration.goodSystems)
+            oldBest = parentsGeneration.best
+        else:
+            generation.goodSystems = population.createPool()
+            oldBest = None
+        for ID in population.getIDs():
+            system = population.getEntry(ID)
             for suffix in self.goodSystemsSuffixes:
-                if system[f'.isBad.{suffix}']:
+                if suffix not in system.flavours or system[f'.isBad.{suffix}']:
                     break
             else:
-                self.pool.goodSystemIDs.append(system.ID)
-                goodSystems.append(system)
-        self.ExpressionEvaluator.calculate(self.optType, self.pool.goodSystems, self.pool.extensions)
-        self.ExpressionEvaluator.calculate(self.createPopulation.optType, self.pool.goodSystems, self.pool.extensions)
-        population = goodSystems
-        assert population, 'All systems in population failed relaxation.'
-        self._markDuplicates(population)
-        self.pool.append(population)
-        for VO in self.target.variationOperators:
-            if hasattr(VO, 'tune'):
-                VO.tune(population, applyPresetsRecursive(self.optType))
-        best = set(system['ID'] for system in self.pool.fronts(self.pool.uniqueSystems, self.optType)[0])
-        if best == self.best:
-            self._isStable = True
+                generation.goodSystems.addEntry(system)
+                generation.goodPopulation.addEntry(system)
+        generation.goodSystems.evaluate(self.optType)
+        assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
+        optType = generation.goodSystems.createExpression(self.optType)
+        generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, generation.goodSystems,
+                                                        parentsGeneration, optType)
+        logger.debug('Updating target: list of unique systems.')
+        generation.uniquePopulation = population.createPool()
+        for ID in generation.goodPopulation.getIDs():
+            system = generation.goodPopulation.getEntry(ID)
+            try:
+                system = generation.goodPopulation.getEntry(system.getProperty('originalID'))
+            except KeyError:
+                pass
+            if system.ID not in generation.uniquePopulation.getIDs():
+                generation.uniquePopulation.addEntry(system)
+        best = set(system.ID for system in generation.uniqueSystems.fronts(optType)[0])
+        if best == oldBest:
+            isStable = True
         else:
-            self._isStable = False
-            self.best = best
-        self.pool.generations[-1]['bestSystems'] = self.best
-        if self.stopFitness is not None:
-            for ID in self.best:
-                if round(self.pool.allSystems[self.pool.getOriginalID(ID)][self.optType], ndigits=3)\
-                        <= round(self.stopFitness, ndigits=3):
-                    self._isGoalReached = True
+            isStable = False
+        generation.best = best
+        isGoalReached = False
+        if self.stopValue is not None:
+            for ID in best:
+                value = generation.uniqueSystems.getEntry(ID)[optType]
+                if value < self.stopValue or np.isclose(value, self.stopValue, atol=5.e-4):
+                    isGoalReached = True
                     break
-        if self.stopSystems is not None and not self._isGoalReached:
+        if self.stopSystems is not None and not isGoalReached:
             stopSystems = list(self.stopSystems)
-            for system in self.pool.uniqueSystems:
+            for system in generation.uniqueSystems:
                 for i, stopSystem in enumerate(stopSystems):
-                    if self.fingerprintUtility.equal(system, stopSystem):
+                    if system == stopSystem:
                         del stopSystems[i]
                         break
                 if not stopSystems:
                     break
-            self._isGoalReached = not stopSystems
+            isGoalReached = not stopSystems
+        return generation, isStable, isGoalReached
 
-    def _markDuplicates(self, population: list):
+    def _markDuplicates(self, population, goodSystems, parentsGeneration, optType):
         """
         Method for cleaning duplicates.
 
@@ -177,39 +120,38 @@ class GlobalOptimizer(object):
         :param population: list of systems which allows to update our knowledge about target space.
         """
         logger.info('Looking for duplicates.')
-        for system in population:
-            for i, ref_system in enumerate(self.pool.uniqueSystems):
-                if self.fingerprintUtility.equal(system, ref_system) and system['ID'] != ref_system['ID']:
-                    logger.info(f"system {system['ID']} coincides with system {ref_system['ID']} found earlier")
-                    if system[applyPresetsRecursive(self.optType)] < ref_system[applyPresetsRecursive(self.optType)]:
-                        self.fingerprintUtility.clean(ref_system)
-                        ref_system.setProperty('originalID', system['ID'])
-                        system.duplicates = ref_system.duplicates
-                        for ID in system.duplicates:
-                            self.pool.allSystems[ID].originalID = system['ID']
-                        if ref_system['ID'] not in system.duplicates:
-                            system.duplicates.append(ref_system['ID'])
+        if parentsGeneration is not None:
+            uniqueSystems = parentsGeneration.uniqueSystems.getIDs()
+        else:
+            uniqueSystems = []
+        for system_ID in population.getIDs():
+            system = population.getEntry(system_ID)
+            for i, ref_system_ID in enumerate(uniqueSystems):
+                ref_system = goodSystems.getEntry(ref_system_ID)
+                if system == ref_system and system.ID != ref_system.ID:
+                    logger.info(f"system {system.ID} coincides with system {ref_system.ID} found earlier")
+                    try:
+                        duplicates = ref_system.getProperty('duplicates')
+                    except KeyError:
+                        duplicates = []
+                    if system[optType] < ref_system[optType]:
+                        ref_system.setProperty('originalID', system.ID)
+                        for ID in duplicates:
+                            goodSystems.getEntry(ID).setProperty('originalID', system.ID)
+                        if ref_system.ID not in duplicates:
+                            duplicates.append(ref_system.ID)
+                        system.setProperty('duplicates', duplicates)
+                        ref_system.delProperty('duplicates')
+                        uniqueSystems[i] = system.ID
                     else:
-                        self.fingerprintUtility.clean(system)
-                        system.setProperty('originalID', ref_system['ID'])
-                        if system['ID'] not in ref_system.duplicates:
-                            ref_system.duplicates.append(system['ID'])
+                        system.setProperty('originalID', ref_system.ID)
+                        if system.ID not in duplicates:
+                            duplicates.append(system.ID)
+                        ref_system.setProperty('duplicates', duplicates)
                     break
-
-    @property
-    def isStable(self):
-        return self._isStable
-
-    @property
-    def isGoalReached(self):
-        return self._isGoalReached
-
-
-def _extract(expression):
-    if isinstance(expression, str):
-        return [expression]
-    if isinstance(expression, tuple):
-        func, *arguments = expression
-        return list(set(chain(*[_extract(arg) for arg in arguments])))
-    else:
-        return []
+            else:
+                uniqueSystems.append(system.ID)
+        uniqueSystemsPool = population.createPool()
+        for ID in uniqueSystems:
+            uniqueSystemsPool.addEntry(goodSystems.getEntry(ID))
+        return uniqueSystemsPool

@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 from itertools import combinations_with_replacement
 
-from ...components import AtomisticRepresentation, BondUtility
+from ...components import AtomicStructureRepresentation, BondUtility
 
 
 class BondUtility_TestHardness(unittest.TestCase):
@@ -14,50 +14,50 @@ class BondUtility_TestHardness(unittest.TestCase):
         cls.bondUtility = BondUtility()
 
     def test_graphite(self):
-        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite.POSCAR')
+        graphite = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite.POSCAR')
 
         bonds = self.bondUtility.getMinimalGraphBonds(graphite)
         H = self.bondUtility.calcHardness(graphite, bonds)
         self.assertAlmostEqual(H, 0.231, places=3)
 
     def test_graphite2(self):
-        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
+        graphite = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
         bonds = self.bondUtility.getMinimalGraphBonds(graphite)
         H = self.bondUtility.calcHardness(graphite, bonds)
         self.assertAlmostEqual(H, 0.433, places=3)
 
     def test_graphite2_supercell(self):
-        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR').makeSupercell(3*np.eye(3))
+        graphite = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR').makeSupercell(3*np.eye(3))
         bonds = self.bondUtility.getMinimalGraphBonds(graphite)
         H = self.bondUtility.calcHardness(graphite, bonds)
         self.assertAlmostEqual(H, 0.433, places=3)
 
     def test_graphite_1layer(self):
-        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite_1layer.POSCAR')
+        graphite = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite_1layer.POSCAR')
         bonds = self.bondUtility.getMinimalGraphBonds(graphite)
         H = self.bondUtility.calcHardness(graphite, bonds)
         self.assertAlmostEqual(H, 1.72, places=1)
 
     def test_aluminium(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'al.POSCAR')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'al.POSCAR')
         bonds = self.bondUtility.getMinimalGraphBonds(system)
         H = self.bondUtility.calcHardness(system, bonds)
         self.assertAlmostEqual(H, 10.562, places=3)
 
     def test_diamond(self):
-        diamond = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'diamond.POSCAR')
+        diamond = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'diamond.POSCAR')
         bonds = self.bondUtility.getMinimalGraphBonds(diamond)
         H = self.bondUtility.calcHardness(diamond, bonds)
         self.assertAlmostEqual(H, 89.656, places=3)
 
     def test_Mg4Al8O16(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'Mg4Al8O16.POSCAR')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'Mg4Al8O16.POSCAR')
         bonds = self.bondUtility.getMinimalGraphBonds(system)
         H = self.bondUtility.calcHardness(system, bonds)
         self.assertAlmostEqual(H, 6.177, places=3)
 
     def test_Mg4Al8O16_2(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'Mg4Al8O16_2.POSCAR')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'Mg4Al8O16_2.POSCAR')
         bonds = self.bondUtility.getMinimalGraphBonds(system)
         H = self.bondUtility.calcHardness(system, bonds)
         self.assertAlmostEqual(H, 19.970, places=0)
@@ -69,23 +69,23 @@ class BondUtility_TestSoftModes(unittest.TestCase):
         self.bondUtility = BondUtility()
 
     def test_MgAlO_system_1(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'MgAlO_system_1.vasp')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'MgAlO_system_1.vasp')
         bonds = self.bondUtility.getMinimalGraphBonds(system)
         freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
 
     def test_MgAlO_system_2(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'MgAlO_system_2.vasp')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'MgAlO_system_2.vasp')
         bonds = self.bondUtility.getMinimalGraphBonds(system)
         freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
 
     def test_MgAlO_system_3(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'MgAlO_system_3.vasp')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'MgAlO_system_3.vasp')
         bonds = self.bondUtility.getMinimalGraphBonds(system)
         freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
 
     # Carbon systems
     def test_graphite(self):
-        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite.POSCAR')
+        graphite = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite.POSCAR')
         bonds = self.bondUtility.getMinimalGraphBonds(graphite)
         freq, eigvector = self.bondUtility.calcSoftModes(graphite, bonds)
 
@@ -95,7 +95,7 @@ class BondUtility_TestSoftModes(unittest.TestCase):
         self.assertTrue(np.allclose(freq, freq_ref))
 
     def test_graphite_supercell(self):
-        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite.POSCAR').makeSupercell(2*np.eye(3))
+        graphite = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite.POSCAR').makeSupercell(2*np.eye(3))
         bonds = self.bondUtility.getMinimalGraphBonds(graphite)
         freq, eigvector = self.bondUtility.calcSoftModes(graphite, bonds)
 
@@ -127,7 +127,7 @@ class BondUtility_TestSoftModes(unittest.TestCase):
         # self.assertTrue(np.allclose(freq, freq_ref))
 
     def test_diamond(self):
-        diamond = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'diamond.POSCAR')
+        diamond = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'diamond.POSCAR')
         bonds = self.bondUtility.getMinimalGraphBonds(diamond)
         freq, eigvector = self.bondUtility.calcSoftModes(diamond, bonds)
         freq_ref = [ -2.22044605e-16, -2.22044605e-16, -2.22044605e-16,  1.66088535e+00, 1.66088535e+00,  1.66088535e+00]
@@ -135,7 +135,7 @@ class BondUtility_TestSoftModes(unittest.TestCase):
 
 
     def test_diamond_supercell(self):
-        diamond = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'diamond.POSCAR').makeSupercell(2*np.eye(3))
+        diamond = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'diamond.POSCAR').makeSupercell(2*np.eye(3))
         bonds = self.bondUtility.getMinimalGraphBonds(diamond)
         freq, eigvector = self.bondUtility.calcSoftModes(diamond, bonds)
 
@@ -154,12 +154,12 @@ class BondUtility_TestSoftModes(unittest.TestCase):
         self.assertTrue(np.allclose(freq, freq_ref))
 
     def test_MgO_1(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'MgO_system_1.vasp')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'MgO_system_1.vasp')
         bonds = self.bondUtility.getMinimalGraphBonds(system)
         freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
 
     def test_MgO_2(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'MgO_system_2.vasp')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'MgO_system_2.vasp')
         bonds = self.bondUtility.getMinimalGraphBonds(system)
         freq, eigvector = self.bondUtility.calcSoftModes(system, bonds)
 
@@ -167,18 +167,19 @@ class BondUtility_TestSoftModes(unittest.TestCase):
 class BondUtility_TestGraph(unittest.TestCase):
     def setUp(self):
         self.CURRENT_DIR = Path(__file__).parent
-        self.cellType = AtomisticRepresentation.cellType
-        self.structureType = AtomisticRepresentation.structureType
+        self.cellType = AtomicStructureRepresentation.cellType
+        self.structureType = AtomicStructureRepresentation.structureType
+        self.atomType = AtomicStructureRepresentation.atomType
 
     def test_diamond(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'diamond.POSCAR')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'diamond.POSCAR')
         bonds = BondUtility(goodBonds={frozenset(('C', 'C')): 0.5})
         bond_in = bonds.getMinimalGraphBonds(system)
 
     def test_1(self):
         scaled_positions = np.array([[0., 0., 0.], [0.33333, 0.66667, 0.], [0., 0., 0.5], [0.66667, 0.33334, 0.5]])
         cell = self.cellType(np.array([[2.456, 0., 0.], [-1.228, 2.126958, 0.], [0., 0., 6.696]]), (1, 1, 1))
-        system = self.structureType([BondUtility.atomType(s) for s in 4 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        system = self.structureType([self.atomType(s) for s in 4 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
 
         bonds_ref = []
         bonds_ref.append((2, 3, -0.10204218, 0, -1., -1., 0.))
@@ -241,7 +242,7 @@ class BondUtility_TestGraph(unittest.TestCase):
                                      [0.833335, 0.16667, 0.75],
                                      [0.833335, 0.66667, 0.75]])
 
-        system = self.structureType([BondUtility.atomType(s) for s in 32 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        system = self.structureType([self.atomType(s) for s in 32 * ['C']], cell.fractionalToCartesian(scaled_positions), cell=cell)
 
         bonds_ref = []
 
@@ -358,7 +359,7 @@ class BondUtility_TestGraph(unittest.TestCase):
                                      [0.313428, 0.183023, 0.690758],
                                      [0.903796, 0.748461, 0.862665],
                                      [0.527341, 0.851466, 0.140968]])
-        system = self.structureType([BondUtility.atomType(s) for s in composition], cell.fractionalToCartesian(scaled_positions),
+        system = self.structureType([self.atomType(s) for s in composition], cell.fractionalToCartesian(scaled_positions),
                                  cell=cell)
 
         bonds_ref = []
@@ -812,7 +813,7 @@ class BondUtility_TestGraph(unittest.TestCase):
                                      [0.1501313, 0.1671769, 0.1373762],
                                      [0.8067350, 0.6081254, 0.1830761]])
 
-        system = self.structureType([BondUtility.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        system = self.structureType([self.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
         bonds = BondUtility(goodBonds={frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'Al')): 0.14142136,
                                        frozenset(('Mg', 'O')): 0.17320508, frozenset(('Al', 'Al')): 0.2,
                                        frozenset(('Al', 'O')): 0.24494897, frozenset(('O', 'O')): 0.3})
@@ -834,14 +835,14 @@ class BondUtility_TestGraph(unittest.TestCase):
                                      [0.0, 0.0, 0.5],
                                      [0.5, 0.5, 0.5]])
 
-        system = self.structureType([BondUtility.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
+        system = self.structureType([self.atomType(s) for s in symbols], cell.fractionalToCartesian(scaled_positions), cell=cell)
         bonds = BondUtility(goodBonds={frozenset(('Mg', 'Mg')): 0.1, frozenset(('Mg', 'O')): 0.17320508,
                                        frozenset(('O', 'O')): 0.3})
         bond_in = bonds.getMinimalGraphBonds(system)
         print('MgO_new1')
 
     def test_graphite2(self):
-        graphite = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
+        graphite = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
 
         bonds_ref = []
         bonds_ref.append((4, 7, -0.09794277, 0, 1., -0., -0.))
@@ -878,17 +879,17 @@ class BondUtility_TestGraph(unittest.TestCase):
         self.assertTrue(count == len_bonds == len(bonds_ref))
 
     def test_MoCluster(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'Mo36_vacuum_POSCAR', pbc=(0, 0, 0))
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'Mo36_vacuum_POSCAR', pbc=(0, 0, 0))
         bonds = BondUtility(goodBonds={frozenset(('Mo', 'Mo')): 0.5})
         bond_in = bonds.getMinimalGraphBonds(system)
 
     def test_Periodic1d(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'Mo3_periodic_POSCARz', pbc=(0, 0, 1))
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'Mo3_periodic_POSCARz', pbc=(0, 0, 1))
         bonds = BondUtility(goodBonds={frozenset(('Mo', 'Mo')): 0.5})
         bond_in = bonds.getMinimalGraphBonds(system)
 
     def test_Conflict_dimensions(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'Mo3_periodic_POSCARy', pbc=(0, 0, 1))
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'Mo3_periodic_POSCARy', pbc=(0, 0, 1))
         with self.assertRaises(IndexError) as context:
             bonds = BondUtility(goodBonds={frozenset(('Mo', 'Mo')): 0.5})
             bond_in = bonds.getMinimalGraphBonds(system)
@@ -901,9 +902,9 @@ class BondUtility_TestCheckConnectivity(unittest.TestCase):
 
     def test_cluster(self):
         bonds = BondUtility()
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'P11H3_badstruct.POSCARS', pbc=(0, 0, 0))
-        covalentLengths = {(s1.short_name, s2.short_name): bonds.atomType(s1.short_name).covalent_radius +
-                                                           bonds.atomType(s2.short_name).covalent_radius
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'P11H3_badstruct.POSCARS', pbc=(0, 0, 0))
+        covalentLengths = {(s1.short_name, s2.short_name): s1.covalent_radius +
+                                                           s2.covalent_radius
                            for s1, s2 in combinations_with_replacement(system.getAtomTypes(), 2)}
         bonds = BondUtility()
         x = 2
@@ -913,9 +914,9 @@ class BondUtility_TestCheckConnectivity(unittest.TestCase):
 
     def test_graphite(self):
         bonds = BondUtility()
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
-        covalentLengths = {(s1.short_name, s2.short_name): bonds.atomType(s1.short_name).covalent_radius +
-                                                           bonds.atomType(s2.short_name).covalent_radius
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
+        covalentLengths = {(s1.short_name, s2.short_name): s1.covalent_radius +
+                                                           s2.covalent_radius
                            for s1, s2 in combinations_with_replacement(system.getAtomTypes(), 2)}
         bonds = BondUtility()
         x = 2
@@ -924,26 +925,26 @@ class BondUtility_TestCheckConnectivity(unittest.TestCase):
         x = 2.6
         self.assertTrue(bonds.isConnected(system, cutoff={k: x * v for k, v in covalentLengths.items()}))
 
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite_1layer.POSCAR')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite_1layer.POSCAR')
         x = 1.5
         self.assertFalse(bonds.isConnected(system, cutoff={k: x * v for k, v in covalentLengths.items()}))
         self.assertFalse(bonds.isConnected(system, cutoff='strong'))
 
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite_1layer.POSCAR', pbc=(1, 1, 0))
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite_1layer.POSCAR', pbc=(1, 1, 0))
         x = 1.5
         self.assertTrue(bonds.isConnected(system, cutoff={k: x * v for k, v in covalentLengths.items()}))
         self.assertTrue(bonds.isConnected(system, cutoff='strong'))
 
     def test_vanderWaalsCutoff(self):
         bonds = BondUtility(cutoff='vdw')
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'P11H3_badstruct.POSCARS')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'P11H3_badstruct.POSCARS')
         self.assertFalse(bonds.isConnected(system))
 
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'graphite2.POSCAR')
         self.assertTrue(bonds.isConnected(system))
 
     def test_cusomCutoff(self):
-        system = AtomisticRepresentation.readPOSCAR(self.CURRENT_DIR/'POSCARS'/'BeB2H8_POSCAR')
+        system = AtomicStructureRepresentation.readPOSCAR(self.CURRENT_DIR/'POSCARS'/'BeB2H8_POSCAR')
         bonds = BondUtility()
         self.assertFalse(bonds.isConnected(system))
         cutoffInputDict = {'B H': 1.6, 'Be H': 1.71, 'H H': 2.9}

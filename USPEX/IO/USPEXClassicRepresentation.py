@@ -12,14 +12,14 @@ class USPEXClassicRepresentation(object):
     def __init__(self, RES_FOLDER: Path, **params):
         self.RES_FOLDER = RES_FOLDER
 
-    def presentFractions(self, optimizer):
+    def presentFractions(self, generations):
         allOperators = set()
         allAmountsAndTotals = []
-        for generation in optimizer.pool.generations:
-            population = generation['allSystems']
+        for generation in generations:
+            population = generation.population
             amounts = Counter()
-            for system in population:
-                amounts[system['.howCome.origin']] += 1
+            for ID in population.getIDs():
+                amounts[population.getEntry(ID)['.howCome.origin']] += 1
             total = sum(amounts.values())
             allOperators.update(amounts.keys())
             allAmountsAndTotals.append((amounts, total))
@@ -51,17 +51,18 @@ class USPEXClassicRepresentation(object):
         return header
 
     @staticmethod
-    def getPopulationCreationBlock(population, optimizer, targetRepresentation) -> list:
+    def getPopulationCreationBlock(population, optimizer, generator, generations, targetRepresentation) -> list:
         block = []
-        if not optimizer.createPopulation.globalParentsPool:
+        if not generator.globalParentsPool:
             block.append('     Best and diverse structures from previous generation')
-            mostDiverseTable = targetRepresentation.getNewSystemsTable()
-            for system in optimizer.createPopulation.getMostDiverse():
+            mostDiverseTable = targetRepresentation.getNewSystemsTable(generations[-1].goodSystems)
+            for system in generator.getMostDiverse():
                 mostDiverseTable.update(system['ID'], system)
             block.append(mostDiverseTable.table.get_string())
 
         amounts = Counter()
-        for system in population:
+        for ID in population.getIDs():
+            system = population.getEntry(ID)
             amounts[system['.howCome.origin']] += 1
         seedsAmount = amounts.pop('Seeds') if 'Seeds' in amounts else 0
         total = sum(amounts.values())

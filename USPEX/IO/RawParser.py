@@ -15,7 +15,8 @@ from parsec import (
     string,
     generate,
     many,
-    endBy
+    endBy,
+    ParseError
 )
 
 whitespace = regex(r'[^\S\r\n]*', re.MULTILINE)

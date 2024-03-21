@@ -13,13 +13,13 @@ from pathlib import Path
 from ase.geometry import get_distances
 
 from ..AtomisticStage import AtomisticStage
-from ...Optimizers.PoolEntry import PoolEntry
-from ...components import AtomisticRepresentation, Atomistic
+from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...components import Atomistic
 
 PATH_WITH_TESTS = Path(__file__).parent
 
 class FakeSimpleMoleculeUtility:
-    checkIntegrityType = 'rigid'
+    whatToCheckInMolecules = 'all'
     integrityTol = 0.1
 class FakeUtilities:
     simpleMoleculeUtility = FakeSimpleMoleculeUtility()
@@ -29,15 +29,19 @@ class FakeTarget:
 class AtomisticStage_Test(unittest.TestCase):
     '''
     '''
+
+    def setUp(self) -> None:
+        PoolEntry.createEngine(":memory:")
+
     @staticmethod
     def checkWrapped(system):
         mol_no = 0
-        cell = system.getProperty('cell', prefix='atomistic', suffix='origin')
-        for i, molSource in enumerate(system.getProperty('molecules', prefix='atomistic', suffix='origin')):
+        cell = system.getProperty('cell', extension='atomistic', suffix='origin')
+        for i, molSource in enumerate(system.getProperty('molecules', extension='atomistic', suffix='origin')):
             if len(molSource) > 1:
                 # print(f"\nMolecule {mol_no}")
                 mol_no += 1
-                molSink = system.getProperty('molecules', prefix='atomistic', suffix='0')[i]
+                molSink = system.getProperty('molecules', extension='atomistic', suffix='0')[i]
                 distMatSource = {}
                 distMatSink = {}
                 diff = {}
@@ -65,20 +69,19 @@ class AtomisticStage_Test(unittest.TestCase):
                                         environmentStyle=None,
                                         vacuumSize=0)
         atomistic = Atomistic()
-        extensions = {'atomistic': atomistic.propertyExtension(atomistic)}
-        badWrappingFilePath = PATH_WITH_TESTS/'mol_wrapping_POSCARS.uspex'
-        systemSource, systemSink = AtomisticRepresentation.readAtomicStructures(badWrappingFilePath)
-        systemSource['ID'] = 0
-        system = PoolEntry(extensions, **systemSource)
-        system.system['0'] = systemSink
-        self.assertTrue(self.checkWrapped(system))
-        atomisticStage.checkAndFixMolecules(system)
-        self.assertFalse(self.checkWrapped(system))
+        extensions = {'atomistic': atomistic.propertyExtension()}
+        for badWrappingFilePath in [PATH_WITH_TESTS / 'dewrapping_POSCAR.uspex',
+                                    PATH_WITH_TESTS/'mol_wrapping_POSCARS.uspex']:
+            systemSource, systemSink = Atomistic.readAtomicStructures(badWrappingFilePath)
+            system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
+            system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink))
+            self.assertTrue(self.checkWrapped(system))
+            atomisticStage.checkAndFixMolecules(system)
+            self.assertFalse(self.checkWrapped(system))
         brokenMolFilePath = PATH_WITH_TESTS / 'mol_wrapping_POSCARS_brokenMol.uspex'
-        systemSource, systemSink = AtomisticRepresentation.readAtomicStructures(brokenMolFilePath)
-        systemSource['ID'] = 0
-        system = PoolEntry(extensions, **systemSource)
-        system.system['0'] = systemSink
+        systemSource, systemSink = Atomistic.readAtomicStructures(brokenMolFilePath)
+        system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
+        system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink))
         atomisticStage.checkAndFixMolecules(system)
         self.assertTrue(system.getProperty('isBad', suffix='0'))
 
