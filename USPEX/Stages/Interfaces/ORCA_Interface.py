@@ -6,7 +6,6 @@ USPEX.Stages.ORCA_Interface
 
 import logging
 from pathlib import Path
-import numpy as np
 
 logger = logging.getLogger(__name__)
 HARTREE_TO_EV = 27.211386245988 #https://physics.nist.gov/cgi-bin/cuu/Value?hrev
@@ -19,25 +18,22 @@ class ORCA_Interface:
     Local running
     """
     DEFAULT_SLEEP_TIME = 30
-    structureType = None
-    atomType = None
-    cellType = None
 
     inputFile, outputFile, errorFile = 'orca.in', 'output', 'error'
     specific_file = 'orca.in_'
 
     out_geometry_file = 'orca.xyz'
 
-    aseAdapterType = None
+    AtomicStructureRepresentation = None
 
     @classmethod
-    def registerTypes(cls, structureType, atomType, cellType, aseAdapterType):
-        cls.structureType = structureType
-        cls.atomType = atomType
-        cls.cellType = cellType
-        cls.aseAdapterType = aseAdapterType
+    def registerTypes(cls, AtomicStructureRepresentation):
+        cls.AtomicStructureRepresentation = AtomicStructureRepresentation
 
-    def __init__(self, tag: str, orca_input: str = None, targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str,
+                       orca_input: str = None,
+                       targetProperties: list = None,
+                       **kwargs):
 
         self.tag = tag
         if orca_input is None:
@@ -48,12 +44,11 @@ class ORCA_Interface:
         with open(orca_input, 'r') as f:
             self.orca_input = f.read()
 
-        self.adapter = self.aseAdapterType()
-        self.targetProperties = targetProperties if targetProperties is not None else ['structure', 'enthalpy']
+        self.targetProperties = targetProperties
 
     def prepareLocalCalculation(self, system, calcFolder : Path):
 
-        structure = system.getAtomicStructure()
+        structure = system.getProperty('structure', extension='atomistic')
         cell = structure.getCell()
         with open(calcFolder/'pbc', 'wt') as f:
             f.write(' '.join(f'{c}' for c in cell.getPBC()))
@@ -66,20 +61,33 @@ class ORCA_Interface:
         for i, j in enumerate(xyz_line_contents):
             if 'xyz' in j:
                 charge = int(xyz_line_contents[i+1])
+                multiplicity_request = int(xyz_line_contents[i+2])
 
         nelectrons = 0
         for symbol in structure.getAtomTypes():
             nelectrons += symbol.z
-
         total_nelectrons = nelectrons - charge
-        if (total_nelectrons % 2) == 0:
-            multiplicity = 1
+
+        if multiplicity_request <= 0:
+            if (total_nelectrons % 2) == 0:
+                multiplicity = 1
+            else:
+                multiplicity = 2
         else:
-            multiplicity = 2
+            if (multiplicity_request % 2) == 0:
+                if (total_nelectrons % 2) == 0:
+                    multiplicity = multiplicity_request - 1
+                else:
+                    multiplicity = multiplicity_request
+            else:
+                if (total_nelectrons % 2) == 0:
+                    multiplicity = multiplicity_request
+                else:
+                    multiplicity = multiplicity_request + 1
 
         orca_input_lines[xyz_line_index] = '* xyz  {}  {}'.format(charge, multiplicity)
 
-        disassembler = system.getProperty('disassembler', prefix='atomistic', suffix='intermediate')
+        disassembler = system.getProperty('disassembler', extension='atomistic')
         fixedIndices = disassembler.allFixedIndices
         for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
             if i in fixedIndices:
@@ -99,8 +107,7 @@ class ORCA_Interface:
 
         return ''
 
-    def isConverged(self, calcFolder: Path):
-
+    def isConverged(self, calcFolder: Path) -> bool:
         if not calcFolder.joinpath(self.outputFile).exists():
             return False
 
@@ -113,16 +120,29 @@ class ORCA_Interface:
         return True
 
     def readOutput(self, system, calcFolder: Path):
+        new_structure = self.readStructure(system, calcFolder)
+        EnergyHa = self.readEnergyHa(calcFolder)
+        factory = system.getFactory()
+        result = factory()
 
         if 'structure' in self.targetProperties:
-            with open(calcFolder / 'pbc', 'rt') as f:
-                pbc = tuple(int(c) for c in f.read().split())
-            new_structure = self.adapter.read_structure(self.out_geometry_file, calcFolder, pbc)
-            system.setProperty('structure', new_structure, prefix='atomistic', suffix=self.tag)
+            result.setProperty('structure', new_structure, extension='atomistic')
         if 'energy' in self.targetProperties:
-            system.setProperty('energy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV, suffix=self.tag)
+            result.setProperty('energy', EnergyHa * HARTREE_TO_EV)
         if 'enthalpy' in self.targetProperties:
-            system.setProperty('enthalpy', self.readEnergyHa(calcFolder) * HARTREE_TO_EV, suffix=self.tag)
+            result.setProperty('enthalpy', EnergyHa * HARTREE_TO_EV)
+        return result
+
+    def readStructure(self, system, calcFolder: Path):
+        atomistic = system.getFactory().extensions['atomistic'].utility
+        structure = system.getProperty('structure', extension='atomistic')
+
+        if calcFolder.joinpath(self.out_geometry_file).exists():
+            new_structure = self.AtomicStructureRepresentation.readXYZ(calcFolder/self.out_geometry_file)
+        else:
+            new_structure = atomistic.structureType(structure.getAtomTypes(), structure.getCartesianCoordinates(), cell=structure.getCell())
+
+        return new_structure
 
     def readEnergyHa(self, calcFolder: Path):
 

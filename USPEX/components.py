@@ -80,7 +80,7 @@ from .Stages.Interfaces.DFTBplus_Interface import DFTBplus_Interface
 DFTBplus_Interface.registerTypes(AtomicStructureRepresentation)
 Executor.registerInterface('dftb', DFTBplus_Interface)
 from .Stages.Interfaces.ORCA_Interface import ORCA_Interface
-ORCA_Interface.registerTypes(AtomicStructure, Element, Cell, ASEInterfaceAdapter.XYZ)
+ORCA_Interface.registerTypes(AtomicStructureRepresentation)
 Executor.registerInterface('orca', ORCA_Interface)
 from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
 Executor.registerInterface('cp2k', CP2K_Interface)
