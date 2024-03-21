@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 
 from time import time
@@ -13,7 +14,7 @@ MAX_SITE_SAMPLES_TRY = 1000
 
 
 class CoreAdsorbantRandomGenerator:
-    def __init__(self, utilities, debug = False):
+    def __init__(self, utilities, debug=False):
         self.junctionUtility = utilities.junctionUtility
         self.environmentUtility = utilities.environmentUtility
         self.cellUtility = utilities.cellUtility
@@ -54,19 +55,19 @@ class CoreAdsorbantRandomGenerator:
                 for adsName, quantity in composition.items():
                     adsorbant = self.simpleMoleculeUtility.molecules[adsName]
                     adsSites = self.junctionUtility.molSitesMapping[adsName]
-                    compatibleSites = select_compatible_sites(adsName, adsTypesCoreSitesDiGraph)
+                    compatibleCoreSites = select_compatible_sites(adsName, adsTypesCoreSitesDiGraph)
 
                     # check if there is enough sites
-                    if len(compatibleSites) < quantity:
+                    if len(compatibleCoreSites) < quantity:
                         raise Exception(f"Too few sites for {adsName}")
 
-                    max_samples_try = int(min(MAX_SITE_SAMPLES_TRY, binom(len(compatibleSites), quantity)))
+                    max_samples_try = int(min(MAX_SITE_SAMPLES_TRY, binom(len(compatibleCoreSites), quantity)))
                     i_sample = 0
                     isDocked = False
 
                     while i_sample <= max_samples_try and not isDocked:
                         sample_molecules = tmp_molecules.copy()
-                        sites_sample_attempt = np.random.choice(compatibleSites, quantity, replace=False)
+                        sites_sample_attempt = np.random.choice(compatibleCoreSites, quantity, replace=False)
                         i_sample += 1
                         for site in sites_sample_attempt:
                             for k_angle in list(np.random.permutation(self.angle_indices)):
@@ -103,7 +104,7 @@ class CoreAdsorbantRandomGenerator:
                     for x in goodAdsorptionmap])
                 if not npCoreAssembler.isMapAlreadySeen(goodAdsorptionmap):
                     npCoreAssembler.addSeenAdsorbtion(goodAdsorptionmap)
-                    logger.debug(f"Adsorption {adsMapString} sucessfully created")
+                    logger.debug(f"Adsorption {adsMapString} successfully created")
                     tmp_offspring.setProperty('adsorption_map', goodAdsorptionmap)
                     return tmp_offspring,
                 else:
@@ -132,8 +133,6 @@ class CoreAdsorbantRandomGenerator:
             if self.bondUtility.isConnected(tmp_struct):
                 docked = True
         return tmp_offspring, docked
-
-
 
 
 def select_compatible_sites(ligand, adsTypesSitesDiGraph):
