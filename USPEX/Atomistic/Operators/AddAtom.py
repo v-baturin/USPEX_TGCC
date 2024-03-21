@@ -42,7 +42,7 @@ class AddAtom:
             newAtomType = np.random.choice(species)
 
             for _ in range(100):
-                i = np.random.choice(len(atomTypes), p=deltaCNs/deltaCNs.sum())
+                i = np.random.choice(len(structure), p=deltaCNs/deltaCNs.sum())
                 atom1Type = atomTypes[i]
                 atom1coord = coordinates[i]
                 mol1Ind = disassembler.findMolIndex(i)
@@ -94,9 +94,8 @@ class AddAtom:
             offspring['atomistic.molecules'][0:0] = molecules
             offspring['atomistic.environments'] = environments
             offspring = offspringFactory(**offspring)
-            structure = offspring.getProperty('structure', extension='atomistic')
-            minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
-                                                          self.conditions.externalPressure)
+            offspringAtomTypes = offspring.getProperty('structure', extension='atomistic').getAtomTypes()
+            minDistMatrix = self.bondUtility.getDistances(offspringAtomTypes, self.conditions.externalPressure)
             if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix) \
                     and self.compositionSpace.isGoodComposition(offspring.getProperty('composition', extension='simpleMoleculeUtility')):
                 self.conditions.putConditions(offspring)
@@ -106,7 +105,6 @@ class AddAtom:
                 tagsAddRemove_offspring = deepcopy(tagsAddRemove)
                 tagsAddRemove_offspring.append([])
                 offspring.setProperty('tags', tagsAddRemove_offspring, extension='addRemove')
-                # if self.bonds.isConnected(structure):
                 return offspring,
 
         raise RuntimeError("AddAtom failed.")
