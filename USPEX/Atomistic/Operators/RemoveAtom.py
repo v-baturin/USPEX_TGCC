@@ -44,7 +44,7 @@ class RemoveAtom:
             else:
                 raise RuntimeError("RemoveAtom failed.")
 
-            offspring = {'atomistic.molecules': molecules, 'atomistic.cell': cell}
+            offspring = {'atomistic.molecules': copy(molecules), 'atomistic.cell': cell}
             del offspring['atomistic.molecules'][molInd]
             offspring['atomistic.environments'] = environments
             offspring = offspringFactory(**offspring)
