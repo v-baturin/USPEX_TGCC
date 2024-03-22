@@ -36,8 +36,8 @@ class ORCA_Interface:
                        **kwargs):
 
         self.tag = tag
-        orca_input = Path(orca_input) if orca_input is not None else Path.cwd()/f'Specific/{self.specific_file}{tag}'
 
+        orca_input = Path.cwd()/f'Specific/{self.specific_file}{tag}' if orca_input is None else Path(orca_input)
         assert orca_input.exists(), f'Please, check path to ORCA input. Now it is {orca_input}'
 
         with open(orca_input, 'r') as f:

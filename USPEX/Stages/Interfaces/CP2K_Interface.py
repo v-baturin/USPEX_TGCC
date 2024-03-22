@@ -41,9 +41,8 @@ class CP2K_Interface:
                  targetProperties: list = None, **kwargs):
 
         self.tag = tag
-        if cp2k_in is None:
-            cp2k_in = Path.cwd()/f'Specific/{self.specific_file}{tag}'
 
+        cp2k_in = Path.cwd()/f'Specific/{self.specific_file}{tag}' if cp2k_in is None else Path(cp2k_in)
         assert cp2k_in.exists(), f'Please, check path to cp2k_in input. Now it is {cp2k_in}'
 
         with open(cp2k_in, 'r') as f:
