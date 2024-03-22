@@ -49,9 +49,8 @@ class DFTBplus_Interface:
                        **kwargs):
 
         self.tag = tag
-        if dftb_input is None:
-            dftb_input = Path.cwd()/f'Specific/{self.specific_file}{tag}'
 
+        dftb_input = Path.cwd()/f'Specific/{self.specific_file}{tag}' if dftb_input is None else Path(dftb_input)
         assert dftb_input.exists(), f'Please, check path to DFTB input. Now it is {dftb_input}'
 
         with open(dftb_input, 'r') as f:

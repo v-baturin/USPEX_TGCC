@@ -39,9 +39,8 @@ class XTB_Interface:
     def __init__(self, tag: str, xtb_input: str = None, targetProperties: list = None, **kwargs):
 
         self.tag = tag
-        if xtb_input is None:
-            xtb_input = Path.cwd()/f'Specific/{self.specific_file}{tag}'
 
+        xtb_input = Path.cwd()/f'Specific/{self.specific_file}{tag}' if xtb_input is None else Path(xtb_input)
         assert xtb_input.exists(), f'Please, check path to xTB input. Now it is {xtb_input}'
 
         with open(xtb_input, 'r') as f:
