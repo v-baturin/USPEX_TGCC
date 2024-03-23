@@ -15,8 +15,7 @@ from os.path import join as pj
 
 from ..ExpressionEvaluator import ExpressionEvaluator
 from ..Functions.BasicFunctions import BasicFunctions
-from ...DataModel import DataModel
-from ...DataModel.Entry import Entry
+from ...DataModel.Engine import Engine
 from ...DataModel.Flavour import FlavourFactory, Flavour
 from ...DataModel.Pool import Pool
 from ...components import CompositionSpace, SimpleMoleculeUtility, Atomistic
@@ -36,7 +35,7 @@ class System(object):
 
 class Fitness_Test(unittest.TestCase):
     def setUp(self) -> None:
-        DataModel.createEngine(':memory:')
+        Engine.createEngine(':memory:')
         molecules = [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mg'] * 4 + ['Al'] * 8 + ['O'] * 16]
         systems = [{'atomistic.molecules': molecules, '.enthalpy': -646.695,
@@ -210,7 +209,7 @@ class Fitness_Test(unittest.TestCase):
 
 class FitnessXray_Test(unittest.TestCase):
     def setUp(self) -> None:
-        DataModel.createEngine(':memory:')
+        Engine.createEngine(':memory:')
         # 'externalPressure': 135,
         filename = pj(HOMEPATH,'XRay_POSCARS')
         systems = Atomistic.readAtomicStructures(filename)

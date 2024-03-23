@@ -4,7 +4,7 @@ import os
 
 
 from ..PopulationProcessor import PopulationProcessor, Stages
-from ...DataModel import DataModel
+from ...DataModel.Engine import Engine
 from ...DataModel.Flavour import Flavour, FlavourFactory
 from ...DataModel.Entry import Entry
 from ...DataModel.Pool import Pool
@@ -39,7 +39,7 @@ Stages.registerStage('stage2', Stage2)
 class PopulationProcessor_Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        DataModel.createEngine(":memory:")
+        Engine.createEngine(":memory:")
 
     def test_life(self):
         stages = [{'stageType': 'stage1', 'tag': '1', 'source': 'origin'},

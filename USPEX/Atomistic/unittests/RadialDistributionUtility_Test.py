@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 
 from ..RadialDistributionUtility import RadialDistributionUtility
-from ...DataModel import DataModel
+from ...DataModel.Engine import Engine
 from ...DataModel.Flavour import Flavour
 from ...DataModel.Entry import Entry
 from ...components import Atomistic
@@ -14,7 +14,7 @@ PATH_WITH_TESTS = Path(__file__).parent
 
 class RadialDistributionUtility_Test(unittest.TestCase):
     def setUp(self):
-        DataModel.createEngine(':memory:')
+        Engine.createEngine(':memory:')
         self.utility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'], suffix='origin')
         atomistic = Atomistic()
         extensions = dict(

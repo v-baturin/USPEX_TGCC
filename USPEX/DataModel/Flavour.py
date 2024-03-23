@@ -3,7 +3,7 @@ import pickle as pcl
 from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, Float, String, select, update, delete, and_
 from sqlalchemy.dialects.sqlite import insert
 
-from . import DataModel
+from .Engine import Engine
 
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 flavours = Table(
     "flavours",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("name", String, nullable=False),
@@ -19,7 +19,7 @@ flavours = Table(
 )
 propertiesInt = Table(
     "propertiesInt",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("fID", ForeignKey("flavours.id"), nullable=False),
     Column("prop", String(30), nullable=False),
@@ -28,7 +28,7 @@ propertiesInt = Table(
 )
 propertiesFlt = Table(
     "propertiesFlt",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("fID", ForeignKey("flavours.id"), nullable=False),
     Column("prop", String(30), nullable=False),
@@ -37,7 +37,7 @@ propertiesFlt = Table(
 )
 propertiesStr = Table(
     "propertiesStr",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("fID", ForeignKey("flavours.id"), nullable=False),
     Column("prop", String(30), nullable=False),
@@ -46,7 +46,7 @@ propertiesStr = Table(
 )
 propertiesObj = Table(
     "propertiesObj",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("fID", ForeignKey("flavours.id"), nullable=False),
     Column("prop", String(30), nullable=False),
@@ -65,7 +65,7 @@ class FlavourFactory:
         return Flavour(extensions=self.extensions, **kwargs)
 
     def fetchFlavours(self, entryID):
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             result = conn.execute(select(flavours.c.id, flavours.c.name).where(flavours.c.sID == entryID)).all()
         return {name: Flavour(ID=fID, extensions=self.extensions) for fID, name in result}
 
@@ -86,7 +86,7 @@ class Flavour:
         self._propertiesCache = {}
 
     def setID(self, entryID: int, name: str):
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             result = conn.execute(insert(flavours), [{"sID": entryID, "name": name}])
             conn.commit()
         assert self.ID is None
@@ -116,25 +116,25 @@ class Flavour:
 
     def _getPropertyBD(self, prop):
         stmt = select(propertiesInt.c.value).where(and_(propertiesInt.c.fID == self.ID, propertiesInt.c.prop == prop))
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             rows = conn.execute(stmt).all()
         assert len(rows) <= 1
         if len(rows) == 1:
             return rows[0][0]
         stmt = select(propertiesFlt.c.value).where(and_(propertiesFlt.c.fID == self.ID, propertiesFlt.c.prop == prop))
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             rows = conn.execute(stmt).all()
         assert len(rows) <= 1
         if len(rows) == 1:
             return rows[0][0]
         stmt = select(propertiesStr.c.value).where(and_(propertiesStr.c.fID == self.ID, propertiesStr.c.prop == prop))
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             rows = conn.execute(stmt).all()
         assert len(rows) <= 1
         if len(rows) == 1:
             return rows[0][0]
         stmt = select(propertiesObj.c.value).where(and_(propertiesObj.c.fID == self.ID, propertiesObj.c.prop == prop))
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             rows = conn.execute(stmt).all()
         assert len(rows) <= 1
         if len(rows) == 1:
@@ -147,7 +147,7 @@ class Flavour:
             self._setPropertyBD(f'{extension}.{prop}', value)
 
     def _setPropertyBD(self, prop: str, value):
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             if isinstance(value, int):
                 stmt = insert(propertiesInt).values(fID=self.ID, prop=prop, value=value)
                 stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
@@ -167,7 +167,7 @@ class Flavour:
             conn.commit()
 
     def _updatePropertyBD(self, prop: str, value):
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             if isinstance(value, int):
                 conn.execute(update(propertiesInt).where(
                     and_(propertiesInt.c.fID == self.ID, propertiesInt.c.prop == prop)).values(value=value))
@@ -194,7 +194,7 @@ class Flavour:
                 self._delPropertyBD(f'{extension}.{prop}', value)
 
     def _delPropertyBD(self, prop, value):
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             if isinstance(value, int):
                 conn.execute(
                     delete(propertiesInt).where(and_(propertiesInt.c.fID == self.ID, propertiesInt.c.prop == prop)))

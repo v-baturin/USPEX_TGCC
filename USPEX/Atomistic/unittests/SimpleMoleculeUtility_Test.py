@@ -2,7 +2,7 @@ import unittest
 
 from pathlib import Path
 
-from ...DataModel import DataModel
+from ...DataModel.Engine import Engine
 from ...DataModel.Flavour import Flavour
 from ...DataModel.Entry import Entry
 from ...components import SimpleMoleculeUtility, Atomistic, AtomicStructureRepresentation, BondUtility
@@ -13,7 +13,7 @@ PATH_WITH_TESTS = Path(__file__).parent
 class SimpleMoleculeUtility_Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        DataModel.createEngine(":memory:")
+        Engine.createEngine(":memory:")
 
     def test_checkMinDistances(self):
         atomistic = Atomistic()

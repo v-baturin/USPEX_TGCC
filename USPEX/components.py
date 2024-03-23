@@ -117,5 +117,5 @@ GenerationController.setUpcompileParams(compileParams)
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(Atomistic)
 # ---------------------------------------------- Data Model ---------------------------------------------------------
-from .DataModel import DataModel
-DataModel.createEngine("uspex.db")
+from .DataModel.Engine import Engine
+Engine.createEngine("uspex.db")

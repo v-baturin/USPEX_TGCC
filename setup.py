@@ -2,9 +2,11 @@ from setuptools import Extension, setup
 from Cython.Build import cythonize
 
 extensions = [
-    Extension("USPEX.DataModel",
-              ["USPEX/DataModel/__init__.py", "USPEX/DataModel/Entry.py", "USPEX/DataModel/Expression.py",
-               "USPEX/DataModel/Flavour.py", "USPEX/DataModel/Pool.py"]),
+    Extension("USPEX.DataModel.Engine", ["USPEX/DataModel/Engine.py"]),
+    Extension("USPEX.DataModel.Entry", ["USPEX/DataModel/Entry.py"]),
+    Extension("USPEX.DataModel.Expression", ["USPEX/DataModel/Expression.py"]),
+    Extension("USPEX.DataModel.Flavour", ["USPEX/DataModel/Flavour.py"]),
+    Extension("USPEX.DataModel.Pool", ["USPEX/DataModel/Pool.py"]),
     Extension("USPEX.Optimizers.GlobalOptimizer", ["USPEX/Optimizers/GlobalOptimizer.py"]),
     Extension("USPEX.Generators.Target", ["USPEX/Generators/Target.py"]),
     Extension("USPEX.Generators.Evolution", ["USPEX/Generators/Evolution.py"]),

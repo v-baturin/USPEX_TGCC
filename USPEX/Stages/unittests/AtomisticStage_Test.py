@@ -13,7 +13,7 @@ from pathlib import Path
 from ase.geometry import get_distances
 
 from ..AtomisticStage import AtomisticStage
-from ...DataModel import DataModel
+from ...DataModel.Engine import Engine
 from ...DataModel.Flavour import Flavour
 from ...DataModel.Entry import Entry
 from ...components import Atomistic
@@ -33,7 +33,7 @@ class AtomisticStage_Test(unittest.TestCase):
     '''
 
     def setUp(self) -> None:
-        DataModel.createEngine(":memory:")
+        Engine.createEngine(":memory:")
 
     @staticmethod
     def checkWrapped(system):

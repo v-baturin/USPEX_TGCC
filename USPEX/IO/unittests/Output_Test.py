@@ -6,9 +6,8 @@ import asyncio
 
 from pathlib import Path
 
-from ...DataModel import DataModel
+from ...DataModel.Engine import Engine
 from ...DataModel.Flavour import FlavourFactory, Flavour
-from ...DataModel.Entry import Entry
 from ...DataModel.Pool import Pool
 from ...components import GlobalOptimizer, Atomistic, Evolution
 from ..OutputRepresentation import OutputRepresentation
@@ -19,7 +18,7 @@ TESTPATH = Path(__file__).parent
 class Output_Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        DataModel.createEngine(':memory:')
+        Engine.createEngine(':memory:')
 
     def test_1(self):
         folder_name = 'output_results'

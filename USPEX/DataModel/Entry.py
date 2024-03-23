@@ -4,7 +4,7 @@ from typing import Union
 from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, Float, String, select, update, delete, and_
 from sqlalchemy.dialects.sqlite import insert
 
-from . import DataModel
+from .Engine import Engine
 from .Flavour import Flavour, FlavourFactory
 
 
@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 
 systems = Table(
     "systems",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
 )
 expressionsInt = Table(
     "expressionsInt",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("eID", ForeignKey("expressions.id"), nullable=False),
@@ -27,7 +27,7 @@ expressionsInt = Table(
 )
 expressionsFlt = Table(
     "expressionsFlt",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("eID", ForeignKey("expressions.id"), nullable=False),
@@ -36,7 +36,7 @@ expressionsFlt = Table(
 )
 expressionsStr = Table(
     "expressionsStr",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("eID", ForeignKey("expressions.id"), nullable=False),
@@ -45,7 +45,7 @@ expressionsStr = Table(
 )
 expressionsObj = Table(
     "expressionsObj",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("sID", ForeignKey("systems.id"), nullable=False),
     Column("eID", ForeignKey("expressions.id"), nullable=False),
@@ -81,7 +81,7 @@ class Entry:
         :param system: system to be labeled with ID.
 
         """
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             result = conn.execute(insert(systems), [{}])
             conn.commit()
         ID = result.inserted_primary_key[0]
@@ -93,7 +93,7 @@ class Entry:
 
     @staticmethod
     def getEntry(ID: int, flavourFactory: FlavourFactory, metric=None):
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             result = conn.execute(select(systems).where(systems.c.id == ID)).all()
         assert result
         return Entry(ID, flavourFactory, metric)
@@ -132,7 +132,7 @@ class Entry:
             self.setExpressionBD(expression.ID, value)
 
     def setExpressionBD(self, exprID: int, value):
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             if isinstance(value, int):
                 stmt = insert(expressionsInt).values(sID=self.ID, eID=exprID, value=value)
                 stmt = stmt.on_conflict_do_update(index_elements=['sID', 'eID'], set_=dict(value=value))
@@ -158,25 +158,25 @@ class Entry:
 
     def getExpressionBD(self, exprID):
         stmt = select(expressionsInt.c.value).where(and_(expressionsInt.c.sID == self.ID, expressionsInt.c.eID == exprID))
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             rows = conn.execute(stmt).all()
         assert len(rows) <= 1
         if len(rows) == 1:
             return rows[0][0]
         stmt = select(expressionsFlt.c.value).where(and_(expressionsFlt.c.sID == self.ID, expressionsFlt.c.eID == exprID))
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             rows = conn.execute(stmt).all()
         assert len(rows) <= 1
         if len(rows) == 1:
             return rows[0][0]
         stmt = select(expressionsStr.c.value).where(and_(expressionsStr.c.sID == self.ID, expressionsStr.c.eID == exprID))
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             rows = conn.execute(stmt).all()
         assert len(rows) <= 1
         if len(rows) == 1:
             return rows[0][0]
         stmt = select(expressionsObj.c.value).where(and_(expressionsObj.c.sID == self.ID, expressionsObj.c.eID == exprID))
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             rows = conn.execute(stmt).all()
         assert len(rows) <= 1
         if len(rows) == 1:

@@ -3,7 +3,7 @@ import numpy as np
 from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, Float, String, select, update, delete, and_
 from sqlalchemy.dialects.sqlite import insert
 
-from . import DataModel
+from .Engine import Engine
 from .Flavour import FlavourFactory, Flavour
 from .Entry import Entry
 from .Expression import Expression
@@ -15,12 +15,12 @@ logger = logging.getLogger(__name__)
 
 pools = Table(
     "pools",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
 )
 poolMap = Table(
     "poolMap",
-    DataModel.metadata_obj,
+    Engine.metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("entryID", ForeignKey("systems.id"), nullable=False),
     Column("poolID", ForeignKey("pools.id"), nullable=False),
@@ -39,7 +39,7 @@ class Pool:
 
     @staticmethod
     def newPool(flavourfactory: FlavourFactory, expressionExtensions, metric=None):
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             result = conn.execute(insert(pools), [{}])
             conn.commit()
         return Pool(result.inserted_primary_key[0], flavourfactory, expressionExtensions, metric)
@@ -84,14 +84,14 @@ class Pool:
 
     def addEntry(self, entry: Entry):
         self._cache[entry.ID] = entry
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             stmt = insert(poolMap).values(poolID=self.ID, entryID=entry.ID)
             stmt = stmt.on_conflict_do_nothing()
             conn.execute(stmt)
             conn.commit()
 
     def getIDs(self) -> list:
-        with DataModel.engine.connect() as conn:
+        with Engine.engine.connect() as conn:
             IDs = conn.execute(select(poolMap.c.entryID).where(poolMap.c.poolID == self.ID)).all()
         return np.asarray(IDs, dtype=int).flatten().tolist()
 
