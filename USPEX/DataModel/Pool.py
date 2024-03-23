@@ -26,7 +26,6 @@ poolMap = Table(
     Column("poolID", ForeignKey("pools.id"), nullable=False),
     UniqueConstraint('entryID', 'poolID'),
 )
-DataModel.createTables(pools, poolMap)
 
 
 class Pool:

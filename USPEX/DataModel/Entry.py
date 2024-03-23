@@ -16,14 +16,6 @@ systems = Table(
     DataModel.metadata_obj,
     Column("id", Integer, primary_key=True),
 )
-flavours = Table(
-    "flavours",
-    DataModel.metadata_obj,
-    Column("id", Integer, primary_key=True),
-    Column("sID", ForeignKey("systems.id"), nullable=False),
-    Column("name", String, nullable=False),
-    UniqueConstraint('sID', 'name'),
-)
 expressionsInt = Table(
     "expressionsInt",
     DataModel.metadata_obj,
@@ -60,7 +52,6 @@ expressionsObj = Table(
     Column("value", String, nullable=False),
     UniqueConstraint('sID', 'eID'),
 )
-DataModel.createTables(systems, flavours, expressionsInt, expressionsFlt, expressionsStr, expressionsObj)
 
 class Entry:
 
@@ -110,18 +101,12 @@ class Entry:
     @property
     def flavours(self):
         if not self._flavours:
-            with DataModel.engine.connect() as conn:
-                result = conn.execute(select(flavours.c.id, flavours.c.name).where(flavours.c.sID == self.ID)).all()
-            for fID, flavour in result:
-                self._flavours[flavour] = self.flavourFactory(ID=fID)
+            self._flavours = self.flavourFactory.fetchFlavours(self.ID)
         return self._flavours
 
     def addFlavour(self, name: str, flavour: Flavour):
         # assert name not in self.flavours, f'Flavour {name} already in system {self.ID}'
-        with DataModel.engine.connect() as conn:
-            result = conn.execute(insert(flavours), [{"sID": self.ID, "name": name}])
-            conn.commit()
-        flavour.setID(result.inserted_primary_key[0])
+        flavour.setID(self.ID, name)
         self._flavours = {}
 
     def getFlavour(self, name: str) -> Flavour:

@@ -16,7 +16,6 @@ expressions = Table(
     Column("name", String, nullable=False),
     UniqueConstraint('poolID', 'name'),
 )
-DataModel.createTables(expressions)
 
 
 class Expression:

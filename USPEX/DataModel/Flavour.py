@@ -9,6 +9,14 @@ from . import DataModel
 logger = logging.getLogger(__name__)
 
 
+flavours = Table(
+    "flavours",
+    DataModel.metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("sID", ForeignKey("systems.id"), nullable=False),
+    Column("name", String, nullable=False),
+    UniqueConstraint('sID', 'name'),
+)
 propertiesInt = Table(
     "propertiesInt",
     DataModel.metadata_obj,
@@ -45,7 +53,7 @@ propertiesObj = Table(
     Column("value", String, nullable=False),
     UniqueConstraint('fID', 'prop'),
 )
-DataModel.createTables(propertiesInt, propertiesFlt, propertiesStr, propertiesObj)
+
 
 class FlavourFactory:
 
@@ -55,6 +63,11 @@ class FlavourFactory:
 
     def __call__(self, **kwargs):
         return Flavour(extensions=self.extensions, **kwargs)
+
+    def fetchFlavours(self, entryID):
+        with DataModel.engine.connect() as conn:
+            result = conn.execute(select(flavours.c.id, flavours.c.name).where(flavours.c.sID == entryID)).all()
+        return {name: Flavour(ID=fID, extensions=self.extensions) for fID, name in result}
 
 
 class Flavour:
@@ -72,9 +85,12 @@ class Flavour:
         self.extensions = state['extensions']
         self._propertiesCache = {}
 
-    def setID(self, ID: int):
+    def setID(self, entryID: int, name: str):
+        with DataModel.engine.connect() as conn:
+            result = conn.execute(insert(flavours), [{"sID": entryID, "name": name}])
+            conn.commit()
         assert self.ID is None
-        self.ID = ID
+        self.ID = result.inserted_primary_key[0]
         for prop, value in self._propertiesCache.items():
             self._setPropertyBD(prop, value)
 

@@ -1,5 +1,3 @@
-from .DataModel import DataModel
-DataModel.createEngine("uspex.db")
 # ---------------------------------- Primitives and Representations -------------------------------------------------
 from .Atomistic.Primitives.Element import Element
 from .Atomistic.Primitives.Cell import Cell
@@ -118,3 +116,6 @@ GenerationController.setUpcompileParams(compileParams)
 # ---------------------------------------- Output Representation ----------------------------------------------------
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(Atomistic)
+# ---------------------------------------------- Data Model ---------------------------------------------------------
+from .DataModel import DataModel
+DataModel.createEngine("uspex.db")

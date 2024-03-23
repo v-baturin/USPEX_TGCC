@@ -9,7 +9,4 @@ class DataModel:
     @classmethod
     def createEngine(cls, filename):
         cls.engine = create_engine(f"sqlite+pysqlite:///{filename}")
-
-    @classmethod
-    def createTables(cls, *tables):
-        cls.metadata_obj.create_all(cls.engine, tables)
+        cls.metadata_obj.create_all(cls.engine)
