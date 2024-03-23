@@ -16,7 +16,7 @@ version = {attr = "USPEX.__version__"}
 
 [tool.setuptools]
 packages = ['USPEX', 'USPEX.IO', 'USPEX.Stages', 'USPEX.Stages.Interfaces', 'USPEX.Stages.TaskManagers',
-    'USPEX.Expressions.Functions', 'USPEX.DataModel']
+    'USPEX.Expressions.Functions']
 include-package-data = false
 
 [tool.setuptools.package-data]
