@@ -15,7 +15,10 @@ from os.path import join as pj
 
 from ..ExpressionEvaluator import ExpressionEvaluator
 from ..Functions.BasicFunctions import BasicFunctions
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour, Pool, FlavourFactory
+from ...DataModel import DataModel
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory, Flavour
+from ...DataModel.Pool import Pool
 from ...components import CompositionSpace, SimpleMoleculeUtility, Atomistic
 from ...Atomistic.Primitives.AtomicStructure import AtomicStructure
 from ...Atomistic.RadialDistributionUtility import Fingerprint
@@ -33,7 +36,7 @@ class System(object):
 
 class Fitness_Test(unittest.TestCase):
     def setUp(self) -> None:
-        PoolEntry.createEngine(':memory:')
+        DataModel.createEngine(':memory:')
         molecules = [AtomicStructure([symbol], np.zeros((1, 3), dtype=float), np.eye(3, dtype=float))
                      for symbol in ['Mg'] * 4 + ['Al'] * 8 + ['O'] * 16]
         systems = [{'atomistic.molecules': molecules, '.enthalpy': -646.695,
@@ -65,7 +68,7 @@ class Fitness_Test(unittest.TestCase):
         )
         self.systems = Pool.newPool(FlavourFactory(extensions=propertyExtensions), expressionExtensions)
         for system in systems:
-            self.systems.newEntry(EntryFlavour(extensions=propertyExtensions,
+            self.systems.newEntry(Flavour(extensions=propertyExtensions,
                                                **{'.howCome': 'Seeds', '.parent': None},
                                                **system))
 
@@ -207,7 +210,7 @@ class Fitness_Test(unittest.TestCase):
 
 class FitnessXray_Test(unittest.TestCase):
     def setUp(self) -> None:
-        PoolEntry.createEngine(':memory:')
+        DataModel.createEngine(':memory:')
         # 'externalPressure': 135,
         filename = pj(HOMEPATH,'XRay_POSCARS')
         systems = Atomistic.readAtomicStructures(filename)
@@ -230,7 +233,7 @@ class FitnessXray_Test(unittest.TestCase):
         )
         self.systems = Pool.newPool(FlavourFactory(extensions=propertyExtensions), expressionExtensions)
         for system in systems:
-            self.systems.newEntry(EntryFlavour(extensions=propertyExtensions,
+            self.systems.newEntry(Flavour(extensions=propertyExtensions,
                                                **{'.howCome': 'Seeds', '.parent': None},
                                                **system))
         for ID in self.systems.getIDs():

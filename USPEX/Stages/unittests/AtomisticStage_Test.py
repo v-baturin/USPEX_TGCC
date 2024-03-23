@@ -13,7 +13,9 @@ from pathlib import Path
 from ase.geometry import get_distances
 
 from ..AtomisticStage import AtomisticStage
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...DataModel import DataModel
+from ...DataModel.Flavour import Flavour
+from ...DataModel.Entry import Entry
 from ...components import Atomistic
 
 PATH_WITH_TESTS = Path(__file__).parent
@@ -31,7 +33,7 @@ class AtomisticStage_Test(unittest.TestCase):
     '''
 
     def setUp(self) -> None:
-        PoolEntry.createEngine(":memory:")
+        DataModel.createEngine(":memory:")
 
     @staticmethod
     def checkWrapped(system):
@@ -73,15 +75,15 @@ class AtomisticStage_Test(unittest.TestCase):
         for badWrappingFilePath in [PATH_WITH_TESTS / 'dewrapping_POSCAR.uspex',
                                     PATH_WITH_TESTS/'mol_wrapping_POSCARS.uspex']:
             systemSource, systemSink = Atomistic.readAtomicStructures(badWrappingFilePath)
-            system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
-            system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink))
+            system = Entry.newEntry(Flavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
+            system.addFlavour('0', Flavour(extensions=extensions, **systemSink))
             self.assertTrue(self.checkWrapped(system))
             atomisticStage.checkAndFixMolecules(system)
             self.assertFalse(self.checkWrapped(system))
         brokenMolFilePath = PATH_WITH_TESTS / 'mol_wrapping_POSCARS_brokenMol.uspex'
         systemSource, systemSink = Atomistic.readAtomicStructures(brokenMolFilePath)
-        system = PoolEntry.newEntry(EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
-        system.addFlavour('0', EntryFlavour(extensions=extensions, **systemSink))
+        system = Entry.newEntry(Flavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **systemSource))
+        system.addFlavour('0', Flavour(extensions=extensions, **systemSink))
         atomisticStage.checkAndFixMolecules(system)
         self.assertTrue(system.getProperty('isBad', suffix='0'))
 

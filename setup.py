@@ -3,7 +3,6 @@ from Cython.Build import cythonize
 
 extensions = [
     Extension("USPEX.Optimizers.GlobalOptimizer", ["USPEX/Optimizers/GlobalOptimizer.py"]),
-    Extension("USPEX.Optimizers.PoolEntry", ["USPEX/Optimizers/PoolEntry.py"]),
     Extension("USPEX.Generators.Target", ["USPEX/Generators/Target.py"]),
     Extension("USPEX.Generators.Evolution", ["USPEX/Generators/Evolution.py"]),
     Extension("USPEX.Expressions.ExpressionEvaluator", ["USPEX/Expressions/ExpressionEvaluator.py"]),

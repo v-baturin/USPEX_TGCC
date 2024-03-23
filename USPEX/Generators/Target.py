@@ -13,7 +13,8 @@ from types import SimpleNamespace
 from typing import List, Dict
 
 from ..Expressions.Functions.BasicFunctions import BasicFunctions
-from ..Optimizers.PoolEntry import FlavourFactory, Pool
+from ..DataModel.Flavour import FlavourFactory
+from ..DataModel.Pool import Pool
 
 
 logger = logging.getLogger(__name__)

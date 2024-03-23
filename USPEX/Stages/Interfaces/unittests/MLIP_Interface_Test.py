@@ -14,7 +14,7 @@ import filecmp
 from pathlib import Path
 
 from ..MLIP_Interface import MLIP_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -81,7 +81,7 @@ class MLIP_train_Test(unittest.TestCase):
     def test_init(self):
         trajectory = AtomicStructureRepresentation.readMLIPsample(SPECIFICPATH/'configurations.cfg', specorder=['Mo', 'S'])
         intermediate = {'.trajectory': trajectory}
-        intermediate = EntryFlavour(extensions=self.extensions, **intermediate)
+        intermediate = Flavour(extensions=self.extensions, **intermediate)
         calcFolder = HOMEPATH/'MLIP_INIT'
         calcFolder.mkdir(exist_ok=True)
         args = self.interface.prepareLocalCalculation(intermediate, calcFolder=calcFolder)
@@ -91,7 +91,7 @@ class MLIP_train_Test(unittest.TestCase):
 
 
     def test_sample(self):
-        intermediate = EntryFlavour(extensions=self.extensions)
+        intermediate = Flavour(extensions=self.extensions)
         calcFolder=HOMEPATH/'MLIP_REF'
         result = self.interface.readOutput(intermediate, calcFolder=calcFolder)
         self.assertTrue(filecmp.cmp(self.trainFolder/'ts.cfg', calcFolder/'input.cfg'))

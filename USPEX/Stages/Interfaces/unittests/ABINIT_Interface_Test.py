@@ -15,7 +15,7 @@ import numpy as np
 from pathlib import Path
 
 from ..ABINIT_Interface import ABINIT_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -56,7 +56,7 @@ else:
                 intermediate = disassembler.disassemble(structure)
                 intermediate['.externalPressure'] = 130
                 intermediate['atomistic.disassembler'] = disassembler
-                intermediate = EntryFlavour(extensions=extensions, **intermediate)
+                intermediate = Flavour(extensions=extensions, **intermediate)
                 WORKPATH.mkdir(parents=True, exist_ok=True)
                 abinit.prepareLocalCalculation(intermediate, WORKPATH)
                 folder = GATHEREDPATH/'input'/f"CalcFold{ID}"

@@ -17,7 +17,7 @@ import filecmp
 from pathlib import Path
 
 from ..GULP_Interface import GULP_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -49,7 +49,7 @@ class GULP_CalculatorTest(unittest.TestCase):
             intermediate = disassembler.disassemble(structure)
             intermediate['.externalPressure'] = 100
             intermediate['atomistic.disassembler'] = disassembler
-            intermediate = EntryFlavour(extensions=extensions, **intermediate)
+            intermediate = Flavour(extensions=extensions, **intermediate)
             WORKPATH.mkdir(parents=True, exist_ok=True)
             gulp.prepareLocalCalculation(intermediate, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{ID}"
@@ -94,7 +94,7 @@ class GULP_InterfaceTest(unittest.TestCase):
         intermediate = disassembler.disassemble(structure)
         intermediate['.externalPressure'] = 100
         intermediate['atomistic.disassembler'] = disassembler
-        intermediate = EntryFlavour(extensions=extensions, **intermediate)
+        intermediate = Flavour(extensions=extensions, **intermediate)
         result = interface.readOutput(intermediate, calcFolder=HOMEPATH/'gulp_test')
         self.assertTrue(np.isclose(result['.enthalpy'], -645.80329121))
         stress_ref = np.array([[-99.960848, 0.394719, -0.211383], [0.394719,  -100.008335,  0.019149], [-0.211383,  0.019149,  -100.271584]])

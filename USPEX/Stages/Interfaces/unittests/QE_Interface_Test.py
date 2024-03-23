@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 
 from ..QE_Interface import QE_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -44,7 +44,7 @@ class QE_CalculatorTest2(unittest.TestCase):
             intermediate['atomistic.structure'] = structure
             intermediate['.externalPressure'] = 0.0001
             intermediate['atomistic.disassembler'] = disassembler
-            intermediate = EntryFlavour(extensions=extensions, **intermediate)
+            intermediate = Flavour(extensions=extensions, **intermediate)
             WORKPATH.mkdir(parents=True, exist_ok=True)
             qe.prepareLocalCalculation(intermediate, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{ID}"

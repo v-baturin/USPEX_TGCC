@@ -1,5 +1,5 @@
-from .Optimizers.PoolEntry import PoolEntry
-PoolEntry.createEngine("uspex.db")
+from .DataModel import DataModel
+DataModel.createEngine("uspex.db")
 # ---------------------------------- Primitives and Representations -------------------------------------------------
 from .Atomistic.Primitives.Element import Element
 from .Atomistic.Primitives.Cell import Cell

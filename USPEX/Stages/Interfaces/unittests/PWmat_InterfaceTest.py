@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 from ..PWmat_Interface import PWmat_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -53,7 +53,7 @@ class PWmat_InterfaceTest(unittest.TestCase):
         intermediate = disassembler.disassemble(structure)
         intermediate['.externalPressure'] = 0.00001
         intermediate['atomistic.disassembler'] = disassembler
-        intermediate = EntryFlavour(extensions=extensions, **intermediate)
+        intermediate = Flavour(extensions=extensions, **intermediate)
         cls.testSystem = intermediate
         cls.CALC_FOLDER = HOMEPATH/CALC_FOLDER_TEMPLATE.format(0, 's0')
         cls.REFERENCE_FOLDER = HOMEPATH/'PWmatReference/'

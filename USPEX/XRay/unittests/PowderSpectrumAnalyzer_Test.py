@@ -10,7 +10,7 @@ Class for PowderSpectrumAnalyzer testing
 import unittest
 from pathlib import Path
 
-from ...Optimizers.PoolEntry import EntryFlavour
+from ...DataModel.Flavour import Flavour
 from ...components import Atomistic
 from ..PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
 
@@ -20,7 +20,7 @@ PATH_WITH_TESTS = Path(__file__).parent
 class SpectrumAnalyzer_Test(unittest.TestCase):
     def setUp(self):
         propertyExtensions = dict(atomistic=Atomistic().propertyExtension())
-        self.system = EntryFlavour(extensions=propertyExtensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'Na8Cl24.vasp'))
+        self.system = Flavour(extensions=propertyExtensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'Na8Cl24.vasp'))
 
     def test(self):
         xraydata = PowderSpectrumAnalyzer.parse(PATH_WITH_TESTS/'spectrum.txt')

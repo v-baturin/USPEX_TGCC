@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 
 from ..VASP_Interface import VASP_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -56,7 +56,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
             intermediate['.externalPressure'] = 0.0001
             intermediate['.ID'] = ID
             intermediate['atomistic.disassembler'] = disassembler
-            intermediate = EntryFlavour(extensions=extensions, **intermediate)
+            intermediate = Flavour(extensions=extensions, **intermediate)
             WORKPATH.mkdir(exist_ok=True, parents=True)
             vasp.prepareLocalCalculation(intermediate, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{ID}"
@@ -130,7 +130,7 @@ class VASP_interface_MD_Test(unittest.TestCase):
             atomistic=atomistic.propertyExtension()
         )
 
-        result = self.interface.readOutput(EntryFlavour(extensions=extensions), wd)
+        result = self.interface.readOutput(Flavour(extensions=extensions), wd)
         self.assertGreater(len(result['.trajectory']), 1)
         for data in result['.trajectory']:
             self.assertTrue(len(data['structure']) == 3)
