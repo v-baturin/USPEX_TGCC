@@ -39,7 +39,7 @@ class GlobalOptimizer(object):
 
     def __init__(self,
                  optType: Union[str, tuple],
-                 goodSystemsSuffixes: list[str],
+                 goodSystemsSuffixes: set[str],
                  stopValue: float = None,
                  stopSystems: tuple = None,
                  **kwargs):
