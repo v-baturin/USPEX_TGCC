@@ -24,8 +24,8 @@ test_sources:
     - cd USPEX
     - nosetests -v .
 
-build_whl38:
-  image: python:3.8
+build_whl39:
+  image: python:3.9
   stage: build_phase1
   script:
     - pip install build
@@ -33,8 +33,7 @@ build_whl38:
     - python -m build --wheel
   artifacts:
     paths:
-      - dist/uspex-*-cp38-cp38-linux_x86_64.whl
-    expire_in: 1 mos 1 day
+      - dist/uspex-*-cp39-cp39-linux_x86_64.whl
 
 test_binaries:
   image: $CI_REGISTRY/uspex_python/thirdparty:master
@@ -44,7 +43,7 @@ test_binaries:
     - pip-compile -o requirements.txt pyproject.toml
     - pip-sync
     - pip install nose
-    - mkdir binaries && unzip dist/uspex-*-cp38-cp38-linux_x86_64.whl -d binaries
+    - mkdir binaries && unzip dist/uspex-*-cp39-cp39-linux_x86_64.whl -d binaries
     - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./binaries/$(dirname {}) && mv {} ./binaries/$(dirname {})'
     - cd binaries/USPEX
     - nosetests -v .
@@ -56,7 +55,7 @@ test_package:
     - pip install pip-tools
     - pip-compile -o requirements.txt pyproject.toml
     - pip-sync
-    - pip install dist/uspex-*-cp38-cp38-linux_x86_64.whl
+    - pip install dist/uspex-*-cp39-cp39-linux_x86_64.whl
     - cd testFolder
     - uspex -r
   artifacts:
@@ -64,29 +63,18 @@ test_package:
       - testFolder
 
 build_documentation:
-  image: python:3.8
+  image: python:3.9
   stage: build_phase3
   script:
     - pip install pip-tools
     - pip-compile -o requirements.txt pyproject.toml
     - pip-sync
-    - pip install sphinx dist/uspex-*-cp38-cp38-linux_x86_64.whl
+    - pip install sphinx dist/uspex-*-cp39-cp39-linux_x86_64.whl
     - sphinx-build -b html sphinx build_docs
   artifacts:
     paths:
       - build_docs
     expire_in: 1 mos 1 day
-
-build_whl39:
-  image: python:3.9
-  stage: build_phase3
-  script:
-    - pip install build
-    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
-    - python -m build --wheel
-  artifacts:
-    paths:
-      - dist/uspex-*-cp39-cp39-linux_x86_64.whl
 
 build_whl310:
   image: python:3.10
@@ -99,3 +87,24 @@ build_whl310:
     paths:
       - dist/uspex-*-cp310-cp310-linux_x86_64.whl
 
+build_whl311:
+  image: python:3.11
+  stage: build_phase3
+  script:
+    - pip install build
+    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
+    - python -m build --wheel
+  artifacts:
+    paths:
+      - dist/uspex-*-cp311-cp311-linux_x86_64.whl
+
+build_whl312:
+  image: python:3.12
+  stage: build_phase3
+  script:
+    - pip install build
+    - find ./USPEX -type d -name "*unittests*" | xargs rm -r
+    - python -m build --wheel
+  artifacts:
+    paths:
+      - dist/uspex-*-cp312-cp312-linux_x86_64.whl
