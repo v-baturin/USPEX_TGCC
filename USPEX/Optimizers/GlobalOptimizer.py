@@ -8,9 +8,12 @@ Class implementing global optimizer
 """
 
 import logging
-from copy import copy
-
 import numpy as np
+from copy import copy
+from typing import Union
+
+from ..DataModel.Pool import Pool
+from ..DataModel.Expression import Expression
 
 
 logger = logging.getLogger(__name__)
@@ -34,7 +37,11 @@ class GlobalOptimizer(object):
 
     """
 
-    def __init__(self, optType, goodSystemsSuffixes, stopValue=None, stopSystems=None,
+    def __init__(self,
+                 optType: Union[str, tuple],
+                 goodSystemsSuffixes: list[str],
+                 stopValue: float = None,
+                 stopSystems: tuple = None,
                  **kwargs):
         """
         Initializes the class.
@@ -49,7 +56,10 @@ class GlobalOptimizer(object):
         self.stopValue = stopValue
         self.stopSystems = stopSystems
 
-    async def update(self, population, parentsGeneration):
+    async def update(self,
+                     population: Pool,
+                     parentsGeneration: 'Generation'
+                     ) -> tuple['Generation', bool, bool]:
         """
         Updates state of optimized structures.
 
@@ -102,7 +112,8 @@ class GlobalOptimizer(object):
                     break
         if self.stopSystems is not None and not isGoalReached:
             stopSystems = list(self.stopSystems)
-            for system in generation.uniqueSystems:
+            for ID in generation.uniqueSystems.getIDs():
+                system = generation.uniqueSystems.getEntry(ID)
                 for i, stopSystem in enumerate(stopSystems):
                     if system == stopSystem:
                         del stopSystems[i]
@@ -112,7 +123,12 @@ class GlobalOptimizer(object):
             isGoalReached = not stopSystems
         return generation, isStable, isGoalReached
 
-    def _markDuplicates(self, population, goodSystems, parentsGeneration, optType):
+    def _markDuplicates(self,
+                        population: Pool,
+                        goodSystems: Pool,
+                        parentsGeneration: 'Generation',
+                        optType: Union[str, Expression]
+                        ) -> Pool:
         """
         Method for cleaning duplicates.
 

@@ -57,14 +57,14 @@ propertiesObj = Table(
 
 class FlavourFactory:
 
-    def __init__(self, extensions, metric=None):
+    def __init__(self, extensions: dict[str, object], metric=None):
         self.extensions = extensions
         self.metric = metric
 
-    def __call__(self, **kwargs):
+    def __call__(self, **kwargs) -> 'Flavour':
         return Flavour(extensions=self.extensions, **kwargs)
 
-    def fetchFlavours(self, entryID):
+    def fetchFlavours(self, entryID: int) -> dict[str, 'Flavour']:
         with Engine.engine.connect() as conn:
             result = conn.execute(select(flavours.c.id, flavours.c.name).where(flavours.c.sID == entryID)).all()
         return {name: Flavour(ID=fID, extensions=self.extensions) for fID, name in result}
@@ -72,15 +72,15 @@ class FlavourFactory:
 
 class Flavour:
 
-    def __init__(self, ID=None, extensions=None, **properties):
+    def __init__(self, ID: int = None, extensions: dict[str, object] = None, **properties):
         self.extensions = extensions if extensions is not None else {}
         self._propertiesCache = properties
         self.ID = ID
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         return dict(ID=self.ID, extensions=self.extensions)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict):
         self.ID = state['ID']
         self.extensions = state['extensions']
         self._propertiesCache = {}
@@ -94,10 +94,10 @@ class Flavour:
         for prop, value in self._propertiesCache.items():
             self._setPropertyBD(prop, value)
 
-    def getFactory(self):
+    def getFactory(self) -> 'FlavourFactory':
         return FlavourFactory(self.extensions)
 
-    def getProperty(self, prop, extension=''):
+    def getProperty(self, prop: str, extension: str = ''):
         if f'{extension}.{prop}' not in self._propertiesCache:
             if self.ID is not None:
                 try:
@@ -114,7 +114,7 @@ class Flavour:
                 raise KeyError(f'Can not evaluate property {extension}.{prop} for {self._propertiesCache}.')
         return self._propertiesCache[f'{extension}.{prop}']
 
-    def _getPropertyBD(self, prop):
+    def _getPropertyBD(self, prop: str):
         stmt = select(propertiesInt.c.value).where(and_(propertiesInt.c.fID == self.ID, propertiesInt.c.prop == prop))
         with Engine.engine.connect() as conn:
             rows = conn.execute(stmt).all()
@@ -141,7 +141,7 @@ class Flavour:
             return pcl.loads(rows[0][0])
         raise KeyError(f"Can't find property {prop} for flavour {self.ID} in the database.")
 
-    def setProperty(self, prop, value, extension=''):
+    def setProperty(self, prop: str, value, extension: str = ''):
         self._propertiesCache[f'{extension}.{prop}'] = value
         if self.ID is not None:
             self._setPropertyBD(f'{extension}.{prop}', value)
@@ -182,7 +182,7 @@ class Flavour:
                     and_(propertiesObj.c.fID == self.ID, propertiesObj.c.prop == prop)).values(value=pcl.dumps(value)))
             conn.commit()
 
-    def delProperty(self, prop, extension=''):
+    def delProperty(self, prop: str, extension: str = ''):
         if f'{extension}.{prop}' in self._propertiesCache:
             del self._propertiesCache[f'{extension}.{prop}']
         if self.ID is not None:
@@ -193,7 +193,7 @@ class Flavour:
             else:
                 self._delPropertyBD(f'{extension}.{prop}', value)
 
-    def _delPropertyBD(self, prop, value):
+    def _delPropertyBD(self, prop: str, value):
         with Engine.engine.connect() as conn:
             if isinstance(value, int):
                 conn.execute(
@@ -214,7 +214,7 @@ class Flavour:
         assert not other, f'Too complex property name {item}.'
         return self.getProperty(prop, extension=extension)
 
-    def __contains__(self, item: str):
+    def __contains__(self, item: str) -> bool:
         extension, prop, *other = item.split('.')
         assert not other, f'Too complex property name {item}.'
         try:

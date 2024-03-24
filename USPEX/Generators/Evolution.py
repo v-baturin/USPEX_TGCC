@@ -9,7 +9,7 @@ USPEX.Generators.Evolution
 import logging
 import numpy as np
 from copy import copy
-from typing import Dict
+from typing import Union
 from collections import Counter
 
 from ..Expressions.Antiseeds import Antiseeds
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class Autofrac(object):
 
-    def __init__(self, fractions : Dict[str, tuple], weightsLast, best : list, newFoundSystems : list, varOperators : list):
+    def __init__(self, fractions : dict[str, tuple], weightsLast, best : list, newFoundSystems : list, varOperators : list):
         """
 
         :param population:
@@ -83,10 +83,10 @@ class Evolution(object):
     Target = None
 
     @classmethod
-    def setTarget(cls, targetType):
+    def setTarget(cls, targetType: type):
         cls.Target = targetType
 
-    def __init__(self, target, optType, popSize: int, fractions: Dict[str, tuple],
+    def __init__(self, target: dict, optType: Union[str, tuple], popSize: int, fractions: dict[str, tuple],
                  initialPopSize: int = None, bestFrac: float=0.7, howManyDiverse: int = None,
                  diversityTolerance: float = 0.5, antiseeds: dict = None, globalParentsPool: bool = False, debug=False,
                  **kwargs):

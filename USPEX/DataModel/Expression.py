@@ -20,22 +20,22 @@ expressions = Table(
 
 class Expression:
 
-    def __init__(self, expression, pool):
+    def __init__(self, expression: tuple, poolID: int):
         with Engine.engine.connect() as conn:
-            result = conn.execute(select(expressions.c.id).where(and_(expressions.c.poolID == pool.ID),
+            result = conn.execute(select(expressions.c.id).where(and_(expressions.c.poolID == poolID),
                                                             expressions.c.name == str(expression))).all()
         if not result:
             with Engine.engine.connect() as conn:
-                result = conn.execute(insert(expressions), [{"poolID": pool.ID, "name": str(expression)}])
+                result = conn.execute(insert(expressions), [{"poolID": poolID, "name": str(expression)}])
                 conn.commit()
             self.ID = result.inserted_primary_key[0]
         else:
             self.ID = result[0][0]
         self._expression = expression
-        self._pool = pool
+        self._poolID = poolID
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.ID)
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'Expression') -> bool:
         return self.ID == other.ID

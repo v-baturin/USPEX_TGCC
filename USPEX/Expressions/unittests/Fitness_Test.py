@@ -13,7 +13,6 @@ import os
 from os.path import join as pj
 
 
-from ..ExpressionEvaluator import ExpressionEvaluator
 from ..Functions.BasicFunctions import BasicFunctions
 from ...DataModel.Engine import Engine
 from ...DataModel.Flavour import FlavourFactory, Flavour
@@ -71,11 +70,9 @@ class Fitness_Test(unittest.TestCase):
                                                **{'.howCome': 'Seeds', '.parent': None},
                                                **system))
 
-        self.fitness = ExpressionEvaluator(self.systems)
-
     def test_enthalpy(self):
         ref = [-646.695, -644.48,  -650.098, -649.082, -651.279, -643.925, -652.042, -648.368, -648.335]
-        self.assertTrue(np.allclose(self.fitness.evaluate('.enthalpy.origin'), ref))
+        self.assertTrue(np.allclose(self.systems.evaluate('.enthalpy.origin'), ref))
 
     def test_composition(self):
         ref = [{'Mg': 4, 'Al': 8, 'O': 16},
@@ -87,7 +84,7 @@ class Fitness_Test(unittest.TestCase):
                {'Mg': 4, 'Al': 8, 'O': 16},
                {'Mg': 4, 'Al': 8, 'O': 16},
                {'Mg': 4, 'Al': 8, 'O': 16}]
-        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.evaluate('simpleMoleculeUtility.composition.origin'), ref)]))
+        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.systems.evaluate('simpleMoleculeUtility.composition.origin'), ref)]))
 
     def test_compositionSpace_numIons(self):
         ref = [[4, 8, 16, ],
@@ -99,37 +96,37 @@ class Fitness_Test(unittest.TestCase):
                [4, 8, 16, ],
                [4, 8, 16, ],
                [4, 8, 16, ]]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('compositionSpace.numMolsFromCompositions',
+        self.assertTrue(np.allclose(self.systems.evaluate(('compositionSpace.numMolsFromCompositions',
                                                               'simpleMoleculeUtility.composition.origin')), ref))
 
     def test_compositionSpace_numBlocks(self):
         ref = [[1], [1], [1], [1], [1], [1], [1], [1], [1]]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('compositionSpace.numBlocksFromCompositions',
+        self.assertTrue(np.allclose(self.systems.evaluate(('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition.origin')), ref))
 
     def test_getRelativeCHSpace(self):
         ref = [[-646.695], [-644.48 ], [-650.098], [-649.082], [-651.279], [-643.925], [-652.042], [-648.368], [-648.335]]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('getRelativeCHSpace',
+        self.assertTrue(np.allclose(self.systems.evaluate(('getRelativeCHSpace',
                                                            ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition.origin'), '.enthalpy.origin')), ref))
 
     def test_convexHullHeightComposition(self):
         ref = [5.347, 7.562, 1.944, 2.96,  0.763, 8.117, 0., 3.674, 3.707]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('convexHullHeight',
+        self.assertTrue(np.allclose(self.systems.evaluate(('convexHullHeight',
                                                            ('getRelativeCHSpace',
                                                                ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition.origin'), '.enthalpy.origin'))), ref))
 
     def test_simpleHeightComposition(self):
         ref = [5.347, 7.562, 1.944, 2.96, 0.763, 8.117, 0., 3.674, 3.707]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('simpleHeight',
+        self.assertTrue(np.allclose(self.systems.evaluate(('simpleHeight',
                                                            ('getRelativeCHSpace',
                                                                ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition.origin'), '.enthalpy.origin'))), ref))
 
     def test_pareto(self):
         ref = [6, 7, 2, 3, 1, 8, 0, 4, 5]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('pareto', ('convexHullHeight',
+        self.assertTrue(np.allclose(self.systems.evaluate(('pareto', ('convexHullHeight',
                                                                       ('getRelativeCHSpace',
                                                                 ('compositionSpace.numBlocksFromCompositions',
                                                               'simpleMoleculeUtility.composition.origin'), '.enthalpy.origin')))), ref))
@@ -144,7 +141,7 @@ class Fitness_Test(unittest.TestCase):
                {'b': [0.1, -0.2]},
                {'a': [0.2, -0.2], 'b': [0.2, -0.2]},
                {'a': [0.2, -0.2], 'b': [0.2, -0.2]}]
-        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.fitness.evaluate('.fingerprint.origin'), ref)]))
+        self.assertTrue(np.all([value == ref_value for value, ref_value in zip(self.systems.evaluate('.fingerprint.origin'), ref)]))
 
     def test_tabulateFingerprint(self):
         ref = [[[ 0.2, -0.2], [ 0.2, -0.2]],
@@ -156,7 +153,7 @@ class Fitness_Test(unittest.TestCase):
                [[-1.,  -1. ], [ 0.1, -0.2]],
                [[ 0.2, -0.2], [ 0.2, -0.2]],
                [[ 0.2, -0.2], [ 0.2, -0.2]]]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('tabulate', '.fingerprint.origin')), ref))
+        self.assertTrue(np.allclose(self.systems.evaluate(('tabulate', '.fingerprint.origin')), ref))
 
     def test_hstack(self):
         ref = [[0.2, -0.2, 0.2, -0.2],
@@ -168,7 +165,7 @@ class Fitness_Test(unittest.TestCase):
                [-1.,  -1., 0.1, -0.2],
                [0.2, -0.2, 0.2, -0.2],
                [0.2, -0.2, 0.2, -0.2]]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('hstack', ('tabulate', '.fingerprint.origin'))), ref))
+        self.assertTrue(np.allclose(self.systems.evaluate(('hstack', ('tabulate', '.fingerprint.origin'))), ref))
 
     def test_getPrincipalComponents(self):
         ref = [[-0.33720674, -0.17273979],
@@ -180,7 +177,7 @@ class Fitness_Test(unittest.TestCase):
                [ 1.07891698,  0.11325245],
                [-0.33720674, -0.17273979],
                [-0.33720674, -0.17273979]]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('getPrincipalComponents', 2,
+        self.assertTrue(np.allclose(self.systems.evaluate(('getPrincipalComponents', 2,
                                                            ('hstack', ('tabulate', '.fingerprint.origin')))), ref))
 
     def test_getAbsoluteCHSpace(self):
@@ -193,14 +190,14 @@ class Fitness_Test(unittest.TestCase):
                [ 1.07891698e+00,  1.13252449e-01, -6.52042000e+02],
                [-3.37206745e-01, -1.72739794e-01, -6.48368000e+02],
                [-3.37206745e-01, -1.72739794e-01, -6.48335000e+02]]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('getAbsoluteCHSpace',
+        self.assertTrue(np.allclose(self.systems.evaluate(('getAbsoluteCHSpace',
                                                            ('getPrincipalComponents', 2,
                                                                ('hstack', ('tabulate', '.fingerprint.origin'))),
                                                               '.enthalpy.origin')), ref))
 
     def test_convexHullHeightFingerprint(self):
         ref = [4.256279, 0., 1.181, 0., 0., 0., 0., 2.583279, 2.616279]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('convexHullHeight',
+        self.assertTrue(np.allclose(self.systems.evaluate(('convexHullHeight',
                                                            ('getAbsoluteCHSpace',
                                                                ('getPrincipalComponents', 2,
                                                                 ('hstack', ('tabulate', '.fingerprint.origin'))),
@@ -238,18 +235,16 @@ class FitnessXray_Test(unittest.TestCase):
         for ID in self.systems.getIDs():
             self.systems.getEntry(ID).setProperty('enthalpy', enthalpies[ID-1])
 
-        self.fitness = ExpressionEvaluator(self.systems)
-
     def test_xraydistance(self):
         ref = [0.190, 0.028,  0.192, 0.165, 0.028, 0.104, 0.028, 0.122, 0.132, 0.042]
-        self.assertTrue(np.allclose(np.round(self.fitness.evaluate('powderSpectrumAnalyzer.xraydistance.origin'),
+        self.assertTrue(np.allclose(np.round(self.systems.evaluate('powderSpectrumAnalyzer.xraydistance.origin'),
                                              decimals=3), ref))
 
     def test_k(self):
         ref = [1.003, 1.005,  1.003, 1.005, 1.006, 1.011, 0.994, 1.004, 1.005, 1.004]
-        self.assertTrue(np.allclose(np.round(self.fitness.evaluate('powderSpectrumAnalyzer.k.origin'), decimals=3), ref))
+        self.assertTrue(np.allclose(np.round(self.systems.evaluate('powderSpectrumAnalyzer.k.origin'), decimals=3), ref))
 
     def test_pareto(self):
         ref = [0, 0, 0, 0, 0, 0, 1, 1, 1, 1]
-        self.assertTrue(np.allclose(self.fitness.evaluate(('pareto', '.enthalpy.origin',
+        self.assertTrue(np.allclose(self.systems.evaluate(('pareto', '.enthalpy.origin',
                                                               'powderSpectrumAnalyzer.xraydistance.origin')), ref))

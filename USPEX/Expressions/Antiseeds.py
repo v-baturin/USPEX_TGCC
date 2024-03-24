@@ -1,6 +1,8 @@
 import numpy as np
 from itertools import combinations
 
+from ..DataModel.Pool import Pool
+
 ANTISEEDS_MAX = 0.005
 ANTISEEDS_SIGMA = 0.001
 
@@ -11,7 +13,7 @@ class Antiseeds:
     Such penalties applied not only to some system itself but to all its neighbours with gaussian distribution.
     """
 
-    def __init__(self, prop='corrections', max=ANTISEEDS_MAX, sigma=ANTISEEDS_SIGMA):
+    def __init__(self, prop: str = 'corrections', max: float = ANTISEEDS_MAX, sigma: float = ANTISEEDS_SIGMA):
         """
         :param max: height of gaussian distribution.
         :param sigma: width of gaussian distribution.
@@ -20,7 +22,7 @@ class Antiseeds:
         self.max = max
         self.sigma = sigma
 
-    def payPenalties(self, population, pool, metric):
+    def payPenalties(self, population: Pool, pool: Pool, metric):
         """
         Calculates and stores penalties.
         :param population: list of systems to be penalized. This systems will be in centers of gaussian distributions.

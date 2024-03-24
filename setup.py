@@ -10,7 +10,6 @@ extensions = [
     Extension("USPEX.Optimizers.GlobalOptimizer", ["USPEX/Optimizers/GlobalOptimizer.py"]),
     Extension("USPEX.Generators.Target", ["USPEX/Generators/Target.py"]),
     Extension("USPEX.Generators.Evolution", ["USPEX/Generators/Evolution.py"]),
-    Extension("USPEX.Expressions.ExpressionEvaluator", ["USPEX/Expressions/ExpressionEvaluator.py"]),
     Extension("USPEX.Expressions.ConvexHull", ["USPEX/Expressions/ConvexHull.py"]),
     Extension("USPEX.Expressions.paretoRanking", ["USPEX/Expressions/paretoRanking.py"]),
     Extension("USPEX.Expressions.Antiseeds", ["USPEX/Expressions/Antiseeds.py"]),

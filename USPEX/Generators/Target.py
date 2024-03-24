@@ -10,7 +10,6 @@ Class describing target space
 
 import logging
 from types import SimpleNamespace
-from typing import List, Dict
 
 from ..Expressions.Functions.BasicFunctions import BasicFunctions
 from ..DataModel.Flavour import FlavourFactory
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class TargetType:
-    def __init__(self, utilities: List[type], hybridizations: List[type], mutations: List[type], creations: List[type],
+    def __init__(self, utilities: list[type], hybridizations: list[type], mutations: list[type], creations: list[type],
                  defaultMetric: str, seeds: type = None):
         self.utilities = utilities
         self.hybridizations = hybridizations
@@ -49,11 +48,11 @@ class Target(object):
         list of utilities.
     """
 
-    knownTargetTypes: Dict[str, TargetType] = {}
+    knownTargetTypes: dict[str, TargetType] = {}
 
     @classmethod
-    def registerTarget(cls, name: str, utilities: List[type], hybridizations: List[type], mutations: List[type],
-                       creations: List[type], defaultMetric: str, seeds: type = None):
+    def registerTarget(cls, name: str, utilities: list[type], hybridizations: list[type], mutations: list[type],
+                       creations: list[type], defaultMetric: str, seeds: type = None):
         """
         Register the target as known target.
 
@@ -75,7 +74,7 @@ class Target(object):
                                                 mutations=mutations, creations=creations, seeds=seeds,
                                                 defaultMetric=defaultMetric)
 
-    def __init__(self, type, defaultSuffix, **kwargs):
+    def __init__(self, type: str, defaultSuffix: str, **kwargs):
         """
         Initializes the class.
 
@@ -158,5 +157,5 @@ class Target(object):
         self.metric = getattr(self.utilities, targetTypes.defaultMetric)
         self.flavourFactory = FlavourFactory(self.propertyExtensions, self.metric)
 
-    def createPool(self):
+    def createPool(self) -> Pool:
         return Pool.newPool(self.flavourFactory, self.expressionExtensions, self.metric)

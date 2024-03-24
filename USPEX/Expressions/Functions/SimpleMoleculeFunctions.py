@@ -1,6 +1,8 @@
 import numpy as np
 from collections import Counter
 
+from ...DataModel.Flavour import Flavour
+
 
 DENSITY_CONST = 1.660539
 
@@ -10,7 +12,7 @@ class SimpleMoleculeFunctions:
     def __init__(self, utility) -> None:
         self.utility = utility
 
-    def moleculeTypes(self, system):
+    def moleculeTypes(self, system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -20,7 +22,7 @@ class SimpleMoleculeFunctions:
         """
         return [self.utility.determineMoleculeType(molecule) for molecule in system['atomistic.molecules']]
 
-    def composition(self, system):
+    def composition(self, system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -30,7 +32,7 @@ class SimpleMoleculeFunctions:
         """
         return Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
 
-    def density(self, system):
+    def density(self, system: Flavour):
         cell = system['atomistic.cell']
         if cell.dim == 3:
             mass = sum(e.mass*v for e, v in self.utility.getElementalComposition(self.composition(system)).items())

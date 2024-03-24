@@ -7,7 +7,6 @@ class Engine:
     metadata_obj = MetaData()
 
     @classmethod
-    def createEngine(cls, filename):
-        if filename is not None:
-            cls.engine = create_engine(f"sqlite+pysqlite:///{filename}")
-            cls.metadata_obj.create_all(cls.engine)
+    def createEngine(cls, filename: str):
+        cls.engine = create_engine(f"sqlite+pysqlite:///{filename}")
+        cls.metadata_obj.create_all(cls.engine)
