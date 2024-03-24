@@ -114,13 +114,14 @@ class Pool:
         else:
             return Expression(expression, self.ID)
 
-    def evaluate(self, expression: Union[tuple, str]):
+    def evaluate(self, expression: Union[tuple, str]) -> np.ndarray:
         storedData = {}
         self._evaluate(expression, storedData)
         for expression, values in storedData.items():
             for ID, value in zip(self.getIDs(), values):
                 if isinstance(expression, tuple):
                     self.getEntry(ID).setExpression(self.createExpression(expression), value)
+        return storedData[expression]
 
     def _evaluate(self, expression: Union[str, tuple, int, float], storedData: dict) -> Union[np.ndarray, int, float]:
         if expression not in storedData:
