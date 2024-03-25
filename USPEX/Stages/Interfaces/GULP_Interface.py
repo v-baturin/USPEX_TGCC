@@ -11,6 +11,7 @@ import shutil
 import yaml
 
 from pathlib import Path
+from typing import List
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class GULP_Interface:
     DEFAULT_SLEEP_TIME = 10
     inputFile, outputFile, errorFile = 'input', 'output', 'error'
 
-    def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: list[str] = None,
+    def __init__(self, tag: str, ginput: str = None, goptions: str = None, libs: List[str] = None,
                  moleculeSpecifics: dict = None, fixCell: bool = False, targetProperties: list = None, **kwargs):
         """
 

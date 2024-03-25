@@ -12,6 +12,7 @@ import numpy as np
 
 
 from scipy.spatial import ConvexHull
+from typing import List
 
 
 from ..ConvexHull import Simplex
@@ -34,7 +35,7 @@ class ConvexHull_Square_Test(unittest.TestCase):
             cls.simplecies.append(Simplex(np.array([square[x][1:] for x in facet])))
             cls.energies.append(np.array([square[x][0] for x in facet]))
 
-    def get_heights(self, point) -> list[float]:
+    def get_heights(self, point) -> List[float]:
         '''
         For GCH first number is energy, next - coordinates
         :param point:
@@ -101,7 +102,7 @@ class Simplex_Test(unittest.TestCase):
             cls.simplicies.append(Simplex(np.array([v1[1:], v2[1:]])))
             cls.energies.append(np.array([v1[0], v2[0]]))
 
-    def get_heights(self, point) -> list[float]:
+    def get_heights(self, point) -> List[float]:
         '''
         For GCH first number is energy, next - coordinates
         :param point:

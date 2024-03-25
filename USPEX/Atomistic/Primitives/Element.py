@@ -8,6 +8,8 @@ Class for Element
 .. codeauthor:: Artem Samtsevich <samtsevichartem@gmail.com>
 """
 
+from typing import List, Union, Optional
+
 
 class _Atom:
     z: int                         # atomic number
@@ -15,13 +17,12 @@ class _Atom:
     fullname: str                  # Full name of the element
     valence: float                 # Valence of the element
     v_electrons: int               # number of valence electrons
-    R_covalent: float              # covalent radius of the element
-    R_vdW: float                   # van der Waals radius of the element
+    R_covalent: Optional[float]    # covalent radius of the element
     good_bonds: float              # good bonds
     mass: float                    # element mass
 
     def __init__(self, z: int, shortname: str, fullname: str, valence: float, v_electrons: int,
-                 R_covalent: float | None, R_vdW: float | None, good_bonds: float, mass: float):
+                 R_covalent: Optional[float], R_vdW: Optional[float], good_bonds: float, mass: float):
         self.z = z
         self.shortname = shortname
         self.fullname = fullname
@@ -167,7 +168,7 @@ class Element(object):
     good_bonds = None
     mass = None
 
-    def __init__(self, input: str | int, charge=None, **kwargs):
+    def __init__(self, input: Union[str, int], charge=None, **kwargs):
         """
         Initializes the class.
 
@@ -236,35 +237,35 @@ class Element(object):
         return [Element(x.z) for x in _ELEMENTS_LIST]
 
     @staticmethod
-    def all_z() -> list[int]:
+    def all_z() -> List[int]:
         return [x.z for x in _ELEMENTS_LIST]
 
     @staticmethod
-    def all_short_names() -> list[str]:
+    def all_short_names() -> List[str]:
         return [x.shortname for x in _ELEMENTS_LIST]
 
     @staticmethod
-    def all_long_names() -> list[str]:
+    def all_long_names() -> List[str]:
         return [x.fullname for x in _ELEMENTS_LIST]
 
     @staticmethod
-    def all_valences() -> list[float]:
+    def all_valences() -> List[float]:
         return [x.valence for x in _ELEMENTS_LIST]
 
     @staticmethod
-    def all_valence_electrons() -> list[int]:
+    def all_valence_electrons() -> List[int]:
         return [x.v_electrons for x in _ELEMENTS_LIST]
 
     @staticmethod
-    def all_covalent_radii() -> list[float]:
+    def all_covalent_radii() -> List[float]:
         return [x.R_covalent for x in _ELEMENTS_LIST]
 
     @staticmethod
-    def all_good_bonds() -> list[float]:
+    def all_good_bonds() -> List[float]:
         return [x.good_bonds for x in _ELEMENTS_LIST]
 
     @staticmethod
-    def all_masses() -> list[float]:
+    def all_masses() -> List[float]:
         return [x.mass for x in _ELEMENTS_LIST]
 
 

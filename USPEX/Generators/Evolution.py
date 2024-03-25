@@ -9,6 +9,7 @@ USPEX.Generators.Evolution
 import logging
 import numpy as np
 from copy import copy
+from typing import Union
 from collections import Counter
 
 from ..Expressions.Antiseeds import Antiseeds
@@ -85,7 +86,7 @@ class Evolution(object):
     def setTarget(cls, targetType: type):
         cls.Target = targetType
 
-    def __init__(self, target: dict, optType: str | tuple, popSize: int, fractions: dict[str, tuple],
+    def __init__(self, target: dict, optType: Union[str, tuple], popSize: int, fractions: dict[str, tuple],
                  initialPopSize: int = None, bestFrac: float=0.7, howManyDiverse: int = None,
                  diversityTolerance: float = 0.5, antiseeds: dict = None, globalParentsPool: bool = False, debug=False,
                  **kwargs):
