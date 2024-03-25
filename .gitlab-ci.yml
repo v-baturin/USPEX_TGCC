@@ -45,6 +45,7 @@ test_binaries:
     - pip install nose
     - mkdir binaries && unzip dist/uspex-*-cp39-cp39-linux_x86_64.whl -d binaries
     - find ./USPEX -type d -name "*unittests*" | xargs -I {} -t sh -c 'mkdir -p ./binaries/$(dirname {}) && mv {} ./binaries/$(dirname {})'
+    - find ./USPEX -type f -name "__init__.py" | xargs -I {} -t sh -c 'cp {} ./binaries/$(dirname {})'
     - cd binaries/USPEX
     - nosetests -v .
 
