@@ -10,7 +10,6 @@ import numpy as np
 import shutil
 
 from pathlib import Path
-from typing import List
 from ase.io import read
 
 
@@ -46,8 +45,8 @@ class LAMMPS_Interface:
     def registerTypes(cls, AtomicStructureRepresentation):
         cls.AtomicStructureRepresentation = AtomicStructureRepresentation
 
-    def __init__(self, tag: str, specorder: List[str], lammps_in: str = None, mlip_in: str = None, mlip: str = None,
-                 libs: List[str] = None, targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str, specorder: list[str], lammps_in: str = None, mlip_in: str = None, mlip: str = None,
+                 libs: list[str] = None, targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:

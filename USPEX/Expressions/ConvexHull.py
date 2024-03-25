@@ -11,7 +11,6 @@ Class for ConvexHull
 import logging
 import numpy as np
 from scipy.spatial import ConvexHull as QHull
-from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -131,14 +130,14 @@ class ConvexHull(object):
         # assert set(qhull.vertices) == set(chain(self.lower_bound, self.upper_bound))
 
     @property
-    def lower_bound(self) -> List[int]:
+    def lower_bound(self) -> list[int]:
         '''
         :return: IDs of structures, which are on the lower bound of CH
         '''
         return list(i for i, x in enumerate(self._height) if np.isclose(x, 0.0))
 
     @property
-    def upper_bound(self) -> List[int]:
+    def upper_bound(self) -> list[int]:
         '''
         :return: IDs of structures, which are on the lower bound of CH
         '''

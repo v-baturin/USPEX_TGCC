@@ -11,7 +11,6 @@ import os
 import shutil
 import numpy as np
 from pathlib import Path
-from typing import List
 
 from .KPoints import KPoints, BadKPoints
 
@@ -41,7 +40,7 @@ class ABINIT_Interface:
     def __init__(self, tag: str, 
                        kresol: float,
                        in_file: str = None,
-                       pp_files: List[str] = None,
+                       pp_files: list[str] = None,
                        targetProperties: list = None,
                        **kwargs):
         """

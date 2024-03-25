@@ -10,7 +10,6 @@ Objects and methods for handling chemical bonds
 
 import logging
 import numpy as np
-from typing import Dict, Tuple, Union
 from ase.atoms import Atoms
 from ase.neighborlist import primitive_neighbor_list
 from itertools import combinations_with_replacement
@@ -54,7 +53,7 @@ class Bond(object):
         self._dir2 = np.asarray(dir2, dtype=int)
 
     @property
-    def indicies(self) -> Tuple[int, int]:
+    def indicies(self) -> tuple[int, int]:
         return self._index1, self._index2
 
     @property
@@ -86,7 +85,7 @@ class Bond(object):
 class BondUtility:
 
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
-                 cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, ionDistances=None):
+                 cutoff: str | dict | float | int = 'strong', volumeType=0, ionDistances=None):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
         self.maxBond = maxBond if maxBond is not None else MAX_BOND
         self.lowerBond = lowerBond if lowerBond is not None else LOWER_BOND

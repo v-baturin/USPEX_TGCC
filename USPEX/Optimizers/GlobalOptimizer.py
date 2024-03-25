@@ -10,7 +10,6 @@ Class implementing global optimizer
 import logging
 import numpy as np
 from copy import copy
-from typing import Union
 
 from ..DataModel.Pool import Pool
 from ..DataModel.Expression import Expression
@@ -38,7 +37,7 @@ class GlobalOptimizer(object):
     """
 
     def __init__(self,
-                 optType: Union[str, tuple],
+                 optType: str | tuple,
                  goodSystemsSuffixes: set[str],
                  stopValue: float = None,
                  stopSystems: tuple = None,
@@ -127,7 +126,7 @@ class GlobalOptimizer(object):
                         population: Pool,
                         goodSystems: Pool,
                         parentsGeneration: 'Generation',
-                        optType: Union[str, Expression]
+                        optType: str | Expression
                         ) -> Pool:
         """
         Method for cleaning duplicates.

@@ -7,7 +7,6 @@ USPEX.Atomistic.RadialDistributionUtility
 
 import logging
 import numpy as np
-from typing import Dict, Tuple
 from collections.abc import Mapping
 
 from scipy.special import erf
@@ -440,7 +439,7 @@ class RadialDistributionUtility(object):
     @staticmethod
     def _fingerprintWeights(structure):
         """
-        :rtype: Dict[Tuple[str,str], float]
+        :rtype: dict[tuple[str,str], float]
         :return: weights of fingerprints of each atom type pair to be used in cosine distance calculation.
         """
         comp = structure.getComposition()

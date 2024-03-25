@@ -9,7 +9,6 @@ import numpy as np
 import shutil
 
 from pathlib import Path
-from typing import List
 from ase.io.vasp import iread_vasp_out, read_vasp_xml, write_vasp
 from ase.io import ParseError
 from ase.atoms import Atoms
@@ -21,7 +20,7 @@ from .KPoints import KPoints, BadKPoints
 logger = logging.getLogger(__name__)
 
 
-def split_up_data(data: List[str], out_size:int):
+def split_up_data(data: list[str], out_size:int):
     '''
     Sometimes data in the OUTCAR is gleaned in the follows way:
 

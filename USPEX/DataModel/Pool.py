@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from typing import Union, Mapping
+from typing import Mapping
 from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, Float, String, select, update, delete, and_
 from sqlalchemy.dialects.sqlite import insert
 
@@ -101,20 +101,20 @@ class Pool:
             self._cache[ID] = Entry.getEntry(ID, self.flavourFactory, self.metric)
         return self._cache[ID]
 
-    def fronts(self, expression: Union[Expression, str]) -> list[list['Entry']]:
+    def fronts(self, expression: Expression | str) -> list[list['Entry']]:
         # expression = applyPresetsRecursive(expression)
         entries = [self.getEntry(ID) for ID in self.getIDs()]
         values = [entry[expression] if isinstance(expression, str) else entry.getExpression(expression)
                   for entry in entries]
         return [[entries[ind] for ind in np.flatnonzero(values == value)] for value in np.unique(values)]
 
-    def createExpression(self, expression: Union[tuple, str]) -> Union[Expression, str]:
+    def createExpression(self, expression: tuple | str) -> Expression | str:
         if isinstance(expression, str):
             return expression
         else:
             return Expression(expression, self.ID)
 
-    def evaluate(self, expression: Union[tuple, str]) -> np.ndarray:
+    def evaluate(self, expression: tuple | str) -> np.ndarray:
         storedData = {}
         self._evaluate(expression, storedData)
         for expression, values in storedData.items():
@@ -123,7 +123,7 @@ class Pool:
                     self.getEntry(ID).setExpression(self.createExpression(expression), value)
         return storedData[expression]
 
-    def _evaluate(self, expression: Union[str, tuple, int, float], storedData: dict) -> Union[np.ndarray, int, float]:
+    def _evaluate(self, expression: str | tuple | int | float, storedData: dict) -> np.ndarray | int | float:
         if expression not in storedData:
             if len(self.getIDs()) == 0:
                 valueArray = np.empty(0)

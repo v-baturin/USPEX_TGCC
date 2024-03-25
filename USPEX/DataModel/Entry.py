@@ -1,6 +1,5 @@
 import logging
 import pickle as pcl
-from typing import Union
 from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, Float, String, select, update, delete, and_
 from sqlalchemy.dialects.sqlite import insert
 
@@ -185,7 +184,7 @@ class Entry:
         return None
 
 
-    def __getitem__(self, item: Union[str, Expression]):
+    def __getitem__(self, item: str | Expression):
         if isinstance(item, str):
             if item == 'ID':
                 return self.ID
@@ -194,7 +193,7 @@ class Entry:
             return self.getProperty(prop, prefix, suffix)
         return self.getExpression(item)
 
-    def __contains__(self, item: Union[str, Expression]) -> bool:
+    def __contains__(self, item: str | Expression) -> bool:
         if item == 'ID':
             return True
         elif isinstance(item, tuple):
