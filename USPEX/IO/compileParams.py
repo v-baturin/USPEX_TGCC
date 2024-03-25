@@ -1,4 +1,5 @@
 from itertools import chain
+from pathlib import Path
 
 from ..components import AtomicStructureRepresentation, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
     EnvironmentUtility, JunctionUtility, SimpleMoleculeUtility, Atomistic
@@ -90,10 +91,10 @@ def compileParams(main: dict) -> dict:
         if 'cutoff' not in target['bondUtility']:
             target['bondUtility']['cutoff'] = 'vdw' if defaultCutoffVDW else 'strong'
         if 'powderSpectrumAnalyzer' in target:
-            target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(target['powderSpectrumAnalyzer'])
+            target['powderSpectrumAnalyzer'] = PowderSpectrumAnalyzer.parse(Path(target['powderSpectrumAnalyzer']))
         if 'singleCrystalSpectrumAnalyzer' in target:
             sCS = target['singleCrystalSpectrumAnalyzer']
-            sCS['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(sCS.pop('hklFile'))
+            sCS['expReflections'] = SingleCrystalSpectrumAnalyzer.parse(Path(sCS.pop('hklFile')))
         if 'radialDistributionUtility' not in target:
             target['radialDistributionUtility'] = {}
         if 'symbols' not in target['radialDistributionUtility']:
