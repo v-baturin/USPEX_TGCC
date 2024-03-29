@@ -206,7 +206,8 @@ class RadialDistributionUtility(object):
         N_type = numIons.shape[0]
         N_atom = np.sum(numIons)
         N_pair = dist_matrix.shape[0]  # the number of atomic pairs being considered
-        normalizer = numIons / np.linalg.det(lat) if sum(fp_pbc) == 3 else np.zeros((1,), dtype=float)
+        #normalizer = numIons / np.linalg.det(lat) if sum(fp_pbc) == 3 else np.zeros((1,), dtype=float)
+        normalizer = 1 / np.linalg.det(lat) if sum(fp_pbc) == 3 else np.zeros((1,), dtype=float)
 
         N_Bins = int(round(self.Rmax / float(self.delta)))
         fing = np.zeros((N_type, N_type, N_Bins))
@@ -334,7 +335,8 @@ class RadialDistributionUtility(object):
         atom_fing /= (4.0 * np.pi * self.delta)
         atom_fing -= normalizer.reshape((1, -1, 1))
 
-        fing /= (4.0 * np.pi * numIons.reshape((-1, 1, 1)) * self.delta)
+        #fing /= (4.0 * np.pi * numIons.reshape((-1, 1, 1)) * self.delta)
+        fing /= (4.0 * np.pi * numIons.reshape((-1, 1, 1)) * numIons.reshape((1, -1, 1)) * self.delta)
         fing -= normalizer.reshape((1, -1, 1))
 
         atomFings = []
