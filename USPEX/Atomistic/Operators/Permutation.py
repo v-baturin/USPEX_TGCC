@@ -3,6 +3,8 @@ from itertools import combinations
 from copy import copy
 
 from ..Transformation import Transformation
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory
 
 
 _SWAP_ATTEMPTS = 1000
@@ -25,7 +27,7 @@ class Permutation:
         self.howManySwaps = howManySwaps
         self.swapAttempts = swapAttempts
 
-    def __call__(self, system, offspringFactory=None):
+    def __call__(self, system: Entry, offspringFactory: FlavourFactory = None):
         molecules = system.getProperty('molecules', extension='atomistic', suffix=self.suffix)
         cell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
         structure = system.getProperty('structure', extension='atomistic', suffix=self.suffix)

@@ -4,7 +4,10 @@ import os
 
 
 from ..PopulationProcessor import PopulationProcessor, Stages
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour, Pool, FlavourFactory
+from ...DataModel.Engine import Engine
+from ...DataModel.Flavour import Flavour, FlavourFactory
+from ...DataModel.Entry import Entry
+from ...DataModel.Pool import Pool
 
 
 class Stage1:
@@ -36,7 +39,7 @@ Stages.registerStage('stage2', Stage2)
 class PopulationProcessor_Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        PoolEntry.createEngine(":memory:")
+        Engine.createEngine(":memory:")
 
     def test_life(self):
         stages = [{'stageType': 'stage1', 'tag': '1', 'source': 'origin'},
@@ -44,7 +47,7 @@ class PopulationProcessor_Test(unittest.TestCase):
                   {'stageType': 'stage1', 'tag': '3', 'source': '2'}]
         population = Pool.newPool(FlavourFactory({}), {})
         for i in range(20):
-            population.newEntry(EntryFlavour(**{'.howCome': None, '.parent': None, '.isBad': False}))
+            population.newEntry(Flavour(**{'.howCome': None, '.parent': None, '.isBad': False}))
         asyncio.get_event_loop().run_until_complete(PopulationProcessor.processPopulation(stages, population, 10))
 
         for ID in population.getIDs():

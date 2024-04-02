@@ -6,7 +6,9 @@ import asyncio
 
 from pathlib import Path
 
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour, Pool, FlavourFactory
+from ...DataModel.Engine import Engine
+from ...DataModel.Flavour import FlavourFactory, Flavour
+from ...DataModel.Pool import Pool
 from ...components import GlobalOptimizer, Atomistic, Evolution
 from ..OutputRepresentation import OutputRepresentation
 
@@ -16,7 +18,7 @@ TESTPATH = Path(__file__).parent
 class Output_Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        PoolEntry.createEngine(':memory:')
+        Engine.createEngine(':memory:')
 
     def test_1(self):
         folder_name = 'output_results'
@@ -82,7 +84,7 @@ class Output_Test(unittest.TestCase):
                     del structure['ID']
                 structure.update(Atomistic.readAtomicStructure(
                     TESTPATH / f"output_data/system{gen * popSize + i}s0.vasp"))
-                ID = allSystems.newEntry(EntryFlavour(extensions=extensions, **structure))
+                ID = allSystems.newEntry(Flavour(extensions=extensions, **structure))
                 system = allSystems.getEntry(ID)
                 for j in range(numStages):
                     try:

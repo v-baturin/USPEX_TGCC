@@ -5,6 +5,8 @@ import numpy as np
 from copy import copy
 
 from ..Transformation import Transformation
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory
 
 
 class Rotation():
@@ -18,7 +20,7 @@ class Rotation():
         self.cellUtility = utilities.cellUtility
 
 
-    def __call__(self, system, offspringFactory=None) -> tuple:
+    def __call__(self, system: Entry, offspringFactory: FlavourFactory = None) -> tuple:
         molecules = system['molecules']
         cell = system['cell']
         if self.cellUtility.isGoodCell(cell):

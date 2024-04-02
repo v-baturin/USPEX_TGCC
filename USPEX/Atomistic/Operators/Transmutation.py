@@ -1,5 +1,8 @@
 import numpy as np
 
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory
+
 _TRANS_ATTEMPTS = 1000
 
 
@@ -19,7 +22,7 @@ class Transmutation:
         self.howManyTrans = howManyTrans
         self.transAttempts = transAttempts
 
-    def __call__(self, system, offspringFactory=None):
+    def __call__(self, system: Entry, offspringFactory: FlavourFactory = None):
         molecules = system.getProperty('molecules', extension='atomistic', suffix=self.suffix)
         cell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
         structure = system.getProperty('structure', extension='atomistic', suffix=self.suffix)

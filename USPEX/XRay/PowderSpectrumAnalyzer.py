@@ -8,12 +8,12 @@ Class which implements the fitness function for comparing powder X-ray spectra
 """
 
 import numpy as np
-
 from copy import deepcopy
 from scipy.optimize import minimize
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
+from pathlib import Path
 
 
 from ..Expressions.Functions.PowderSpectrumAnalyzerFunctions import PowderSpectrumAnalyzerFunctions
@@ -92,12 +92,12 @@ class PowderSpectrumAnalyzer(object):
         system.setProperty('k', result.x[0], extension='powderSpectrumAnalyzer')
 
     @staticmethod
-    def parse(filename: str):
+    def parse(filename: Path):
         """
         It parses a file containing information about the experimental spectrum and
         it returns a dictionary containing the parameters for class initialization.
 
-        :type filename: str
+        :type filename: Path
         :param filename: filename.
         :rtype: dict
         :return: kwargs parsed from the file.

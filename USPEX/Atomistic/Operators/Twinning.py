@@ -1,5 +1,8 @@
 import numpy as np
 
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory
+
 from ..Slab import Slab
 
 
@@ -11,7 +14,7 @@ class Twinning:
         self.radialDistributionUtility = utilities.radialDistributionUtility
         self.correlation = 0
 
-    def __call__(self, system, offspringFactory=None):
+    def __call__(self, system: Entry, offspringFactory: FlavourFactory = None):
         cell = system['cell']
         molecules = system['molecules']
         order = self.radialDistributionUtility.order(system)

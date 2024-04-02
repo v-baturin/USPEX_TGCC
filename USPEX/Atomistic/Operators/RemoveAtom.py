@@ -1,6 +1,9 @@
 import numpy as np
 from copy import copy, deepcopy
 
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory
+
 
 class RemoveAtom:
     def __init__(self, utilities, suffix):
@@ -16,7 +19,7 @@ class RemoveAtom:
             raise RuntimeError("RemoveAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
 
-    def __call__(self, system, offspringFactory=None):
+    def __call__(self, system: Entry, offspringFactory: FlavourFactory = None):
         molecules = system.getProperty('molecules', extension='atomistic', suffix=self.suffix)
         cell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
         environments = system.getProperty('environments', extension='atomistic', suffix=self.suffix)

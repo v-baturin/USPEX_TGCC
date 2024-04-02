@@ -6,6 +6,9 @@ from time import time
 import numpy as np
 from scipy.special import binom
 
+from ...DataModel.Flavour import FlavourFactory
+
+
 MAX_CORELIGAND_TIME = 30
 MAX_RANDOM_TIME = 300
 MAX_CORELIGAND_ATTEMPTS = 1000
@@ -29,7 +32,7 @@ class CoreAdsorbantRandomGenerator:
         if debug:
             logger.setLevel(logging.DEBUG)
 
-    def __call__(self, offspringFactory=None):
+    def __call__(self, offspringFactory: FlavourFactory = None):
         # Choice of active centers
         # Reorienting adsorbants according to chosen active centers in core
         composition = self.compositionSpace.randomComposition()  # {symbol : numbers, ...}

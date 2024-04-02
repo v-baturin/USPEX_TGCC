@@ -4,7 +4,9 @@ from pathlib import Path
 import numpy as np
 
 from ..RadialDistributionUtility import RadialDistributionUtility
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...DataModel.Engine import Engine
+from ...DataModel.Flavour import Flavour
+from ...DataModel.Entry import Entry
 from ...components import Atomistic
 
 PATH_WITH_TESTS = Path(__file__).parent
@@ -12,7 +14,7 @@ PATH_WITH_TESTS = Path(__file__).parent
 
 class RadialDistributionUtility_Test(unittest.TestCase):
     def setUp(self):
-        PoolEntry.createEngine(':memory:')
+        Engine.createEngine(':memory:')
         self.utility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'], suffix='origin')
         atomistic = Atomistic()
         extensions = dict(
@@ -20,15 +22,15 @@ class RadialDistributionUtility_Test(unittest.TestCase):
             radialDistributionUtility=self.utility.propertyExtension()
         )
 
-        self.systemRDU1 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,
+        self.systemRDU1 = Entry.newEntry(Flavour(extensions=extensions,
                                                           **{'.howCome': 'Seeds', '.parent': None},
                                                           **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU1.POSCAR")))
         self.systemRDU1.getProperty('structure', extension='atomistic')
-        self.systemRDU2 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,
+        self.systemRDU2 = Entry.newEntry(Flavour(extensions=extensions,
                                                           **{'.howCome': 'Seeds', '.parent': None},
                                                            **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU2.POSCAR")))
         self.systemRDU2.getProperty('structure', extension='atomistic')
-        self.systemRDU3 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,
+        self.systemRDU3 = Entry.newEntry(Flavour(extensions=extensions,
                                                           **{'.howCome': 'Seeds', '.parent': None},
                                                            **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU3.POSCAR")))
         self.systemRDU3.getProperty('structure', extension='atomistic')

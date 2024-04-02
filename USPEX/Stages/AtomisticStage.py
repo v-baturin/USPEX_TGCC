@@ -4,7 +4,7 @@ import numpy as np
 from itertools import product
 from ase.geometry import get_distances
 
-from ..Optimizers.PoolEntry import PoolEntry
+from ..DataModel.Entry import Entry
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class AtomisticStage:
         self.kwargs = kwargs
         self.executor = self.executorType(tag=tag, targetProperties=self.targetProperties, **kwargs)
 
-    async def run(self, system: PoolEntry):
+    async def run(self, system: Entry):
         if self.environmentStyle != 'noEnvironment':
             structure = system.getProperty('structure', extension='atomistic', suffix=self.source)
             disassembler = system.getProperty('disassembler', extension='atomistic', suffix=self.source)

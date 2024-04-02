@@ -7,7 +7,7 @@ import filecmp
 from pathlib import Path
 
 from ..LAMMPS_Interface import LAMMPS_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -44,7 +44,7 @@ class LAMMPS_CalculatorTest(unittest.TestCase):
             intermediate['atomistic.disassembler'] = disassembler
             intermediate['.externalPressure'] = 100.0
             intermediate['.ID'] = ID
-            intermediate = EntryFlavour(extensions=extensions, **intermediate)
+            intermediate = Flavour(extensions=extensions, **intermediate)
             WORKPATH.mkdir(parents=True, exist_ok=True)
             lammps.prepareLocalCalculation(intermediate, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{ID}"
@@ -87,7 +87,7 @@ class LAMMPS_InterfaceTest(unittest.TestCase):
         intermediate['.externalPressure'] = 0.0
         intermediate['.ID'] = ID
         intermediate['atomistic.disassembler'] = disassembler
-        intermediate = EntryFlavour(extensions=extensions, **intermediate)
+        intermediate = Flavour(extensions=extensions, **intermediate)
         result = interface.readOutput(intermediate, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
         self.assertTrue(np.isclose(result['.enthalpy'], -102.64364))
 
@@ -112,7 +112,7 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
         intermediate['.ID'] = 0
         intermediate['atomistic.structure'] = structure
         intermediate['atomistic.disassembler'] = disassembler
-        intermediate = EntryFlavour(extensions=self.extensions, **intermediate)
+        intermediate = Flavour(extensions=self.extensions, **intermediate)
         calcFolder = HOMEPATH/'LAMMPS_MLIP_INIT'
         calcFolder.mkdir()
         self.interface.prepareLocalCalculation(intermediate, calcFolder=calcFolder)
@@ -126,7 +126,7 @@ class LAMMPS_MLIP_Test(unittest.TestCase):
 
 
     def test_sample(self):
-        result = self.interface.readOutput(EntryFlavour(extensions=self.extensions), calcFolder=HOMEPATH/'LAMMPS_MLIP_SAMPLE')
+        result = self.interface.readOutput(Flavour(extensions=self.extensions), calcFolder=HOMEPATH/'LAMMPS_MLIP_SAMPLE')
         self.assertEqual(len(result['.trajectory']), 1805)
         for system in result['.trajectory']:
             self.assertEqual(len(system['structure']), 104)
