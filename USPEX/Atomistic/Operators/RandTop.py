@@ -14,6 +14,7 @@ from sympy.combinatorics.partitions import Partition, RGS_rank
 
 from ..SymmetricStructure import SymmetricStructure
 from ...SpaceGroups.SpaceGroups3D import Group
+from ...DataModel.Flavour import FlavourFactory
 
 
 HOMEPATH = Path(__file__).parent
@@ -46,7 +47,7 @@ class RandTop:
         self.__dict__.update(state)
         signal.signal(signal.SIGALRM, signal_handler)
 
-    def __call__(self, offspringFactory):
+    def __call__(self, offspringFactory: FlavourFactory):
         composition = self.compositionSpace.randomComposition()
         envAssembler = np.random.choice(self.environmentUtility.environments) if self.environmentUtility.environments \
             else None

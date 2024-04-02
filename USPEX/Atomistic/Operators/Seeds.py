@@ -15,6 +15,8 @@ import numpy as np
 
 from pathlib import Path
 
+from ...DataModel.Flavour import FlavourFactory
+
 
 class Seeds(object):
 
@@ -34,7 +36,7 @@ class Seeds(object):
         self.seedsFolders = [Path(s) for s in seedsFolders] if seedsFolders is not None else []
         self.currentGeneration = 0
 
-    def __call__(self, offspringFactory=None):
+    def __call__(self, offspringFactory: FlavourFactory = None):
 
         if self.currentGeneration not in self.generations:
             logger.debug(f'No Seeds specified for generation {self.currentGeneration}.')

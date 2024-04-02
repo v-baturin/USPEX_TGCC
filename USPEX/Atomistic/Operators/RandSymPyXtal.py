@@ -9,6 +9,8 @@ from pyxtal.crystal import Lattice
 from pyxtal import pyxtal
 from pyxtal.molecular_crystal import molecular_crystal
 
+from ...DataModel.Flavour import FlavourFactory
+
 
 MAX_PYXTAL_TIME = 30
 MAX_RANDOM_TIME = 300
@@ -50,7 +52,7 @@ class RandSymPyXtal:
         self.__dict__.update(state)
         signal.signal(signal.SIGALRM, signal_handler)
 
-    def __call__(self, offspringFactory=None):
+    def __call__(self, offspringFactory: FlavourFactory = None):
         composition = self.compositionSpace.randomComposition()
 
         symbols = list(composition.keys())

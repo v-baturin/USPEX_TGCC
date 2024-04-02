@@ -15,6 +15,7 @@ import signal
 
 from ..Transformation import Transformation
 from ...SpaceGroups.SpaceGroups3D import Group
+from ...DataModel.Flavour import FlavourFactory
 
 MAX_RANDOM_FAILED_DIST = 10000
 EXIT_TIME = 1200
@@ -97,7 +98,7 @@ class RandSym:
         self.__dict__.update(state)
         signal.signal(signal.SIGALRM, signal_handler)
 
-    def __call__(self, offspringFactory=None):
+    def __call__(self, offspringFactory: FlavourFactory = None):
         composition = self.compositionSpace.randomComposition()
 
         symbols = list(composition.keys())

@@ -2,6 +2,8 @@ import numpy as np
 from scipy.linalg import norm
 from copy import deepcopy
 
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory
 
 class AddAtom:
     def __init__(self, utilities, suffix):
@@ -17,7 +19,7 @@ class AddAtom:
             raise RuntimeError("AddAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
 
-    def __call__(self, system, offspringFactory=None):
+    def __call__(self, system: Entry, offspringFactory: FlavourFactory = None):
         molecules = system.getProperty('molecules', extension='atomistic', suffix=self.suffix)
         cell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
         environments = system.getProperty('environments', extension='atomistic', suffix=self.suffix)

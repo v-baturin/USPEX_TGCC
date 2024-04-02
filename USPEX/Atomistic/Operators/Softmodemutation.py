@@ -4,6 +4,8 @@ logger = logging.getLogger(__name__)
 import numpy as np
 
 from ..Transformation import Transformation
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory
 
 
 _MIN_VALID_FREQUENCY = 5.0e-4
@@ -20,7 +22,7 @@ class Softmodemutation:
         self.suffix = suffix
         self.knownSystems = {}
 
-    def __call__(self, system, offspringFactory=None):
+    def __call__(self, system: Entry, offspringFactory: FlavourFactory = None):
         ID = system.ID
         molecules = system.getProperty('molecules', extension='atomistic', suffix=self.suffix)
         cell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)

@@ -7,6 +7,8 @@ from collections import Counter
 
 from ..Slab import Slab
 from ..Transformation import Transformation
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory
 
 ATTEMPTS = 100
 NSLUBS = 2
@@ -39,7 +41,7 @@ class Heredity:
         if np.isnan(self.correlation):
             self.correlation = 0
 
-    def __call__(self, system1, system2, offspringFactory=None):
+    def __call__(self, system1: Entry, system2: Entry, offspringFactory: FlavourFactory = None):
         molecules1 = system1.getProperty('molecules', extension='atomistic', suffix=self.suffix)
         cell1 = system1.getProperty('cell', extension='atomistic', suffix=self.suffix)
         composition1 = system1.getProperty('composition', extension='simpleMoleculeUtility', suffix='origin')
