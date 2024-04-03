@@ -19,6 +19,7 @@ from scipy.spatial.distance import cdist
 from scipy.stats import gmean
 from itertools import chain
 
+from ..Semantics.Atomistic.BondUtility import BondUtility as BondUtilitySemantics
 from .VolumeEstimator import VolumeEstimator
 from ..Expressions.Functions.BondFunctions import BondFunctions
 
@@ -83,7 +84,7 @@ class Bond(object):
         return isEqualSymbols and isEqualDistance
 
 
-class BondUtility:
+class BondUtility(BondUtilitySemantics):
 
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
                  cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, ionDistances=None):

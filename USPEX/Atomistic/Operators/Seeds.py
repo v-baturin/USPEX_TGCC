@@ -15,6 +15,10 @@ import numpy as np
 
 from pathlib import Path
 
+from ...Semantics.Atomistic.Atomistic import Atomistic
+from ...Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ...Semantics.Atomistic.BondUtility import BondUtility
+from ...Semantics.Atomistic.Conditions import Conditions
 from ...DataModel.Flavour import FlavourFactory
 
 
@@ -27,10 +31,10 @@ class Seeds(object):
         :param generations:
         :param seedsFolders: default Seeds/POSCAR
         '''
-        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.bondUtility = utilities.bondUtility
-        self.conditions = utilities.conditions
-        self.atomistic = utilities.atomistic
+        self.simpleMoleculeUtility: SimpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.bondUtility: BondUtility = utilities.bondUtility
+        self.conditions: Conditions = utilities.conditions
+        self.atomistic: Atomistic = utilities.atomistic
 
         self.generations = generations if generations is not None else []
         self.seedsFolders = [Path(s) for s in seedsFolders] if seedsFolders is not None else []

@@ -7,6 +7,7 @@ import logging
 import numpy as np
 from collections import Counter
 
+from ..Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility as SimpleMoleculeUtilitySemantics
 from .Transformation import Transformation
 from ..Expressions.Functions.SimpleMoleculeFunctions import SimpleMoleculeFunctions
 
@@ -20,7 +21,7 @@ INTEGRITY_TOL = {'all': 0.1, # maximum relative change in all distances
                  }
 
 
-class SimpleMoleculeUtility(object):
+class SimpleMoleculeUtility(SimpleMoleculeUtilitySemantics):
     """
     Utility providing methods for work with simple molecules.
     """

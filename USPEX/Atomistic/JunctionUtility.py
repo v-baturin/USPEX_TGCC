@@ -2,6 +2,8 @@ import numpy as np
 from .Transformation import Transformation
 import logging
 
+from ..Semantics.Atomistic.JunctionUtility import JunctionUtility as JunctionUtilitySemantics
+
 ALPHA_JUNCTION_LABELS = ['VERTEX', 'EDGE', 'FACE']
 
 
@@ -97,7 +99,7 @@ class Site:
             self.mountPoint = self.mountPoint + self.orientation * shift_coeff
 
 
-class JunctionUtility:
+class JunctionUtility(JunctionUtilitySemantics):
 
     def __init__(self, molSitesMapping=None):
         self.hasJunctions = bool(molSitesMapping)

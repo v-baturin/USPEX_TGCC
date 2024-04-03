@@ -7,6 +7,11 @@ from collections import Counter
 
 from ..Slab import Slab
 from ..Transformation import Transformation
+from ...Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ...Semantics.Atomistic.BondUtility import BondUtility
+from ...Semantics.Atomistic.Conditions import Conditions
+from ...Semantics.Atomistic.CellUtility import CellUtility
+from ...Semantics.Atomistic.CompositionSpace import CompositionSpace
 from ...DataModel.Entry import Entry
 from ...DataModel.Flavour import FlavourFactory
 
@@ -17,13 +22,12 @@ NSLUBS = 2
 class Heredity:
 
     def __init__(self, utilities, suffix, nslabs=None, randomizeCells=True, attempts=ATTEMPTS, debug=False):
-        self.cellUtility = utilities.cellUtility
+        self.cellUtility: CellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
-        self.compositionSpace = utilities.compositionSpace
-        self.radialDistributionUtility = utilities.radialDistributionUtility
-        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.bondUtility = utilities.bondUtility
-        self.conditions = utilities.conditions
+        self.compositionSpace: CompositionSpace = utilities.compositionSpace
+        self.simpleMoleculeUtility: SimpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.bondUtility: BondUtility = utilities.bondUtility
+        self.conditions: Conditions = utilities.conditions
         self.suffix = suffix
         self.nslabs = nslabs
         self.randomizeCells = randomizeCells

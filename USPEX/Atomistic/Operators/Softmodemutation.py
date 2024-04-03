@@ -1,23 +1,28 @@
 import logging
-logger = logging.getLogger(__name__)
-
 import numpy as np
 
-from ..Transformation import Transformation
+from ...Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ...Semantics.Atomistic.BondUtility import BondUtility
+from ...Semantics.Atomistic.Conditions import Conditions
+from ...Semantics.Atomistic.CellUtility import CellUtility
 from ...DataModel.Entry import Entry
 from ...DataModel.Flavour import FlavourFactory
 
+from ..Transformation import Transformation
+
+
+logger = logging.getLogger(__name__)
 
 _MIN_VALID_FREQUENCY = 5.0e-4
 
 
 class Softmodemutation:
     def __init__(self, utilities, suffix, degree: float = None):
-        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.bondUtility = utilities.bondUtility
+        self.simpleMoleculeUtility: SimpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.bondUtility: BondUtility = utilities.bondUtility
+        self.conditions: Conditions = utilities.conditions
+        self.cellUtility: CellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
-        self.conditions = utilities.conditions
-        self.cellUtility = utilities.cellUtility
         self.degree= degree
         self.suffix = suffix
         self.knownSystems = {}

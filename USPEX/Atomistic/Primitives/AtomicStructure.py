@@ -7,8 +7,9 @@ import numpy as np
 from copy import copy
 from collections import Counter
 
+from ...Semantics.Atomistic.Primitives.AtomicStructure import AtomicStructure as AtomicStructureSemantics
 
-class AtomicStructure:
+class AtomicStructure(AtomicStructureSemantics):
     """
     This class describe pure geometry of any atomic structure including crystals, molecules, nanoparticles etc.
     Such pure geometry consists of coordinates of atoms and their types. In case of periodic structures it naturally

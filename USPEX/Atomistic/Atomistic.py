@@ -3,6 +3,7 @@ import yaml
 from pathlib import Path
 from copy import copy
 
+from ..Semantics.Atomistic.Atomistic import Atomistic as AtomisticSemantics
 from ..Expressions.Functions.AtomisticFunctions import AtomisticFunctions
 from .Transformation import Transformation
 
@@ -157,7 +158,7 @@ class AtomicDisassembler:
         raise RuntimeError("Bad index or empty structure.")
 
 
-class Atomistic:
+class Atomistic(AtomisticSemantics):
     structureType = None
     atomType = None
     cellType = None
@@ -264,6 +265,7 @@ class Atomistic:
             systems = [cls.atomicDisassemblerType(np.arange(len(structure)).reshape((-1, 1))).disassemble(structure)
                        for structure in cls.AtomicStructureRepresentation.readPOSCARS(filename)]
         return systems
+
     def propertyExtension(self):
         return AtomisticFunctions(self)
 

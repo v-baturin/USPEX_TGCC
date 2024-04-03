@@ -6,6 +6,13 @@ from time import time
 import numpy as np
 from scipy.special import binom
 
+from ...Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ...Semantics.Atomistic.BondUtility import BondUtility
+from ...Semantics.Atomistic.Conditions import Conditions
+from ...Semantics.Atomistic.CellUtility import CellUtility
+from ...Semantics.Atomistic.CompositionSpace import CompositionSpace
+from ...Semantics.Atomistic.JunctionUtility import JunctionUtility
+from ...Semantics.Atomistic.SymbolsFactoryUtility import SymbolsFactoryUtility
 from ...DataModel.Flavour import FlavourFactory
 
 
@@ -18,14 +25,14 @@ MAX_SITE_SAMPLES_TRY = 1000
 
 class CoreAdsorbantRandomGenerator:
     def __init__(self, utilities, debug=False):
-        self.junctionUtility = utilities.junctionUtility
+        self.junctionUtility: JunctionUtility = utilities.junctionUtility
         self.environmentUtility = utilities.environmentUtility
-        self.cellUtility = utilities.cellUtility
-        self.bondUtility = utilities.bondUtility
-        self.conditions = utilities.conditions
-        self.compositionSpace = utilities.compositionSpace
-        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.symbolsFactoryUtility = utilities.symbolsFactoryUtility
+        self.cellUtility: CellUtility = utilities.cellUtility
+        self.bondUtility: BondUtility = utilities.bondUtility
+        self.conditions: Conditions = utilities.conditions
+        self.compositionSpace: CompositionSpace = utilities.compositionSpace
+        self.simpleMoleculeUtility: SimpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.symbolsFactoryUtility: SymbolsFactoryUtility = utilities.symbolsFactoryUtility
         self.cellType = type(self.cellUtility.getRandomCell(1, np.empty(0)))
         self.angle_indices = np.arange(TOTAL_ROTATION_STEPS)
 
