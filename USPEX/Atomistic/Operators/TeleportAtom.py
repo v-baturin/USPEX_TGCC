@@ -2,9 +2,13 @@ import numpy as np
 from copy import copy, deepcopy
 from scipy.linalg import norm
 
+from ...DataModel.Entry import Entry
+from ...DataModel.Flavour import FlavourFactory
+
 
 class TeleportAtom:
     def __init__(self, utilities, suffix):
+        self.atomistic = utilities.atomistic
         self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
         self.compositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
@@ -16,13 +20,15 @@ class TeleportAtom:
             raise RuntimeError("TeleportAtom does not currently work in molecular regime.")
         self.availableAtomsDatabase = None
 
-    def __call__(self, system, offspringFactory=None):
-        molecules = system['molecules']
-        cell = system['cell']
-        if 'tagsAddRemove' not in system:
-            system['tagsAddRemove'] = [[] for _ in range(len(molecules))]
-        tagsAddRemove = system['tagsAddRemove']
-        structure, disassembler = offspringFactory.atomicDisassemblerType.assemble(molecules, cell)  # ,environment)
+    def __call__(self, system: Entry, offspringFactory: FlavourFactory = None):
+        molecules = system.getProperty('molecules', extension='atomistic', suffix=self.suffix)
+        cell = system.getProperty('cell', extension='atomistic', suffix=self.suffix)
+        environments = system.getProperty('environments', extension='atomistic', suffix=self.suffix)
+        if 'addRemove.tags.origin' not in system:
+            system.setProperty('tags', [[] for _ in range(len(molecules))], extension='addRemove', suffix='origin')
+        tagsAddRemove = system.getProperty('tags', extension='addRemove', suffix='origin')
+        structure, disassembler = self.atomistic.atomicDisassemblerType.assemble({'atomistic.molecules': molecules,
+                                                                                  'atomistic.cell': cell})
         atomTypes = structure.getAtomTypes()
         species = np.unique(atomTypes)
         coordinates = structure.getCartesianCoordinates()
@@ -95,24 +101,23 @@ class TeleportAtom:
             operation[0:3, 3] = cell.cartesianToFractional(newAtomCoords)
             operations = {newAtomType.short_name: [[[operation]]]}
             offspring = self.simpleMoleculeUtility.populateStructure(cell, operations)
-            offspring['molecules'][0:0] = molecules
-            del offspring['molecules'][molInd]
-            if 'environments' in system:
-                offspring['environments'] = system['environments']
+            offspring['atomistic.molecules'][0:0] = molecules
+            del offspring['atomistic.molecules'][molInd]
+            offspring['atomistic.environments'] = environments
             offspring = offspringFactory(**offspring)
-            structure = offspring.getAtomicStructure()
-            minDistMatrix = self.bondUtility.getDistances(structure.getAtomTypes(),
-                                                          self.conditions.externalPressure)
+            offspringAtomTypes = offspring.getProperty('structure', extension='atomistic').getAtomTypes()
+            minDistMatrix = self.bondUtility.getDistances(offspringAtomTypes, self.conditions.externalPressure)
             if self.simpleMoleculeUtility.checkMinDistances(offspring, minDistMatrix) \
-                    and self.compositionSpace.isGoodComposition(self.simpleMoleculeUtility.composition(offspring)):
+                    and self.compositionSpace.isGoodComposition(offspring.getProperty('composition', extension='simpleMoleculeUtility')):
                 self.conditions.putConditions(offspring)
                 tagsAddRemove[molInd].append('removed')
                 tagsAddRemove[mol1Ind].append(f'added_{newAtomType}')
                 tagsAddRemove[mol2Ind].append(f'added_{newAtomType}')
-                offspring.setProperty('tagsAddRemove', deepcopy(tagsAddRemove))
-                del offspring['tagsAddRemove'][molInd]
-                offspring['tagsAddRemove'].append([])
-                # if self.bonds.isConnected(structure):
+                system.setProperty('tags', tagsAddRemove, extension='addRemove', suffix='origin')
+                tagsAddRemove_offspring = deepcopy(tagsAddRemove)
+                del tagsAddRemove_offspring[molInd]
+                tagsAddRemove_offspring.append([])
+                offspring.setProperty('tags', tagsAddRemove_offspring, extension='addRemove')
                 return offspring,
 
         raise RuntimeError("TeleportAtom failed.")

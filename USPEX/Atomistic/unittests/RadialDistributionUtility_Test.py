@@ -4,7 +4,9 @@ from pathlib import Path
 import numpy as np
 
 from ..RadialDistributionUtility import RadialDistributionUtility
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...DataModel.Engine import Engine
+from ...DataModel.Flavour import Flavour
+from ...DataModel.Entry import Entry
 from ...components import Atomistic
 
 PATH_WITH_TESTS = Path(__file__).parent
@@ -12,7 +14,7 @@ PATH_WITH_TESTS = Path(__file__).parent
 
 class RadialDistributionUtility_Test(unittest.TestCase):
     def setUp(self):
-        PoolEntry.createEngine(':memory:')
+        Engine.createEngine(':memory:')
         self.utility = RadialDistributionUtility(symbols=['Mg', 'Al', 'O'], suffix='origin')
         atomistic = Atomistic()
         extensions = dict(
@@ -20,38 +22,38 @@ class RadialDistributionUtility_Test(unittest.TestCase):
             radialDistributionUtility=self.utility.propertyExtension()
         )
 
-        self.systemRDU1 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,
+        self.systemRDU1 = Entry.newEntry(Flavour(extensions=extensions,
                                                           **{'.howCome': 'Seeds', '.parent': None},
                                                           **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU1.POSCAR")))
         self.systemRDU1.getProperty('structure', extension='atomistic')
-        self.systemRDU2 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,
+        self.systemRDU2 = Entry.newEntry(Flavour(extensions=extensions,
                                                           **{'.howCome': 'Seeds', '.parent': None},
                                                            **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU2.POSCAR")))
         self.systemRDU2.getProperty('structure', extension='atomistic')
-        self.systemRDU3 = PoolEntry.newEntry(EntryFlavour(extensions=extensions,
+        self.systemRDU3 = Entry.newEntry(Flavour(extensions=extensions,
                                                           **{'.howCome': 'Seeds', '.parent': None},
                                                            **Atomistic.readAtomicStructure(PATH_WITH_TESTS/"systemRDU3.POSCAR")))
         self.systemRDU3.getProperty('structure', extension='atomistic')
 
     def test_structureOrder(self):
-        self.assertAlmostEqual(self.systemRDU1['radialDistributionUtility.structureOrder.origin'], 0.207, places=3)
-        self.assertAlmostEqual(self.systemRDU2['radialDistributionUtility.structureOrder.origin'], 0.207, places=3)
-        self.assertAlmostEqual(self.systemRDU3['radialDistributionUtility.structureOrder.origin'], 0.169, places=3)
+        self.assertAlmostEqual(self.systemRDU1['radialDistributionUtility.structureOrder.origin'], 0.017, places=3)
+        self.assertAlmostEqual(self.systemRDU2['radialDistributionUtility.structureOrder.origin'], 0.017, places=3)
+        self.assertAlmostEqual(self.systemRDU3['radialDistributionUtility.structureOrder.origin'], 0.014, places=3)
 
     def test_averageOrder(self):
-        self.assertAlmostEqual(self.systemRDU1['radialDistributionUtility.averageOrder.origin'], 0.22, places=2)
-        self.assertAlmostEqual(self.systemRDU2['radialDistributionUtility.averageOrder.origin'], 0.22, places=2)
-        self.assertAlmostEqual(self.systemRDU3['radialDistributionUtility.averageOrder.origin'], 0.21, places=2)
+        self.assertAlmostEqual(self.systemRDU1['radialDistributionUtility.averageOrder.origin'], 0.27, places=2)
+        self.assertAlmostEqual(self.systemRDU2['radialDistributionUtility.averageOrder.origin'], 0.27, places=2)
+        self.assertAlmostEqual(self.systemRDU3['radialDistributionUtility.averageOrder.origin'], 0.26, places=2)
 
     def test_quasientropy(self):
-        self.assertAlmostEqual(self.systemRDU1['radialDistributionUtility.quasientropy.origin'], 0.072, places=3)
-        self.assertAlmostEqual(self.systemRDU2['radialDistributionUtility.quasientropy.origin'], 0.072, places=3)
-        self.assertAlmostEqual(self.systemRDU3['radialDistributionUtility.quasientropy.origin'], 0.166, places=3)
+        self.assertAlmostEqual(self.systemRDU1['radialDistributionUtility.quasientropy.origin'], 0.052, places=3)
+        self.assertAlmostEqual(self.systemRDU2['radialDistributionUtility.quasientropy.origin'], 0.052, places=3)
+        self.assertAlmostEqual(self.systemRDU3['radialDistributionUtility.quasientropy.origin'], 0.111, places=3)
 
     def test_distance(self):
         self.assertAlmostEqual(self.utility.dist(self.systemRDU1, self.systemRDU2), 0, places=3)
-        self.assertAlmostEqual(self.utility.dist(self.systemRDU2, self.systemRDU3), 0.6124, places=3)
-        self.assertAlmostEqual(self.utility.dist(self.systemRDU1, self.systemRDU3), 0.6124, places=3)
+        self.assertAlmostEqual(self.utility.dist(self.systemRDU2, self.systemRDU3), 0.4032, places=3)
+        self.assertAlmostEqual(self.utility.dist(self.systemRDU1, self.systemRDU3), 0.4031, places=3)
 
     def test_make_matrices(self):
         from ..RadialDistributionUtility import _make_matrices

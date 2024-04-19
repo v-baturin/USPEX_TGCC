@@ -10,7 +10,8 @@ Class implementing external optimizer
 import logging
 from itertools import chain
 
-from ..Optimizers.PoolEntry import FlavourFactory, PoolEntry
+from ..DataModel.Flavour import FlavourFactory
+from ..DataModel.Entry import Entry
 
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ class SampleOptimizer(object):
             return None, True, False
         else:
             stages = [self.Stages.createStage(**stage) for stage in self.stages]
-            system = PoolEntry.newEntry(self.flavourFactory(sample=sample, isBad=False))
+            system = Entry.newEntry(self.flavourFactory(sample=sample, isBad=False))
             for stage in stages:
                 if stage.tag not in system.flavours and stage.source in system.flavours \
                         and not system.getProperty('isBad', suffix=stage.source):

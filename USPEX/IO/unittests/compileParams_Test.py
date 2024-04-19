@@ -62,7 +62,8 @@ class CompileParams_Test(unittest.TestCase):
                     'radialDistributionUtility': {'symbols': ['Al', 'Mg', 'O'], 'suffix': '4'},
                     'defaultSuffix': '4',
                     'bondUtility': {'volumeType': 0, 'cutoff': 'strong'},
-                    'junctionUtility': {'molSitesMapping': {}}
+                    'junctionUtility': {'molSitesMapping': {}},
+                    'symbolsFactoryUtility': {}
                 },
                 'popSize': 40,
                 'bestFrac': 0.6,
@@ -137,7 +138,8 @@ class CompileParams_Test(unittest.TestCase):
     #                                      'blocks': [[4]]},
     #                 'radialDistributionUtility': {'symbols': ['H', 'O']},
     #                 'bondUtility': {'volumeType': 0.5, 'cutoff': 'strong'},
-    #                 'junctionUtility': {'molSitesMapping': {}}
+    #                 'junctionUtility': {'molSitesMapping': {}},
+    #                 'symbolsFactoryUtility': {}
     #             },
     #             'optType': 'enthalpy',
     #             'selection': {'type': 'USPEXClassic',
@@ -188,7 +190,8 @@ class CompileParams_Test(unittest.TestCase):
                     'radialDistributionUtility': {'symbols': ['Cl', 'Na'], 'suffix': 'origin'},
                     'defaultSuffix': 'origin',
                     'bondUtility': {'volumeType': 0, 'cutoff': 'strong'},
-                    'junctionUtility': {'molSitesMapping': {}}
+                    'junctionUtility': {'molSitesMapping': {}},
+                    'symbolsFactoryUtility': {}
                 },
                 'optType': 'enthalpy'
             },

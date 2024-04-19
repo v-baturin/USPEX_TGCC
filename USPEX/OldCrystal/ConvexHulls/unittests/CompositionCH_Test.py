@@ -1,12 +1,12 @@
-import unittest
-import numpy as np
-
-from USPEX.OldCrystal.ConvexHulls.CompositionCH import CompositionCH
-from USPEX.Atomistic.Primitives.AtomicStructure import AtomicStructure
-from USPEX.Optimizers.PoolEntry import EntryFlavour, PoolEntry
-from USPEX.components import CompositionSpace, SimpleMoleculeUtility
-
-
+# import unittest
+# import numpy as np
+#
+# from USPEX.OldCrystal.ConvexHulls.CompositionCH import CompositionCH
+# from USPEX.Atomistic.Primitives.AtomicStructure import AtomicStructure
+# from USPEX.Optimizers.PoolEntry import EntryFlavour, PoolEntry
+# from USPEX.components import CompositionSpace, SimpleMoleculeUtility
+#
+#
 # class CompostionCH_Test(unittest.TestCase):
 #
 #     def setUp(self) -> None:

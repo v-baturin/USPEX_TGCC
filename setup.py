@@ -2,11 +2,14 @@ from setuptools import Extension, setup
 from Cython.Build import cythonize
 
 extensions = [
+    Extension("USPEX.DataModel.Engine", ["USPEX/DataModel/Engine.py"]),
+    Extension("USPEX.DataModel.Entry", ["USPEX/DataModel/Entry.py"]),
+    Extension("USPEX.DataModel.Expression", ["USPEX/DataModel/Expression.py"]),
+    Extension("USPEX.DataModel.Flavour", ["USPEX/DataModel/Flavour.py"]),
+    Extension("USPEX.DataModel.Pool", ["USPEX/DataModel/Pool.py"]),
     Extension("USPEX.Optimizers.GlobalOptimizer", ["USPEX/Optimizers/GlobalOptimizer.py"]),
-    Extension("USPEX.Optimizers.PoolEntry", ["USPEX/Optimizers/PoolEntry.py"]),
     Extension("USPEX.Generators.Target", ["USPEX/Generators/Target.py"]),
     Extension("USPEX.Generators.Evolution", ["USPEX/Generators/Evolution.py"]),
-    Extension("USPEX.Expressions.ExpressionEvaluator", ["USPEX/Expressions/ExpressionEvaluator.py"]),
     Extension("USPEX.Expressions.ConvexHull", ["USPEX/Expressions/ConvexHull.py"]),
     Extension("USPEX.Expressions.paretoRanking", ["USPEX/Expressions/paretoRanking.py"]),
     Extension("USPEX.Expressions.Antiseeds", ["USPEX/Expressions/Antiseeds.py"]),
@@ -28,6 +31,7 @@ extensions = [
     Extension("USPEX.Atomistic.Conditions", ["USPEX/Atomistic/Conditions.py"]),
     Extension("USPEX.Atomistic.RadialDistributionUtility", ["USPEX/Atomistic/RadialDistributionUtility.py"]),
     Extension("USPEX.Atomistic.SimpleMoleculeUtility", ["USPEX/Atomistic/SimpleMoleculeUtility.py"]),
+    Extension("USPEX.Atomistic.SymbolsFactoryUtility", ["USPEX/Atomistic/SymbolsFactoryUtility.py"]),
     Extension("USPEX.Atomistic.Slab", ["USPEX/Atomistic/Slab.py"]),
     Extension("USPEX.Atomistic.Transformation", ["USPEX/Atomistic/Transformation.py"]),
     Extension("USPEX.Atomistic.VolumeEstimator", ["USPEX/Atomistic/VolumeEstimator.py"]),

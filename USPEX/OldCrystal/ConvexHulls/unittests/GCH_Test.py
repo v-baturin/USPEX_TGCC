@@ -1,28 +1,28 @@
-'''
-@file        GCH_Test.py
-@author:     Artem Samtsevich
-@copyright:  2019 Oganov's Lab. All rights reserved.
-@contact:    samtsevichartem@gmail.com
-@date        16 September 2019
-@brief       Class for GeneralizedConvexHull testing
-'''
-
-
-import numpy as np
-import unittest
-
-from pathlib import Path
-
-from USPEX.OldCrystal.ConvexHulls.GCH import GeneralizedConvexHull
-from USPEX.Optimizers.PoolEntry import PoolEntry, EntryFlavour
-from USPEX.components import RadialDistributionUtility, CompositionSpace, Atomistic
-
-TESTPATH = Path(__file__).parent
-
-Si_gch_path = TESTPATH/'Si_gch_test'
-FeC_gch_path = TESTPATH/'FeC_gch_test'
-
-
+# '''
+# @file        GCH_Test.py
+# @author:     Artem Samtsevich
+# @copyright:  2019 Oganov's Lab. All rights reserved.
+# @contact:    samtsevichartem@gmail.com
+# @date        16 September 2019
+# @brief       Class for GeneralizedConvexHull testing
+# '''
+#
+#
+# import numpy as np
+# import unittest
+#
+# from pathlib import Path
+#
+# from USPEX.OldCrystal.ConvexHulls.GCH import GeneralizedConvexHull
+# from USPEX.Optimizers.PoolEntry import PoolEntry, EntryFlavour
+# from USPEX.components import RadialDistributionUtility, CompositionSpace, Atomistic
+#
+# TESTPATH = Path(__file__).parent
+#
+# Si_gch_path = TESTPATH/'Si_gch_test'
+# FeC_gch_path = TESTPATH/'FeC_gch_test'
+#
+#
 # def read_structures_and_energies(symbols, folder: Path):
 #     with open(folder/'Individuals', 'r') as fp:
 #         info = fp.readlines()[2:]

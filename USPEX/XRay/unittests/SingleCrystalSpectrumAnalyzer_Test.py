@@ -11,7 +11,7 @@ import unittest
 
 from pathlib import Path
 
-from ...Optimizers.PoolEntry import EntryFlavour
+from ...DataModel.Flavour import Flavour
 from ...components import Atomistic
 from ..SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 
@@ -21,7 +21,7 @@ PATH_WITH_TESTS = Path(__file__).parent
 class SpectrumAnalyzer_Test(unittest.TestCase):
     def setUp(self):
         propertyExtensions = dict(atomistic=Atomistic().propertyExtension())
-        self.system = EntryFlavour(extensions=propertyExtensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'Mg4O12Si4.vasp'))
+        self.system = Flavour(extensions=propertyExtensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'Mg4O12Si4.vasp'))
 
     def test(self):
         hklFile = PATH_WITH_TESTS/'test_P1.hkl'

@@ -8,8 +8,8 @@ Class which implements the fitness function for comparing single crystal X-ray s
 """
 
 import numpy as np
-
 from pymatgen.core.structure import Structure
+from pathlib import Path
 
 from .get_reflections import get_reflections
 from ..Expressions.Functions.SingleCrystalSpectrumAnalyzerFunctions import SingleCrystalSpectrumAnalyzerFunctions
@@ -94,12 +94,12 @@ class SingleCrystalSpectrumAnalyzer(object):
             system.setProperty('xraydistance', wR, 'singleCrystalSpectrumAnalyzer')
 
     @staticmethod
-    def parse(hklFile: str):
+    def parse(hklFile: Path):
         """
         It parses a file containing information about the experimental spectrum and
         it returns a dictionary containing the parameters for class initialization.
 
-        :type filename: str
+        :type filename: Path
         :param filename: SHELXL hkl file containing the user-given reflections.
         :rtype: list
         :return: single crystal reflections parsed from the file.

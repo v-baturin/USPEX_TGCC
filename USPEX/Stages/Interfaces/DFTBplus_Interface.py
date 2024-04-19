@@ -49,9 +49,8 @@ class DFTBplus_Interface:
                        **kwargs):
 
         self.tag = tag
-        if dftb_input is None:
-            dftb_input = Path.cwd()/f'Specific/{self.specific_file}{tag}'
 
+        dftb_input = Path.cwd()/f'Specific/{self.specific_file}{tag}' if dftb_input is None else Path(dftb_input)
         assert dftb_input.exists(), f'Please, check path to DFTB input. Now it is {dftb_input}'
 
         with open(dftb_input, 'r') as f:
@@ -131,7 +130,7 @@ class DFTBplus_Interface:
     def readOutput(self, system, calcFolder: Path):
         with open(calcFolder / 'pbc', 'rt') as f:
             pbc = tuple(int(c) for c in f.read().split())
-        atoms = read_gen(calcFolder / self.geometry_file)
+        atoms = read_gen(calcFolder / self.out_geometry_file)
         atoms.set_pbc(pbc)
         new_structure = self.AtomicStructureRepresentation.fromAtoms(atoms)
 

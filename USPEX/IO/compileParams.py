@@ -1,4 +1,5 @@
 from itertools import chain
+from pathlib import Path
 
 from ..components import (AtomicStructureRepresentation,
                           # PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,
@@ -29,28 +30,39 @@ def compileParams(main: dict) -> dict:
         symbols = target['compositionSpace']['symbols']
         defaultVolumeType = 0
         defaultCutoffVDW = False
-        molecules = {}
-        molSitesMapping = {}
+        symbolsFactories = {} if 'symbolsFactoryUtility' not in target else target['symbolsFactoryUtility']
+        moleculeDescriptors = []
         elementalSymbols = set()
         for i, symbol in enumerate(symbols):
-            if not isinstance(symbol, dict):
-                elementalSymbols.add(symbol)
-            else:
-                molecule = AtomicStructureRepresentation.readXYZ(**symbol)
-                if not len(molecule.edges):
-                    molecule = SimpleMoleculeUtility.detectBonds(molecule)
-                molecules[symbol['name']] = molecule
+            if isinstance(symbol, dict):
+                moleculeDescriptors.append(symbol)
                 symbols[i] = symbol['name']
-                if 'sites' in symbol:
-                    for site in symbol['sites']:
-                        site['junctionTypes'] =\
-                            JunctionUtility.calculateJunctionTypes(molecule,
-                                                                   junctionsDescription=site['junctionTypes'])
-                    molSitesMapping[symbol['name']] = symbol['sites']
-                else:
-                    defaultVolumeType = 0.5
-                    defaultCutoffVDW = True
-                elementalSymbols |= set([x.short_name for x in molecule.getAtomTypes()])
+            elif symbol in symbolsFactories:
+                moleculeDescriptors += symbolsFactories[symbol]
+                symbolsFactories[symbol] = [molDescriptor['name'] for molDescriptor in symbolsFactories[symbol]]
+            else:
+                elementalSymbols.add(symbol)
+        target['symbolsFactoryUtility'] = symbolsFactories
+        molecules = {}
+        molSitesMapping = {}
+        for moleculeDescriptor in moleculeDescriptors:
+            if not isinstance(moleculeDescriptor, dict):
+                elementalSymbols.add(moleculeDescriptor)
+                continue
+            molecule = AtomicStructureRepresentation.readXYZ(**moleculeDescriptor)
+            if not len(molecule.edges):
+                molecule = SimpleMoleculeUtility.detectBonds(molecule)
+            molecules[moleculeDescriptor['name']] = molecule
+            if 'sites' in moleculeDescriptor:
+                for site in moleculeDescriptor['sites']:
+                    site['junctionTypes'] =\
+                        JunctionUtility.calculateJunctionTypes(molecule,
+                                                               junctionsDescription=site['junctionTypes'])
+                molSitesMapping[moleculeDescriptor['name']] = moleculeDescriptor['sites']
+            else:
+                defaultVolumeType = 0.5
+                defaultCutoffVDW = True
+            elementalSymbols |= set([x.short_name for x in molecule.getAtomTypes()])
         if 'junctionUtility' in target:
             target['junctionUtility']['molSitesMapping'] = molSitesMapping
         else:

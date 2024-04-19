@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 
 from ..XTB_Interface import XTB_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -35,6 +35,6 @@ class XTB_InterfaceTest(unittest.TestCase):
         intermediate = disassembler.disassemble(structure)
         intermediate['.externalPressure'] = 0.0
         intermediate['atomistic.disassembler'] = disassembler
-        intermediate = EntryFlavour(extensions=extensions, **intermediate)
+        intermediate = Flavour(extensions=extensions, **intermediate)
         result = interface.readOutput(intermediate, calcFolder=GATHEREDPATH/f'output/CalcFold{ID}')
         self.assertTrue(np.isclose(result['.enthalpy'], -1003.116))

@@ -1,8 +1,11 @@
+from ...DataModel.Flavour import Flavour
+
+
 class RadialDistributionFunctions:
     def __init__(self, utility) -> None:
         self.utility = utility
 
-    def structureFingerprint(self, system):
+    def structureFingerprint(self, system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -13,7 +16,7 @@ class RadialDistributionFunctions:
         self.utility.calcFingerprint(system)
         return system['radialDistributionUtility.structureFingerprint']
 
-    def complexFingerprint(self, system):
+    def complexFingerprint(self, system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -24,7 +27,7 @@ class RadialDistributionFunctions:
         self.utility.calcFingerprint(system)
         return system['radialDistributionUtility.complexFingerprint']
 
-    def order(self, system):
+    def order(self, system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -36,7 +39,7 @@ class RadialDistributionFunctions:
         self.utility.calcFingerprint(system)
         return system['radialDistributionUtility.order']
 
-    def averageOrder(self, system):
+    def averageOrder(self, system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -48,7 +51,7 @@ class RadialDistributionFunctions:
         self.utility.calcFingerprint(system)
         return system['radialDistributionUtility.averageOrder']
 
-    def structureOrder(self, system):
+    def structureOrder(self, system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -60,7 +63,7 @@ class RadialDistributionFunctions:
         self.utility.calcFingerprint(system)
         return system['radialDistributionUtility.structureOrder']
 
-    def quasientropy(self, system):
+    def quasientropy(self, system: Flavour):
         """
         For using in **Fitness** infrastructure
 

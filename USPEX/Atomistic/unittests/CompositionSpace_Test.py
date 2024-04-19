@@ -10,7 +10,7 @@ Class for Config testing
 import unittest
 from pathlib import Path
 
-from ...Optimizers.PoolEntry import EntryFlavour
+from ...DataModel.Flavour import Flavour
 from ...components import Atomistic, CompositionSpace, SimpleMoleculeUtility
 
 PATH_WITH_TESTS = Path(__file__).parent
@@ -25,10 +25,10 @@ class CompositionSpace_Test(unittest.TestCase):
         extensions = dict(
             simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension()
         )
-        self.system1 = EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system1.vasp'))
-        self.system2 = EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system2.vasp'))
-        self.system3 = EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system3.vasp'))
-        self.system4 = EntryFlavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system4.vasp'))
+        self.system1 = Flavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system1.vasp'))
+        self.system2 = Flavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system2.vasp'))
+        self.system3 = Flavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system3.vasp'))
+        self.system4 = Flavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system4.vasp'))
 
     def test_fixed(self):
         config = CompositionSpace(symbols=['Mg', 'Al', 'O'], blocks=[[4, 8, 16]], range=[[1, 1]])
