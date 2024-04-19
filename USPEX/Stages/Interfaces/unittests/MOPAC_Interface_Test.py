@@ -7,7 +7,7 @@ import filecmp
 from pathlib import Path
 
 from ..MOPAC_Interface import MOPAC_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -38,7 +38,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
             intermediate['atomistic.structure'] = structure
             intermediate['.externalPressure'] = 0.0
             intermediate['atomistic.disassembler'] = disassembler
-            intermediate = EntryFlavour(extensions=extensions, **intermediate)
+            intermediate = Flavour(extensions=extensions, **intermediate)
             WORKPATH.mkdir(parents=True, exist_ok=True)
             mopac.prepareLocalCalculation(intermediate, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{ID}"

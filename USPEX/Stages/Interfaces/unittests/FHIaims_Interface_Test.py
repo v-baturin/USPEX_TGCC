@@ -17,7 +17,7 @@ import numpy as np
 from pathlib import Path
 
 from ..FHIaims_Interface import FHIaims_Interface
-from ....Optimizers.PoolEntry import EntryFlavour
+from ....DataModel.Flavour import Flavour
 from ....Atomistic.Primitives.Element import Element
 from ....Atomistic.Primitives.Cell import Cell
 from ....Atomistic.Primitives.AtomicStructure import AtomicStructure
@@ -53,7 +53,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
             intermediate = disassembler.disassemble(structure)
             intermediate['.externalPressure'] = 0.0001
             intermediate['atomistic.disassembler'] = disassembler
-            intermediate = EntryFlavour(extensions=extensions, **intermediate)
+            intermediate = Flavour(extensions=extensions, **intermediate)
             WORKPATH.mkdir(parents=True, exist_ok=True)
             aims.prepareLocalCalculation(intermediate, WORKPATH)
             folder = GATHEREDPATH/'input'/f"CalcFold{ID}"

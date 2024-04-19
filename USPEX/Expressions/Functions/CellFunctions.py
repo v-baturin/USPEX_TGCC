@@ -1,12 +1,14 @@
 import spglib
 
+from ...DataModel.Flavour import Flavour
+
 
 class CellFunctions:
     def __init__(self, utility) -> None:
         self.utility = utility
 
     @staticmethod
-    def volume(system):
+    def volume(system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -17,7 +19,7 @@ class CellFunctions:
         return system['atomistic.cell'].getVolume()
 
     @staticmethod
-    def area(system):
+    def area(system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -28,7 +30,7 @@ class CellFunctions:
         return system['atomistic.cell'].getArea()
     
     @staticmethod
-    def length(system):
+    def length(system: Flavour):
         """
         For using in **Fitness** infrastructure
 
@@ -38,7 +40,7 @@ class CellFunctions:
         """
         return system['atomistic.cell'].getLength()
 
-    def symmetry(self, system):
+    def symmetry(self, system: Flavour):
         """
         For using in **Fitness** infrastructure
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from pymatgen.core.structure import Structure
 
 from ..Expressions.Functions.ElasticMLFunctions import ElasticMLFunctions
-from ..Optimizers.PoolEntry import EntryFlavour
+from ..DataModel.Flavour import Flavour
 
 EMBEDDINGS = [
     [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0],
@@ -202,7 +202,7 @@ class ElasticML:
     def propertyExtension(self):
         return ElasticMLFunctions(self)
 
-    def predictValues(self, system: EntryFlavour):
+    def predictValues(self, system: Flavour):
         """
         Predict values of E and nu using neural network from doi.org/10.1063/5.0012055
         """

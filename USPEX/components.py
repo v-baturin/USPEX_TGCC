@@ -1,5 +1,3 @@
-from .Optimizers.PoolEntry import PoolEntry
-PoolEntry.createEngine("uspex.db")
 # ---------------------------------- Primitives and Representations -------------------------------------------------
 from .Atomistic.Primitives.Element import Element
 from .Atomistic.Primitives.Cell import Cell
@@ -25,9 +23,10 @@ SimpleMoleculeUtility.registerTypes(AtomicStructure, Element)
 from .Atomistic.JunctionUtility import JunctionUtility
 from .Atomistic.Conditions import Conditions
 from .Atomistic.BondUtility import BondUtility
-# from .Atomistic.ElasticML import ElasticML
-# from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
-# from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
+from .Atomistic.SymbolsFactoryUtility import SymbolsFactoryUtility
+#from .Atomistic.ElasticML import ElasticML
+#from .XRay.PowderSpectrumAnalyzer import PowderSpectrumAnalyzer
+#from .XRay.SingleCrystalSpectrumAnalyzer import SingleCrystalSpectrumAnalyzer
 from .Atomistic.Operators.Heredity import Heredity
 from .Atomistic.Operators.RandTop import RandTop
 from .Atomistic.Operators.RandSym import RandSym
@@ -48,8 +47,8 @@ from .Generators.Target import Target
 Target.registerTarget('Atomistic',
                       utilities=[Atomistic, CompositionSpace, RadialDistributionUtility, CellUtility,
                                  EnvironmentUtility, SimpleMoleculeUtility, Conditions, BondUtility,
-                                 # ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,
-                                 JunctionUtility, MofUtility],
+#                                 ElasticML, PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,
+                                 JunctionUtility, SymbolsFactoryUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
                       creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator, MOF_Random],
@@ -82,6 +81,9 @@ Executor.registerInterface('vasp', VASP_Interface)
 # from .Stages.Interfaces.DFTBplus_Interface import DFTBplus_Interface
 # DFTBplus_Interface.registerTypes(AtomicStructureRepresentation)
 # Executor.registerInterface('dftb', DFTBplus_Interface)
+# from .Stages.Interfaces.ORCA_Interface import ORCA_Interface
+# ORCA_Interface.registerTypes(AtomicStructureRepresentation)
+# Executor.registerInterface('orca', ORCA_Interface)
 # from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
 # Executor.registerInterface('cp2k', CP2K_Interface)
 # -------------------------------------------- Task Managers --------------------------------------------------------
@@ -121,3 +123,6 @@ GenerationController.setUpcompileParams(compileParams)
 # ---------------------------------------- Output Representation ----------------------------------------------------
 from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(Atomistic)
+# ---------------------------------------------- Data Model ---------------------------------------------------------
+from .DataModel.Engine import Engine
+Engine.createEngine("uspex.db")

@@ -2,7 +2,9 @@ import unittest
 
 from pathlib import Path
 
-from ...Optimizers.PoolEntry import PoolEntry, EntryFlavour
+from ...DataModel.Engine import Engine
+from ...DataModel.Flavour import Flavour
+from ...DataModel.Entry import Entry
 from ...components import SimpleMoleculeUtility, Atomistic, AtomicStructureRepresentation, BondUtility
 
 PATH_WITH_TESTS = Path(__file__).parent
@@ -11,7 +13,7 @@ PATH_WITH_TESTS = Path(__file__).parent
 class SimpleMoleculeUtility_Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        PoolEntry.createEngine(":memory:")
+        Engine.createEngine(":memory:")
 
     def test_checkMinDistances(self):
         atomistic = Atomistic()
@@ -23,8 +25,8 @@ class SimpleMoleculeUtility_Test(unittest.TestCase):
         custom_iondist = {'H H': 1.9}
         bondUtility = BondUtility(volumeType=0, ionDistances=custom_iondist, cutoff='vdw')
         simpleMoleculeUtility = SimpleMoleculeUtility(molecules)
-        system = PoolEntry.newEntry(
-            EntryFlavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **badDistSys[0]))
+        system = Entry.newEntry(
+            Flavour(extensions=extensions, **{'.howCome': 'Seeds', '.parent': None}, **badDistSys[0]))
         structure = system.getProperty('structure', extension='atomistic')
         minDistMatrix = bondUtility.getDistances(structure.getAtomTypes(), 0)
         self.assertFalse(simpleMoleculeUtility.checkMinDistances(system, minDistMatrix))
