@@ -78,6 +78,7 @@ class VASP_Interface:
                        incar: str = None,
                        potcarsPath: str = None,
                        targetProperties: list = None,
+                       vdWKernel: str = None,
                        **kwargs):
         '''
         :param params: dictionary with parameters:
@@ -94,6 +95,10 @@ class VASP_Interface:
 
         self.potcarsPath = Path(potcarsPath) if potcarsPath is not None else Path.cwd()/'Specific'
         assert self.potcarsPath.exists()
+        
+        self.vdWKernelPath = Path(vdWKernel) if vdWKernel is not None else Path.cwd()/'Specific/vdw_kernel.bindat'
+        if not self.vdWKernelPath.exists():
+            self.vdWKernelPath = None
 
         self.kPoints = KPoints(kresol)
         self.failedSystems = []
@@ -152,6 +157,10 @@ class VASP_Interface:
         with open(calcFolder/self.kpoints_file, 'w') as fp:
             fp.write('EA\n0\nGamma\n')
             fp.write('%4d %4d %4d\n' % tuple(kPoints))
+        
+        ############################# vdW kernel ##############################
+        if self.vdWKernelPath:
+            shutil.copy2(self.vdWKernelPath, calcFolder)
 
         # copyfile('POSCAR', 'POSCAR-G' + str(system.generation) + '-N' + str(system.index) + '-S' + str(system.step))
 
