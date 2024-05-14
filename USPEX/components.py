@@ -87,8 +87,8 @@ Executor.registerInterface('phonopy', PHONOPY_Interface)
 # from .Stages.Interfaces.ORCA_Interface import ORCA_Interface
 # ORCA_Interface.registerTypes(AtomicStructureRepresentation)
 # Executor.registerInterface('orca', ORCA_Interface)
-# from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
-# Executor.registerInterface('cp2k', CP2K_Interface)
+from .Stages.Interfaces.CP2K_Interface import CP2K_Interface
+Executor.registerInterface('cp2k', CP2K_Interface)
 # -------------------------------------------- Task Managers --------------------------------------------------------
 from .Stages.TaskManagers.BSUB import BSUB
 Executor.registerTaskManager('BSUB', BSUB)
