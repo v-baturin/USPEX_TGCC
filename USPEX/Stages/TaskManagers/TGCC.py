@@ -52,8 +52,6 @@ class TGCC:
         content += f'#MSUB -r  {JOB_NAME}\n' \
                    f'#MSUB  -o  {outputFile}\n' \
                    f'#MSUB  -e  {errorFile}\n\n' \
-                   f'ml purge\n'\
-                   f'ml load intel/20.0.0 mpi/openmpi/4.1.4 vasp/6.2.1\n\n'\
                    f'{COMMAND_EXEC}\n'
 
         return ''.join(content)
