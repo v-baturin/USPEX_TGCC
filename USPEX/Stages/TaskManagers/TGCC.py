@@ -53,6 +53,8 @@ class TGCC:
                    f'#MSUB  -o  {outputFile}\n' \
                    f'#MSUB  -e  {errorFile}\n\n' \
                    f'{COMMAND_EXEC}\n'
+        #Normally supplied with
+        #ml purge &&  ml load intel/20.0.0 mpi/openmpi/4.1.4 vasp/6.2.1
 
         return ''.join(content)
 
