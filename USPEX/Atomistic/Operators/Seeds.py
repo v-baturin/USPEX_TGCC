@@ -60,6 +60,8 @@ class Seeds(object):
                 if filename.is_file():
                     systems = self.atomistic.readAtomicStructures(filename)
                     for system in systems:
+                        system['atomistic.molecules'] = [self.simpleMoleculeUtility.detectBonds(mol) if len(mol) > 1
+                                               else mol for mol in system['atomistic.molecules']]
                         system = offspringFactory(**system)
                         structure = system.getProperty('structure', extension='atomistic')
                         minDistMatrix = self.bondUtility.getDistances(
@@ -67,14 +69,6 @@ class Seeds(object):
                         if self.simpleMoleculeUtility.checkMinDistances(system, minDistMatrix):
                             self.conditions.putConditions(system)
                             system.setProperty('filename', filename)
-                            molecules = system.getProperty('molecules',extension='atomistic')
-                            newMolecules = []
-                            for mol in molecules:
-                                if len(mol) > 1:
-                                    newMolecules.append(self.simpleMoleculeUtility.detectBonds(mol))
-                                else:
-                                    newMolecules.append(mol)
-                            system.setProperty('molecules', newMolecules, extension='atomistic')
                             seeds.append(system)
                         else:
                             logger.info(f"Structure created from seed {filename} violates constraints.")
