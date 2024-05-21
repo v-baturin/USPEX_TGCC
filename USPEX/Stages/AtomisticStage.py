@@ -124,8 +124,13 @@ class AtomisticStage:
                 molSource = moleculesSource[i]
                 if self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'edges':
                     ADJ_MAT = np.zeros((nAtoms, nAtoms))
-                    ADJ_MAT[molSource.edges[:, 0], molSource.edges[:, 1]] = 1
-                    ADJ_MAT += ADJ_MAT.T
+                    if molSource.edges.ndim == 2:
+                        ADJ_MAT[molSource.edges[:, 0], molSource.edges[:, 1]] = 1
+                        ADJ_MAT += ADJ_MAT.T
+                    else:
+                        logger.info(f'system {system["ID"]} tag {self.tag}: bad bond graph')
+                        system.setProperty('isBad', True, suffix=self.tag)
+                        break
                 elif self.target.utilities.simpleMoleculeUtility.whatToCheckInMolecules == 'all':
                     ADJ_MAT = np.ones((nAtoms, nAtoms)) - np.eye(nAtoms)
                 molSink.edges = molSource.edges
