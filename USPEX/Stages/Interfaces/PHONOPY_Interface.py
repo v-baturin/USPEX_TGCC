@@ -176,7 +176,9 @@ class PHONOPY_Interface:
             bandLines = [f'ATOM_NAME = {atom_name}',
                          f'DIM = {supercell_str}',
                          f'BAND = {k_path_coords}',
-                         f'BAND_LABELS = {labels}']
+                         f'BAND_LABELS = {labels}',
+                         'EIGENVECTORS = .TRUE.',
+                         'BAND_CONNECTION = .TRUE.']
             meshconf.write('\n'.join(meshLines))
             bandconf.write('\n'.join(bandLines))
         
