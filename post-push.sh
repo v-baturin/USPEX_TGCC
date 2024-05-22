@@ -7,7 +7,7 @@
 SERVER2="baturinv@irene-fr.ccc.cea.fr:/ccc/work/cont003/gen6175/baturinv/USPEX/Common_v2"
 
 # Hardcoded passwords
-PASSWORD_VB="Roz@Luxemburg669"
+PASSWORD_VB="Nin@18031938"
 #PASSWORD2="qdkgov38!Gfd"
 
 # Function to synchronize the current directory with remote servers using rsync
