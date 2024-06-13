@@ -95,6 +95,7 @@ class SBATCH:
 
         jobID = self._parseJobID(out, err)
         logger.info(f"Job ID is {jobID}")
+        self.jobsStatusCache[jobID] = 'PD'
         return jobID
 
     def _parseJobID(self, output : str, error : str) -> int:
@@ -136,7 +137,7 @@ class SBATCH:
     async def isReady(self, jobID : int):
         await self.ensureCacheIsFresh()
         status = self.jobsStatusCache.get(jobID, False)
-        return status in {'CD', 'F', 'CA', 'S'} if status else True
+        return status in {'CD', 'F', 'CA', 'S', False}
 
     async def isExist(self, jobID : int):
         await self.ensureCacheIsFresh()
