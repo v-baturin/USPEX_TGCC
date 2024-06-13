@@ -130,7 +130,7 @@ class SBATCH:
         self.cacheTime = datetime.now()
 
     async def ensureCacheIsFresh(self):
-        # Check if the cache is older than 5 minutes and update if necessary
+        # Check if the cache is older than self.queueRefreshDelay seconds and update if necessary
         if datetime.now() - self.cacheTime > timedelta(seconds=self.queueRefreshDelay):
             await self.updateCache()
 
