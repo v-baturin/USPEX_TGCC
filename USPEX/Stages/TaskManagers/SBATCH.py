@@ -7,6 +7,7 @@ USPEX.Stages.TaskManagers.SBATCH
 import logging
 
 from pathlib import Path
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +19,14 @@ class SBATCH:
 
     type = 'SBATCH'
     _RUNSCRIPT = 'jobscript'
+    _QUEUE_REFRESH_DELAY_SECONDS = 60
 
-    def __init__(self, header : str, connector):
+    def __init__(self, header : str, connector, refreshDelay : int = None):
         self.header = header
         self.connector = connector
+        self.jobsStatusCache = dict()
+        self.queueRefreshDelay = self._QUEUE_REFRESH_DELAY_SECONDS if refreshDelay is None else refreshDelay
+        self.cacheTime = datetime.now()
 
     def _prepareSubmission(self, COMMAND_EXEC : str,
                                  JOB_NAME : str,
@@ -101,21 +106,42 @@ class SBATCH:
 
         return int(output.split()[-1])
 
+    async def updateCache(self):
+        # Execute the command to get all jobs status
+        returncode, out, err = await self.connector.execute('squeue -t all -u $USER')
+
+        # Parse the output and update the cache
+        lines = out.split('\n')
+        header = lines[0].split()
+        status_index = header.index('ST')
+        job_id_index = header.index('JOBID')
+
+        new_cache = dict()
+        if len(lines) > 1:
+            for line in lines[1:]:
+                if line.strip():
+                    parts = line.split()
+                    job_id = int(parts[job_id_index])
+                    status = parts[status_index]
+                    new_cache[job_id] = status
+
+        self.jobsStatusCache = new_cache
+        self.cacheTime = datetime.now()
+
+    async def ensureCacheIsFresh(self):
+        # Check if the cache is older than 5 minutes and update if necessary
+        if datetime.now() - self.cacheTime > timedelta(seconds=self.queueRefreshDelay):
+            await self.updateCache()
+
     async def isReady(self, jobID : int):
-        returncode, out, err = await self.connector.execute(f'squeue -t all -j {jobID}')
-        if 'invalid job' in err.lower():
-            return True
-        header, job, *_ = out.split('\n')
-        i = header.split().index('ST')
-        status = job.split()[i]
-        return status == 'CD' or status == 'F' or status == 'CA' or status == 'S'
+        await self.ensureCacheIsFresh()
+        status = self.jobsStatusCache.get(jobID, False)
+        return status in {'CD', 'F', 'CA', 'S'} if status else True
 
     async def isExist(self, jobID : int):
-        returncode, out, err = await self.connector.execute(f'squeue -j {jobID}')
-        header, job, *_ = out.split('\n')
-        i = header.split().index('ST')
-        status = job.split()[i]
-        return status == 'R' or status == 'PD'
+        await self.ensureCacheIsFresh()
+        status = self.jobsStatusCache.get(jobID, False)
+        return status in {'R', 'PD'} if status else status
 
     async def kill(self, jobID : int):
         returncode, out, err = await self.connector.execute(f'scancell {jobID}')
