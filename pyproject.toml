@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "uspex"
 requires-python = ">=3.9"
-dependencies = ["numpy", "pyshtools==4.10.4", "ase", "pymatgen", "abipy", "asyncssh", "pandas", "scikit-learn", "prettytable", "parsec", "pyxtal", "torch", "alphashape", "sqlalchemy"]
+dependencies = ["numpy", "pyshtools==4.10.4", "ase<=3.22.1", "pymatgen", "abipy", "asyncssh", "pandas", "scikit-learn", "prettytable", "parsec", "pyxtal", "torch", "alphashape", "sqlalchemy", "scikit-learn<=1.4.2"]
 dynamic = ["version"]
 
 [project.scripts]
