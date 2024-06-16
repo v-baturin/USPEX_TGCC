@@ -28,6 +28,12 @@ class TGCC:
         self.queueRefreshDelay = self._QUEUE_REFRESH_DELAY_SECONDS if refreshDelay is None else refreshDelay
         self.cacheTime = datetime.now()
 
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        if not hasattr(self, 'queueRefreshDelay'): # TODO: remove after testing
+            self.queueRefreshDelay = self._QUEUE_REFRESH_DELAY_SECONDS
+        self.updateCache()
+
     def _prepareSubmission(self, COMMAND_EXEC : str,
                                  JOB_NAME : str,
                                  inputFile : str,
