@@ -60,6 +60,8 @@ class Seeds(object):
                 if filename.is_file():
                     systems = self.atomistic.readAtomicStructures(filename)
                     for system in systems:
+                        system['atomistic.molecules'] = [self.simpleMoleculeUtility.detectBonds(mol) if len(mol) > 1
+                                                         else mol for mol in system['atomistic.molecules']]
                         system = offspringFactory(**system)
                         structure = system.getProperty('structure', extension='atomistic')
                         minDistMatrix = self.bondUtility.getDistances(
