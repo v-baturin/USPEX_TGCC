@@ -2,18 +2,24 @@ import numpy as np
 from scipy.linalg import norm
 from copy import deepcopy
 
+from ...Semantics.Atomistic.Atomistic import Atomistic
+from ...Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ...Semantics.Atomistic.BondUtility import BondUtility
+from ...Semantics.Atomistic.Conditions import Conditions
+from ...Semantics.Atomistic.CellUtility import CellUtility
+from ...Semantics.Atomistic.CompositionSpace import CompositionSpace
 from ...DataModel.Entry import Entry
 from ...DataModel.Flavour import FlavourFactory
 
 class AddAtom:
     def __init__(self, utilities, suffix):
-        self.atomistic = utilities.atomistic
-        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.compositionSpace = utilities.compositionSpace
+        self.atomistic: Atomistic = utilities.atomistic
+        self.simpleMoleculeUtility: SimpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.compositionSpace: CompositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
-        self.bondUtility = utilities.bondUtility
-        self.conditions = utilities.conditions
-        self.cellUtility = utilities.cellUtility
+        self.bondUtility: BondUtility = utilities.bondUtility
+        self.conditions: Conditions = utilities.conditions
+        self.cellUtility: CellUtility = utilities.cellUtility
         self.suffix = suffix
         if self.simpleMoleculeUtility.isTrueMolecular:
             raise RuntimeError("AddAtom does not currently work in molecular regime.")

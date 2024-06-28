@@ -7,6 +7,7 @@ import logging
 import numpy as np
 from copy import copy
 
+from ..Semantics.Atomistic.CellUtility import CellUtility as CellUtilitySemantics
 from ..Expressions.Functions.CellFunctions import CellFunctions
 from .Primitives.Cell import Cell
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
 
 
-class CellUtility:
+class CellUtility(CellUtilitySemantics):
     """
     Utility for working with unit cells of atomic structures.
     """

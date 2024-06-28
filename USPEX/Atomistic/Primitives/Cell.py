@@ -3,9 +3,10 @@ from copy import copy
 from scipy.spatial.transform import Rotation
 from scipy.linalg import orthogonal_procrustes
 
+from ...Semantics.Atomistic.Primitives.Cell import Cell as CellSemantic
 from ..Transformation import Transformation
 
-class Cell:
+class Cell(CellSemantic):
     """
     Class representing unit cell of atomic structure.
     """

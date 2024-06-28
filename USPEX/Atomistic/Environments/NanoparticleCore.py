@@ -7,10 +7,11 @@ import alphashape
 logger = logging.getLogger(__name__)
 
 
+from ...Semantics.Atomistic.Environment import Environment as EnvironmentSemantics
 from ..JunctionUtility import Site, JunctionType
 
 
-class NanoparticleCore:
+class NanoparticleCore(EnvironmentSemantics):
     """
     Class NanoparticleCore provides basic functionality for Core-Adsorbant search.
     It consists of the following classes:

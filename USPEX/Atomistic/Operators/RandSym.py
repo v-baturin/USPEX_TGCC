@@ -15,6 +15,11 @@ import signal
 
 from ..Transformation import Transformation
 from ...SpaceGroups.SpaceGroups3D import Group
+from ...Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ...Semantics.Atomistic.BondUtility import BondUtility
+from ...Semantics.Atomistic.Conditions import Conditions
+from ...Semantics.Atomistic.CellUtility import CellUtility
+from ...Semantics.Atomistic.CompositionSpace import CompositionSpace
 from ...DataModel.Flavour import FlavourFactory
 
 MAX_RANDOM_FAILED_DIST = 10000
@@ -64,12 +69,12 @@ def determineOperations(lat, numIons, candidate):
 class RandSym:
     def __init__(self, utilities, nsym=None, sym_coef=0.4, splitInto=[1],
                  attemptsRotation: int = ATTEMPTS_ROTATION, debug = False):
-        self.cellUtility = utilities.cellUtility
+        self.cellUtility: CellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
-        self.compositionSpace = utilities.compositionSpace
-        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.bondUtility = utilities.bondUtility
-        self.conditions = utilities.conditions
+        self.compositionSpace: CompositionSpace = utilities.compositionSpace
+        self.simpleMoleculeUtility: SimpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.bondUtility: BondUtility = utilities.bondUtility
+        self.conditions: Conditions = utilities.conditions
         if nsym is None:
             if utilities.cellUtility.getDim() == 0:
                 self.nsym = (
