@@ -76,6 +76,7 @@ class Flavour:
         self.extensions = extensions if extensions is not None else {}
         self._propertiesCache = properties
         self.ID = ID
+        self.lockedProperties = set()
 
     def __getstate__(self) -> dict:
         return dict(ID=self.ID, extensions=self.extensions)
@@ -109,7 +110,12 @@ class Flavour:
             if extension == 'antiseeds':
                 self._propertiesCache[f'{extension}.{prop}'] = 0.0
             elif extension in self.extensions:
+                if f'{extension}.{prop}' in self.lockedProperties:
+                    raise KeyError(
+                        f'Infinite recursion while evaluatioin of property {extension}.{prop} for {self._propertiesCache}')
+                self.lockedProperties.add(f'{extension}.{prop}')
                 self._propertiesCache[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
+                self.lockedProperties.remove(f'{extension}.{prop}')
             else:
                 raise KeyError(f'Can not evaluate property {extension}.{prop} for {self._propertiesCache}.')
         return self._propertiesCache[f'{extension}.{prop}']
