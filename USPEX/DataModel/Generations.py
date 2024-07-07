@@ -60,7 +60,7 @@ class Generations(Sequence):
             conn.commit()
         self._cache[generationID] = generation
 
-    def getGeneration(self, generationID) -> list[int]:
+    def getGeneration(self, generationID) -> dict[str, Pool]:
         if generationID not in self._cache:
             with Engine.engine.connect() as conn:
                 pools = conn.execute(select(generationsMap.c.poolID, generationsMap.c.poolName).where(generationsMap.c.generationID == generationID)).all()
