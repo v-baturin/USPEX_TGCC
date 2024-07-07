@@ -145,7 +145,7 @@ class OutputRepresentation(object):
             if final:
                 goodSystems = generations[-1]['goodSystems']
                 table = self.targetRepresentation.getNewSystemsTable(goodSystems)
-                for ID in generations[-1]['best']:
+                for ID in generations[-1]['best'].getIDs():
                     table.update(ID, goodSystems.getEntry(ID))
                 output += createHeader_wrap(['Calculation results'], 'center')
                 output.append(table.table.get_string())
