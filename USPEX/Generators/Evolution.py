@@ -12,6 +12,7 @@ from copy import copy
 from typing import Union
 from collections import Counter
 
+from ..Semantics.Generator import Generator as GeneratorSemantics
 from ..Expressions.Antiseeds import Antiseeds
 from ..DataModel.Pool import Pool
 
@@ -79,7 +80,7 @@ class Autofrac(object):
         return int(howMany)
 
 
-class Evolution(object):
+class Evolution(GeneratorSemantics):
 
     Target = None
 
@@ -121,7 +122,7 @@ class Evolution(object):
         else:
             logger.setLevel(logging.INFO)
 
-    def call(self, generation: dict[str, Pool]):
+    def call(self, generation: Union[dict[str, Pool], None]):
         """
         :param oldPopulation: generation of new
         :param best:

@@ -12,6 +12,7 @@ import numpy as np
 from copy import copy
 from typing import Union
 
+from ..Semantics.Optimizer import Optimizer as OptimizerSemantics
 from ..DataModel.Pool import Pool
 from ..DataModel.Expression import Expression
 
@@ -19,7 +20,7 @@ from ..DataModel.Expression import Expression
 logger = logging.getLogger(__name__)
 
 
-class GlobalOptimizer(object):
+class GlobalOptimizer(OptimizerSemantics):
     """
     Main purpose of this class is to generate new structures
 
@@ -49,7 +50,7 @@ class GlobalOptimizer(object):
 
     async def update(self,
                      population: Pool,
-                     parentsGeneration: dict[str, Pool]
+                     parentsGeneration: Union[dict[str, Pool], None]
                      ) -> tuple[dict[str, Pool], bool, bool]:
         """
         Updates state of optimized structures.
@@ -126,7 +127,7 @@ class GlobalOptimizer(object):
     def _markDuplicates(self,
                         population: Pool,
                         goodSystems: Pool,
-                        parentsGeneration: dict[str, Pool],
+                        parentsGeneration: Union[dict[str, Pool], None],
                         optType: Union[str, Expression]
                         ) -> Pool:
         """
