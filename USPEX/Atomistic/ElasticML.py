@@ -5,7 +5,7 @@ import torch.nn as nn
 from pathlib import Path
 from pymatgen.core.structure import Structure
 
-from ..Expressions.Functions.ElasticMLFunctions import ElasticMLFunctions
+from ..Expressions.Functions.register import PropertyExtension
 from ..DataModel.Flavour import Flavour
 
 EMBEDDINGS = [
@@ -195,12 +195,11 @@ class ElasticML:
     MAX_NUM_NBR = 12
     STEP = 0.2
 
+    propertyExtension = PropertyExtension()
+
     def __init__(self):
         with open(self.MODELNAME, "rb") as f:
             self.model = torch.load(f)
-
-    def propertyExtension(self):
-        return ElasticMLFunctions(self)
 
     def predictValues(self, system: Flavour):
         """
@@ -240,3 +239,45 @@ class ElasticML:
                                                 (E*(1-13.7*nu+48.6*nu**2)/(1-15.2*nu+70.2*nu**2-81.5*nu**3))**1.5,
                            extension='elasticML')
         return
+
+    @propertyExtension
+    def youngsModulus(self, system: Flavour):
+        if not 'elasticML.youngsModulus' in system:
+            self.predictValues(system)
+        return system['elasticML.youngsModulus']
+
+    @propertyExtension
+    def poissonsRatio(self, system: Flavour):
+        if not 'elasticML.poissonsRatio' in system:
+            self.predictValues(system)
+        return system['elasticML.poissonsRatio']
+
+    @propertyExtension
+    def bulkModulus(self, system: Flavour):
+        if not 'elasticML.bulkModulus' in system:
+            self.predictValues(system)
+        return system['elasticML.bulkModulus']
+
+    @propertyExtension
+    def shearModulus(self, system: Flavour):
+        if not 'elasticML.shearModulus' in system:
+            self.predictValues(system)
+        return system['elasticML.shearModulus']
+
+    @propertyExtension
+    def pughsRatio(self, system: Flavour):
+        if not 'elasticML.pughsRatio' in system:
+            self.predictValues(system)
+        return system['elasticML.pughsRatio']
+
+    @propertyExtension
+    def vickersHardness(self, system: Flavour):
+        if not 'elasticML.vickersHardness' in system:
+            self.predictValues(system)
+        return system['elasticML.vickersHardness']
+
+    @propertyExtension
+    def fractureToughness(self, system: Flavour):
+        if not 'elasticML.fractureToughness' in system:
+            self.predictValues(system)
+        return system['elasticML.fractureToughness']

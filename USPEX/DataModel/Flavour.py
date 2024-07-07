@@ -114,7 +114,8 @@ class Flavour:
                     raise KeyError(
                         f'Infinite recursion while evaluatioin of property {extension}.{prop} for {self._propertiesCache}')
                 self.lockedProperties.add(f'{extension}.{prop}')
-                self._propertiesCache[f'{extension}.{prop}'] = getattr(self.extensions[extension], prop)(self)
+                utility, propertyTable = self.extensions[extension]
+                self._propertiesCache[f'{extension}.{prop}'] = propertyTable[prop](utility, self)
                 self.lockedProperties.remove(f'{extension}.{prop}')
             else:
                 raise KeyError(f'Can not evaluate property {extension}.{prop} for {self._propertiesCache}.')

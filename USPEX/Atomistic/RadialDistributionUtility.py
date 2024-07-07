@@ -14,7 +14,8 @@ from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
 
-from ..Expressions.Functions.RadialDistributionFunctions import RadialDistributionFunctions
+from ..Expressions.Functions.register import PropertyExtension
+from ..DataModel.Flavour import Flavour
 
 
 logger = logging.getLogger(__name__)
@@ -147,6 +148,8 @@ class RadialDistributionUtility(object):
     Utility for working with radial distribution related properties of systems.
     """
 
+    propertyExtension = PropertyExtension()
+
     def __init__(self, symbols, suffix, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
                  legacy=False):
         """
@@ -168,9 +171,6 @@ class RadialDistributionUtility(object):
         self.legacy = legacy
         self.distances = {}
         self.legacy_distances = {}
-
-    def propertyExtension(self):
-        return RadialDistributionFunctions(self)
 
     def clean(self, system):
         """
@@ -452,6 +452,83 @@ class RadialDistributionUtility(object):
         for key in weights:
             weights[key] /= weightSum
         return weights
+
+    @propertyExtension
+    def structureFingerprint(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculate or retrieve structure fingerprint of a system.
+        """
+        self.calcFingerprint(system)
+        return system['radialDistributionUtility.structureFingerprint']
+
+    @propertyExtension
+    def complexFingerprint(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculate or retrieve structure fingerprint of a system.
+        """
+        self.calcFingerprint(system)
+        return system['radialDistributionUtility.complexFingerprint']
+
+    @propertyExtension
+    def order(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculate or retrieve list of atomic *local orders* of a system.
+            *Local order* is a measure of atom surrounding being regular.
+        """
+        self.calcFingerprint(system)
+        return system['radialDistributionUtility.order']
+
+    @propertyExtension
+    def averageOrder(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculate or retrieve average atomic *local order* of a system.
+            *Local order* is a measure of atom surrounding being regular.
+        """
+        self.calcFingerprint(system)
+        return system['radialDistributionUtility.averageOrder']
+
+    @propertyExtension
+    def structureOrder(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculate or retrieve *structure order* of a system.
+            *Structure order* is a measure of structure being regular.
+        """
+        self.calcFingerprint(system)
+        return system['radialDistributionUtility.structureOrder']
+
+    @propertyExtension
+    def quasientropy(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculate quasientropy of structure.
+        """
+
+        self.calcFingerprint(system)
+        return system['radialDistributionUtility.quasientropy']
+
 
 
 def _super_matrix(xmin: int, xmax: int, ymin: int, ymax: int, zmin: int, zmax: int):

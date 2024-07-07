@@ -11,7 +11,6 @@ Class describing target space
 import logging
 from types import SimpleNamespace
 
-from ..Expressions.Functions.BasicFunctions import BasicFunctions
 from ..DataModel.Flavour import FlavourFactory
 from ..DataModel.Pool import Pool
 from ..DataModel.Generations import Generations
@@ -88,8 +87,7 @@ class Target(object):
         self.defaultSuffix = defaultSuffix
         self.name = type
         utilities = {}
-        self.expressionExtensions = {'basic': BasicFunctions()}
-
+        self.expressionExtensions = {}
         self.propertyExtensions = {}
         failedUtilities = []
         for utilityType in targetTypes.utilities:
@@ -98,9 +96,9 @@ class Target(object):
                 utility = utilityType(**kwargs[name]) if name in kwargs else utilityType()
                 utilities[name] = utility
                 if hasattr(utilityType, 'expressionExtension'):
-                    self.expressionExtensions[name] = utility.expressionExtension()
+                    self.expressionExtensions[name] = (utility, utility.expressionExtension.expressionTable)
                 if hasattr(utility, 'propertyExtension'):
-                    self.propertyExtensions[name] = utility.propertyExtension()
+                    self.propertyExtensions[name] = (utility, utility.propertyExtension.propertyTable)
             except TypeError as e:
                 logger.debug(e)
                 failedUtilities.append(utilityType.__name__)

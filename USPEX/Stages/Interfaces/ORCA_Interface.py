@@ -133,7 +133,7 @@ class ORCA_Interface:
         return result
 
     def readStructure(self, system, calcFolder: Path):
-        atomistic = system.getFactory().extensions['atomistic'].utility
+        atomistic = system.getFactory().extensions['atomistic'][0]
         structure = system.getProperty('structure', extension='atomistic')
 
         if calcFolder.joinpath(self.out_geometry_file).exists():

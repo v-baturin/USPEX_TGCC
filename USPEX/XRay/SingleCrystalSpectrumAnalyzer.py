@@ -12,10 +12,13 @@ from pymatgen.core.structure import Structure
 from pathlib import Path
 
 from .get_reflections import get_reflections
-from ..Expressions.Functions.SingleCrystalSpectrumAnalyzerFunctions import SingleCrystalSpectrumAnalyzerFunctions
+from ..Expressions.Functions.register import PropertyExtension
+from ..DataModel.Flavour import Flavour
 
 
 class SingleCrystalSpectrumAnalyzer(object):
+
+    propertyExtension = PropertyExtension()
 
     def __init__(self, expReflections: list, cellParameters: tuple):
         """
@@ -28,9 +31,6 @@ class SingleCrystalSpectrumAnalyzer(object):
         """
         self.exp_reflections = np.array(expReflections, dtype=object)
         self.cellParameters = cellParameters
-
-    def propertyExtension(self):
-        return SingleCrystalSpectrumAnalyzerFunctions(self)
 
     def analyze(self, system):
         """
@@ -119,3 +119,11 @@ class SingleCrystalSpectrumAnalyzer(object):
                     sigma_hkl = float(values[4])
                     expReflections.append([i_hkl, hkl, sigma_hkl])
         return expReflections
+
+    @propertyExtension
+    def xraydistance(self, system: Flavour):
+        if 'singleCrystalSpectrumAnalyzer.xraydistance' not in system:
+            self.analyze(system)
+        assert 'singleCrystalSpectrumAnalyzer.xraydistance' in system
+        return system['singleCrystalSpectrumAnalyzer.xraydistance']
+

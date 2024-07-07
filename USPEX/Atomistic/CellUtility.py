@@ -6,10 +6,13 @@ USPEX.Atomistic.CellUtility
 import logging
 import numpy as np
 from copy import copy
+import spglib
 
 from ..Semantics.Atomistic.CellUtility import CellUtility as CellUtilitySemantics
-from ..Expressions.Functions.CellFunctions import CellFunctions
+from ..Expressions.Functions.register import PropertyExtension
 from .Primitives.Cell import Cell
+from ..DataModel.Flavour import Flavour
+
 
 logger = logging.getLogger(__name__)
 _DEFAULT_SYMMETRY_TOLERANCE = 0.05
@@ -19,6 +22,7 @@ class CellUtility(CellUtilitySemantics):
     """
     Utility for working with unit cells of atomic structures.
     """
+    propertyExtension = PropertyExtension()
 
     def __init__(self, dim=None, pbc=None, cellVectors = None, cellParameters = None, cellVolume = None, axis=None,
                  thickness=None, supercellDegree = None, symTolerance=None, debug = False):
@@ -173,9 +177,6 @@ class CellUtility(CellUtilitySemantics):
         :return: volume of unit cell if it is set or the cell is fixed, otherwise *None*.
         """
         return self._volume
-
-    def propertyExtension(self):
-        return CellFunctions(self)
 
     def adjustCell(self, cellVectors, estimatedVolume, numAtoms, baseCell=None):
         """
@@ -400,4 +401,58 @@ class CellUtility(CellUtilitySemantics):
         elif self._thickness is not None:
             isGood = isGood and (cell.getRadius() <= self._thickness * 0.8661)
         return isGood
+
+    @propertyExtension
+    def volume(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculated volume of system.
+        """
+        return system['atomistic.cell'].getVolume()
+
+    @propertyExtension
+    def area(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculated area of system.
+        """
+        return system['atomistic.cell'].getArea()
+
+    @propertyExtension
+    def length(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculated length of system.
+        """
+        return system['atomistic.cell'].getLength()
+
+    @propertyExtension
+    def symmetry(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculated symmetry of system.
+        """
+        structure = system['atomistic.structure']
+        cell = structure.getCell()
+        lattice = cell.getCellVectors()
+        coordinates = structure.getFractionalCoordinates()
+        numbers = [el.z for el in structure.getAtomTypes()]
+        spacegroup = spglib.get_spacegroup((lattice, coordinates, numbers), symprec=self.symTolerance)
+        if cell.dim == 3 and spacegroup is not None:
+            symmetry = '{:7s} {:4s}'.format(*[str(x) for x in spacegroup.split()])
+        else:
+            symmetry = None
+        return symmetry
 

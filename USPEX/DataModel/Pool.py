@@ -8,6 +8,7 @@ from .Engine import Engine
 from .Flavour import FlavourFactory, Flavour
 from .Entry import Entry
 from .Expression import Expression
+from ..Expressions.Functions.BasicFunctions import BasicFunctions
 
 
 logger = logging.getLogger(__name__)
@@ -137,13 +138,13 @@ class Pool:
                         arguments[i] = arg[:size]
                 funcName = funcName.split('.')
                 if len(funcName) == 1:
-                    extension = 'basic'
-                    funcName, = funcName
+                    valueArray = getattr(BasicFunctions, funcName[0])(*arguments)
                 elif len(funcName) == 2:
                     extension, funcName = funcName
+                    utility, expressionTable = self.expressionExtensions[extension]
+                    valueArray = expressionTable[funcName](utility, *arguments)
                 else:
                     raise RuntimeError(f"Too complex expression {'.'.join(expression)}.")
-                valueArray = getattr(self.expressionExtensions[extension], funcName)(*arguments)
             elif isinstance(expression, str):
                 value = [self.getEntry(ID)[expression] for ID in self.getIDs()]
                 # value = [self.evaluateTerminal(expression, system) for system in self.pool]
