@@ -16,7 +16,7 @@ class USPEXClassicRepresentation(object):
         allOperators = set()
         allAmountsAndTotals = []
         for generation in generations:
-            population = generation.population
+            population = generation['population']
             amounts = Counter()
             for ID in population.getIDs():
                 amounts[population.getEntry(ID)['.howCome.origin']] += 1
@@ -55,7 +55,7 @@ class USPEXClassicRepresentation(object):
         block = []
         if not generator.globalParentsPool:
             block.append('     Best and diverse structures from previous generation')
-            mostDiverseTable = targetRepresentation.getNewSystemsTable(generations[-1].goodSystems)
+            mostDiverseTable = targetRepresentation.getNewSystemsTable(generations[-1]['goodSystems'])
             for system in generator.getMostDiverse():
                 mostDiverseTable.update(system['ID'], system)
             block.append(mostDiverseTable.table.get_string())

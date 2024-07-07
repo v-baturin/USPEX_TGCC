@@ -7,6 +7,7 @@ extensions = [
     Extension("USPEX.DataModel.Expression", ["USPEX/DataModel/Expression.py"]),
     Extension("USPEX.DataModel.Flavour", ["USPEX/DataModel/Flavour.py"]),
     Extension("USPEX.DataModel.Pool", ["USPEX/DataModel/Pool.py"]),
+    Extension("USPEX.DataModel.Generations", ["USPEX/DataModel/Generations.py"]),
     Extension("USPEX.Optimizers.GlobalOptimizer", ["USPEX/Optimizers/GlobalOptimizer.py"]),
     Extension("USPEX.Generators.Target", ["USPEX/Generators/Target.py"]),
     Extension("USPEX.Generators.Evolution", ["USPEX/Generators/Evolution.py"]),
