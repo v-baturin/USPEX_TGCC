@@ -13,6 +13,7 @@ from ..IO.InputParser import read
 from ..Semantics.Generator import Generator as GeneratorSemantics
 from ..Semantics.Optimizer import Optimizer as OptimizerSemantics
 
+
 logger = logging.getLogger(__name__)
 DEFAULT_OUTPUT_REFRESH_DELAY = 120
 
