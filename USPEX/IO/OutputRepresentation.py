@@ -128,24 +128,24 @@ class OutputRepresentation(object):
             output += createHeader_wrap(['Generations block'], 'center')
 
             for i, generation in enumerate(generations):
-                population = generation.population
+                population = generation['population']
                 output.append(' Generation {0:4d}'.format(i))
                 output += self.selectionRepresentation.getPopulationCreationBlock(population, optimizer, generator,
                                                                                   generations, self.targetRepresentation)
                 output.append('    Optimization results')
-                table = self.targetRepresentation.getNewSystemsTable(generations[i].goodSystems)
+                table = self.targetRepresentation.getNewSystemsTable(generation['goodSystems'])
                 for ID in population.getIDs():
                     table.update(ID, population.getEntry(ID))
                 output.append(table.table.get_string())
-                output += self.targetRepresentation.getPopulationSummaryBlock(generation.goodPopulation, optimizer,
+                output += self.targetRepresentation.getPopulationSummaryBlock(generation['goodPopulation'], optimizer,
                                                                               generator, generations)
                 output.append('')
 
 
             if final:
-                goodSystems = generations[-1].goodSystems
+                goodSystems = generations[-1]['goodSystems']
                 table = self.targetRepresentation.getNewSystemsTable(goodSystems)
-                for ID in generations[-1].best:
+                for ID in generations[-1]['best']:
                     table.update(ID, goodSystems.getEntry(ID))
                 output += createHeader_wrap(['Calculation results'], 'center')
                 output.append(table.table.get_string())
