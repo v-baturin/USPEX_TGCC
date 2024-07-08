@@ -9,7 +9,7 @@ from copy import copy
 from collections import Counter
 
 from ..Semantics.Atomistic.CompositionSpace import CompositionSpace as CompositionSpaceSemantics
-from ..Expressions.Functions.register import ExpressionExtension
+from USPEX.Expressions import ExpressionExtension
 
 
 logger = logging.getLogger(__name__)

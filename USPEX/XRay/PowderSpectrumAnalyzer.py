@@ -16,7 +16,7 @@ from pymatgen.analysis.diffraction.xrd import XRDCalculator
 from pathlib import Path
 
 
-from ..Expressions.Functions.register import PropertyExtension
+from USPEX.Expressions import PropertyExtension
 from ..DataModel.Flavour import Flavour
 
 

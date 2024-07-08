@@ -1,6 +1,6 @@
-from USPEX.Expressions.ConvexHull import ConvexHull
+from USPEX.Expressions.Private.ConvexHull import ConvexHull
 from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
-from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
+from USPEX.Expressions.Functions import Functions
 from USPEX.Atomistic.CompositionSpace import CompositionSpace
 
 
@@ -9,7 +9,7 @@ class CompositionCH(ConvexHull):
         self.systems = systems
         self.compositionSpace = compositionSpace
         extensions = dict(
-            basic=BasicFunctions(),
+            basic=Functions(),
             compositionSpace=compositionSpace.expressionExtension(),
         )
         expression = ('getRelativeCHSpace',
@@ -37,7 +37,7 @@ class CompositionCH(ConvexHull):
     def extend(self, systems: list):
         self.systems.extend(systems)
         extensions = dict(
-            basic=BasicFunctions(),
+            basic=Functions(),
             compositionSpace=self.compositionSpace.expressionExtension(),
         )
         expression = ('getRelativeCHSpace',

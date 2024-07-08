@@ -12,8 +12,6 @@ import numpy as np
 import os
 from os.path import join as pj
 
-
-from ..Functions.BasicFunctions import BasicFunctions
 from ...DataModel.Engine import Engine
 from ...DataModel.Flavour import FlavourFactory, Flavour
 from ...DataModel.Pool import Pool

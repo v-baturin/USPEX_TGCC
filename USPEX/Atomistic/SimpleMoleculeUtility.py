@@ -8,7 +8,7 @@ import numpy as np
 from collections import Counter
 
 
-from ..Expressions.Functions.register import PropertyExtension
+from USPEX.Expressions import PropertyExtension
 from ..Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility as SimpleMoleculeUtilitySemantics
 from ..DataModel.Flavour import Flavour
 from .Transformation import Transformation

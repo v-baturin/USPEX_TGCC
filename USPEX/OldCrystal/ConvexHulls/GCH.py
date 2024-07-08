@@ -1,9 +1,9 @@
 import logging
 import numpy as np
 
-from USPEX.Expressions.ConvexHull import ConvexHull
+from USPEX.Expressions.Private.ConvexHull import ConvexHull
 from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
-from USPEX.Expressions.Functions.BasicFunctions import BasicFunctions
+from USPEX.Expressions.Functions import Functions
 
 logger = logging.getLogger(__name__)
 # To which dimensionality we project our FP and consider
@@ -50,7 +50,7 @@ class GeneralizedConvexHull(ConvexHull):
             self._height = np.full(size, 0.0)
             self._depth = np.full(size, 0.0)
         else:
-            extensions = {'basic': BasicFunctions()}
+            extensions = {'basic': Functions()}
             expression = ('getAbsoluteCHSpace',
                           ('getPrincipalComponents',
                            self.DIMENSIONALITY - 1,
@@ -83,7 +83,7 @@ class GeneralizedConvexHull(ConvexHull):
             self._height = np.full(size, 0.0)
             self._depth = np.full(size, 0.0)
         else:
-            extensions = {'basic': BasicFunctions()}
+            extensions = {'basic': Functions()}
             expression = ('getAbsoluteCHSpace',
                           ('getPrincipalComponents',
                            self.DIMENSIONALITY - 1,

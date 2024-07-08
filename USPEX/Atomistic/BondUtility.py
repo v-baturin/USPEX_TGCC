@@ -20,7 +20,7 @@ from scipy.stats import gmean
 from itertools import chain
 
 from ..Semantics.Atomistic.BondUtility import BondUtility as BondUtilitySemantics
-from ..Expressions.Functions.register import PropertyExtension
+from USPEX.Expressions import PropertyExtension
 from .VolumeEstimator import VolumeEstimator
 from ..DataModel.Flavour import Flavour
 

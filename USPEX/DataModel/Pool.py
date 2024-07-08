@@ -1,14 +1,14 @@
 import logging
 import numpy as np
 from typing import Union, Mapping
-from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, Float, String, select, update, delete, and_
+from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, select
 from sqlalchemy.dialects.sqlite import insert
 
 from .Engine import Engine
 from .Flavour import FlavourFactory, Flavour
 from .Entry import Entry
 from .Expression import Expression
-from ..Expressions.Functions.BasicFunctions import BasicFunctions
+from USPEX.Expressions.Functions import Functions
 
 
 logger = logging.getLogger(__name__)
@@ -138,7 +138,7 @@ class Pool:
                         arguments[i] = arg[:size]
                 funcName = funcName.split('.')
                 if len(funcName) == 1:
-                    valueArray = getattr(BasicFunctions, funcName[0])(*arguments)
+                    valueArray = getattr(Functions, funcName[0])(*arguments)
                 elif len(funcName) == 2:
                     extension, funcName = funcName
                     utility, expressionTable = self.expressionExtensions[extension]
