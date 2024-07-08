@@ -28,7 +28,7 @@ class MOPAC_CalculatorTest(unittest.TestCase):
         mopac = MOPAC_Interface(tag='0', mop_input=SPECIFICPATH/'mop_1', targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension()
+            atomistic=(atomistic, atomistic.propertyExtension.propertyTable),
         )
 
         for ID in range(10):

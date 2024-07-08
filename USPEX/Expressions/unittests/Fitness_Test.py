@@ -58,11 +58,10 @@ class Fitness_Test(unittest.TestCase):
         self.compositionSpace = CompositionSpace(symbols=['Mg', 'Al', 'O'], blocks=[[4, 8, 16]], range=[[1, 1]])
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
         expressionExtensions = dict(
-            basic=BasicFunctions(),
-            compositionSpace=self.compositionSpace.expressionExtension(),
+            compositionSpace=(self.compositionSpace, self.compositionSpace.expressionExtension.expressionTable),
         )
         propertyExtensions = dict(
-            simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension()
+            simpleMoleculeUtility=(self.simpleMoleculeUtility, self.simpleMoleculeUtility.propertyExtension.propertyTable)
         )
         self.systems = Pool.newPool(FlavourFactory(extensions=propertyExtensions), expressionExtensions)
         for system in systems:
@@ -216,16 +215,14 @@ class FitnessXray_Test(unittest.TestCase):
         self.powderSpectrumAnalyzer = PowderSpectrumAnalyzer(**PowderSpectrumAnalyzer.parse(pj(HOMEPATH, 'spectrum.txt')))
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
         self.atomistic = Atomistic()
-
         expressionExtensions = dict(
-            basic=BasicFunctions(),
-            compositionSpace=self.compositionSpace.expressionExtension(),
+            compositionSpace=(self.compositionSpace, self.compositionSpace.expressionExtension.expressionTable),
         )
+        atomistic = Atomistic()
         propertyExtensions = dict(
-
-            atomistic = Atomistic().propertyExtension(),
-            simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension(),
-            powderSpectrumAnalyzer=self.powderSpectrumAnalyzer.propertyExtension(),
+            atomistic = (atomistic, atomistic.propertyExtension.propertyTable),
+            simpleMoleculeUtility=(self.simpleMoleculeUtility, self.simpleMoleculeUtility.propertyExtension.propertyTable),
+            powderSpectrumAnalyzer = (self.powderSpectrumAnalyzer, self.powderSpectrumAnalyzer.propertyExtension.propertyTable),
         )
         self.systems = Pool.newPool(FlavourFactory(extensions=propertyExtensions), expressionExtensions)
         for system in systems:

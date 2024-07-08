@@ -41,10 +41,10 @@ class PWmat_InterfaceTest(unittest.TestCase):
         cls.knownSystemEnergy = -858.0749767374361
 
         params = {'tag': 's0', 'kresol': 0.05, 'etot_input': HOMEPATH/'Specific/etot.input_1',
-                  'potcars': [HOMEPATH/'Specific/Si.SG15.PBE.UPF']}
+                  'potcars': [HOMEPATH/'Specific/Si.SG15.PBE.UPF'], 'targetProperties': ['structure', 'enthalpy']}
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension()
+            atomistic=(atomistic, atomistic.propertyExtension.propertyTable),
         )
 
         cls.vcEmpty = PWmat_Interface(**params)
