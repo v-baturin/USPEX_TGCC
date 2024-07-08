@@ -10,6 +10,7 @@ Class for Element
 
 from typing import List, Union, Optional
 
+from ...Semantics.Atomistic.Primitives.Element import Element as ElementSemantics
 
 class _Atom:
     z: int                         # atomic number
@@ -143,7 +144,7 @@ _ELEMENTS_LIST = [
 ]
 
 
-class Element(object):
+class Element(ElementSemantics):
     """
     Class for returning information about elements in one place.
 

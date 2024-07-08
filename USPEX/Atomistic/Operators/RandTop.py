@@ -14,6 +14,11 @@ from sympy.combinatorics.partitions import Partition, RGS_rank
 
 from ..SymmetricStructure import SymmetricStructure
 from ...SpaceGroups.SpaceGroups3D import Group
+from ...Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ...Semantics.Atomistic.BondUtility import BondUtility
+from ...Semantics.Atomistic.Conditions import Conditions
+from ...Semantics.Atomistic.CellUtility import CellUtility
+from ...Semantics.Atomistic.CompositionSpace import CompositionSpace
 from ...DataModel.Flavour import FlavourFactory
 
 
@@ -30,12 +35,12 @@ MAX_RANDOM_TIME = 300
 class RandTop:
     def __init__(self, utilities, supercells: list = None, maxSupersize: int = MAX_SUPERSIZE,
                  attemptsRotation: int = ATTEMPTS_ROTATION, attemptsPointGroup: int = ATTEMPTS_POINT_GROUP):
-        self.cellUtility = utilities.cellUtility
+        self.cellUtility: CellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
-        self.compositionSpace = utilities.compositionSpace
-        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.bondUtility = utilities.bondUtility
-        self.conditions = utilities.conditions
+        self.compositionSpace: CompositionSpace = utilities.compositionSpace
+        self.simpleMoleculeUtility: SimpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.bondUtility: BondUtility = utilities.bondUtility
+        self.conditions: Conditions = utilities.conditions
         self.supercells = supercells
         self.maxSupersize = maxSupersize
         self.attemptsRotation = attemptsRotation

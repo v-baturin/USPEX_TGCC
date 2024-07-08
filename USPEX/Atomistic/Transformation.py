@@ -6,8 +6,9 @@ USPEX.Atomistic.Transformation
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from ..Semantics.Atomistic.Primitives.Transformation import Transformation as TransfromationSemantics
 
-class Transformation:
+class Transformation(TransfromationSemantics):
     """
     Class defining 3D space transformation: rotation plus shift.
     """

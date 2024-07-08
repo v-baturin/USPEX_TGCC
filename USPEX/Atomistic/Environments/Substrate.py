@@ -2,6 +2,7 @@ import numpy as np
 import logging
 
 
+from ...Semantics.Atomistic.Environment import Environment as EnvironmentSemantics
 from .slabFunctions import constructSurfaceSlab  # adjustSystem
 
 
@@ -13,7 +14,7 @@ DEFAULT_MAX_MISFIT_STRAIN = 5E-3
 DEFAULT_MAX_ENVIRONMENT_AREA = 1000
 
 
-class Substrate:
+class Substrate(EnvironmentSemantics):
     """
     Class representing part of structure which is not being altered via variation operators.
     I.e. it acts as environment for individual.

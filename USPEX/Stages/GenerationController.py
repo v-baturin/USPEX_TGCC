@@ -10,6 +10,8 @@ from shutil import copyfile
 from time import time
 from ..IO.OutputRepresentation import OutputRepresentation
 from ..IO.InputParser import read
+from ..Semantics.Generator import Generator as GeneratorSemantics
+from ..Semantics.Optimizer import Optimizer as OptimizerSemantics
 
 
 logger = logging.getLogger(__name__)
@@ -57,8 +59,8 @@ class GenerationController(object):
         self.stopCrit = stopCrit
         self.numParallelCalcs = numParallelCalcs
         self.stages = stages
-        self.optimizer = optimizer
-        self.generator = generator
+        self.optimizer: OptimizerSemantics = optimizer
+        self.generator: GeneratorSemantics = generator
         self.outputRepresentation = outputRepresentation
         self.outputRefreshDelay = outputRefreshDelay
         self.start = start
@@ -70,8 +72,8 @@ class GenerationController(object):
         self.isGoalReached = False
         self.state = ControllerState.createPopulation
         self.population = None
-        self.allSystems = self.generator.target.createPool()
-        self.generations = []
+        self.allSystems = None
+        self.generations = self.generator.target.createGenerations()
         self.save()
 
     @staticmethod
@@ -115,9 +117,13 @@ class GenerationController(object):
 
             if self.state is ControllerState.createPopulation:
                 generation = self.generations[-1] if self.generations else None
-                self.population = self.generator(generation)
-                for ID in self.population.getIDs():
-                    self.allSystems.addEntry(self.population.getEntry(ID))
+                self.population = self.generator.call(generation)
+                if generation is None:
+                    self.allSystems = copy(self.population)
+                else:
+                    self.allSystems = copy(generation['allSystems'])
+                    for ID in self.population.getIDs():
+                        self.allSystems.addEntry(self.population.getEntry(ID))
                 self.state = ControllerState.processPopulation
                 self.save()
             if self.state is ControllerState.processPopulation:

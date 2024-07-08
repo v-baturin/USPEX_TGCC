@@ -14,6 +14,7 @@ from types import SimpleNamespace
 from ..Expressions.Functions.BasicFunctions import BasicFunctions
 from ..DataModel.Flavour import FlavourFactory
 from ..DataModel.Pool import Pool
+from ..DataModel.Generations import Generations
 
 
 logger = logging.getLogger(__name__)
@@ -159,3 +160,6 @@ class Target(object):
 
     def createPool(self) -> Pool:
         return Pool.newPool(self.flavourFactory, self.expressionExtensions, self.metric)
+
+    def createGenerations(self) -> Generations:
+        return Generations(self.flavourFactory, self.expressionExtensions, self.metric)

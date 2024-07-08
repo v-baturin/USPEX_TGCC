@@ -3,8 +3,9 @@ USPEX.Atomistic.Conditions
 ==========================
 """
 
+from ..Semantics.Atomistic.Conditions import Conditions as CondeitionsSemantics
 
-class Conditions:
+class Conditions(CondeitionsSemantics):
     """
     Class describing conditions such as external pressure.
     """

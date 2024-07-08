@@ -1,11 +1,13 @@
 import numpy as np
 import logging
 
+from ...Semantics.Atomistic.Environment import Environment as EnvironmentSemantics
+
 
 logger = logging.getLogger(__name__)
 
 
-class Bulk:
+class Bulk(EnvironmentSemantics):
     Atomistic = None
 
     @classmethod

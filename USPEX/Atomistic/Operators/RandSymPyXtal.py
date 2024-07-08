@@ -9,6 +9,12 @@ from pyxtal.crystal import Lattice
 from pyxtal import pyxtal
 from pyxtal.molecular_crystal import molecular_crystal
 
+from ...Semantics.Atomistic.Atomistic import Atomistic
+from ...Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ...Semantics.Atomistic.BondUtility import BondUtility
+from ...Semantics.Atomistic.Conditions import Conditions
+from ...Semantics.Atomistic.CellUtility import CellUtility
+from ...Semantics.Atomistic.CompositionSpace import CompositionSpace
 from ...DataModel.Flavour import FlavourFactory
 
 
@@ -19,13 +25,13 @@ LOCAL_VACUUM = 0.2
 
 class RandSymPyXtal:
     def __init__(self, utilities, symmetries=None, factor=1.1):
-        self.atomistic = utilities.atomistic
-        self.cellUtility = utilities.cellUtility
+        self.atomistic: Atomistic = utilities.atomistic
+        self.cellUtility: CellUtility = utilities.cellUtility
         self.environmentUtility = utilities.environmentUtility
-        self.compositionSpace = utilities.compositionSpace
-        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.bondUtility = utilities.bondUtility
-        self.conditions = utilities.conditions
+        self.compositionSpace: CompositionSpace = utilities.compositionSpace
+        self.simpleMoleculeUtility: SimpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.bondUtility: BondUtility = utilities.bondUtility
+        self.conditions: Conditions = utilities.conditions
         # if self.simpleMoleculeUtility.isTrueMolecular:
         #     raise RuntimeError("RandSymPyXtal does not currently work in molecular regime.")
         if isinstance(symmetries, int):

@@ -2,6 +2,7 @@ import numpy as np
 import logging
 
 
+from ...Semantics.Atomistic.Environment import Environment as EnvironmentSemantics
 from .slabFunctions import constructSurfaceSlab, constructGrainsSlabs  # adjustSystem, adjustStructures, alignStructure
 
 
@@ -14,7 +15,7 @@ DEFAULT_MAX_ENVIRONMENT_AREA = 1000
 DEFAULT_VACUUM = 1e-3
 
 
-class Interface:
+class Interface(EnvironmentSemantics):
     """
     Class representing part of structure which is not being altered via variation operators.
     I.e. it acts as environment for individual.

@@ -3,6 +3,11 @@ from itertools import combinations
 from copy import copy
 
 from ..Transformation import Transformation
+from ...Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility
+from ...Semantics.Atomistic.BondUtility import BondUtility
+from ...Semantics.Atomistic.Conditions import Conditions
+from ...Semantics.Atomistic.CellUtility import CellUtility
+from ...Semantics.Atomistic.CompositionSpace import CompositionSpace
 from ...DataModel.Entry import Entry
 from ...DataModel.Flavour import FlavourFactory
 
@@ -13,12 +18,12 @@ _SWAP_ATTEMPTS = 1000
 class Permutation:
 
     def __init__(self, utilities, suffix, howManySwaps = 5, specificSwaps = None, swapAttempts = _SWAP_ATTEMPTS):
-        self.compositionSpace = utilities.compositionSpace
+        self.compositionSpace: CompositionSpace = utilities.compositionSpace
         self.environmentUtility = utilities.environmentUtility
-        self.simpleMoleculeUtility = utilities.simpleMoleculeUtility
-        self.bondUtility = utilities.bondUtility
-        self.conditions = utilities.conditions
-        self.cellUtility = utilities.cellUtility
+        self.simpleMoleculeUtility: SimpleMoleculeUtility = utilities.simpleMoleculeUtility
+        self.bondUtility: BondUtility = utilities.bondUtility
+        self.conditions: Conditions = utilities.conditions
+        self.cellUtility: CellUtility = utilities.cellUtility
         if len(self.compositionSpace.symbols) == 1:
             raise RuntimeError("Permutation does not work when number of symbols in calculation is 1.")
         self.specificSwaps = [self.compositionSpace.symbols[i-1] for i in specificSwaps] if specificSwaps is not None \

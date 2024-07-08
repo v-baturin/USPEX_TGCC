@@ -12,6 +12,7 @@ import numpy as np
 from copy import copy
 from typing import Union
 
+from ..Semantics.Optimizer import Optimizer as OptimizerSemantics
 from ..DataModel.Pool import Pool
 from ..DataModel.Expression import Expression
 
@@ -19,16 +20,7 @@ from ..DataModel.Expression import Expression
 logger = logging.getLogger(__name__)
 
 
-class Generation:
-    population = None
-    goodPopulation = None
-    uniquePopulation = None
-    goodSystems = None
-    uniqueSystems = None
-    best = None
-
-
-class GlobalOptimizer(object):
+class GlobalOptimizer(OptimizerSemantics):
     """
     Main purpose of this class is to generate new structures
 
@@ -58,21 +50,27 @@ class GlobalOptimizer(object):
 
     async def update(self,
                      population: Pool,
-                     parentsGeneration: 'Generation'
-                     ) -> tuple['Generation', bool, bool]:
+                     parentsGeneration: Union[dict[str, Pool], None]
+                     ) -> tuple[dict[str, Pool], bool, bool]:
         """
         Updates state of optimized structures.
 
         :param population: list of systems which allows to update our knowledge about target space.
         """
-        generation = Generation()
-        generation.population = population
-        generation.goodPopulation = population.createPool()
+        generation: dict[str, Pool] = {'population': population}
         if parentsGeneration is not None:
-            generation.goodSystems = copy(parentsGeneration.goodSystems)
-            oldBest = parentsGeneration.best
+            generation['allSystems'] = copy(parentsGeneration['allSystems'])
+            for ID in population.getIDs():
+                generation['allSystems'].addEntry(population.getEntry(ID))
         else:
-            generation.goodSystems = population.createPool()
+            generation['allSystems'] = copy(population)
+
+        generation['goodPopulation'] = population.createPool()
+        if parentsGeneration is not None:
+            generation['goodSystems'] = copy(parentsGeneration['goodSystems'])
+            oldBest = set(parentsGeneration['best'].getIDs())
+        else:
+            generation['goodSystems'] = population.createPool()
             oldBest = None
         for ID in population.getIDs():
             system = population.getEntry(ID)
@@ -80,40 +78,43 @@ class GlobalOptimizer(object):
                 if suffix not in system.flavours or system[f'.isBad.{suffix}']:
                     break
             else:
-                generation.goodSystems.addEntry(system)
-                generation.goodPopulation.addEntry(system)
-        generation.goodSystems.evaluate(self.optType)
-        assert generation.goodPopulation.getIDs(), 'All systems in population failed relaxation.'
-        optType = generation.goodSystems.createExpression(self.optType)
-        generation.uniqueSystems = self._markDuplicates(generation.goodPopulation, generation.goodSystems,
+                generation['goodSystems'].addEntry(system)
+                generation['goodPopulation'].addEntry(system)
+        generation['goodSystems'].evaluate(self.optType)
+        assert generation['goodPopulation'].getIDs(), 'All systems in population failed relaxation.'
+        optType = generation['goodSystems'].createExpression(self.optType)
+        generation['uniqueSystems'] = self._markDuplicates(generation['goodPopulation'], generation['goodSystems'],
                                                         parentsGeneration, optType)
         logger.debug('Updating target: list of unique systems.')
-        generation.uniquePopulation = population.createPool()
-        for ID in generation.goodPopulation.getIDs():
-            system = generation.goodPopulation.getEntry(ID)
+        generation['uniquePopulation'] = population.createPool()
+        for ID in generation['goodPopulation'].getIDs():
+            system = generation['goodPopulation'].getEntry(ID)
             try:
-                system = generation.goodPopulation.getEntry(system.getProperty('originalID'))
+                system = generation['goodPopulation'].getEntry(system.getProperty('originalID'))
             except KeyError:
                 pass
-            if system.ID not in generation.uniquePopulation.getIDs():
-                generation.uniquePopulation.addEntry(system)
-        best = set(system.ID for system in generation.uniqueSystems.fronts(optType)[0])
-        if best == oldBest:
+            if system.ID not in generation['uniquePopulation'].getIDs():
+                generation['uniquePopulation'].addEntry(system)
+        best = population.createPool()
+        for system in generation['uniqueSystems'].fronts(optType)[0]:
+            best.addEntry(generation['uniqueSystems'].getEntry(system.ID))
+        bestIDs = set(best.getIDs())
+        if bestIDs == oldBest:
             isStable = True
         else:
             isStable = False
-        generation.best = best
+        generation['best'] = best
         isGoalReached = False
         if self.stopValue is not None:
-            for ID in best:
-                value = generation.uniqueSystems.getEntry(ID)[optType]
+            for ID in bestIDs:
+                value = generation['uniqueSystems'].getEntry(ID)[optType]
                 if value < self.stopValue or np.isclose(value, self.stopValue, atol=5.e-4):
                     isGoalReached = True
                     break
         if self.stopSystems is not None and not isGoalReached:
             stopSystems = list(self.stopSystems)
-            for ID in generation.uniqueSystems.getIDs():
-                system = generation.uniqueSystems.getEntry(ID)
+            for ID in generation['uniqueSystems'].getIDs():
+                system = generation['uniqueSystems'].getEntry(ID)
                 for i, stopSystem in enumerate(stopSystems):
                     if system == stopSystem:
                         del stopSystems[i]
@@ -126,7 +127,7 @@ class GlobalOptimizer(object):
     def _markDuplicates(self,
                         population: Pool,
                         goodSystems: Pool,
-                        parentsGeneration: 'Generation',
+                        parentsGeneration: Union[dict[str, Pool], None],
                         optType: Union[str, Expression]
                         ) -> Pool:
         """
@@ -137,7 +138,7 @@ class GlobalOptimizer(object):
         """
         logger.info('Looking for duplicates.')
         if parentsGeneration is not None:
-            uniqueSystems = parentsGeneration.uniqueSystems.getIDs()
+            uniqueSystems = parentsGeneration['uniqueSystems'].getIDs()
         else:
             uniqueSystems = []
         for system_ID in population.getIDs():

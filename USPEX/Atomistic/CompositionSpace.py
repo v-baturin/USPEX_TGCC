@@ -8,12 +8,13 @@ import numpy as np
 from copy import copy
 from collections import Counter
 
+from ..Semantics.Atomistic.CompositionSpace import CompositionSpace as CompositionSpaceSemantics
 from ..Expressions.Functions.CompositionSpaceFunctions import CompositionSpaceFunctions
 
 logger = logging.getLogger(__name__)
 
 
-class CompositionSpace(object):
+class CompositionSpace(CompositionSpaceSemantics):
     """
     Describes the chemical compositions configuration space.
     """
