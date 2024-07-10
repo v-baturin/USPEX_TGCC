@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, Float, String, select, update, delete, and_
 from sqlalchemy.dialects.sqlite import insert
-from collections import Sequence
+from collections.abc import Sequence
 
 from .Engine import Engine
 from .Flavour import FlavourFactory, Flavour
