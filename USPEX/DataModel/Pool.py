@@ -1,13 +1,14 @@
 import logging
 import numpy as np
 from typing import Union, Mapping
-from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, Float, String, select, update, delete, and_
+from sqlalchemy import ForeignKey, UniqueConstraint, Table, Column, Integer, select
 from sqlalchemy.dialects.sqlite import insert
 
 from .Engine import Engine
 from .Flavour import FlavourFactory, Flavour
 from .Entry import Entry
 from .Expression import Expression
+from USPEX.Expressions.Functions import Functions
 
 
 logger = logging.getLogger(__name__)
@@ -137,13 +138,13 @@ class Pool:
                         arguments[i] = arg[:size]
                 funcName = funcName.split('.')
                 if len(funcName) == 1:
-                    extension = 'basic'
-                    funcName, = funcName
+                    valueArray = getattr(Functions, funcName[0])(*arguments)
                 elif len(funcName) == 2:
                     extension, funcName = funcName
+                    utility, expressionTable = self.expressionExtensions[extension]
+                    valueArray = expressionTable[funcName](utility, *arguments)
                 else:
                     raise RuntimeError(f"Too complex expression {'.'.join(expression)}.")
-                valueArray = getattr(self.expressionExtensions[extension], funcName)(*arguments)
             elif isinstance(expression, str):
                 value = [self.getEntry(ID)[expression] for ID in self.getIDs()]
                 # value = [self.evaluateTerminal(expression, system) for system in self.pool]

@@ -19,7 +19,10 @@ PATH_WITH_TESTS = Path(__file__).parent
 
 class SpectrumAnalyzer_Test(unittest.TestCase):
     def setUp(self):
-        propertyExtensions = dict(atomistic=Atomistic().propertyExtension())
+        atomistic = Atomistic()
+        propertyExtensions = dict(
+            atomistic = (atomistic, atomistic.propertyExtension.propertyTable),
+        )
         self.system = Flavour(extensions=propertyExtensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'Na8Cl24.vasp'))
 
     def test(self):

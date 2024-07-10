@@ -74,7 +74,7 @@ class MLIP_Interface:
         #         sample.extend(s for s in individual['trajectory'] if not s['isBad'])
         # else:
         #     raise RuntimeError('No mlip sample in system.')
-        atomistic = system.getFactory().extensions['atomistic'].utility
+        atomistic = system.getFactory().extensions['atomistic'][0]
 
         shutil.copy2(self.potential, calcFolder)
 
@@ -110,7 +110,7 @@ class MLIP_Interface:
         factory = system.getFactory()
         result = factory()
         if 'sample' in self.targetProperties:
-            atomistic = factory.extensions['atomistic'].utility
+            atomistic = factory.extensions['atomistic'][0]
             sample = atomistic.AtomicStructureRepresentation.readMLIPsample(calcFolder/self.out_cfg_file, self.specorder)
             result.setProperty('sample', sample)
         if self.mode == 'train':

@@ -210,7 +210,7 @@ class GULP_Interface:
         # Improve the GULP reader in case optimized_structure file is broken
         # Now ready to use parallel GULP  (applied to EX18-ZnOH)
         factory = system.getFactory()
-        atomistic = factory.extensions['atomistic'].utility
+        atomistic = factory.extensions['atomistic'][0]
         with open(calcFolder/self.outputFile, 'rt') as f:
             content = f.readlines()
         if (calcFolder / self.optimizedStructure).exists():

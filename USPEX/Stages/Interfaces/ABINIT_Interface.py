@@ -84,7 +84,7 @@ class ABINIT_Interface:
         atomTypes = structure.getAtomTypes()
 
 
-        atomistic = system.getFactory().extensions['atomistic'].utility
+        atomistic = system.getFactory().extensions['atomistic'][0]
 
         ############################# FILES FILE ################################
         for pp_file_path in self.pp_files:
@@ -281,7 +281,7 @@ class ABINIT_Interface:
         from abipy import abilab
         gsr = abilab.abiopen(calcFolder/self.gsr_file_name)
         factory = system.getFactory()
-        atomistic = factory.extensions['atomistic'].utility
+        atomistic = factory.extensions['atomistic'][0]
         result = factory()
         if 'structure' in self.targetProperties:
             with open(calcFolder/'pbc', 'rt') as f:

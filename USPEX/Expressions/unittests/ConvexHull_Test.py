@@ -15,7 +15,7 @@ from scipy.spatial import ConvexHull
 from typing import List
 
 
-from ..ConvexHull import Simplex
+from USPEX.Expressions.Private.ConvexHull import Simplex
 
 square = np.array([[2,4], [4,12], [12,10], [10,2]])
 

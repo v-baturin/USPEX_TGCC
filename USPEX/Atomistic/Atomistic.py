@@ -4,7 +4,8 @@ from pathlib import Path
 from copy import copy
 
 from ..Semantics.Atomistic.Atomistic import Atomistic as AtomisticSemantics
-from ..Expressions.Functions.AtomisticFunctions import AtomisticFunctions
+from USPEX.Expressions import PropertyExtension
+from ..DataModel.Flavour import Flavour
 from .Transformation import Transformation
 
 
@@ -164,6 +165,7 @@ class Atomistic(AtomisticSemantics):
     cellType = None
     AtomicStructureRepresentation = None
     atomicDisassemblerType = AtomicDisassembler
+    propertyExtension = PropertyExtension()
 
     @classmethod
     def registerTypes(cls, structureType, atomType, cellType, AtomicStructureRepresentation):
@@ -266,6 +268,41 @@ class Atomistic(AtomisticSemantics):
                        for structure in cls.AtomicStructureRepresentation.readPOSCARS(filename)]
         return systems
 
-    def propertyExtension(self):
-        return AtomisticFunctions(self)
+    @staticmethod
+    def _setDisassembled(system: Flavour):
+        structure = system.getProperty('structure', extension='atomistic')
+        disassembler = system.getProperty('disassembler', extension='atomistic')
+        for key, value in disassembler.disassemble(structure).items():
+            extension, prop, *other = key.split('.')
+            assert len(other) == 0, f'Too complex property name {key}.'
+            system.setProperty(prop, value, extension=extension)
 
+    @propertyExtension
+    def cell(self, system: Flavour):
+        self._setDisassembled(system)
+        return system.getProperty('cell', extension='atomistic')
+
+    @propertyExtension
+    def molecules(self, system: Flavour):
+        self._setDisassembled(system)
+        return system.getProperty('molecules', extension='atomistic')
+
+    @propertyExtension
+    def environments(self, system: Flavour):
+        if 'atomistic.cell' not in system and 'atomistic.molecules' not in system:
+            self._setDisassembled(system)
+            return system.getProperty('environments', extension='atomistic')
+        else:
+            return []
+
+    @propertyExtension
+    def structure(self, system: Flavour):
+        structure, disassembler = self.atomicDisassemblerType.assemble(system)
+        system.setProperty('disassembler', disassembler, extension='atomistic')
+        return structure
+
+    @propertyExtension
+    def disassembler(self, system: Flavour):
+        structure, disassembler = self.atomicDisassemblerType.assemble(system)
+        system.setProperty('structure', structure, extension='atomistic')
+        return disassembler
