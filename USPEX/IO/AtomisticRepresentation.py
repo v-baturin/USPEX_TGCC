@@ -372,7 +372,7 @@ class AtomisticRepresentation(object):
         if isinstance(optimizer.optType, str):
             optType = optimizer.optType
         else:
-            optType = generations[-1].goodSystems.createExpression(optimizer.optType)
+            optType = generations[-1]['goodSystems'].createExpression(optimizer.optType)
         fitness = [system[optType] for system in population]
         order = [system[f'radialDistributionUtility.averageOrder.{self.suffix}'] for system in population]
         if np.any(np.isnan(np.asarray(fitness, dtype=float))):
@@ -645,7 +645,7 @@ class AtomisticRepresentation(object):
         pass
 
     def _drawParetoFronts2(self, fronts, generations):
-        pool = generations[-1].goodSystems
+        pool = generations[-1]['goodSystems']
         xProp = pool.createExpression(self.presentPareto[0])
         yProp = pool.createExpression(self.presentPareto[1])
         xLabel = getExpressionLabel(xProp, self.labels)
