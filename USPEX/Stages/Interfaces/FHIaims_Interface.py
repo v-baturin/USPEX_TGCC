@@ -107,7 +107,7 @@ class FHIaims_Interface:
         # and FHI finishes without changing the relaxed structure, thus
         # geometry.in.next_step won't be created.
         factory = system.getFactory()
-        atomistic = factory.extensions['atomistic'].utility
+        atomistic = factory.extensions['atomistic'][0]
         result = factory()
 
         if 'structure' in self.targetProperties:

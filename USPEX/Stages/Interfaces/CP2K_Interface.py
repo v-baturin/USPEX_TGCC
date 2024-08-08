@@ -141,7 +141,7 @@ class CP2K_Interface:
         return result
 
     def readStructure(self, system, calcFolder: Path):
-        atomistic = system.getFactory().extensions['atomistic'].utility
+        atomistic = system.getFactory().extensions['atomistic'][0]
 
         with open(calcFolder / 'pbc', 'rt') as f:
             pbc = tuple(int(c) for c in f.read().split())

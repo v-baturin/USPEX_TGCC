@@ -20,8 +20,9 @@ from scipy.stats import gmean
 from itertools import chain
 
 from ..Semantics.Atomistic.BondUtility import BondUtility as BondUtilitySemantics
+from USPEX.Expressions import PropertyExtension
 from .VolumeEstimator import VolumeEstimator
-from ..Expressions.Functions.BondFunctions import BondFunctions
+from ..DataModel.Flavour import Flavour
 
 
 logger = logging.getLogger(__name__)
@@ -86,6 +87,8 @@ class Bond(object):
 
 class BondUtility(BondUtilitySemantics):
 
+    propertyExtension = PropertyExtension()
+
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
                  cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, volumeCoefficient=1., ionDistances=None):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
@@ -119,9 +122,6 @@ class BondUtility(BondUtilitySemantics):
             assert np.isfinite(value)
             s1, s2 = key.split(' ')
             self._distances[(s1, s2)] = value
-
-    def propertyExtension(self):
-        return BondFunctions(self)
 
     def isConnected(self, structure, cutoff=None):
         """
@@ -533,6 +533,12 @@ class BondUtility(BondUtilitySemantics):
             s2 = symbols[j]
             mDM[i, j] = mDM[j, i] = minDistMatrix[(s1, s2)]
         return mDM
+
+    @propertyExtension
+    def hardness(self, system: Flavour):
+        structure = system.getProperty('structure', extension='atomistic')
+        bonds = self.getMinimalGraphBonds(structure)
+        return self.calcHardness(structure, bonds)
 
 
 def _AddDynMatSelf(D, a, H, Cos, phase):

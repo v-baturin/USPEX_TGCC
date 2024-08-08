@@ -27,7 +27,7 @@ class XTB_InterfaceTest(unittest.TestCase):
                                   targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension()
+            atomistic=(atomistic, atomistic.propertyExtension.propertyTable),
         )
 
         structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (0, 0, 0))

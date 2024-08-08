@@ -46,7 +46,7 @@ class VASP_CalculatorTest2(unittest.TestCase):
                               kresol=0.13, targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension()
+            atomistic=(atomistic, atomistic.propertyExtension.propertyTable),
         )
 
         for ID in range(10):
@@ -127,7 +127,7 @@ class VASP_interface_MD_Test(unittest.TestCase):
                                         kresol=0.06, targetProperties=['trajectory'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension()
+            atomistic=(atomistic, atomistic.propertyExtension.propertyTable),
         )
 
         result = self.interface.readOutput(Flavour(extensions=extensions), wd)

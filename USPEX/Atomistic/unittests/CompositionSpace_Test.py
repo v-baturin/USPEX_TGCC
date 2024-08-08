@@ -23,7 +23,7 @@ class CompositionSpace_Test(unittest.TestCase):
 
         self.simpleMoleculeUtility = SimpleMoleculeUtility()
         extensions = dict(
-            simpleMoleculeUtility=self.simpleMoleculeUtility.propertyExtension()
+            simpleMoleculeUtility=(self.simpleMoleculeUtility, self.simpleMoleculeUtility.propertyExtension.propertyTable)
         )
         self.system1 = Flavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system1.vasp'))
         self.system2 = Flavour(extensions=extensions, **Atomistic.readAtomicStructure(PATH_WITH_TESTS/'system2.vasp'))

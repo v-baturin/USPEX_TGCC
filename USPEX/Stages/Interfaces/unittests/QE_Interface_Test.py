@@ -33,9 +33,8 @@ class QE_CalculatorTest2(unittest.TestCase):
                           targetProperties=['structure', 'enthalpy'])
         atomistic = Atomistic()
         extensions = dict(
-            atomistic=atomistic.propertyExtension()
+            atomistic=(atomistic, atomistic.propertyExtension.propertyTable),
         )
-
 
         for ID in range(10):
             structure = AtomicStructureRepresentation.readPOSCAR(GATHEREDPATH/f'input/system{ID}.vasp', (1, 1, 1))

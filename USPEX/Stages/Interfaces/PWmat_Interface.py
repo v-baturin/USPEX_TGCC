@@ -206,7 +206,7 @@ class PWmat_Interface:
         atomTypes = []
         factory = system.getFactory()
         result = factory()
-        atomistic = factory.extensions['atomistic'].utility
+        atomistic = factory.extensions['atomistic'][0]
         for n, line in enumerate(content):
             if 'lattice' in line.lower():
                 for i in range(3):

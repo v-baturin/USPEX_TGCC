@@ -72,7 +72,9 @@ class AtomisticStage_Test(unittest.TestCase):
                                         environmentStyle=None,
                                         vacuumSize=0)
         atomistic = Atomistic()
-        extensions = {'atomistic': atomistic.propertyExtension()}
+        extensions = dict(
+            atomistic = (atomistic, atomistic.propertyExtension.propertyTable),
+        )
         for badWrappingFilePath in [PATH_WITH_TESTS / 'dewrapping_POSCAR.uspex',
                                     PATH_WITH_TESTS/'mol_wrapping_POSCARS.uspex']:
             systemSource, systemSink = Atomistic.readAtomicStructures(badWrappingFilePath)

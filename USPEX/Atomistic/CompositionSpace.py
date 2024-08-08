@@ -9,7 +9,8 @@ from copy import copy
 from collections import Counter
 
 from ..Semantics.Atomistic.CompositionSpace import CompositionSpace as CompositionSpaceSemantics
-from ..Expressions.Functions.CompositionSpaceFunctions import CompositionSpaceFunctions
+from USPEX.Expressions import ExpressionExtension
+
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class CompositionSpace(CompositionSpaceSemantics):
     """
     Describes the chemical compositions configuration space.
     """
+    expressionExtension = ExpressionExtension()
 
     def __init__(self, symbols: list, blocks: list, range: list=None, minAt: int=None, maxAt: int=None):
         """
@@ -71,9 +73,6 @@ class CompositionSpace(CompositionSpaceSemantics):
                 numIons *= factor
             assert numIons.sum() <= self.maxAt
             self.predefinedCompositions.append(Counter(dict(zip(self.symbols, numIons))))
-
-    def expressionExtension(self):
-        return CompositionSpaceFunctions(self)
 
     def isGoodComposition(self, composition) -> bool:
         """
@@ -253,4 +252,31 @@ class CompositionSpace(CompositionSpaceSemantics):
                 composition[moleculeType] += 1
         return np.asarray(indices)
 
+    @expressionExtension
+    def numBlocksFromCompositions(self, compositions: np.ndarray):
+        """
+        For using in **Fitness** infrastructure
+
+        :param compositions: N array of dictionary like compositions.
+
+        :return: N*M array of block numbers, where M number of different blocks defined in this space.
+        """
+        numBlocks = []
+        for composition in compositions:
+            numBlocks.append(self.numBlocks(composition))
+        return np.asarray(numBlocks)
+
+    @expressionExtension
+    def numMolsFromCompositions(self, compositions: np.ndarray):
+        """
+        For using in **Fitness** infrastructure
+
+        :param compositions: N array of dictionary like compositions.
+
+        :return: N*M array of elements numbers, where M number of different symbols defined in this space.
+        """
+        numMols = []
+        for composition in compositions:
+            numMols.append(self.numIons(composition))
+        return np.asarray(numMols)
 

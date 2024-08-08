@@ -17,7 +17,9 @@ class SimpleMoleculeUtility_Test(unittest.TestCase):
 
     def test_checkMinDistances(self):
         atomistic = Atomistic()
-        extensions = {'atomistic': atomistic.propertyExtension()}
+        extensions = dict(
+            atomistic = (atomistic, atomistic.propertyExtension.propertyTable),
+        )
         badDistFilePath = PATH_WITH_TESTS / "badMolDist_POSCAR.uspex"
         molPath = PATH_WITH_TESTS / "AlH2.xyz"
         badDistSys = Atomistic.readAtomicStructures(badDistFilePath)

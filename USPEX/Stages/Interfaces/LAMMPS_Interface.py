@@ -244,7 +244,7 @@ class LAMMPS_Interface:
                 raise RuntimeError("Bad lammps output.")
 
         if 'trajectory' in self.targetProperties:
-            atomistic = factory.extensions['atomistic'].utility
+            atomistic = factory.extensions['atomistic'][0]
             sample = atomistic.AtomicStructureRepresentation.readMLIPsample(calcFolder/self.mlip_sample, self.specorder)
             # for subsystem in sample:
             #     subsystem['disassembler'] = system['disassembler']

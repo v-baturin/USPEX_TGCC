@@ -16,10 +16,13 @@ from pymatgen.analysis.diffraction.xrd import XRDCalculator
 from pathlib import Path
 
 
-from ..Expressions.Functions.PowderSpectrumAnalyzerFunctions import PowderSpectrumAnalyzerFunctions
+from USPEX.Expressions import PropertyExtension
+from ..DataModel.Flavour import Flavour
 
 
 class PowderSpectrumAnalyzer(object):
+
+    propertyExtension = PropertyExtension()
 
     def __init__(self, spectrum_starts: float, spectrum_ends: float, wavelength: float, match_tol: float,
                  exp_angles: list, exp_intensities: list):
@@ -47,9 +50,6 @@ class PowderSpectrumAnalyzer(object):
         self.match_tol = match_tol
         self.exp_angles = np.array(exp_angles)
         self.exp_intensities = np.array(exp_intensities) / max(exp_intensities) * 100
-
-    def propertyExtension(self):
-        return PowderSpectrumAnalyzerFunctions(self)
 
     def analyze(self, system):
         """
@@ -169,3 +169,18 @@ class PowderSpectrumAnalyzer(object):
             fitness += (intensity / 100) ** 2
 
         return fitness
+
+    @propertyExtension
+    def xraydistance(self, system: Flavour):
+        if 'powderSpectrumAnalyzer.xraydistance' not in system:
+            self.analyze(system)
+        assert 'powderSpectrumAnalyzer.xraydistance' in system
+        return system['powderSpectrumAnalyzer.xraydistance']
+
+    @propertyExtension
+    def k(self, system: Flavour):
+        if 'powderSpectrumAnalyzer.k' not in system:
+            self.analyze(system)
+        assert 'powderSpectrumAnalyzer.k' in system
+        return system['powderSpectrumAnalyzer.k']
+

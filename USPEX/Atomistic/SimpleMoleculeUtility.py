@@ -7,9 +7,11 @@ import logging
 import numpy as np
 from collections import Counter
 
+
+from USPEX.Expressions import PropertyExtension
 from ..Semantics.Atomistic.SimpleMoleculeUtility import SimpleMoleculeUtility as SimpleMoleculeUtilitySemantics
+from ..DataModel.Flavour import Flavour
 from .Transformation import Transformation
-from ..Expressions.Functions.SimpleMoleculeFunctions import SimpleMoleculeFunctions
 
 
 logger = logging.getLogger(__name__)
@@ -28,6 +30,7 @@ class SimpleMoleculeUtility(SimpleMoleculeUtilitySemantics):
 
     structureType = None
     atomType = None
+    propertyExtension = PropertyExtension()
 
     @classmethod
     def registerTypes(cls, structureType, atomType):
@@ -57,9 +60,6 @@ class SimpleMoleculeUtility(SimpleMoleculeUtilitySemantics):
         # TODO: what if we have two molecules with same formula?
         self.whatToCheckInMolecules = whatToCheckInMolecules
         self.integrityTol = INTEGRITY_TOL[whatToCheckInMolecules] if integrityTol is None else integrityTol
-
-    def propertyExtension(self):
-        return SimpleMoleculeFunctions(self)
 
     def populateStructure(self, cell, operations):
         """
@@ -348,6 +348,38 @@ class SimpleMoleculeUtility(SimpleMoleculeUtilitySemantics):
                                    f'Please check your MOL file again. Serious WARNING....')
 
         return pair
+
+    @propertyExtension
+    def moleculeTypes(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculated or retrieve list of types of molecules of a system.
+        """
+        return [self.determineMoleculeType(molecule) for molecule in system['atomistic.molecules']]
+
+    @propertyExtension
+    def composition(self, system: Flavour):
+        """
+        For using in **Fitness** infrastructure
+
+        :param system: dictionary describing system.
+
+        :return: calculated or retrieve molecular composition of a system.
+        """
+        return Counter(dict(zip(*np.unique(self.moleculeTypes(system), return_counts=True))))
+
+    @propertyExtension
+    def density(self, system: Flavour):
+        cell = system['atomistic.cell']
+        if cell.dim == 3:
+            mass = sum(e.mass*v for e, v in self.getElementalComposition(self.composition(system)).items())
+            return mass/cell.getVolume()*DENSITY_CONST
+        else:
+            return None
+
 
 def _GetAngle(a1, a2, a3):
     """

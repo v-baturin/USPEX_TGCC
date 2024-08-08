@@ -110,7 +110,7 @@ class MOPAC_Interface:
 
     def readOutput(self, system, calcFolder: Path):
         factory = system.getFactory()
-        atomistic = factory.extensions['atomistic'].utility
+        atomistic = factory.extensions['atomistic'][0]
         result = factory()
         with open(calcFolder/self.arcFile, 'rt') as arc_fid:
             content = arc_fid.readlines()
