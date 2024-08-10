@@ -15,8 +15,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 from pathlib import Path
 
-
-from USPEX.Expressions import PropertyExtension
+from ..Expressions import PropertyExtension
 from ..DataModel.Flavour import Flavour
 
 

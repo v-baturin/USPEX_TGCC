@@ -4,7 +4,7 @@ from pathlib import Path
 from copy import copy
 
 from ..Semantics.Atomistic.Atomistic import Atomistic as AtomisticSemantics
-from USPEX.Expressions import PropertyExtension
+from ..Expressions import PropertyExtension
 from ..DataModel.Flavour import Flavour
 from .Transformation import Transformation
 

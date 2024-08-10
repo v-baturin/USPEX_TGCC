@@ -14,7 +14,7 @@ from scipy.special import erf
 from scipy.spatial.distance import cdist
 from itertools import combinations
 
-from USPEX.Expressions import PropertyExtension
+from ..Expressions import PropertyExtension
 from ..DataModel.Flavour import Flavour
 
 

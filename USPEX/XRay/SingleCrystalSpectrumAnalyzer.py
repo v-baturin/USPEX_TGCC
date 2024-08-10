@@ -12,7 +12,7 @@ from pymatgen.core.structure import Structure
 from pathlib import Path
 
 from .get_reflections import get_reflections
-from USPEX.Expressions import PropertyExtension
+from ..Expressions import PropertyExtension
 from ..DataModel.Flavour import Flavour
 
 

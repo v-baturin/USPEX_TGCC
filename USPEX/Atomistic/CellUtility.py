@@ -9,7 +9,7 @@ from copy import copy
 import spglib
 
 from ..Semantics.Atomistic.CellUtility import CellUtility as CellUtilitySemantics
-from USPEX.Expressions import PropertyExtension
+from ..Expressions import PropertyExtension
 from .Primitives.Cell import Cell
 from ..DataModel.Flavour import Flavour
 

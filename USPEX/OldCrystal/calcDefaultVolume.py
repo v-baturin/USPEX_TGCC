@@ -9,7 +9,7 @@ Methods for volume calculation of a cell
 
 import math
 
-from USPEX.Atomistic.Primitives.Element import Element
+from ..Atomistic.Primitives.Element import Element
 from ..Atomistic.CompositionSpace import Composition
 
 

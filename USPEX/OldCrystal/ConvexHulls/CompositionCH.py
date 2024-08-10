@@ -1,7 +1,7 @@
-from USPEX.Expressions.Private.ConvexHull import ConvexHull
-from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
-from USPEX.Expressions.Functions import Functions
-from USPEX.Atomistic.CompositionSpace import CompositionSpace
+from ...Expressions.Private.ConvexHull import ConvexHull
+from ...Expressions.ExpressionEvaluator import ExpressionEvaluator
+from ...Expressions.Functions import Functions
+from ...Atomistic.CompositionSpace import CompositionSpace
 
 
 class CompositionCH(ConvexHull):

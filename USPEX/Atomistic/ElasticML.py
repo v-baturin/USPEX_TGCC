@@ -5,7 +5,7 @@ import torch.nn as nn
 from pathlib import Path
 from pymatgen.core.structure import Structure
 
-from USPEX.Expressions import PropertyExtension
+from ..Expressions import PropertyExtension
 from ..DataModel.Flavour import Flavour
 
 EMBEDDINGS = [
