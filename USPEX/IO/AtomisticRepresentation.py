@@ -10,7 +10,7 @@ from prettytable import PrettyTable
 from itertools import zip_longest
 
 from .formatters import createHeader_wrap
-from USPEX.Expressions.Functions import presetFitness, applyPresetsRecursive
+from ..Expressions.Functions import presetFitness, applyPresetsRecursive
 
 matplotlib.use('Agg')
 

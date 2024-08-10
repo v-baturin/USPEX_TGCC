@@ -1,6 +1,6 @@
 from typing import Callable, Any
 
-from USPEX.DataModel.Flavour import Flavour
+from ..DataModel.Flavour import Flavour
 
 
 class PropertyExtension:
