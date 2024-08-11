@@ -1,9 +1,9 @@
 import logging
 import numpy as np
 
-from USPEX.Expressions.Private.ConvexHull import ConvexHull
-from USPEX.Expressions.ExpressionEvaluator import ExpressionEvaluator
-from USPEX.Expressions.Functions import Functions
+from ...Expressions.Private.ConvexHull import ConvexHull
+from ...Expressions.ExpressionEvaluator import ExpressionEvaluator
+from ...Expressions.Functions import Functions
 
 logger = logging.getLogger(__name__)
 # To which dimensionality we project our FP and consider

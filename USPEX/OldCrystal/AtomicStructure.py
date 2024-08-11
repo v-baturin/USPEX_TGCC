@@ -18,7 +18,7 @@ from collections import Counter
 
 
 
-from USPEX.Atomistic.Primitives.Element import Element
+from ..Atomistic.Primitives.Element import Element
 from ..Atomistic.CompositionSpace import Composition
 from .System import System
 from .calcDefaultVolume import calcVolume

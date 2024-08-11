@@ -1,7 +1,7 @@
 import numpy as np
 from itertools import combinations
 
-from USPEX.DataModel.Pool import Pool
+from ...DataModel.Pool import Pool
 
 ANTISEEDS_MAX = 0.005
 ANTISEEDS_SIGMA = 0.001
