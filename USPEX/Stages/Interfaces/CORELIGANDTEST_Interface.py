@@ -1,5 +1,5 @@
 """
-USPEX.Stages.MOPAC_Interface
+USPEX.Stages.CORELIGANDTEST_Interface
 ============================
 
 .. codeauthor:: Vladimir Baturin <vsbat@yandex.ru>
@@ -9,6 +9,9 @@ USPEX.Stages.MOPAC_Interface
 import logging
 import re
 import numpy as np
+import sys
+sys.path.append('/home/vsbat/SYNC/00__WORK/my_packages/optimization_test_functions')
+from functions_collection import GO_testing_function, function_lib
 
 from pathlib import Path
 
@@ -16,11 +19,11 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-class MOPAC_Interface:
+class CORELIGANDTEST_Interface:
     """
      Calculator for Gulp.
      Local running
-     """
+    """
     DEFAULT_SLEEP_TIME = 1
 
     def __init__(self, tag: str, targetProperties: list = None, **kwargs):
@@ -41,7 +44,7 @@ class MOPAC_Interface:
         #     self.moleculeSpecifics = {}
         self.targetProperties = targetProperties
 
-        logger.debug('MOPAC calculator created.')
+        logger.debug('CORELIGANDTEST calculator created.')
 
     def prepareLocalCalculation(self, system, calcFolder: Path):
         """
@@ -85,7 +88,7 @@ class MOPAC_Interface:
         with open(calcFolder/self.inputFile, 'wt') as f:
             f.write(total_content)
 
-        logger.debug('MOPAC calculator prepared calculation.')
+        logger.debug('CORELIGANDTEST calculator prepared calculation.')
         return ''
 
     def isConverged(self, calcFolder: Path):
@@ -94,7 +97,7 @@ class MOPAC_Interface:
         :return: whether optimization converged
         """
 
-        if not (calcFolder.joinpath(self.mopacOut).exists()
+        if not (calcFolder.joinpath(self.coreLigandTestOut).exists()
                 and calcFolder.joinpath(self.arcFile).exists()):
             return False
 
