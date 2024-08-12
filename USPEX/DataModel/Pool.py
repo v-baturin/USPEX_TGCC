@@ -8,7 +8,7 @@ from .Engine import Engine
 from .Flavour import FlavourFactory, Flavour
 from .Entry import Entry
 from .Expression import Expression
-from USPEX.Expressions.Functions import Functions
+from ..Expressions.Functions import Functions
 
 
 logger = logging.getLogger(__name__)

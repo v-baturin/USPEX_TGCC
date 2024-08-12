@@ -4,7 +4,7 @@ from pathlib import Path
 from ..components import (AtomicStructureRepresentation,
                           # PowderSpectrumAnalyzer, SingleCrystalSpectrumAnalyzer,\
     EnvironmentUtility, JunctionUtility, SimpleMoleculeUtility, Atomistic)
-from USPEX.Expressions.Functions import applyPresetsRecursive
+from ..Expressions.Functions import applyPresetsRecursive
 
 
 def compileParams(main: dict) -> dict:

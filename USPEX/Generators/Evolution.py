@@ -13,7 +13,7 @@ from typing import Union
 from collections import Counter
 
 from ..Semantics.Generator import Generator as GeneratorSemantics
-from USPEX.Expressions.Private.Antiseeds import Antiseeds
+from ..Expressions.Private.Antiseeds import Antiseeds
 from ..DataModel.Pool import Pool
 
 
