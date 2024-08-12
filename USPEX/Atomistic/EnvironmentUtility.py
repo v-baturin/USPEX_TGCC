@@ -6,7 +6,7 @@ USPEX.Atomistic.EnvironmentUtility
 from .Environments.Interface import Interface
 from .Environments.Substrate import Substrate
 from .Environments.Bulk import Bulk
-# from .Environments.NanoparticleCore import NanoparticleCore
+from .Environments.NanoparticleCore import NanoparticleCore
 
 class EnvironmentUtility:
     """
@@ -16,8 +16,8 @@ class EnvironmentUtility:
     supportedEnvironments = {
         'interface': Interface,
         'substrate': Substrate,
-        'bulk': Bulk #,
-        #'nanoparticle_core': NanoparticleCore
+        'bulk': Bulk,
+        'nanoparticle_core': NanoparticleCore
     }
 
 
