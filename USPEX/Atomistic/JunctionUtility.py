@@ -5,6 +5,7 @@ import logging
 from ..Semantics.Atomistic.JunctionUtility import JunctionUtility as JunctionUtilitySemantics
 
 ALPHA_JUNCTION_LABELS = ['VERTEX', 'EDGE', 'FACE']
+MIN_EFFECTIVE_RADIUS = 100.
 
 
 class JunctionType:
@@ -130,7 +131,7 @@ class JunctionUtility(JunctionUtilitySemantics):
         geometricalDiameter = np.max(distMatrix)
         diametralAtomsIdx = np.where(distMatrix == geometricalDiameter)[0]
         maxAtRadius = np.max([at.covalent_radius for at in structure.getAtomTypes()[diametralAtomsIdx]])
-        return geometricalDiameter / 2 + maxAtRadius
+        return min(MIN_EFFECTIVE_RADIUS, geometricalDiameter / 2 + maxAtRadius)
 
 
 __author__ = "Vladimir Baturin"

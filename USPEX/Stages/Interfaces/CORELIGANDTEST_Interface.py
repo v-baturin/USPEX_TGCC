@@ -5,28 +5,32 @@ USPEX.Stages.CORELIGANDTEST_Interface
 .. codeauthor:: Vladimir Baturin <vsbat@yandex.ru>
 
 """
-
 import logging
-import re
 import numpy as np
 import sys
-sys.path.append('/home/vsbat/SYNC/00__WORK/my_packages/optimization_test_functions')
+import yaml
+from pathlib import Path
+
+# functions_collections_path = '/home/vsbat/SYNC/00__WORK/my_packages/optimization_test_functions'
+functions_collections_path = Path(__file__).parent / 'optimization_test_functions'
+sys.path.append(functions_collections_path)
 from functions_collection import GO_testing_function, function_lib
 
 from pathlib import Path
-
 
 logger = logging.getLogger(__name__)
 
 
 class CORELIGANDTEST_Interface:
     """
-     Calculator for Gulp.
+     Fake calculator for tests Gulp.
      Local running
     """
+    inputFile, outputFile, errorFile = 'input', 'output', 'error'
+
     DEFAULT_SLEEP_TIME = 1
 
-    def __init__(self, tag: str, targetProperties: list = None, **kwargs):
+    def __init__(self, tag: str, interactionSetup: str | None = None, targetProperties: list = None, **kwargs):
         """
 
         :param params: dictionary with parameters:
@@ -36,12 +40,20 @@ class CORELIGANDTEST_Interface:
 
         self.tag = tag
 
+        interactionSetup = Path.cwd() / f'Specific/test_setup.yaml' if interactionSetup is None else Path(
+            interactionSetup)
+        assert interactionSetup.exists()
 
+        with open(interactionSetup, 'r') as interacions_fid:
+            interactions_list = yaml.safe_load(interacions_fid.read())['interactions']
+            self.interactions = dict()
+            for int_dict in interactions_list:
+                fn = GO_testing_function(**function_lib[int_dict['function']])
+                fn.transform_to_match_new_borders(((0., 2 * np.pi), (0., np.pi)))
+                self.interactions[frozenset(int_dict['elements'].split())] = {'function': fn}
+                if 'optVertex' in int_dict:
+                    self.interactions[frozenset(int_dict['elements'].split())]['optVertex'] = int_dict['optVertex']
 
-        # if moleculeSpecifics != None:
-        #     self.moleculeSpecifics = moleculeSpecifics
-        # else:
-        #     self.moleculeSpecifics = {}
         self.targetProperties = targetProperties
 
         logger.debug('CORELIGANDTEST calculator created.')
@@ -52,41 +64,9 @@ class CORELIGANDTEST_Interface:
         :param system:
         :param calcFolder:
         """
-        structure = system.getProperty('structure', extension='atomistic')
 
-        cell = structure.getCell()
-        with open(calcFolder/'pbc', 'wt') as f:
-            f.write(' '.join(f'{c}' for c in cell.getPBC()))
-
-        # files_to_delete = ['output', 'optimized.structure']
-        # for f in files_to_delete:
-        #     if os.path.isfile(f):
-        #         os.remove(f)
-
-        content_to_write = ''
-
-        for i, (symbol, coord) in enumerate(zip(structure.getAtomTypes(), structure.getCartesianCoordinates())):
-            tuple_to_format = (symbol.short_name, ) +\
-                              tuple(np.format_float_positional(c if not np.isclose(c, 0) else 0, unique=False,
-                                                               precision=6) for c in coord)
-            disassembler = system.getProperty('disassembler', extension='atomistic')
-            if i in disassembler.allFixedIndices:
-                content_to_write += '%4s %12s 0 %12s 0 %12s 0\n' % tuple_to_format
-            else:
-                content_to_write += '%4s %12s 1 %12s 1 %12s 1\n' % tuple_to_format
-
-        for i, dim in enumerate(cell.getPBC()):
-            if dim:
-                content_to_write += 'Tv %12.6f 1 %12.6f 1 %12.6f 1\n' % tuple(cell.getCellVectors()[i])
-
-        externalPressure = system.getProperty('externalPressure')
-        if externalPressure >= 0.05:
-            self.mop_input += f" P={externalPressure:.2f}Gpa\n"
-
-        total_content = self.mop_input + '\n' + content_to_write + '\n'
-
-        with open(calcFolder/self.inputFile, 'wt') as f:
-            f.write(total_content)
+        with open(calcFolder / self.inputFile, 'wt') as f:
+            f.write('')
 
         logger.debug('CORELIGANDTEST calculator prepared calculation.')
         return ''
@@ -97,56 +77,43 @@ class CORELIGANDTEST_Interface:
         :return: whether optimization converged
         """
 
-        if not (calcFolder.joinpath(self.coreLigandTestOut).exists()
-                and calcFolder.joinpath(self.arcFile).exists()):
-            return False
-
-        with open(calcFolder/self.arcFile, 'rt') as arc_fid:
-            arc_content = arc_fid.read()
-            return 'FINAL GEOMETRY OBTAINED' in arc_content
+        return True
 
     def readOutput(self, system, calcFolder: Path):
         factory = system.getFactory()
-        atomistic = factory.extensions['atomistic'][0]
         result = factory()
-        with open(calcFolder/self.arcFile, 'rt') as arc_fid:
-            content = arc_fid.readlines()
+        fake_energy = 0.
+        env = system.getProperty('environments', extension='atomistic')[0][0]
+        centered_env_coords = env.getCartesianCoordinates()
+        centered_env_coords -= np.sum(centered_env_coords, axis=0) / len(centered_env_coords)
+        for k, v in self.interactions.items():
+            if 'optVertex' in v:
+                opt_idx = v['optVertex']
+                opt_vertex_coordinates = centered_env_coords[opt_idx]
+                phi1, theta1 = phi(opt_vertex_coordinates), theta(opt_vertex_coordinates)
+                v['function'].affine_transform(b=(v['function'].global_optima[0][0][0] - phi1,
+                                                  v['function'].global_optima[0][0][1] - theta1))
 
-        if 'structure' in self.targetProperties:
-            with open(calcFolder/'pbc', 'rt') as f:
-                pbc = tuple(int(c) for c in f.read().split())
-            result.setProperty('structure', self.readStructure(atomistic, content, pbc), extension='atomistic')
-
-        if 'enthalpy' in self.targetProperties:
-            for line in content:
-                if 'TOTAL ENERGY' in line:
-                    e = re.match(r'\s*TOTAL ENERGY\s*=\s*(\S+)\s*EV', line)
-                    result.setProperty('enthalpy', float(e.group(1)))
-                    break
-            else:
-                raise RuntimeError('Can not read enthalpy.')
+        for mol in system.getProperty('molecules', extension='atomistic'):
+            molCoord = mol.getCartesianCoordinates()[0]
+            distances = np.linalg.norm(env.getCartesianCoordinates() - molCoord, axis=1)
+            closest_index = np.argmin(distances)
+            closest_vertex = centered_env_coords[closest_index]
+            phi_closest, theta_closest = phi(closest_vertex), theta(closest_vertex)
+            mol_atom = mol.getAtomTypes()[0].short_name
+            closest_env_atom = env.getAtomTypes()[closest_index].short_name
+            ads_en = self.interactions[frozenset((mol_atom, closest_env_atom))]['function'](phi_closest, theta_closest)
+            fake_energy += ads_en
+        result.setProperty('enthalpy', ads_en)
+        result.setProperty('isBad', False)
         return result
 
-    @staticmethod
-    def readStructure(atomistic, content, pbc):
-        atomTypes = []
-        positions = []
-        new_lattice = []
-        cell = None
-        for i, line in enumerate(content):
-            if 'FINAL GEOMETRY OBTAINED' in line:
-                coords_regex = r'\s*([A-Z][a-z]?)' + r'\s+(-?\d*\.\d+)\s+\S+' * 3
-                for line in content[i:]:
-                    coordsgroup = re.findall(coords_regex, line)
-                    if coordsgroup:
-                        sym = coordsgroup[0][0]
-                        vector = [float(x) for x in coordsgroup[0][1:]]
-                        if sym == 'Tv':
-                            new_lattice.append(vector)
-                        else:
-                            positions.append(vector)
-                            atomTypes.append(atomistic.atomType(sym))
 
-                positions = np.asarray(positions)
-                cell = atomistic.cellType.initFromCellVectors(pbc, new_lattice)
-        return atomistic.structureType(atomTypes, positions, cell=cell)
+def theta(vec):
+    x, y, z = vec
+    return np.arccos(z / np.linalg.norm([x, y, z]))
+
+
+def phi(vec):
+    x, y, z = vec
+    return np.sign(y) * np.arccos(x / np.linalg.norm([x, y]))
