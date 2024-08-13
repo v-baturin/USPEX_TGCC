@@ -7,13 +7,7 @@ USPEX.Stages.CORELIGANDTEST_Interface
 """
 import logging
 import numpy as np
-import sys
 import yaml
-from pathlib import Path
-
-# functions_collections_path = '/home/vsbat/SYNC/00__WORK/my_packages/optimization_test_functions'
-functions_collections_path = Path(__file__).parent / 'optimization_test_functions'
-sys.path.append(functions_collections_path)
 from functions_collection import GO_testing_function, function_lib
 
 from pathlib import Path

@@ -20,14 +20,14 @@ class GO_testing_function:
         self.fn = fn
         self.global_optima = global_optima
         self.domain_borders = domain_borders
+        self.n_par = len(signature(self.fn).parameters)
 
     def __call__(self, *args, **kwargs):
         return self.fn(*args, **kwargs)
 
     def affine_transform(self, k: Tuple[float, ...] = None, b: Tuple[float, ...] = None):
-        n_par = len(signature(self.fn).parameters)
-        k = (1.,) * n_par if k is None else k
-        b = (0.,) * n_par if b is None else b
+        k = (1.,) * self.n_par if k is None else k
+        b = (0.,) * self.n_par if b is None else b
 
         def affine(args: Tuple[Tuple[float, ...] | float, ...],
                    coeff: Tuple[float, ...] = k,
