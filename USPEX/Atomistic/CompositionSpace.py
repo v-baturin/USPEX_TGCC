@@ -21,7 +21,8 @@ class CompositionSpace(CompositionSpaceSemantics):
     """
     expressionExtension = ExpressionExtension()
 
-    def __init__(self, symbols: list, blocks: list, range: list=None, minAt: int=None, maxAt: int=None):
+    def __init__(self, symbols: list, blocks: list, range: list=None, minAt: int=None, maxAt: int=None,
+                 reduceComposition: bool = False, reductionProbability: float | None = None):
         """
 
         :type symbols: [...]
@@ -36,6 +37,11 @@ class CompositionSpace(CompositionSpaceSemantics):
         :type maxAt: int
         :param maxAt:
             maximum number of atoms or molecules in the unit cell.
+        :type reduceComposition: bool
+        :param reduceComposition:
+            if all coefficients in a composition have a common divisor, perform the division
+        :param reductionProbability:
+            probability of reduction if it is applicable
 
         """
 
@@ -59,13 +65,13 @@ class CompositionSpace(CompositionSpaceSemantics):
             self.minAt = int(np.sum([np.min(x) * np.sum(block) for block, x in zip(blocks, range)]))
             self.maxAt = int(np.sum([np.max(x) * np.sum(block) for block, x in zip(blocks, range)]))
 
-        self.range = np.asarray(range, dtype=int)
+        self.range = np.asarray(range, dtype=float)
         assert self.range.shape == (self.nBlocks, 2)
 
-        self.isFixedComposition = np.all([x1 == x2 for x1, x2 in self.range])
+        self.isFixedComposition = np.all([np.isclose(x1, x2) for x1, x2 in self.range])
 
         self.predefinedCompositions = []
-        minBlocks = np.fromiter((minBlocks for minBlocks, maxBlocks in self.range), dtype = int)
+        minBlocks = np.fromiter((minBlocks for minBlocks, maxBlocks in self.range), dtype = float)
         numBlocksArray = np.tile(minBlocks, (len(self.blocks), 1)) + np.diag(np.logical_not(minBlocks))
         for numIons in np.dot(numBlocksArray, self.blocks):
             factor = int(np.ceil(float(self.minAt)/float(numIons.sum())))
@@ -73,6 +79,8 @@ class CompositionSpace(CompositionSpaceSemantics):
                 numIons *= factor
             assert numIons.sum() <= self.maxAt
             self.predefinedCompositions.append(Counter(dict(zip(self.symbols, numIons))))
+        self.reduceComposition = reduceComposition
+        self.reductionProbability = 0.5 if reduceComposition and reductionProbability is None else reductionProbability
 
     def isGoodComposition(self, composition) -> bool:
         """
@@ -123,7 +131,7 @@ class CompositionSpace(CompositionSpaceSemantics):
         :rtype: list
         :return: list of blocks amounts corresponding *blocks* variable of this instance.
         """
-        return np.round(np.linalg.lstsq(self.blocks.T, self.numIons(*args, **kwargs), rcond=None)[0]).astype(int)
+        return np.linalg.lstsq(self.blocks.T, self.numIons(*args, **kwargs), rcond=None)[0]
 
     def randomComposition(self):
         """
@@ -137,6 +145,10 @@ class CompositionSpace(CompositionSpaceSemantics):
         while True:
             numBlocks = np.fromiter((np.random.randint(low, high + 1) for low, high in self.range), dtype=int)
             numIons = np.dot(numBlocks, self.blocks)
+            if self.reduceComposition:
+                if np.random.rand() < self.reductionProbability:
+                    numIons //= np.gcd.reduce(numIons)
+
             if self.minAt <= np.sum(numIons) <= self.maxAt:
                 return Counter(dict(zip(self.symbols, numIons)))
 
@@ -162,7 +174,7 @@ class CompositionSpace(CompositionSpaceSemantics):
         maxAtoms = np.dot(maxBlocks, self.blocks)
         maxAdded = maxAtoms - numIons_start  # how many atoms one could possibly add
 
-        blocks = np.asarray(self.blocks, dtype=int)
+        blocks = np.asarray(self.blocks, dtype=float)
 
         if len(blocks.shape) == 1:
             Nb, Nt = 1, blocks.size
@@ -197,7 +209,7 @@ class CompositionSpace(CompositionSpaceSemantics):
                 #if debug:
                 #    tolerance = 1
 
-                blockN = np.zeros(Nb, dtype=int)  # specifies the number of blocks in the composition found by algorithm
+                blockN = np.zeros(Nb, dtype=float)  # specifies the number of blocks in the composition found by algorithm
                 composition_tmp = np.copy(numIons_start)
                 crutch = np.random.rand(Nb)
                 if debug:
@@ -231,7 +243,7 @@ class CompositionSpace(CompositionSpaceSemantics):
                     bestGreed = np.sum(abs(numIons_start - np.dot(blockN, blocks)))
                     numBlocks = blockN
 
-        return +Counter(dict(zip(self.symbols, np.dot(numBlocks, blocks)))) # We left only positive values in composition
+        return +Counter(dict(zip(self.symbols, np.round(np.dot(numBlocks, blocks)).astype(int)))) # We left only positive values in composition
 
     @staticmethod
     def choose(moleculeTypes, desiredComposition):
