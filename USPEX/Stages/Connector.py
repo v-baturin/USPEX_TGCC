@@ -8,7 +8,7 @@ USPEX.Stages.Connector
 
 import logging
 import asyncio, asyncssh
-
+import os
 from copy import copy
 import random
 from pathlib import Path
@@ -122,7 +122,13 @@ class Connector(object):
                 del kwargs['input']
             else:
                 input = None
-            process = await asyncio.create_subprocess_shell(execCommand, cwd=cwd, **kwargs)
+
+            env = os.environ.copy()
+            env.pop('MKL_NUM_THREADS', None)
+            env.pop('NUMEXPR_NUM_THREADS', None)
+            env.pop('OMP_NUM_THREADS', None)
+
+            process = await asyncio.create_subprocess_shell(execCommand, cwd=cwd, env=env, **kwargs)
             out, err = await process.communicate(input)
             if isinstance(out, bytes):
                 out = out.decode()
