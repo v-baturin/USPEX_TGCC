@@ -126,7 +126,7 @@ class Connector(object):
             env = os.environ.copy()
             env.pop('MKL_NUM_THREADS', None)
             env.pop('NUMEXPR_NUM_THREADS', None)
-            env.pop('OMP_NUM_THREADS', None)
+            # env.pop('OMP_NUM_THREADS', None)
 
             process = await asyncio.create_subprocess_shell(execCommand, cwd=cwd, env=env, **kwargs)
             out, err = await process.communicate(input)
