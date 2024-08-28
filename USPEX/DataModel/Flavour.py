@@ -89,11 +89,11 @@ class Flavour:
     def setID(self, entryID: int, name: str):
         with Engine.engine.connect() as conn:
             result = conn.execute(insert(flavours), [{"sID": entryID, "name": name}])
+            assert self.ID is None
+            self.ID = result.inserted_primary_key[0]
             for prop, value in self._propertiesCache.items():
                 self._setPropertyBD(prop, value, conn)
             conn.commit()
-        assert self.ID is None
-        self.ID = result.inserted_primary_key[0]
 
     def getFactory(self) -> 'FlavourFactory':
         return FlavourFactory(self.extensions)
