@@ -85,7 +85,7 @@ class Executor(object):
 
         self.submittedTasks = {}
 
-    async def run(self, ID, system):
+    async def run(self, ID, system, shellEnv=None):
         # ID = system['ID']
         tag = self.tag
         calcFolder = self.workingDirectory/self.CALC_FOLDER_TEMPLATE.format(ID, tag)
@@ -101,7 +101,7 @@ class Executor(object):
                 logger.info(f'System {ID} with tag {tag} will be submitted now.')
                 jobID = await self._taskManager.submit(f'{self.commandExecutable} {args}', f'U{ID}S{tag}',
                                                        self._interface.inputFile, self._interface.outputFile,
-                                                       self._interface.errorFile, calcFolder)
+                                                       self._interface.errorFile, calcFolder, shellEnv=shellEnv)
                 self.submittedTasks[calcFolder] = jobID
 
             if jobID > 0:

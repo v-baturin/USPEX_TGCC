@@ -65,13 +65,15 @@ class BSUB:
                            input: str,
                            output: str,
                            error: str,
-                           calcFolder: Path) -> int:
+                           calcFolder: Path,
+                           shellEnv: None | dict = None) -> int:
+
         content = self._prepareSubmission(command, jobname, input, output, error)
         with open(calcFolder/self._RUNSCRIPT, 'wt') as f:
             f.write(content)
         await self.connector.sync_l2r(calcFolder/self._RUNSCRIPT)
 
-        returncode, out, err = await self.connector.execute('bsub', cwd=str(calcFolder), input=content)
+        returncode, out, err = await self.connector.execute('bsub', cwd=str(calcFolder), input=content, env=shellEnv)
         logger.debug(f'process returned code {returncode}')
         if returncode != 0:
             logger.error(err)

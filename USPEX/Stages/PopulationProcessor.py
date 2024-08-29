@@ -24,19 +24,19 @@ class PopulationProcessor:
         system.setProperty(self.population, final, suffix=self.tag)
 
     @staticmethod
-    async def processPopulation(stages, population, numParallelCalcs, target=None):
+    async def processPopulation(stages, population, numParallelCalcs, target=None, shellEnv=None):
         stages = [Stages.createStage(**stage, target=target) for stage in stages]
         sem = asyncio.Semaphore(numParallelCalcs)
-        await asyncio.gather(*(PopulationProcessor.life(population.getEntry(ID), stages, sem)
+        await asyncio.gather(*(PopulationProcessor.life(population.getEntry(ID), stages, sem, shellEnv)
                                for ID in population.getIDs()))
 
     @staticmethod
-    async def life(system, stages, sem):
+    async def life(system, stages, sem, shellEnv=None):
         await sem.acquire()
         for stage in stages:
             if stage.tag not in system.flavours and stage.source in system.flavours \
                     and not system.getProperty('isBad', suffix=stage.source):
-                await stage.run(system)
+                await stage.run(system, shellEnv)
         sem.release()
 
 class Stages:

@@ -29,13 +29,15 @@ class SHELL:
                            input: str,
                            output: str,
                            error: str,
-                           calcFolder: Path) -> int:
+                           calcFolder: Path,
+                           shellEnv: None | dict = None) -> int:
 
         # if not os
         with open(calcFolder/input, 'r') as fi,\
                 open(calcFolder/output, 'w') as fo,\
                 open(calcFolder/error, 'w') as fe:
-            returncode, out, err= await self.connector.execute(command, stdin=fi, stdout=fo, stderr=fe, cwd=str(calcFolder))
+            returncode, out, err= await self.connector.execute(command, stdin=fi, stdout=fo, stderr=fe,
+                                                               cwd=str(calcFolder), env=shellEnv)
             logger.debug('process returned code {}'.format(returncode))
             if returncode != 0:
                 logger.error(err)

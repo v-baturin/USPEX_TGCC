@@ -1,5 +1,6 @@
 import logging
 import sys
+import os
 import asyncio
 from time import time
 
@@ -16,6 +17,9 @@ def main():
 
     parser.add_argument("-v", "--version", dest="version", action="store_true",
                         help="show program's version number and exit")
+
+    parser.add_argument('-s', '--singlethreaded', required=False, action='store_true',
+                        help="run USPEX on a single thread")
 
     # parser.add_argument("-p", "--parameter", action='callback', dest="parm",
     #                     help="specify parameter to get help. If no value or 'all' value is specified, all INPUT.txt parameters will be shown",
@@ -53,6 +57,14 @@ def main():
     if args.version:
         from . import __version__
         print(f'USPEX {__version__}\n')
+
+    if args.singlethreaded:
+        shellEnv = os.environ.copy()
+        os.environ['MKL_NUM_THREADS'] = '1'
+        os.environ['NUMEXPR_NUM_THREADS'] = '1'
+        os.environ['OMP_NUM_THREADS'] = '1'
+    else:
+        shellEnv = None
 
     # if args.parm:
     #     parm = args.parm
@@ -103,7 +115,7 @@ def main():
     if args.uspex_run:
         try:
             from .components import GenerationController
-            asyncio.get_event_loop().run_until_complete(GenerationController.createController(start).run())
+            asyncio.get_event_loop().run_until_complete(GenerationController.createController(start).run(shellEnv))
         except Exception as ex:
             logger.exception(ex)
             exc_info = sys.exc_info()

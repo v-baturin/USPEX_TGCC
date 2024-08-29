@@ -109,7 +109,7 @@ class GenerationController(object):
             raise RuntimeError('No input or dump file to start.')
         return controller
 
-    async def run(self):
+    async def run(self, shellEnv=None):
         self.outputRepresentation.presentOutput(self.optimizer, self.generator, self.generations)
         while (self.generation < self.numGenerations and
                self.numberStableGenerations < self.stopCrit and
@@ -130,7 +130,8 @@ class GenerationController(object):
                 self.doPresentSystems = True
                 task = asyncio.ensure_future(self.presentSystems())
                 await self.populationProcessorType.processPopulation(self.stages, self.population,
-                                                                     self.numParallelCalcs, self.generator.target)
+                                                                     self.numParallelCalcs, self.generator.target,
+                                                                     shellEnv=shellEnv)
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.state = ControllerState.updateOptimizer

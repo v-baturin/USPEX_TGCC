@@ -75,7 +75,8 @@ class SBATCH:
                            input: str,
                            output: str,
                            error: str,
-                           calcFolder: Path) -> int:
+                           calcFolder: Path,
+                           shellEnv: None | dict = None) -> int:
         '''
         :param command: command executable
         :param jobname: name of the job
@@ -91,7 +92,7 @@ class SBATCH:
             f.write(content)
         await self.connector.sync_l2r(filepath)
 
-        returncode, out, err = await self.connector.execute(f'sbatch {self._RUNSCRIPT}', cwd=str(calcFolder))
+        returncode, out, err = await self.connector.execute(f'sbatch {self._RUNSCRIPT}', cwd=str(calcFolder), env=shellEnv)
         logger.debug(f'process returned code {returncode}')
         if returncode != 0:
             logger.error(err)

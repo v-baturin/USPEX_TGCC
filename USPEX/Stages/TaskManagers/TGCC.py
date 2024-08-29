@@ -21,7 +21,7 @@ class TGCC:
     _RUNSCRIPT = 'jobscript'
     _QUEUE_REFRESH_DELAY_SECONDS = 300
 
-    def __init__(self, header : str, connector, refreshDelay : int = None):
+    def __init__(self, header: str, connector, refreshDelay: int = None):
         self.header = header
         self.connector = connector
         self.jobsStatusCache = dict()
@@ -30,15 +30,15 @@ class TGCC:
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        if not hasattr(self, 'queueRefreshDelay'): # TODO: remove after testing
+        if not hasattr(self, 'queueRefreshDelay'):  # TODO: remove after testing
             self.queueRefreshDelay = self._QUEUE_REFRESH_DELAY_SECONDS
         self.updateCache()
 
-    def _prepareSubmission(self, COMMAND_EXEC : str,
-                                 JOB_NAME : str,
-                                 inputFile : str,
-                                 outputFile : str,
-                                 errorFile : str) -> str:
+    def _prepareSubmission(self, COMMAND_EXEC: str,
+                           JOB_NAME: str,
+                           inputFile: str,
+                           outputFile: str,
+                           errorFile: str) -> str:
         '''
         Preparing jobscript for submission
         :param commandExec:
@@ -72,7 +72,13 @@ class TGCC:
 
         return ''.join(content)
 
-    async def submit(self, command: str, jobname: str, input: str, output: str, error: str, calcFolder: Path) -> int:
+    async def submit(self, command: str,
+                             jobname: str,
+                             input: str,
+                             output: str,
+                             error: str,
+                             calcFolder: Path,
+                             shellEnv: None | dict = None) -> int:
         '''
         :param command: command executable
         :param jobname: name of the job
@@ -83,12 +89,12 @@ class TGCC:
         :return:
         '''
         content = self._prepareSubmission(command, jobname, input, output, error)
-        filepath = calcFolder/self._RUNSCRIPT
+        filepath = calcFolder / self._RUNSCRIPT
         with open(filepath, 'wt') as f:
             f.write(content)
         await self.connector.sync_l2r(filepath)
         logger.debug(f'Trying to submit a task in {calcFolder}')
-        returncode, out, err = await self.connector.execute(f'ccc_msub {self._RUNSCRIPT}', cwd=calcFolder)
+        returncode, out, err = await self.connector.execute(f'ccc_msub {self._RUNSCRIPT}', cwd=calcFolder, env=shellEnv)
         logger.debug(f'process returned code {returncode}')
         if returncode != 0:
             logger.error(err)
@@ -99,7 +105,7 @@ class TGCC:
         self.jobsStatusCache[jobID] = 'PD'
         return jobID
 
-    def _parseJobID(self, output : str, error : str) -> int:
+    def _parseJobID(self, output: str, error: str) -> int:
         '''
         :param output: output message
         :param error: error message
@@ -145,7 +151,7 @@ class TGCC:
         status = self.jobsStatusCache.get(jobID, False)
         return status in {'R', 'PD'} if status else status
 
-    async def kill(self, jobID : int):
+    async def kill(self, jobID: int):
         returncode, out, err = await self.connector.execute(f'ccc_mdel {jobID}')
 
         #logger.info(f'Process with jobID={}  killed.')

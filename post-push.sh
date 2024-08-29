@@ -1,5 +1,5 @@
 #!/bin/bash
-SERVER2="irene_vb:/ccc/work/cont003/gen6175/baturinv/USPEX/Common_pop_env"
+SERVER2="irene_vb:/ccc/work/cont003/gen6175/baturinv/USPEX/Common_singlethreaded"
 
 # Extract the server hostname for the prompt
 SERVER_NAME=$(echo "$SERVER2" | cut -d'@' -f2 | cut -d':' -f1)

@@ -123,12 +123,7 @@ class Connector(object):
             else:
                 input = None
 
-            env = os.environ.copy()
-            env.pop('MKL_NUM_THREADS', None)
-            env.pop('NUMEXPR_NUM_THREADS', None)
-            # env.pop('OMP_NUM_THREADS', None)
-
-            process = await asyncio.create_subprocess_shell(execCommand, cwd=cwd, env=env, **kwargs)
+            process = await asyncio.create_subprocess_shell(execCommand, cwd=cwd, **kwargs)
             out, err = await process.communicate(input)
             if isinstance(out, bytes):
                 out = out.decode()

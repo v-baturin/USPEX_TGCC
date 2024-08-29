@@ -30,7 +30,7 @@ class AtomisticStage:
         self.kwargs = kwargs
         self.executor = self.executorType(tag=tag, targetProperties=self.targetProperties, **kwargs)
 
-    async def run(self, system: Entry):
+    async def run(self, system: Entry, shellEnv=None):
         if self.environmentStyle != 'noEnvironment':
             structure = system.getProperty('structure', extension='atomistic', suffix=self.source)
             disassembler = system.getProperty('disassembler', extension='atomistic', suffix=self.source)
@@ -49,7 +49,7 @@ class AtomisticStage:
         intermediate = system.flavourFactory(**intermediate)
 
         try:
-            result = await self.executor.run(system.ID, intermediate)
+            result = await self.executor.run(system.ID, intermediate, shellEnv=shellEnv)
         except Exception as ex:
             logger.warning(f'system {system.ID} error in relaxation:')
             logger.exception(ex)
