@@ -169,8 +169,6 @@ class GenerationController(object):
     def save(self):
         if GenerationController.DUMP_FILENAME.exists():
             copyfile(GenerationController.DUMP_FILENAME, GenerationController.DUMP_FILENAME_BACKUP)
-            copyfile(GenerationController.DUMP_FILENAME.parent / 'uspex.db',
-                     GenerationController.DUMP_FILENAME.parent / 'uspex.db.back')
         with open(GenerationController.DUMP_FILENAME, 'wb') as f:
             pcl.dump(self, f)
         if self.executionTime is not None:
