@@ -39,9 +39,9 @@ from .Atomistic.Operators.RemoveAtom import RemoveAtom
 from .Atomistic.Operators.TeleportAtom import TeleportAtom
 from .Atomistic.Operators.Seeds import Seeds
 from .Atomistic.Operators.CoreAdsorbantRandomGenerator import CoreAdsorbantRandomGenerator
-from .Atomistic.MofUtility import MofUtility
-from .Atomistic.Operators.MOF_Heredity import MOF_Heredity
-from .Atomistic.Operators.MOF_Random import MOF_Random
+#from .Atomistic.MofUtility import MofUtility
+#from .Atomistic.Operators.MOF_Heredity import MOF_Heredity
+#from .Atomistic.Operators.MOF_Random import MOF_Random
 # --------------------------------------------- Targets--- ----------------------------------------------------------
 from .Generators.Target import Target
 Target.registerTarget('Atomistic',
@@ -51,7 +51,7 @@ Target.registerTarget('Atomistic',
                                  JunctionUtility, SymbolsFactoryUtility],
                       hybridizations=[Heredity],
                       mutations=[Softmodemutation, Permutation, Transmutation, AddAtom, RemoveAtom, TeleportAtom],
-                      creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator, MOF_Random],
+                      creations=[RandTop, RandSym, RandSymPyXtal, CoreAdsorbantRandomGenerator],  # MOF_Random],
                       seeds=Seeds,
                       defaultMetric='radialDistributionUtility')
 # --------------------------------------------- Interfaces ----------------------------------------------------------
