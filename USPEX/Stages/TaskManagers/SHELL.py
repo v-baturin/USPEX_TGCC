@@ -38,8 +38,7 @@ class SHELL:
             returncode, out, err= await self.connector.execute(command, stdin=fi, stdout=fo, stderr=fe, cwd=str(calcFolder))
             logger.debug('process returned code {}'.format(returncode))
             if returncode != 0:
-                logger.error(err)
-                logger.error(out)
+                logger.error(f'Returncode {returncode} != 0, Error={err}, Output={out}')
 
         return 0 if returncode == 0 else -1
 
