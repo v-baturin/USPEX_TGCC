@@ -89,11 +89,11 @@ class Flavour:
     def setID(self, entryID: int, name: str):
         with Engine.engine.connect() as conn:
             result = conn.execute(insert(flavours), [{"sID": entryID, "name": name}])
+            assert self.ID is None
+            self.ID = result.inserted_primary_key[0]
+            for prop, value in self._propertiesCache.items():
+                self._setPropertyBD(prop, value, conn)
             conn.commit()
-        assert self.ID is None
-        self.ID = result.inserted_primary_key[0]
-        for prop, value in self._propertiesCache.items():
-            self._setPropertyBD(prop, value)
 
     def getFactory(self) -> 'FlavourFactory':
         return FlavourFactory(self.extensions)
@@ -151,27 +151,27 @@ class Flavour:
     def setProperty(self, prop: str, value, extension: str = ''):
         self._propertiesCache[f'{extension}.{prop}'] = value
         if self.ID is not None:
-            self._setPropertyBD(f'{extension}.{prop}', value)
+            with Engine.engine.connect() as conn:
+                self._setPropertyBD(f'{extension}.{prop}', value, conn)
+                conn.commit()
 
-    def _setPropertyBD(self, prop: str, value):
-        with Engine.engine.connect() as conn:
-            if isinstance(value, int):
-                stmt = insert(propertiesInt).values(fID=self.ID, prop=prop, value=value)
-                stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
-                conn.execute(stmt)
-            elif isinstance(value, float):
-                stmt = insert(propertiesFlt).values(fID=self.ID, prop=prop, value=value)
-                stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
-                conn.execute(stmt)
-            elif isinstance(value, str):
-                stmt = insert(propertiesStr).values(fID=self.ID, prop=prop, value=value)
-                stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
-                conn.execute(stmt)
-            else:
-                stmt = insert(propertiesObj).values(fID=self.ID, prop=prop, value=pcl.dumps(value))
-                stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=pcl.dumps(value)))
-                conn.execute(stmt)
-            conn.commit()
+    def _setPropertyBD(self, prop: str, value, conn):
+        if isinstance(value, int):
+            stmt = insert(propertiesInt).values(fID=self.ID, prop=prop, value=value)
+            stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
+            conn.execute(stmt)
+        elif isinstance(value, float):
+            stmt = insert(propertiesFlt).values(fID=self.ID, prop=prop, value=value)
+            stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
+            conn.execute(stmt)
+        elif isinstance(value, str):
+            stmt = insert(propertiesStr).values(fID=self.ID, prop=prop, value=value)
+            stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=value))
+            conn.execute(stmt)
+        else:
+            stmt = insert(propertiesObj).values(fID=self.ID, prop=prop, value=pcl.dumps(value))
+            stmt = stmt.on_conflict_do_update(index_elements=['fID', 'prop'], set_=dict(value=pcl.dumps(value)))
+            conn.execute(stmt)
 
     def _updatePropertyBD(self, prop: str, value):
         with Engine.engine.connect() as conn:
