@@ -107,6 +107,8 @@ def main():
         except Exception as ex:
             logger.exception(ex)
             exc_info = sys.exc_info()
+            with open("STATE", 'w') as state_fid:
+                state_fid.write(f"ERROR")
             raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
 
 

@@ -175,5 +175,8 @@ class GenerationController(object):
             dt = time() - self.start
             logger.debug(f"{int(dt)} seconds passed")
             if dt >= self.executionTime:
-                logger.info(f"Time is up. Exiting normally. Next state is {self.state.name}")
+                logger.info(f"Executiontime={self.executionTime}s have passed. Exiting normally.\n"
+                            f"Next state is {self.state.name}")
+                with open("STATE", 'w') as state_fid:
+                    state_fid.write(f"{self.state.name}")
                 exit()
