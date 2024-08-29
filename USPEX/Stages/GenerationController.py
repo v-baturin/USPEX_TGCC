@@ -54,7 +54,8 @@ class GenerationController(object):
         cls.compileParams = compileParams
 
     def __init__(self, numGenerations : int, stopCrit : int, numParallelCalcs : int, stages: list,
-                 optimizer, generator, outputRepresentation, outputRefreshDelay):
+                 optimizer, generator, outputRepresentation, outputRefreshDelay : int,
+                 initialState: str | None = None ):
         self.numGenerations = numGenerations
         self.stopCrit = stopCrit
         self.numParallelCalcs = numParallelCalcs
@@ -68,7 +69,7 @@ class GenerationController(object):
         self.numberStableGenerations = 0
         self.isStable = False
         self.isGoalReached = False
-        self.state = ControllerState.createPopulation
+        self.state = ControllerState[initialState] if initialState else ControllerState.createPopulation
         self.population = None
         self.allSystems = None
         self.generations = self.generator.target.createGenerations()
@@ -87,9 +88,8 @@ class GenerationController(object):
             numParallelCalcs = params['numParallelCalcs']
             numGenerations = params['numGenerations']
             stopCrit = params['stopCrit']
-            outputRefreshDelay = params['outputRefreshDelay'] if 'outputRefreshDelay' in params \
-                else DEFAULT_OUTPUT_REFRESH_DELAY
-
+            outputRefreshDelay = params.get('outputRefreshDelay', DEFAULT_OUTPUT_REFRESH_DELAY)
+            initialState = params.get('controllerState')
             if optimizer['type'] in GenerationController.knownOptimizers:
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
             else:
@@ -99,7 +99,7 @@ class GenerationController(object):
             stages = params['stages']
             outputRepresentation = OutputRepresentation(optimizer, generator, **params)
             controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer, generator,
-                                              outputRepresentation, outputRefreshDelay)
+                                              outputRepresentation, outputRefreshDelay, initialState)
             logger.info('Calculation initialized from input parameters.')
         else:
             raise RuntimeError('No input or dump file to start.')
