@@ -90,16 +90,13 @@ class GenerationController(object):
             numParallelCalcs = params['numParallelCalcs']
             numGenerations = params['numGenerations']
             stopCrit = params['stopCrit']
-            outputRefreshDelay = params['outputRefreshDelay'] if 'outputRefreshDelay' in params \
-                else DEFAULT_OUTPUT_REFRESH_DELAY
-            executionTime = params['executionTime'] if 'executionTime' in params \
-                else DEFAULT_EXECUTION_TIME
+            outputRefreshDelay = params.get('outputRefreshDelay', DEFAULT_OUTPUT_REFRESH_DELAY)
+            executionTime = params.get('executionTime', DEFAULT_EXECUTION_TIME)
             if optimizer['type'] in GenerationController.knownOptimizers:
                 optimizer = GenerationController.knownOptimizers[optimizer['type']](**optimizer)
             else:
                 RuntimeError(f"Unknown optimizer type: {optimizer['type']}.")
             generator = GenerationController.knownGenerators[generator['type']](**generator)
-
             stages = params['stages']
             outputRepresentation = OutputRepresentation(optimizer, generator, **params)
             controller = GenerationController(numGenerations, stopCrit, numParallelCalcs, stages, optimizer, generator,
