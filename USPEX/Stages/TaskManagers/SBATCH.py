@@ -32,11 +32,11 @@ class SBATCH:
         self.__dict__.update(state)
         self.updateCache()
 
-    def _prepareSubmission(self, COMMAND_EXEC : str,
-                                 JOB_NAME : str,
-                                 inputFile : str,
-                                 outputFile : str,
-                                 errorFile : str) -> str:
+    def _prepareSubmission(self, COMMAND_EXEC: str,
+                           JOB_NAME: str,
+                           inputFile: str,
+                           outputFile: str,
+                           errorFile: str) -> str:
         '''
         Preparing jobscript for submission
         :param commandExec:
@@ -49,24 +49,32 @@ class SBATCH:
         :param errorFile: path to errorFile
         :return: jobscript as string
         '''
-
+        hash_lines = []
+        non_hash_lines = []
         content = ''
         for line in self.header.split('\n'):
-            if ' -j ' in line.lower():
-                logger.info('Job name found in HEADER will be overwritten')
-            elif ' -i ' in line.lower():
-                logger.info('Input file name found in HEADER will be overwritten')
-            elif ' -o ' in line.lower():
-                logger.info('Output file name found in HEADER will be overwritten')
-            elif ' -e ' in line.lower():
-                logger.info('Error file name found in HEADER will be overwritten')
+            if not line:
+                continue
+            if line.strip()[0] == '#':
+                if ' -j ' in line.lower():
+                    logger.info('Job name found in HEADER will be overwritten')
+                elif ' -i ' in line.lower():
+                    logger.info('Input file name found in HEADER will be overwritten')
+                elif ' -o ' in line.lower():
+                    logger.info('Output file name found in HEADER will be overwritten')
+                elif ' -e ' in line.lower():
+                    logger.info('Error file name found in HEADER will be overwritten')
+                else:
+                    hash_lines.append(line)
             else:
-                content += line + '\n'
-        content += f'#SBATCH -J  {JOB_NAME}\n' \
+                non_hash_lines.append(line)
+
+        content += '\n'.join(hash_lines)
+        content += f'\n#SBATCH -J  {JOB_NAME}\n' \
                    f'#SBATCH -i  {inputFile}\n' \
                    f'#SBATCH -o  {outputFile}\n' \
-                   f'#SBATCH -e  {errorFile}\n\n' \
-                   f'{COMMAND_EXEC}\n'
+                   f'#SBATCH -e  {errorFile}\n'
+        content += '\n'.join(non_hash_lines) + f'\n{COMMAND_EXEC}\n'
 
         return ''.join(content)
 
