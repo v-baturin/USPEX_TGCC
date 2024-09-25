@@ -51,24 +51,31 @@ class TGCC:
         :param errorFile: path to errorFile
         :return: jobscript as string
         '''
-
+        hash_lines = []
+        non_hash_lines = []
         content = ''
         for line in self.header.split('\n'):
-            if ' -r ' in line.lower():
-                logger.info('Job name found in HEADER will be overwritten')
-            elif ' -o ' in line.lower():
-                logger.info('Output file name found in HEADER will be overwritten')
-            elif ' -e ' in line.lower():
-                logger.info('Error file name found in HEADER will be overwritten')
-                content += f'#MSUB  -e  {errorFile}\n'
+            if not line:
+                continue
+            if line.strip()[0] == '#':
+                if ' -r ' in line.lower():
+                    logger.info('Job name found in HEADER will be overwritten')
+                elif ' -o ' in line.lower():
+                    logger.info('Output file name found in HEADER will be overwritten')
+                elif ' -e ' in line.lower():
+                    logger.info('Error file name found in HEADER will be overwritten')
+                    content += f'#MSUB  -e  {errorFile}\n'
+                else:
+                    hash_lines.append(line)
             else:
-                content += line + '\n'
-        content += f'#MSUB -r  {JOB_NAME}\n' \
+                non_hash_lines.append(line)
+
+        content += '\n'.join(hash_lines)
+        content += f'\n#MSUB -r  {JOB_NAME}\n' \
                    f'#MSUB  -o  {outputFile}\n' \
-                   f'#MSUB  -e  {errorFile}\n\n' \
-                   f'{COMMAND_EXEC}\n'
-        #Normally supplied with
-        #ml purge &&  ml load intel/20.0.0 mpi/openmpi/4.1.4 vasp/6.2.1
+                   f'#MSUB  -e  {errorFile}\n' \
+
+        content += '\n'.join(non_hash_lines) + f'\n{COMMAND_EXEC}\n'
 
         return ''.join(content)
 
