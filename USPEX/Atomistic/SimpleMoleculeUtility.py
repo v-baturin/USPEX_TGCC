@@ -43,7 +43,8 @@ class SimpleMoleculeUtility(SimpleMoleculeUtilitySemantics):
         cls.structureType = structureType
         cls.atomType = atomType
 
-    def __init__(self, molecules: dict = None, doCenterMolecule=False, whatToCheckInMolecules='all', integrityTol=None):
+    def __init__(self, molecules: dict = None, doCenterMolecule=False, whatToCheckInMolecules='all', integrityTol=None,
+                 dropCheckDist=False):
         """
         :param molecules: {<name>: <definition>} dictionary of molecule definitions.
 
@@ -60,6 +61,7 @@ class SimpleMoleculeUtility(SimpleMoleculeUtilitySemantics):
         # TODO: what if we have two molecules with same formula?
         self.whatToCheckInMolecules = whatToCheckInMolecules
         self.integrityTol = INTEGRITY_TOL[whatToCheckInMolecules] if integrityTol is None else integrityTol
+        self.dropCheckDist = dropCheckDist
 
     def populateStructure(self, cell, operations):
         """
@@ -137,7 +139,8 @@ class SimpleMoleculeUtility(SimpleMoleculeUtilitySemantics):
         #             break
         #     if not inMolecule: return False
         # return True
-
+        if self.dropCheckDist:
+            return True
         molecules = entry.getProperty('molecules', extension='atomistic')
         cell = entry.getProperty('cell', extension='atomistic')
         structure = entry.getProperty('structure', extension='atomistic')
