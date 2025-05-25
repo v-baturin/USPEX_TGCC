@@ -2,6 +2,7 @@ import logging
 
 import asyncio
 import pickle as pcl
+from asyncio import CancelledError
 
 from copy import copy, deepcopy
 from enum import Enum
@@ -17,6 +18,7 @@ from ..Semantics.Optimizer import Optimizer as OptimizerSemantics
 logger = logging.getLogger(__name__)
 DEFAULT_OUTPUT_REFRESH_DELAY = 120
 DEFAULT_EXECUTION_TIME = None  # time in sec. None=infinite run
+DEFAULT_WRAPUP_TIME = 300  # Time from killing cluster jobs to killing uspex at irene cluster
 
 class ControllerState(Enum):
     createPopulation = 0
@@ -126,8 +128,17 @@ class GenerationController(object):
             if self.state is ControllerState.processPopulation:
                 self.doPresentSystems = True
                 task = asyncio.ensure_future(self.presentSystems())
-                await self.populationProcessorType.processPopulation(self.stages, self.population,
-                                                                     self.numParallelCalcs, self.generator.target)
+                try:
+                    time_rest = self.executionTime - (time() - self.start) - DEFAULT_WRAPUP_TIME
+                    await asyncio.wait_for(self.populationProcessorType.processPopulation(self.stages,
+                                                                                          self.population,
+                                                                                          self.numParallelCalcs,
+                                                                                          self.generator.target),
+                                           time_rest)
+                except TimeoutError:
+                    self.save()
+                    logger.info("Process population timed out")
+                    exit()
                 self.doPresentSystems = False
                 await asyncio.wait({task})
                 self.state = ControllerState.updateOptimizer

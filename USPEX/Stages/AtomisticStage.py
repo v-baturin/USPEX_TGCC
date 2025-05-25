@@ -1,4 +1,5 @@
 import logging
+from asyncio import CancelledError
 
 import numpy as np
 from itertools import product
@@ -50,6 +51,9 @@ class AtomisticStage:
 
         try:
             result = await self.executor.run(system.ID, intermediate)
+        except CancelledError:
+            logger.info(f"system {system.ID}: relaxation interrupted by timeout")
+            raise
         except Exception as ex:
             logger.warning(f'system {system.ID} error in relaxation:')
             logger.exception(ex)
