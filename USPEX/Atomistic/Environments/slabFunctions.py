@@ -4,7 +4,10 @@ import logging
 from pymatgen.analysis.interfaces.zsl import ZSLGenerator
 from pymatgen.analysis.interfaces.coherent_interfaces import get_2d_transform, Deformation
 
-from pymatgen.core.interface import GrainBoundaryGenerator
+try:
+    from pymatgen.core.interface import GrainBoundaryGenerator
+except ImportError:
+    from pymatgen.analysis.gb.grain import GrainBoundaryGenerator
 from pymatgen.core.surface import SlabGenerator
 from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
