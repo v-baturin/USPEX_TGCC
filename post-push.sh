@@ -11,7 +11,7 @@ echo
 # Function to synchronize the current directory with remote servers using rsync
 synchronize_with_servers() {
   echo "Synchronizing current directory with remote servers..."
-  sshpass -p "$PASSWORD_VB" rsync --progress --recursive --compress --exclude="unittests" --exclude="testFolder" --exclude=".git" --exclude="uspex.egg-info/" --exclude="venv/" --exclude=".idea/" --exclude="post-push.sh" ./ "$SERVER2"
+  sshpass -p "$PASSWORD_VB" rsync --progress --recursive --compress --exclude="unittests" --exclude='*.pyc' --exclude='*.rst' --exclude="testFolder" --exclude=".git" --exclude="uspex.egg-info/" --exclude="venv/" --exclude=".idea/" --exclude="post-push.sh" ./ "$SERVER2"
 #  echo "Current directory synchronized with remote servers successfully."
 }
 synchronize_with_servers
