@@ -90,10 +90,12 @@ class BondUtility(BondUtilitySemantics):
     propertyExtension = PropertyExtension()
 
     def __init__(self, sameBond: float = None, maxBond: float = None, lowerBond: float = None, goodBonds: dict = None,
-                 cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, volumeCoefficient=1., ionDistances=None):
+                 cutoff: Union[str, Dict, float, int] = 'strong', volumeType=0, volumeCoefficient=1., ionDistances=None,
+                 dropConnectivityCheck=False):
         self.sameBond = sameBond if sameBond is not None else SAME_BOND_THRESHOLD
         self.maxBond = maxBond if maxBond is not None else MAX_BOND
         self.lowerBond = lowerBond if lowerBond is not None else LOWER_BOND
+        self.dropConnectivityCheck = dropConnectivityCheck
         if goodBonds is not None:
             self.goodBonds = {}
             for key, value in goodBonds.items():
@@ -132,6 +134,8 @@ class BondUtility(BondUtilitySemantics):
         @param cutoff: str, dict, float, int
         @return: bool
         """
+        if self.dropConnectivityCheck:
+            return True
         cutoff = self.buildCutoffDict(structure, cutoff)
         strongBonds, weakBonds = self.getAllBondsInCutoff(structure, cutoff)
         pbc = structure.getCell().getPBC()
