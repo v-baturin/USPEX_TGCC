@@ -100,6 +100,8 @@ from .Stages.TaskManagers.SHELL import SHELL
 Executor.registerTaskManager('SHELL', SHELL)
 from .Stages.TaskManagers.TGCC import TGCC
 Executor.registerTaskManager('TGCC', TGCC)
+from .Stages.TaskManagers.TGCC_flux import TGCC_flux
+Executor.registerTaskManager('TGCC_flux', TGCC_flux)
 from .Stages.AtomisticStage import AtomisticStage
 # ------------------------------------------------ Stages -----------------------------------------------------------
 from .Stages.ExternalStage import ExternalStage
