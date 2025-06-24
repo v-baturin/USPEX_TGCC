@@ -78,7 +78,7 @@ class Executor(object):
         self._connector = Connector(**remote)
 
         if taskManager is not None:
-            self._taskManager = self.knownTaskManagers[taskManager['type']](header=taskManager['header'],
+            self._taskManager = self.knownTaskManagers[taskManager['type']](header=taskManager.get('header',''),
                                                                             connector=self._connector)
         else:
             self._taskManager = self.knownTaskManagers['SHELL'](connector=self._connector)
