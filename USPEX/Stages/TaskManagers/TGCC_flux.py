@@ -1,8 +1,9 @@
 """
-USPEX.Stages.TaskManagers.SHELL
+USPEX.Stages.TaskManagers.TGCC_flux
 ===============================
 
-.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>
+.. codeauthor:: Pavel Bushlanov <paulbush@mail.ru>,
+.. codeauthor:: Vladimir Baturin <vladimir.s.baturin@gmail.com>,
 
 """
 import os
@@ -12,11 +13,11 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-class SHELL:
+class TGCC_flux:
 
-    shortname = 'SHELL'
+    shortname = 'Flux'
 
-    def __init__(self, connector):
+    def __init__(self, connector, **kwargs):
         """
         :param connector: for remote submission
         :return:
