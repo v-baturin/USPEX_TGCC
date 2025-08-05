@@ -225,7 +225,7 @@ class RadialDistributionUtility(object):
         atom1 = dist_matrix[:, 0]
         type1 = dist_matrix[:, 1]
         type2 = dist_matrix[:, 2]
-        btype1 = (type1 + 1.0 - 1.0) * N_type + (type2 + 1.0)
+        btype1 = (type1 + 1.0 - 1.0) * N_type + (type2 + 1.0)  #bond type
         R0 = dist_matrix[:, 3]
         R02 = R0 ** 2.0
         min_bin = np.floor((-4.0 * sigma + R0) / float(self.delta) + 0.5) + 1.0

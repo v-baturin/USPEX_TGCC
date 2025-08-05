@@ -130,4 +130,4 @@ from .IO.AtomisticRepresentation import AtomisticRepresentation
 AtomisticRepresentation.registerTypes(Atomistic)
 # ---------------------------------------------- Data Model ---------------------------------------------------------
 from .DataModel.Engine import Engine
-Engine.createEngine("uspex.db")
+# Engine.createEngine("uspex.db")

@@ -103,6 +103,8 @@ def main():
     if args.uspex_run:
         try:
             from .components import GenerationController
+            from .components import Engine
+            Engine.createEngine("uspex.db")
             asyncio.get_event_loop().run_until_complete(GenerationController.createController(start).run())
         except Exception as ex:
             logger.exception(ex)
