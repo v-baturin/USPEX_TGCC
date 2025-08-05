@@ -150,8 +150,9 @@ class RadialDistributionUtility(object):
 
     propertyExtension = PropertyExtension()
 
-    def __init__(self, symbols, suffix, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT, tolerance=TOLERANCE_DEFAULT,
-                 legacy=False):
+    def __init__(self, symbols, suffix, Rmax=RMAX_DEFAULT, sigma=SIGMA_DEFAULT, delta=DELTA_DEFAULT,
+                 tolerance=TOLERANCE_DEFAULT, storeDistances=True,
+                 legacy=False, **kwargs):
         """
         :type Rmax: float
         :param Rmax: threshold distance between i-th anf j-th atom.
@@ -170,6 +171,7 @@ class RadialDistributionUtility(object):
         self.tolerance = tolerance
         self.legacy = legacy
         self.distances = {}
+        self.storeDistances = storeDistances
         self.legacy_distances = {}
 
     def clean(self, system):
@@ -412,17 +414,21 @@ class RadialDistributionUtility(object):
         :return: distance between systems.
         """
         legacy = self.legacy if legacy is None else legacy
-        pair = (system1.ID, system2.ID) if system1.ID < system2.ID else (system2.ID, system1.ID)
         if legacy:
-            if pair not in self.legacy_distances:
-                expr = f'radialDistributionUtility.structureFingerprint.{self.suffix}'
-                self.legacy_distances[pair] = Fingerprint.cosine_distance(system1[expr], system2[expr])
-            distance = self.legacy_distances[pair]
+            expr = f'radialDistributionUtility.structureFingerprint.{self.suffix}'
+            dist_fun = Fingerprint.cosine_distance
+            distances_cache = self.legacy_distances
         else:
-            if pair not in self.distances:
-                expr = f'radialDistributionUtility.complexFingerprint.{self.suffix}'
-                self.distances[pair] = ComplexFingerprint.dist(system1[expr], system2[expr])
-            distance = self.distances[pair]
+            expr = f'radialDistributionUtility.complexFingerprint.{self.suffix}'
+            dist_fun = ComplexFingerprint.dist
+            distances_cache = self.distances
+        if self.storeDistances:
+            pair = (system1.ID, system2.ID) if system1.ID < system2.ID else (system2.ID, system1.ID)
+            if pair not in distances_cache:
+                distances_cache[pair] = dist_fun(system1[expr], system2[expr])
+            distance = distances_cache[pair]
+        else:
+            distance = dist_fun(system1[expr], system2[expr])
         return distance
 
     def equal(self, system1, system2, tolerance=None):
