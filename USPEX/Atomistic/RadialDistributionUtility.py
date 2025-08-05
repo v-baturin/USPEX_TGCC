@@ -190,7 +190,7 @@ class RadialDistributionUtility(object):
         structure = system['atomistic.structure']
         disassembler = system['atomistic.disassembler']
         atomTypes = structure.getAtomTypes()
-        uniqueSimbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)
+        uniqueSymbols, inverse, numIons = np.unique(atomTypes, return_inverse=True, return_counts=True)
         indices = np.argsort(inverse)
         revertIndices = np.argsort(indices)
         cartesian = structure.getCartesianCoordinates()
@@ -340,7 +340,7 @@ class RadialDistributionUtility(object):
         fing -= normalizer.reshape((1, -1, 1))
 
         atomFings = []
-        weights = {s.short_name: w for s, w in zip(uniqueSimbols, numIons / np.sum(numIons))}
+        weights = {s.short_name: w for s, w in zip(uniqueSymbols, numIons / np.sum(numIons))}
         for s in self.symbols:
             if s not in weights:
                 weights[s] = 0
@@ -350,7 +350,7 @@ class RadialDistributionUtility(object):
             if np.allclose(atom_fing[i], 0):
                 order.append(0.0)
                 continue
-            value = {s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSimbols)}
+            value = {s.short_name: atom_fing[i, j] for j, s in enumerate(uniqueSymbols)}
             for s in self.symbols:
                 if s not in value:
                     value[s] = np.zeros(N_Bins, dtype=float)
@@ -363,7 +363,7 @@ class RadialDistributionUtility(object):
         molOrder = np.fromiter((order[np.asarray(inds)].sum()/len(inds) for inds in disassembler.indices), dtype=float)
         a_order = np.mean(order[np.isfinite(order)]) if np.any(np.isfinite(order)) else np.nan
 
-        fing = {(s1.short_name, s2.short_name): fing[i, j] for i, s1 in enumerate(uniqueSimbols) for j, s2 in enumerate(uniqueSimbols)}
+        fing = {(s1.short_name, s2.short_name): fing[i, j] for i, s1 in enumerate(uniqueSymbols) for j, s2 in enumerate(uniqueSymbols)}
         fingerprint = Fingerprint(value=fing, weights=self._fingerprintWeights(structure),
                                   delta=self.delta)
         s_order = fingerprint.order

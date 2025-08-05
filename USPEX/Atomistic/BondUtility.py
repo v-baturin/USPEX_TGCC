@@ -516,11 +516,11 @@ class BondUtility(BondUtilitySemantics):
         :return: N*N array of minimal distances.
         """
         symbols = [symbol.short_name for symbol in symbols]
-        uniqueSimbols = np.unique(symbols)
+        uniqueSymbols = np.unique(symbols)
         minDistMatrix = {}
         radii = {symbol: self.volumeEstimator.calcAtomVolume(symbol, pressure) ** (1.0 / 3.0)
-                 for symbol in uniqueSimbols}
-        for s1, s2 in combinations_with_replacement(uniqueSimbols, 2):
+                 for symbol in uniqueSymbols}
+        for s1, s2 in combinations_with_replacement(uniqueSymbols, 2):
             if (s1, s2) in self._distances:
                 minDistMatrix[(s2, s1)] = minDistMatrix[(s1, s2)] = self._distances[(s1, s2)]
             elif (s2, s1) in self._distances:
