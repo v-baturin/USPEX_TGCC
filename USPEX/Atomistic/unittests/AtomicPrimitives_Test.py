@@ -23,7 +23,7 @@ class GetPrincipalCell_Test(unittest.TestCase):
         print('\npbc_index is ', which_pbc)
         for i, vec in enumerate(newvectors):
             print(f"cos(pbcvec, newvec[{i}]) = ", cosine(newvectors[i], pbcvec))
-        self.assertAlmostEquals(cosine(newvectors[which_pbc], pbcvec), 0.)
+        self.assertAlmostEqual(cosine(newvectors[which_pbc], pbcvec), 0.)
 
 class bad_principal_test(unittest.TestCase):
 
