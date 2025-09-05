@@ -214,7 +214,8 @@ class RadialDistributionUtility(object):
         N_Bins = int(round(self.Rmax / float(self.delta)))
         fing = np.zeros((N_type, N_type, N_Bins))
         atom_fing = np.zeros((N_atom, N_type, N_Bins))
-        sigma = self.sigma / (2.0 * np.log(2.0)) ** 0.5
+        # sigma = self.sigma / (2.0 * np.log(2.0)) ** 0.5
+        sigma = self.sigma
         sqrt2_sigm = sigma * 2.0 ** 0.5
 
         # Vectorization:
